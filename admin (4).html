@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>CertLab 관리자</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
+:root{--pink:#D4537E;--purple:#7F77DD;--green:#1D9E75;--red:#E24B4A;--blue:#185FA5;--gray:#888780}
+
+/* 로그인 화면 */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFF5F8,#F0EDFF)}
+.login-box{background:#fff;border-radius:24px;padding:40px 32px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.08);text-align:center}
+.login-logo{font-size:28px;font-weight:800;background:linear-gradient(135deg,#D4537E,#7F77DD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.login-sub{font-size:14px;color:#888780;margin-bottom:32px}
+.btn-google{width:100%;padding:14px;border-radius:12px;border:1.5px solid #E0E0E0;background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:600;color:#2C2C2A;cursor:pointer;transition:all .15s}
+.btn-google:hover{background:#F5F5F5}
+.google-icon{width:20px;height:20px}
+.login-note{font-size:12px;color:#B4B2A9;margin-top:16px}
+
+/* 메인 레이아웃 */
+.admin-wrap{display:none;min-height:100vh;flex-direction:column}
+.admin-header{background:#fff;border-bottom:1px solid #E8E8E8;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.admin-logo{font-size:18px;font-weight:800;background:linear-gradient(135deg,#D4537E,#7F77DD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.admin-user{display:flex;align-items:center;gap:10px;font-size:13px;color:#888780}
+.btn-logout{padding:6px 14px;border-radius:20px;border:1.5px solid #E8E8E8;background:#fff;font-size:12px;color:#888780;cursor:pointer}
+.btn-logout:hover{background:#F5F5F5}
+
+/* 탭 */
+.admin-tabs{background:#fff;border-bottom:1px solid #E8E8E8;padding:0 24px;display:flex;gap:0}
+.tab-btn{padding:14px 20px;font-size:14px;font-weight:600;color:#888780;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:#7F77DD;border-bottom-color:#7F77DD}
+.tab-btn .badge{display:inline-block;background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
+/* 콘텐츠 */
+.admin-content{padding:24px;max-width:1200px;margin:0 auto;width:100%}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* 대시보드 카드 */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.dash-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.dash-card .label{font-size:12px;color:#888780;margin-bottom:8px}
+.dash-card .value{font-size:28px;font-weight:700;color:#2C2C2A}
+.dash-card.pink .value{color:#D4537E}
+.dash-card.purple .value{color:#7F77DD}
+.dash-card.green .value{color:#1D9E75}
+.dash-card.red .value{color:#E24B4A}
+.dash-card.blue .value{color:#185FA5}
+.dash-card.orange .value{color:#BA7517}
+
+/* 테이블 */
+.table-wrap{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0F0F0}
+.table-title{font-size:15px;font-weight:700;color:#2C2C2A}
+.search-input{padding:8px 14px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;width:220px}
+.search-input:focus{border-color:#7F77DD}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#888780;background:#FAFAFA;border-bottom:1px solid #F0F0F0}
+td{padding:12px 16px;font-size:13px;color:#2C2C2A;border-bottom:1px solid #F8F8F8;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAFA}
+
+/* 배지 */
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-free{background:#E8F8F3;color:#0F6E56}
+.badge-active{background:#E6F1FB;color:#185FA5}
+.badge-expired{background:#FCEBEB;color:#A32D2D}
+.badge-guest{background:#F4EEF9;color:#534AB7}
+.badge-pending{background:#FFF9F0;color:#BA7517}
+.badge-approved{background:#E8F8F3;color:#0F6E56}
+.badge-rejected{background:#FCEBEB;color:#A32D2D}
+
+/* 버튼 */
+.btn-sm{padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-approve{background:#E8F8F3;color:#0F6E56}
+.btn-approve:hover{background:#1D9E75;color:#fff}
+.btn-reject{background:#FCEBEB;color:#A32D2D}
+.btn-reject:hover{background:#E24B4A;color:#fff}
+.btn-extend{background:#E6F1FB;color:#185FA5}
+.btn-extend:hover{background:#185FA5;color:#fff}
+.btn-expire{background:#FFF9F0;color:#BA7517}
+.btn-expire:hover{background:#BA7517;color:#fff}
+.btn-primary{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+
+/* 로딩 */
+.loading{text-align:center;padding:40px;color:#888780;font-size:14px}
+.empty{text-align:center;padding:40px;color:#B4B2A9;font-size:14px}
+
+/* 모달 */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-bg.hidden{display:none}
+.modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:400px;margin:16px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F5F5F5;font-size:14px}
+.modal-row:last-of-type{border-bottom:none}
+.modal-label{color:#888780}
+.modal-value{font-weight:600}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.modal-btns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+.btn-modal-ok{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff}
+.btn-modal-cancel{background:#F4EEF9;color:#7F77DD}
+
+/* 반응형 */
+@media(max-width:600px){
+  .admin-content{padding:16px}
+  .dash-grid{grid-template-columns:repeat(2,1fr)}
+  th:nth-child(n+4),td:nth-child(n+4){display:none}
+  .search-input{width:140px}
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">CertLab</div>
+    <div class="login-sub">관리자 전용 페이지</div>
+    <button class="btn-google" onclick="adminLogin()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Google로 로그인
+    </button>
+    <div class="login-note">관리자 계정으로만 접근 가능합니다</div>
+  </div>
+</div>
+
+<!-- 관리자 메인 -->
+<div class="admin-wrap" id="adminWrap">
+  <div class="admin-header">
+    <div class="admin-logo">CertLab Admin</div>
+    <div class="admin-user">
+      <span id="adminEmail"></span>
+      <button class="btn-logout" onclick="adminLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="admin-tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">대시보드</button>
+    <button class="tab-btn" onclick="switchTab('payments')" id="tabPayments">결제 신청<span class="badge" id="pendingBadge" style="display:none">0</span></button>
+    <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
+    <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
+  </div>
+
+  <div class="admin-content">
+
+    <!-- 대시보드 -->
+    <div class="tab-panel active" id="panel-dashboard">
+      <div class="dash-grid">
+        <div class="dash-card"><div class="label">전체 회원</div><div class="value" id="statTotal">-</div></div>
+        <div class="dash-card purple"><div class="label">무료 체험</div><div class="value" id="statFree">-</div></div>
+        <div class="dash-card green"><div class="label">유료 회원</div><div class="value" id="statActive">-</div></div>
+        <div class="dash-card red"><div class="label">만료</div><div class="value" id="statExpired">-</div></div>
+        <div class="dash-card orange"><div class="label">승인 대기</div><div class="value" id="statPending">-</div></div>
+        <div class="dash-card pink"><div class="label">이번 달 매출</div><div class="value" id="statRevenue">-</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">최근 결제 신청</div></div>
+        <div id="recentPayments"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 결제 신청 -->
+    <div class="tab-panel" id="panel-payments">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">결제 신청 목록</div>
+          <input class="search-input" id="searchPayment" placeholder="이메일 검색..." oninput="filterPayments()">
+        </div>
+        <div id="paymentList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 회원 관리 -->
+    <div class="tab-panel" id="panel-members">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">회원 목록</div>
+          <input class="search-input" id="searchMember" placeholder="이메일 검색..." oninput="filterMembers()">
+        </div>
+        <div id="memberList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 오류 신고 -->
+    <div class="tab-panel" id="panel-reports">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">문제 오류 신고 목록</div>
+          <select id="filterStatus" onchange="filterReports()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            <option value="all">전체</option>
+            <option value="pending">처리 대기</option>
+            <option value="done">처리 완료</option>
+          </select>
+        </div>
+        <div id="reportList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 승인 모달 -->
+<div class="modal-bg hidden" id="approveModal">
+  <div class="modal">
+    <div class="modal-title">✅ 이용권 승인</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="modalEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">입금자</span><span class="modal-value" id="modalDepositor"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="modalPlan"></span></div>
+    <div class="modal-row"><span class="modal-label">금액</span><span class="modal-value" id="modalPrice"></span></div>
+    <div class="modal-row"><span class="modal-label">만료일</span><span class="modal-value" id="modalExpire"></span></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-modal-ok" onclick="confirmApprove()">승인 확정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 거절 모달 -->
+<div class="modal-bg hidden" id="rejectModal">
+  <div class="modal">
+    <div class="modal-title">❌ 결제 거절</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="rejectEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="rejectPlan"></span></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-reject" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600" onclick="confirmReject()">거절 확정</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_EMAIL = 'certlab.team@gmail.com';
+const firebaseConfig = {
+  apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+  authDomain: "certlab-c3bcb.firebaseapp.com",
+  projectId: "certlab-c3bcb",
+  storageBucket: "certlab-c3bcb.firebasestorage.app",
+  messagingSenderId: "698827699707",
+  appId: "1:698827699707:web:b08d492f408ac444fa875e"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+let allPayments = [];
+let allMembers = [];
+let pendingPaymentId = null;
+let pendingPaymentData = null;
+
+// ===== Auth =====
+auth.onAuthStateChanged(user => {
+  if (user && user.email === ADMIN_EMAIL) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminWrap').style.display = 'flex';
+    document.getElementById('adminEmail').textContent = user.email;
+    loadAll();
+  } else if (user) {
+    auth.signOut();
+    alert('관리자 계정만 접근 가능합니다.');
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('adminWrap').style.display = 'none';
+  }
+});
+
+async function adminLogin() {
+  try { await auth.signInWithPopup(googleProvider); }
+  catch(e) { if(e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message); }
+}
+function adminLogout() { if(confirm('로그아웃 하시겠어요?')) auth.signOut(); }
+
+// ===== 탭 =====
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// ===== 데이터 로드 =====
+async function loadAll() {
+  await Promise.all([loadPayments(), loadMembers(), loadReports()]);
+  loadDashboard();
+}
+
+async function loadPayments() {
+  try {
+    const snap = await db.collection('payments').orderBy('createdAt','desc').get();
+    allPayments = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    renderPayments(allPayments);
+    renderRecentPayments();
+    updatePendingBadge();
+  } catch(e) { document.getElementById('paymentList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+async function loadMembers() {
+  try {
+    const snap = await db.collection('users').orderBy('createdAt','desc').get();
+    allMembers = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    renderMembers(allMembers);
+  } catch(e) { document.getElementById('memberList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+function loadDashboard() {
+  const now = new Date();
+  const total = allMembers.length;
+  const free = allMembers.filter(m => m.plan === 'FREE_TRIAL').length;
+  const active = allMembers.filter(m => m.plan === 'ACTIVE').length;
+  const expired = allMembers.filter(m => m.plan === 'EXPIRED').length;
+  const pending = allPayments.filter(p => p.status === 'pending').length;
+
+  // 이번 달 매출
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const revenue = allPayments
+    .filter(p => {
+      if (p.status !== 'approved' || !p.approvedAt) return false;
+      const d = p.approvedAt.toDate ? p.approvedAt.toDate() : new Date(p.approvedAt);
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    })
+    .reduce((sum, p) => sum + (p.price || 0), 0);
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statFree').textContent = free;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statExpired').textContent = expired;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statRevenue').textContent = revenue.toLocaleString() + '원';
+}
+
+function updatePendingBadge() {
+  const pending = allPayments.filter(p => p.status === 'pending').length;
+  const badge = document.getElementById('pendingBadge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+}
+
+// ===== 렌더링 =====
+const planNames = {7:'Basic (7일)', 14:'Standard (14일)', 28:'Premium (28일)'};
+const planBadge = p => p === 'FREE_TRIAL' ? 'badge-free' : p === 'ACTIVE' ? 'badge-active' : p === 'EXPIRED' ? 'badge-expired' : 'badge-guest';
+const planLabel = p => p === 'FREE_TRIAL' ? '무료체험' : p === 'ACTIVE' ? '이용중' : p === 'EXPIRED' ? '만료' : p;
+
+function fmtDate(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function fmtDateShort(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ko-KR', {year:'2-digit',month:'2-digit',day:'2-digit'});
+}
+function daysLeft(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Math.ceil((d - new Date()) / 86400000);
+  return diff > 0 ? diff + '일' : '만료';
+}
+
+function renderRecentPayments() {
+  const recent = allPayments.slice(0, 5);
+  if (!recent.length) { document.getElementById('recentPayments').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
+  document.getElementById('recentPayments').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th></tr></thead>
+      <tbody>${recent.map(p => `
+        <tr>
+          <td>${p.email||'-'}</td>
+          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${(p.price||0).toLocaleString()}원</td>
+          <td><span class="badge ${p.status==='pending'?'badge-pending':p.status==='approved'?'badge-approved':'badge-rejected'}">${p.status==='pending'?'대기':p.status==='approved'?'승인':'거절'}</span></td>
+          <td>${fmtDate(p.createdAt)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderPayments(list) {
+  if (!list.length) { document.getElementById('paymentList').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
+  document.getElementById('paymentList').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>입금자</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
+      <tbody>${list.map(p => `
+        <tr>
+          <td>${p.email||'-'}</td>
+          <td><strong>${p.depositorName||'-'}</strong></td>
+          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${(p.price||0).toLocaleString()}원</td>
+          <td><span class="badge ${p.status==='pending'?'badge-pending':p.status==='approved'?'badge-approved':'badge-rejected'}">${p.status==='pending'?'승인대기':p.status==='approved'?'승인완료':'거절'}</span></td>
+          <td>${fmtDate(p.createdAt)}</td>
+          <td>${p.status==='pending' ? `
+            <button class="btn-sm btn-approve" onclick="openApprove('${p.id}')">승인</button>
+            <button class="btn-sm btn-reject" onclick="openReject('${p.id}')" style="margin-left:4px">거절</button>` : '-'}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderMembers(list) {
+  if (!list.length) { document.getElementById('memberList').innerHTML = '<div class="empty">회원이 없습니다.</div>'; return; }
+  document.getElementById('memberList').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>상태</th><th>만료일</th><th>남은일</th><th>가입일</th><th>관리</th></tr></thead>
+      <tbody>${list.map(m => `
+        <tr>
+          <td>${m.email||'-'}</td>
+          <td><span class="badge ${planBadge(m.plan)}">${planLabel(m.plan)}</span></td>
+          <td>${m.plan==='ACTIVE'?fmtDateShort(m.expireAt):m.plan==='FREE_TRIAL'?fmtDateShort(m.trialEnd):'-'}</td>
+          <td>${m.plan==='ACTIVE'?daysLeft(m.expireAt):m.plan==='FREE_TRIAL'?daysLeft(m.trialEnd):'-'}</td>
+          <td>${fmtDateShort(m.createdAt)}</td>
+          <td>
+            <button class="btn-sm btn-extend" onclick="extendMember('${m.id}','${m.email}')">연장</button>
+            <button class="btn-sm btn-expire" onclick="expireMember('${m.id}','${m.email}')" style="margin-left:4px">만료</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ===== 검색 =====
+function filterPayments() {
+  const q = document.getElementById('searchPayment').value.toLowerCase();
+  renderPayments(allPayments.filter(p => (p.email||'').toLowerCase().includes(q)));
+}
+function filterMembers() {
+  const q = document.getElementById('searchMember').value.toLowerCase();
+  renderMembers(allMembers.filter(m => (m.email||'').toLowerCase().includes(q)));
+}
+
+// ===== 승인/거절 =====
+function openApprove(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  const expireDate = new Date();
+  expireDate.setDate(expireDate.getDate() + (p.planDays || 14));
+  document.getElementById('modalEmail').textContent = p.email;
+  document.getElementById('modalDepositor').textContent = p.depositorName || '-';
+  document.getElementById('modalPlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('modalPrice').textContent = (p.price||0).toLocaleString()+'원';
+  document.getElementById('modalExpire').textContent = expireDate.toLocaleDateString('ko-KR');
+  document.getElementById('approveModal').classList.remove('hidden');
+}
+
+function openReject(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  document.getElementById('rejectEmail').textContent = p.email;
+  document.getElementById('rejectPlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('rejectModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('approveModal').classList.add('hidden');
+  document.getElementById('rejectModal').classList.add('hidden');
+  pendingPaymentId = null;
+  pendingPaymentData = null;
+}
+
+async function confirmApprove() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  const p = pendingPaymentData;
+  const expireAt = new Date();
+  expireAt.setDate(expireAt.getDate() + (p.planDays || 14));
+  try {
+    // 결제 상태 업데이트
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'approved',
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // 유저 플랜 업데이트
+    await db.collection('users').doc(p.uid).update({
+      plan: 'ACTIVE',
+      expireAt: firebase.firestore.Timestamp.fromDate(expireAt),
+      planDays: p.planDays
+    });
+    closeModal();
+    alert(`✅ ${p.email} 승인 완료!\n만료일: ${expireAt.toLocaleDateString('ko-KR')}`);
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function confirmReject() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'rejected',
+      rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal();
+    alert('거절 처리되었습니다.');
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// ===== 오류 신고 =====
+let allReports = [];
+
+async function loadReports() {
+  try {
+    const snap = await db.collection('reports').orderBy('createdAt','desc').get();
+    allReports = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    renderReports(allReports);
+    updateReportBadge();
+  } catch(e) { document.getElementById('reportList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+function updateReportBadge() {
+  const pending = allReports.filter(r => r.status === 'pending').length;
+  const badge = document.getElementById('reportBadge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+}
+
+function renderReports(list) {
+  if (!list.length) { document.getElementById('reportList').innerHTML = '<div class="empty">신고 내역이 없습니다.</div>'; return; }
+  document.getElementById('reportList').innerHTML = `
+    <table>
+      <thead><tr><th>신고일시</th><th>과목</th><th>오류유형</th><th>신고내용</th><th>신고자</th><th>상태</th><th>처리</th></tr></thead>
+      <tbody>${list.map((r,i) => `
+        <tr>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td style="font-size:11px">${r.subject||'-'}</td>
+          <td><span class="badge badge-pending">${r.errorType||'-'}</span></td>
+          <td style="max-width:160px">
+            <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${r.question||''}">${(r.question||'').slice(0,20)}${(r.question||'').length>20?'...':''}</div>
+            <div style="font-size:11px;color:#888780">${r.detail||'-'}</div>
+          </td>
+          <td style="font-size:11px">${r.reporterEmail||'-'}</td>
+          <td><span class="badge ${r.status==='done'?'badge-approved':'badge-pending'}">${r.status==='done'?'처리완료':'대기'}</span></td>
+          <td>${r.status==='pending'
+            ? `<button class="btn-sm btn-approve" onclick="markReportDone('${r.id}')">완료</button>`
+            : '-'}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function filterReports() {
+  const status = document.getElementById('filterStatus').value;
+  if (status === 'all') renderReports(allReports);
+  else renderReports(allReports.filter(r => r.status === status));
+}
+
+async function markReportDone(reportId) {
+  try {
+    await db.collection('reports').doc(reportId).update({
+      status: 'done',
+      doneAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await loadReports();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// ===== 회원 관리 =====
+async function extendMember(uid, email) {
+  const days = prompt(`${email}\n연장할 일수를 입력하세요 (숫자만):`);
+  if (!days || isNaN(days) || Number(days) <= 0) return;
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    const data = doc.data();
+    let base = new Date();
+    if (data.plan === 'ACTIVE' && data.expireAt) {
+      const cur = data.expireAt.toDate();
+      if (cur > base) base = cur;
+    }
+    base.setDate(base.getDate() + Number(days));
+    await db.collection('users').doc(uid).update({
+      plan: 'ACTIVE',
+      expireAt: firebase.firestore.Timestamp.fromDate(base)
+    });
+    alert(`✅ ${email} ${days}일 연장 완료!\n새 만료일: ${base.toLocaleDateString('ko-KR')}`);
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function expireMember(uid, email) {
+  if (!confirm(`${email}\n이용권을 즉시 만료 처리하시겠어요?`)) return;
+  try {
+    await db.collection('users').doc(uid).update({ plan: 'EXPIRED' });
+    alert(`${email} 만료 처리 완료.`);
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+</script>
+</body>
+</html>

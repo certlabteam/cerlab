@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>CertLab 초기화</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+body{font-family:-apple-system,sans-serif;max-width:480px;margin:40px auto;padding:20px;background:#F4F6FA}
+.box{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+h2{font-size:18px;margin-bottom:16px}
+.btn{width:100%;padding:14px;border-radius:10px;border:none;background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.log{margin-top:16px;font-size:13px;color:#555;line-height:1.8;white-space:pre-wrap;background:#F9F9F9;border-radius:8px;padding:12px;max-height:300px;overflow-y:auto}
+.success{color:#1D9E75;font-weight:700}
+.error{color:#E24B4A;font-weight:700}
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>🔧 CertLab 할인코드 초기화</h2>
+  <p style="font-size:13px;color:#888;margin-bottom:16px">TEST01~TEST30 할인코드를 Firestore에 생성합니다.<br>관리자 계정으로 로그인 후 실행하세요.</p>
+  <button class="btn" id="btnLogin" onclick="doLogin()">Google 로그인</button>
+  <button class="btn" id="btnInit" onclick="initCodes()" disabled style="background:#1D9E75">할인코드 생성 시작</button>
+  <div class="log" id="log">로그인 후 시작하세요...</div>
+</div>
+<script>
+const ADMIN_EMAIL = 'certlab.team@gmail.com';
+const firebaseConfig = {
+  apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+  authDomain: "certlab-c3bcb.firebaseapp.com",
+  projectId: "certlab-c3bcb",
+  storageBucket: "certlab-c3bcb.firebasestorage.app",
+  messagingSenderId: "698827699707",
+  appId: "1:698827699707:web:b08d492f408ac444fa875e"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+auth.onAuthStateChanged(user => {
+  if (user && user.email === ADMIN_EMAIL) {
+    log(`✅ ${user.email} 로그인 완료`);
+    document.getElementById('btnInit').disabled = false;
+    document.getElementById('btnLogin').disabled = true;
+  } else if (user) {
+    auth.signOut();
+    log('❌ 관리자 계정만 가능합니다.');
+  }
+});
+
+function doLogin() {
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(e => log('로그인 오류: ' + e.message));
+}
+
+async function initCodes() {
+  document.getElementById('btnInit').disabled = true;
+  log('할인코드 생성 시작...\n');
+  let success = 0, skip = 0;
+  for (let i = 1; i <= 30; i++) {
+    const code = 'TEST' + String(i).padStart(2, '0');
+    try {
+      const ref = db.collection('discountCodes').doc(code);
+      const doc = await ref.get();
+      if (doc.exists) {
+        log(`⏭ ${code} 이미 존재 (건너뜀)`);
+        skip++;
+      } else {
+        await ref.set({
+          code,
+          days: 7,
+          used: false,
+          usedBy: null,
+          usedAt: null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        log(`✅ ${code} 생성 완료`);
+        success++;
+      }
+    } catch(e) {
+      log(`❌ ${code} 오류: ${e.message}`);
+    }
+  }
+  log(`\n완료! 생성: ${success}개 / 건너뜀: ${skip}개`);
+  document.getElementById('btnInit').disabled = false;
+}
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.textContent += msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+</script>
+</body>
+</html>
