@@ -13,7 +13,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 :root{--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#888780;--text:#2C2C2A;--text2:#5F5E5A;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:20px;--radius-sm:12px}
 .header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
 .logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,#185FA5,#0C447C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.mode-pill{margin-left:auto;font-size:11px;font-weight:600;background:#E6F1FB;color:#185FA5;padding:4px 12px;border-radius:20px;border:1px solid #B5D4F4}
+.mode-pill{margin-left:auto;font-size:11px;font-weight:600;background:#E6F1FB;color:#185FA5;padding:4px 12px;border-radius:20px;border:1px solid #B5D4F4;display:none}
 .mode-pill.wrong{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
 .subjects-wrap{background:#fff;padding:10px 0;border-bottom:1px solid #E6EEF8;position:relative;display:flex;align-items:center}
 .scroll-arrow{flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid #B5D4F4;border-radius:50%;cursor:pointer;font-size:14px;color:#185FA5;transition:all .15s;z-index:2;margin:0 6px}
@@ -125,7 +125,17 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .auth-bar{display:flex;align-items:center;gap:8px;margin-left:auto}
 /* ===== 통합 플랫폼: 홈/전환/슬로건 ===== */
 .brand-area{display:flex;flex-direction:column;line-height:1.05}
-.slogan{font-size:9.5px;font-weight:600;color:#7C93AD;letter-spacing:-.2px;margin-top:3px}
+.slogan{font-size:10px;font-weight:600;color:#7C93AD;letter-spacing:-.2px;margin-top:6px;white-space:nowrap}
+.home-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:16px;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;cursor:pointer;padding:0;line-height:1}
+.home-btn.hidden{display:none}
+.home-btn:active{transform:scale(.94)}
+.sr-hide{display:none}
+.user-menu{position:relative;display:flex;align-items:center}
+.avatar-btn{background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;border-radius:50%}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid #B5D4F4;border-radius:12px;box-shadow:0 6px 20px rgba(12,68,124,.15);padding:10px;display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:124px;z-index:200}
+.user-dropdown.hidden{display:none}
+.user-dropdown .plan-badge{text-align:center}
+.user-dropdown .btn-logout{width:100%}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .header-right .mode-pill{margin-left:0}
 .header-right .auth-bar{margin-left:0}
@@ -389,7 +399,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     <div class="slogan">도전하는 사람들의 성공을 돕습니다</div>
   </div>
   <div class="header-right">
-    <div class="cert-switch hidden" id="certSwitch" onclick="goHome()"><span id="certSwitchName">시험</span><span class="chev">⌄</span></div>
+    <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
     <div class="mode-pill" id="modePill">전체</div>
     <div class="auth-bar" id="authBar">
       <button class="btn-login" onclick="showLoginPopup()">로그인</button>
@@ -859,10 +869,16 @@ function updateAuthBar() {
     ? `<img class="user-avatar" src="${currentUser.photoURL}" alt="">`
     : `<div style="width:28px;height:28px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
   bar.innerHTML = `
-    ${img}
-    <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
-    <button class="btn-logout" onclick="signOut()">로그아웃</button>`;
+    <div class="user-menu" id="userMenu">
+      <button class="avatar-btn" onclick="toggleUserMenu(event)" aria-label="내 메뉴">${img}</button>
+      <div class="user-dropdown hidden" id="userDropdown">
+        <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
+        <button class="btn-logout" onclick="signOut()">로그아웃</button>
+      </div>
+    </div>`;
 }
+function toggleUserMenu(e){ if(e){e.stopPropagation();} const d=document.getElementById('userDropdown'); if(d) d.classList.toggle('hidden'); }
+document.addEventListener('click',function(e){ const m=document.getElementById('userMenu'); const d=document.getElementById('userDropdown'); if(d&&m&&!m.contains(e.target)) d.classList.add('hidden'); });
 
 // ===== 팝업 =====
 function showLoginPopup(mode='default') {
