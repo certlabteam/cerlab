@@ -1791,6 +1791,8 @@ function showDataError(err){
 showHome();
 loadAllBanks().then(()=>{
   rebuildQid();
+  // 비동기 로딩 전에 빈 D로 굳은 카드 스냅샷을 실데이터로 재동기화
+  if(typeof cards!=='undefined'){ cards=[...D]; filtered=[...cards]; current=0; }
   if(typeof refresh==='function') refresh();
   if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
 }).catch(showDataError);
