@@ -74,6 +74,7 @@ tr:hover td{background:#FAFAFA}
 .badge-pending{background:#FFF9F0;color:#BA7517}
 .badge-approved{background:#E8F8F3;color:#0F6E56}
 .badge-rejected{background:#FCEBEB;color:#A32D2D}
+.badge-revoked{background:#FCEBEB;color:#A32D2D}
 
 /* 버튼 */
 .btn-sm{padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
@@ -100,6 +101,7 @@ tr:hover td{background:#FAFAFA}
 .modal-row:last-of-type{border-bottom:none}
 .modal-label{color:#888780}
 .modal-value{font-weight:600}
+.modal-note{font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:10px;padding:10px 12px;margin-top:14px;line-height:1.6}
 .modal-btns{display:flex;gap:10px;margin-top:20px}
 .modal-btns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none}
 .btn-modal-ok{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff}
@@ -204,7 +206,7 @@ tr:hover td{background:#FAFAFA}
   </div>
 </div>
 
-<!-- 승인 모달 -->
+<!-- 승인 모달 (레거시 pending 대응) -->
 <div class="modal-bg hidden" id="approveModal">
   <div class="modal">
     <div class="modal-title">✅ 이용권 승인</div>
@@ -220,7 +222,7 @@ tr:hover td{background:#FAFAFA}
   </div>
 </div>
 
-<!-- 거절 모달 -->
+<!-- 거절 모달 (레거시 pending 대응) -->
 <div class="modal-bg hidden" id="rejectModal">
   <div class="modal">
     <div class="modal-title">❌ 결제 거절</div>
@@ -229,6 +231,21 @@ tr:hover td{background:#FAFAFA}
     <div class="modal-btns">
       <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
       <button class="btn-reject" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600" onclick="confirmReject()">거절 확정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 철회 모달 (자동승인 건 입금 미확인 시) -->
+<div class="modal-bg hidden" id="revokeModal">
+  <div class="modal">
+    <div class="modal-title">⛔ 이용권 철회</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="revokeEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">자격증</span><span class="modal-value" id="revokeCert"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="revokePlan"></span></div>
+    <div class="modal-note">입금이 확인되지 않은 건을 철회합니다. 해당 회원의 이 자격증 이용권이 즉시 <b>만료</b>되고, 결제 기록은 <b>철회</b>로 표시됩니다.</div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-reject" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600" onclick="confirmRevoke()">철회 확정</button>
     </div>
   </div>
 </div>
@@ -252,6 +269,13 @@ let allPayments = [];
 let allMembers = [];
 let pendingPaymentId = null;
 let pendingPaymentData = null;
+
+// 결제 상태 헬퍼 — 앱은 즉시구매를 'auto_approved'로 저장한다
+const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사' };
+const isPaid = s => s === 'approved' || s === 'auto_approved';
+const statusBadge = s => isPaid(s) ? 'badge-approved' : (s === 'pending' ? 'badge-pending' : 'badge-revoked');
+const statusLabel = s => s === 'auto_approved' ? '자동승인' : s === 'approved' ? '승인' : s === 'pending' ? '승인대기' : s === 'revoked' ? '철회' : '거절';
+const certNameOf = p => p.certName || CERT_NAMES[p.certType] || p.certType || '생체2급';
 
 // ===== Auth =====
 auth.onAuthStateChanged(user => {
@@ -307,21 +331,43 @@ async function loadMembers() {
   } catch(e) { document.getElementById('memberList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
 }
 
+// 회원이 어떤 자격증이든 유효한 이용권을 가졌는지 판정 (top-level + entitlements)
+function memberStatus(m) {
+  const now = new Date();
+  const live = ent => {
+    if (!ent || ent.plan !== 'ACTIVE') return false;
+    if (!ent.expireAt) return true;
+    const d = ent.expireAt.toDate ? ent.expireAt.toDate() : new Date(ent.expireAt);
+    return d > now;
+  };
+  if (m.plan === 'ACTIVE' && live({plan:'ACTIVE', expireAt:m.expireAt})) return 'ACTIVE';
+  if (m.entitlements && Object.values(m.entitlements).some(live)) return 'ACTIVE';
+  if (m.plan === 'EXPIRED') return 'EXPIRED';
+  if (m.plan === 'FREE_TRIAL' || (m.entitlements && Object.values(m.entitlements).some(e=>e&&e.plan==='FREE_TRIAL'))) return 'FREE_TRIAL';
+  return m.plan || 'GUEST';
+}
+
 function loadDashboard() {
   const now = new Date();
   const total = allMembers.length;
-  const free = allMembers.filter(m => m.plan === 'FREE_TRIAL').length;
-  const active = allMembers.filter(m => m.plan === 'ACTIVE').length;
-  const expired = allMembers.filter(m => m.plan === 'EXPIRED').length;
+  let free=0, active=0, expired=0;
+  allMembers.forEach(m => {
+    const s = memberStatus(m);
+    if (s === 'ACTIVE') active++;
+    else if (s === 'EXPIRED') expired++;
+    else if (s === 'FREE_TRIAL') free++;
+  });
   const pending = allPayments.filter(p => p.status === 'pending').length;
 
-  // 이번 달 매출
+  // 이번 달 매출 — 자동승인/승인 건 모두 집계 (철회/거절 제외)
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();
   const revenue = allPayments
     .filter(p => {
-      if (p.status !== 'approved' || !p.approvedAt) return false;
-      const d = p.approvedAt.toDate ? p.approvedAt.toDate() : new Date(p.approvedAt);
+      if (!isPaid(p.status)) return false;
+      const ref = p.approvedAt || p.createdAt;
+      if (!ref) return false;
+      const d = ref.toDate ? ref.toDate() : new Date(ref);
       return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
     })
     .reduce((sum, p) => sum + (p.price || 0), 0);
@@ -368,13 +414,14 @@ function renderRecentPayments() {
   if (!recent.length) { document.getElementById('recentPayments').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
   document.getElementById('recentPayments').innerHTML = `
     <table>
-      <thead><tr><th>이메일</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th></tr></thead>
+      <thead><tr><th>이메일</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th></tr></thead>
       <tbody>${recent.map(p => `
         <tr>
           <td>${p.email||'-'}</td>
+          <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${planNames[p.planDays]||p.planDays+'일'}</td>
           <td>${(p.price||0).toLocaleString()}원</td>
-          <td><span class="badge ${p.status==='pending'?'badge-pending':p.status==='approved'?'badge-approved':'badge-rejected'}">${p.status==='pending'?'대기':p.status==='approved'?'승인':'거절'}</span></td>
+          <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
           <td>${fmtDate(p.createdAt)}</td>
         </tr>`).join('')}
       </tbody>
@@ -385,18 +432,23 @@ function renderPayments(list) {
   if (!list.length) { document.getElementById('paymentList').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
   document.getElementById('paymentList').innerHTML = `
     <table>
-      <thead><tr><th>이메일</th><th>입금자</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
+      <thead><tr><th>이메일</th><th>입금자</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
       <tbody>${list.map(p => `
         <tr>
           <td>${p.email||'-'}</td>
           <td><strong>${p.depositorName||'-'}</strong></td>
+          <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${planNames[p.planDays]||p.planDays+'일'}</td>
           <td>${(p.price||0).toLocaleString()}원</td>
-          <td><span class="badge ${p.status==='pending'?'badge-pending':p.status==='approved'?'badge-approved':'badge-rejected'}">${p.status==='pending'?'승인대기':p.status==='approved'?'승인완료':'거절'}</span></td>
+          <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
           <td>${fmtDate(p.createdAt)}</td>
-          <td>${p.status==='pending' ? `
-            <button class="btn-sm btn-approve" onclick="openApprove('${p.id}')">승인</button>
-            <button class="btn-sm btn-reject" onclick="openReject('${p.id}')" style="margin-left:4px">거절</button>` : '-'}
+          <td>${
+            p.status==='pending' ? `
+              <button class="btn-sm btn-approve" onclick="openApprove('${p.id}')">승인</button>
+              <button class="btn-sm btn-reject" onclick="openReject('${p.id}')" style="margin-left:4px">거절</button>`
+            : isPaid(p.status) ? `
+              <button class="btn-sm btn-reject" onclick="openRevoke('${p.id}')">철회</button>`
+            : '-'}
           </td>
         </tr>`).join('')}
       </tbody>
@@ -408,10 +460,12 @@ function renderMembers(list) {
   document.getElementById('memberList').innerHTML = `
     <table>
       <thead><tr><th>이메일</th><th>상태</th><th>만료일</th><th>남은일</th><th>가입일</th><th>관리</th></tr></thead>
-      <tbody>${list.map(m => `
+      <tbody>${list.map(m => {
+        const s = memberStatus(m);
+        return `
         <tr>
           <td>${m.email||'-'}</td>
-          <td><span class="badge ${planBadge(m.plan)}">${planLabel(m.plan)}</span></td>
+          <td><span class="badge ${planBadge(s)}">${planLabel(s)}</span></td>
           <td>${m.plan==='ACTIVE'?fmtDateShort(m.expireAt):m.plan==='FREE_TRIAL'?fmtDateShort(m.trialEnd):'-'}</td>
           <td>${m.plan==='ACTIVE'?daysLeft(m.expireAt):m.plan==='FREE_TRIAL'?daysLeft(m.trialEnd):'-'}</td>
           <td>${fmtDateShort(m.createdAt)}</td>
@@ -419,7 +473,7 @@ function renderMembers(list) {
             <button class="btn-sm btn-extend" onclick="extendMember('${m.id}','${m.email}')">연장</button>
             <button class="btn-sm btn-expire" onclick="expireMember('${m.id}','${m.email}')" style="margin-left:4px">만료</button>
           </td>
-        </tr>`).join('')}
+        </tr>`;}).join('')}
       </tbody>
     </table>`;
 }
@@ -434,7 +488,7 @@ function filterMembers() {
   renderMembers(allMembers.filter(m => (m.email||'').toLowerCase().includes(q)));
 }
 
-// ===== 승인/거절 =====
+// ===== 승인/거절 (레거시 pending 건 전용) =====
 function openApprove(paymentId) {
   const p = allPayments.find(x => x.id === paymentId);
   if (!p) return;
@@ -460,9 +514,22 @@ function openReject(paymentId) {
   document.getElementById('rejectModal').classList.remove('hidden');
 }
 
+// ===== 철회 (자동승인 건 입금 미확인) =====
+function openRevoke(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  document.getElementById('revokeEmail').textContent = p.email;
+  document.getElementById('revokeCert').textContent = certNameOf(p);
+  document.getElementById('revokePlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('revokeModal').classList.remove('hidden');
+}
+
 function closeModal() {
   document.getElementById('approveModal').classList.add('hidden');
   document.getElementById('rejectModal').classList.add('hidden');
+  document.getElementById('revokeModal').classList.add('hidden');
   pendingPaymentId = null;
   pendingPaymentData = null;
 }
@@ -470,20 +537,21 @@ function closeModal() {
 async function confirmApprove() {
   if (!pendingPaymentId || !pendingPaymentData) return;
   const p = pendingPaymentData;
+  const cert = p.certType || 'bodybuilding';
   const expireAt = new Date();
   expireAt.setDate(expireAt.getDate() + (p.planDays || 14));
   try {
-    // 결제 상태 업데이트
     await db.collection('payments').doc(pendingPaymentId).update({
       status: 'approved',
       approvedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    // 유저 플랜 업데이트
-    await db.collection('users').doc(p.uid).update({
-      plan: 'ACTIVE',
-      expireAt: firebase.firestore.Timestamp.fromDate(expireAt),
-      planDays: p.planDays
-    });
+    const upd = {
+      ['entitlements.'+cert+'.plan']: 'ACTIVE',
+      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
+      ['entitlements.'+cert+'.planDays']: p.planDays
+    };
+    if (cert === 'bodybuilding') { upd.plan='ACTIVE'; upd.expireAt=firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays=p.planDays; }
+    await db.collection('users').doc(p.uid).update(upd);
     closeModal();
     alert(`✅ ${p.email} 승인 완료!\n만료일: ${expireAt.toLocaleDateString('ko-KR')}`);
     await loadAll();
@@ -499,6 +567,24 @@ async function confirmReject() {
     });
     closeModal();
     alert('거절 처리되었습니다.');
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function confirmRevoke() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  const p = pendingPaymentData;
+  const cert = p.certType || 'bodybuilding';
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'revoked',
+      revokedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const upd = { ['entitlements.'+cert+'.plan']: 'EXPIRED' };
+    if (cert === 'bodybuilding') upd.plan = 'EXPIRED';
+    if (p.uid) await db.collection('users').doc(p.uid).update(upd);
+    closeModal();
+    alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`);
     await loadAll();
   } catch(e) { alert('오류: ' + e.message); }
 }
@@ -569,16 +655,20 @@ async function extendMember(uid, email) {
   if (!days || isNaN(days) || Number(days) <= 0) return;
   try {
     const doc = await db.collection('users').doc(uid).get();
-    const data = doc.data();
+    const data = doc.data() || {};
     let base = new Date();
     if (data.plan === 'ACTIVE' && data.expireAt) {
-      const cur = data.expireAt.toDate();
+      const cur = data.expireAt.toDate ? data.expireAt.toDate() : new Date(data.expireAt);
       if (cur > base) base = cur;
     }
     base.setDate(base.getDate() + Number(days));
+    const ts = firebase.firestore.Timestamp.fromDate(base);
+    // 생체(top-level 미러) + 생체 entitlement 동시 반영
     await db.collection('users').doc(uid).update({
       plan: 'ACTIVE',
-      expireAt: firebase.firestore.Timestamp.fromDate(base)
+      expireAt: ts,
+      ['entitlements.bodybuilding.plan']: 'ACTIVE',
+      ['entitlements.bodybuilding.expireAt']: ts
     });
     alert(`✅ ${email} ${days}일 연장 완료!\n새 만료일: ${base.toLocaleDateString('ko-KR')}`);
     await loadAll();
@@ -586,9 +676,17 @@ async function extendMember(uid, email) {
 }
 
 async function expireMember(uid, email) {
-  if (!confirm(`${email}\n이용권을 즉시 만료 처리하시겠어요?`)) return;
+  if (!confirm(`${email}\n이 회원의 모든 이용권을 즉시 만료 처리하시겠어요?`)) return;
   try {
-    await db.collection('users').doc(uid).update({ plan: 'EXPIRED' });
+    const doc = await db.collection('users').doc(uid).get();
+    const data = doc.data() || {};
+    const upd = { plan: 'EXPIRED' };
+    if (data.entitlements) {
+      Object.keys(data.entitlements).forEach(c => { upd['entitlements.'+c+'.plan'] = 'EXPIRED'; });
+    } else {
+      upd['entitlements.bodybuilding.plan'] = 'EXPIRED';
+    }
+    await db.collection('users').doc(uid).update(upd);
     alert(`${email} 만료 처리 완료.`);
     await loadAll();
   } catch(e) { alert('오류: ' + e.message); }
