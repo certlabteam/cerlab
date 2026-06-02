@@ -1773,7 +1773,7 @@ function renderMCQ(){
 function renderMcqHome(root){
   let html='';
   const due=srDueCertCount(mqCert);
-  if(due>0) html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
+  html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
   html+='<div class="sec-lbl">과목 선택</div>';
   curOrder().forEach(id=>{
     const s=curQB()[id]; const open=!!mqOpen[id];
@@ -1806,7 +1806,14 @@ function mcqMasteryBadge(q){ const m=srMasteryK(mqCert,q.id); if(m==='new') retu
 function startMcqReview(){
   const qb=curQB(); const due=[];
   curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)) due.push(q); })); });
-  if(!due.length){ alert('오늘 복습할 문제가 없습니다.'); return; }
+  if(!due.length){
+    const root=document.getElementById('mcqRoot');
+    if(root) root.innerHTML='<div class="mcq-result"><div class="em">🎉</div>'
+      +'<div class="rt">오늘 복습할 문제가 없어요!</div>'
+      +'<div class="rs">복습일이 된 문제가 생기면 여기에 모아드려요.<br>새 문제를 더 풀면 복습 일정이 쌓입니다.</div>'
+      +'<div class="rbtns"><button onclick="mqBackHome()">과목 선택</button></div></div>';
+    return;
+  }
   mqStopTimer();
   mqReview=true; mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqAns={}; mqIdx=0;
   mqList=due; mqTimeLeft=due.length*60;
@@ -1887,6 +1894,7 @@ function mqPick(qid,n){
   renderMCQ();
   const qs=mqQuestions();
   if(mqIdx<qs.length-1){ setTimeout(()=>{ if(mqScreen==='exam'){ mqIdx++; mqSaveProgress(); renderMCQ(); } }, 550); }
+  else { setTimeout(()=>{ if(mqScreen==='exam'){ mqResult(); } }, 650); }  // 마지막 문제 → 자동 채점
 }
 function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid]; renderMCQ(); }
 function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); renderMCQ(); window.scrollTo(0,0); }
