@@ -181,7 +181,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .auth-popup{position:fixed;inset:0;background:rgba(44,44,42,.6);display:flex;align-items:flex-end;justify-content:center;z-index:300;animation:fadeIn .2s}
 .auth-popup.hidden{display:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:32px 24px 40px;width:100%;max-width:480px;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);position:relative}
+.auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:20px 24px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);position:relative}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .auth-sheet-title{font-size:22px;font-weight:700;color:#2C2C2A;margin-bottom:6px;text-align:center}
 .auth-sheet-sub{font-size:14px;color:#888780;text-align:center;margin-bottom:24px;line-height:1.6}
@@ -387,6 +387,27 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mq-mst.sr-weak{background:#E24B4A}
 .mq-mst.sr-learning{background:#E0A52E}
 .mq-mst.sr-master{background:#2E9B5E}
+.popup-x{position:sticky;top:0;float:right;width:34px;height:34px;margin:0 -4px -28px 0;background:#F0EDE8;border:1px solid #E2D6CC;border-radius:50%;font-size:18px;color:#6E6256;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:5;padding:0}
+.popup-x:hover{background:#E2D6CC}
+.report-box{position:relative}
+.anal-card{margin:12px 14px 4px;padding:16px 16px 14px;background:#fff;border:1px solid #E2D6CC;border-radius:16px;box-shadow:0 2px 12px rgba(80,50,20,.05)}
+.anal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.anal-top b{font-size:14px;color:#2C2C2A}
+.anal-rediag,.anal-diag{border:1px solid #B5D4F4;background:#E6F1FB;color:#185FA5;font-weight:700;border-radius:999px;cursor:pointer}
+.anal-rediag{font-size:11px;padding:5px 11px}
+.anal-diag{font-size:14px;padding:11px 16px;width:100%;margin-top:10px}
+.anal-empty{font-size:13px;color:#8A7D6E;line-height:1.6}
+.anal-score{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px}
+.anal-pred{font-size:34px;font-weight:800;color:#185FA5;line-height:1}
+.anal-pred small{font-size:15px;font-weight:700;margin-left:2px}
+.anal-lv{font-size:14px;font-weight:800}
+.anal-row{display:flex;align-items:center;gap:8px;margin:5px 0}
+.anal-nm{font-size:12px;color:#3C3C3A;width:96px;flex:0 0 96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.anal-bar{flex:1;height:9px;background:#F0E7DE;border-radius:999px;overflow:hidden}
+.anal-fill{height:100%;border-radius:999px;transition:width .4s}
+.anal-pct{font-size:12px;font-weight:700;color:#6E6256;width:40px;text-align:right}
+.anal-weak{margin-top:10px;font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:10px;padding:8px 10px;line-height:1.5}
+.anal-note{margin-top:8px;font-size:11px;color:#B4A99C}
 </style>
 <!-- Meta Pixel Code -->
 <script>
@@ -547,6 +568,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 <!-- 오류 신고 시트 -->
 <div class="report-sheet hidden" id="reportSheet">
   <div class="report-box">
+    <button class="popup-x" onclick="closeReport()" aria-label="닫기">✕</button>
     <div class="report-title">⚠️ 문제 오류 신고</div>
     <div class="report-sub" id="reportSubTitle"></div>
     <div class="report-types">
@@ -584,6 +606,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 <!-- 로그인 팝업 -->
 <div class="auth-popup hidden" id="loginPopup">
   <div class="auth-sheet">
+    <button class="popup-x" onclick="hideLoginPopup()" aria-label="닫기">✕</button>
     <div class="auth-sheet-title" id="loginTitle">🎯 무료 체험 완료</div>
     <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
     <div class="auth-features">
@@ -603,7 +626,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 <!-- 이용권 팝업 -->
 <div class="auth-popup hidden" id="planPopup">
   <div class="auth-sheet">
-    <button onclick="hidePlanPopup()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;color:#888780;cursor:pointer;line-height:1">✕</button>
+    <button class="popup-x" onclick="hidePlanPopup()" aria-label="닫기">✕</button>
     <div class="plan-sheet-title" id="planSheetTitle">⏰ 무료 체험 완료!</div>
     <div class="plan-sheet-sub" id="planSub">이용권 구매 후 전체 문제와 학습 기록을 계속 이용할 수 있습니다.</div>
     <div class="plan-stats" id="planStats"></div>
@@ -788,6 +811,7 @@ async function loadUserData() {
       // 자동복습 진행상황
       srProgress = (data.cardProgress && typeof data.cardProgress==='object') ? data.cardProgress : {};
       srExamOverride = (data.examDates && typeof data.examDates==='object') ? data.examDates : {};
+      srDiagnostics = Array.isArray(data.diagnostics) ? data.diagnostics : [];
       srMigrateIfNeeded();
       srApplyToCards();
       if (data.solveCount) {
@@ -847,7 +871,7 @@ async function saveUserData() {
     const favoriteList = D.filter(c=>c.fav).map(c=>'bodybuilding‖'+c.s+'‖'+c.q);
     await db.collection('userData').doc(currentUser.uid).set({
       wrongList, favoriteList, solveCount,
-      cardProgress: srProgress, examDates: srExamOverride,
+      cardProgress: srProgress, examDates: srExamOverride, diagnostics: srDiagnostics,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { console.error('저장 오류:', e); }
@@ -1270,6 +1294,7 @@ const SR_DAY=86400000;
 const SR_DAILY_CAP=40;
 const SR_DEFAULT_EXAM={ bodybuilding:'2026-06-23' };
 let srProgress={};        // { 'B_1': {st,nx,lr,res,rc,w} }
+let srDiagnostics=[];      // 진단 모의고사 스냅샷 [{cert,at,score,total}]
 let srExamOverride={};     // { bodybuilding:'YYYY-MM-DD' }
 let srMode='mix';          // 'new' | 'review' | 'mix'
 let srSaveTimer=null, srDirtyCount=0;
@@ -1740,6 +1765,7 @@ let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
 let mqTimer=null, mqTimeLeft=0;
 let mqMode='all', mqList=null;          // 'all' | 'wrong' | 'review'
 let mqReview=false;                       // SR 복습 세션 여부
+let mqDiag=false;                          // 진단 모의고사 세션 여부
 let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
 function mqQuestions(){ return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
 // 중요도(star 1~3)/소요시간(time 1~3): 값 미지정(0)이면 표시 안 함. 값은 추후 별도 입력.
@@ -1772,6 +1798,7 @@ function renderMCQ(){
 }
 function renderMcqHome(root){
   let html='';
+  html+=mcqAnalysisCard(mqCert);
   const due=srDueCertCount(mqCert);
   html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
   html+='<div class="sec-lbl">과목 선택</div>';
@@ -1803,6 +1830,69 @@ function renderMcqHome(root){
 }
 function mqToggle(id){ mqOpen[id]=!mqOpen[id]; renderMCQ(); }
 function mcqMasteryBadge(q){ const m=srMasteryK(mqCert,q.id); if(m==='new') return ''; const cls={weak:'sr-weak',learning:'sr-learning',master:'sr-master'}[m]; return '<span class="mq-mst '+cls+'">'+SR_MASTER_LABEL[m]+'</span>'; }
+
+/* ===== 실력 분석 / 예상점수 / 진단 ===== */
+function mcqSubjectStats(cert){
+  const qb=qbOf(cert); let totN=0;
+  const per=Object.keys(qb).map(code=>{
+    let cor=0,n=0;
+    qb[code].sets.forEach(st=>st.questions.forEach(q=>{ const p=srGetK(cert,q.id); if(p&&p.rc>0){ n++; if(p.res===2) cor++; } }));
+    totN+=n;
+    return {code,name:qb[code].name,acc:n>0?Math.round(cor/n*100):null,n};
+  });
+  const valid=per.filter(s=>s.acc!=null);
+  const predicted=valid.length?Math.round(valid.reduce((a,s)=>a+s.acc,0)/valid.length):null;
+  return {per,valid,predicted,totN};
+}
+function mcqLevel(pred){
+  if(pred==null) return {label:'데이터 부족',color:'#B4A99C'};
+  if(pred>=80) return {label:'🟢 안전권',color:'#2E9B5E'};
+  if(pred>=60) return {label:'🟡 합격권',color:'#E0A52E'};
+  return {label:'🔴 위험권',color:'#E24B4A'};
+}
+function mcqAnalysisCard(cert){
+  const s=mcqSubjectStats(cert);
+  if(s.totN===0){
+    return '<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b></div>'
+      +'<div class="anal-empty">아직 데이터가 없어요. 진단 모의고사로 현재 실력을 측정해 보세요.</div>'
+      +'<button class="anal-diag" onclick="startDiagnostic()">🎯 진단 모의고사 시작</button></div>';
+  }
+  const lv=mcqLevel(s.predicted);
+  const weak=s.valid.length?s.valid.slice().sort((a,b)=>a.acc-b.acc)[0]:null;
+  const bars=s.per.map(p=>{
+    const a=p.acc, w=a==null?0:a;
+    const col=a==null?'#E2D6CC':a>=80?'#2E9B5E':a>=60?'#E0A52E':'#E24B4A';
+    return '<div class="anal-row"><span class="anal-nm">'+p.name+'</span>'
+      +'<div class="anal-bar"><div class="anal-fill" style="width:'+w+'%;background:'+col+'"></div></div>'
+      +'<span class="anal-pct">'+(a==null?'-':a+'%')+'</span></div>';
+  }).join('');
+  return '<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b>'
+    +'<button class="anal-rediag" onclick="startDiagnostic()">진단 다시</button></div>'
+    +'<div class="anal-score"><div class="anal-pred">'+s.predicted+'<small>점</small></div>'
+    +'<div class="anal-lv" style="color:'+lv.color+'">'+lv.label+'</div></div>'
+    +'<div class="anal-bars">'+bars+'</div>'
+    +(weak?'<div class="anal-weak">⚠️ <b>'+weak.name+'</b> 집중 학습이 필요해요 ('+weak.acc+'%)</div>':'')
+    +(s.totN<10?'<div class="anal-note">더 많이 풀수록 예상점수가 정확해져요.</div>':'')
+    +'</div>';
+}
+function startDiagnostic(){
+  const cert=mqCert, qb=qbOf(cert); let picked=[];
+  Object.keys(qb).forEach(code=>{
+    const pool=[]; qb[code].sets.forEach(st=>st.questions.forEach(q=>{ if(mqHasAnswer(q)) pool.push(q); }));
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    picked=picked.concat(pool.slice(0,8));
+  });
+  if(picked.length<1){ alert('진단에 사용할 문제가 아직 없습니다. (정답이 입력된 문제가 필요해요)'); return; }
+  for(let i=picked.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[picked[i],picked[j]]=[picked[j],picked[i]];}
+  mqStopTimer();
+  mqDiag=true; mqReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqAns={}; mqIdx=0;
+  mqList=picked; mqTimeLeft=picked.length*60;
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function srSaveDiagnostic(cert,correct,total){
+  srDiagnostics.push({cert,at:Date.now(),score:total?Math.round(correct/total*100):0,total});
+  srFlush();
+}
 function startMcqReview(){
   const qb=curQB(); const due=[];
   curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)) due.push(q); })); });
@@ -1820,7 +1910,7 @@ function startMcqReview(){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function startMcqExam(id,si,mode){
-  mqReview=false;
+  mqReview=false; mqDiag=false;
   mode=mode||'all';
   mqStopTimer();
   mqSub=id; mqSet=si; mqMode=mode; mqShow={};
@@ -1833,7 +1923,7 @@ function startMcqExam(id,si,mode){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
-  mqReview=false;
+  mqReview=false; mqDiag=false;
   mqStopTimer();
   const saved=mqLoadProgress(id,si);
   if(!saved){ startMcqExam(id,si,'all'); return; }
@@ -1842,13 +1932,13 @@ function resumeMcqExam(id,si){
   mqAns=saved.ans||{}; mqIdx=saved.idx||0; mqTimeLeft=(saved.t!=null?saved.t:mqList.length*60);
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
-function mqBackHome(){ mqStopTimer(); if(mqScreen==='exam'&&!mqReview) mqSaveProgress(); mqReview=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ mqStopTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
 function renderMcqExam(root){
-  const subObj=mqReview?null:curQB()[mqSub];
+  const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
-  const examName=mqReview?'오늘의 복습':subObj.name;
-  const examSet=mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
+  const examName=mqDiag?'진단 모의고사':mqReview?'오늘의 복습':subObj.name;
+  const examSet=mqDiag?'실력 측정':mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
   const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
   const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
@@ -1907,16 +1997,21 @@ function mqResult(){
   }});
   if(currentUser) saveUserData();
   const total=qs.length; const pct=total?Math.round(correct/total*100):0;
+  if(mqDiag) srSaveDiagnostic(mqCert,correct,total);
   const em=pct>=80?'🏆':pct>=60?'💪':'📚';
-  const modeLbl=mqReview?' · 복습':mqMode==='wrong'?' · 오답 다시풀기':'';
+  const modeLbl=mqDiag?' · 진단':mqReview?' · 복습':mqMode==='wrong'?' · 오답 다시풀기':'';
+  const titleTxt=mqDiag?'진단 모의고사':mqReview?'오늘의 복습':(curQB()[mqSub].name+' · '+curQB()[mqSub].sets[mqSet].label);
+  const btns=mqDiag
+    ? '<button onclick="mqBackHome()">📊 내 실력 분석 보기</button>'
+    : '<button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>';
   document.getElementById('mcqRoot').innerHTML=
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
-    '<div class="rt">'+(mqReview?'오늘의 복습':(curQB()[mqSub].name+' · '+curQB()[mqSub].sets[mqSet].label))+modeLbl+'</div>'+
-    '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답</div>'+
+    '<div class="rt">'+titleTxt+modeLbl+'</div>'+
+    '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답'+(mqDiag?' · 진단 점수 '+pct+'점':'')+'</div>'+
     '<div class="sc"><div><div class="v ok">'+correct+'</div><div class="l">정답</div></div>'+
     '<div><div class="v bad">'+(answered-correct)+'</div><div class="l">오답</div></div>'+
     '<div><div class="v">'+pct+'%</div><div class="l">정답률</div></div></div>'+
-    '<div class="rbtns"><button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button></div></div>';
+    '<div class="rbtns">'+btns+'</div></div>';
 }
 function mqRetry(){
   if(mqReview){ startMcqReview(); return; }
