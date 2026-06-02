@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>CertLab - 생활체육지도사 보디빌딩 구술카드</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
+:root{--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#888780;--text:#2C2C2A;--text2:#5F5E5A;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:20px;--radius-sm:12px}
+.header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
+.logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,#185FA5,#0C447C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.mode-pill{margin-left:auto;font-size:11px;font-weight:600;background:#E6F1FB;color:#185FA5;padding:4px 12px;border-radius:20px;border:1px solid #B5D4F4;display:none}
+.mode-pill.wrong{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.subjects-wrap{background:#fff;padding:10px 0;border-bottom:1px solid #E6EEF8;position:relative;display:flex;align-items:center}
+.scroll-arrow{flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid #B5D4F4;border-radius:50%;cursor:pointer;font-size:14px;color:#185FA5;transition:all .15s;z-index:2;margin:0 6px}
+.scroll-arrow:active{background:#E6F1FB;transform:scale(.92)}
+.scroll-arrow.disabled{opacity:.3;cursor:default}
+.scroll-arrow.hidden{display:none}
+.stars-wrap{background:#FFF9F0;padding:8px 0;border-bottom:2px solid #FFF3D6;display:flex;align-items:center}
+.star-scroll{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:2px 4px;flex:1}
+.star-scroll::-webkit-scrollbar{display:none}
+.star-btn{flex-shrink:0;padding:5px 9px;border-radius:30px;border:1.5px solid #FAC775;background:#fff;color:#888780;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap}
+.star-btn.active{border-color:#FAC775;background:linear-gradient(135deg,#FAC775,#FFEDBA);color:#4B2000}
+.star-arrow{border-color:#FAC775;color:#C87A00}
+.star-arrow:active{background:#FFF9EC}
+.star-arrow.hidden{display:none}
+.subjects{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 4px;flex:1}
+.subjects::-webkit-scrollbar{display:none}
+.subj-btn{flex-shrink:0;padding:7px 14px;border-radius:30px;border:1.5px solid #B5D4F4;background:#fff;color:#888780;font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;white-space:nowrap;position:relative}
+.subj-btn.active{border-color:#185FA5;background:linear-gradient(135deg,#B5D4F4,#9CC3EE);color:#042C53}
+.subj-btn.has-wrong::after{content:'';position:absolute;top:4px;right:4px;width:6px;height:6px;background:#E24B4A;border-radius:50%;border:1.5px solid #fff}
+.progress-wrap{padding:12px 20px 8px}
+.progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-label{font-size:13px;font-weight:600;color:#2C2C2A}
+.progress-right{font-size:12px;color:#888780}
+.progress-track{height:6px;background:#E9F2FB;border-radius:6px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,#B5D4F4,#9CC3EE);border-radius:6px;transition:width .35s ease}
+.counter-strip{display:flex;gap:10px;padding:0 20px 10px}
+.c-pill{flex:1;background:#fff;border:1px solid #B5D4F4;border-radius:var(--radius-sm);padding:8px;text-align:center}
+.c-pill .v{font-size:18px;font-weight:700;color:#185FA5}
+.c-pill .l{font-size:10px;color:#888780;margin-top:1px}
+.c-pill.wrong-pill .v{color:#E24B4A}
+.c-pill.done-pill .v{color:#0C447C}
+.card-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 20px}
+.subj-tag{font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+.card-scene{width:100%;perspective:1000px}
+.card-inner{position:relative;width:100%;min-height:220px;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.4,0,.2,1);cursor:pointer}
+.card-inner.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;width:100%;min-height:220px;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--radius);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:28px 22px;text-align:center}
+.card-front{background:#fff;border:2px solid #B5D4F4;box-shadow:0 4px 20px rgba(24,95,165,.08)}
+.card-front.is-wrong{border-color:#E24B4A;background:#F2F8FD}
+.card-back{background:linear-gradient(135deg,#EFF6FD 0%,#E6F1FB 100%);border:2px solid #9CC3EE;transform:rotateY(180deg)}
+.card-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:#185FA5}
+.card-back .card-label{color:#0C447C}
+.card-text{font-size:20px;font-weight:700;line-height:1.55;color:#2C2C2A}
+.card-back .card-text{font-size:17px;color:#042C53}
+.wrong-dot{position:absolute;top:14px;right:14px;background:#E24B4A;color:#fff;font-size:11px;font-weight:800;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.star-dot{position:absolute;top:12px;right:12px;font-size:12px;line-height:1;letter-spacing:-1px}
+.tap-hint{margin-top:12px;font-size:11px;color:#B4B2A9;text-align:center;min-height:18px}
+.learn-btn-wrap{width:100%;margin-top:14px}
+.learn-loading{width:100%;margin-top:14px;padding:14px;text-align:center;color:#0C447C;font-size:13px;font-weight:600;background:#E6F1FB;border-radius:var(--radius-sm);animation:pulse .8s ease-in-out infinite alternate}
+@keyframes pulse{from{opacity:.5}to{opacity:1}}
+.learn-btn{width:100%;padding:13px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,#9FE1CB,#9CC3EE);color:#1D4A3C;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s}
+.learn-btn:active{transform:scale(.97)}
+.learn-panel{width:100%;background:#fff;border:2px solid #9CC3EE;border-radius:var(--radius);margin-top:12px;overflow:hidden;animation:slideDown .3s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.learn-panel-header{background:linear-gradient(135deg,#E6F1FB,#E8F8F3);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #9CC3EE}
+.learn-panel-title{font-size:13px;font-weight:700;color:#0C447C}
+.learn-panel-close{background:none;border:none;font-size:18px;cursor:pointer;color:#888780;padding:0 4px}
+.learn-panel-body{padding:16px 18px;max-height:380px;overflow-y:auto}
+.learn-section{margin-bottom:16px}
+.learn-section:last-child{margin-bottom:0}
+.learn-section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#0C447C;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #E6F1FB}
+.learn-section-body{font-size:13px;line-height:1.75;color:#3C3C3A}
+.learn-section-body ul{padding-left:16px;margin-top:4px}
+.learn-section-body li{margin-bottom:5px}
+.learn-keyword{display:inline-block;background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:6px;font-size:11px;font-weight:600;padding:2px 8px;margin:2px 3px 2px 0}
+.btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
+.btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
+.btn .lbl{font-size:10px;font-weight:500;opacity:.75}
+.btn:active{transform:scale(.95)}
+.btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.btn-prev{background:#E9F2FB;color:#0C447C}
+.btn-wrong{background:#FFF0F0;color:#E24B4A;border:1.5px solid #F7C1C1}
+.btn-wrong.marked{background:#E24B4A;color:#fff;border-color:#E24B4A}
+.btn-next{background:linear-gradient(135deg,#1D9E75,#9FE1CB);color:#fff}
+.bottom-bar{padding:10px 20px 24px;border-top:1px solid #E6EEF8;display:flex;gap:8px;background:#fff}
+.bar-btn{flex:1;padding:12px 6px;border-radius:var(--radius-sm);border:1.5px solid #B5D4F4;background:#fff;font-size:11px;font-weight:600;color:#888780;cursor:pointer;transition:all .15s}
+.bar-btn:active{transform:scale(.97)}
+.bar-btn.review-on{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.empty{text-align:center;padding:40px 20px}
+.empty .emoji{font-size:44px;margin-bottom:14px}
+.empty p{color:#888780;font-size:15px;line-height:1.6}
+.overlay{position:fixed;inset:0;background:rgba(253,248,245,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;z-index:100;animation:popIn .3s cubic-bezier(.34,1.56,.64,1)}
+.overlay.hidden{display:none}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.ov-icon{font-size:60px;margin-bottom:12px}
+.ov-title{font-size:24px;font-weight:700;background:linear-gradient(135deg,#185FA5,#0C447C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;text-align:center}
+.ov-sub{font-size:14px;color:#888780;margin-bottom:22px;text-align:center;line-height:1.6}
+.ov-stats{display:flex;gap:10px;margin-bottom:24px;width:100%}
+.ov-stat{flex:1;background:#fff;border:1.5px solid #B5D4F4;border-radius:var(--radius-sm);padding:14px;text-align:center}
+.ov-stat .v{font-size:26px;font-weight:700;color:#185FA5}
+.ov-stat.w .v{color:#E24B4A}
+.ov-stat.d .v{color:#0C447C}
+.ov-stat .l{font-size:11px;color:#888780;margin-top:2px}
+.ov-btns{display:flex;flex-direction:column;gap:10px;width:100%}
+.ov-btn{padding:16px;border-radius:var(--radius-sm);border:none;font-size:15px;font-weight:700;cursor:pointer;transition:all .15s}
+.ov-btn:active{transform:scale(.97)}
+.ov-wrong{background:linear-gradient(135deg,#E24B4A,#F09595);color:#fff}
+.ov-next{background:linear-gradient(135deg,#B5D4F4,#9CC3EE);color:#042C53}
+.ov-retry{background:#E9F2FB;color:#0C447C}
+.milestone{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:200;background:rgba(253,248,245,.9);animation:popIn .35s cubic-bezier(.34,1.56,.64,1)}
+.milestone.hidden{display:none}
+.ms-box{background:#fff;border-radius:24px;border:2px solid #B5D4F4;padding:32px 28px;text-align:center;max-width:300px;width:100%}
+.ms-stars{font-size:32px;letter-spacing:6px;margin-bottom:10px}
+.ms-num{font-size:52px;font-weight:700;background:linear-gradient(135deg,#185FA5,#0C447C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.ms-label{font-size:14px;color:#888780;margin:4px 0 6px}
+.ms-msg{font-size:18px;font-weight:700;color:#2C2C2A;margin-bottom:20px;line-height:1.4}
+.ms-close{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,#B5D4F4,#9CC3EE);color:#042C53;font-size:15px;font-weight:700;cursor:pointer}
+
+.auth-bar{display:flex;align-items:center;gap:8px;margin-left:auto}
+/* ===== 통합 플랫폼: 홈/전환/슬로건 ===== */
+.brand-area{display:flex;flex-direction:column;line-height:1.05}
+.slogan{font-size:10px;font-weight:600;color:#7C93AD;letter-spacing:-.2px;margin-top:6px;white-space:nowrap}
+.home-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:16px;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;cursor:pointer;padding:0;line-height:1}
+.home-btn.hidden{display:none}
+.home-btn:active{transform:scale(.94)}
+.sr-hide{display:none}
+.user-menu{position:relative;display:flex;align-items:center}
+.avatar-btn{background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;border-radius:50%}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid #B5D4F4;border-radius:12px;box-shadow:0 6px 20px rgba(12,68,124,.15);padding:10px;display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:124px;z-index:200}
+.user-dropdown.hidden{display:none}
+.user-dropdown .plan-badge{text-align:center}
+.user-dropdown .btn-logout{width:100%}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.header-right .mode-pill{margin-left:0}
+.header-right .auth-bar{margin-left:0}
+.cert-switch{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:5px 11px;border-radius:999px;cursor:pointer}
+.cert-switch .chev{font-size:10px;opacity:.7}
+.cert-switch.hidden{display:none}
+.home-view{padding:26px 18px 40px}
+.home-view.hidden{display:none}
+.home-hero{text-align:center;margin-bottom:24px}
+.home-hero h1{font-size:22px;font-weight:800;color:#0C447C;letter-spacing:-.5px;margin-bottom:8px}
+.home-hero p{font-size:13px;color:#6E7B86;line-height:1.65}
+.home-label{font-size:12px;font-weight:700;color:#8A95A0;margin:0 4px 11px}
+.cert-cards{display:flex;flex-direction:column;gap:13px}
+.cert-card{background:#fff;border:1px solid #E7ECF1;border-radius:18px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:15px;transition:transform .12s,box-shadow .12s,border-color .12s}
+.cert-card:active{transform:scale(.985)}
+.cert-card:hover{border-color:#B5D4F4;box-shadow:0 6px 20px rgba(12,68,124,.08)}
+.cert-card.soon{opacity:.66}
+.cert-ic{width:52px;height:52px;border-radius:14px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:25px;flex-shrink:0}
+.cert-meta{flex:1;min-width:0}
+.cert-meta .nm{font-size:16px;font-weight:800;color:#1B2430}
+.cert-meta .ds{font-size:12.5px;color:#6E7B86;margin-top:3px;line-height:1.5}
+.cert-meta .tag{display:inline-block;font-size:10.5px;font-weight:700;color:#185FA5;background:#E6F1FB;padding:2px 8px;border-radius:6px;margin-top:7px}
+.cert-meta .tag.soon{color:#8A6D1F;background:#FFF9EC}
+.cert-go{color:#B5D4F4;font-size:19px;flex-shrink:0}
+.cert-view.hidden{display:none}
+.soon-wrap{padding:58px 26px;text-align:center}
+.soon-wrap .em{font-size:46px;margin-bottom:14px}
+.soon-wrap h2{font-size:18px;font-weight:800;color:#0C447C;margin-bottom:8px}
+.soon-wrap p{font-size:13px;color:#6E7B86;line-height:1.7}
+.soon-wrap .back{margin-top:20px;background:#0C447C;color:#fff;border:none;border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;cursor:pointer}
+.user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #B5D4F4}
+.user-name{font-size:12px;font-weight:600;color:#2C2C2A;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-login{padding:6px 14px;border-radius:20px;border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-login:active{transform:scale(.96)}
+.btn-logout{padding:5px 10px;border-radius:20px;border:1.5px solid #B5D4F4;background:#fff;color:#888780;font-size:11px;font-weight:600;cursor:pointer}
+.plan-badge{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.plan-free{background:#E8F8F3;color:#0F6E56}
+.plan-active{background:#E6F1FB;color:#185FA5}
+.plan-expired{background:#FCEBEB;color:#A32D2D}
+.plan-guest{background:#E9F2FB;color:#0C447C}
+
+/* 로그인 팝업 */
+.auth-popup{position:fixed;inset:0;background:rgba(44,44,42,.6);display:flex;align-items:flex-end;justify-content:center;z-index:300;animation:fadeIn .2s}
+.auth-popup.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:32px 24px 40px;width:100%;max-width:480px;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);position:relative}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.auth-sheet-title{font-size:22px;font-weight:700;color:#2C2C2A;margin-bottom:6px;text-align:center}
+.auth-sheet-sub{font-size:14px;color:#888780;text-align:center;margin-bottom:24px;line-height:1.6}
+.auth-features{background:#F4F9FE;border-radius:16px;padding:16px 20px;margin-bottom:24px}
+.auth-feature-item{display:flex;align-items:center;gap:10px;font-size:13px;color:#3C3C3A;padding:5px 0}
+.auth-feature-item::before{content:'✓';color:#0C447C;font-weight:700;font-size:14px}
+.btn-google-login{width:100%;padding:16px;border-radius:var(--radius-sm);border:1.5px solid #E0E0E0;background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#2C2C2A;cursor:pointer;transition:all .15s;margin-bottom:12px}
+.btn-google-login:active{background:#F5F5F5;transform:scale(.98)}
+.google-icon{width:20px;height:20px}
+.auth-sheet-close{width:100%;padding:12px;border-radius:var(--radius-sm);border:none;background:#E9F2FB;color:#0C447C;font-size:14px;font-weight:600;cursor:pointer}
+
+/* 이용권 팝업 */
+.plan-sheet-title{font-size:20px;font-weight:700;color:#2C2C2A;margin-bottom:6px;text-align:center}
+.plan-sheet-sub{font-size:13px;color:#888780;text-align:center;margin-bottom:20px;line-height:1.6}
+.plan-stats{display:flex;gap:8px;margin-bottom:20px}
+.plan-stat{flex:1;background:#E9F2FB;border-radius:12px;padding:12px;text-align:center}
+.plan-stat .v{font-size:20px;font-weight:700;color:#0C447C}
+.plan-stat .l{font-size:10px;color:#888780;margin-top:2px}
+.plan-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.plan-card{border:1.5px solid #E8E8E8;border-radius:16px;padding:14px 16px;cursor:pointer;transition:all .15s;position:relative}
+.plan-card:active{transform:scale(.98)}
+.plan-card.selected{border-color:#0C447C;background:#F4F9FE}
+.plan-card-top{display:flex;justify-content:space-between;align-items:center}
+.plan-card-name{font-size:15px;font-weight:700;color:#2C2C2A}
+.plan-card-price{font-size:16px;font-weight:700;color:#185FA5}
+.plan-card-desc{font-size:12px;color:#888780;margin-top:3px}
+.plan-badge-pop{position:absolute;top:-8px;right:12px;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px}
+.bank-info{background:#FFF9F0;border:1.5px solid #FAC775;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#4B2000;line-height:1.8}
+.bank-info strong{font-weight:700}
+.btn-payment{width:100%;padding:16px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px}
+.btn-payment:active{transform:scale(.98)}
+.payment-note{font-size:11px;color:#B4B2A9;text-align:center;line-height:1.6}
+
+.footer{background:#fff;border-top:1px solid #F0F0F0;padding:24px 20px;text-align:center}
+.footer-brand{font-size:14px;font-weight:700;color:#2C2C2A;margin-bottom:5px}
+.footer-read{font-weight:600;color:#9AA7B2;font-size:13px}
+.footer-tag{font-size:12px;color:#6E7B86;font-weight:600;margin-bottom:7px}
+.footer-desc{font-size:11.5px;color:#B4B2A9;line-height:1.7;margin:0 auto 13px;max-width:330px}
+.footer-info{font-size:11px;color:#B4B2A9;line-height:1.9}
+.footer-info a{color:#B4B2A9;text-decoration:none}
+.footer-links{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}
+.footer-links a{font-size:12px;color:#6E7B86;text-decoration:none;font-weight:600;cursor:pointer}
+.footer-links a:hover{color:#185FA5}
+.footer-links .sep{color:#CBD3DA;font-size:11px}
+
+/* 할인코드 */
+.discount-wrap{margin-bottom:16px}
+.discount-label{font-size:13px;font-weight:600;color:#2C2C2A;margin-bottom:8px}
+.discount-row{display:flex;gap:8px}
+.discount-input{flex:1;padding:10px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none}
+.discount-input:focus{border-color:#0C447C}
+.btn-discount{padding:10px 16px;border-radius:10px;border:none;background:#E9F2FB;color:#0C447C;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-discount:active{background:#0C447C;color:#fff}
+.discount-msg{font-size:12px;margin-top:6px;padding:6px 10px;border-radius:8px}
+.discount-msg.success{background:#E8F8F3;color:#0F6E56}
+.discount-msg.error{background:#FCEBEB;color:#A32D2D}
+
+/* 오류 신고 */
+.report-btn{width:100%;margin-top:10px;padding:10px;border-radius:var(--radius-sm);border:1.5px solid #FAC775;background:#FFF9F0;color:#BA7517;font-size:12px;font-weight:600;cursor:pointer}
+.report-sheet{position:fixed;inset:0;background:rgba(44,44,42,.6);display:flex;align-items:flex-end;justify-content:center;z-index:300}
+.report-sheet.hidden{display:none}
+.report-box{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 36px;width:100%;max-width:480px}
+.report-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.report-sub{font-size:12px;color:#888780;margin-bottom:16px}
+.report-types{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.report-type{padding:6px 14px;border-radius:20px;border:1.5px solid #E8E8E8;background:#fff;font-size:12px;font-weight:600;color:#888780;cursor:pointer}
+.report-type.selected{border-color:#185FA5;background:#E6F1FB;color:#185FA5}
+.report-textarea{width:100%;padding:12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:13px;resize:none;outline:none;font-family:inherit}
+.report-textarea:focus{border-color:#0C447C}
+.report-btns{display:flex;gap:8px;margin-top:12px}
+.btn-report-cancel{flex:1;padding:12px;border-radius:10px;border:none;background:#E9F2FB;color:#0C447C;font-size:14px;font-weight:600;cursor:pointer}
+.btn-report-submit{flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+
+/* 인앱 브라우저 안내 팝업 */
+.inapp-popup{position:fixed;inset:0;background:rgba(44,44,42,.7);display:flex;align-items:flex-end;justify-content:center;z-index:500}
+.inapp-popup.hidden{display:none}
+.inapp-box{background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px}
+.inapp-icon{font-size:40px;text-align:center;margin-bottom:12px}
+.inapp-title{font-size:18px;font-weight:700;color:#2C2C2A;text-align:center;margin-bottom:8px}
+.inapp-desc{font-size:14px;color:#888780;text-align:center;line-height:1.7;margin-bottom:20px}
+.inapp-steps{background:#F4F9FE;border-radius:14px;padding:16px 18px;margin-bottom:20px}
+.inapp-step{font-size:13px;color:#3C3C3A;padding:5px 0;display:flex;align-items:center;gap:8px}
+.inapp-step-num{background:#0C447C;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.btn-inapp-chrome{width:100%;padding:15px;border-radius:12px;border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px}
+.btn-inapp-later{width:100%;padding:12px;border-radius:12px;border:none;background:#E9F2FB;color:#0C447C;font-size:13px;font-weight:600;cursor:pointer}
+/* ===== 감정평가사 객관식 엔진 (보기·해설: 슬레이트 그레이 + 정답 초록/오답 빨강) ===== */
+#mcqView .mcq-wrap{padding:12px 14px 26px}
+#mcqView .subbar{display:flex;gap:7px;overflow-x:auto;padding:11px 0;scrollbar-width:none}
+#mcqView .subbar::-webkit-scrollbar{display:none}
+#mcqView .sub-btn{flex-shrink:0;font-size:12.5px;font-weight:700;color:#5F5E5A;background:#fff;border:1px solid #E2E8F0;padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
+#mcqView .sub-btn.active{color:#fff;background:#0C447C;border-color:#0C447C}
+#mcqView .set-row{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px;scrollbar-width:none}
+#mcqView .set-row::-webkit-scrollbar{display:none}
+#mcqView .set-btn{flex-shrink:0;font-size:11.5px;font-weight:700;color:#475569;background:#F8FAFC;border:1px solid #E2E8F0;padding:5px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
+#mcqView .set-btn.active{color:#fff;background:#0F172A;border-color:#0F172A}
+#mcqView .mq-prog{margin-bottom:12px}
+#mcqView .mq-prog .row{display:flex;justify-content:space-between;font-size:12px;color:#64748B;font-weight:700;margin-bottom:6px}
+#mcqView .mq-prog .track{height:6px;background:#E2E8F0;border-radius:99px;overflow:hidden}
+#mcqView .mq-prog .bar{height:100%;background:linear-gradient(90deg,#185FA5,#378ADD);border-radius:99px;transition:width .25s}
+#mcqView .qcard{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:17px 16px}
+#mcqView .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+#mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+#mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
+#mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
+#mcqView .opts{display:flex;flex-direction:column;gap:9px}
+#mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer}
+#mcqView .opt .onum{width:23px;height:23px;border-radius:50%;border:1.5px solid #CBD5E1;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
+#mcqView .opt .otxt{font-size:13.5px;line-height:1.55;color:#0F172A;font-weight:500;flex:1}
+#mcqView .opt.sel{border-color:#0F172A}
+#mcqView .opt.cor{background:#F0FDF4;border-color:#16A34A}
+#mcqView .opt.cor .onum{background:#16A34A;border-color:#16A34A;color:#fff}
+#mcqView .opt.cor .otxt{color:#15803D}
+#mcqView .opt.wr{background:#FEF2F2;border-color:#DC2626}
+#mcqView .opt.wr .onum{background:#DC2626;border-color:#DC2626;color:#fff}
+#mcqView .opt.wr .otxt{color:#B91C1C}
+#mcqView .opt.dim{opacity:.55}
+#mcqView .exp{margin-top:13px;border-top:1px dashed #E2E8F0;padding-top:12px}
+#mcqView .exp .al{font-size:13px;font-weight:800;color:#15803D;margin-bottom:6px}
+#mcqView .exp .al.bad{color:#B91C1C}
+#mcqView .exp .note{font-size:12px;color:#64748B;line-height:1.6}
+#mcqView .exp-opts{margin-top:9px;display:flex;flex-direction:column;gap:5px}
+#mcqView .exp-opts .eo{font-size:12px;color:#475569;line-height:1.5;padding:6px 9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px}
+#mcqView .exp-opts .eo b{color:#64748B;margin-right:3px}
+#mcqView .exp-opts .eo.ok{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
+#mcqView .exp-opts .eo.ok b{color:#16A34A}
+#mcqView .mcq-foot{display:flex;gap:9px;margin-top:14px}
+#mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
+#mcqView .mbtn:disabled{opacity:.4}
+#mcqView .mbtn-prev{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0}
+#mcqView .mbtn-exp{background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4}
+#mcqView .mbtn-next{background:#0F172A;color:#fff}
+#mcqView .mcq-result{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:26px 18px;text-align:center}
+#mcqView .mcq-result .em{font-size:40px;margin-bottom:8px}
+#mcqView .mcq-result .rt{font-size:18px;font-weight:800;color:#0F172A;margin-bottom:4px}
+#mcqView .mcq-result .rs{font-size:13px;color:#64748B;margin-bottom:16px}
+#mcqView .mcq-result .sc{display:flex;justify-content:center;gap:22px;margin-bottom:18px}
+#mcqView .mcq-result .sc .v{font-size:24px;font-weight:900;color:#0C447C}
+#mcqView .mcq-result .sc .v.ok{color:#16A34A}
+#mcqView .mcq-result .sc .v.bad{color:#DC2626}
+#mcqView .mcq-result .sc .l{font-size:11px;color:#64748B;font-weight:700;margin-top:2px}
+#mcqView .mcq-result button{background:#0C447C;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-size:13.5px;font-weight:800;cursor:pointer}
+/* 과목 아코디언 (원본 감평사 방식) */
+#mcqView .sec-lbl{font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 6px}
+#mcqView .scard{border-radius:16px;border:1.5px solid #E2E8F0;overflow:hidden;background:#fff;margin-bottom:10px}
+#mcqView .scard-hd{display:flex;align-items:center;gap:10px;padding:14px 15px;cursor:pointer;user-select:none}
+#mcqView .sdot{width:6px;height:6px;border-radius:50%;background:#0C447C;flex-shrink:0}
+#mcqView .snm{font-size:14px;font-weight:800;flex:1;color:#0F172A}
+#mcqView .scard-set-label{font-size:11px;font-weight:600;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;padding:2px 9px;border-radius:20px;flex-shrink:0}
+#mcqView .scard-arrow{width:24px;height:24px;border-radius:50%;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94A3B8;transition:transform .2s;flex-shrink:0}
+#mcqView .scard-arrow.open{transform:rotate(180deg)}
+#mcqView .scard-body{border-top:1px solid #F1F5F9}
+#mcqView .srow{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid #F1F5F9}
+#mcqView .srow:last-child{border-bottom:none}
+#mcqView .srow-left{display:flex;flex-direction:column;gap:2px}
+#mcqView .syr{font-size:13px;font-weight:700;color:#1E293B}
+#mcqView .swc{font-size:11px;color:#94A3B8;font-weight:500}
+#mcqView .sact{display:flex;gap:6px}
+#mcqView .b-go{background:#0C447C;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer}
+#mcqView .b-fresh{color:#64748B;background:#fff;border:1.5px solid #E2E8F0;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+#mcqView .b-wr{color:#B91C1C;background:#FEF2F2;border:1.5px solid #FECACA;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+/* 시험 헤더 */
+#mcqView .exam-hd{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
+#mcqView .exam-ti{flex:1;min-width:0}
+#mcqView .etim{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;color:#0F172A;background:#F8FAFC;padding:5px 10px;border-radius:8px;border:1.5px solid #E2E8F0;letter-spacing:1px;flex-shrink:0}
+#mcqView .etim.red{color:#DC2626;border-color:#FECACA;background:#FEF2F2;animation:mqbl .8s ease-in-out infinite}
+@keyframes mqbl{0%,100%{opacity:1}50%{opacity:.45}}
+#mcqView .exam-back{background:#F1F5F9;border:none;color:#475569;font-size:13px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;flex-shrink:0}
+#mcqView .exam-ti .nm{font-size:14px;font-weight:800;color:#0F172A;line-height:1.2}
+#mcqView .exam-ti .st{font-size:11.5px;color:#64748B;font-weight:600}
+/* 중요도(별)·소요시간 뱃지 */
+#mcqView .imp{font-size:11px;font-weight:800;color:#C87A00;background:#FFF9F0;border:1px solid #FFEDBA;padding:2px 8px;border-radius:6px;letter-spacing:-.3px}
+#mcqView .tmark{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid}
+#mcqView .tmark.t1{color:#15803D;background:#F0FDF4;border-color:#BBF7D0}
+#mcqView .tmark.t2{color:#185FA5;background:#E6F1FB;border-color:#B5D4F4}
+#mcqView .tmark.t3{color:#B91C1C;background:#FEF2F2;border-color:#FECACA}
+/* 결과 버튼 */
+#mcqView .mcq-result .rbtns{display:flex;gap:9px;justify-content:center}
+#mcqView .mcq-result .ghost{background:#fff;color:#475569;border:1.5px solid #E2E8F0}
+/* ===== 자동복습 UI ===== */
+.sr-banner{margin:10px 14px 4px;padding:12px 15px;background:linear-gradient(135deg,#185FA5,#0C447C);border-radius:14px;color:#fff;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.sr-banner-l{display:flex;flex-direction:column;gap:3px;text-align:left}
+.sr-banner-l b{font-size:14px}
+.sr-exam{font-size:11px;opacity:.9;text-decoration:underline}
+.sr-banner-go{font-size:12px;font-weight:700;background:#fff;color:#185FA5;padding:7px 12px;border-radius:999px;white-space:nowrap}
+.rate-row{display:flex;gap:8px;padding:4px 14px 8px;align-items:stretch}
+.rate-prev{flex:0 0 auto;border:1px solid #E2D6CC;background:#fff;border-radius:12px;padding:0 14px;font-size:13px;font-weight:700;color:#8A7D6E;cursor:pointer}
+.rate-prev:disabled{opacity:.4}
+.rate-hint{flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;color:#B4A99C;border:1px dashed #E2D6CC;border-radius:12px;padding:10px}
+.rb{flex:1;display:flex;flex-direction:column;align-items:center;border:1.5px solid;border-radius:14px;padding:9px 4px;background:#fff;cursor:pointer;font-size:21px;line-height:1.1}
+.rb span{font-size:13px;font-weight:800;margin-top:3px}
+.rb i{font-size:10px;font-weight:600;font-style:normal;opacity:.8}
+.rb:active{transform:scale(.96)}
+.rb-wrong{border-color:#F2C0BC}.rb-wrong span{color:#D64B3F}.rb-wrong i{color:#CC7777}
+.rb-vague{border-color:#F3DDA6}.rb-vague span{color:#C9952B}.rb-vague i{color:#B89A4F}
+.rb-ok{border-color:#B7E0C6}.rb-ok span{color:#2E9B5E}.rb-ok i{color:#5BA97D}
+.bar-btn.mode-on{background:#185FA5;color:#fff;border-color:#185FA5}
+.sr-dot{position:absolute;top:12px;left:12px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:#fff;z-index:2}
+.sr-dot.sr-new{background:#B4A99C}
+.sr-dot.sr-weak{background:#E24B4A}
+.sr-dot.sr-learning{background:#E0A52E}
+.sr-dot.sr-master{background:#2E9B5E}
+.mq-mst{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:#fff;margin-right:4px}
+.mq-mst.sr-weak{background:#E24B4A}
+.mq-mst.sr-learning{background:#E0A52E}
+.mq-mst.sr-master{background:#2E9B5E}
+</style>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '975416015293680');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+</head>
+<body>
+<!-- 인앱 브라우저 안내 팝업 -->
+<div class="inapp-popup hidden" id="inappPopup">
+  <div class="inapp-box">
+    <div class="inapp-icon">🌐</div>
+    <div class="inapp-title">크롬 브라우저로 열어주세요!</div>
+    <div class="inapp-desc">카카오톡 내부 브라우저에서는<br>로그인 정보가 유지되지 않아요.<br>크롬으로 열면 학습 기록이 저장됩니다.</div>
+    <div class="inapp-steps">
+      <div class="inapp-step"><div class="inapp-step-num">1</div>우측 하단 <strong>⋮ 메뉴</strong> 터치</div>
+      <div class="inapp-step"><div class="inapp-step-num">2</div><strong>다른 브라우저로 열기</strong> 선택</div>
+      <div class="inapp-step"><div class="inapp-step-num">3</div><strong>Chrome</strong> 선택</div>
+    </div>
+    <button class="btn-inapp-chrome" onclick="openInChrome()">🔗 크롬으로 열기</button>
+    <button class="btn-inapp-later" onclick="closeInappPopup()">나중에 할게요</button>
+  </div>
+</div>
+
+<div class="header">
+  <div class="brand-area">
+    <div class="logo">CertLab</div>
+    <div class="slogan">도전하는 사람들의 성공을 돕습니다</div>
+  </div>
+  <div class="header-right">
+    <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
+    <div class="mode-pill" id="modePill">전체</div>
+    <div class="auth-bar" id="authBar">
+      <button class="btn-login" onclick="showLoginPopup()">로그인</button>
+    </div>
+  </div>
+</div>
+<div class="home-view" id="homeView">
+  <div class="home-hero">
+    <h1>어떤 시험을 준비하세요?</h1>
+    <p>시험을 선택해 학습을 시작하세요.</p>
+  </div>
+  <div class="home-label">시험 선택</div>
+  <div class="cert-cards">
+    <div class="cert-card" onclick="enterCert('bodybuilding')">
+      <div class="cert-ic">💪</div>
+      <div class="cert-meta"><div class="nm">생활체육지도사 보디빌딩 2급</div><div class="ds">구술시험 대비 플래시카드 · 5과목</div><span class="tag">플래시카드</span></div>
+      <div class="cert-go">›</div>
+    </div>
+    <div class="cert-card" onclick="enterCert('appraiser')">
+      <div class="cert-ic">📐</div>
+      <div class="cert-meta"><div class="nm">감정평가사 1차</div><div class="ds">객관식 모의고사 · 5과목 460문항</div><span class="tag">모의고사</span></div>
+      <div class="cert-go">›</div>
+    </div>
+    <div class="cert-card" onclick="enterCert('realestate1')">
+      <div class="cert-ic">🏠</div>
+      <div class="cert-meta"><div class="nm">공인중개사 1차</div><div class="ds">객관식 · 부동산학개론 · 민법및민사특별법</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-go">›</div>
+    </div>
+    <div class="cert-card" onclick="enterCert('realestate2')">
+      <div class="cert-ic">🏢</div>
+      <div class="cert-meta"><div class="nm">공인중개사 2차</div><div class="ds">객관식 · 중개사법령 · 공법 · 공시법령및세법</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-go">›</div>
+    </div>
+    <div class="cert-card" onclick="enterCert('koreanhistory')">
+      <div class="cert-ic">📜</div>
+      <div class="cert-meta"><div class="nm">한국사능력검정시험 심화</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-go">›</div>
+    </div>
+  </div>
+</div>
+<div class="cert-view hidden" id="bodybuildingView">
+<div class="sr-banner" id="srBanner" onclick="srBannerClick()"></div>
+<div class="subjects-wrap">
+  <button class="scroll-arrow hidden" id="arrowL" onclick="scrollSubj(-1)" aria-label="이전 과목">◀</button>
+  <div class="subjects" id="subjectBar"></div>
+  <button class="scroll-arrow" id="arrowR" onclick="scrollSubj(1)" aria-label="다음 과목">▶</button>
+</div>
+<div class="stars-wrap">
+  <button class="scroll-arrow star-arrow hidden" id="starArrowL" onclick="scrollStar(-1)" aria-label="이전 별점">◀</button>
+  <div class="star-scroll" id="starBar"></div>
+  <button class="scroll-arrow star-arrow" id="starArrowR" onclick="scrollStar(1)" aria-label="다음 별점">▶</button>
+</div>
+<div class="progress-wrap">
+  <div class="progress-row">
+    <span class="progress-label" id="progressText">1 / 20</span>
+    <span class="progress-right" id="wrongCount">오답 0개</span>
+  </div>
+  <div class="progress-track"><div class="progress-bar" id="progressBar" style="width:5%"></div></div>
+</div>
+<div class="counter-strip">
+  <div class="c-pill"><div class="v" id="statTotal">0</div><div class="l">전체</div></div>
+  <div class="c-pill wrong-pill"><div class="v" id="statWrong">0</div><div class="l">오답</div></div>
+  <div class="c-pill done-pill"><div class="v" id="statDone">0%</div><div class="l">정답률</div></div>
+  <div class="c-pill"><div class="v" id="statCount">0</div><div class="l">푼 횟수</div></div>
+</div>
+<div class="card-area" id="cardArea"></div>
+<div class="rate-row" id="rateRow"></div>
+<div class="bottom-bar">
+  <button class="bar-btn" id="modeNew" onclick="setSrMode('new')">🆕 신규</button>
+  <button class="bar-btn" id="modeReview" onclick="setSrMode('review')">🔁 복습</button>
+  <button class="bar-btn" id="modeMix" onclick="setSrMode('mix')">🔀 혼합</button>
+  <button class="bar-btn" onclick="shuffle()">🎲 섞기</button>
+</div>
+</div>
+<div class="cert-view hidden" id="mcqView">
+  <div class="mcq-wrap" id="mcqRoot"></div>
+</div>
+<div class="footer">
+  <div class="footer-brand">CertLab <span class="footer-read">(서트랩)</span></div>
+  <div class="footer-tag">도전하는 사람들의 성공을 돕습니다</div>
+  <div class="footer-desc">자격증·전문직 시험·학습 콘텐츠를 제공하는 교육 플랫폼입니다.</div>
+  <div class="footer-links">
+    <a href="about.html" target="_blank" rel="noopener">회사소개</a>
+    <span class="sep">·</span>
+    <a href="terms.html" target="_blank" rel="noopener">이용약관</a>
+    <span class="sep">·</span>
+    <a href="privacy.html" target="_blank" rel="noopener">개인정보 취급방침</a>
+    <span class="sep">·</span>
+    <a href="javascript:void(0)" onclick="openCS()">고객센터</a>
+  </div>
+  <div class="footer-info">
+    상호명: 프사오도담 · 사업자등록번호: 453-01-02999<br>
+    주소: 세종시 보듬3로 8-20 한신휴시티 B102호<br>
+    이메일: certlab.team@gmail.com<br>
+    © 2025 CertLab. All rights reserved.
+  </div>
+</div>
+<div class="overlay hidden" id="completeOv">
+  <div class="ov-icon" id="ovIcon">🎯</div>
+  <div class="ov-title" id="ovTitle">완료!</div>
+  <div class="ov-sub" id="ovSub"></div>
+  <div class="ov-stats" id="ovStats"></div>
+  <div class="ov-btns" id="ovBtns"></div>
+</div>
+<div class="milestone hidden" id="milestoneBox">
+  <div class="ms-box">
+    <div class="ms-stars" id="msStars">⭐⭐⭐</div>
+    <div class="ms-num" id="msNum">100</div>
+    <div class="ms-label">문제 돌파!</div>
+    <div class="ms-msg" id="msMsg">정말 대단해요! 🎉</div>
+    <button class="ms-close" onclick="closeMilestone()">계속하기 💪</button>
+  </div>
+</div>
+
+<!-- 오류 신고 시트 -->
+<div class="report-sheet hidden" id="reportSheet">
+  <div class="report-box">
+    <div class="report-title">⚠️ 문제 오류 신고</div>
+    <div class="report-sub" id="reportSubTitle"></div>
+    <div class="report-types">
+      <div class="report-type" onclick="selectReportType(this,'문제 오류')">문제 오류</div>
+      <div class="report-type" onclick="selectReportType(this,'정답 오류')">정답 오류</div>
+      <div class="report-type" onclick="selectReportType(this,'해설 오류')">해설 오류</div>
+      <div class="report-type" onclick="selectReportType(this,'오타')">오타</div>
+      <div class="report-type" onclick="selectReportType(this,'기타')">기타</div>
+    </div>
+    <textarea class="report-textarea" id="reportDetail" rows="3" placeholder="오류 내용을 자세히 적어주세요."></textarea>
+    <div class="report-btns">
+      <button class="btn-report-cancel" onclick="closeReport()">취소</button>
+      <button class="btn-report-submit" onclick="submitReport()">신고하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 고객센터 (문제오류수정 기능 재사용) -->
+<div class="report-sheet hidden" id="csSheet">
+  <div class="report-box">
+    <div class="report-title">📮 고객센터</div>
+    <div class="report-sub">문의·오류·개선사항을 남겨주세요. 확인 후 빠르게 반영하겠습니다.</div>
+    <div class="report-types">
+      <div class="report-type" onclick="selectCSType(this,'오류')">오류</div>
+      <div class="report-type" onclick="selectCSType(this,'개선사항')">개선사항</div>
+    </div>
+    <textarea class="report-textarea" id="csDetail" rows="4" placeholder="내용을 자세히 적어주세요."></textarea>
+    <div class="report-btns">
+      <button class="btn-report-cancel" onclick="closeCS()">취소</button>
+      <button class="btn-report-submit" onclick="submitCS()">보내기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 로그인 팝업 -->
+<div class="auth-popup hidden" id="loginPopup">
+  <div class="auth-sheet">
+    <div class="auth-sheet-title" id="loginTitle">🎯 무료 체험 완료</div>
+    <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
+    <div class="auth-features">
+      <div class="auth-feature-item">전체 248문제 + 상세 해설</div>
+      <div class="auth-feature-item">오답노트 & 즐겨찾기</div>
+      <div class="auth-feature-item">랜덤 학습</div>
+      <div class="auth-feature-item">학습 기록 저장</div>
+    </div>
+    <button class="btn-google-login" onclick="signInWithGoogle()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Google로 계속하기
+    </button>
+    <button class="auth-sheet-close" onclick="hideLoginPopup()">나중에</button>
+  </div>
+</div>
+
+<!-- 이용권 팝업 -->
+<div class="auth-popup hidden" id="planPopup">
+  <div class="auth-sheet">
+    <button onclick="hidePlanPopup()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;color:#888780;cursor:pointer;line-height:1">✕</button>
+    <div class="plan-sheet-title" id="planSheetTitle">⏰ 무료 체험 완료!</div>
+    <div class="plan-sheet-sub" id="planSub">이용권 구매 후 전체 문제와 학습 기록을 계속 이용할 수 있습니다.</div>
+    <div class="plan-stats" id="planStats"></div>
+    <div class="plan-cards">
+      <div class="plan-card" id="plan7" onclick="selectPlan(7,3900)">
+        <div class="plan-card-top">
+          <span class="plan-card-name">1주 이용권</span>
+          <span class="plan-card-price">3,900원</span>
+        </div>
+        <div class="plan-card-desc">7일 전체 이용</div>
+      </div>
+      <div class="plan-card selected" id="plan14" onclick="selectPlan(14,5900)">
+        <div class="plan-badge-pop">⭐ 가장 인기</div>
+        <div class="plan-card-top">
+          <span class="plan-card-name">2주 이용권</span>
+          <span class="plan-card-price">5,900원</span>
+        </div>
+        <div class="plan-card-desc">14일 전체 이용</div>
+      </div>
+      <div class="plan-card" id="plan28" onclick="selectPlan(28,8900)">
+        <div class="plan-badge-pop" style="background:linear-gradient(135deg,#1D9E75,#0C447C)">⭐ 가장 경제적</div>
+        <div class="plan-card-top">
+          <span class="plan-card-name">4주 이용권</span>
+          <span class="plan-card-price">8,900원</span>
+        </div>
+        <div class="plan-card-desc">28일 전체 이용</div>
+      </div>
+    </div>
+    <div class="discount-wrap">
+      <div class="discount-label">🎟 할인코드가 있으신가요?</div>
+      <div class="discount-row">
+        <input class="discount-input" id="discountInput" placeholder="코드 입력 (예: TEST01)" maxlength="10">
+        <button class="btn-discount" onclick="applyDiscount()">적용</button>
+      </div>
+      <div class="discount-msg" id="discountMsg" style="display:none"></div>
+    </div>
+    <div class="bank-info">
+      <strong>입금 계좌</strong><br>
+      토스뱅크 1000-2406-0293<br>
+      예금주: 박성환<br><br>
+      입금 완료 신청 시 이용권이 <strong>즉시 활성화</strong>됩니다.<br>단, 결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.
+    </div>
+    <input id="depositorName" placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
+    <button class="btn-payment" id="btnPayment" onclick="submitPayment()">입금 완료 신청</button>
+    <div class="payment-note">입금 완료 신청 시 이용권이 즉시 활성화됩니다.<br>결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.</div>
+  </div>
+</div>
+<script>
+// ===== Firebase 초기화 =====
+const firebaseConfig = {
+  apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+  authDomain: "certlab-c3bcb.firebaseapp.com",
+  projectId: "certlab-c3bcb",
+  storageBucket: "certlab-c3bcb.firebasestorage.app",
+  messagingSenderId: "698827699707",
+  appId: "1:698827699707:web:b08d492f408ac444fa875e"
+};
+let auth = null, db = null, googleProvider = null, firebaseReady = false;
+try {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  googleProvider = new firebase.auth.GoogleAuthProvider();
+  firebaseReady = true;
+} catch (e) {
+  console.warn('Firebase를 불러오지 못했습니다. 로그인·동기화 없이 학습 기능만 동작합니다.', e);
+}
+
+// ===== 사용자 상태 =====
+let currentUser = null;
+let userPlan = 'GUEST'; // (레거시 미러: 현재 활성 시험의 plan) GUEST | FREE_TRIAL | ACTIVE | EXPIRED
+let trialCount = 0;     // (레거시 미러: 현재 활성 시험의 무료 사용 수)
+const GUEST_LIMIT = 10;
+const TRIAL_LIMIT = 50;
+// ===== 시험별 이용권(entitlements) =====
+const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory'];
+const CERT_LABELS = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사' };
+const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험 심화' };
+function certLabel(c){ return CERT_LABELS[c]||c; }
+function certFull(c){ return CERT_FULLNAMES[c]||c; }
+function blankEnt(){ const o={}; ALL_CERTS.forEach(c=>o[c]={plan:'GUEST',trialCount:0,expireAt:null,planDays:null}); return o; }
+function blankGuest(){ const o={}; ALL_CERTS.forEach(c=>o[c]=0); return o; }
+let userEnt = blankEnt();
+let guestCounts = blankGuest();  // 비회원 시험별 푼 수
+function activeCertId(){ return (typeof activeCert!=='undefined' && activeCert) ? activeCert : 'bodybuilding'; }
+function syncPlanMirror(){
+  const e = userEnt[activeCertId()] || userEnt.bodybuilding;
+  userPlan = e.plan; trialCount = e.trialCount || 0;
+}
+// 공용 중요도 별표(압축): 0=숨김, 1→★, 2+→★n
+function impLabel(n){ n=n||0; if(!n) return ''; return n===1 ? '★' : '★'+n; }
+let selectedPlanDays = 14;
+let selectedPlanPrice = 5900;
+
+// ===== Auth 상태 감지 =====
+if (firebaseReady) {
+  auth.onAuthStateChanged(async (user) => {
+    currentUser = user;
+    if (user) {
+      await loadUserPlan(user);
+    } else {
+      userPlan = 'GUEST';
+      userEnt = blankEnt();
+      guestCounts = blankGuest();
+      appWrong={};
+      updateAuthBar();
+    }
+    refresh();
+    routeAfterAuth();
+  });
+} else {
+  // Firebase 미연결(미리보기/오프라인): 게스트 모드로 콘텐츠만 동작
+  userPlan = 'GUEST';
+  userEnt = blankEnt();
+  updateAuthBar();
+}
+
+// ===== 사용자 플랜 로드 =====
+async function loadUserPlan(user) {
+  try {
+    const ref = db.collection('users').doc(user.uid);
+    const doc = await ref.get();
+    if (!doc.exists) {
+      // 신규 회원: 시험별 무료체험으로 시작
+      const ent = {}; ALL_CERTS.forEach(c=>ent[c]={plan:'FREE_TRIAL',trialCount:0,expireAt:null,planDays:null});
+      await ref.set({
+        email: user.email, displayName: user.displayName, photoURL: user.photoURL,
+        plan: 'FREE_TRIAL', trialCount: 0,        // 레거시 미러(관리자 호환)
+        entitlements: ent,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
+      return;
+    }
+    const data = doc.data();
+    let ent = data.entitlements;
+    if (!ent) {
+      // 지연 마이그레이션: 기존 평면 plan → entitlements.bodybuilding (레거시 필드는 보존)
+      ent = {};
+      ALL_CERTS.forEach(c=>ent[c]={plan:'FREE_TRIAL',trialCount:0,expireAt:null,planDays:null});
+      ent.bodybuilding = { plan: data.plan || 'FREE_TRIAL', trialCount: data.trialCount || 0,
+                           expireAt: data.expireAt || null, planDays: data.planDays || null };
+      try { await ref.update({ entitlements: ent }); } catch(_) {}
+    }
+    // 시험별 ACTIVE 만료 체크
+    const now = new Date();
+    for (const k of ALL_CERTS) {
+      if (!ent[k]) ent[k] = { plan:'FREE_TRIAL', trialCount:0, expireAt:null, planDays:null };
+      const e = ent[k];
+      if (e.plan === 'ACTIVE' && e.expireAt) {
+        const exp = e.expireAt.toDate ? e.expireAt.toDate() : new Date(e.expireAt);
+        if (now > exp) {
+          e.plan = 'EXPIRED';
+          try {
+            const upd = { ['entitlements.'+k+'.plan']: 'EXPIRED' };
+            if (k === 'bodybuilding') upd.plan = 'EXPIRED'; // 레거시 미러
+            await ref.update(upd);
+          } catch(_) {}
+        }
+      }
+    }
+    userEnt = ent; syncPlanMirror(); updateAuthBar(); loadUserData();
+  } catch(e) {
+    console.error('플랜 로드 오류:', e);
+    userEnt = blankEnt(); userEnt.bodybuilding.plan='FREE_TRIAL'; userEnt.appraiser.plan='FREE_TRIAL';
+    syncPlanMirror(); updateAuthBar();
+  }
+}
+
+// ===== Firestore 오답·즐겨찾기 로드 =====
+async function loadUserData() {
+  if (!currentUser || !db) return;
+  try {
+    const doc = await db.collection('userData').doc(currentUser.uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      // 초기화 후 복원
+      D.forEach(c=>{ c.w=false; c.fav=false; });
+      appWrong={};
+      (data.wrongList||[]).forEach(key => applyMark(key,'w',true));
+      (data.favoriteList||[]).forEach(key => applyMark(key,'fav',true));
+      // 자동복습 진행상황
+      srProgress = (data.cardProgress && typeof data.cardProgress==='object') ? data.cardProgress : {};
+      srExamOverride = (data.examDates && typeof data.examDates==='object') ? data.examDates : {};
+      srMigrateIfNeeded();
+      srApplyToCards();
+      if (data.solveCount) {
+        solveCount = data.solveCount;
+        document.getElementById('statCount').textContent = solveCount;
+      }
+      refresh();
+      if (activeCert === 'appraiser') renderMCQ();
+    }
+  } catch(e) { console.error('데이터 로드 오류:', e); }
+}
+
+// 기존 오답노트(w) → cardProgress 1회 마이그레이션 (미숙·오늘 복습으로 편입)
+function srMigrateIfNeeded(){
+  if (srProgress && Object.keys(srProgress).length>0) return; // 이미 있음
+  const now=Date.now(); let any=false;
+  D.forEach(c=>{ if(c.w && c.id){ srProgress[SR_CERT+'|'+c.id]={st:0,nx:now,lr:now,res:0,rc:1,w:true}; any=true; } });
+  if(any) srFlush();
+}
+// cardProgress의 오답상태(w)를 카드 객체에 반영
+function srApplyToCards(){
+  cards.forEach(c=>{ const p=srProgress[SR_CERT+'|'+c.id]; c.w=!!(p&&p.w); });
+}
+// 비로그인(게스트) localStorage 복원
+function srLoadLocal(){
+  try{ const raw=localStorage.getItem('sr:'+SR_CERT); if(!raw) return;
+    const o=JSON.parse(raw); srProgress=o.p||{}; srExamOverride=o.e||{};
+    if(o.c){ solveCount=o.c; const el=document.getElementById('statCount'); if(el) el.textContent=solveCount; }
+    srApplyToCards();
+  }catch(_){}
+}
+// 네임스페이스 키 적용: "시험종류‖과목‖문제" (신형) / "과목||문제" (구형=생체, 무손실)
+function applyMark(key, field, val) {
+  if (typeof key !== 'string') return;
+  if (key.indexOf('‖') !== -1) {
+    const p = key.split('‖'); const cert = p[0];
+    if (isMcqCert(cert)) {
+      const qid = p[p.length-1];
+      if (field==='w') appWrong[qid]=val;   // 객관식 오답 (즐겨찾기 미사용)
+    } else { // bodybuilding
+      const sub=p[1], q=p.slice(2).join('‖');
+      const i=D.findIndex(c=>c.s===sub && c.q===q); if(i!==-1) D[i][field]=val;
+    }
+  } else { // 구형 생체 키 "과목||문제"
+    const i=D.findIndex(c=>(c.s+'||'+c.q)===key); if(i!==-1) D[i][field]=val;
+  }
+}
+
+// ===== Firestore 저장 =====
+async function saveUserData() {
+  if (!currentUser || !db) return;
+  try {
+    const wrongList = [
+      ...D.filter(c=>c.w).map(c=>'bodybuilding‖'+c.s+'‖'+c.q),
+      ...Object.keys(appWrong).filter(qid=>appWrong[qid]&&MCQ_QID2CS[qid]).map(qid=>MCQ_QID2CS[qid].cert+'‖'+MCQ_QID2CS[qid].sub+'‖'+qid)
+    ];
+    const favoriteList = D.filter(c=>c.fav).map(c=>'bodybuilding‖'+c.s+'‖'+c.q);
+    await db.collection('userData').doc(currentUser.uid).set({
+      wrongList, favoriteList, solveCount,
+      cardProgress: srProgress, examDates: srExamOverride,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.error('저장 오류:', e); }
+}
+
+// ===== 로그인/로그아웃 =====
+// ===== 인앱 브라우저 팝업 =====
+function openInChrome() {
+  const url = window.location.href;
+  // 안드로이드: intent로 크롬 강제 실행
+  if (/android/i.test(navigator.userAgent)) {
+    window.location.href = 'intent://' + url.replace(/https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+  } else {
+    // iOS: 클립보드 복사 안내
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      alert('주소가 복사되었습니다!\nChrome을 열고 붙여넣기 해주세요.');
+    } else {
+      alert('Chrome 브라우저에서 certlab.ai.kr 을 입력해 접속해주세요.');
+    }
+  }
+}
+function closeInappPopup() {
+  document.getElementById('inappPopup').classList.add('hidden');
+  sessionStorage.setItem('inappDismissed', '1');
+}
+function checkInAppBrowser() {
+  if (isInAppBrowser() && !sessionStorage.getItem('inappDismissed')) {
+    document.getElementById('inappPopup').classList.remove('hidden');
+  }
+}
+
+function isInAppBrowser() {
+  const ua = navigator.userAgent.toLowerCase();
+  return /kakaotalk|naver|instagram|fban|fbav|line|wechat|micromessenger/.test(ua)
+    || (ua.includes('android') && ua.includes('wv'))
+    || (ua.includes('iphone') && !ua.includes('safari'));
+}
+
+async function signInWithGoogle() {
+  if (!firebaseReady) { alert('로그인은 배포된 사이트(인터넷 연결)에서 동작합니다. 지금은 미리보기 모드예요.'); return; }
+  if (isInAppBrowser()) {
+    const url = window.location.href;
+    // 안드로이드: intent로 크롬 열기
+    if (/android/i.test(navigator.userAgent)) {
+      window.location.href = 'intent://' + url.replace(/https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+    } else {
+      // iOS: 외부 브라우저 안내
+      alert('⚠️ 로그인하려면 외부 브라우저에서 열어야 합니다. 우측 하단 메뉴(···) → 기본 브라우저로 열기 를 눌러주세요.');
+    }
+    return;
+  }
+  try {
+    await auth.signInWithPopup(googleProvider);
+    hideLoginPopup();
+  } catch(e) {
+    if (e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message);
+  }
+}
+
+function signOut() {
+  if (confirm('로그아웃 하시겠어요?')) {
+    auth.signOut();
+  }
+}
+
+// ===== Auth 바 업데이트 =====
+function updateAuthBar() {
+  const bar = document.getElementById('authBar');
+  if (!currentUser) {
+    bar.innerHTML = '<button class="btn-login" onclick="showLoginPopup()">로그인</button>';
+    return;
+  }
+  const planLabels = { FREE_TRIAL:'무료체험', ACTIVE:'이용중', EXPIRED:'만료', GUEST:'게스트' };
+  const planClasses = { FREE_TRIAL:'plan-free', ACTIVE:'plan-active', EXPIRED:'plan-expired', GUEST:'plan-guest' };
+  const img = currentUser.photoURL
+    ? `<img class="user-avatar" src="${currentUser.photoURL}" alt="">`
+    : `<div style="width:28px;height:28px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
+  bar.innerHTML = `
+    <div class="user-menu" id="userMenu">
+      <button class="avatar-btn" onclick="toggleUserMenu(event)" aria-label="내 메뉴">${img}</button>
+      <div class="user-dropdown hidden" id="userDropdown">
+        <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
+        <button class="btn-logout" onclick="signOut()">로그아웃</button>
+      </div>
+    </div>`;
+}
+function toggleUserMenu(e){ if(e){e.stopPropagation();} const d=document.getElementById('userDropdown'); if(d) d.classList.toggle('hidden'); }
+document.addEventListener('click',function(e){ const m=document.getElementById('userMenu'); const d=document.getElementById('userDropdown'); if(d&&m&&!m.contains(e.target)) d.classList.add('hidden'); });
+
+// ===== 팝업 =====
+function showLoginPopup(mode='default') {
+  const popup = document.getElementById('loginPopup');
+  const title = document.getElementById('loginTitle');
+  const sub = document.getElementById('loginSub');
+  if (mode === 'guest_limit') {
+    title.textContent = '🎯 무료 체험 완료';
+    sub.textContent = "50문제를 모두 체험하셨습니다. 로그인 후 계속 학습하세요!";
+  } else {
+    title.textContent = '📚 CertLab';
+    sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
+  }
+  popup.classList.remove('hidden');
+}
+function hideLoginPopup() { document.getElementById('loginPopup').classList.add('hidden'); }
+
+function showPlanPopup() {
+  const cert = activeCertId();
+  const certName = certFull(cert);
+  let totalTxt;
+  if (cert === 'bodybuilding') totalTxt = '248문제';
+  else { const qb=qbOf(cert); const n=Object.keys(qb).reduce((a,sub)=>a+qb[sub].sets.reduce((b,st)=>b+st.questions.length,0),0); totalTxt = n>0 ? n+'문항' : '전체 문항'; }
+  const titleEl = document.getElementById('planSheetTitle');
+  if (titleEl) titleEl.textContent = `⏰ ${certName} 무료 체험 완료!`;
+  const subEl = document.getElementById('planSub');
+  if (subEl) subEl.textContent = `${certName} 이용권 구매 후 전체 ${totalTxt}와 학습 기록을 계속 이용할 수 있습니다.`;
+  const stats = document.getElementById('planStats');
+  const learned = (userEnt[cert] && userEnt[cert].trialCount) || 0;
+  let wrong = 0;
+  if (cert === 'bodybuilding') wrong = D.filter(c=>c.w).length;
+  else { try { Object.keys(mqAns).forEach(qid=>{ /* appraiser 오답 집계 */ }); } catch(e){} }
+  const rate = learned > 0 ? Math.round((learned-wrong)/learned*100) : 0;
+  stats.innerHTML = `
+    <div class="plan-stat"><div class="v">${learned}</div><div class="l">학습 문제</div></div>
+    <div class="plan-stat"><div class="v">${rate > 0 ? rate : 0}%</div><div class="l">정답률</div></div>
+    <div class="plan-stat"><div class="v">${wrong}</div><div class="l">오답노트</div></div>`;
+  document.getElementById('planPopup').classList.remove('hidden');
+}
+function hidePlanPopup() { document.getElementById('planPopup').classList.add('hidden'); }
+
+function showWelcomePopup() {
+  const popup = document.getElementById('loginPopup');
+  document.getElementById('loginTitle').textContent = '🎉 환영합니다!';
+  document.getElementById("loginSub").textContent = "50문제 무료 체험이 시작되었습니다. 지금 바로 학습해보세요!";
+  document.querySelector('.auth-features').innerHTML = `
+    <div class="auth-feature-item">전체 248문제 + 상세 해설</div>
+    <div class="auth-feature-item">오답노트 & 즐겨찾기</div>
+    <div class="auth-feature-item">랜덤 학습</div>
+    <div class="auth-feature-item">3일 무료 이용 시작!</div>`;
+  document.querySelector('.btn-google-login').style.display='none';
+  document.querySelector('.auth-sheet-close').textContent='학습 시작하기!';
+  document.querySelector('.auth-sheet-close').style.background='linear-gradient(135deg,#185FA5,#0C447C)';
+  document.querySelector('.auth-sheet-close').style.color='#fff';
+  popup.classList.remove('hidden');
+}
+
+// ===== 이용권 선택 & 신청 =====
+function selectPlan(days, price) {
+  selectedPlanDays = days;
+  selectedPlanPrice = price;
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('plan'+days).classList.add('selected');
+  document.getElementById('btnPayment').textContent = `${price.toLocaleString()}원 입금 완료 신청`;
+}
+
+async function submitPayment() {
+  if (!currentUser) { showLoginPopup(); return; }
+  const depositorName = document.getElementById('depositorName').value.trim();
+  if (!depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
+  const cert = activeCertId();
+  const certName = certFull(cert);
+  const planNames = {7:'Basic (7일)',14:'Standard (14일)',28:'Premium (28일)'};
+  if (!confirm(`[${certName}] ${planNames[selectedPlanDays]} - ${selectedPlanPrice.toLocaleString()}원
+입금자: ${depositorName}
+입금 완료 신청을 하시겠어요?`)) return;
+  if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
+  try {
+    const expireAt = new Date();
+    expireAt.setDate(expireAt.getDate() + selectedPlanDays);
+    // 결제 신청 기록 (즉시 자동승인 — 입금 미확인 시 관리자가 수동 철회)
+    await db.collection('payments').add({
+      uid: currentUser.uid,
+      email: currentUser.email,
+      displayName: currentUser.displayName,
+      depositorName,
+      certType: cert,
+      certName,
+      planDays: selectedPlanDays,
+      price: selectedPlanPrice,
+      status: 'auto_approved',
+      autoApproved: true,
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // 이용권 즉시 활성화 (할인코드 적용과 동일 방식)
+    const upd = {
+      ['entitlements.'+cert+'.plan']: 'ACTIVE',
+      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
+      ['entitlements.'+cert+'.planDays']: selectedPlanDays
+    };
+    if (cert === 'bodybuilding') { upd.plan = 'ACTIVE'; upd.expireAt = firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays = selectedPlanDays; }
+    await db.collection('users').doc(currentUser.uid).update(upd);
+    userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = selectedPlanDays;
+    syncPlanMirror();
+    updateAuthBar();
+    hidePlanPopup();
+    alert('✅ 이용권이 즉시 활성화되었습니다!\n만료일: ' + expireAt.toLocaleDateString('ko-KR') + '\n(입금 확인 후 유지됩니다.)');
+    refresh();
+  } catch(e) {
+    alert('오류가 발생했습니다: ' + e.message);
+  }
+}
+
+// ===== FREE_TRIAL 카운트 저장 =====
+async function saveTrialCount(cert) {
+  if (!currentUser) return;
+  cert = cert || activeCertId();
+  try {
+    const upd = { ['entitlements.'+cert+'.trialCount']: userEnt[cert].trialCount };
+    if (cert === 'bodybuilding') upd.trialCount = userEnt.bodybuilding.trialCount; // 레거시 미러
+    await db.collection('users').doc(currentUser.uid).update(upd);
+  } catch(e) { console.error('trialCount 저장 오류:', e); }
+}
+
+// ===== 할인코드 =====
+async function applyDiscount() {
+  if (!currentUser) { showLoginPopup(); return; }
+  const code = document.getElementById('discountInput').value.trim().toUpperCase();
+  const msgEl = document.getElementById('discountMsg');
+  if (!code) return;
+  msgEl.style.display = 'none';
+  try {
+    const ref = db.collection('discountCodes').doc(code);
+    const doc = await ref.get();
+    if (!doc.exists || doc.data().used) {
+      msgEl.className = 'discount-msg error';
+      msgEl.textContent = '유효하지 않거나 이미 사용된 코드입니다.';
+      msgEl.style.display = 'block';
+      return;
+    }
+    const data = doc.data();
+    const cert = activeCertId();
+    // 코드에 certType이 지정돼 있으면 해당 시험에서만 사용 가능 (없으면 현재 시험에 적용)
+    if (data.certType && data.certType !== cert) {
+      const need = data.certType === 'appraiser' ? '감정평가사' : '생체2급';
+      msgEl.className = 'discount-msg error';
+      msgEl.textContent = `이 코드는 ${need} 전용입니다. 해당 시험에서 사용해주세요.`;
+      msgEl.style.display = 'block';
+      return;
+    }
+    const expireAt = new Date();
+    expireAt.setDate(expireAt.getDate() + (data.days || 7));
+    // 코드 사용 처리
+    await ref.update({
+      used: true,
+      usedBy: currentUser.uid,
+      usedByEmail: currentUser.email,
+      usedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // 유저 플랜 활성화 (현재 보고 있는 시험에 적용)
+    const upd = {
+      ['entitlements.'+cert+'.plan']: 'ACTIVE',
+      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
+      ['entitlements.'+cert+'.planDays']: data.days || 7
+    };
+    if (cert === 'bodybuilding') { // 레거시 미러
+      upd.plan = 'ACTIVE';
+      upd.expireAt = firebase.firestore.Timestamp.fromDate(expireAt);
+      upd.planDays = data.days || 7;
+    }
+    await db.collection('users').doc(currentUser.uid).update(upd);
+    userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = data.days || 7;
+    syncPlanMirror();
+    updateAuthBar();
+    hidePlanPopup();
+    msgEl.style.display = 'none';
+    alert('이용권이 적용되었습니다! 만료일: ' + expireAt.toLocaleDateString('ko-KR'));
+    refresh();
+  } catch(e) {
+    msgEl.className = 'discount-msg error';
+    msgEl.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+    msgEl.style.display = 'block';
+  }
+}
+
+// ===== 오류 신고 =====
+let selectedReportType = '';
+
+function openReport() {
+  const card = filtered[current];
+  if (!card) return;
+  document.getElementById('reportSubTitle').textContent = card.q.length > 30 ? card.q.slice(0,30)+'...' : card.q;
+  selectedReportType = '';
+  document.querySelectorAll('.report-type').forEach(t => t.classList.remove('selected'));
+  document.getElementById('reportDetail').value = '';
+  document.getElementById('reportSheet').classList.remove('hidden');
+}
+
+function closeReport() {
+  document.getElementById('reportSheet').classList.add('hidden');
+}
+
+function selectReportType(el, type) {
+  selectedReportType = type;
+  document.querySelectorAll('.report-type').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function submitReport() {
+  if (!selectedReportType) { alert('오류 유형을 선택해주세요.'); return; }
+  const detail = document.getElementById('reportDetail').value.trim();
+  const card = filtered[current];
+  try {
+    await db.collection('reports').add({
+      question: card.q,
+      subject: card.s,
+      cardIndex: D.findIndex(c => c.q === card.q && c.s === card.s),
+      certType: activeCertId(),
+      errorType: selectedReportType,
+      detail: detail || '',
+      reporterUid: currentUser ? currentUser.uid : 'guest',
+      reporterEmail: currentUser ? currentUser.email : '비회원',
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeReport();
+    alert('✅ 신고가 접수되었습니다. 감사합니다!');
+  } catch(e) {
+    alert('오류가 발생했습니다: ' + e.message);
+  }
+}
+
+/* ===== 고객센터 (reports 컬렉션 재사용) ===== */
+let selectedCSType = '';
+function openCS() {
+  selectedCSType = '';
+  document.querySelectorAll('#csSheet .report-type').forEach(t => t.classList.remove('selected'));
+  document.getElementById('csDetail').value = '';
+  document.getElementById('csSheet').classList.remove('hidden');
+}
+function closeCS() { document.getElementById('csSheet').classList.add('hidden'); }
+function selectCSType(el, type) {
+  selectedCSType = type;
+  document.querySelectorAll('#csSheet .report-type').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+async function submitCS() {
+  if (!selectedCSType) { alert('카테고리를 선택해주세요.'); return; }
+  const detail = document.getElementById('csDetail').value.trim();
+  if (!detail) { alert('내용을 입력해주세요.'); return; }
+  try {
+    await db.collection('reports').add({
+      question: '[고객센터]',
+      subject: '고객센터',
+      cardIndex: -1,
+      certType: (typeof activeCert!=='undefined' && activeCert) ? activeCert : 'general',
+      errorType: selectedCSType,
+      detail: detail,
+      reporterUid: currentUser ? currentUser.uid : 'guest',
+      reporterEmail: currentUser ? currentUser.email : '비회원',
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeCS();
+    alert('✅ 접수되었습니다. 소중한 의견 감사합니다!');
+  } catch(e) {
+    alert('오류가 발생했습니다: ' + e.message);
+  }
+}
+
+// ===== 접근 권한 체크 (시험별) =====
+function canAccess(cert) {
+  cert = cert || activeCertId();
+  const e = userEnt[cert] || { plan:'GUEST', trialCount:0 };
+  const plan = e.plan;
+  if (plan === 'GUEST') {
+    if ((guestCounts[cert]||0) >= GUEST_LIMIT) {
+      showLoginPopup('guest_limit');
+      return false;
+    }
+    return true;
+  }
+  if (plan === 'FREE_TRIAL') {
+    if ((e.trialCount||0) >= TRIAL_LIMIT) {
+      showPlanPopup();
+      return false;
+    }
+    return true;
+  }
+  if (plan === 'EXPIRED') {
+    showPlanPopup();
+    return false;
+  }
+  return true; // ACTIVE
+}
+
+const SUBJS=['보디빌딩규정','운동생리학','스포츠영양학','웨이트트레이닝','응급처치'];
+const ALL_SUBJS=['전체',...SUBJS];
+const MILESTONES=[
+  {n:45,stars:'⭐⭐',msg:'좋은 출발이에요! 계속 달려봐요 🏃\u200d♀️'},
+  {n:100,stars:'⭐⭐⭐',msg:'100문제 돌파! 정말 대단해요 🎉'},
+  {n:200,stars:'🌟🌟🌟',msg:'200문제! 실력이 쑥쑥 크고 있어요 💪'},
+  {n:300,stars:'✨✨✨✨',msg:'300문제! 합격이 보이기 시작했어요 👑'},
+  {n:1000,stars:'🏆🏆🏆🏆🏆',msg:'1000문제 완전 정복! 당신은 전설입니다 🥇'},
+];
+const passedMilestones=new Set();
+const D=[];
+function q(s,question,answer,star,learn,time){var st=star||3;st=st<=2?1:(st===3?2:3);D.push({s,q:question,a:answer,learn:learn||null,star:st,time:time||0,w:false,fav:false});}
+
+/* ===== 데이터 ===== */
+
+const B='보디빌딩규정';
+const EP='운동생리학';
+const NU='스포츠영양학';
+const WT='웨이트트레이닝';
+const FA='응급처치';
+let cards=[...D];
+let filtered=[...cards];
+let current=0;
+let reviewMode=false;
+let currentSubj='전체';
+let isFlipped=false;
+let learnOpen=false;
+let currentStar=0;
+let solveCount=0;
+
+/* ===== 자동복습(Spaced Repetition) 코어 ===== */
+const SR_CERT='bodybuilding';
+const SR_DAY=86400000;
+const SR_DAILY_CAP=40;
+const SR_DEFAULT_EXAM={ bodybuilding:'2026-06-23' };
+let srProgress={};        // { 'B_1': {st,nx,lr,res,rc,w} }
+let srExamOverride={};     // { bodybuilding:'YYYY-MM-DD' }
+let srMode='mix';          // 'new' | 'review' | 'mix'
+let srSaveTimer=null, srDirtyCount=0;
+
+function srExamDateOf(cert){ const s=srExamOverride[cert]||SR_DEFAULT_EXAM[cert]; return s?new Date(s+'T23:59:59'):null; }
+function srDaysLeftOf(cert){ const d=srExamDateOf(cert); return d?Math.ceil((d-Date.now())/SR_DAY):null; }
+function srExamDate(){ return srExamDateOf(SR_CERT); }
+function srDaysLeft(){ return srDaysLeftOf(SR_CERT); }
+function srCorrectInterval(streak,cert){
+  cert=cert||SR_CERT;
+  const base=[7,14,30,60,90];
+  let days=base[Math.min(streak,5)-1]||90;
+  const dl=srDaysLeftOf(cert);
+  if(dl!=null&&dl>0){
+    if(dl<=7) days=Math.min(days,2);
+    else if(dl<=21) days=Math.min(days,Math.max(1,Math.round(days/2)));
+    days=Math.min(days,Math.max(1,dl));
+  }
+  return days;
+}
+function srVagueInterval(cert){ const dl=srDaysLeftOf(cert||SR_CERT); let d=3; if(dl!=null&&dl>0){ d=dl<=7?1:Math.min(3,dl); } return d; }
+
+/* 코어: (cert,id) 기준 — 구술·객관식 공용 */
+function srGetK(cert,id){ return srProgress[cert+'|'+id]; }
+function srMasteryK(cert,id){ const p=srGetK(cert,id); if(!p||!p.rc) return 'new'; if(p.w||!p.st) return 'weak'; if(p.st>=5) return 'master'; return 'learning'; }
+function srDueK(cert,id){ const p=srGetK(cert,id); return !!(p&&p.rc>0&&(p.nx||0)<=Date.now()); }
+function srDueCertCount(cert){ let n=0,pre=cert+'|',now=Date.now(); for(const k in srProgress){ if(k.indexOf(pre)===0){ const p=srProgress[k]; if(p&&p.rc>0&&(p.nx||0)<=now) n++; } } return n; }
+function srRateK(cert,id,result){          // 0 틀림 / 1 애매 / 2 정확
+  if(!id) return;
+  const k=cert+'|'+id, now=Date.now();
+  let p=srProgress[k]||{st:0,nx:0,lr:0,res:null,rc:0,cor:0,w:false};
+  p.rc=(p.rc||0)+1; p.lr=now; p.res=result;
+  if(result===2) p.cor=(p.cor||0)+1;     // 정답 누계 (과목 정확도·예상점수용)
+  if(result===0){ p.st=0; p.w=true; p.nx=now+1*SR_DAY; }
+  else if(result===1){ p.nx=now+srVagueInterval(cert)*SR_DAY; }
+  else { p.st=(p.st||0)+1; p.w=false; p.nx=now+srCorrectInterval(p.st,cert)*SR_DAY; }
+  srProgress[k]=p;
+  return p;
+}
+
+/* 구술(플래시카드) 래퍼 */
+function srKey(card){ return card&&card.id?(SR_CERT+'|'+card.id):null; }
+function srGet(card){ const k=srKey(card); return k?srProgress[k]:null; }
+function srIsNew(card){ const p=srGet(card); return !p||!p.rc; }
+function srDue(card){ const p=srGet(card); return !!(p&&p.rc>0&&(p.nx||0)<=Date.now()); }
+function srMastery(card){ return card&&card.id?srMasteryK(SR_CERT,card.id):'new'; }
+function srTodayCount(){ return cards.filter(srDue).length; }
+function srRate(card,result){
+  if(!card||!card.id) return;
+  const p=srRateK(SR_CERT,card.id,result);
+  card.w=!!(p&&p.w);
+  const idx=cards.findIndex(c=>c.id===card.id); if(idx!==-1) cards[idx].w=card.w;
+}
+
+/* 객관식 채점 → 복습 연결 (정답=정확, 오답=틀림. 애매 없음. ans:0 제외) */
+function mqHasAnswer(q){ return q && (Array.isArray(q.ans)? q.ans.length>0 : q.ans>0); }
+function srRateMcq(cert,q,selected){
+  if(!mqHasAnswer(q)) return;            // 정답 미확정 문항은 복습 집계 제외
+  srRateK(cert, q.id, isCorr(q.ans,selected)?2:0);
+}
+const SR_MASTER_LABEL={new:'신규',weak:'미숙',learning:'학습중',master:'숙달'};
+
+let solveCountAfterSR=true; // marker
+
+function getWrongCount(){return cards.filter(c=>c.w).length;}
+function getFiltered(){
+  let b=cards;
+  if(srMode==='new') b=b.filter(srIsNew);
+  else if(srMode==='review') b=b.filter(srDue);
+  // 'mix' = 전체 (신규+학습한 카드 모두)
+  if(currentSubj!=='전체') b=b.filter(c=>c.s===currentSubj);
+  if(currentStar!==0) b=b.filter(c=>c.star===currentStar);
+  if(srMode==='review'){
+    b=b.slice().sort((x,y)=>{ const px=srGet(x)||{},py=srGet(y)||{};
+      return (px.nx||0)-(py.nx||0) || (y.star||0)-(x.star||0); });
+    if(b.length>SR_DAILY_CAP) b=b.slice(0,SR_DAILY_CAP);   // 하루 복습 상한
+  }
+  return b;
+}
+function isSubjEnd(){return currentSubj!=='전체'&&!reviewMode&&current===filtered.length-1;}
+
+function scrollSubj(dir){
+  const bar=document.getElementById('subjectBar');
+  bar.scrollBy({left:dir*120,behavior:'smooth'});
+  setTimeout(updateSubjArrows,300);
+}
+function updateSubjArrows(){
+  const bar=document.getElementById('subjectBar');
+  const l=document.getElementById('arrowL');
+  const r=document.getElementById('arrowR');
+  if(!l||!r)return;
+  l.classList.toggle('hidden',bar.scrollLeft<=2);
+  r.classList.toggle('hidden',bar.scrollLeft+bar.clientWidth>=bar.scrollWidth-2);
+}
+function scrollStar(dir){
+  const bar=document.getElementById('starBar');
+  bar.scrollBy({left:dir*120,behavior:'smooth'});
+  setTimeout(updateStarArrows,300);
+}
+function updateStarArrows(){
+  const bar=document.getElementById('starBar');
+  const l=document.getElementById('starArrowL');
+  const r=document.getElementById('starArrowR');
+  if(!l||!r)return;
+  l.classList.toggle('hidden',bar.scrollLeft<=2);
+  r.classList.toggle('hidden',bar.scrollLeft+bar.clientWidth>=bar.scrollWidth-2);
+}
+
+function buildBar(){
+  const bar=document.getElementById('subjectBar');
+  bar.innerHTML='';
+  ALL_SUBJS.forEach(s=>{
+    const hasW=s==='전체'?cards.some(c=>c.w):cards.filter(c=>c.s===s).some(c=>c.w);
+    const btn=document.createElement('button');
+    btn.className='subj-btn'+(s===currentSubj?' active':'')+(hasW?' has-wrong':'');
+    btn.textContent=s==='전체'?'전체 \u2736':s;
+    btn.onclick=()=>{currentSubj=s;current=0;isFlipped=false;learnOpen=false;refresh();};
+    bar.appendChild(btn);
+  });
+  setTimeout(()=>{
+    const active=bar.querySelector('.active');
+    if(active)active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    updateSubjArrows();
+  },50);
+  bar.addEventListener('scroll',updateSubjArrows,{passive:true});
+}
+
+function buildStarBar(){
+  const bar=document.getElementById('starBar');
+  bar.innerHTML='';
+  const stars=[{n:0,label:'전체'},...[3,2,1].map(n=>({n,label:impLabel(n)}))];
+  stars.forEach(({n,label})=>{
+    const base=srMode==='new'?cards.filter(srIsNew):srMode==='review'?cards.filter(srDue):cards;
+    const pool=currentSubj==='전체'?base:base.filter(c=>c.s===currentSubj);
+    const cnt=n===0?pool.length:pool.filter(c=>c.star===n).length;
+    const btn=document.createElement('button');
+    btn.className='star-btn'+(n===currentStar?' active':'')+(cnt===0?' disabled-star':'');
+    if(cnt===0)btn.style.opacity='0.3';
+    btn.textContent=label;
+    btn.onclick=()=>{if(cnt===0)return;currentStar=n;current=0;isFlipped=false;learnOpen=false;refresh();};
+    bar.appendChild(btn);
+  });
+  setTimeout(()=>{
+    const active=bar.querySelector('.active');
+    if(active)active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    updateStarArrows();
+  },50);
+  bar.addEventListener('scroll',updateStarArrows,{passive:true});
+}
+
+function updateStats(){
+  const t=cards.length,w=getWrongCount();
+  document.getElementById('statTotal').textContent=t;
+  document.getElementById('statWrong').textContent=w;
+  document.getElementById('statDone').textContent=t>0?Math.round((t-w)/t*100)+'%':'0%';
+  document.getElementById('statCount').textContent=solveCount;
+  document.getElementById('wrongCount').textContent='오답 '+w+'개';
+}
+
+function buildLearnHTML(card){
+  if(!card.learn)return '';
+  const L=card.learn;
+  const btnLabel=learnOpen?'📖 해설 닫기 ▲':'📖 해설보기 ▼';
+  const panelDisplay=learnOpen?'':'display:none';
+  return '<div class="learn-btn-wrap"><button class="learn-btn" onclick="toggleLearn()">'+btnLabel+'</button></div>'
+    +'<div class="learn-panel" id="learnPanel" style="'+panelDisplay+'">'
+    +'<div class="learn-panel-header"><span class="learn-panel-title">📚 해설</span>'
+    +'<button class="learn-panel-close" onclick="toggleLearn()">✕</button></div>'
+    +'<div class="learn-panel-body">'+buildLearnPanel(L)+'</div>'
+    +'</div>';
+}
+
+function buildLearnPanel(data){
+  const kws=data.keywords.map(k=>'<span class="learn-keyword">'+k+'</span>').join('');
+  const pts=data.points.map(p=>'<li>'+p+'</li>').join('');
+  return '<div class="learn-section"><div class="learn-section-title">핵심 개념</div>'
+    +'<div class="learn-section-body">'+data.concept+'</div></div>'
+    +'<div class="learn-section"><div class="learn-section-title">포인트 정리</div>'
+    +'<div class="learn-section-body"><ul>'+pts+'</ul></div></div>'
+    +'<div class="learn-section"><div class="learn-section-title">시험관 답변 예시</div>'
+    +'<div class="learn-section-body">'+data.extra+'</div></div>'
+    +'<div class="learn-section"><div class="learn-section-title">핵심 키워드</div>'
+    +'<div class="learn-section-body">'+kws+'</div></div>';
+}
+
+function toggleLearn(){
+  learnOpen=!learnOpen;
+  const panel=document.getElementById('learnPanel');
+  const btns=document.querySelectorAll('.learn-btn');
+  if(panel)panel.style.display=learnOpen?'block':'none';
+  btns.forEach(b=>{b.textContent=learnOpen?'📖 해설 닫기 ▲':'📖 해설보기 ▼';});
+}
+
+function renderCard(){
+  filtered=getFiltered();
+  const area=document.getElementById('cardArea');
+  const rateRow=document.getElementById('rateRow');
+  if(filtered.length===0){
+    const msg=srMode==='review'?'<strong>오늘 복습할 카드가 없어요!</strong><br>잘하고 있어요 ✨'
+             :srMode==='new'?'<strong>새 카드를 모두 학습했어요!</strong><br>복습 모드로 점검해 보세요'
+             :'카드가 없어요.';
+    area.innerHTML='<div class="empty"><div class="emoji">'+(srMode==='review'?'🎉':'🌸')+'</div><p>'+msg+'</p></div>';
+    document.getElementById('progressText').textContent='0 / 0';
+    document.getElementById('progressBar').style.width='0%';
+    if(rateRow) rateRow.innerHTML='';
+    return;
+  }
+  if(current>=filtered.length)current=filtered.length-1;
+  if(current<0)current=0;
+  const card=filtered[current];
+  const pct=Math.round((current+1)/filtered.length*100);
+  document.getElementById('progressText').textContent=(current+1)+' / '+filtered.length;
+  document.getElementById('progressBar').style.width=pct+'%';
+
+  // 숙달도 색뱃지
+  const mst=srMastery(card);
+  const dotCls={new:'sr-new',weak:'sr-weak',learning:'sr-learning',master:'sr-master'}[mst];
+  const statusDot='<div class="sr-dot '+dotCls+'" title="'+SR_MASTER_LABEL[mst]+'">'+SR_MASTER_LABEL[mst]+'</div>';
+  const starCount=card.star||0;
+  const starDot=starCount>0?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
+  const learnHTML=isFlipped?buildLearnHTML(card):'';
+  const reportBtn=isFlipped?`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`:'';
+  const hintText=isFlipped?'':'탭해서 답 확인 💫';
+  area.innerHTML=
+    '<div class="subj-tag">'+card.s+'</div>'
+    +'<div class="card-scene">'
+    +'<div class="card-inner'+(isFlipped?' flipped':'')+'" id="ci" onclick="flipCard()">'
+    +'<div class="card-face card-front">'+statusDot+starDot
+    +'<div class="card-label">Question</div>'
+    +'<div class="card-text">'+card.q+'</div></div>'
+    +'<div class="card-face card-back">'
+    +'<div class="card-label">Answer</div>'
+    +'<div class="card-text">'+card.a+'</div></div>'
+    +'</div></div>'
+    +'<div class="tap-hint">'+hintText+'</div>'
+    +learnHTML
+    +reportBtn;
+
+  // 하단 평가 버튼 (답 확인 후에만 노출)
+  if(rateRow){
+    if(!isFlipped){
+      rateRow.innerHTML=
+        '<button class="rate-prev" '+(current===0?'disabled':'')+' onclick="navigate(-1)">◀ 이전</button>'
+        +'<div class="rate-hint">카드를 탭해 답을 확인하세요</div>';
+    } else {
+      const dl=srCorrectInterval((srGet(card)&&srGet(card).st||0)+1);
+      rateRow.innerHTML=
+        '<button class="rb rb-wrong" onclick="rate(0)">❌<span>틀림</span><i>내일 다시</i></button>'
+        +'<button class="rb rb-vague" onclick="rate(1)">🤔<span>애매함</span><i>'+srVagueInterval()+'일 후</i></button>'
+        +'<button class="rb rb-ok" onclick="rate(2)">✅<span>정확함</span><i>'+dl+'일 후</i></button>';
+    }
+  }
+}
+
+function flipCard(){
+  isFlipped=!isFlipped;
+  if(!isFlipped) learnOpen=false;
+  renderCard();
+}
+
+function countUp(){
+  solveCount++;
+  document.getElementById('statCount').textContent=solveCount;
+  checkMilestone(solveCount);
+  srSaveDebounced();
+}
+
+/* ===== SR 저장(디바운스) ===== */
+function srSaveDebounced(force){
+  srDirtyCount++;
+  if(force||srDirtyCount>=5){ srFlush(); return; }
+  if(srSaveTimer) clearTimeout(srSaveTimer);
+  srSaveTimer=setTimeout(srFlush,4000);
+}
+function srFlush(){
+  srDirtyCount=0; if(srSaveTimer){clearTimeout(srSaveTimer);srSaveTimer=null;}
+  if(currentUser) saveUserData();
+  else { try{ localStorage.setItem('sr:'+SR_CERT, JSON.stringify({p:srProgress,e:srExamOverride,c:solveCount})); }catch(_){} }
+}
+window.addEventListener('beforeunload',()=>{ if(srDirtyCount>0) srFlush(); });
+
+/* ===== SR 평가 (틀림0/애매1/정확2) ===== */
+function rate(result){
+  filtered=getFiltered();
+  if(!filtered.length) return;
+  if(!canAccess('bodybuilding')) return;
+  const card=filtered[current];
+  srRate(card,result);
+  countUp();
+  { const e=userEnt.bodybuilding;
+    if(e.plan==='GUEST') guestCounts.bodybuilding++;
+    if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
+  isFlipped=false; learnOpen=false;
+  if(srMode==='review'){
+    filtered=getFiltered();
+    if(filtered.length===0){ updateStats();updateSrBanner();buildBar();buildStarBar(); renderCard(); return; }
+    if(current>=filtered.length) current=0;
+  } else {
+    if(current<filtered.length-1) current++;
+    else { updateStats();updateSrBanner(); showComplete(); return; }
+  }
+  updateStats();updateSrBanner();buildBar();buildStarBar();
+  renderCard();
+}
+
+function setSrMode(m){
+  srMode=m; current=0; isFlipped=false; learnOpen=false;
+  refresh();
+}
+function updateModeButtons(){
+  [['modeNew','new'],['modeReview','review'],['modeMix','mix']].forEach(([id,m])=>{
+    const b=document.getElementById(id); if(b) b.classList.toggle('mode-on',srMode===m);
+  });
+}
+function updateSrBanner(){
+  const el=document.getElementById('srBanner'); if(!el) return;
+  const due=srTodayCount(); const dl=srDaysLeft();
+  const dtxt=dl!=null?(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료'):'';
+  el.innerHTML='<div class="sr-banner-l"><b>'+(dtxt?dtxt+' · ':'')+'오늘 복습 '+due+'개</b>'
+    +'<span class="sr-exam" onclick="event.stopPropagation();srEditExam()">시험일 '+(srExamOverride[SR_CERT]||SR_DEFAULT_EXAM[SR_CERT]||'미설정')+' ✎</span></div>'
+    +'<div class="sr-banner-go">'+(srMode==='review'?'복습 중':'복습 시작')+' →</div>';
+}
+function srBannerClick(){ setSrMode('review'); }
+function checkMilestone(n){
+  const m=MILESTONES.find(m=>m.n===n&&!passedMilestones.has(n));
+  if(!m)return;
+  passedMilestones.add(n);
+  document.getElementById('msStars').textContent=m.stars;
+  document.getElementById('msNum').textContent=n.toLocaleString();
+  document.getElementById('msMsg').textContent=m.msg;
+  document.getElementById('milestoneBox').classList.remove('hidden');
+}
+function closeMilestone(){document.getElementById('milestoneBox').classList.add('hidden');}
+function srEditExam(){
+  const cur=srExamOverride[SR_CERT]||SR_DEFAULT_EXAM[SR_CERT]||'';
+  const v=prompt('시험일을 입력하세요 (YYYY-MM-DD)',cur);
+  if(!v) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ alert('날짜 형식이 올바르지 않습니다. 예: 2026-06-23'); return; }
+  srExamOverride[SR_CERT]=v; srFlush(); refresh();
+}
+
+function navigate(dir){
+  if(dir===1&&current<filtered.length-1){ isFlipped=false;learnOpen=false;current++;renderCard(); }
+  else if(dir===-1&&current>0){ isFlipped=false;learnOpen=false;current--;renderCard(); }
+}
+
+function toggleWrong(){
+  if(!currentUser){showLoginPopup();return;}
+  filtered=getFiltered();
+  if(!filtered.length)return;
+  const card=filtered[current];
+  const idx=cards.findIndex(c=>c.q===card.q&&c.s===card.s);
+  if(idx!==-1)cards[idx].w=true;
+  updateStats();buildBar();
+  saveUserData();
+  // 오답 표시 후 다음 문제로 이동
+  if(current<filtered.length-1){
+    if(!canAccess('bodybuilding'))return;
+    countUp();
+    { const e=userEnt.bodybuilding;
+      if(e.plan==='GUEST') guestCounts.bodybuilding++;
+      if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
+    isFlipped=false;learnOpen=false;current++;renderCard();
+  } else if(isSubjEnd()){
+    showComplete();
+  } else {
+    renderCard();
+  }
+}
+
+function showComplete(){
+  filtered=getFiltered();
+  const total=filtered.length;
+  const wrongN=filtered.filter(c=>c.w).length;
+  const correct=total-wrongN;
+  const pct=Math.round(correct/total*100);
+  const emoji=pct>=80?'🏆':pct>=60?'💪':'📚';
+  document.getElementById('ovIcon').textContent=emoji;
+  document.getElementById('ovTitle').textContent=currentSubj+' 완료!';
+  document.getElementById('ovSub').textContent=total+'문제를 모두 학습했어요 🌸';
+  document.getElementById('ovStats').innerHTML=
+    '<div class="ov-stat"><div class="v">'+total+'</div><div class="l">전체</div></div>'
+    +'<div class="ov-stat w"><div class="v">'+wrongN+'</div><div class="l">오답</div></div>'
+    +'<div class="ov-stat d"><div class="v">'+pct+'%</div><div class="l">정답률</div></div>';
+  const subjIdx=SUBJS.indexOf(currentSubj);
+  const nextSubj=subjIdx>=0&&subjIdx<SUBJS.length-1?SUBJS[subjIdx+1]:null;
+  let btns='';
+  if(wrongN>0)btns+='<button class="ov-btn ov-wrong" onclick="startWrongReview()">❌ 오답 '+wrongN+'개 복습하기</button>';
+  if(nextSubj)btns+='<button class="ov-btn ov-next" onclick="goNext(\''+nextSubj+'\')">다음 과목: '+nextSubj+' →</button>';
+  btns+='<button class="ov-btn ov-retry" onclick="retrySubj()">🔄 처음부터 다시</button>';
+  document.getElementById('ovBtns').innerHTML=btns;
+  document.getElementById('completeOv').classList.remove('hidden');
+}
+
+function hideComplete(){document.getElementById('completeOv').classList.add('hidden');}
+function startWrongReview(){hideComplete();setSrMode('review');}
+function goNext(s){hideComplete();currentSubj=s;current=0;isFlipped=false;learnOpen=false;refresh();}
+function retrySubj(){hideComplete();current=0;isFlipped=false;learnOpen=false;renderCard();}
+
+function toggleReview(){
+  reviewMode=!reviewMode;current=0;isFlipped=false;learnOpen=false;
+  const btn=document.getElementById('btnReview');
+  btn.classList.toggle('review-on',reviewMode);
+  btn.textContent=reviewMode?'📋 전체보기':'❌ 오답만';
+  document.getElementById('modePill').className='mode-pill'+(reviewMode?' wrong':'');
+  document.getElementById('modePill').textContent=reviewMode?'오답 모드':'전체';
+  refresh();
+}
+function shuffle(){
+  for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
+  current=0;isFlipped=false;learnOpen=false;refresh();
+}
+function resetWrong(){
+  if(!confirm('오답 표시를 모두 초기화할까요?'))return;
+  cards.forEach(c=>c.w=false);
+  if(reviewMode){reviewMode=false;document.getElementById('btnReview').classList.remove('review-on');document.getElementById('modePill').className='mode-pill';document.getElementById('modePill').textContent='전체';}
+  current=0;isFlipped=false;learnOpen=false;refresh();
+}
+function refresh(){buildBar();buildStarBar();updateStats();updateSrBanner();updateModeButtons();renderCard();}
+
+let tx=0;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx;
+  if(Math.abs(dx)>55){if(dx<0&&current<filtered.length-1)navigate(1);else if(dx>0&&current>0)navigate(-1);}
+},{passive:true});
+
+checkInAppBrowser();
+
+const APP_QB={civil:{name:'민법',sets:[]},law:{name:'감정평가관계법규',sets:[]},econ:{name:'경제학원론',sets:[]},acct:{name:'회계학',sets:[]},real:{name:'부동산학원론',sets:[]}};
+
+/* ===== 객관식(MCQ) 엔진 — 시험별 문제은행 (감정평가사 / 공인중개사 1·2차 …) ===== */
+const ansArr=a=>Array.isArray(a)?a:[a];
+const isCorr=(qa,sel)=>sel!==undefined&&sel!==null&&ansArr(qa).includes(sel);
+const ansLabel=a=>ansArr(a).join(', ');
+// 공인중개사 문제은행 골격 (문제는 추후 입력). 차수 라벨은 시험명으로 구분.
+const RE1_QB = {
+  re1_intro: { name:'부동산학개론', sets:[] },
+  re1_civil: { name:'민법 및 민사특별법', sets:[] }
+};
+const RE2_QB = {
+  re2_law:    { name:'공인중개사법령 및 중개실무', sets:[] },
+  re2_public: { name:'부동산공법', sets:[] },
+  re2_tax:    { name:'부동산공시법령 및 세법', sets:[] }
+};
+// 한국사능력검정시험 심화 — 과목 구분 없이 회차별 50문항(5지선다). 문제는 추후 입력.
+const KSH_QB = {
+  ksh: { name:'한국사 심화', sets:[] }
+};
+// 시험별 문제은행 레지스트리
+const MCQ_EXAMS = {
+  appraiser:     { name:'감정평가사',     qb: APP_QB },
+  realestate1:   { name:'공인중개사 1차', qb: RE1_QB },
+  realestate2:   { name:'공인중개사 2차', qb: RE2_QB },
+  koreanhistory: { name:'한국사능력검정시험 심화', qb: KSH_QB }
+};
+const MCQ_CERTS = Object.keys(MCQ_EXAMS);
+function isMcqCert(c){ return MCQ_CERTS.indexOf(c)!==-1; }
+let mqCert='appraiser';                 // 현재 보고 있는 객관식 시험
+function qbOf(cert){ return MCQ_EXAMS[cert].qb; }
+function curQB(){ return qbOf(mqCert); }
+function curOrder(){ return Object.keys(curQB()); }
+// qid → {cert, sub} 전역 인덱스 (네임스페이스 저장용). qid는 시험 간 고유하게 구성.
+const MCQ_QID2CS={};
+function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub};}))); }); }
+rebuildQid();
+let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
+let mqTimer=null, mqTimeLeft=0;
+let mqMode='all', mqList=null;          // 'all' | 'wrong' | 'review'
+let mqReview=false;                       // SR 복습 세션 여부
+let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
+function mqQuestions(){ return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
+// 중요도(star 1~3)/소요시간(time 1~3): 값 미지정(0)이면 표시 안 함. 값은 추후 별도 입력.
+function impBadge(q){ const s=impLabel(q.star||0); return s ? '<span class="imp">'+s+'</span>' : ''; }
+function timeBadge(q){ const v=q.time||0; if(!v) return ''; const lab={1:'빠름',2:'보통',3:'오래'}[v]||''; return '<span class="tmark t'+v+'">⌛ '+lab+'</span>'; }
+// 진행상태 저장(이어서 풀기)
+function mqPKey(sub,set){ return 'certlab_mcq_p_'+mqCert+'_'+sub+'_'+set; }
+function mqSaveProgress(){ if(mqMode!=='all') return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft})); }catch(e){} }
+function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,set)); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
+function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
+function mqStopTimer(){ if(mqTimer){ clearInterval(mqTimer); mqTimer=null; } }
+function mqStartTimer(){
+  mqStopTimer();
+  mqTimer=setInterval(()=>{
+    if(mqScreen!=='exam'){ mqStopTimer(); return; }
+    mqTimeLeft--;
+    if(mqTimeLeft<=0){ mqTimeLeft=0; mqStopTimer(); mqResult(); return; }
+    mqSaveProgress();
+    const el=document.getElementById('mqTimer');
+    if(el){ el.textContent=mqFmt(mqTimeLeft); if(mqTimeLeft<=300) el.classList.add('red'); }
+    else { mqStopTimer(); }
+  },1000);
+}
+
+function renderMCQ(){
+  const root=document.getElementById('mcqRoot'); if(!root) return;
+  if(mqScreen==='exam') return renderMcqExam(root);
+  return renderMcqHome(root);
+}
+function renderMcqHome(root){
+  let html='';
+  const due=srDueCertCount(mqCert);
+  if(due>0) html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
+  html+='<div class="sec-lbl">과목 선택</div>';
+  curOrder().forEach(id=>{
+    const s=curQB()[id]; const open=!!mqOpen[id];
+    const total=s.sets.reduce((a,st)=>a+st.questions.length,0);
+    html+='<div class="scard"><div class="scard-hd" onclick="mqToggle(\''+id+'\')">'+
+      '<span class="sdot"></span><span class="snm">'+s.name+'</span>'+
+      '<span class="scard-set-label">'+s.sets.length+'회차 · '+total+'문항</span>'+
+      '<span class="scard-arrow'+(open?' open':'')+'">▼</span></div>';
+    if(open){
+      html+='<div class="scard-body">';
+      if(s.sets.length===0){ html+='<div class="srow"><span class="swc" style="padding:4px 0">문제 준비 중입니다.</span></div>'; }
+      s.sets.forEach((st,si)=>{
+        const setWrong=st.questions.filter(q=>appWrong[q.id]).length;
+        const hasSave=!!mqLoadProgress(id,si);
+        const goBtns = hasSave
+          ? '<button class="b-go" onclick="resumeMcqExam(\''+id+'\','+si+')">이어풀기</button><button class="b-fresh" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">처음부터</button>'
+          : '<button class="b-go" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">풀기</button>';
+        html+='<div class="srow"><div class="srow-left"><span class="syr">'+st.label+'</span>'+
+          '<span class="swc">'+st.questions.length+'문항'+(setWrong>0?' · 오답 '+setWrong:'')+'</span></div>'+
+          '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+'</div></div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  root.innerHTML=html;
+}
+function mqToggle(id){ mqOpen[id]=!mqOpen[id]; renderMCQ(); }
+function mcqMasteryBadge(q){ const m=srMasteryK(mqCert,q.id); if(m==='new') return ''; const cls={weak:'sr-weak',learning:'sr-learning',master:'sr-master'}[m]; return '<span class="mq-mst '+cls+'">'+SR_MASTER_LABEL[m]+'</span>'; }
+function startMcqReview(){
+  const qb=curQB(); const due=[];
+  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)) due.push(q); })); });
+  if(!due.length){ alert('오늘 복습할 문제가 없습니다.'); return; }
+  mqStopTimer();
+  mqReview=true; mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqAns={}; mqIdx=0;
+  mqList=due; mqTimeLeft=due.length*60;
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function startMcqExam(id,si,mode){
+  mqReview=false;
+  mode=mode||'all';
+  mqStopTimer();
+  mqSub=id; mqSet=si; mqMode=mode; mqShow={};
+  const all=curQB()[id].sets[si].questions;
+  if(mode==='wrong') mqList=all.filter(q=>appWrong[q.id]);
+  else mqList=all;
+  if(!mqList.length){ alert('오답이 없습니다.'); mqList=null; return; }
+  if(mode==='all') mqClearProgress(id,si);   // 처음부터: 저장 삭제
+  mqAns={}; mqIdx=0; mqTimeLeft=mqList.length*60;
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function resumeMcqExam(id,si){
+  mqReview=false;
+  mqStopTimer();
+  const saved=mqLoadProgress(id,si);
+  if(!saved){ startMcqExam(id,si,'all'); return; }
+  mqSub=id; mqSet=si; mqMode='all'; mqShow={};
+  mqList=curQB()[id].sets[si].questions;
+  mqAns=saved.ans||{}; mqIdx=saved.idx||0; mqTimeLeft=(saved.t!=null?saved.t:mqList.length*60);
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function mqBackHome(){ mqStopTimer(); if(mqScreen==='exam'&&!mqReview) mqSaveProgress(); mqReview=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+
+function renderMcqExam(root){
+  const subObj=mqReview?null:curQB()[mqSub];
+  const sets=subObj?subObj.sets:[];
+  const examName=mqReview?'오늘의 복습':subObj.name;
+  const examSet=mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
+  const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
+  const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
+  const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
+  const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
+    if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
+    else if(sel===n)cls+=' sel';
+    return '<div class="'+cls+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div><div class="otxt">'+o+'</div></div>';
+  }).join('');
+  let expHTML='';
+  if(showExp){ const okk=isCorr(q.ans,sel);
+    let body='';
+    const hasExp=q.exp && (q.exp.s || (q.exp.o && q.exp.o.some(Boolean)));
+    if(hasExp){
+      if(q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
+      if(q.exp.o && q.exp.o.some(Boolean)){
+        body+='<div class="exp-opts">'+q.exp.o.map((t,i)=> t?('<div class="eo'+(ansArr(q.ans).includes(i+1)?' ok':'')+'"><b>'+(i+1)+'</b> '+t+'</div>'):'').join('')+'</div>';
+      }
+    } else { body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>'; }
+    expHTML='<div class="exp"><div class="al'+(okk?'':' bad')+'">'+(okk?'✓ 정답':(sel?'✕ 오답':'미응답'))+' · 정답 '+ansLabel(q.ans)+'번'+(isMulti?(ansArr(q.ans).length===5?' (전항정답)':' (복수정답)'):'')+'</div>'+body+'</div>'; }
+  const tags=(isMulti?'<span class="qmulti">'+(ansArr(q.ans).length===5?'전항정답':'복수정답')+'</span>':'')+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
+  root.innerHTML=
+    '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
+      '<div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div>'+
+      '<span class="etim'+(mqTimeLeft<=300?' red':'')+'" id="mqTimer">'+mqFmt(mqTimeLeft)+'</span></div>'+
+    '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '<div class="qcard"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div>'+
+    '<div class="qtext">'+q.q+'</div>'+(q.img?'<div class="qimg"><img src="'+q.img+'" alt=""></div>':'')+'<div class="opts">'+optHTML+'</div>'+expHTML+'</div>'+
+    '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
+    '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
+    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?'채점 ✓':'다음 ▶')+'</button></div>';
+}
+function mqPick(qid,n){
+  if(!canAccess(mqCert)) return;
+  const firstTime = mqAns[qid]===undefined;
+  mqAns[qid]=n; mqShow[qid]=false;
+  if(firstTime){
+    const q=mqQuestions().find(x=>x.id===qid);
+    if(q){ srRateMcq(mqCert,q,n); srSaveDebounced(); }
+    const e=userEnt[mqCert];
+    if(e.plan==='GUEST') guestCounts[mqCert]++;
+    if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount(mqCert); } }
+  mqSaveProgress();
+  renderMCQ();
+  const qs=mqQuestions();
+  if(mqIdx<qs.length-1){ setTimeout(()=>{ if(mqScreen==='exam'){ mqIdx++; mqSaveProgress(); renderMCQ(); } }, 550); }
+}
+function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid]; renderMCQ(); }
+function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); renderMCQ(); window.scrollTo(0,0); }
+function mqResult(){
+  mqStopTimer(); mqClearProgress(mqSub,mqSet);
+  const qs=mqQuestions(); let correct=0,answered=0;
+  qs.forEach(q=>{ if(mqAns[q.id]!==undefined){ answered++;
+    if(isCorr(q.ans,mqAns[q.id])){ correct++; delete appWrong[q.id]; }
+    else { appWrong[q.id]=true; }
+  }});
+  if(currentUser) saveUserData();
+  const total=qs.length; const pct=total?Math.round(correct/total*100):0;
+  const em=pct>=80?'🏆':pct>=60?'💪':'📚';
+  const modeLbl=mqReview?' · 복습':mqMode==='wrong'?' · 오답 다시풀기':'';
+  document.getElementById('mcqRoot').innerHTML=
+    '<div class="mcq-result"><div class="em">'+em+'</div>'+
+    '<div class="rt">'+(mqReview?'오늘의 복습':(curQB()[mqSub].name+' · '+curQB()[mqSub].sets[mqSet].label))+modeLbl+'</div>'+
+    '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답</div>'+
+    '<div class="sc"><div><div class="v ok">'+correct+'</div><div class="l">정답</div></div>'+
+    '<div><div class="v bad">'+(answered-correct)+'</div><div class="l">오답</div></div>'+
+    '<div><div class="v">'+pct+'%</div><div class="l">정답률</div></div></div>'+
+    '<div class="rbtns"><button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button></div></div>';
+}
+function mqRetry(){
+  if(mqReview){ startMcqReview(); return; }
+  mqClearProgress(mqSub,mqSet);
+  const all=curQB()[mqSub].sets[mqSet].questions;
+  if(mqMode==='wrong') mqList=all.filter(q=>appWrong[q.id]);
+  else mqList=all;
+  if(!mqList.length){ alert('다시 풀 문항이 없습니다.'); mqBackHome(); return; }
+  mqAns={}; mqShow={}; mqIdx=0; mqTimeLeft=mqList.length*60; mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+
+/* ===== 통합 플랫폼 라우팅: 시험 선택 / 전환 / 마지막 시험 기억 ===== */
+let activeCert = null;
+function getLastCert(){ try{ return localStorage.getItem('certlab_lastCert'); }catch(e){ return null; } }
+function setLastCert(id){ try{ localStorage.setItem('certlab_lastCert', id); }catch(e){} }
+function showHome(){
+  activeCert = null;
+  if(typeof mqStopTimer==='function') mqStopTimer();
+  document.getElementById('homeView').classList.remove('hidden');
+  document.getElementById('bodybuildingView').classList.add('hidden');
+  document.getElementById('mcqView').classList.add('hidden');
+  document.getElementById('certSwitch').classList.add('hidden');
+  document.getElementById('modePill').style.display = 'none';
+  syncPlanMirror(); updateAuthBar();
+}
+function enterCert(id){
+  activeCert = id;
+  if(typeof mqStopTimer==='function') mqStopTimer();
+  setLastCert(id);
+  document.getElementById('homeView').classList.add('hidden');
+  document.getElementById('certSwitch').classList.remove('hidden');
+  if(id === 'bodybuilding'){
+    document.getElementById('bodybuildingView').classList.remove('hidden');
+    document.getElementById('mcqView').classList.add('hidden');
+    document.getElementById('certSwitchName').textContent = '생체2급';
+    document.getElementById('modePill').style.display = '';
+    refresh();
+  } else if(isMcqCert(id)){
+    document.getElementById('mcqView').classList.remove('hidden');
+    document.getElementById('bodybuildingView').classList.add('hidden');
+    document.getElementById('certSwitchName').textContent = certLabel(id);
+    document.getElementById('modePill').style.display = 'none';
+    mqCert = id; mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
+  }
+  syncPlanMirror(); updateAuthBar();
+  // 만료된 시험 진입 시 결제 안내
+  if(currentUser && userEnt[id] && userEnt[id].plan === 'EXPIRED'){ setTimeout(()=>showPlanPopup(), 600); }
+  window.scrollTo(0,0);
+}
+function goHome(){ showHome(); }
+function routeAfterAuth(){
+  if(currentUser && !activeCert){
+    const last = getLastCert();
+    if(last === 'bodybuilding' || last === 'appraiser') enterCert(last);
+  }
+}
+
+/* ===== Firestore 문제은행 로더 (버전 캐시) ===== */
+async function loadAllBanks(){
+  if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
+  const mSnap=await db.collection('manifest').doc('exams').get();
+  if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
+  const manifest=mSnap.data();
+  for(const ex of (manifest.exams||[])){
+    for(const sub of (ex.subjects||[])){
+      const ver=(ex.versions&&ex.versions[sub.code])||1;
+      const ck='qb:'+ex.id+':'+sub.code+':v'+ver;
+      let doc=null;
+      try{ const c=localStorage.getItem(ck); if(c) doc=JSON.parse(c); }catch(e){}
+      if(!doc){
+        const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+        if(snap.exists){ doc=snap.data(); try{ localStorage.setItem(ck,JSON.stringify(doc)); }catch(e){} }
+      }
+      if(doc) applyBank(ex,sub,doc);
+    }
+  }
+  rebuildQid();
+}
+function applyBank(ex,sub,doc){
+  const qs=doc.questions||[];
+  if(ex.type==='flashcard'){
+    qs.forEach(c=>D.push({id:c.id, s:sub.name,q:c.q,a:c.a,learn:c.learn||null,star:c.star||1,w:false,fav:false}));
+  } else {
+    const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
+    if(!qb||!qb[sub.code]) return;
+    const byset={},order=[];
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; byset[lab].push(it); });
+    qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
+  }
+}
+function showDataError(err){
+  console.error('문제 데이터 로드 실패',err);
+  var b=document.createElement('div');
+  b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#b00020;color:#fff;padding:10px;text-align:center;z-index:99999;font-size:14px';
+  b.textContent='문제 데이터를 불러오지 못했습니다. 네트워크/Firestore 설정을 확인해 주세요.';
+  document.body.appendChild(b);
+}
+showHome();
+loadAllBanks().then(()=>{
+  rebuildQid();
+  // 비동기 로딩 전에 빈 D로 굳은 카드 스냅샷을 실데이터로 재동기화
+  if(typeof cards!=='undefined'){ cards=[...D]; filtered=[...cards]; current=0; }
+  if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
+  if(typeof refresh==='function') refresh();
+  if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
+}).catch(showDataError);
+</script>
+</body>
+</html>
