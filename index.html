@@ -492,6 +492,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   </div>
 </div>
 <div class="cert-view hidden" id="bodybuildingView">
+<div id="bbAnalysis"></div>
 <div class="sr-banner" id="srBanner" onclick="srBannerClick()"></div>
 <div class="subjects-wrap">
   <button class="scroll-arrow hidden" id="arrowL" onclick="scrollSubj(-1)" aria-label="이전 과목">◀</button>
@@ -999,6 +1000,7 @@ function showPlanPopup() {
     <div class="plan-stat"><div class="v">${rate > 0 ? rate : 0}%</div><div class="l">정답률</div></div>
     <div class="plan-stat"><div class="v">${wrong}</div><div class="l">오답노트</div></div>`;
   document.getElementById('planPopup').classList.remove('hidden');
+  renderPlanCards(cert);
 }
 function hidePlanPopup() { document.getElementById('planPopup').classList.add('hidden'); }
 
@@ -1019,6 +1021,27 @@ function showWelcomePopup() {
 }
 
 // ===== 이용권 선택 & 신청 =====
+const PLAN_SETS={
+  _default:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
+            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용',pop:'⭐ 가장 인기'},
+            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  appraiser:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
+             {d:28,p:12900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 추천'},
+             {d:56,p:19900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 최고 가성비',green:1}]
+};
+function plansFor(cert){ return PLAN_SETS[cert]||PLAN_SETS._default; }
+function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
+function renderPlanCards(cert){
+  const set=plansFor(cert), box=document.querySelector('.plan-cards'); if(!box) return;
+  box.innerHTML=set.map((pl,i)=>{
+    const badge=pl.pop?('<div class="plan-badge-pop"'+(pl.green?' style="background:linear-gradient(135deg,#1D9E75,#0C447C)"':'')+'>'+pl.pop+'</div>'):'';
+    return '<div class="plan-card" id="plan'+pl.d+'" onclick="selectPlan('+pl.d+','+pl.p+')">'+badge
+      +'<div class="plan-card-top"><span class="plan-card-name">'+pl.name+'</span>'
+      +'<span class="plan-card-price">'+pl.p.toLocaleString()+'원</span></div>'
+      +'<div class="plan-card-desc">'+pl.desc+'</div></div>';
+  }).join('');
+  const mid=set[1]||set[0]; selectPlan(mid.d, mid.p);   // 기본 선택 = 추천(가운데)
+}
 function selectPlan(days, price) {
   selectedPlanDays = days;
   selectedPlanPrice = price;
@@ -1033,8 +1056,7 @@ async function submitPayment() {
   if (!depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
   const cert = activeCertId();
   const certName = certFull(cert);
-  const planNames = {7:'Basic (7일)',14:'Standard (14일)',28:'Premium (28일)'};
-  if (!confirm(`[${certName}] ${planNames[selectedPlanDays]} - ${selectedPlanPrice.toLocaleString()}원
+  if (!confirm(`[${certName}] ${planLabelOf(selectedPlanDays)} - ${selectedPlanPrice.toLocaleString()}원
 입금자: ${depositorName}
 입금 완료 신청을 하시겠어요?`)) return;
   if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
@@ -1609,6 +1631,42 @@ function updateModeButtons(){
     const b=document.getElementById(id); if(b) b.classList.toggle('mode-on',srMode===m);
   });
 }
+function bbScoreOf(m){ return m==='master'?100:m==='learning'?60:m==='weak'?20:0; }
+function bbAnalysis(){
+  const per={}; SUBJS.forEach(s=>per[s]={sum:0,n:0});
+  let sum=0,n=0; const cnt={master:0,learning:0,weak:0,'new':0};
+  cards.forEach(c=>{ const m=srMasteryK(SR_CERT,c.id); cnt[m]=(cnt[m]||0)+1;
+    if(m!=='new'){ const sc=bbScoreOf(m); sum+=sc; n++; if(per[c.s]){per[c.s].sum+=sc;per[c.s].n++;} } });
+  const predicted=n?Math.round(sum/n):null;
+  const perArr=SUBJS.map(s=>({name:s, score:per[s].n?Math.round(per[s].sum/per[s].n):null, n:per[s].n}));
+  return {predicted,perArr,cnt,studied:n,total:cards.length};
+}
+function updateBbAnalysis(){
+  const el=document.getElementById('bbAnalysis'); if(!el) return;
+  const a=bbAnalysis();
+  if(!a.studied){
+    el.innerHTML='<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b></div>'
+      +'<div class="anal-empty">아직 학습 데이터가 없어요. 카드를 풀면 예상점수가 표시됩니다.</div></div>';
+    return;
+  }
+  const lv=mcqLevel(a.predicted,70);
+  const weak=a.perArr.filter(p=>p.score!=null).sort((x,y)=>x.score-y.score)[0];
+  const bars=a.perArr.map(p=>{
+    const sc=p.score, w=sc==null?0:sc;
+    const col=sc==null?'#E2D6CC':sc>=80?'#2E9B5E':sc>=70?'#E0A52E':'#E24B4A';
+    return '<div class="anal-row"><span class="anal-nm">'+p.name+'</span>'
+      +'<div class="anal-bar"><div class="anal-fill" style="width:'+w+'%;background:'+col+'"></div></div>'
+      +'<span class="anal-pct">'+(sc==null?'-':sc+'%')+'</span></div>';
+  }).join('');
+  el.innerHTML='<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b>'
+    +'<span style="font-size:11px;color:#B4A99C">숙달 '+a.cnt.master+' · 학습중 '+a.cnt.learning+' · 미숙 '+a.cnt.weak+'</span></div>'
+    +'<div class="anal-score"><div class="anal-pred">'+a.predicted+'<small>점</small></div>'
+    +'<div class="anal-lv" style="color:'+lv.color+'">'+lv.label+'</div></div>'
+    +'<div class="anal-bars">'+bars+'</div>'
+    +(weak?'<div class="anal-weak">⚠️ <b>'+weak.name+'</b> 집중 학습이 필요해요 ('+weak.score+'%)</div>':'')
+    +(a.studied<10?'<div class="anal-note">더 많이 학습할수록 예상점수가 정확해져요.</div>':'')
+    +'</div>';
+}
 function updateSrBanner(){
   const el=document.getElementById('srBanner'); if(!el) return;
   const due=srTodayCount(); const dl=srDaysLeft();
@@ -1713,7 +1771,7 @@ function resetWrong(){
   if(reviewMode){reviewMode=false;document.getElementById('btnReview').classList.remove('review-on');document.getElementById('modePill').className='mode-pill';document.getElementById('modePill').textContent='전체';}
   current=0;isFlipped=false;learnOpen=false;refresh();
 }
-function refresh(){buildBar();buildStarBar();updateStats();updateSrBanner();updateModeButtons();renderCard();}
+function refresh(){buildBar();buildStarBar();updateStats();updateSrBanner();updateBbAnalysis();updateModeButtons();renderCard();}
 
 let tx=0;
 document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
@@ -1844,10 +1902,11 @@ function mcqSubjectStats(cert){
   const predicted=valid.length?Math.round(valid.reduce((a,s)=>a+s.acc,0)/valid.length):null;
   return {per,valid,predicted,totN};
 }
-function mcqLevel(pred){
+function mcqLevel(pred,pass){
+  pass=pass||60; const safe=Math.max(80,pass+10);
   if(pred==null) return {label:'데이터 부족',color:'#B4A99C'};
-  if(pred>=80) return {label:'🟢 안전권',color:'#2E9B5E'};
-  if(pred>=60) return {label:'🟡 합격권',color:'#E0A52E'};
+  if(pred>=safe) return {label:'🟢 안전권',color:'#2E9B5E'};
+  if(pred>=pass) return {label:'🟡 합격권',color:'#E0A52E'};
   return {label:'🔴 위험권',color:'#E24B4A'};
 }
 function mcqAnalysisCard(cert){
