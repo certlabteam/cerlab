@@ -429,10 +429,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnemonic-tag{font-size:11px;font-weight:800;color:#B97A12;margin-bottom:5px}
 .mnemonic-code{font-size:19px;font-weight:800;color:#8A5A00;letter-spacing:1px}
 .mnemonic-desc{font-size:13px;color:#7A6A50;line-height:1.6;margin-top:6px}
-.audio-bar{display:flex;gap:8px;align-items:center;justify-content:center;padding:8px 14px 2px}
-.audio-play{flex:0 0 auto;padding:9px 20px;border:none;border-radius:999px;background:#185FA5;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.audio-bar{display:flex;gap:6px;align-items:center}
+.audio-play{flex:0 0 auto;padding:7px 14px;border:none;border-radius:999px;background:#185FA5;color:#fff;font-weight:800;font-size:13px;cursor:pointer}
 .audio-play.on{background:#A32D2D}
-.audio-opt{padding:8px 13px;border:1px solid #E0D7CC;border-radius:999px;background:#fff;color:#6E6256;font-weight:700;font-size:13px;cursor:pointer}
+.audio-opt{padding:6px 10px;border:1px solid #E0D7CC;border-radius:999px;background:#fff;color:#6E6256;font-weight:700;font-size:12px;cursor:pointer}
+.subj-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 16px 0;max-width:560px;margin:0 auto;width:100%}
+.subj-row .subj-tag{margin:0}
 .anal-card{margin:12px 14px 4px;padding:16px 16px 14px;background:#fff;border:1px solid #E2D6CC;border-radius:16px;box-shadow:0 2px 12px rgba(80,50,20,.05)}
 .anal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .anal-top b{font-size:14px;color:#2C2C2A}
@@ -561,13 +563,16 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="c-pill done-pill"><div class="v" id="statDone">0%</div><div class="l">정답률</div></div>
   <div class="c-pill"><div class="v" id="statCount">0</div><div class="l">푼 횟수</div></div>
 </div>
+<div class="subj-row">
+  <div class="subj-tag" id="subjTag"></div>
+  <div class="audio-bar">
+    <button class="audio-play" id="audioPlay" onclick="ttsToggle()">🔊 듣기</button>
+    <button class="audio-opt" id="audioVoice" onclick="ttsToggleVoice()">👩 여성</button>
+    <button class="audio-opt" id="audioRate" onclick="ttsCycleRate()">1.0×</button>
+  </div>
+</div>
 <div class="card-area" id="cardArea"></div>
 <div class="rate-row" id="rateRow"></div>
-<div class="audio-bar">
-  <button class="audio-play" id="audioPlay" onclick="ttsToggle()">🔊 듣기</button>
-  <button class="audio-opt" id="audioVoice" onclick="ttsToggleVoice()">👩 여성</button>
-  <button class="audio-opt" id="audioRate" onclick="ttsCycleRate()">1.0×</button>
-</div>
 <div class="bottom-bar">
   <button class="bar-btn" id="modeNew" onclick="setSrMode('new')">🆕 신규</button>
   <button class="bar-btn" id="modeReview" onclick="setSrMode('review')">🔁 복습</button>
@@ -1585,6 +1590,7 @@ function renderCard(){
   if(current>=filtered.length)current=filtered.length-1;
   if(current<0)current=0;
   const card=filtered[current];
+  { const st=document.getElementById('subjTag'); if(st) st.textContent=card.s; }
   const pct=Math.round((current+1)/filtered.length*100);
   document.getElementById('progressText').textContent=(current+1)+' / '+filtered.length;
   document.getElementById('progressBar').style.width=pct+'%';
@@ -1600,8 +1606,7 @@ function renderCard(){
   const reportBtn=isFlipped?`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`:'';
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
   area.innerHTML=
-    '<div class="subj-tag">'+card.s+'</div>'
-    +'<div class="card-scene">'
+    '<div class="card-scene">'
     +'<div class="card-inner'+(isFlipped?' flipped':'')+'" id="ci" onclick="flipCard()">'
     +'<div class="card-face card-front">'+statusDot+starDot
     +'<div class="card-label">Question</div>'
