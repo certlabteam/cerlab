@@ -1369,7 +1369,7 @@ function srVagueInterval(cert){ const dl=srDaysLeftOf(cert||SR_CERT); let d=3; i
 
 /* 코어: (cert,id) 기준 — 구술·객관식 공용 */
 function srGetK(cert,id){ return srProgress[cert+'|'+id]; }
-function srMasteryK(cert,id){ const p=srGetK(cert,id); if(!p||!p.rc) return 'new'; if(p.w||!p.st) return 'weak'; if(p.st>=5) return 'master'; return 'learning'; }
+function srMasteryK(cert,id){ const p=srGetK(cert,id); if(!p||!p.rc) return 'new'; if(!p.st) return 'weak'; if(p.st>=5) return 'master'; return 'learning'; }
 function srDueK(cert,id){ const p=srGetK(cert,id); return !!(p&&p.rc>0&&(p.nx||0)<=Date.now()); }
 function srDueCertCount(cert){ let n=0,pre=cert+'|',now=Date.now(); for(const k in srProgress){ if(k.indexOf(pre)===0){ const p=srProgress[k]; if(p&&p.rc>0&&(p.nx||0)<=now) n++; } } return n; }
 function srRateK(cert,id,result){          // 0 틀림 / 1 애매 / 2 정확
@@ -1378,7 +1378,7 @@ function srRateK(cert,id,result){          // 0 틀림 / 1 애매 / 2 정확
   let p=srProgress[k]||{st:0,nx:0,lr:0,res:null,rc:0,cor:0,w:false};
   p.rc=(p.rc||0)+1; p.lr=now; p.res=result;
   if(result===2) p.cor=(p.cor||0)+1;     // 정답 누계 (과목 정확도·예상점수용)
-  if(result===0){ p.st=0; p.w=true; p.nx=now+1*SR_DAY; }
+  if(result===0){ p.st=Math.ceil((p.st||0)/2); p.w=true; p.nx=now+1*SR_DAY; }
   else if(result===1){ p.nx=now+srVagueInterval(cert)*SR_DAY; }
   else { p.st=(p.st||0)+1; p.w=false; p.nx=now+srCorrectInterval(p.st,cert)*SR_DAY; }
   srProgress[k]=p;
@@ -1660,11 +1660,12 @@ function updateModeButtons(){
   });
 }
 function bbScoreOf(m){ return m==='master'?100:m==='learning'?60:m==='weak'?20:0; }
+function bbScoreStreak(st){ return Math.min(100, 20 + (st||0)*16); }   // 0→20,1→36,2→52,3→68,4→84,5+→100
 function bbAnalysis(){
   const per={}; SUBJS.forEach(s=>per[s]={sum:0,n:0});
   let sum=0,n=0; const cnt={master:0,learning:0,weak:0,'new':0};
-  cards.forEach(c=>{ const m=srMasteryK(SR_CERT,c.id); cnt[m]=(cnt[m]||0)+1;
-    if(m!=='new'){ const sc=bbScoreOf(m); sum+=sc; n++; if(per[c.s]){per[c.s].sum+=sc;per[c.s].n++;} } });
+  cards.forEach(c=>{ const p=srGetK(SR_CERT,c.id); const m=srMasteryK(SR_CERT,c.id); cnt[m]=(cnt[m]||0)+1;
+    if(p&&p.rc){ const sc=bbScoreStreak(p.st); sum+=sc; n++; if(per[c.s]){per[c.s].sum+=sc;per[c.s].n++;} } });
   const predicted=n?Math.round(sum/n):null;
   const perArr=SUBJS.map(s=>({name:s, score:per[s].n?Math.round(per[s].sum/per[s].n):null, n:per[s].n}));
   return {predicted,perArr,cnt,studied:n,total:cards.length};
