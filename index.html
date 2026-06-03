@@ -429,6 +429,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnemonic-tag{font-size:11px;font-weight:800;color:#B97A12;margin-bottom:5px}
 .mnemonic-code{font-size:19px;font-weight:800;color:#8A5A00;letter-spacing:1px}
 .mnemonic-desc{font-size:13px;color:#7A6A50;line-height:1.6;margin-top:6px}
+.audio-bar{display:flex;gap:8px;align-items:center;justify-content:center;padding:8px 14px 2px}
+.audio-play{flex:0 0 auto;padding:9px 20px;border:none;border-radius:999px;background:#185FA5;color:#fff;font-weight:800;font-size:14px;cursor:pointer}
+.audio-play.on{background:#A32D2D}
+.audio-opt{padding:8px 13px;border:1px solid #E0D7CC;border-radius:999px;background:#fff;color:#6E6256;font-weight:700;font-size:13px;cursor:pointer}
 .anal-card{margin:12px 14px 4px;padding:16px 16px 14px;background:#fff;border:1px solid #E2D6CC;border-radius:16px;box-shadow:0 2px 12px rgba(80,50,20,.05)}
 .anal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .anal-top b{font-size:14px;color:#2C2C2A}
@@ -559,6 +563,11 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 </div>
 <div class="card-area" id="cardArea"></div>
 <div class="rate-row" id="rateRow"></div>
+<div class="audio-bar">
+  <button class="audio-play" id="audioPlay" onclick="ttsToggle()">🔊 듣기</button>
+  <button class="audio-opt" id="audioVoice" onclick="ttsToggleVoice()">👩 여성</button>
+  <button class="audio-opt" id="audioRate" onclick="ttsCycleRate()">1.0×</button>
+</div>
 <div class="bottom-bar">
   <button class="bar-btn" id="modeNew" onclick="setSrMode('new')">🆕 신규</button>
   <button class="bar-btn" id="modeReview" onclick="setSrMode('review')">🔁 복습</button>
@@ -1473,7 +1482,7 @@ function buildBar(){
     const btn=document.createElement('button');
     btn.className='subj-btn'+(s===currentSubj?' active':'')+(hasW?' has-wrong':'');
     btn.textContent=s==='전체'?'전체 \u2736':s;
-    btn.onclick=()=>{currentSubj=s;current=0;isFlipped=false;learnOpen=false;refresh();};
+    btn.onclick=()=>{if(typeof ttsStop==='function')ttsStop();currentSubj=s;current=0;isFlipped=false;learnOpen=false;refresh();};
     bar.appendChild(btn);
   });
   setTimeout(()=>{
@@ -1675,6 +1684,7 @@ function rate(result){
 }
 
 function setSrMode(m){
+  if(typeof ttsStop==='function')ttsStop();
   srMode=m; current=0; isFlipped=false; learnOpen=false;
   refresh();
 }
@@ -1825,6 +1835,81 @@ function resetWrong(){
   current=0;isFlipped=false;learnOpen=false;refresh();
 }
 function refresh(){buildBar();buildStarBar();updateStats();updateSrBanner();updateBbAnalysis();updateModeButtons();renderCard();}
+
+/* ===== 음성 듣기 (브라우저 TTS) ===== */
+let ttsPlaying=false, ttsRate=1.0, ttsVoiceSel='female', ttsKoVoices=[];
+const TTS_RATES=[1.0,1.25,1.5];
+function ttsLoadVoices(){
+  try{ ttsKoVoices=(speechSynthesis.getVoices()||[]).filter(v=>/ko(-|_)?KR|korean|한국/i.test(v.lang+' '+v.name)); }catch(_){}
+}
+if('speechSynthesis' in window){
+  ttsLoadVoices();
+  speechSynthesis.onvoiceschanged=ttsLoadVoices;
+}
+function ttsPickVoice(){
+  if(!ttsKoVoices.length) return null;
+  const female=ttsKoVoices.find(v=>/female|여|woman|yuna|sora|heami/i.test(v.name));
+  const male=ttsKoVoices.find(v=>/male|남|man/i.test(v.name));
+  if(ttsVoiceSel==='male') return male || ttsKoVoices[1] || ttsKoVoices[0];
+  return female || ttsKoVoices[0];
+}
+function ttsSpeak(text, onend){
+  if(!text){ onend&&onend(); return; }
+  const u=new SpeechSynthesisUtterance(text.replace(/<[^>]+>/g,' '));
+  u.lang='ko-KR'; u.rate=ttsRate;
+  const v=ttsPickVoice(); if(v) u.voice=v;
+  u.onend=()=>{ if(ttsPlaying) onend&&onend(); };
+  u.onerror=()=>{ if(ttsPlaying) onend&&onend(); };
+  speechSynthesis.speak(u);
+}
+function ttsToggle(){
+  if(!('speechSynthesis' in window)){ alert('이 브라우저는 음성 읽기를 지원하지 않습니다.'); return; }
+  if(ttsPlaying){ ttsStop(); return; }
+  if(!filtered.length) return;
+  ttsPlaying=true; ttsUpdateBtn();
+  ttsPlayCurrent();
+}
+function ttsPlayCurrent(){
+  if(!ttsPlaying) return;
+  if(current>=filtered.length){ ttsStop(); return; }
+  const card=filtered[current];
+  // 화면도 답면으로 보여주며 진행
+  isFlipped=false; renderCard();
+  ttsSpeak(card.q, ()=>{
+    if(!ttsPlaying) return;
+    setTimeout(()=>{
+      if(!ttsPlaying) return;
+      isFlipped=true; renderCard();
+      ttsSpeak(card.a, ()=>{
+        if(!ttsPlaying) return;
+        if(current<filtered.length-1){ current++; setTimeout(ttsPlayCurrent, 600); }
+        else { ttsStop(); }
+      });
+    }, 800);   // 질문 후 멈춤
+  });
+}
+function ttsStop(){
+  ttsPlaying=false;
+  try{ speechSynthesis.cancel(); }catch(_){}
+  ttsUpdateBtn();
+}
+function ttsUpdateBtn(){
+  const b=document.getElementById('audioPlay'); if(b) b.innerHTML=ttsPlaying?'⏸ 정지':'🔊 듣기';
+  if(b) b.classList.toggle('on',ttsPlaying);
+}
+function ttsToggleVoice(){
+  ttsVoiceSel = ttsVoiceSel==='female'?'male':'female';
+  const b=document.getElementById('audioVoice'); if(b) b.innerHTML=ttsVoiceSel==='female'?'👩 여성':'👨 남성';
+  if(ttsPlaying){ ttsStop(); }   // 목소리 바꾸면 정지(다시 재생)
+}
+function ttsCycleRate(){
+  const i=TTS_RATES.indexOf(ttsRate); ttsRate=TTS_RATES[(i+1)%TTS_RATES.length];
+  const b=document.getElementById('audioRate'); if(b) b.textContent=ttsRate.toFixed(2).replace(/0$/,'')+'×';
+  // 재생 중이면 다음 발화부터 속도 적용 (현재 발화는 유지)
+}
+// 화면 벗어나거나 다른 곳 가면 자동 정지
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) ttsStop(); });
+window.addEventListener('beforeunload',()=>ttsStop());
 
 let tx=0;
 document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
@@ -2139,7 +2224,7 @@ function mqRetry(){
 let activeCert = null;
 function getLastCert(){ try{ return localStorage.getItem('certlab_lastCert'); }catch(e){ return null; } }
 function setLastCert(id){ try{ localStorage.setItem('certlab_lastCert', id); }catch(e){} }
-function showHome(){
+function showHome(){ if(typeof ttsStop==='function')ttsStop();
   activeCert = null;
   if(typeof mqStopTimer==='function') mqStopTimer();
   document.getElementById('homeView').classList.remove('hidden');
