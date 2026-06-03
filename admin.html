@@ -267,6 +267,7 @@ const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 let allPayments = [];
 let allMembers = [];
+let codeByUid = {};   // { uid: ['CODE1', ...] } — 무료/할인 코드 사용 매핑
 let pendingPaymentId = null;
 let pendingPaymentData = null;
 
@@ -325,9 +326,30 @@ async function loadPayments() {
 
 async function loadMembers() {
   try {
-    const snap = await db.collection('users').orderBy('createdAt','desc').get();
-    allMembers = snap.docs.map(d => ({id:d.id, ...d.data()}));
-    renderMembers(allMembers);
+    const [usnap, csnap] = await Promise.all([
+      db.collection('users').orderBy('createdAt','desc').get(),
+      db.collection('discountCodes').get().catch(()=>null)
+    ]);
+    allMembers = usnap.docs.map(d => ({id:d.id, ...d.data()}));
+    codeByUid = {};
+    if (csnap) csnap.docs.forEach(d => {
+      const c = d.data();
+      if (c.used && c.usedBy) (codeByUid[c.usedBy] = codeByUid[c.usedBy] || []).push(d.id);
+    });
+    renderMembers(allMembers);   // 우선 빠르게 표시 (학습량은 '…')
+    // 회원별 학습량(userData) 비동기 로드 후 갱신
+    await Promise.all(allMembers.map(async m => {
+      try {
+        const ud = await db.collection('userData').doc(m.id).get();
+        if (ud.exists) {
+          const d = ud.data();
+          m._solve = d.solveCount || 0;
+          m._studied = d.cardProgress ? Object.keys(d.cardProgress).length : 0;
+        } else { m._solve = 0; m._studied = 0; }
+      } catch(_) { m._solve = 0; m._studied = 0; }
+    }));
+    const q = (document.getElementById('searchMember')||{}).value || '';
+    renderMembers(q ? allMembers.filter(m => (m.email||'').toLowerCase().includes(q.toLowerCase())) : allMembers);
   } catch(e) { document.getElementById('memberList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
 }
 
@@ -459,15 +481,23 @@ function renderMembers(list) {
   if (!list.length) { document.getElementById('memberList').innerHTML = '<div class="empty">회원이 없습니다.</div>'; return; }
   document.getElementById('memberList').innerHTML = `
     <table>
-      <thead><tr><th>이메일</th><th>상태</th><th>만료일</th><th>남은일</th><th>가입일</th><th>관리</th></tr></thead>
+      <thead><tr><th>이메일</th><th>상태</th><th>만료일</th><th>남은일</th><th>학습량</th><th>사용 코드</th><th>가입일</th><th>관리</th></tr></thead>
       <tbody>${list.map(m => {
         const s = memberStatus(m);
+        const learn = m._solve==null ? '<span style="color:#B4A99C">…</span>'
+          : `${(m._solve||0).toLocaleString()}회${m._studied?` · ${m._studied}문항`:''}`;
+        const codes = (codeByUid[m.id]||[]);
+        const codeCell = codes.length
+          ? codes.map(c=>`<span class="badge" style="background:#EDE9FB;color:#5B50C0">🎟 ${c}</span>`).join(' ')
+          : '<span style="color:#C9BFB2">-</span>';
         return `
         <tr>
           <td>${m.email||'-'}</td>
           <td><span class="badge ${planBadge(s)}">${planLabel(s)}</span></td>
           <td>${m.plan==='ACTIVE'?fmtDateShort(m.expireAt):m.plan==='FREE_TRIAL'?fmtDateShort(m.trialEnd):'-'}</td>
           <td>${m.plan==='ACTIVE'?daysLeft(m.expireAt):m.plan==='FREE_TRIAL'?daysLeft(m.trialEnd):'-'}</td>
+          <td>${learn}</td>
+          <td>${codeCell}</td>
           <td>${fmtDateShort(m.createdAt)}</td>
           <td>
             <button class="btn-sm btn-extend" onclick="extendMember('${m.id}','${m.email}')">연장</button>
