@@ -485,7 +485,10 @@ function renderMembers(list) {
       <tbody>${list.map(m => {
         const s = memberStatus(m);
         const learn = m._solve==null ? '<span style="color:#B4A99C">…</span>'
-          : `${(m._solve||0).toLocaleString()}회${m._studied?` · ${m._studied}문항`:''}`;
+          : `<div style="display:flex;gap:14px">
+               <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${(m._solve||0).toLocaleString()}</div><div style="font-size:10px;color:#A89C8E">푼 횟수</div></div>
+               <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${m._studied||0}</div><div style="font-size:10px;color:#A89C8E">학습문항</div></div>
+             </div>`;
         const codes = (codeByUid[m.id]||[]);
         const codeCell = codes.length
           ? codes.map(c=>`<span class="badge" style="background:#EDE9FB;color:#5B50C0">🎟 ${c}</span>`).join(' ')
