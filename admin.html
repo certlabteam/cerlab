@@ -687,9 +687,29 @@ async function confirmRevoke() {
       status: 'revoked',
       revokedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    const upd = { ['entitlements.'+cert+'.plan']: 'EXPIRED' };
-    if (cert === 'bodybuilding') upd.plan = 'EXPIRED';
-    if (p.uid) await db.collection('users').doc(p.uid).update(upd);
+    // 회원 문서 찾기 (uid 우선, 없으면 이메일로)
+    let ref=null, data=null;
+    if (p.uid) { ref=db.collection('users').doc(p.uid); const d=await ref.get(); if(d.exists) data=d.data(); }
+    if (!data && p.email) {
+      const qs=await db.collection('users').where('email','==',p.email).limit(1).get();
+      if(!qs.empty){ ref=qs.docs[0].ref; data=qs.docs[0].data(); }
+    }
+    if (ref) {
+      const upd = { ['entitlements.'+cert+'.plan']: 'EXPIRED' };
+      // 이번에 만료시키는 것 외에 살아있는 다른 이용권이 있는지 확인
+      const ents = (data && data.entitlements) || {};
+      const now = Date.now();
+      const otherLive = Object.keys(ents).some(k => {
+        if (k===cert) return false;
+        const e=ents[k]; if(!e || e.plan!=='ACTIVE') return false;
+        if(!e.expireAt) return true;
+        const t = e.expireAt.toDate ? e.expireAt.toDate().getTime() : new Date(e.expireAt).getTime();
+        return t > now;
+      });
+      // bodybuilding(레거시 top-plan)이거나, 남은 이용권이 없으면 top-level plan도 만료
+      if (cert==='bodybuilding' || !otherLive) upd.plan='EXPIRED';
+      await ref.update(upd);
+    }
     closeModal();
     alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`);
     await loadAll();
