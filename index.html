@@ -425,6 +425,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .popup-x:hover{background:#E2D6CC}
 .report-box{position:relative}
 .home-seo{font-size:12px;color:#A89C8E;line-height:1.6;margin-top:10px;max-width:440px}
+.mnemonic{margin:14px 0 4px;padding:13px 15px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;border-radius:14px}
+.mnemonic-tag{font-size:11px;font-weight:800;color:#B97A12;margin-bottom:5px}
+.mnemonic-code{font-size:19px;font-weight:800;color:#8A5A00;letter-spacing:1px}
+.mnemonic-desc{font-size:13px;color:#7A6A50;line-height:1.6;margin-top:6px}
 .anal-card{margin:12px 14px 4px;padding:16px 16px 14px;background:#fff;border:1px solid #E2D6CC;border-radius:16px;box-shadow:0 2px 12px rgba(80,50,20,.05)}
 .anal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .anal-top b{font-size:14px;color:#2C2C2A}
@@ -1512,6 +1516,15 @@ function updateStats(){
   document.getElementById('wrongCount').textContent='오답 '+w+'개';
 }
 
+function buildMnemonic(card){
+  const m=card.mn; if(!m) return '';
+  const code = (typeof m==='string') ? m : (m.code||'');
+  const desc = (typeof m==='object' && m.desc) ? m.desc : '';
+  if(!code) return '';
+  return '<div class="mnemonic"><div class="mnemonic-tag">🧠 암기코드</div>'
+    +'<div class="mnemonic-code">'+code+'</div>'
+    +(desc?'<div class="mnemonic-desc">'+desc+'</div>':'')+'</div>';
+}
 function buildLearnHTML(card){
   if(!card.learn)return '';
   const L=card.learn;
@@ -1574,6 +1587,7 @@ function renderCard(){
   const starCount=card.star||0;
   const starDot=starCount>0?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
   const learnHTML=isFlipped?buildLearnHTML(card):'';
+  const mnemonicHTML=isFlipped?buildMnemonic(card):'';
   const reportBtn=isFlipped?`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`:'';
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
   area.innerHTML=
@@ -1588,6 +1602,7 @@ function renderCard(){
     +'<div class="card-text">'+card.a+'</div></div>'
     +'</div></div>'
     +'<div class="tap-hint">'+hintText+'</div>'
+    +mnemonicHTML
     +learnHTML
     +reportBtn;
 
@@ -2189,7 +2204,7 @@ async function loadAllBanks(){
 function applyBank(ex,sub,doc){
   const qs=doc.questions||[];
   if(ex.type==='flashcard'){
-    qs.forEach(c=>D.push({id:c.id, s:sub.name,q:c.q,a:c.a,learn:c.learn||null,star:c.star||1,w:false,fav:false}));
+    qs.forEach(c=>D.push({id:c.id, s:sub.name,q:c.q,a:c.a,learn:c.learn||null,mn:c.mn||null,star:c.star||1,w:false,fav:false}));
   } else {
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
