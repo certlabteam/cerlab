@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CertLab 문제은행 업로드 (admin)</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --line:#30363d; --txt:#e6edf3;
+    --muted:#8b949e; --accent:#3fb950; --warn:#d29922; --blue:#58a6ff; --red:#f85149;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.55}
+  header{padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel);
+    position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:15px;margin:0;letter-spacing:.5px}
+  .pill{font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .pill.ok{border-color:var(--accent);color:var(--accent)}
+  .pill.warn{border-color:var(--warn);color:var(--warn)}
+  main{padding:18px;max-width:1080px;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:16px}
+  .card h2{font-size:13px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);
+    background:#1c2330;color:var(--blue);letter-spacing:.5px}
+  .body{padding:14px}
+  button{font-family:inherit;font-size:13px;background:#21262d;color:var(--txt);
+    border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--blue)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button.go{background:#1f6f3f;border-color:#2ea043;color:#fff;font-weight:600}
+  button.go:hover:not(:disabled){background:#258545}
+  #drop{border:2px dashed var(--line);border-radius:8px;padding:26px;text-align:center;
+    color:var(--muted);cursor:pointer;transition:.15s}
+  #drop.hover{border-color:var(--blue);color:var(--txt);background:#11202f}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600}
+  td.num{text-align:right}
+  .v-old{color:var(--muted)} .v-new{color:var(--accent);font-weight:600}
+  .st-ready{color:var(--blue)} .st-done{color:var(--accent)} .st-bad{color:var(--red)} .st-wait{color:var(--muted)}
+  label.chk{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+  .muted{color:var(--muted)} .red{color:var(--red)} .accent{color:var(--accent)}
+  #log{background:#0b0f14;border:1px solid var(--line);border-radius:6px;padding:10px;
+    max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;margin-top:10px}
+  .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .who{font-size:12px}
+  .danger{border:1px solid var(--warn);background:#22190a;border-radius:6px;padding:10px 12px;
+    color:var(--warn);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>CertLab 문제은행 업로드</h1>
+  <span class="pill warn">banks 만 덮어씀 · manifest 안 건드림</span>
+  <span class="pill" id="proj">certlab-c3bcb</span>
+  <span class="who" id="who" style="margin-left:auto"></span>
+</header>
+<main>
+
+  <div class="card">
+    <h2>1단계 · 관리자 로그인</h2>
+    <div class="body">
+      <div class="row">
+        <button id="loginBtn">Google로 로그인</button>
+        <button id="logoutBtn" disabled>로그아웃</button>
+        <span id="authMsg" class="muted">업로드(쓰기)에는 certlab.team@gmail.com 로그인이 필요합니다.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2단계 · JSON 파일 선택 (5개)</h2>
+    <div class="body">
+      <div id="drop">여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<br>
+        <span class="muted">bodybuilding__B.json … WT.json</span></div>
+      <input id="file" type="file" accept=".json,application/json" multiple hidden>
+      <table id="tbl" style="display:none">
+        <thead><tr>
+          <th>파일</th><th>문서 ID</th><th>cert/subject</th>
+          <th>현재 ver</th><th>새 ver</th><th>문항수</th><th>상태</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3단계 · 업로드 실행</h2>
+    <div class="body">
+      <div class="row" style="margin-bottom:10px">
+        <label class="chk"><input type="checkbox" id="bump" checked> 버전 자동 +1 (캐시 갱신)</label>
+      </div>
+      <div class="danger" style="margin-bottom:10px">
+        실행하면 banks 문서 5개를 <b>덮어씁니다</b>(set/overwrite). 기존 id·순서는 파일에 보존돼 있고,
+        manifest는 건드리지 않습니다. 실행 전 위 표의 "현재 ver → 새 ver"를 확인하세요.
+      </div>
+      <button id="runBtn" class="go" disabled>업로드 실행</button>
+      <button id="refreshBtn" disabled>현재 상태 새로고침</button>
+      <div id="log" class="muted">대기 중…</div>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const ADMIN_EMAIL = "certlab.team@gmail.com";
+const firebaseConfig = {
+  apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+  authDomain: "certlab-c3bcb.firebaseapp.com",
+  projectId: "certlab-c3bcb",
+  storageBucket: "certlab-c3bcb.firebasestorage.app",
+  messagingSenderId: "698827699707",
+  appId: "1:698827699707:web:b08d492f408ac444fa875e",
+  measurementId: "G-RPZRZQ779J"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const $ = id => document.getElementById(id);
+let isAdmin = false;
+let items = []; // {file, docId, cert, subject, name, version(json), count, curVer, parsed, status}
+
+function log(msg, cls){
+  const el=$('log'); el.className='';
+  const t=new Date().toLocaleTimeString('ko-KR');
+  const span = cls ? `<span class="${cls}">${msg}</span>` : msg;
+  el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…' ? '\n' : '') + `[${t}] ${span}`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ---------- Auth ----------
+auth.onAuthStateChanged(u=>{
+  if(u){
+    isAdmin = (u.email === ADMIN_EMAIL);
+    $('who').innerHTML = `로그인: ${u.email} ` + (isAdmin
+      ? '<span class="pill ok">관리자</span>' : '<span class="pill warn">관리자 아님</span>');
+    $('authMsg').innerHTML = isAdmin
+      ? '<span class="accent">관리자 인증됨 — 업로드 가능</span>'
+      : `<span class="red">이 계정은 관리자가 아닙니다. ${ADMIN_EMAIL}로 로그인하세요.</span>`;
+    $('loginBtn').disabled = true; $('logoutBtn').disabled = false;
+  }else{
+    isAdmin=false;
+    $('who').textContent=''; 
+    $('authMsg').innerHTML='업로드(쓰기)에는 '+ADMIN_EMAIL+' 로그인이 필요합니다.';
+    $('loginBtn').disabled=false; $('logoutBtn').disabled=true;
+  }
+  refreshButtons();
+});
+$('loginBtn').onclick = async ()=>{
+  try{
+    const p=new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(p);
+  }catch(e){ log('로그인 실패: '+(e.message||e), 'st-bad'); }
+};
+$('logoutBtn').onclick = ()=> auth.signOut();
+
+// ---------- File handling ----------
+$('drop').onclick = ()=> $('file').click();
+['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('hover');}));
+['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('hover');}));
+$('drop').addEventListener('drop', e=> handleFiles(e.dataTransfer.files));
+$('file').addEventListener('change', e=> handleFiles(e.target.files));
+
+async function handleFiles(fileList){
+  const files=[...fileList].filter(f=>/\.json$/i.test(f.name));
+  if(!files.length){ log('JSON 파일이 없습니다.', 'st-bad'); return; }
+  for(const f of files){
+    let parsed=null, status='ready', err='';
+    try{
+      parsed = JSON.parse(await f.text());
+    }catch(e){ status='bad'; err='JSON 파싱 실패'; }
+    let docId='', cert='', subject='', name='', version='', count=0;
+    if(parsed){
+      cert=parsed.cert; subject=parsed.subject; name=parsed.name; version=parsed.version;
+      count=Array.isArray(parsed.questions)?parsed.questions.length:-1;
+      docId = (cert&&subject)? `${cert}__${subject}` : '';
+      if(!cert||!subject){ status='bad'; err='cert/subject 누락'; }
+      else if(count<0){ status='bad'; err='questions 배열 아님'; }
+    }
+    // 중복 파일 교체
+    items = items.filter(it=> it.docId!==docId || !docId);
+    items.push({file:f.name, docId, cert, subject, name, version, count, curVer:'?', parsed, status, err});
+    if(err) log(`${f.name}: ${err}`, 'st-bad');
+  }
+  await loadCurrentVersions();
+  render();
+  refreshButtons();
+}
+
+async function loadCurrentVersions(){
+  for(const it of items){
+    if(!it.docId){ continue; }
+    try{
+      const snap = await db.collection('banks').doc(it.docId).get();
+      it.curVer = snap.exists ? (snap.data().version ?? '(없음)') : '(신규문서)';
+    }catch(e){ it.curVer='읽기실패'; }
+  }
+}
+
+function newVersionOf(it){
+  if(it.status==='bad') return '-';
+  if(!$('bump').checked) return it.version; // 파일 값 그대로
+  const base = (typeof it.curVer==='number') ? it.curVer
+             : (typeof it.version==='number' ? it.version : 0);
+  return base + 1;
+}
+
+function render(){
+  const tb=$('tbl').querySelector('tbody');
+  $('tbl').style.display = items.length? 'table':'none';
+  tb.innerHTML = items.map((it,i)=>{
+    const stTxt = it.status==='bad' ? ('오류: '+it.err)
+                : it.status==='done' ? '완료'
+                : '준비됨';
+    const stCls = it.status==='bad'?'st-bad': it.status==='done'?'st-done':'st-ready';
+    return `<tr>
+      <td>${it.file}</td>
+      <td>${it.docId||'-'}</td>
+      <td>${it.cert||'-'} / ${it.subject||'-'}</td>
+      <td class="num v-old">${it.curVer}</td>
+      <td class="num v-new">${newVersionOf(it)}</td>
+      <td class="num">${it.count>=0?it.count:'-'}</td>
+      <td class="${stCls}">${stTxt}</td>
+    </tr>`;
+  }).join('');
+}
+$('bump').addEventListener('change', render);
+
+function refreshButtons(){
+  const anyReady = items.some(it=>it.status==='ready');
+  $('runBtn').disabled = !(isAdmin && anyReady);
+  $('refreshBtn').disabled = !items.some(it=>it.docId);
+}
+
+$('refreshBtn').onclick = async ()=>{ await loadCurrentVersions(); render(); log('현재 버전 새로고침 완료'); };
+
+// ---------- Upload ----------
+$('runBtn').onclick = async ()=>{
+  if(!isAdmin){ log('관리자 로그인이 필요합니다.', 'st-bad'); return; }
+  const ready = items.filter(it=>it.status==='ready');
+  if(!ready.length) return;
+  const lines = ready.map(it=>`  ${it.docId}: ver ${it.curVer} → ${newVersionOf(it)} (문항 ${it.count})`).join('\n');
+  if(!confirm(`다음 ${ready.length}개 문서를 덮어씁니다. 계속할까요?\n\n${lines}\n\nmanifest는 변경하지 않습니다.`)) {
+    log('업로드 취소됨.'); return;
+  }
+  $('runBtn').disabled=true;
+  for(const it of ready){
+    try{
+      const nv = newVersionOf(it);
+      const payload = Object.assign({}, it.parsed, { version: nv });
+      await db.collection('banks').doc(it.docId).set(payload); // 전체 덮어쓰기
+      // 검증 재읽기
+      const back = await db.collection('banks').doc(it.docId).get();
+      const bd = back.data()||{};
+      const okN = Array.isArray(bd.questions)?bd.questions.length:-1;
+      it.status='done'; it.curVer = bd.version ?? nv;
+      log(`✓ ${it.docId} 업로드 완료 — ver ${bd.version}, 문항 ${okN}`, 'st-done');
+    }catch(e){
+      it.status='bad'; it.err='업로드 실패: '+(e.message||e);
+      log(`✗ ${it.docId} 실패: ${e.message||e}`, 'st-bad');
+    }
+    render();
+  }
+  log('— 작업 종료 —', 'accent');
+  refreshButtons();
+};
+</script>
+</body>
+</html>
