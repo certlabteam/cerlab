@@ -1610,8 +1610,9 @@ function renderCard(){
   if(rateRow){
     if(!isFlipped){
       rateRow.innerHTML=
-        '<button class="rate-prev" '+(current===0?'disabled':'')+' onclick="navigate(-1)">◀ 이전</button>'
-        +'<div class="rate-hint">카드를 탭해 답을 확인하세요</div>';
+        '<button class="rb rb-wrong" onclick="flipCard()">❌<span>틀림</span><i>답 보기</i></button>'
+        +'<button class="rb rb-vague" onclick="flipCard()">🤔<span>애매함</span><i>답 보기</i></button>'
+        +'<button class="rb rb-ok" onclick="rate(2)">✅<span>정확함</span><i>바로 통과</i></button>';
     } else {
       const dl=srCorrectInterval((srGet(card)&&srGet(card).st||0)+1);
       rateRow.innerHTML=
