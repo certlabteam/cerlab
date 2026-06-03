@@ -395,8 +395,12 @@ async function loadMembers() {
         const ud = await db.collection('userData').doc(m.id).get();
         if (ud.exists) {
           const d = ud.data();
-          m._solve = d.solveCount || 0;
-          m._studied = d.cardProgress ? Object.keys(d.cardProgress).length : 0;
+          const cp = d.cardProgress && typeof d.cardProgress==='object' ? d.cardProgress : {};
+          const keys = Object.keys(cp);
+          m._studied = keys.length;
+          // 푼 횟수 = 각 문항 시도횟수(rc) 합계 (항상 학습문항 이상). 없으면 solveCount로 폴백
+          let tries = 0; keys.forEach(k => { const p=cp[k]; tries += (p && p.rc) ? p.rc : 0; });
+          m._solve = tries || (d.solveCount || 0);
         } else { m._solve = 0; m._studied = 0; }
       } catch(_) { m._solve = 0; m._studied = 0; }
     }));
