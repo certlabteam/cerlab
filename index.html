@@ -216,6 +216,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .welcome-mile{margin-top:12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;font-size:12px;color:#7A5A1A;line-height:1.6;text-align:center}
 .welcome-mile b{color:#C2611B;font-size:14px}
 .welcome-mile span{color:#A07A30}
+.mile-use{display:flex;align-items:center;gap:8px;padding:11px 13px;margin-bottom:10px;border:1px solid #F1D9A8;border-radius:10px;background:#FFFBF4;font-size:13px;color:#7A5A1A;cursor:pointer}
+.mile-use b{color:#C2611B}
+.mile-use input{width:16px;height:16px}
 .plan-badge{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700}
 .plan-free{background:#E8F8F3;color:#0F6E56}
 .plan-active{background:#E6F1FB;color:#185FA5}
@@ -748,6 +751,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
       예금주: 박성환<br><br>
       입금 완료 신청 시 이용권이 <strong>즉시 활성화</strong>됩니다.<br>단, 결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.
     </div>
+    <div id="mileUseBox"></div>
     <input id="depositorName" placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
     <button class="btn-payment" id="btnPayment" onclick="submitPayment()">입금 완료 신청</button>
     <div class="payment-note">입금 완료 신청 시 이용권이 즉시 활성화됩니다.<br>결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.</div>
@@ -1209,6 +1213,7 @@ function showPlanPopup() {
   }
   document.getElementById('planPopup').classList.remove('hidden');
   renderPlanCards(cert);
+  mileApplyOn=false; renderMileUse();
 }
 function hidePlanPopup() { document.getElementById('planPopup').classList.add('hidden'); }
 
@@ -1259,38 +1264,76 @@ function selectPlan(days, price) {
   selectedPlanPrice = price;
   document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('plan'+days).classList.add('selected');
-  document.getElementById('btnPayment').textContent = `${price.toLocaleString()}원 입금 완료 신청`;
+  recalcPay();
+}
+let mileApplyOn = false;
+function renderMileUse(){
+  const box=document.getElementById('mileUseBox'); if(!box) return;
+  const bal=mileageBalance(myMileageLots);
+  if(bal<=0){ box.innerHTML=''; mileApplyOn=false; return; }
+  box.innerHTML='<label class="mile-use"><input type="checkbox" id="mileChk" '+(mileApplyOn?'checked':'')+' onchange="onMileToggle()"> 🪙 보유 마일리지 <b>'+bal.toLocaleString()+'원</b> 사용</label>';
+}
+function onMileToggle(){ const c=document.getElementById('mileChk'); mileApplyOn=!!(c&&c.checked); recalcPay(); }
+function recalcPay(){
+  const btn=document.getElementById('btnPayment'); if(!btn) return;
+  const price=selectedPlanPrice||0;
+  const bal=mileageBalance(myMileageLots);
+  const applied=mileApplyOn?Math.min(bal,price):0;
+  const payable=price-applied;
+  if(price<=0){ btn.textContent='이용권을 선택하세요'; return; }
+  if(payable<=0) btn.textContent='마일리지 '+applied.toLocaleString()+'원으로 결제 (즉시 활성화)';
+  else if(applied>0) btn.textContent=payable.toLocaleString()+'원 입금 신청 (마일리지 '+applied.toLocaleString()+'원 사용)';
+  else btn.textContent=price.toLocaleString()+'원 입금 완료 신청';
 }
 
+function consumeMileage(lots, amount){
+  const now=Date.now();
+  const active=lots.filter(l=>l && !l.used && (l.a>0) && (!l.exp||l.exp>now))
+    .sort((a,b)=>(a.exp||9e15)-(b.exp||9e15));   // 빨리 만료되는 것부터
+  let need=amount;
+  for(const l of active){ if(need<=0) break; const take=Math.min(l.a, need); l.a-=take; need-=take; if(l.a<=0) l.used=true; }
+  return lots.filter(l=>l && !l.used && (l.a>0));   // 소진된 lot 제거
+}
 async function submitPayment() {
   if (!currentUser) { showLoginPopup(); return; }
-  const depositorName = document.getElementById('depositorName').value.trim();
-  if (!depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
+  if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
   const cert = activeCertId();
   const certName = certFull(cert);
-  if (!confirm(`[${certName}] ${planLabelOf(selectedPlanDays)} - ${selectedPlanPrice.toLocaleString()}원
-입금자: ${depositorName}
-입금 완료 신청을 하시겠어요?`)) return;
-  if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
+  const price = selectedPlanPrice;
+  const bal = mileageBalance(myMileageLots);
+  const applied = mileApplyOn ? Math.min(bal, price) : 0;
+  const payable = price - applied;
+  const depositorName = (document.getElementById('depositorName').value||'').trim();
+  if (payable > 0 && !depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
+
+  const confMsg = payable<=0
+    ? '['+certName+'] '+planLabelOf(selectedPlanDays)+'\n마일리지 '+applied.toLocaleString()+'원으로 결제 (입금 없이 즉시 활성화)\n진행할까요?'
+    : '['+certName+'] '+planLabelOf(selectedPlanDays)+' - '+price.toLocaleString()+'원\n'+(applied>0?'마일리지 '+applied.toLocaleString()+'원 사용 + 입금 '+payable.toLocaleString()+'원\n':'')+'입금자: '+depositorName+'\n신청하시겠어요?';
+  if (!confirm(confMsg)) return;
+
   try {
     const expireAt = new Date();
     expireAt.setDate(expireAt.getDate() + selectedPlanDays);
-    // 결제 신청 기록 (즉시 자동승인 — 입금 미확인 시 관리자가 수동 철회)
+
+    if (applied > 0) {
+      myMileageLots = consumeMileage(myMileageLots, applied);
+      try { await db.collection('users').doc(currentUser.uid).update({ mileageLots: myMileageLots }); } catch(_){}
+    }
+
     await db.collection('payments').add({
-      uid: currentUser.uid,
-      email: currentUser.email,
-      displayName: currentUser.displayName,
-      depositorName,
-      certType: cert,
-      certName,
+      uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
+      depositorName: depositorName || (applied>0?'(마일리지 결제)':''),
+      certType: cert, certName,
       planDays: selectedPlanDays,
-      price: selectedPlanPrice,
-      status: 'auto_approved',
-      autoApproved: true,
+      price: price,
+      mileageUsed: applied,
+      depositAmount: payable,
+      status: 'auto_approved', autoApproved: true,
+      paidByMileageOnly: payable<=0,
       approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    // 이용권 즉시 활성화 (할인코드 적용과 동일 방식)
+
     const upd = {
       ['entitlements.'+cert+'.plan']: 'ACTIVE',
       ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
@@ -1299,10 +1342,12 @@ async function submitPayment() {
     if (cert === 'bodybuilding') { upd.plan = 'ACTIVE'; upd.expireAt = firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays = selectedPlanDays; }
     await db.collection('users').doc(currentUser.uid).update(upd);
     userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = selectedPlanDays;
-    syncPlanMirror();
-    updateAuthBar();
-    hidePlanPopup();
-    alert('✅ 이용권이 즉시 활성화되었습니다!\n만료일: ' + expireAt.toLocaleDateString('ko-KR') + '\n(입금 확인 후 유지됩니다.)');
+
+    // 추천 결제 보너스: 추천받아 가입했다면 내 referral 기록을 paid=true (추천인 다음 로그인 시 +10,000)
+    try { await db.collection('referrals').doc(currentUser.uid).update({ paid:true }); } catch(_){}
+
+    syncPlanMirror(); updateAuthBar(); hidePlanPopup();
+    alert((payable<=0?'✅ 마일리지로 결제 완료! 즉시 활성화되었습니다.':'✅ 이용권이 즉시 활성화되었습니다!')+'\n만료일: '+expireAt.toLocaleDateString('ko-KR')+(payable>0?'\n(입금 확인 후 유지됩니다.)':''));
     refresh();
   } catch(e) {
     alert('오류가 발생했습니다: ' + e.message);
