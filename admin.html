@@ -448,7 +448,7 @@ function loadDashboard() {
       const d = ref.toDate ? ref.toDate() : new Date(ref);
       return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
     })
-    .reduce((sum, p) => sum + (p.price || 0), 0);
+    .reduce((sum, p) => sum + (p.depositAmount!=null ? p.depositAmount : (p.price || 0)), 0);
 
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statFree').textContent = free;
@@ -516,7 +516,7 @@ function renderRecentPayments() {
           <td>${p.email||'-'}</td>
           <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${planNames[p.planDays]||p.planDays+'일'}</td>
-          <td>${(p.price||0).toLocaleString()}원</td>
+          <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
           <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
           <td>${fmtDate(p.createdAt)}</td>
         </tr>`).join('')}
@@ -535,7 +535,7 @@ function renderPayments(list) {
           <td><strong>${p.depositorName||'-'}</strong></td>
           <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${planNames[p.planDays]||p.planDays+'일'}</td>
-          <td>${(p.price||0).toLocaleString()}원</td>
+          <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
           <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
           <td>${fmtDate(p.createdAt)}</td>
           <td>${
@@ -606,7 +606,9 @@ function openApprove(paymentId) {
   document.getElementById('modalEmail').textContent = p.email;
   document.getElementById('modalDepositor').textContent = p.depositorName || '-';
   document.getElementById('modalPlan').textContent = planNames[p.planDays] || p.planDays+'일';
-  document.getElementById('modalPrice').textContent = (p.price||0).toLocaleString()+'원';
+  document.getElementById('modalPrice').textContent = p.mileageUsed>0
+    ? ((p.depositAmount||0).toLocaleString()+'원 입금 + 마일리지 '+(p.mileageUsed||0).toLocaleString()+'원')
+    : (p.price||0).toLocaleString()+'원';
   document.getElementById('modalExpire').textContent = expireDate.toLocaleDateString('ko-KR');
   document.getElementById('approveModal').classList.remove('hidden');
 }
