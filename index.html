@@ -2435,7 +2435,7 @@ function renderMcqExam(root){
     } else { body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>'; }
     expHTML='<div class="exp"><div class="al'+(okk?'':' bad')+'">'+(okk?'✓ 정답':(sel?'✕ 오답':'미응답'))+' · 정답 '+ansLabel(q.ans)+'번'+(isMulti?(ansArr(q.ans).length===5?' (전항정답)':' (복수정답)'):'')+'</div>'+body+'</div>'; }
   const subjTag=((mqDiag||mqReview)&&q._subj)?'<span class="qsubj">'+q._subj+'</span>':'';
-  const tags=subjTag+(isMulti?'<span class="qmulti">'+(ansArr(q.ans).length===5?'전항정답':'복수정답')+'</span>':'')+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
+  const tags=subjTag+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
   root.innerHTML=
     '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
       '<div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div>'+
