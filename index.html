@@ -333,6 +333,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px}
 #mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
+#mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
 #mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
 #mcqView .opts{display:flex;flex-direction:column;gap:9px}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer}
@@ -2290,7 +2291,7 @@ function mcqAnalysisCard(cert){
 function startDiagnostic(){
   const cert=mqCert, qb=qbOf(cert); let picked=[];
   Object.keys(qb).forEach(code=>{
-    const pool=[]; qb[code].sets.forEach(st=>st.questions.forEach(q=>{ if(mqHasAnswer(q)) pool.push(q); }));
+    const pool=[]; qb[code].sets.forEach(st=>st.questions.forEach(q=>{ if(mqHasAnswer(q)){ q._subj=qb[code].name||code; pool.push(q); } }));
     for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
     picked=picked.concat(pool.slice(0,8));
   });
@@ -2307,7 +2308,7 @@ function srSaveDiagnostic(cert,correct,total){
 }
 function startMcqReview(){
   const qb=curQB(); const due=[];
-  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)) due.push(q); })); });
+  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)){ q._subj=qb[id].name||id; due.push(q); } })); });
   if(!due.length){
     const root=document.getElementById('mcqRoot');
     if(root) root.innerHTML='<div class="mcq-result"><div class="em">🎉</div>'
@@ -2370,7 +2371,8 @@ function renderMcqExam(root){
       }
     } else { body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>'; }
     expHTML='<div class="exp"><div class="al'+(okk?'':' bad')+'">'+(okk?'✓ 정답':(sel?'✕ 오답':'미응답'))+' · 정답 '+ansLabel(q.ans)+'번'+(isMulti?(ansArr(q.ans).length===5?' (전항정답)':' (복수정답)'):'')+'</div>'+body+'</div>'; }
-  const tags=(isMulti?'<span class="qmulti">'+(ansArr(q.ans).length===5?'전항정답':'복수정답')+'</span>':'')+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
+  const subjTag=((mqDiag||mqReview)&&q._subj)?'<span class="qsubj">'+q._subj+'</span>':'';
+  const tags=subjTag+(isMulti?'<span class="qmulti">'+(ansArr(q.ans).length===5?'전항정답':'복수정답')+'</span>':'')+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
   root.innerHTML=
     '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
       '<div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div>'+
