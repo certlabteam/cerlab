@@ -393,59 +393,59 @@ function mileBalanceOf(m){
   (m.mileageLots||[]).forEach(l=>{ if(l && !l.used && (!l.exp||l.exp>now)) s+=(l.a||0); });
   return s;
 }
+function mileHistSum(m, neg){
+  let s=0; (m.mileageHistory||[]).forEach(h=>{ const a=h.a||0; if(neg){ if(a<0) s+=-a; } else { if(a>0) s+=a; } }); return s;
+}
+function memberByUid(uid){ return allMembers.find(x=>x.id===uid); }
+function memberByEmail(em){ if(!em) return null; em=em.toLowerCase(); return allMembers.find(x=>(x.email||'').toLowerCase()===em); }
 function renderMileage(list){
   const box=document.getElementById('mileList'); if(!box) return;
   const members = list || allMembers;
-  let rows = members.map(m=>{
+  // 추천인(자기 코드로 가입자가 1명 이상 있는 회원)만 헤더로
+  let refers = members.map(m=>{
     const code=m.referralCode||'';
-    const refs=allReferrals.filter(r=>r.referrerCode && code && r.referrerCode===code);
+    const refs=allReferrals.filter(r=>r.referrerCode && code && r.referrerCode===code && r.refereeUid!==m.id);
     const paidRefs=refs.filter(r=>r.paid).length;
-    const expectedMax = 1000 + refs.length*1000 + paidRefs*10000;  // 정상적으로 받을 수 있는 최대(만료·사용 전)
-    const bal=mileBalanceOf(m);
+    const expectedMax = 1000 + refs.length*1000 + paidRefs*10000;
+    const earned = mileHistSum(m,false);   // 받은 적립금(이력 기준)
+    const used = mileHistSum(m,true);       // 사용 적립금
+    const bal = mileBalanceOf(m);
     const selfRef = !!(m.referredBy && code && m.referredBy===code);
-    const overMax = bal > expectedMax;   // 잔액이 정상 최대보다 큼 = 위조
+    const overMax = bal > expectedMax;
     const suspect = overMax || selfRef;
-    return {m,code,refCnt:refs.length,paidRefs,expectedMax,bal,selfRef,overMax,suspect};
-  }).filter(r=> r.bal>0 || r.refCnt>0);
-  rows.sort((a,b)=> (Number(b.suspect)-Number(a.suspect)) || (b.bal-a.bal));
-  if(!rows.length){ box.innerHTML='<div class="empty">마일리지·추천 내역이 있는 회원이 없습니다.</div>'; return; }
-  const suspectN=rows.filter(r=>r.suspect).length;
-  box.innerHTML =
-    '<div style="padding:12px 20px;font-size:13px;color:#6E6256;border-bottom:1px solid #F0F0F0">'
-    +'대상 <b>'+rows.length+'</b>명 · 의심 <b style="color:#A32D2D">'+suspectN+'</b>명</div>'
-    +'<table><thead><tr><th>이메일</th><th>잔액</th><th>추천(가입/결제)</th><th>내 코드</th><th>추천받음</th><th>상태</th></tr></thead><tbody>'
-    + rows.map((r,i)=>{
-        const refList = allReferrals.filter(x=>x.referrerCode && r.code && x.referrerCode===r.code);
-        const histRows = (r.m.mileageHistory||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(h=>{
-          const label = h.t==='signup'?'가입 보너스':h.t==='ref_signup'?('추천 가입'+(h.who?' ('+h.who+')':'')):h.t==='ref_paid'?('추천 결제'+(h.who?' ('+h.who+')':'')):h.t==='use'?('사용'+(h.memo?' ('+h.memo+')':'')):h.t;
-          const amt=(h.a||0); const col=amt<0?'#A32D2D':'#15793F';
-          const dt=h.at?new Date(h.at).toLocaleDateString('ko-KR'):'';
-          return '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px"><span style="color:#6E6256">'+label+' <span style="color:#B4A99C">'+dt+'</span></span><b style="color:'+col+'">'+(amt>0?'+':'')+amt.toLocaleString()+'원</b></div>';
-        }).join('') || '<div style="font-size:12px;color:#B4A99C">적립/사용 내역 없음</div>';
-        const refRows = refList.length
-          ? refList.map(x=>'<div style="font-size:12px;padding:2px 0;color:#6E6256">• '+(x.refereeEmail||x.refereeUid)+(x.paid?' <span style="color:#15793F">(결제함 +10,000)</span>':' <span style="color:#B4A99C">(가입만 +1,000)</span>')+'</div>').join('')
-          : '<div style="font-size:12px;color:#B4A99C">아직 없음</div>';
-        return `
-        <tr onclick="toggleMileDetail(${i})" style="cursor:pointer${r.suspect?';background:#FFF6F6':''}">
-          <td>${r.m.email||'-'} <span style="color:#B4A99C">▾</span></td>
-          <td style="font-weight:700;color:#C2611B">${r.bal.toLocaleString()}원</td>
-          <td>${r.refCnt}명 / ${r.paidRefs}결제</td>
-          <td>${r.code||'-'}</td>
-          <td>${r.m.referredBy||'-'}</td>
-          <td>${r.suspect
-              ? '<span class="badge badge-revoked">⚠ 의심'+(r.overMax?' (잔액초과)':'')+(r.selfRef?' (자기추천)':'')+'</span>'
-              : '<span class="badge badge-approved">정상</span>'}</td>
-        </tr>
-        <tr class="mile-detail hidden" id="mileDet${i}"><td colspan="6" style="background:#FAF8F4;padding:12px 20px">
-          <div style="display:flex;gap:24px;flex-wrap:wrap">
-            <div style="flex:1;min-width:220px"><div style="font-weight:700;font-size:12px;color:#8A7E70;margin-bottom:4px">내 링크로 가입한 사람 (${refList.length}명)</div>${refRows}</div>
-            <div style="flex:1;min-width:220px"><div style="font-weight:700;font-size:12px;color:#8A7E70;margin-bottom:4px">적립 / 사용 내역</div>${histRows}</div>
-          </div>
-        </td></tr>`;
-      }).join('')
-    + '</tbody></table>';
+    return {m,code,refs,paidRefs,earned,used,bal,suspect,overMax,selfRef};
+  }).filter(r=> r.refs.length>0);
+  refers.sort((a,b)=> (Number(b.suspect)-Number(a.suspect)) || (b.earned-a.earned));
+  if(!refers.length){ box.innerHTML='<div class="empty">추천으로 가입한 내역이 없습니다.</div>'; return; }
+  const suspectN=refers.filter(r=>r.suspect).length;
+  let html='<div style="padding:12px 20px;font-size:13px;color:#6E6256;border-bottom:1px solid #F0F0F0">'
+    +'추천인 <b>'+refers.length+'</b>명 · 의심 <b style="color:#A32D2D">'+suspectN+'</b>명</div>'
+    +'<table><thead><tr><th>추천인 / 가입자</th><th>결제</th><th>받은 적립금</th><th>사용 적립금</th><th>상태</th></tr></thead><tbody>';
+  refers.forEach((r,i)=>{
+    // 추천인 헤더 줄
+    html+='<tr style="background:#F4F6FA'+(r.suspect?';background:#FFF6F6':'')+';font-weight:700">'
+      +'<td>👤 '+(r.m.email||'-')+' <span style="color:#8A7E70;font-weight:500">('+r.refs.length+'명 추천)</span></td>'
+      +'<td>'+r.paidRefs+'결제</td>'
+      +'<td style="color:#15793F">+'+r.earned.toLocaleString()+'원</td>'
+      +'<td style="color:#A32D2D">-'+r.used.toLocaleString()+'원</td>'
+      +'<td>'+(r.suspect?'<span class="badge badge-revoked">⚠ 의심'+(r.overMax?' (잔액초과)':'')+(r.selfRef?' (자기추천)':'')+'</span>':'<span class="badge badge-approved">정상</span>')+'</td></tr>';
+    // 가입자 한 명씩
+    r.refs.forEach(rf=>{
+      const gm = memberByUid(rf.refereeUid) || memberByEmail(rf.refereeEmail);
+      const gEarned = gm? mileHistSum(gm,false):0;
+      const gUsed = gm? mileHistSum(gm,true):0;
+      const joined = gm && gm.createdAt ? (gm.createdAt.toDate?gm.createdAt.toDate():new Date(gm.createdAt)).toLocaleDateString('ko-KR') : '';
+      html+='<tr style="font-size:13px">'
+        +'<td style="padding-left:28px;color:#4A4036">└ '+(rf.refereeEmail||rf.refereeUid)+(joined?' <span style="color:#B4A99C">'+joined+' 가입</span>':'')+'</td>'
+        +'<td>'+(rf.paid?'<span style="color:#15793F">결제함</span>':'<span style="color:#B4A99C">가입만</span>')+'</td>'
+        +'<td style="color:#15793F">+'+gEarned.toLocaleString()+'원</td>'
+        +'<td style="color:#A32D2D">-'+gUsed.toLocaleString()+'원</td>'
+        +'<td></td></tr>';
+    });
+  });
+  html+='</tbody></table>';
+  box.innerHTML=html;
 }
-function toggleMileDetail(i){ const d=document.getElementById('mileDet'+i); if(d) d.classList.toggle('hidden'); }
 function filterMile(){
   const q=document.getElementById('searchMile').value.toLowerCase();
   renderMileage(allMembers.filter(m=>(m.email||'').toLowerCase().includes(q)||(m.referralCode||'').toLowerCase().includes(q)||(m.referredBy||'').toLowerCase().includes(q)));
