@@ -550,17 +550,17 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     </div>
     <div class="cert-card" onclick="enterCert('realestate1')">
       <div class="cert-ic">🏠</div>
-      <div class="cert-meta"><div class="nm">공인중개사 1차</div><div class="ds">객관식 · 부동산학개론 · 민법및민사특별법</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-meta"><div class="nm">공인중개사 1차</div><div class="ds">객관식 · 부동산학개론 · 민법및민사특별법</div><span class="tag soon" id="certTag-realestate1">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" onclick="enterCert('realestate2')">
       <div class="cert-ic">🏢</div>
-      <div class="cert-meta"><div class="nm">공인중개사 2차</div><div class="ds">객관식 · 중개사법령 · 공법 · 공시법령및세법</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-meta"><div class="nm">공인중개사 2차</div><div class="ds">객관식 · 중개사법령 · 공법 · 공시법령및세법</div><span class="tag soon" id="certTag-realestate2">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" onclick="enterCert('koreanhistory')">
       <div class="cert-ic">📜</div>
-      <div class="cert-meta"><div class="nm">한국사능력검정시험 심화</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-meta"><div class="nm">한국사능력검정시험 심화</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon" id="certTag-koreanhistory">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
   </div>
@@ -2585,8 +2585,17 @@ function showDataError(err){
   document.body.appendChild(b);
 }
 showHome();
+function refreshCertCards(){
+  ['realestate1','realestate2','koreanhistory'].forEach(cert=>{
+    const tag=document.getElementById('certTag-'+cert); if(!tag) return;
+    const n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
+    if(n>0){ tag.textContent='모의고사'; tag.classList.remove('soon'); }
+    else { tag.textContent='준비 중'; tag.classList.add('soon'); }
+  });
+}
 loadAllBanks().then(()=>{
   rebuildQid();
+  if(typeof refreshCertCards==='function') refreshCertCards();
   // 비동기 로딩 전에 빈 D로 굳은 카드 스냅샷을 실데이터로 재동기화
   if(typeof cards!=='undefined'){ cards=[...D]; filtered=[...cards]; current=0; }
   if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
