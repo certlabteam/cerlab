@@ -795,10 +795,20 @@ async function confirmRevoke() {
       });
       // bodybuilding(레거시 top-plan)이거나, 남은 이용권이 없으면 top-level plan도 만료
       if (cert==='bodybuilding' || !otherLive) upd.plan='EXPIRED';
+      // 마일리지 사용분 환원 (1년 유효)
+      const used = p.mileageUsed || 0;
+      if (used > 0) {
+        const lots = Array.isArray(data && data.mileageLots) ? data.mileageLots.slice() : [];
+        lots.push({a:used, t:'refund', at:now, exp:now+365*86400000});
+        const hist = Array.isArray(data && data.mileageHistory) ? data.mileageHistory.slice() : [];
+        hist.push({t:'refund', a:used, at:now, memo:'결제 철회 환원'});
+        upd.mileageLots = lots;
+        upd.mileageHistory = hist;
+      }
       await ref.update(upd);
     }
     closeModal();
-    alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`);
+    alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`+((p.mileageUsed||0)>0?`\n사용한 마일리지 ${(p.mileageUsed||0).toLocaleString()}원을 환원했습니다.`:''));
     await loadAll();
   } catch(e) { alert('오류: ' + e.message); }
 }
