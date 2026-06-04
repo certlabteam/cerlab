@@ -786,6 +786,7 @@ const MILE_DAY = 86400000;
 async function settleReferralMileage(ref, data){
   if (!myReferralCode) return;
   let lots = Array.isArray(data.mileageLots) ? data.mileageLots.slice() : [];
+  let hist = Array.isArray(data.mileageHistory) ? data.mileageHistory.slice() : [];
   let changed = false;
   const now = Date.now();
   try {
@@ -796,12 +797,14 @@ async function settleReferralMileage(ref, data){
       // 가입 보상 1,000 (1년)
       if (!r.signupSettled) {
         lots.push({a:1000, t:'ref_signup', at:now, exp:now+365*MILE_DAY});
+        hist.push({t:'ref_signup', a:1000, at:now, who:r.refereeEmail||null});
         changed = true;
         try { await d.ref.update({ signupSettled:true }); } catch(_){}
       }
       // 결제 보상 10,000 (1년)
       if (r.paid && !r.paidSettled) {
         lots.push({a:10000, t:'ref_paid', at:now, exp:now+365*MILE_DAY});
+        hist.push({t:'ref_paid', a:10000, at:now, who:r.refereeEmail||null});
         changed = true;
         try { await d.ref.update({ paidSettled:true }); } catch(_){}
       }
@@ -809,7 +812,7 @@ async function settleReferralMileage(ref, data){
   } catch(_){}
   if (changed) {
     myMileageLots = lots;
-    try { await ref.update({ mileageLots: lots }); } catch(_){}
+    try { await ref.update({ mileageLots: lots, mileageHistory: hist }); } catch(_){}
     updateAuthBar();
   }
 }
@@ -896,6 +899,7 @@ async function loadUserPlan(user) {
         referralCode: refCode,
         referredBy: referredBy || null,
         mileageLots: lots,
+        mileageHistory: [{t:'signup', a:1000, at:now}],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       myReferralCode = refCode; myMileageLots = lots;
@@ -1317,7 +1321,10 @@ async function submitPayment() {
 
     if (applied > 0) {
       myMileageLots = consumeMileage(myMileageLots, applied);
-      try { await db.collection('users').doc(currentUser.uid).update({ mileageLots: myMileageLots }); } catch(_){}
+      let hist = [];
+      try { const ud=await db.collection('users').doc(currentUser.uid).get(); hist=(ud.data()&&Array.isArray(ud.data().mileageHistory))?ud.data().mileageHistory.slice():[]; } catch(_){}
+      hist.push({t:'use', a:-applied, at:Date.now(), memo:certName});
+      try { await db.collection('users').doc(currentUser.uid).update({ mileageLots: myMileageLots, mileageHistory: hist }); } catch(_){}
     }
 
     await db.collection('payments').add({
