@@ -776,6 +776,8 @@ try {
 
 // ===== 사용자 상태 =====
 let currentUser = null;
+// ===== 추천/마일리지 =====
+const MILE_DAY = 86400000;
 // ===== 추천 대기정산 (추천인 본인 로그인 시 자기 문서에 적립) =====
 async function settleReferralMileage(ref, data){
   if (!myReferralCode) return;
