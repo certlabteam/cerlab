@@ -162,6 +162,10 @@ tr:hover td{background:#FAFAFA}
         <div class="dash-card red"><div class="label">만료</div><div class="value" id="statExpired">-</div></div>
         <div class="dash-card orange"><div class="label">승인 대기</div><div class="value" id="statPending">-</div></div>
         <div class="dash-card pink"><div class="label">이번 달 매출</div><div class="value" id="statRevenue">-</div></div>
+        <div class="dash-card green"><div class="label">전환율 (유료/전체)</div><div class="value" id="statConv">-</div></div>
+        <div class="dash-card"><div class="label">최근 7일 가입</div><div class="value" id="statNew7">-</div></div>
+        <div class="dash-card purple"><div class="label">최근 7일 결제</div><div class="value" id="statPay7">-</div></div>
+        <div class="dash-card orange"><div class="label">학습 20회↑ 무료회원<br><span style="font-size:10px;font-weight:500">전환 유망</span></div><div class="value" id="statHot">-</div></div>
       </div>
       <div class="table-wrap">
         <div class="table-header"><div class="table-title">최근 결제 신청</div></div>
@@ -541,6 +545,24 @@ function loadDashboard() {
   document.getElementById('statExpired').textContent = expired;
   document.getElementById('statPending').textContent = pending;
   document.getElementById('statRevenue').textContent = revenue.toLocaleString() + '원';
+
+  // ===== CRM 통계 =====
+  const WEEK = 7*86400000; const nowMs = now.getTime();
+  const dOf = (t)=> t ? (t.toDate?t.toDate():new Date(t)) : null;
+  // 전환율 = 유료 / 전체
+  const conv = total>0 ? Math.round(active/total*100) : 0;
+  // 최근 7일 가입
+  const new7 = allMembers.filter(m=>{ const d=dOf(m.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
+  // 최근 7일 결제(결제 건 기준, 철회/거절 제외)
+  const pay7 = allPayments.filter(p=>{ if(!isPaid(p.status)) return false; const d=dOf(p.approvedAt||p.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
+  // 학습 20회 이상 무료회원
+  const hot = allMembers.filter(m=> memberStatus(m)==='FREE_TRIAL' && (m._solve||0)>=20 ).length;
+
+  const setT=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setT('statConv', conv+'%');
+  setT('statNew7', new7+'명');
+  setT('statPay7', pay7+'건');
+  setT('statHot', hot+'명');
 }
 
 function updatePendingBadge() {
