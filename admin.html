@@ -72,6 +72,12 @@ tr:hover td{background:#FAFAFA}
 .badge-expired{background:#FCEBEB;color:#A32D2D}
 .badge-guest{background:#F4EEF9;color:#534AB7}
 .badge-coupon{background:#FFF1E6;color:#C2611B}
+.grade{display:inline-block;min-width:22px;text-align:center;padding:2px 8px;border-radius:8px;font-weight:800;font-size:12px}
+.g-a{background:#E6F4EA;color:#15793F}
+.g-b{background:#E6F1FB;color:#185FA5}
+.g-c{background:#FFF6E6;color:#B5851A}
+.g-d{background:#F1EFEC;color:#9A8F80}
+.g-paid{background:#EDE9FB;color:#5B50C0}
 .badge-pending{background:#FFF9F0;color:#BA7517}
 .badge-approved{background:#E8F8F3;color:#0F6E56}
 .badge-rejected{background:#FCEBEB;color:#A32D2D}
@@ -148,6 +154,7 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
     <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
     <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
+    <button class="tab-btn" onclick="switchTab('crm')">전환 타겟</button>
     <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
   </div>
 
@@ -189,7 +196,17 @@ tr:hover td{background:#FAFAFA}
       <div class="table-wrap">
         <div class="table-header">
           <div class="table-title">회원 목록</div>
-          <input class="search-input" id="searchMember" placeholder="이메일 검색..." oninput="filterMembers()">
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="filterGrade" onchange="filterMembers()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="">전체 등급</option>
+              <option value="A">A (30회↑)</option>
+              <option value="B">B (10~29회)</option>
+              <option value="C">C (1~9회)</option>
+              <option value="D">D (0회)</option>
+              <option value="유료">유료</option>
+            </select>
+            <input class="search-input" id="searchMember" placeholder="이메일 검색..." oninput="filterMembers()">
+          </div>
         </div>
         <div id="memberList"><div class="loading">로딩 중...</div></div>
       </div>
@@ -214,6 +231,21 @@ tr:hover td{background:#FAFAFA}
           <input class="search-input" id="searchMile" placeholder="이메일/코드 검색..." oninput="filterMile()">
         </div>
         <div id="mileList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 전환 타겟 -->
+    <div class="tab-panel" id="panel-crm">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">전환 타겟 (발송 대상 추출)</div>
+          <select id="crmSeg" onchange="renderCrm()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            <option value="new24">가입 24시간 내 · 학습 0회</option>
+            <option value="new3d">가입 3일 내 · 학습 0회</option>
+            <option value="hot">학습 20회↑ · 미결제 (전환 유망)</option>
+          </select>
+        </div>
+        <div id="crmList"><div class="loading">로딩 중...</div></div>
       </div>
     </div>
 
@@ -279,6 +311,14 @@ tr:hover td{background:#FAFAFA}
   </div>
 </div>
 
+<div class="modal-bg hidden" id="memberDetailModal">
+  <div class="modal" style="max-width:540px;width:92%;max-height:86vh;overflow-y:auto">
+    <div class="modal-title">👤 회원 상세</div>
+    <div id="mdBody"><div class="loading">로딩 중...</div></div>
+    <div class="modal-btns"><button class="btn-modal-cancel" style="flex:1" onclick="closeMemberDetail()">닫기</button></div>
+  </div>
+</div>
+
 <script>
 const ADMIN_EMAIL = 'certlab.team@gmail.com';
 const firebaseConfig = {
@@ -335,6 +375,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   event.target.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
+  if(name==='crm') renderCrm();
 }
 
 // ===== 데이터 로드 =====
@@ -488,10 +529,10 @@ async function loadMembers() {
           const keys = Object.keys(cp);
           m._studied = keys.length;
           // 푼 횟수·학습문항은 자동복습 기록(cardProgress) 기준만 사용 (옛 solveCount 폴백 제거)
-          let tries = 0; keys.forEach(k => { const p=cp[k]; tries += (p && p.rc) ? p.rc : 0; });
-          m._solve = tries;
-        } else { m._solve = 0; m._studied = 0; }
-      } catch(_) { m._solve = 0; m._studied = 0; }
+          let tries = 0, lastLr = 0; keys.forEach(k => { const p=cp[k]; tries += (p && p.rc) ? p.rc : 0; if(p && p.lr && p.lr>lastLr) lastLr=p.lr; });
+          m._solve = tries; m._lastStudy = lastLr||null;
+        } else { m._solve = 0; m._studied = 0; m._lastStudy = null; }
+      } catch(_) { m._solve = 0; m._studied = 0; m._lastStudy = null; }
     }));
     const q = (document.getElementById('searchMember')||{}).value || '';
     renderMembers(q ? allMembers.filter(m => (m.email||'').toLowerCase().includes(q.toLowerCase())) : allMembers);
@@ -499,6 +540,18 @@ async function loadMembers() {
 }
 
 // 회원이 어떤 자격증이든 유효한 이용권을 가졌는지 판정 (top-level + entitlements)
+function daysSince(ts){ if(!ts) return null; const d=ts.toDate?ts.toDate():new Date(ts); return Math.floor((Date.now()-d.getTime())/86400000); }
+function agoTxt(ts){ const n=daysSince(ts); if(n==null) return ''; return n<=0?'오늘':(n+'일 전'); }
+function fmtWithAgo(ts){ if(!ts) return '<span style="color:#C9BFB2">-</span>'; return fmtDateShort(ts)+' <span style="color:#A89C8E;font-size:11px">('+agoTxt(ts)+')</span>'; }
+function memberGrade(m){
+  const s=memberStatus(m);
+  if(s==='ACTIVE') return {label:'유료', cls:'g-paid'};
+  const n=m._solve||0;
+  if(n>=30) return {label:'A', cls:'g-a'};
+  if(n>=10) return {label:'B', cls:'g-b'};
+  if(n>=1)  return {label:'C', cls:'g-c'};
+  return {label:'D', cls:'g-d'};
+}
 function memberStatus(m) {
   const now = new Date();
   const live = ent => {
@@ -662,28 +715,25 @@ function renderMembers(list) {
   if (!list.length) { document.getElementById('memberList').innerHTML = '<div class="empty">회원이 없습니다.</div>'; return; }
   document.getElementById('memberList').innerHTML = `
     <table>
-      <thead><tr><th>이메일</th><th>상태</th><th>만료일</th><th>남은일</th><th>학습량</th><th>사용 코드</th><th>가입일</th><th>관리</th></tr></thead>
+      <thead><tr><th>이메일</th><th>등급</th><th>상태</th><th>학습량</th><th>최근 로그인</th><th>최근 학습</th><th>가입(경과)</th><th>관리</th></tr></thead>
       <tbody>${list.map(m => {
         const s = memberStatus(m);
+        const g = memberGrade(m);
         const learn = m._solve==null ? '<span style="color:#B4A99C">…</span>'
-          : `<div style="display:flex;gap:14px">
+          : `<div style="display:flex;gap:12px">
                <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${(m._solve||0).toLocaleString()}</div><div style="font-size:10px;color:#A89C8E">푼 횟수</div></div>
                <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${m._studied||0}</div><div style="font-size:10px;color:#A89C8E">학습문항</div></div>
              </div>`;
-        const codes = (codeByUid[m.id]||[]);
-        const codeCell = codes.length
-          ? codes.map(c=>`<span class="badge" style="background:#EDE9FB;color:#5B50C0">🎟 ${c}</span>`).join(' ')
-          : '<span style="color:#C9BFB2">-</span>';
         return `
-        <tr>
+        <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
           <td>${m.email||'-'}</td>
+          <td><span class="grade ${g.cls}">${g.label}</span></td>
           <td>${memberBadges(m)}</td>
-          <td>${m.plan==='ACTIVE'?fmtDateShort(m.expireAt):m.plan==='FREE_TRIAL'?fmtDateShort(m.trialEnd):'-'}</td>
-          <td>${m.plan==='ACTIVE'?daysLeft(m.expireAt):m.plan==='FREE_TRIAL'?daysLeft(m.trialEnd):'-'}</td>
           <td>${learn}</td>
-          <td>${codeCell}</td>
-          <td>${fmtDateShort(m.createdAt)}</td>
-          <td>
+          <td>${fmtWithAgo(m.lastLoginAt)}</td>
+          <td>${fmtWithAgo(m._lastStudy)}</td>
+          <td>${fmtDateShort(m.createdAt)} <span style="color:#A89C8E;font-size:11px">(${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</span></td>
+          <td onclick="event.stopPropagation()">
             <button class="btn-sm btn-extend" onclick="extendMember('${m.id}','${m.email}')">연장</button>
             <button class="btn-sm btn-expire" onclick="expireMember('${m.id}','${m.email}')" style="margin-left:4px">만료</button>
           </td>
@@ -698,8 +748,122 @@ function filterPayments() {
   renderPayments(allPayments.filter(p => (p.email||'').toLowerCase().includes(q)));
 }
 function filterMembers() {
-  const q = document.getElementById('searchMember').value.toLowerCase();
-  renderMembers(allMembers.filter(m => (m.email||'').toLowerCase().includes(q)));
+  const q = (document.getElementById('searchMember').value||'').toLowerCase();
+  const g = (document.getElementById('filterGrade')||{}).value || '';
+  renderMembers(allMembers.filter(m => {
+    if (q && !((m.email||'').toLowerCase().includes(q))) return false;
+    if (g && memberGrade(m).label !== g) return false;
+    return true;
+  }));
+}
+function closeMemberDetail(){ const el=document.getElementById('memberDetailModal'); if(el) el.classList.add('hidden'); }
+// ===== 전환 타겟 (반자동 발송 대상 추출) =====
+function memberPaid(m){
+  const em=(m.email||'').toLowerCase();
+  return allPayments.some(p => isPaid(p.status) && (p.uid===m.id || (p.email&&em&&p.email.toLowerCase()===em)));
+}
+const CRM_TPL = {
+  new24: { title:'가입 24시간 내 · 학습 0회', subject:'[CertLab] 첫 문제 풀어보셨나요? 50문제 무료 체험 중이에요',
+    body:'안녕하세요! CertLab에 가입해주셔서 감사합니다.\n\n아직 학습을 시작하지 않으셨네요. 지금 50문제 무료 체험으로 내 실력을 진단해볼 수 있어요. 진단 모의고사를 완주하면 예상 점수와 합격 여부, 약점 과목까지 분석해 드립니다.\n\n지금 바로 시작해보세요 → https://certlab.ai.kr' },
+  new3d: { title:'가입 3일 내 · 학습 0회', subject:'[CertLab] 무료 체험이 기다리고 있어요 🎯',
+    body:'안녕하세요! 가입 후 아직 학습을 시작하지 않으셨어요.\n\n하루 10분이면 충분합니다. 기출문제와 자동 복습, 약점 분석으로 효율적으로 준비해보세요. 50문제 무료 체험이 그대로 남아 있어요.\n\n지금 시작 → https://certlab.ai.kr' },
+  hot: { title:'학습 20회↑ · 미결제', subject:'[CertLab] 열심히 하고 계시네요! 전체 문제로 합격에 더 가까이',
+    body:'안녕하세요! 꾸준히 학습해주셔서 감사합니다.\n\n무료 체험을 알차게 활용하고 계신데요, 이용권을 등록하면 전체 기출문제와 상세 해설, 무제한 복습까지 모두 이용할 수 있어요. 지금까지의 학습 흐름을 그대로 이어가 합격까지 가보세요!\n\n이용권 보기 → https://certlab.ai.kr' }
+};
+function crmSegment(seg){
+  const now=Date.now(); const DAY=86400000;
+  return allMembers.filter(m=>{
+    const studied=(m._solve||0);
+    const since=daysSince(m.createdAt);
+    if(seg==='new24'){ const d=m.createdAt&&m.createdAt.toDate?m.createdAt.toDate():(m.createdAt?new Date(m.createdAt):null); return !memberPaid(m) && studied===0 && d && (now-d.getTime())<=DAY; }
+    if(seg==='new3d'){ return !memberPaid(m) && studied===0 && since!=null && since<=3; }
+    if(seg==='hot'){ return !memberPaid(m) && studied>=20; }
+    return false;
+  });
+}
+function renderCrm(){
+  const box=document.getElementById('crmList'); if(!box) return;
+  const seg=(document.getElementById('crmSeg')||{}).value||'new24';
+  const tpl=CRM_TPL[seg];
+  const list=crmSegment(seg);
+  const emails=list.map(m=>m.email).filter(Boolean);
+  if(!list.length){ box.innerHTML='<div class="empty">해당 조건의 대상이 없습니다.</div>'; return; }
+  box.innerHTML =
+    '<div style="padding:14px 20px;border-bottom:1px solid #F0F0F0">'
+    +'<div style="font-size:13px;color:#6E6256;margin-bottom:8px">대상 <b>'+list.length+'</b>명 · 제목: <b>'+tpl.subject+'</b></div>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +'<button class="btn-sm btn-extend" onclick="crmCopyEmails(\''+seg+'\')">📋 이메일 전체 복사</button>'
+    +'<button class="btn-sm btn-extend" onclick="crmMailto(\''+seg+'\')">✉️ 메일 앱 열기(제목·본문 포함)</button>'
+    +'<button class="btn-sm" onclick="crmCopyBody(\''+seg+'\')" style="background:#EDE9FB;color:#5B50C0">📝 본문 복사</button>'
+    +'</div>'
+    +'<div style="font-size:11px;color:#A89C8E;margin-top:8px">※ 자동 발송이 아니라 발송 대상·문구를 준비해 드려요. 메일 앱에서 확인 후 보내세요. (대량은 메일 앱의 숨은참조/BCC 권장)</div>'
+    +'</div>'
+    +'<table><thead><tr><th>이메일</th><th>등급</th><th>학습량</th><th>가입(경과)</th><th>최근 학습</th></tr></thead><tbody>'
+    + list.map(m=>{ const g=memberGrade(m); return `
+      <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
+        <td>${m.email||'-'}</td>
+        <td><span class="grade ${g.cls}">${g.label}</span></td>
+        <td>${(m._solve||0).toLocaleString()}회</td>
+        <td>${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</td>
+        <td>${m._lastStudy?fmtWithAgo(m._lastStudy):'<span style="color:#C9BFB2">없음</span>'}</td>
+      </tr>`;}).join('')
+    + '</tbody></table>';
+}
+function crmCopyEmails(seg){
+  const emails=crmSegment(seg).map(m=>m.email).filter(Boolean);
+  if(!emails.length){ alert('대상이 없습니다.'); return; }
+  navigator.clipboard.writeText(emails.join(', ')).then(()=>alert(emails.length+'명의 이메일을 복사했어요.')).catch(()=>alert('복사 실패'));
+}
+function crmCopyBody(seg){
+  const tpl=CRM_TPL[seg];
+  navigator.clipboard.writeText('제목: '+tpl.subject+'\n\n'+tpl.body).then(()=>alert('제목·본문을 복사했어요.')).catch(()=>alert('복사 실패'));
+}
+function crmMailto(seg){
+  const tpl=CRM_TPL[seg];
+  const emails=crmSegment(seg).map(m=>m.email).filter(Boolean);
+  if(!emails.length){ alert('대상이 없습니다.'); return; }
+  // 대량이면 메일 앱이 막을 수 있어 BCC로
+  const link='mailto:?bcc='+encodeURIComponent(emails.join(','))+'&subject='+encodeURIComponent(tpl.subject)+'&body='+encodeURIComponent(tpl.body);
+  window.location.href=link;
+}
+function openMemberDetail(uid){
+  const m = allMembers.find(x=>x.id===uid); if(!m) return;
+  const g = memberGrade(m); const s = memberStatus(m);
+  // 활성 이용권(자격증별 만료)
+  const ents = m.entitlements||{};
+  const activeCerts = Object.keys(ents).filter(c=>{ const e=ents[c]; if(!e||e.plan!=='ACTIVE') return false; if(!e.expireAt) return true; const d=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); return d>new Date(); });
+  const entHTML = activeCerts.length
+    ? activeCerts.map(c=>`<div style="font-size:13px">• ${CERT_NAMES[c]||c} <span style="color:#15793F">~${fmtDateShort(ents[c].expireAt)} (${daysLeft(ents[c].expireAt)})</span></div>`).join('')
+    : '<span style="color:#B4A99C">활성 이용권 없음</span>';
+  // 쿠폰
+  const codes=(codeByUid[uid]||[]);
+  const codeHTML = codes.length ? codes.map(c=>`<span class="badge" style="background:#EDE9FB;color:#5B50C0">🎟 ${c}</span>`).join(' ') : '<span style="color:#B4A99C">-</span>';
+  // 마일리지 잔액
+  const bal = mileBalanceOf(m);
+  // 결제 이력
+  const pays = allPayments.filter(p=>p.uid===uid).slice().sort((a,b)=>{ const da=(a.createdAt&&a.createdAt.toDate?a.createdAt.toDate():new Date(a.createdAt||0)); const db=(b.createdAt&&b.createdAt.toDate?b.createdAt.toDate():new Date(b.createdAt||0)); return db-da; });
+  const payHTML = pays.length
+    ? pays.map(p=>{
+        const amt = p.mileageUsed>0 ? `${(p.depositAmount||0).toLocaleString()}원+마일${(p.mileageUsed||0).toLocaleString()}` : `${(p.price||0).toLocaleString()}원`;
+        return `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid #F3F0EC">
+          <span>${fmtDateShort(p.approvedAt||p.createdAt)} · ${certNameOf(p)} ${planNames[p.planDays]||(p.planDays+'일')}</span>
+          <span>${amt} <b style="color:${isPaid(p.status)?'#15793F':'#A32D2D'}">${statusLabel(p.status)}</b></span></div>`;
+      }).join('')
+    : '<span style="color:#B4A99C">결제 이력 없음</span>';
+
+  const row=(label,val)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F3F0EC"><span style="color:#8A7E70;font-size:13px">${label}</span><span style="font-weight:600;font-size:13px;text-align:right">${val}</span></div>`;
+  document.getElementById('mdBody').innerHTML =
+    row('이메일', m.email||'-')
+    + row('등급 / 상태', `<span class="grade ${g.cls}">${g.label}</span> ${memberBadges(m)}`)
+    + row('가입일', `${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일 경과'})`)
+    + row('최근 로그인', m.lastLoginAt?`${fmtDateShort(m.lastLoginAt)} (${agoTxt(m.lastLoginAt)})`:'<span style="color:#B4A99C">기록 없음</span>')
+    + row('최근 학습', m._lastStudy?`${fmtDateShort(m._lastStudy)} (${agoTxt(m._lastStudy)})`:'<span style="color:#B4A99C">기록 없음</span>')
+    + row('학습량', `푼 횟수 <b>${(m._solve||0).toLocaleString()}</b> · 학습문항 <b>${m._studied||0}</b>`)
+    + row('마일리지', `${bal.toLocaleString()}원`)
+    + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">활성 이용권</div>${entHTML}`
+    + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">사용 쿠폰</div>${codeHTML}`
+    + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">결제 이력 (${pays.length})</div><div style="margin-top:4px">${payHTML}</div>`;
+  document.getElementById('memberDetailModal').classList.remove('hidden');
 }
 
 // ===== 승인/거절 (레거시 pending 건 전용) =====
