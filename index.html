@@ -901,7 +901,8 @@ async function loadUserPlan(user) {
         referredBy: referredBy || null,
         mileageLots: lots,
         mileageHistory: [{t:'signup', a:1000, at:now}],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       myReferralCode = refCode; myMileageLots = lots;
       // 추천 기록(추천인 정산용) — 추천코드로 들어온 경우만
@@ -955,6 +956,7 @@ async function loadUserPlan(user) {
       try { await ref.update({ referralCode: myReferralCode }); } catch(_){}
     }
     settleReferralMileage(ref, data).catch(()=>{});
+    try { await ref.update({ lastLoginAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch(_){}
   } catch(e) {
     console.error('플랜 로드 오류:', e);
     userEnt = blankEnt(); userEnt.bodybuilding.plan='FREE_TRIAL'; userEnt.appraiser.plan='FREE_TRIAL';
