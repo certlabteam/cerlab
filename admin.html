@@ -78,6 +78,7 @@ tr:hover td{background:#FAFAFA}
 .g-c{background:#FFF6E6;color:#B5851A}
 .g-d{background:#F1EFEC;color:#9A8F80}
 .g-paid{background:#EDE9FB;color:#5B50C0}
+.g-none{background:#F1EFEC;color:#C9BFB2}
 .badge-pending{background:#FFF9F0;color:#BA7517}
 .badge-approved{background:#E8F8F3;color:#0F6E56}
 .badge-rejected{background:#FCEBEB;color:#A32D2D}
@@ -154,7 +155,7 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
     <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
     <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
-    <button class="tab-btn" onclick="switchTab('crm')">전환 타겟</button>
+    <button class="tab-btn" onclick="switchTab('crm')">이메일 발송</button>
     <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
   </div>
 
@@ -199,9 +200,9 @@ tr:hover td{background:#FAFAFA}
           <div style="display:flex;gap:8px;align-items:center">
             <select id="filterGrade" onchange="filterMembers()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
               <option value="">전체 등급</option>
-              <option value="A">A (30회↑)</option>
-              <option value="B">B (10~29회)</option>
-              <option value="C">C (1~9회)</option>
+              <option value="A">A (31회↑)</option>
+              <option value="B">B (11~30회)</option>
+              <option value="C">C (1~10회)</option>
               <option value="D">D (0회)</option>
               <option value="유료">유료</option>
             </select>
@@ -234,15 +235,19 @@ tr:hover td{background:#FAFAFA}
       </div>
     </div>
 
-    <!-- 전환 타겟 -->
+    <!-- 이메일 발송 -->
     <div class="tab-panel" id="panel-crm">
       <div class="table-wrap">
         <div class="table-header">
-          <div class="table-title">전환 타겟 (발송 대상 추출)</div>
+          <div class="table-title">이메일 발송 (등급별 대상 추출)</div>
           <select id="crmSeg" onchange="renderCrm()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
-            <option value="new24">가입 24시간 내 · 학습 0회</option>
-            <option value="new3d">가입 3일 내 · 학습 0회</option>
-            <option value="hot">학습 20회↑ · 미결제 (전환 유망)</option>
+            <option value="all">전체</option>
+            <option value="free">무료체험</option>
+            <option value="paid">유료</option>
+            <option value="A">A (31회↑)</option>
+            <option value="B">B (11~30회)</option>
+            <option value="C">C (1~10회)</option>
+            <option value="D">D (0회)</option>
           </select>
         </div>
         <div id="crmList"><div class="loading">로딩 중...</div></div>
@@ -546,11 +551,12 @@ function fmtWithAgo(ts){ if(!ts) return '<span style="color:#C9BFB2">-</span>'; 
 function memberGrade(m){
   const s=memberStatus(m);
   if(s==='ACTIVE') return {label:'유료', cls:'g-paid'};
+  if(s!=='FREE_TRIAL') return {label:'-', cls:'g-none'};   // 만료·게스트는 등급 없음
   const n=m._solve||0;
-  if(n>=30) return {label:'A', cls:'g-a'};
-  if(n>=10) return {label:'B', cls:'g-b'};
-  if(n>=1)  return {label:'C', cls:'g-c'};
-  return {label:'D', cls:'g-d'};
+  if(n>=31) return {label:'A', cls:'g-a'};   // 31회 이상
+  if(n>=11) return {label:'B', cls:'g-b'};   // 11~30회
+  if(n>=1)  return {label:'C', cls:'g-c'};   // 1~10회
+  return {label:'D', cls:'g-d'};             // 0회
 }
 function memberStatus(m) {
   const now = new Date();
@@ -757,46 +763,29 @@ function filterMembers() {
   }));
 }
 function closeMemberDetail(){ const el=document.getElementById('memberDetailModal'); if(el) el.classList.add('hidden'); }
-// ===== 전환 타겟 (반자동 발송 대상 추출) =====
-function memberPaid(m){
-  const em=(m.email||'').toLowerCase();
-  return allPayments.some(p => isPaid(p.status) && (p.uid===m.id || (p.email&&em&&p.email.toLowerCase()===em)));
-}
-const CRM_TPL = {
-  new24: { title:'가입 24시간 내 · 학습 0회', subject:'[CertLab] 첫 문제 풀어보셨나요? 50문제 무료 체험 중이에요',
-    body:'안녕하세요! CertLab에 가입해주셔서 감사합니다.\n\n아직 학습을 시작하지 않으셨네요. 지금 50문제 무료 체험으로 내 실력을 진단해볼 수 있어요. 진단 모의고사를 완주하면 예상 점수와 합격 여부, 약점 과목까지 분석해 드립니다.\n\n지금 바로 시작해보세요 → https://certlab.ai.kr' },
-  new3d: { title:'가입 3일 내 · 학습 0회', subject:'[CertLab] 무료 체험이 기다리고 있어요 🎯',
-    body:'안녕하세요! 가입 후 아직 학습을 시작하지 않으셨어요.\n\n하루 10분이면 충분합니다. 기출문제와 자동 복습, 약점 분석으로 효율적으로 준비해보세요. 50문제 무료 체험이 그대로 남아 있어요.\n\n지금 시작 → https://certlab.ai.kr' },
-  hot: { title:'학습 20회↑ · 미결제', subject:'[CertLab] 열심히 하고 계시네요! 전체 문제로 합격에 더 가까이',
-    body:'안녕하세요! 꾸준히 학습해주셔서 감사합니다.\n\n무료 체험을 알차게 활용하고 계신데요, 이용권을 등록하면 전체 기출문제와 상세 해설, 무제한 복습까지 모두 이용할 수 있어요. 지금까지의 학습 흐름을 그대로 이어가 합격까지 가보세요!\n\n이용권 보기 → https://certlab.ai.kr' }
-};
+// ===== 이메일 발송 (등급별 대상 추출) =====
 function crmSegment(seg){
-  const now=Date.now(); const DAY=86400000;
   return allMembers.filter(m=>{
-    const studied=(m._solve||0);
-    const since=daysSince(m.createdAt);
-    if(seg==='new24'){ const d=m.createdAt&&m.createdAt.toDate?m.createdAt.toDate():(m.createdAt?new Date(m.createdAt):null); return !memberPaid(m) && studied===0 && d && (now-d.getTime())<=DAY; }
-    if(seg==='new3d'){ return !memberPaid(m) && studied===0 && since!=null && since<=3; }
-    if(seg==='hot'){ return !memberPaid(m) && studied>=20; }
-    return false;
+    const s=memberStatus(m);
+    if(seg==='all') return true;
+    if(seg==='free') return s==='FREE_TRIAL';
+    if(seg==='paid') return s==='ACTIVE';
+    // A/B/C/D = 무료체험 회원 중 해당 등급
+    return s==='FREE_TRIAL' && memberGrade(m).label===seg;
   });
 }
 function renderCrm(){
   const box=document.getElementById('crmList'); if(!box) return;
-  const seg=(document.getElementById('crmSeg')||{}).value||'new24';
-  const tpl=CRM_TPL[seg];
-  const list=crmSegment(seg);
-  const emails=list.map(m=>m.email).filter(Boolean);
-  if(!list.length){ box.innerHTML='<div class="empty">해당 조건의 대상이 없습니다.</div>'; return; }
+  const seg=(document.getElementById('crmSeg')||{}).value||'all';
+  const list=crmSegment(seg).slice().sort((a,b)=>(b._solve||0)-(a._solve||0));
+  const SEGLBL={all:'전체',free:'무료체험',paid:'유료',A:'등급 A',B:'등급 B',C:'등급 C',D:'등급 D'};
+  const segLabel = SEGLBL[seg]||seg;
+  if(!list.length){ box.innerHTML='<div class="empty">해당 대상이 없습니다.</div>'; return; }
   box.innerHTML =
     '<div style="padding:14px 20px;border-bottom:1px solid #F0F0F0">'
-    +'<div style="font-size:13px;color:#6E6256;margin-bottom:8px">대상 <b>'+list.length+'</b>명 · 제목: <b>'+tpl.subject+'</b></div>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +'<div style="font-size:13px;color:#6E6256;margin-bottom:8px">'+segLabel+' · 대상 <b>'+list.length+'</b>명</div>'
     +'<button class="btn-sm btn-extend" onclick="crmCopyEmails(\''+seg+'\')">📋 이메일 전체 복사</button>'
-    +'<button class="btn-sm btn-extend" onclick="crmMailto(\''+seg+'\')">✉️ 메일 앱 열기(제목·본문 포함)</button>'
-    +'<button class="btn-sm" onclick="crmCopyBody(\''+seg+'\')" style="background:#EDE9FB;color:#5B50C0">📝 본문 복사</button>'
-    +'</div>'
-    +'<div style="font-size:11px;color:#A89C8E;margin-top:8px">※ 자동 발송이 아니라 발송 대상·문구를 준비해 드려요. 메일 앱에서 확인 후 보내세요. (대량은 메일 앱의 숨은참조/BCC 권장)</div>'
+    +'<div style="font-size:11px;color:#A89C8E;margin-top:8px">※ 복사한 이메일을 메일 앱의 받는사람(또는 숨은참조/BCC)에 붙여넣어 발송하세요.</div>'
     +'</div>'
     +'<table><thead><tr><th>이메일</th><th>등급</th><th>학습량</th><th>가입(경과)</th><th>최근 학습</th></tr></thead><tbody>'
     + list.map(m=>{ const g=memberGrade(m); return `
@@ -813,18 +802,6 @@ function crmCopyEmails(seg){
   const emails=crmSegment(seg).map(m=>m.email).filter(Boolean);
   if(!emails.length){ alert('대상이 없습니다.'); return; }
   navigator.clipboard.writeText(emails.join(', ')).then(()=>alert(emails.length+'명의 이메일을 복사했어요.')).catch(()=>alert('복사 실패'));
-}
-function crmCopyBody(seg){
-  const tpl=CRM_TPL[seg];
-  navigator.clipboard.writeText('제목: '+tpl.subject+'\n\n'+tpl.body).then(()=>alert('제목·본문을 복사했어요.')).catch(()=>alert('복사 실패'));
-}
-function crmMailto(seg){
-  const tpl=CRM_TPL[seg];
-  const emails=crmSegment(seg).map(m=>m.email).filter(Boolean);
-  if(!emails.length){ alert('대상이 없습니다.'); return; }
-  // 대량이면 메일 앱이 막을 수 있어 BCC로
-  const link='mailto:?bcc='+encodeURIComponent(emails.join(','))+'&subject='+encodeURIComponent(tpl.subject)+'&body='+encodeURIComponent(tpl.body);
-  window.location.href=link;
 }
 function openMemberDetail(uid){
   const m = allMembers.find(x=>x.id===uid); if(!m) return;
