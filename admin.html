@@ -147,6 +147,7 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn" onclick="switchTab('payments')" id="tabPayments">결제 신청<span class="badge" id="pendingBadge" style="display:none">0</span></button>
     <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
     <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
+    <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
     <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
   </div>
 
@@ -198,6 +199,17 @@ tr:hover td{background:#FAFAFA}
           <input class="search-input" id="searchCode" placeholder="코드/이메일 검색..." oninput="filterCodes()">
         </div>
         <div id="codeList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 마일리지 -->
+    <div class="tab-panel" id="panel-mileage">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">마일리지 / 추천 현황</div>
+          <input class="search-input" id="searchMile" placeholder="이메일/코드 검색..." oninput="filterMile()">
+        </div>
+        <div id="mileList"><div class="loading">로딩 중...</div></div>
       </div>
     </div>
 
@@ -323,8 +335,9 @@ function switchTab(name) {
 
 // ===== 데이터 로드 =====
 async function loadAll() {
-  await Promise.all([loadPayments(), loadMembers(), loadReports(), loadCodes()]);
+  await Promise.all([loadPayments(), loadMembers(), loadReports(), loadCodes(), loadMileage()]);
   renderMembers(allMembers);   // 결제·쿠폰 로드 후 출처 배지 반영해 재렌더
+  renderMileage();             // 회원·추천 로드 후 마일리지 재계산
   loadDashboard();
 }
 
@@ -364,6 +377,59 @@ function renderCodes(list) {
 function filterCodes() {
   const q = document.getElementById('searchCode').value.toLowerCase();
   renderCodes(allCodes.filter(c => (c.code||'').toLowerCase().includes(q) || (c.usedByEmail||'').toLowerCase().includes(q)));
+}
+
+// ===== 마일리지 / 추천 현황 =====
+let allReferrals = [];
+async function loadMileage() {
+  try {
+    const snap = await db.collection('referrals').get();
+    allReferrals = snap.docs.map(d => ({id:d.id, ...d.data()}));
+  } catch(e) { allReferrals = []; }
+  renderMileage();
+}
+function mileBalanceOf(m){
+  const now=Date.now(); let s=0;
+  (m.mileageLots||[]).forEach(l=>{ if(l && !l.used && (!l.exp||l.exp>now)) s+=(l.a||0); });
+  return s;
+}
+function renderMileage(list){
+  const box=document.getElementById('mileList'); if(!box) return;
+  const members = list || allMembers;
+  let rows = members.map(m=>{
+    const code=m.referralCode||'';
+    const refs=allReferrals.filter(r=>r.referrerCode && code && r.referrerCode===code);
+    const paidRefs=refs.filter(r=>r.paid).length;
+    const expectedMax = 1000 + refs.length*1000 + paidRefs*10000;  // 정상적으로 받을 수 있는 최대(만료·사용 전)
+    const bal=mileBalanceOf(m);
+    const selfRef = !!(m.referredBy && code && m.referredBy===code);
+    const overMax = bal > expectedMax;   // 잔액이 정상 최대보다 큼 = 위조
+    const suspect = overMax || selfRef;
+    return {m,code,refCnt:refs.length,paidRefs,expectedMax,bal,selfRef,overMax,suspect};
+  }).filter(r=> r.bal>0 || r.refCnt>0);
+  rows.sort((a,b)=> (Number(b.suspect)-Number(a.suspect)) || (b.bal-a.bal));
+  if(!rows.length){ box.innerHTML='<div class="empty">마일리지·추천 내역이 있는 회원이 없습니다.</div>'; return; }
+  const suspectN=rows.filter(r=>r.suspect).length;
+  box.innerHTML =
+    '<div style="padding:12px 20px;font-size:13px;color:#6E6256;border-bottom:1px solid #F0F0F0">'
+    +'대상 <b>'+rows.length+'</b>명 · 의심 <b style="color:#A32D2D">'+suspectN+'</b>명</div>'
+    +'<table><thead><tr><th>이메일</th><th>잔액</th><th>추천(가입/결제)</th><th>내 코드</th><th>추천받음</th><th>상태</th></tr></thead><tbody>'
+    + rows.map(r=>`
+      <tr${r.suspect?' style="background:#FFF6F6"':''}>
+        <td>${r.m.email||'-'}</td>
+        <td style="font-weight:700;color:#C2611B">${r.bal.toLocaleString()}원</td>
+        <td>${r.refCnt}명 / ${r.paidRefs}결제</td>
+        <td>${r.code||'-'}</td>
+        <td>${r.m.referredBy||'-'}</td>
+        <td>${r.suspect
+            ? '<span class="badge badge-revoked">⚠ 의심'+(r.overMax?' (잔액초과)':'')+(r.selfRef?' (자기추천)':'')+'</span>'
+            : '<span class="badge badge-approved">정상</span>'}</td>
+      </tr>`).join('')
+    + '</tbody></table>';
+}
+function filterMile(){
+  const q=document.getElementById('searchMile').value.toLowerCase();
+  renderMileage(allMembers.filter(m=>(m.email||'').toLowerCase().includes(q)||(m.referralCode||'').toLowerCase().includes(q)||(m.referredBy||'').toLowerCase().includes(q)));
 }
 
 async function loadPayments() {
