@@ -435,6 +435,19 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .audio-opt{padding:6px 10px;border:1px solid #E0D7CC;border-radius:999px;background:#fff;color:#6E6256;font-weight:700;font-size:12px;cursor:pointer}
 .subj-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 16px 0;max-width:560px;margin:0 auto;width:100%}
 .subj-row .subj-tag{margin:0}
+#planPopup .auth-sheet{max-width:560px;width:100%;min-height:100dvh;border-radius:0;display:flex;flex-direction:column}
+.plan-hl{margin:6px 0 14px;padding:13px;border-radius:14px;background:linear-gradient(135deg,#E6F1FB,#EAF7F1);color:#15507F;font-weight:800;font-size:16px;text-align:center}
+.cmp{border:1px solid #ECE6DD;border-radius:14px;overflow:hidden;margin-bottom:16px}
+.cmp-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;align-items:center;font-size:13px;border-top:1px solid #F2ECE3}
+.cmp-row:first-child{border-top:none}
+.cmp-row span{padding:10px 8px}
+.cmp-row span:first-child{text-align:left;color:#4A4036;font-weight:600}
+.cmp-row .free{color:#A89C8E;text-align:center}
+.cmp-row .paid{color:#15793F;font-weight:800;text-align:center;background:#F1FAF4}
+.cmp-head{background:#FAF6EF;font-weight:800;color:#6E6256}
+.cmp-head span{padding:11px 8px;text-align:center}
+.cmp-head span:first-child{text-align:left}
+.cmp-head .paid{background:#E8F6EE;color:#15793F}
 .anal-card{margin:12px 14px 4px;padding:16px 16px 14px;background:#fff;border:1px solid #E2D6CC;border-radius:16px;box-shadow:0 2px 12px rgba(80,50,20,.05)}
 .anal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .anal-top b{font-size:14px;color:#2C2C2A}
@@ -1033,26 +1046,58 @@ function showLoginPopup(mode='default') {
 }
 function hideLoginPopup() { document.getElementById('loginPopup').classList.add('hidden'); }
 
+function certQuestionCount(cert){
+  try{
+    if(typeof isMcqCert==='function' && isMcqCert(cert)){
+      const qb=qbOf(cert); let n=0;
+      Object.keys(qb).forEach(s=>(qb[s].sets||[]).forEach(st=>n+=(st.questions||[]).length));
+      return n;
+    }
+    return (typeof D!=='undefined') ? D.length : 0;   // 플래시카드
+  }catch(_){ return 0; }
+}
+function totalQuestionCountAll(){
+  let n=0;
+  try{ if(typeof D!=='undefined') n+=D.length; }catch(_){}
+  try{ (MCQ_CERTS||[]).forEach(c=>{ n+=certQuestionCount(c); }); }catch(_){}
+  return n;
+}
+function examCount(){
+  let c=0;
+  try{ if(typeof D!=='undefined' && D.length>0) c++; }catch(_){}      // 플래시카드(생체)
+  try{ (MCQ_CERTS||[]).forEach(cert=>{ if(certQuestionCount(cert)>0) c++; }); }catch(_){}
+  return c;
+}
+function featureCompareHTML(totalTxt){
+  const rows=[
+    ['풀 수 있는 문제','50문제 체험','전체 '+totalTxt],
+    ['전 과목·회차 기출 + 상세해설','체험분만','✓ 전체'],
+    ['예상점수 · 약점 분석','체험분만','✓ 전체 기준'],
+    ['망각곡선 자동복습','제한','✓ 무제한'],
+    ['음성 듣기 · 암기코드','✓','✓'],
+    ['학습 기록 이어가기','✕ 체험 종료','✓ 계속']
+  ];
+  return '<div class="cmp"><div class="cmp-row cmp-head"><span>기능</span><span>무료</span><span class="paid">유료</span></div>'
+    + rows.map(r=>'<div class="cmp-row"><span>'+r[0]+'</span><span class="free">'+r[1]+'</span><span class="paid">'+r[2]+'</span></div>').join('')
+    + '</div>';
+}
 function showPlanPopup() {
   const cert = activeCertId();
-  const certName = certFull(cert);
-  let totalTxt;
-  if (cert === 'bodybuilding') totalTxt = '248문제';
-  else { const qb=qbOf(cert); const n=Object.keys(qb).reduce((a,sub)=>a+qb[sub].sets.reduce((b,st)=>b+st.questions.length,0),0); totalTxt = n>0 ? n+'문항' : '전체 문항'; }
   const titleEl = document.getElementById('planSheetTitle');
-  if (titleEl) titleEl.textContent = `⏰ ${certName} 무료 체험 완료!`;
+  if (titleEl) titleEl.textContent = `⏰ 무료 체험 완료!`;
   const subEl = document.getElementById('planSub');
-  if (subEl) subEl.textContent = `${certName} 이용권 구매 후 전체 ${totalTxt}와 학습 기록을 계속 이용할 수 있습니다.`;
+  if (subEl) subEl.textContent = `이용권을 시작하면 전체 기출문제와 상세해설, 학습 기록을 계속 이용할 수 있어요.`;
+  const n = certQuestionCount(cert);
+  const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
+  const allN = totalQuestionCountAll();
+  const exams = examCount();
+  const headTxt = (exams>0 && allN>0) ? exams+'개 시험 · 총 '+allN.toLocaleString()+'문제 수록' : '전체 기출문제 + 상세해설 수록';
   const stats = document.getElementById('planStats');
-  const learned = (userEnt[cert] && userEnt[cert].trialCount) || 0;
-  let wrong = 0;
-  if (cert === 'bodybuilding') wrong = D.filter(c=>c.w).length;
-  else { try { Object.keys(mqAns).forEach(qid=>{ /* appraiser 오답 집계 */ }); } catch(e){} }
-  const rate = learned > 0 ? Math.round((learned-wrong)/learned*100) : 0;
-  stats.innerHTML = `
-    <div class="plan-stat"><div class="v">${learned}</div><div class="l">학습 문제</div></div>
-    <div class="plan-stat"><div class="v">${rate > 0 ? rate : 0}%</div><div class="l">정답률</div></div>
-    <div class="plan-stat"><div class="v">${wrong}</div><div class="l">오답노트</div></div>`;
+  if (stats) {
+    stats.innerHTML =
+      '<div class="plan-hl">📚 '+headTxt+'</div>'
+      + featureCompareHTML(totalTxt);
+  }
   document.getElementById('planPopup').classList.remove('hidden');
   renderPlanCards(cert);
 }
