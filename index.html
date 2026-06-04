@@ -205,6 +205,17 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .btn-login{padding:6px 14px;border-radius:20px;border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
 .btn-login:active{transform:scale(.96)}
 .btn-logout{padding:5px 10px;border-radius:20px;border:1.5px solid #B5D4F4;background:#fff;color:#888780;font-size:11px;font-weight:600;cursor:pointer}
+.mile-bal{font-size:13px;color:#4A4036;padding:6px 2px;text-align:center}
+.mile-bal b{color:#C2611B}
+.ref-acc-btn{width:100%;padding:7px 10px;border:none;border-radius:10px;background:#FFF1E6;color:#C2611B;font-weight:700;font-size:12px;cursor:pointer}
+.ref-acc{margin-top:6px;padding:8px;background:#FFFBF6;border:1px solid #F1E3D3;border-radius:10px}
+.ref-acc-desc{font-size:11px;color:#7A6A50;line-height:1.5;margin-bottom:6px}
+.ref-link-box{display:flex;gap:5px;margin-top:6px}
+.ref-link-box input{flex:1;min-width:0;font-size:11px;padding:6px 8px;border:1px solid #E0D7CC;border-radius:8px;background:#fff;color:#4A4036}
+.ref-link-box button{flex:0 0 auto;padding:6px 10px;border:none;border-radius:8px;background:#185FA5;color:#fff;font-weight:700;font-size:11px;cursor:pointer}
+.welcome-mile{margin-top:12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;font-size:12px;color:#7A5A1A;line-height:1.6;text-align:center}
+.welcome-mile b{color:#C2611B;font-size:14px}
+.welcome-mile span{color:#A07A30}
 .plan-badge{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700}
 .plan-free{background:#E8F8F3;color:#0F6E56}
 .plan-active{background:#E6F1FB;color:#185FA5}
@@ -765,6 +776,53 @@ try {
 
 // ===== 사용자 상태 =====
 let currentUser = null;
+// ===== 추천 대기정산 (추천인 본인 로그인 시 자기 문서에 적립) =====
+async function settleReferralMileage(ref, data){
+  if (!myReferralCode) return;
+  let lots = Array.isArray(data.mileageLots) ? data.mileageLots.slice() : [];
+  let changed = false;
+  const now = Date.now();
+  try {
+    const snap = await db.collection('referrals').where('referrerCode','==',myReferralCode).get();
+    for (const d of snap.docs) {
+      const r = d.data();
+      if (r.refereeUid === currentUser.uid) continue;   // 자기추천 방지
+      // 가입 보상 1,000 (1년)
+      if (!r.signupSettled) {
+        lots.push({a:1000, t:'ref_signup', at:now, exp:now+365*MILE_DAY});
+        changed = true;
+        try { await d.ref.update({ signupSettled:true }); } catch(_){}
+      }
+      // 결제 보상 10,000 (1년)
+      if (r.paid && !r.paidSettled) {
+        lots.push({a:10000, t:'ref_paid', at:now, exp:now+365*MILE_DAY});
+        changed = true;
+        try { await d.ref.update({ paidSettled:true }); } catch(_){}
+      }
+    }
+  } catch(_){}
+  if (changed) {
+    myMileageLots = lots;
+    try { await ref.update({ mileageLots: lots }); } catch(_){}
+    updateAuthBar();
+  }
+}
+
+let myReferralCode = null;
+let myMileageLots = [];   // [{a금액, t유형, at적립ms, exp만료ms}]
+// ?ref= 캡처 (로그인 팝업/리다이렉트 넘어가도 유지)
+try {
+  const _ref = new URLSearchParams(location.search).get('ref');
+  if (_ref) localStorage.setItem('pendingRef', _ref.trim().toUpperCase());
+} catch(_) {}
+function genReferralCode(uid){ return (uid||'').replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,6) || ('R'+Math.random().toString(36).slice(2,7).toUpperCase()); }
+function mileageBalance(lots){
+  const now = Date.now(); let s=0;
+  (lots||[]).forEach(l=>{ if(l && (!l.exp || l.exp>now) && !l.used) s+=(l.a||0); });
+  return s;
+}
+function myReferralLink(){ return location.origin + location.pathname + '?ref=' + (myReferralCode||''); }
+
 let userPlan = 'GUEST'; // (레거시 미러: 현재 활성 시험의 plan) GUEST | FREE_TRIAL | ACTIVE | EXPIRED
 let trialCount = 0;     // (레거시 미러: 현재 활성 시험의 무료 사용 수)
 const GUEST_LIMIT = 10;
@@ -820,12 +878,33 @@ async function loadUserPlan(user) {
     if (!doc.exists) {
       // 신규 회원: 시험별 무료체험으로 시작
       const ent = {}; ALL_CERTS.forEach(c=>ent[c]={plan:'FREE_TRIAL',trialCount:0,expireAt:null,planDays:null});
+      const now = Date.now();
+      const refCode = genReferralCode(user.uid);
+      let referredBy = null;
+      try { const pr = localStorage.getItem('pendingRef'); if (pr && pr !== refCode) referredBy = pr; } catch(_){}
+      const lots = [ {a:1000, t:'signup', at:now, exp:now+3*MILE_DAY} ];   // 가입 보너스 1,000원(3일)
       await ref.set({
         email: user.email, displayName: user.displayName, photoURL: user.photoURL,
         plan: 'FREE_TRIAL', trialCount: 0,        // 레거시 미러(관리자 호환)
         entitlements: ent,
+        referralCode: refCode,
+        referredBy: referredBy || null,
+        mileageLots: lots,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      myReferralCode = refCode; myMileageLots = lots;
+      // 추천 기록(추천인 정산용) — 추천코드로 들어온 경우만
+      if (referredBy) {
+        try {
+          await db.collection('referrals').doc(user.uid).set({
+            refereeUid: user.uid, refereeEmail: user.email || null,
+            referrerCode: referredBy, paid: false,
+            signupSettled: false, paidSettled: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch(_){}
+      }
+      try { localStorage.removeItem('pendingRef'); } catch(_){}
       userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
       return;
     }
@@ -857,6 +936,14 @@ async function loadUserPlan(user) {
       }
     }
     userEnt = ent; syncPlanMirror(); updateAuthBar(); loadUserData();
+    // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
+    myReferralCode = data.referralCode || null;
+    myMileageLots = Array.isArray(data.mileageLots) ? data.mileageLots : [];
+    if (!myReferralCode) {
+      myReferralCode = genReferralCode(user.uid);
+      try { await ref.update({ referralCode: myReferralCode }); } catch(_){}
+    }
+    settleReferralMileage(ref, data).catch(()=>{});
   } catch(e) {
     console.error('플랜 로드 오류:', e);
     userEnt = blankEnt(); userEnt.bodybuilding.plan='FREE_TRIAL'; userEnt.appraiser.plan='FREE_TRIAL';
@@ -1023,11 +1110,31 @@ function updateAuthBar() {
       <button class="avatar-btn" onclick="toggleUserMenu(event)" aria-label="내 메뉴">${img}</button>
       <div class="user-dropdown hidden" id="userDropdown">
         <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
+        <div class="mile-bal">🪙 마일리지 <b>${mileageBalance(myMileageLots).toLocaleString()}원</b></div>
+        <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
+        <div class="ref-acc hidden" id="refAcc">
+          <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 +10,000원!</div>
+          <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
+        </div>
         <button class="btn-logout" onclick="signOut()">로그아웃</button>
       </div>
     </div>`;
 }
 function toggleUserMenu(e){ if(e){e.stopPropagation();} const d=document.getElementById('userDropdown'); if(d) d.classList.toggle('hidden'); }
+function copyReferralLinkW(e){
+  if(e){e.stopPropagation();}
+  const inp=document.getElementById('refLinkInputW'); const link=myReferralLink();
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(()=>alert('추천 링크가 복사되었어요!')).catch(()=>{if(inp){inp.select();document.execCommand('copy');}alert('추천 링크가 복사되었어요!');}); }
+  else { if(inp){inp.select(); try{document.execCommand('copy');}catch(_){}} alert('추천 링크가 복사되었어요!'); }
+}
+function toggleReferralAcc(e){ if(e){e.stopPropagation();} const a=document.getElementById('refAcc'); if(a) a.classList.toggle('hidden'); }
+function copyReferralLink(e){
+  if(e){e.stopPropagation();}
+  const inp=document.getElementById('refLinkInput'); if(!inp) return;
+  const link=myReferralLink();
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(()=>alert('추천 링크가 복사되었어요!')).catch(()=>{inp.select();document.execCommand('copy');alert('추천 링크가 복사되었어요!');}); }
+  else { inp.select(); try{document.execCommand('copy');}catch(_){} alert('추천 링크가 복사되었어요!'); }
+}
 document.addEventListener('click',function(e){ const m=document.getElementById('userMenu'); const d=document.getElementById('userDropdown'); if(d&&m&&!m.contains(e.target)) d.classList.add('hidden'); });
 
 // ===== 팝업 =====
@@ -1111,7 +1218,11 @@ function showWelcomePopup() {
     <div class="auth-feature-item">전체 기출문제 + 상세 해설</div>
     <div class="auth-feature-item">자동복습 & 오답노트</div>
     <div class="auth-feature-item">예상점수 & 약점 분석</div>
-    <div class="auth-feature-item">50문제 무료 체험!</div>`;
+    <div class="auth-feature-item">50문제 무료 체험!</div>
+    <div class="welcome-mile">🎁 가입 축하 <b>1,000원</b> 마일리지 지급! <span>(3일 안에 사용)</span><br>
+      친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +10,000원 (1년 유효)
+      <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
+    </div>`;
   document.querySelector('.btn-google-login').style.display='none';
   document.querySelector('.auth-sheet-close').textContent='학습 시작하기!';
   document.querySelector('.auth-sheet-close').style.background='linear-gradient(135deg,#185FA5,#0C447C)';
