@@ -273,13 +273,6 @@ tr:hover td{background:#FAFAFA}
             ※ 이 파일이 <b>현재 Firestore에 올라가 있는 최신 데이터</b>입니다. 데이터방에서 이 파일을 받아 수정한 뒤, 업로드 페이지로 다시 올리면 됩니다.<br>
             ※ 형식은 업로드와 호환됩니다 (manifest + banks).
           </div>
-          <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
-          <div class="table-title" style="margin-bottom:8px">manifest 버전 동기화</div>
-          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin-bottom:10px">
-            앱은 manifest의 version으로 캐시를 갱신합니다. bank를 새로 올렸는데 화면에 안 보이면, 이 버튼으로 <b>manifest version을 각 bank의 실제 version과 일치</b>시키세요. (불일치 시 옛 데이터가 캐싱됨)
-          </div>
-          <button class="btn-sm btn-extend" onclick="syncManifest()">🔄 manifest ↔ bank 버전 동기화</button>
-          <div id="syncStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
         </div>
       </div>
     </div>
@@ -306,10 +299,15 @@ tr:hover td{background:#FAFAFA}
             <thead><tr style="color:#8A7E70"><th style="text-align:left;padding:7px 10px">문서 ID</th><th style="text-align:left;padding:7px 10px">cert/subject</th><th style="text-align:right;padding:7px 10px">현재 ver</th><th style="text-align:right;padding:7px 10px">새 ver</th><th style="text-align:right;padding:7px 10px">문항수</th><th style="text-align:left;padding:7px 10px">상태</th></tr></thead>
             <tbody></tbody>
           </table>
-          <div style="margin-top:12px;display:flex;gap:8px">
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button id="impRun" class="btn-sm btn-extend" disabled onclick="impUpload()">⬆ 업로드 실행</button>
             <button class="btn-sm" onclick="impRefresh()" style="background:#EDE9FB;color:#5B50C0">현재 ver 새로고침</button>
+            <button class="btn-sm btn-extend" onclick="syncManifest()">🔄 manifest 버전 동기화</button>
           </div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
+            업로드 후 앱에 새 데이터가 안 보이면 <b>"manifest 버전 동기화"</b>를 누르세요. (manifest version을 각 bank의 실제 version과 일치시켜 캐시를 갱신합니다.)
+          </div>
+          <div id="syncStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
           <div id="impLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
         </div>
       </div>
