@@ -158,6 +158,7 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn" onclick="switchTab('crm')">이메일 발송</button>
     <button class="tab-btn" onclick="switchTab('export')">데이터 내보내기</button>
     <button class="tab-btn" onclick="switchTab('import')">데이터 업로드</button>
+    <button class="tab-btn" onclick="switchTab('imgup')">이미지 업로드</button>
     <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
   </div>
 
@@ -307,6 +308,31 @@ tr:hover td{background:#FAFAFA}
       </div>
     </div>
 
+    <!-- 이미지 업로드 -->
+    <div class="tab-panel" id="panel-imgup">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">이미지 업로드 (문항·보기 이미지 → Firestore)</div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="iuDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 이미지(PNG/JPG)를 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">파일명이 곧 키입니다 — 예: ksh74_q13_1.png → 키 <b>ksh74_q13_1</b> → 문항에 <b>img://ksh74_q13_1</b></span>
+          </div>
+          <input id="iuFile" type="file" accept="image/*" multiple hidden>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin:12px 0">
+            업로드 시 가로 최대 1000px로 자동 리사이즈·압축해 <b>images/{키}</b> 문서에 저장합니다. 같은 키면 덮어씁니다.
+          </div>
+          <table id="iuTbl" style="display:none;width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="color:#8A7E70"><th style="text-align:left;padding:7px 10px">미리보기</th><th style="text-align:left;padding:7px 10px">키</th><th style="text-align:left;padding:7px 10px">참조값</th><th style="text-align:right;padding:7px 10px">용량</th><th style="text-align:left;padding:7px 10px">상태</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="margin-top:12px"><button id="iuRun" class="btn-sm btn-extend" disabled onclick="iuUpload()">⬆ 이미지 업로드 실행</button></div>
+          <div id="iuLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+        </div>
+      </div>
+    </div>
+
     <!-- 오류 신고 -->
     <div class="tab-panel" id="panel-reports">
       <div class="table-wrap">
@@ -436,6 +462,7 @@ function switchTab(name) {
   if(name==='crm') renderCrm();
   if(name==='export') openExportTab();
   if(name==='import') impInit();
+  if(name==='imgup') iuInit();
 }
 
 // ===== 데이터 로드 =====
@@ -826,6 +853,83 @@ async function openExportTab(){
   const sel=document.getElementById('expCert'); if(!sel) return;
   sel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
     + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+}
+// ===== 이미지 업로드 (리사이즈/압축 → images/{키}) =====
+let iuItems=[]; let _iuInited=false;
+function iuLog(msg,color){ const el=document.getElementById('iuLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
+function iuInit(){
+  if(_iuInited) return; _iuInited=true;
+  const drop=document.getElementById('iuDrop'), file=document.getElementById('iuFile'); if(!drop||!file) return;
+  drop.onclick=()=>file.click();
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#185FA5';}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
+  drop.addEventListener('drop',e=>iuHandle(e.dataTransfer.files));
+  file.addEventListener('change',e=>iuHandle(e.target.files));
+}
+function iuResize(file, maxW){
+  return new Promise((res,rej)=>{
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.width, h=img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      // 흑백 도판/사진 모두 무난한 jpeg 0.82 (그래프·선명도 필요시 png로) — 우선 jpeg로 용량 최소화
+      let out=c.toDataURL('image/jpeg',0.82);
+      // 너무 크면 더 줄임
+      res(out);
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('이미지 디코드 실패')); };
+    img.src=url;
+  });
+}
+async function iuHandle(fileList){
+  const files=[...fileList].filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name));
+  if(!files.length){ iuLog('이미지 파일이 없습니다.','#f85149'); return; }
+  for(const f of files){
+    const key=f.name.replace(/\.[^.]+$/,'').trim();
+    if(!key){ iuLog(f.name+': 키 추출 실패','#f85149'); continue; }
+    let data='', status='ready', err='';
+    try{ data=await iuResize(f,1000); }catch(e){ status='bad'; err=e.message; }
+    const bytes=data?Math.round(data.length*0.75):0;
+    if(data && bytes>900000){ status='bad'; err='압축 후에도 0.9MB 초과 (이미지를 더 작게 잘라주세요)'; }
+    iuItems=iuItems.filter(it=>it.key!==key);
+    iuItems.push({name:f.name, key, data, bytes, status, err});
+    if(err) iuLog(f.name+': '+err,'#f85149');
+  }
+  iuRender(); document.getElementById('iuRun').disabled=!iuItems.some(it=>it.status==='ready');
+}
+function iuRender(){
+  const tbl=document.getElementById('iuTbl'); const tb=tbl.querySelector('tbody');
+  tbl.style.display=iuItems.length?'table':'none';
+  tb.innerHTML=iuItems.map(it=>{
+    const st=it.status==='bad'?('오류: '+it.err):it.status==='done'?'완료':'준비됨';
+    const col=it.status==='bad'?'#f85149':it.status==='done'?'#15793F':'#185FA5';
+    const kb=it.bytes?(Math.round(it.bytes/1024)+'KB'):'-';
+    const prev=it.data?'<img src="'+it.data+'" style="width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid #E5E7EB">':'-';
+    return '<tr style="border-bottom:1px solid #EFE9E2">'
+      +'<td style="padding:7px 10px">'+prev+'</td>'
+      +'<td style="padding:7px 10px"><b>'+it.key+'</b></td>'
+      +'<td style="padding:7px 10px;color:#5B50C0">img://'+it.key+'</td>'
+      +'<td style="padding:7px 10px;text-align:right">'+kb+'</td>'
+      +'<td style="padding:7px 10px;color:'+col+'">'+st+'</td></tr>';
+  }).join('');
+}
+async function iuUpload(){
+  const ready=iuItems.filter(it=>it.status==='ready');
+  if(!ready.length) return;
+  if(!confirm(ready.length+'개 이미지를 업로드합니다. 계속할까요?')){ iuLog('취소됨.'); return; }
+  document.getElementById('iuRun').disabled=true;
+  for(const it of ready){
+    try{
+      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() });
+      it.status='done';
+      iuLog('✓ '+it.key+' 업로드 완료 ('+Math.round(it.bytes/1024)+'KB) → img://'+it.key,'#15793F');
+    }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); iuLog('✗ '+it.key+' 실패: '+(e.message||e),'#f85149'); }
+    iuRender();
+  }
+  iuLog('— 작업 종료 — 문항 JSON에 img://키 로 연결하세요.','#5B50C0');
 }
 let impItems=[]; let _impInited=false;
 function impLog(msg,color){ const el=document.getElementById('impLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
