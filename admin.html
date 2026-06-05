@@ -308,6 +308,16 @@ tr:hover td{background:#FAFAFA}
             업로드 후 앱에 새 데이터가 안 보이면 <b>"manifest 버전 동기화"</b>를 누르세요. (manifest version을 각 bank의 실제 version과 일치시켜 캐시를 갱신합니다.)
           </div>
           <div id="syncStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
+          <div class="table-title" style="margin-bottom:8px">version +1 강제 갱신 (전체 사용자 캐시 갱신)</div>
+          <div style="background:#FDECEC;border:1px solid #F3C6C6;border-radius:8px;padding:9px 12px;color:#A32D2D;font-size:11.5px;margin-bottom:10px">
+            데이터(문항)는 그대로인데 version만 같아서 사용자들이 옛 데이터를 캐싱 중일 때 사용. 선택한 자격증의 <b>bank·manifest version을 모두 +1</b> 올려 모든 사용자가 새로 받게 합니다.
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="bumpCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">자격증 선택...</option></select>
+            <button class="btn-sm btn-expire" onclick="forceBump()">⬆ version +1 실행</button>
+          </div>
+          <div id="bumpStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
           <div id="impLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
         </div>
       </div>
@@ -940,6 +950,15 @@ let impItems=[]; let _impInited=false;
 function impLog(msg,color){ const el=document.getElementById('impLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
 function impInit(){
   if(_impInited) return; _impInited=true;
+  // version +1 대상 자격증 드롭다운 채우기
+  (async()=>{
+    try{
+      const m=await db.collection('manifest').doc('exams').get();
+      const exams=(m.exists&&m.data().exams)||[];
+      const sel=document.getElementById('bumpCert');
+      if(sel) sel.innerHTML='<option value="">자격증 선택...</option>'+exams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+    }catch(_){}
+  })();
   const drop=document.getElementById('impDrop'), file=document.getElementById('impFile');
   if(!drop||!file) return;
   drop.onclick=()=>file.click();
@@ -1023,6 +1042,34 @@ async function impUpload(){
   impLog('— 작업 종료 — (앱에서 Ctrl+Shift+R로 캐시 갱신)','#5B50C0');
 }
 // ===== manifest ↔ bank 버전 동기화 =====
+// ===== version +1 강제 갱신 (전체 사용자 캐시 갱신) =====
+async function forceBump(){
+  const cert=(document.getElementById('bumpCert')||{}).value||'';
+  const st=document.getElementById('bumpStatus');
+  if(!cert){ st.textContent='자격증을 선택하세요.'; return; }
+  st.textContent='읽는 중...';
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    if(!mSnap.exists){ st.textContent='manifest/exams 문서가 없습니다.'; return; }
+    const manifest=mSnap.data(); const exams=manifest.exams||[];
+    const ex=exams.find(e=>e.id===cert);
+    if(!ex){ st.textContent='해당 자격증을 manifest에서 못 찾음.'; return; }
+    ex.versions=ex.versions||{};
+    const plan=[];
+    for(const sub of (ex.subjects||[])){
+      const bd=await db.collection('banks').doc(cert+'__'+sub.code).get();
+      const curBank=(bd.exists && typeof bd.data().version==='number')?bd.data().version:(ex.versions[sub.code]||1);
+      const nv=curBank+1;
+      plan.push({code:sub.code, name:sub.name, from:curBank, to:nv, exists:bd.exists});
+    }
+    if(!plan.length){ st.textContent='과목이 없습니다.'; return; }
+    if(!confirm('['+(ex.name||cert)+'] version +1 (bank·manifest 동시):\n\n'+plan.map(p=>'  '+p.code+': '+p.from+' → '+p.to).join('\n')+'\n\n전체 사용자가 새로 받게 됩니다. 적용할까요?')){ st.textContent='취소됨.'; return; }
+    // bank version +1
+    for(const p of plan){ if(p.exists){ await db.collection('banks').doc(cert+'__'+p.code).update({version:p.to}); } ex.versions[p.code]=p.to; }
+    await db.collection('manifest').doc('exams').update({ exams: exams });
+    st.innerHTML='✅ 완료 — '+plan.length+'과목 version +1.<br><span style="font-size:11px;color:#A89C8E">'+plan.map(p=>p.code+': '+p.from+'→'+p.to).join('<br>')+'</span><br>이제 모든 사용자가 새 데이터를 받습니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
 async function syncManifest(){
   const st=document.getElementById('syncStatus');
   st.textContent='읽는 중...';
