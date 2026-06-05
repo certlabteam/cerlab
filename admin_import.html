@@ -1,273 +1,1258 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CertLab 문제은행 업로드 (admin)</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>CertLab 관리자</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
-  :root{
-    --bg:#0d1117; --panel:#161b22; --line:#30363d; --txt:#e6edf3;
-    --muted:#8b949e; --accent:#3fb950; --warn:#d29922; --blue:#58a6ff; --red:#f85149;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);
-    font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.55}
-  header{padding:14px 18px;border-bottom:1px solid var(--line);background:var(--panel);
-    position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  header h1{font-size:15px;margin:0;letter-spacing:.5px}
-  .pill{font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
-  .pill.ok{border-color:var(--accent);color:var(--accent)}
-  .pill.warn{border-color:var(--warn);color:var(--warn)}
-  main{padding:18px;max-width:1080px;margin:0 auto}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:16px}
-  .card h2{font-size:13px;margin:0;padding:10px 14px;border-bottom:1px solid var(--line);
-    background:#1c2330;color:var(--blue);letter-spacing:.5px}
-  .body{padding:14px}
-  button{font-family:inherit;font-size:13px;background:#21262d;color:var(--txt);
-    border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer}
-  button:hover:not(:disabled){border-color:var(--blue)}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  button.go{background:#1f6f3f;border-color:#2ea043;color:#fff;font-weight:600}
-  button.go:hover:not(:disabled){background:#258545}
-  #drop{border:2px dashed var(--line);border-radius:8px;padding:26px;text-align:center;
-    color:var(--muted);cursor:pointer;transition:.15s}
-  #drop.hover{border-color:var(--blue);color:var(--txt);background:#11202f}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
-  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
-  th{color:var(--muted);font-weight:600}
-  td.num{text-align:right}
-  .v-old{color:var(--muted)} .v-new{color:var(--accent);font-weight:600}
-  .st-ready{color:var(--blue)} .st-done{color:var(--accent)} .st-bad{color:var(--red)} .st-wait{color:var(--muted)}
-  label.chk{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
-  .muted{color:var(--muted)} .red{color:var(--red)} .accent{color:var(--accent)}
-  #log{background:#0b0f14;border:1px solid var(--line);border-radius:6px;padding:10px;
-    max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:12px;margin-top:10px}
-  .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .who{font-size:12px}
-  .danger{border:1px solid var(--warn);background:#22190a;border-radius:6px;padding:10px 12px;
-    color:var(--warn);font-size:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
+:root{--pink:#D4537E;--purple:#7F77DD;--green:#1D9E75;--red:#E24B4A;--blue:#185FA5;--gray:#888780}
+
+/* 로그인 화면 */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFF5F8,#F0EDFF)}
+.login-box{background:#fff;border-radius:24px;padding:40px 32px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.08);text-align:center}
+.login-logo{font-size:28px;font-weight:800;background:linear-gradient(135deg,#D4537E,#7F77DD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.login-sub{font-size:14px;color:#888780;margin-bottom:32px}
+.btn-google{width:100%;padding:14px;border-radius:12px;border:1.5px solid #E0E0E0;background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:600;color:#2C2C2A;cursor:pointer;transition:all .15s}
+.btn-google:hover{background:#F5F5F5}
+.google-icon{width:20px;height:20px}
+.login-note{font-size:12px;color:#B4B2A9;margin-top:16px}
+
+/* 메인 레이아웃 */
+.admin-wrap{display:none;min-height:100vh;flex-direction:column}
+.admin-header{background:#fff;border-bottom:1px solid #E8E8E8;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.admin-logo{font-size:18px;font-weight:800;background:linear-gradient(135deg,#D4537E,#7F77DD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.admin-user{display:flex;align-items:center;gap:10px;font-size:13px;color:#888780}
+.btn-logout{padding:6px 14px;border-radius:20px;border:1.5px solid #E8E8E8;background:#fff;font-size:12px;color:#888780;cursor:pointer}
+.btn-logout:hover{background:#F5F5F5}
+
+/* 탭 */
+.admin-tabs{background:#fff;border-bottom:1px solid #E8E8E8;padding:0 24px;display:flex;gap:0}
+.tab-btn{padding:14px 20px;font-size:14px;font-weight:600;color:#888780;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:#7F77DD;border-bottom-color:#7F77DD}
+.tab-btn .badge{display:inline-block;background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
+/* 콘텐츠 */
+.admin-content{padding:24px;max-width:1200px;margin:0 auto;width:100%}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* 대시보드 카드 */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.dash-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.dash-card .label{font-size:12px;color:#888780;margin-bottom:8px}
+.dash-card .value{font-size:28px;font-weight:700;color:#2C2C2A}
+.dash-card.pink .value{color:#D4537E}
+.dash-card.purple .value{color:#7F77DD}
+.dash-card.green .value{color:#1D9E75}
+.dash-card.red .value{color:#E24B4A}
+.dash-card.blue .value{color:#185FA5}
+.dash-card.orange .value{color:#BA7517}
+
+/* 테이블 */
+.table-wrap{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0F0F0}
+.table-title{font-size:15px;font-weight:700;color:#2C2C2A}
+.search-input{padding:8px 14px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;width:220px}
+.search-input:focus{border-color:#7F77DD}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#888780;background:#FAFAFA;border-bottom:1px solid #F0F0F0}
+td{padding:12px 16px;font-size:13px;color:#2C2C2A;border-bottom:1px solid #F8F8F8;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAFA}
+
+/* 배지 */
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-free{background:#E8F8F3;color:#0F6E56}
+.badge-active{background:#E6F1FB;color:#185FA5}
+.badge-expired{background:#FCEBEB;color:#A32D2D}
+.badge-guest{background:#F4EEF9;color:#534AB7}
+.badge-coupon{background:#FFF1E6;color:#C2611B}
+.grade{display:inline-block;min-width:22px;text-align:center;padding:2px 8px;border-radius:8px;font-weight:800;font-size:12px}
+.g-a{background:#E6F4EA;color:#15793F}
+.g-b{background:#E6F1FB;color:#185FA5}
+.g-c{background:#FFF6E6;color:#B5851A}
+.g-d{background:#F1EFEC;color:#9A8F80}
+.g-paid{background:#EDE9FB;color:#5B50C0}
+.g-none{background:#F1EFEC;color:#C9BFB2}
+.badge-pending{background:#FFF9F0;color:#BA7517}
+.badge-approved{background:#E8F8F3;color:#0F6E56}
+.badge-rejected{background:#FCEBEB;color:#A32D2D}
+.badge-revoked{background:#FCEBEB;color:#A32D2D}
+
+/* 버튼 */
+.btn-sm{padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-approve{background:#E8F8F3;color:#0F6E56}
+.btn-approve:hover{background:#1D9E75;color:#fff}
+.btn-reject{background:#FCEBEB;color:#A32D2D}
+.btn-reject:hover{background:#E24B4A;color:#fff}
+.btn-extend{background:#E6F1FB;color:#185FA5}
+.btn-extend:hover{background:#185FA5;color:#fff}
+.btn-expire{background:#FFF9F0;color:#BA7517}
+.btn-expire:hover{background:#BA7517;color:#fff}
+.btn-primary{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+
+/* 로딩 */
+.loading{text-align:center;padding:40px;color:#888780;font-size:14px}
+.empty{text-align:center;padding:40px;color:#B4B2A9;font-size:14px}
+
+/* 모달 */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-bg.hidden{display:none}
+.modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:400px;margin:16px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F5F5F5;font-size:14px}
+.modal-row:last-of-type{border-bottom:none}
+.modal-label{color:#888780}
+.modal-value{font-weight:600}
+.modal-note{font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:10px;padding:10px 12px;margin-top:14px;line-height:1.6}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.modal-btns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+.btn-modal-ok{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff}
+.btn-modal-cancel{background:#F4EEF9;color:#7F77DD}
+
+/* 반응형 */
+@media(max-width:600px){
+  .admin-content{padding:16px}
+  .dash-grid{grid-template-columns:repeat(2,1fr)}
+  th:nth-child(n+4),td:nth-child(n+4){display:none}
+  .search-input{width:140px}
+}
 </style>
 </head>
 <body>
-<header>
-  <h1>CertLab 문제은행 업로드</h1>
-  <span class="pill warn">banks 만 덮어씀 · manifest 안 건드림</span>
-  <span class="pill" id="proj">certlab-c3bcb</span>
-  <span class="who" id="who" style="margin-left:auto"></span>
-</header>
-<main>
 
-  <div class="card">
-    <h2>1단계 · 관리자 로그인</h2>
-    <div class="body">
-      <div class="row">
-        <button id="loginBtn">Google로 로그인</button>
-        <button id="logoutBtn" disabled>로그아웃</button>
-        <span id="authMsg" class="muted">업로드(쓰기)에는 certlab.team@gmail.com 로그인이 필요합니다.</span>
-      </div>
+<!-- 로그인 화면 -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">CertLab</div>
+    <div class="login-sub">관리자 전용 페이지</div>
+    <button class="btn-google" onclick="adminLogin()">
+      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Google로 로그인
+    </button>
+    <div class="login-note">관리자 계정으로만 접근 가능합니다</div>
+  </div>
+</div>
+
+<!-- 관리자 메인 -->
+<div class="admin-wrap" id="adminWrap">
+  <div class="admin-header">
+    <div class="admin-logo">CertLab Admin</div>
+    <div class="admin-user">
+      <span id="adminEmail"></span>
+      <button class="btn-logout" onclick="adminLogout()">로그아웃</button>
     </div>
   </div>
 
-  <div class="card">
-    <h2>2단계 · JSON 파일 선택 (5개)</h2>
-    <div class="body">
-      <div id="drop">여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<br>
-        <span class="muted">bodybuilding__B.json … WT.json</span></div>
-      <input id="file" type="file" accept=".json,application/json" multiple hidden>
-      <table id="tbl" style="display:none">
-        <thead><tr>
-          <th>파일</th><th>문서 ID</th><th>cert/subject</th>
-          <th>현재 ver</th><th>새 ver</th><th>문항수</th><th>상태</th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
+  <div class="admin-tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">대시보드</button>
+    <button class="tab-btn" onclick="switchTab('payments')" id="tabPayments">결제 신청<span class="badge" id="pendingBadge" style="display:none">0</span></button>
+    <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
+    <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
+    <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
+    <button class="tab-btn" onclick="switchTab('crm')">이메일 발송</button>
+    <button class="tab-btn" onclick="switchTab('export')">데이터 내보내기</button>
+    <button class="tab-btn" onclick="switchTab('import')">데이터 업로드</button>
+    <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
   </div>
 
-  <div class="card">
-    <h2>3단계 · 업로드 실행</h2>
-    <div class="body">
-      <div class="row" style="margin-bottom:10px">
-        <label class="chk"><input type="checkbox" id="bump" checked> 버전 자동 +1 (캐시 갱신)</label>
+  <div class="admin-content">
+
+    <!-- 대시보드 -->
+    <div class="tab-panel active" id="panel-dashboard">
+      <div class="dash-grid">
+        <div class="dash-card"><div class="label">전체 회원</div><div class="value" id="statTotal">-</div></div>
+        <div class="dash-card purple"><div class="label">무료 체험</div><div class="value" id="statFree">-</div></div>
+        <div class="dash-card green"><div class="label">유료 회원</div><div class="value" id="statActive">-</div></div>
+        <div class="dash-card red"><div class="label">만료</div><div class="value" id="statExpired">-</div></div>
+        <div class="dash-card orange"><div class="label">승인 대기</div><div class="value" id="statPending">-</div></div>
+        <div class="dash-card pink"><div class="label">이번 달 매출</div><div class="value" id="statRevenue">-</div></div>
+        <div class="dash-card green"><div class="label">전환율 (유료/전체)</div><div class="value" id="statConv">-</div></div>
+        <div class="dash-card"><div class="label">최근 7일 가입</div><div class="value" id="statNew7">-</div></div>
+        <div class="dash-card purple"><div class="label">최근 7일 결제</div><div class="value" id="statPay7">-</div></div>
+        <div class="dash-card orange"><div class="label">학습 20회↑ 무료회원<br><span style="font-size:10px;font-weight:500">전환 유망</span></div><div class="value" id="statHot">-</div></div>
       </div>
-      <div class="danger" style="margin-bottom:10px">
-        실행하면 banks 문서 5개를 <b>덮어씁니다</b>(set/overwrite). 기존 id·순서는 파일에 보존돼 있고,
-        manifest는 건드리지 않습니다. 실행 전 위 표의 "현재 ver → 새 ver"를 확인하세요.
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">최근 결제 신청</div></div>
+        <div id="recentPayments"><div class="loading">로딩 중...</div></div>
       </div>
-      <button id="runBtn" class="go" disabled>업로드 실행</button>
-      <button id="refreshBtn" disabled>현재 상태 새로고침</button>
-      <div id="log" class="muted">대기 중…</div>
+    </div>
+
+    <!-- 결제 신청 -->
+    <div class="tab-panel" id="panel-payments">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">결제 신청 목록</div>
+          <input class="search-input" id="searchPayment" placeholder="이메일 검색..." oninput="filterPayments()">
+        </div>
+        <div id="paymentList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 회원 관리 -->
+    <div class="tab-panel" id="panel-members">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">회원 목록</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="filterGrade" onchange="filterMembers()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="">전체 등급</option>
+              <option value="A">A (31회↑)</option>
+              <option value="B">B (11~30회)</option>
+              <option value="C">C (1~10회)</option>
+              <option value="D">D (0회)</option>
+              <option value="유료">유료</option>
+            </select>
+            <input class="search-input" id="searchMember" placeholder="이메일 검색..." oninput="filterMembers()">
+          </div>
+        </div>
+        <div id="memberList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 할인코드 -->
+    <div class="tab-panel" id="panel-codes">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">할인코드 사용 현황</div>
+          <input class="search-input" id="searchCode" placeholder="코드/이메일 검색..." oninput="filterCodes()">
+        </div>
+        <div id="codeList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 마일리지 -->
+    <div class="tab-panel" id="panel-mileage">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">마일리지 / 추천 현황</div>
+          <input class="search-input" id="searchMile" placeholder="이메일/코드 검색..." oninput="filterMile()">
+        </div>
+        <div id="mileList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 이메일 발송 -->
+    <div class="tab-panel" id="panel-crm">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">이메일 발송 (등급별 대상 추출)</div>
+          <select id="crmSeg" onchange="renderCrm()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            <option value="all">전체</option>
+            <option value="free">무료체험</option>
+            <option value="paid">유료</option>
+            <option value="A">A (31회↑)</option>
+            <option value="B">B (11~30회)</option>
+            <option value="C">C (1~10회)</option>
+            <option value="D">D (0회)</option>
+          </select>
+        </div>
+        <div id="crmList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 데이터 내보내기 -->
+    <div class="tab-panel" id="panel-export">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">데이터 내보내기 (현재 Firestore → JSON)</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="expCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <button class="btn-sm btn-extend" onclick="exportData()">⬇ JSON 다운로드</button>
+          </div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="expStatus" style="font-size:13px;color:#6E6256">자격증을 고르고 다운로드를 누르면 현재 서비스 중인 데이터를 JSON으로 받습니다.</div>
+          <div style="font-size:11px;color:#A89C8E;margin-top:10px;line-height:1.6">
+            ※ 이 파일이 <b>현재 Firestore에 올라가 있는 최신 데이터</b>입니다. 데이터방에서 이 파일을 받아 수정한 뒤, 업로드 페이지로 다시 올리면 됩니다.<br>
+            ※ 형식은 업로드와 호환됩니다 (manifest + banks).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 데이터 업로드 -->
+    <div class="tab-panel" id="panel-import">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">데이터 업로드 (JSON → Firestore banks)</div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="impDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">통합 번들(내보내기 파일) 또는 과목별 파일(bodybuilding__B.json 등) 모두 가능</span>
+          </div>
+          <input id="impFile" type="file" accept=".json,application/json" multiple hidden>
+          <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="impBump" checked> 버전 자동 +1 (캐시 갱신)
+          </label>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin:12px 0">
+            ⚠️ 실행하면 banks 문서를 <b>덮어씁니다</b>(set/overwrite). manifest는 건드리지 않습니다. 아래 "현재 ver → 새 ver"를 확인 후 실행하세요.
+          </div>
+          <table id="impTbl" style="display:none;width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="color:#8A7E70"><th style="text-align:left;padding:7px 10px">문서 ID</th><th style="text-align:left;padding:7px 10px">cert/subject</th><th style="text-align:right;padding:7px 10px">현재 ver</th><th style="text-align:right;padding:7px 10px">새 ver</th><th style="text-align:right;padding:7px 10px">문항수</th><th style="text-align:left;padding:7px 10px">상태</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button id="impRun" class="btn-sm btn-extend" disabled onclick="impUpload()">⬆ 업로드 실행</button>
+            <button class="btn-sm" onclick="impRefresh()" style="background:#EDE9FB;color:#5B50C0">현재 ver 새로고침</button>
+          </div>
+          <div id="impLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오류 신고 -->
+    <div class="tab-panel" id="panel-reports">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">문제 오류 신고 목록</div>
+          <select id="filterStatus" onchange="filterReports()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            <option value="all">전체</option>
+            <option value="pending">처리 대기</option>
+            <option value="done">처리 완료</option>
+          </select>
+        </div>
+        <div id="reportList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 승인 모달 (레거시 pending 대응) -->
+<div class="modal-bg hidden" id="approveModal">
+  <div class="modal">
+    <div class="modal-title">✅ 이용권 승인</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="modalEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">입금자</span><span class="modal-value" id="modalDepositor"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="modalPlan"></span></div>
+    <div class="modal-row"><span class="modal-label">금액</span><span class="modal-value" id="modalPrice"></span></div>
+    <div class="modal-row"><span class="modal-label">만료일</span><span class="modal-value" id="modalExpire"></span></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-modal-ok" onclick="confirmApprove()">승인 확정</button>
     </div>
   </div>
+</div>
 
-</main>
+<!-- 거절 모달 (레거시 pending 대응) -->
+<div class="modal-bg hidden" id="rejectModal">
+  <div class="modal">
+    <div class="modal-title">❌ 결제 거절</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="rejectEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="rejectPlan"></span></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-reject" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600" onclick="confirmReject()">거절 확정</button>
+    </div>
+  </div>
+</div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- 철회 모달 (자동승인 건 입금 미확인 시) -->
+<div class="modal-bg hidden" id="revokeModal">
+  <div class="modal">
+    <div class="modal-title">⛔ 이용권 철회</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="revokeEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">자격증</span><span class="modal-value" id="revokeCert"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="revokePlan"></span></div>
+    <div class="modal-note">입금이 확인되지 않은 건을 철회합니다. 해당 회원의 이 자격증 이용권이 즉시 <b>만료</b>되고, 결제 기록은 <b>철회</b>로 표시됩니다.</div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-reject" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600" onclick="confirmRevoke()">철회 확정</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="memberDetailModal">
+  <div class="modal" style="max-width:540px;width:92%;max-height:86vh;overflow-y:auto">
+    <div class="modal-title">👤 회원 상세</div>
+    <div id="mdBody"><div class="loading">로딩 중...</div></div>
+    <div class="modal-btns"><button class="btn-modal-cancel" style="flex:1" onclick="closeMemberDetail()">닫기</button></div>
+  </div>
+</div>
+
 <script>
-const ADMIN_EMAIL = "certlab.team@gmail.com";
+const ADMIN_EMAIL = 'certlab.team@gmail.com';
 const firebaseConfig = {
   apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
   authDomain: "certlab-c3bcb.firebaseapp.com",
   projectId: "certlab-c3bcb",
   storageBucket: "certlab-c3bcb.firebasestorage.app",
   messagingSenderId: "698827699707",
-  appId: "1:698827699707:web:b08d492f408ac444fa875e",
-  measurementId: "G-RPZRZQ779J"
+  appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-const $ = id => document.getElementById(id);
-let isAdmin = false;
-let items = []; // {file, docId, cert, subject, name, version(json), count, curVer, parsed, status}
+let allPayments = [];
+let allMembers = [];
+let codeByUid = {};   // { uid: ['CODE1', ...] } — 무료/할인 코드 사용 매핑
+let pendingPaymentId = null;
+let pendingPaymentData = null;
 
-function log(msg, cls){
-  const el=$('log'); el.className='';
-  const t=new Date().toLocaleTimeString('ko-KR');
-  const span = cls ? `<span class="${cls}">${msg}</span>` : msg;
-  el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…' ? '\n' : '') + `[${t}] ${span}`;
-  el.scrollTop = el.scrollHeight;
-}
+// 결제 상태 헬퍼 — 앱은 즉시구매를 'auto_approved'로 저장한다
+const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사' };
+const isPaid = s => s === 'approved' || s === 'auto_approved';
+const statusBadge = s => isPaid(s) ? 'badge-approved' : (s === 'pending' ? 'badge-pending' : 'badge-revoked');
+const statusLabel = s => s === 'auto_approved' ? '자동승인' : s === 'approved' ? '승인' : s === 'pending' ? '승인대기' : s === 'revoked' ? '철회' : '거절';
+const certNameOf = p => p.certName || CERT_NAMES[p.certType] || p.certType || '생체2급';
 
-// ---------- Auth ----------
-auth.onAuthStateChanged(u=>{
-  if(u){
-    isAdmin = (u.email === ADMIN_EMAIL);
-    $('who').innerHTML = `로그인: ${u.email} ` + (isAdmin
-      ? '<span class="pill ok">관리자</span>' : '<span class="pill warn">관리자 아님</span>');
-    $('authMsg').innerHTML = isAdmin
-      ? '<span class="accent">관리자 인증됨 — 업로드 가능</span>'
-      : `<span class="red">이 계정은 관리자가 아닙니다. ${ADMIN_EMAIL}로 로그인하세요.</span>`;
-    $('loginBtn').disabled = true; $('logoutBtn').disabled = false;
-  }else{
-    isAdmin=false;
-    $('who').textContent=''; 
-    $('authMsg').innerHTML='업로드(쓰기)에는 '+ADMIN_EMAIL+' 로그인이 필요합니다.';
-    $('loginBtn').disabled=false; $('logoutBtn').disabled=true;
+// ===== Auth =====
+auth.onAuthStateChanged(user => {
+  if (user && user.email === ADMIN_EMAIL) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminWrap').style.display = 'flex';
+    document.getElementById('adminEmail').textContent = user.email;
+    loadAll();
+  } else if (user) {
+    auth.signOut();
+    alert('관리자 계정만 접근 가능합니다.');
+  } else {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('adminWrap').style.display = 'none';
   }
-  refreshButtons();
 });
-$('loginBtn').onclick = async ()=>{
-  try{
-    const p=new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(p);
-  }catch(e){ log('로그인 실패: '+(e.message||e), 'st-bad'); }
-};
-$('logoutBtn').onclick = ()=> auth.signOut();
 
-// ---------- File handling ----------
-$('drop').onclick = ()=> $('file').click();
-['dragover','dragenter'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.add('hover');}));
-['dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.remove('hover');}));
-$('drop').addEventListener('drop', e=> handleFiles(e.dataTransfer.files));
-$('file').addEventListener('change', e=> handleFiles(e.target.files));
+async function adminLogin() {
+  try { await auth.signInWithPopup(googleProvider); }
+  catch(e) { if(e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message); }
+}
+function adminLogout() { if(confirm('로그아웃 하시겠어요?')) auth.signOut(); }
 
-async function handleFiles(fileList){
+// ===== 탭 =====
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='crm') renderCrm();
+  if(name==='export') openExportTab();
+  if(name==='import') impInit();
+}
+
+// ===== 데이터 로드 =====
+async function loadAll() {
+  await Promise.all([loadPayments(), loadMembers(), loadReports(), loadCodes(), loadMileage()]);
+  renderMembers(allMembers);   // 결제·쿠폰 로드 후 출처 배지 반영해 재렌더
+  renderMileage();             // 회원·추천 로드 후 마일리지 재계산
+  loadDashboard();
+}
+
+let allCodes = [];
+async function loadCodes() {
+  try {
+    const snap = await db.collection('discountCodes').get();
+    allCodes = snap.docs.map(d => ({code:d.id, ...d.data()}));
+    // 코드명 순 정렬 (TEST01, TEST02 …)
+    allCodes.sort((a,b)=> (a.code||'').localeCompare(b.code||'', undefined, {numeric:true}));
+    renderCodes(allCodes);
+  } catch(e) {
+    document.getElementById('codeList').innerHTML = '<div class="empty">할인코드를 불러올 수 없습니다. (Firestore 읽기 권한 확인 필요)</div>';
+  }
+}
+function certNameShort(c){ return c==='appraiser'?'감정평가사':c==='bodybuilding'?'생체2급':c||'전체'; }
+function renderCodes(list) {
+  if (!list.length) { document.getElementById('codeList').innerHTML = '<div class="empty">할인코드가 없습니다.</div>'; return; }
+  const usedN = list.filter(c=>c.used).length;
+  document.getElementById('codeList').innerHTML = `
+    <div style="padding:12px 20px;font-size:13px;color:#6E6256;border-bottom:1px solid #F0F0F0">
+      전체 <b>${list.length}</b>개 · 사용 <b style="color:#2E9B5E">${usedN}</b>개 · 미사용 <b style="color:#A89C8E">${list.length-usedN}</b>개</div>
+    <table>
+      <thead><tr><th>코드</th><th>적용 시험</th><th>기간</th><th>상태</th><th>사용자</th><th>사용일</th></tr></thead>
+      <tbody>${list.map(c => `
+        <tr>
+          <td style="font-weight:700">${c.code}</td>
+          <td>${certNameShort(c.certType)}</td>
+          <td>${c.days||7}일</td>
+          <td><span class="badge ${c.used?'badge-approved':'badge-pending'}">${c.used?'사용됨':'미사용'}</span></td>
+          <td>${c.usedByEmail||'-'}</td>
+          <td>${c.usedAt?fmtDateShort(c.usedAt):'-'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+function filterCodes() {
+  const q = document.getElementById('searchCode').value.toLowerCase();
+  renderCodes(allCodes.filter(c => (c.code||'').toLowerCase().includes(q) || (c.usedByEmail||'').toLowerCase().includes(q)));
+}
+
+// ===== 마일리지 / 추천 현황 =====
+let allReferrals = [];
+async function loadMileage() {
+  try {
+    const snap = await db.collection('referrals').get();
+    allReferrals = snap.docs.map(d => ({id:d.id, ...d.data()}));
+  } catch(e) { allReferrals = []; }
+  renderMileage();
+}
+function mileBalanceOf(m){
+  const now=Date.now(); let s=0;
+  (m.mileageLots||[]).forEach(l=>{ if(l && !l.used && (!l.exp||l.exp>now)) s+=(l.a||0); });
+  return s;
+}
+function mileHistSum(m, neg){
+  let s=0; (m.mileageHistory||[]).forEach(h=>{ const a=h.a||0; if(neg){ if(a<0) s+=-a; } else { if(a>0) s+=a; } }); return s;
+}
+function memberByUid(uid){ return allMembers.find(x=>x.id===uid); }
+function memberByEmail(em){ if(!em) return null; em=em.toLowerCase(); return allMembers.find(x=>(x.email||'').toLowerCase()===em); }
+function renderMileage(list){
+  const box=document.getElementById('mileList'); if(!box) return;
+  const members = list || allMembers;
+  // 추천인(자기 코드로 가입자가 1명 이상 있는 회원)만 헤더로
+  let refers = members.map(m=>{
+    const code=m.referralCode||'';
+    const refs=allReferrals.filter(r=>r.referrerCode && code && r.referrerCode===code && r.refereeUid!==m.id);
+    const paidRefs=refs.filter(r=>r.paid).length;
+    const expectedMax = 1000 + refs.length*1000 + paidRefs*10000;
+    const earned = mileHistSum(m,false);   // 받은 적립금(이력 기준)
+    const used = mileHistSum(m,true);       // 사용 적립금
+    const bal = mileBalanceOf(m);
+    const selfRef = !!(m.referredBy && code && m.referredBy===code);
+    const overMax = bal > expectedMax;
+    const suspect = overMax || selfRef;
+    return {m,code,refs,paidRefs,earned,used,bal,suspect,overMax,selfRef};
+  }).filter(r=> r.refs.length>0);
+  refers.sort((a,b)=> (Number(b.suspect)-Number(a.suspect)) || (b.earned-a.earned));
+  if(!refers.length){ box.innerHTML='<div class="empty">추천으로 가입한 내역이 없습니다.</div>'; return; }
+  const suspectN=refers.filter(r=>r.suspect).length;
+  let html='<div style="padding:12px 20px;font-size:13px;color:#6E6256;border-bottom:1px solid #F0F0F0">'
+    +'추천인 <b>'+refers.length+'</b>명 · 의심 <b style="color:#A32D2D">'+suspectN+'</b>명</div>'
+    +'<table><thead><tr><th>추천인 / 가입자</th><th>결제</th><th>받은 적립금</th><th>사용 적립금</th><th>상태</th></tr></thead><tbody>';
+  refers.forEach((r,i)=>{
+    // 추천인 헤더 줄
+    html+='<tr style="background:#F4F6FA'+(r.suspect?';background:#FFF6F6':'')+';font-weight:700">'
+      +'<td>👤 '+(r.m.email||'-')+' <span style="color:#8A7E70;font-weight:500">('+r.refs.length+'명 추천)</span></td>'
+      +'<td>'+r.paidRefs+'결제</td>'
+      +'<td style="color:#15793F">+'+r.earned.toLocaleString()+'원</td>'
+      +'<td style="color:#A32D2D">-'+r.used.toLocaleString()+'원</td>'
+      +'<td>'+(r.suspect?'<span class="badge badge-revoked">⚠ 의심'+(r.overMax?' (잔액초과)':'')+(r.selfRef?' (자기추천)':'')+'</span>':'<span class="badge badge-approved">정상</span>')+'</td></tr>';
+    // 가입자 한 명씩
+    r.refs.forEach(rf=>{
+      const gm = memberByUid(rf.refereeUid) || memberByEmail(rf.refereeEmail);
+      const gEarned = gm? mileHistSum(gm,false):0;
+      const gUsed = gm? mileHistSum(gm,true):0;
+      const joined = gm && gm.createdAt ? (gm.createdAt.toDate?gm.createdAt.toDate():new Date(gm.createdAt)).toLocaleDateString('ko-KR') : '';
+      html+='<tr style="font-size:13px">'
+        +'<td style="padding-left:28px;color:#4A4036">└ '+(rf.refereeEmail||rf.refereeUid)+(joined?' <span style="color:#B4A99C">'+joined+' 가입</span>':'')+'</td>'
+        +'<td>'+(rf.paid?'<span style="color:#15793F">결제함</span>':'<span style="color:#B4A99C">가입만</span>')+'</td>'
+        +'<td style="color:#15793F">+'+gEarned.toLocaleString()+'원</td>'
+        +'<td style="color:#A32D2D">-'+gUsed.toLocaleString()+'원</td>'
+        +'<td></td></tr>';
+    });
+  });
+  html+='</tbody></table>';
+  box.innerHTML=html;
+}
+function filterMile(){
+  const q=document.getElementById('searchMile').value.toLowerCase();
+  renderMileage(allMembers.filter(m=>(m.email||'').toLowerCase().includes(q)||(m.referralCode||'').toLowerCase().includes(q)||(m.referredBy||'').toLowerCase().includes(q)));
+}
+
+async function loadPayments() {
+  try {
+    const snap = await db.collection('payments').orderBy('createdAt','desc').get();
+    allPayments = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    renderPayments(allPayments);
+    renderRecentPayments();
+    updatePendingBadge();
+  } catch(e) { document.getElementById('paymentList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+async function loadMembers() {
+  try {
+    const [usnap, csnap] = await Promise.all([
+      db.collection('users').orderBy('createdAt','desc').get(),
+      db.collection('discountCodes').get().catch(()=>null)
+    ]);
+    allMembers = usnap.docs.map(d => ({id:d.id, ...d.data()}));
+    codeByUid = {};
+    if (csnap) csnap.docs.forEach(d => {
+      const c = d.data();
+      if (c.used && c.usedBy) (codeByUid[c.usedBy] = codeByUid[c.usedBy] || []).push(d.id);
+    });
+    renderMembers(allMembers);   // 우선 빠르게 표시 (학습량은 '…')
+    // 회원별 학습량(userData) 비동기 로드 후 갱신
+    await Promise.all(allMembers.map(async m => {
+      try {
+        const ud = await db.collection('userData').doc(m.id).get();
+        if (ud.exists) {
+          const d = ud.data();
+          const cp = d.cardProgress && typeof d.cardProgress==='object' ? d.cardProgress : {};
+          const keys = Object.keys(cp);
+          m._studied = keys.length;
+          // 푼 횟수·학습문항은 자동복습 기록(cardProgress) 기준만 사용 (옛 solveCount 폴백 제거)
+          let tries = 0, lastLr = 0; keys.forEach(k => { const p=cp[k]; tries += (p && p.rc) ? p.rc : 0; if(p && p.lr && p.lr>lastLr) lastLr=p.lr; });
+          m._solve = tries; m._lastStudy = lastLr||null;
+        } else { m._solve = 0; m._studied = 0; m._lastStudy = null; }
+      } catch(_) { m._solve = 0; m._studied = 0; m._lastStudy = null; }
+    }));
+    const q = (document.getElementById('searchMember')||{}).value || '';
+    renderMembers(q ? allMembers.filter(m => (m.email||'').toLowerCase().includes(q.toLowerCase())) : allMembers);
+  } catch(e) { document.getElementById('memberList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+// 회원이 어떤 자격증이든 유효한 이용권을 가졌는지 판정 (top-level + entitlements)
+function daysSince(ts){ if(!ts) return null; const d=ts.toDate?ts.toDate():new Date(ts); return Math.floor((Date.now()-d.getTime())/86400000); }
+function agoTxt(ts){ const n=daysSince(ts); if(n==null) return ''; return n<=0?'오늘':(n+'일 전'); }
+function fmtWithAgo(ts){ if(!ts) return '<span style="color:#C9BFB2">-</span>'; return fmtDateShort(ts)+' <span style="color:#A89C8E;font-size:11px">('+agoTxt(ts)+')</span>'; }
+function memberGrade(m){
+  const s=memberStatus(m);
+  if(s==='ACTIVE') return {label:'유료', cls:'g-paid'};
+  if(s!=='FREE_TRIAL') return {label:'-', cls:'g-none'};   // 만료·게스트는 등급 없음
+  const n=m._solve||0;
+  if(n>=31) return {label:'A', cls:'g-a'};   // 31회 이상
+  if(n>=11) return {label:'B', cls:'g-b'};   // 11~30회
+  if(n>=1)  return {label:'C', cls:'g-c'};   // 1~10회
+  return {label:'D', cls:'g-d'};             // 0회
+}
+function memberStatus(m) {
+  const now = new Date();
+  const live = ent => {
+    if (!ent || ent.plan !== 'ACTIVE') return false;
+    if (!ent.expireAt) return true;
+    const d = ent.expireAt.toDate ? ent.expireAt.toDate() : new Date(ent.expireAt);
+    return d > now;
+  };
+  if (m.plan === 'ACTIVE' && live({plan:'ACTIVE', expireAt:m.expireAt})) return 'ACTIVE';
+  if (m.entitlements && Object.values(m.entitlements).some(live)) return 'ACTIVE';
+  if (m.plan === 'EXPIRED') return 'EXPIRED';
+  if (m.plan === 'FREE_TRIAL' || (m.entitlements && Object.values(m.entitlements).some(e=>e&&e.plan==='FREE_TRIAL'))) return 'FREE_TRIAL';
+  return m.plan || 'GUEST';
+}
+
+function loadDashboard() {
+  const now = new Date();
+  const total = allMembers.length;
+  let free=0, active=0, expired=0;
+  allMembers.forEach(m => {
+    const s = memberStatus(m);
+    if (s === 'ACTIVE') active++;
+    else if (s === 'EXPIRED') expired++;
+    else if (s === 'FREE_TRIAL') free++;
+  });
+  const pending = allPayments.filter(p => p.status === 'pending').length;
+
+  // 이번 달 매출 — 자동승인/승인 건 모두 집계 (철회/거절 제외)
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const revenue = allPayments
+    .filter(p => {
+      if (!isPaid(p.status)) return false;
+      const ref = p.approvedAt || p.createdAt;
+      if (!ref) return false;
+      const d = ref.toDate ? ref.toDate() : new Date(ref);
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    })
+    .reduce((sum, p) => sum + (p.depositAmount!=null ? p.depositAmount : (p.price || 0)), 0);
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statFree').textContent = free;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statExpired').textContent = expired;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statRevenue').textContent = revenue.toLocaleString() + '원';
+
+  // ===== CRM 통계 =====
+  const WEEK = 7*86400000; const nowMs = now.getTime();
+  const dOf = (t)=> t ? (t.toDate?t.toDate():new Date(t)) : null;
+  // 전환율 = 유료 / 전체
+  const conv = total>0 ? Math.round(active/total*100) : 0;
+  // 최근 7일 가입
+  const new7 = allMembers.filter(m=>{ const d=dOf(m.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
+  // 최근 7일 결제(결제 건 기준, 철회/거절 제외)
+  const pay7 = allPayments.filter(p=>{ if(!isPaid(p.status)) return false; const d=dOf(p.approvedAt||p.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
+  // 학습 20회 이상 무료회원
+  const hot = allMembers.filter(m=> memberStatus(m)==='FREE_TRIAL' && (m._solve||0)>=20 ).length;
+
+  const setT=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setT('statConv', conv+'%');
+  setT('statNew7', new7+'명');
+  setT('statPay7', pay7+'건');
+  setT('statHot', hot+'명');
+}
+
+function updatePendingBadge() {
+  const pending = allPayments.filter(p => p.status === 'pending').length;
+  const badge = document.getElementById('pendingBadge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+}
+
+// ===== 렌더링 =====
+const planNames = {7:'Basic (7일)', 14:'Standard (14일)', 28:'Premium (28일)'};
+const planBadge = p => p === 'FREE_TRIAL' ? 'badge-free' : p === 'ACTIVE' ? 'badge-active' : p === 'EXPIRED' ? 'badge-expired' : 'badge-guest';
+const planLabel = p => p === 'FREE_TRIAL' ? '무료체험' : p === 'ACTIVE' ? '이용중' : p === 'EXPIRED' ? '만료' : p;
+// 이용 출처 판정 (결제/쿠폰) — payments·discountCodes와 대조
+function memberSource(m){
+  const em = (m.email||'').toLowerCase();
+  const paid = allPayments.some(p => isPaid(p.status) && (p.uid===m.id || (p.email&&em&&p.email.toLowerCase()===em)));
+  const coupon = allCodes.some(c => c.used && (c.usedBy===m.id || (c.usedByEmail&&em&&c.usedByEmail.toLowerCase()===em)));
+  return {paid, coupon};
+}
+function memberBadges(m){
+  const s = memberStatus(m);
+  if(s==='ACTIVE'){
+    const src=memberSource(m); const out=[];
+    if(src.paid) out.push('<span class="badge badge-active">유료</span>');
+    if(src.coupon) out.push('<span class="badge badge-coupon">쿠폰</span>');
+    if(!out.length) out.push('<span class="badge badge-active">이용중</span>');
+    return out.join(' ');
+  }
+  return `<span class="badge ${planBadge(s)}">${planLabel(s)}</span>`;
+}
+
+function fmtDate(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function fmtDateShort(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ko-KR', {year:'2-digit',month:'2-digit',day:'2-digit'});
+}
+function daysLeft(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Math.ceil((d - new Date()) / 86400000);
+  return diff > 0 ? diff + '일' : '만료';
+}
+
+function renderRecentPayments() {
+  const recent = allPayments.slice(0, 5);
+  if (!recent.length) { document.getElementById('recentPayments').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
+  document.getElementById('recentPayments').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th></tr></thead>
+      <tbody>${recent.map(p => `
+        <tr>
+          <td>${p.email||'-'}</td>
+          <td style="font-size:11px">${certNameOf(p)}</td>
+          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
+          <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
+          <td>${fmtDate(p.createdAt)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderPayments(list) {
+  if (!list.length) { document.getElementById('paymentList').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
+  document.getElementById('paymentList').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>입금자</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
+      <tbody>${list.map(p => `
+        <tr>
+          <td>${p.email||'-'}</td>
+          <td><strong>${p.depositorName||'-'}</strong></td>
+          <td style="font-size:11px">${certNameOf(p)}</td>
+          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
+          <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
+          <td>${fmtDate(p.createdAt)}</td>
+          <td>${
+            p.status==='pending' ? `
+              <button class="btn-sm btn-approve" onclick="openApprove('${p.id}')">승인</button>
+              <button class="btn-sm btn-reject" onclick="openReject('${p.id}')" style="margin-left:4px">거절</button>`
+            : isPaid(p.status) ? `
+              <button class="btn-sm btn-reject" onclick="openRevoke('${p.id}')">철회</button>`
+            : '-'}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderMembers(list) {
+  if (!list.length) { document.getElementById('memberList').innerHTML = '<div class="empty">회원이 없습니다.</div>'; return; }
+  document.getElementById('memberList').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>등급</th><th>상태</th><th>학습량</th><th>최근 로그인</th><th>최근 학습</th><th>가입(경과)</th><th>관리</th></tr></thead>
+      <tbody>${list.map(m => {
+        const s = memberStatus(m);
+        const g = memberGrade(m);
+        const learn = m._solve==null ? '<span style="color:#B4A99C">…</span>'
+          : `<div style="display:flex;gap:12px">
+               <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${(m._solve||0).toLocaleString()}</div><div style="font-size:10px;color:#A89C8E">푼 횟수</div></div>
+               <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${m._studied||0}</div><div style="font-size:10px;color:#A89C8E">학습문항</div></div>
+             </div>`;
+        return `
+        <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
+          <td>${m.email||'-'}</td>
+          <td><span class="grade ${g.cls}">${g.label}</span></td>
+          <td>${memberBadges(m)}</td>
+          <td>${learn}</td>
+          <td>${fmtWithAgo(m.lastLoginAt)}</td>
+          <td>${fmtWithAgo(m._lastStudy)}</td>
+          <td>${fmtDateShort(m.createdAt)} <span style="color:#A89C8E;font-size:11px">(${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</span></td>
+          <td onclick="event.stopPropagation()">
+            <button class="btn-sm btn-extend" onclick="extendMember('${m.id}','${m.email}')">연장</button>
+            <button class="btn-sm btn-expire" onclick="expireMember('${m.id}','${m.email}')" style="margin-left:4px">만료</button>
+          </td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ===== 검색 =====
+function filterPayments() {
+  const q = document.getElementById('searchPayment').value.toLowerCase();
+  renderPayments(allPayments.filter(p => (p.email||'').toLowerCase().includes(q)));
+}
+function filterMembers() {
+  const q = (document.getElementById('searchMember').value||'').toLowerCase();
+  const g = (document.getElementById('filterGrade')||{}).value || '';
+  renderMembers(allMembers.filter(m => {
+    if (q && !((m.email||'').toLowerCase().includes(q))) return false;
+    if (g && memberGrade(m).label !== g) return false;
+    return true;
+  }));
+}
+function closeMemberDetail(){ const el=document.getElementById('memberDetailModal'); if(el) el.classList.add('hidden'); }
+// ===== 데이터 내보내기 =====
+let _expExams = null;
+async function openExportTab(){
+  if(_expExams) return;
+  try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists && m.data().exams)||[]; }catch(e){ _expExams=[]; }
+  const sel=document.getElementById('expCert'); if(!sel) return;
+  sel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
+    + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+}
+let impItems=[]; let _impInited=false;
+function impLog(msg,color){ const el=document.getElementById('impLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
+function impInit(){
+  if(_impInited) return; _impInited=true;
+  const drop=document.getElementById('impDrop'), file=document.getElementById('impFile');
+  if(!drop||!file) return;
+  drop.onclick=()=>file.click();
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#185FA5';}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
+  drop.addEventListener('drop',e=>impHandleFiles(e.dataTransfer.files));
+  file.addEventListener('change',e=>impHandleFiles(e.target.files));
+  const bump=document.getElementById('impBump'); if(bump) bump.addEventListener('change',impRender);
+}
+async function impHandleFiles(fileList){
   const files=[...fileList].filter(f=>/\.json$/i.test(f.name));
-  if(!files.length){ log('JSON 파일이 없습니다.', 'st-bad'); return; }
+  if(!files.length){ impLog('JSON 파일이 없습니다.','#f85149'); return; }
   for(const f of files){
-    let parsed=null, status='ready', err='';
-    try{
-      parsed = JSON.parse(await f.text());
-    }catch(e){ status='bad'; err='JSON 파싱 실패'; }
-    let docId='', cert='', subject='', name='', version='', count=0;
-    if(parsed){
-      cert=parsed.cert; subject=parsed.subject; name=parsed.name; version=parsed.version;
-      count=Array.isArray(parsed.questions)?parsed.questions.length:-1;
-      docId = (cert&&subject)? `${cert}__${subject}` : '';
-      if(!cert||!subject){ status='bad'; err='cert/subject 누락'; }
-      else if(count<0){ status='bad'; err='questions 배열 아님'; }
+    let parsed=null;
+    try{ parsed=JSON.parse(await f.text()); }catch(e){ impLog(f.name+': JSON 파싱 실패','#f85149'); continue; }
+    // (가) 통합 번들: {banks:[{docId,data}]}
+    if(parsed && Array.isArray(parsed.banks)){
+      parsed.banks.forEach(b=>{
+        const docId=b.docId||''; const data=b.data||{};
+        const [cert,subject]=docId.split('__');
+        if(!docId||!cert||!subject){ impLog('번들 내 잘못된 docId: '+docId,'#f85149'); return; }
+        const count=Array.isArray(data.questions)?data.questions.length:-1;
+        impItems=impItems.filter(it=>it.docId!==docId);
+        impItems.push({docId,cert,subject,data,count,version:data.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
+      });
+      impLog(f.name+': 번들 '+parsed.banks.length+'개 문서 인식');
     }
-    // 중복 파일 교체
-    items = items.filter(it=> it.docId!==docId || !docId);
-    items.push({file:f.name, docId, cert, subject, name, version, count, curVer:'?', parsed, status, err});
-    if(err) log(`${f.name}: ${err}`, 'st-bad');
+    // 과목별 파일: {cert,subject,...,questions:[]}
+    else if(parsed && parsed.cert && parsed.subject){
+      const docId=parsed.cert+'__'+parsed.subject;
+      const count=Array.isArray(parsed.questions)?parsed.questions.length:-1;
+      impItems=impItems.filter(it=>it.docId!==docId);
+      impItems.push({docId,cert:parsed.cert,subject:parsed.subject,data:parsed,count,version:parsed.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
+    }
+    else { impLog(f.name+': 형식 불명 (번들도 과목파일도 아님)','#f85149'); }
   }
-  await loadCurrentVersions();
-  render();
-  refreshButtons();
+  await impLoadVersions(); impRender(); document.getElementById('impRun').disabled=!impItems.some(it=>it.status==='ready');
 }
-
-async function loadCurrentVersions(){
-  for(const it of items){
-    if(!it.docId){ continue; }
-    try{
-      const snap = await db.collection('banks').doc(it.docId).get();
-      it.curVer = snap.exists ? (snap.data().version ?? '(없음)') : '(신규문서)';
-    }catch(e){ it.curVer='읽기실패'; }
-  }
+async function impLoadVersions(){
+  for(const it of impItems){ if(!it.docId) continue; try{ const snap=await db.collection('banks').doc(it.docId).get(); it.curVer=snap.exists?(snap.data().version??'(없음)'):'(신규)'; }catch(e){ it.curVer='읽기실패'; } }
 }
-
-function newVersionOf(it){
+function impNewVer(it){
   if(it.status==='bad') return '-';
-  if(!$('bump').checked) return it.version; // 파일 값 그대로
-  const base = (typeof it.curVer==='number') ? it.curVer
-             : (typeof it.version==='number' ? it.version : 0);
-  return base + 1;
+  const bump=document.getElementById('impBump'); if(bump && !bump.checked) return it.version;
+  const base=(typeof it.curVer==='number')?it.curVer:(typeof it.version==='number'?it.version:0);
+  return base+1;
 }
-
-function render(){
-  const tb=$('tbl').querySelector('tbody');
-  $('tbl').style.display = items.length? 'table':'none';
-  tb.innerHTML = items.map((it,i)=>{
-    const stTxt = it.status==='bad' ? ('오류: '+it.err)
-                : it.status==='done' ? '완료'
-                : '준비됨';
-    const stCls = it.status==='bad'?'st-bad': it.status==='done'?'st-done':'st-ready';
-    return `<tr>
-      <td>${it.file}</td>
-      <td>${it.docId||'-'}</td>
-      <td>${it.cert||'-'} / ${it.subject||'-'}</td>
-      <td class="num v-old">${it.curVer}</td>
-      <td class="num v-new">${newVersionOf(it)}</td>
-      <td class="num">${it.count>=0?it.count:'-'}</td>
-      <td class="${stCls}">${stTxt}</td>
-    </tr>`;
+function impRender(){
+  const tbl=document.getElementById('impTbl'); const tb=tbl.querySelector('tbody');
+  tbl.style.display=impItems.length?'table':'none';
+  tb.innerHTML=impItems.map(it=>{
+    const st=it.status==='bad'?('오류: '+it.err):it.status==='done'?'완료':'준비됨';
+    const col=it.status==='bad'?'#f85149':it.status==='done'?'#15793F':'#185FA5';
+    return '<tr style="border-bottom:1px solid #EFE9E2">'
+      +'<td style="padding:7px 10px">'+(it.docId||'-')+'</td>'
+      +'<td style="padding:7px 10px">'+(it.cert||'-')+' / '+(it.subject||'-')+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;color:#8A7E70">'+it.curVer+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;color:#15793F;font-weight:600">'+impNewVer(it)+'</td>'
+      +'<td style="padding:7px 10px;text-align:right">'+(it.count>=0?it.count:'-')+'</td>'
+      +'<td style="padding:7px 10px;color:'+col+'">'+st+'</td></tr>';
   }).join('');
 }
-$('bump').addEventListener('change', render);
-
-function refreshButtons(){
-  const anyReady = items.some(it=>it.status==='ready');
-  $('runBtn').disabled = !(isAdmin && anyReady);
-  $('refreshBtn').disabled = !items.some(it=>it.docId);
-}
-
-$('refreshBtn').onclick = async ()=>{ await loadCurrentVersions(); render(); log('현재 버전 새로고침 완료'); };
-
-// ---------- Upload ----------
-$('runBtn').onclick = async ()=>{
-  if(!isAdmin){ log('관리자 로그인이 필요합니다.', 'st-bad'); return; }
-  const ready = items.filter(it=>it.status==='ready');
+async function impRefresh(){ await impLoadVersions(); impRender(); impLog('현재 버전 새로고침 완료'); }
+async function impUpload(){
+  const ready=impItems.filter(it=>it.status==='ready');
   if(!ready.length) return;
-  const lines = ready.map(it=>`  ${it.docId}: ver ${it.curVer} → ${newVersionOf(it)} (문항 ${it.count})`).join('\n');
-  if(!confirm(`다음 ${ready.length}개 문서를 덮어씁니다. 계속할까요?\n\n${lines}\n\nmanifest는 변경하지 않습니다.`)) {
-    log('업로드 취소됨.'); return;
-  }
-  $('runBtn').disabled=true;
+  const lines=ready.map(it=>'  '+it.docId+': ver '+it.curVer+' → '+impNewVer(it)+' (문항 '+it.count+')').join('\n');
+  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+'\n\nmanifest는 변경하지 않습니다.')){ impLog('업로드 취소됨.'); return; }
+  document.getElementById('impRun').disabled=true;
   for(const it of ready){
     try{
-      const nv = newVersionOf(it);
-      const payload = Object.assign({}, it.parsed, { version: nv });
-      await db.collection('banks').doc(it.docId).set(payload); // 전체 덮어쓰기
-      // 검증 재읽기
-      const back = await db.collection('banks').doc(it.docId).get();
-      const bd = back.data()||{};
-      const okN = Array.isArray(bd.questions)?bd.questions.length:-1;
-      it.status='done'; it.curVer = bd.version ?? nv;
-      log(`✓ ${it.docId} 업로드 완료 — ver ${bd.version}, 문항 ${okN}`, 'st-done');
-    }catch(e){
-      it.status='bad'; it.err='업로드 실패: '+(e.message||e);
-      log(`✗ ${it.docId} 실패: ${e.message||e}`, 'st-bad');
-    }
-    render();
+      const nv=impNewVer(it);
+      const payload=Object.assign({}, it.data, {version:nv});
+      await db.collection('banks').doc(it.docId).set(payload);
+      const back=await db.collection('banks').doc(it.docId).get(); const bd=back.data()||{};
+      it.status='done'; it.curVer=bd.version??nv;
+      impLog('✓ '+it.docId+' 업로드 완료 — ver '+(bd.version)+', 문항 '+(Array.isArray(bd.questions)?bd.questions.length:'?'),'#15793F');
+    }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); impLog('✗ '+it.docId+' 실패: '+(e.message||e),'#f85149'); }
+    impRender();
   }
-  log('— 작업 종료 —', 'accent');
-  refreshButtons();
-};
+  impLog('— 작업 종료 — (앱에서 Ctrl+Shift+R로 캐시 갱신)','#5B50C0');
+}
+async function exportData(){
+  const sel=document.getElementById('expCert'); const pick=(sel&&sel.value)||'__all';
+  const st=document.getElementById('expStatus');
+  st.textContent='읽는 중... 잠시만요.';
+  try{
+    const m=await db.collection('manifest').doc('exams').get();
+    const exams=(m.exists && m.data().exams)||[];
+    const target = pick==='__all' ? exams : exams.filter(e=>e.id===pick);
+    if(!target.length){ st.textContent='해당 자격증을 manifest에서 찾지 못했습니다.'; return; }
+    const banks=[]; let qcnt=0;
+    for(const e of target){
+      for(const sub of (e.subjects||[])){
+        const docId=e.id+'__'+sub.code;
+        try{ const bd=await db.collection('banks').doc(docId).get(); if(bd.exists){ const data=bd.data(); banks.push({docId, data}); qcnt+=((data.questions||[]).length); } }catch(_){}
+      }
+    }
+    const bundle={ manifest:{ exams: target, updatedAt:(m.exists&&m.data().updatedAt)||null }, banks, exportedAt:new Date().toISOString() };
+    const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download='certlab_export_'+(pick==='__all'?'all':pick)+'_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    st.innerHTML='✅ 내보내기 완료 — 문서 <b>'+banks.length+'</b>개 · 문항 <b>'+qcnt.toLocaleString()+'</b>개. 다운로드된 JSON이 현재 서비스 데이터입니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+// ===== 이메일 발송 (등급별 대상 추출) =====
+function crmSegment(seg){
+  return allMembers.filter(m=>{
+    const s=memberStatus(m);
+    if(seg==='all') return true;
+    if(seg==='free') return s==='FREE_TRIAL';
+    if(seg==='paid') return s==='ACTIVE';
+    // A/B/C/D = 무료체험 회원 중 해당 등급
+    return s==='FREE_TRIAL' && memberGrade(m).label===seg;
+  });
+}
+function renderCrm(){
+  const box=document.getElementById('crmList'); if(!box) return;
+  const seg=(document.getElementById('crmSeg')||{}).value||'all';
+  const list=crmSegment(seg).slice().sort((a,b)=>(b._solve||0)-(a._solve||0));
+  const SEGLBL={all:'전체',free:'무료체험',paid:'유료',A:'등급 A',B:'등급 B',C:'등급 C',D:'등급 D'};
+  const segLabel = SEGLBL[seg]||seg;
+  if(!list.length){ box.innerHTML='<div class="empty">해당 대상이 없습니다.</div>'; return; }
+  box.innerHTML =
+    '<div style="padding:14px 20px;border-bottom:1px solid #F0F0F0">'
+    +'<div style="font-size:13px;color:#6E6256;margin-bottom:8px">'+segLabel+' · 대상 <b>'+list.length+'</b>명</div>'
+    +'<button class="btn-sm btn-extend" onclick="crmCopyEmails(\''+seg+'\')">📋 이메일 전체 복사</button>'
+    +'<div style="font-size:11px;color:#A89C8E;margin-top:8px">※ 복사한 이메일을 메일 앱의 받는사람(또는 숨은참조/BCC)에 붙여넣어 발송하세요.</div>'
+    +'</div>'
+    +'<table><thead><tr><th>이메일</th><th>등급</th><th>학습량</th><th>가입(경과)</th><th>최근 학습</th></tr></thead><tbody>'
+    + list.map(m=>{ const g=memberGrade(m); return `
+      <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
+        <td>${m.email||'-'}</td>
+        <td><span class="grade ${g.cls}">${g.label}</span></td>
+        <td>${(m._solve||0).toLocaleString()}회</td>
+        <td>${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</td>
+        <td>${m._lastStudy?fmtWithAgo(m._lastStudy):'<span style="color:#C9BFB2">없음</span>'}</td>
+      </tr>`;}).join('')
+    + '</tbody></table>';
+}
+function crmCopyEmails(seg){
+  const emails=crmSegment(seg).map(m=>m.email).filter(Boolean);
+  if(!emails.length){ alert('대상이 없습니다.'); return; }
+  navigator.clipboard.writeText(emails.join(', ')).then(()=>alert(emails.length+'명의 이메일을 복사했어요.')).catch(()=>alert('복사 실패'));
+}
+function openMemberDetail(uid){
+  const m = allMembers.find(x=>x.id===uid); if(!m) return;
+  const g = memberGrade(m); const s = memberStatus(m);
+  // 활성 이용권(자격증별 만료)
+  const ents = m.entitlements||{};
+  const activeCerts = Object.keys(ents).filter(c=>{ const e=ents[c]; if(!e||e.plan!=='ACTIVE') return false; if(!e.expireAt) return true; const d=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); return d>new Date(); });
+  const entHTML = activeCerts.length
+    ? activeCerts.map(c=>`<div style="font-size:13px">• ${CERT_NAMES[c]||c} <span style="color:#15793F">~${fmtDateShort(ents[c].expireAt)} (${daysLeft(ents[c].expireAt)})</span></div>`).join('')
+    : '<span style="color:#B4A99C">활성 이용권 없음</span>';
+  // 쿠폰
+  const codes=(codeByUid[uid]||[]);
+  const codeHTML = codes.length ? codes.map(c=>`<span class="badge" style="background:#EDE9FB;color:#5B50C0">🎟 ${c}</span>`).join(' ') : '<span style="color:#B4A99C">-</span>';
+  // 마일리지 잔액
+  const bal = mileBalanceOf(m);
+  // 결제 이력
+  const pays = allPayments.filter(p=>p.uid===uid).slice().sort((a,b)=>{ const da=(a.createdAt&&a.createdAt.toDate?a.createdAt.toDate():new Date(a.createdAt||0)); const db=(b.createdAt&&b.createdAt.toDate?b.createdAt.toDate():new Date(b.createdAt||0)); return db-da; });
+  const payHTML = pays.length
+    ? pays.map(p=>{
+        const amt = p.mileageUsed>0 ? `${(p.depositAmount||0).toLocaleString()}원+마일${(p.mileageUsed||0).toLocaleString()}` : `${(p.price||0).toLocaleString()}원`;
+        return `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid #F3F0EC">
+          <span>${fmtDateShort(p.approvedAt||p.createdAt)} · ${certNameOf(p)} ${planNames[p.planDays]||(p.planDays+'일')}</span>
+          <span>${amt} <b style="color:${isPaid(p.status)?'#15793F':'#A32D2D'}">${statusLabel(p.status)}</b></span></div>`;
+      }).join('')
+    : '<span style="color:#B4A99C">결제 이력 없음</span>';
+
+  const row=(label,val)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F3F0EC"><span style="color:#8A7E70;font-size:13px">${label}</span><span style="font-weight:600;font-size:13px;text-align:right">${val}</span></div>`;
+  document.getElementById('mdBody').innerHTML =
+    row('이메일', m.email||'-')
+    + row('등급 / 상태', `<span class="grade ${g.cls}">${g.label}</span> ${memberBadges(m)}`)
+    + row('가입일', `${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일 경과'})`)
+    + row('최근 로그인', m.lastLoginAt?`${fmtDateShort(m.lastLoginAt)} (${agoTxt(m.lastLoginAt)})`:'<span style="color:#B4A99C">기록 없음</span>')
+    + row('최근 학습', m._lastStudy?`${fmtDateShort(m._lastStudy)} (${agoTxt(m._lastStudy)})`:'<span style="color:#B4A99C">기록 없음</span>')
+    + row('학습량', `푼 횟수 <b>${(m._solve||0).toLocaleString()}</b> · 학습문항 <b>${m._studied||0}</b>`)
+    + row('마일리지', `${bal.toLocaleString()}원`)
+    + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">활성 이용권</div>${entHTML}`
+    + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">사용 쿠폰</div>${codeHTML}`
+    + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">결제 이력 (${pays.length})</div><div style="margin-top:4px">${payHTML}</div>`;
+  document.getElementById('memberDetailModal').classList.remove('hidden');
+}
+
+// ===== 승인/거절 (레거시 pending 건 전용) =====
+function openApprove(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  const expireDate = new Date();
+  expireDate.setDate(expireDate.getDate() + (p.planDays || 14));
+  document.getElementById('modalEmail').textContent = p.email;
+  document.getElementById('modalDepositor').textContent = p.depositorName || '-';
+  document.getElementById('modalPlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('modalPrice').textContent = p.mileageUsed>0
+    ? ((p.depositAmount||0).toLocaleString()+'원 입금 + 마일리지 '+(p.mileageUsed||0).toLocaleString()+'원')
+    : (p.price||0).toLocaleString()+'원';
+  document.getElementById('modalExpire').textContent = expireDate.toLocaleDateString('ko-KR');
+  document.getElementById('approveModal').classList.remove('hidden');
+}
+
+function openReject(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  document.getElementById('rejectEmail').textContent = p.email;
+  document.getElementById('rejectPlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('rejectModal').classList.remove('hidden');
+}
+
+// ===== 철회 (자동승인 건 입금 미확인) =====
+function openRevoke(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  document.getElementById('revokeEmail').textContent = p.email;
+  document.getElementById('revokeCert').textContent = certNameOf(p);
+  document.getElementById('revokePlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('revokeModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('approveModal').classList.add('hidden');
+  document.getElementById('rejectModal').classList.add('hidden');
+  document.getElementById('revokeModal').classList.add('hidden');
+  pendingPaymentId = null;
+  pendingPaymentData = null;
+}
+
+async function confirmApprove() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  const p = pendingPaymentData;
+  const cert = p.certType || 'bodybuilding';
+  const expireAt = new Date();
+  expireAt.setDate(expireAt.getDate() + (p.planDays || 14));
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'approved',
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const upd = {
+      ['entitlements.'+cert+'.plan']: 'ACTIVE',
+      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
+      ['entitlements.'+cert+'.planDays']: p.planDays
+    };
+    if (cert === 'bodybuilding') { upd.plan='ACTIVE'; upd.expireAt=firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays=p.planDays; }
+    await db.collection('users').doc(p.uid).update(upd);
+    closeModal();
+    alert(`✅ ${p.email} 승인 완료!\n만료일: ${expireAt.toLocaleDateString('ko-KR')}`);
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function confirmReject() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'rejected',
+      rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal();
+    alert('거절 처리되었습니다.');
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function confirmRevoke() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  const p = pendingPaymentData;
+  const cert = p.certType || 'bodybuilding';
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'revoked',
+      revokedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // 회원 문서 찾기 (uid 우선, 없으면 이메일로)
+    let ref=null, data=null;
+    if (p.uid) { ref=db.collection('users').doc(p.uid); const d=await ref.get(); if(d.exists) data=d.data(); }
+    if (!data && p.email) {
+      const qs=await db.collection('users').where('email','==',p.email).limit(1).get();
+      if(!qs.empty){ ref=qs.docs[0].ref; data=qs.docs[0].data(); }
+    }
+    if (ref) {
+      const upd = { ['entitlements.'+cert+'.plan']: 'EXPIRED' };
+      // 이번에 만료시키는 것 외에 살아있는 다른 이용권이 있는지 확인
+      const ents = (data && data.entitlements) || {};
+      const now = Date.now();
+      const otherLive = Object.keys(ents).some(k => {
+        if (k===cert) return false;
+        const e=ents[k]; if(!e || e.plan!=='ACTIVE') return false;
+        if(!e.expireAt) return true;
+        const t = e.expireAt.toDate ? e.expireAt.toDate().getTime() : new Date(e.expireAt).getTime();
+        return t > now;
+      });
+      // bodybuilding(레거시 top-plan)이거나, 남은 이용권이 없으면 top-level plan도 만료
+      if (cert==='bodybuilding' || !otherLive) upd.plan='EXPIRED';
+      // 마일리지 사용분 환원 (1년 유효)
+      const used = p.mileageUsed || 0;
+      if (used > 0) {
+        const lots = Array.isArray(data && data.mileageLots) ? data.mileageLots.slice() : [];
+        lots.push({a:used, t:'refund', at:now, exp:now+365*86400000});
+        const hist = Array.isArray(data && data.mileageHistory) ? data.mileageHistory.slice() : [];
+        hist.push({t:'refund', a:used, at:now, memo:'결제 철회 환원'});
+        upd.mileageLots = lots;
+        upd.mileageHistory = hist;
+      }
+      await ref.update(upd);
+    }
+    closeModal();
+    alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`+((p.mileageUsed||0)>0?`\n사용한 마일리지 ${(p.mileageUsed||0).toLocaleString()}원을 환원했습니다.`:''));
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// ===== 오류 신고 =====
+let allReports = [];
+
+async function loadReports() {
+  try {
+    const snap = await db.collection('reports').orderBy('createdAt','desc').get();
+    allReports = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    renderReports(allReports);
+    updateReportBadge();
+  } catch(e) { document.getElementById('reportList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+function updateReportBadge() {
+  const pending = allReports.filter(r => r.status === 'pending').length;
+  const badge = document.getElementById('reportBadge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+}
+
+function renderReports(list) {
+  if (!list.length) { document.getElementById('reportList').innerHTML = '<div class="empty">신고 내역이 없습니다.</div>'; return; }
+  document.getElementById('reportList').innerHTML = `
+    <table>
+      <thead><tr><th>신고일시</th><th>과목</th><th>오류유형</th><th>신고내용</th><th>신고자</th><th>상태</th><th>처리</th></tr></thead>
+      <tbody>${list.map((r,i) => `
+        <tr>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td style="font-size:11px">${r.subject||'-'}</td>
+          <td><span class="badge badge-pending">${r.errorType||'-'}</span></td>
+          <td style="max-width:160px">
+            <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${r.question||''}">${(r.question||'').slice(0,20)}${(r.question||'').length>20?'...':''}</div>
+            <div style="font-size:11px;color:#888780">${r.detail||'-'}</div>
+          </td>
+          <td style="font-size:11px">${r.reporterEmail||'-'}</td>
+          <td><span class="badge ${r.status==='done'?'badge-approved':'badge-pending'}">${r.status==='done'?'처리완료':'대기'}</span></td>
+          <td>${r.status==='pending'
+            ? `<button class="btn-sm btn-approve" onclick="markReportDone('${r.id}')">완료</button>`
+            : '-'}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function filterReports() {
+  const status = document.getElementById('filterStatus').value;
+  if (status === 'all') renderReports(allReports);
+  else renderReports(allReports.filter(r => r.status === status));
+}
+
+async function markReportDone(reportId) {
+  try {
+    await db.collection('reports').doc(reportId).update({
+      status: 'done',
+      doneAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await loadReports();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// ===== 회원 관리 =====
+async function extendMember(uid, email) {
+  const days = prompt(`${email}\n연장할 일수를 입력하세요 (숫자만):`);
+  if (!days || isNaN(days) || Number(days) <= 0) return;
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    const data = doc.data() || {};
+    let base = new Date();
+    if (data.plan === 'ACTIVE' && data.expireAt) {
+      const cur = data.expireAt.toDate ? data.expireAt.toDate() : new Date(data.expireAt);
+      if (cur > base) base = cur;
+    }
+    base.setDate(base.getDate() + Number(days));
+    const ts = firebase.firestore.Timestamp.fromDate(base);
+    // 생체(top-level 미러) + 생체 entitlement 동시 반영
+    await db.collection('users').doc(uid).update({
+      plan: 'ACTIVE',
+      expireAt: ts,
+      ['entitlements.bodybuilding.plan']: 'ACTIVE',
+      ['entitlements.bodybuilding.expireAt']: ts
+    });
+    alert(`✅ ${email} ${days}일 연장 완료!\n새 만료일: ${base.toLocaleDateString('ko-KR')}`);
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function expireMember(uid, email) {
+  if (!confirm(`${email}\n이 회원의 모든 이용권을 즉시 만료 처리하시겠어요?`)) return;
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    const data = doc.data() || {};
+    const upd = { plan: 'EXPIRED' };
+    if (data.entitlements) {
+      Object.keys(data.entitlements).forEach(c => { upd['entitlements.'+c+'.plan'] = 'EXPIRED'; });
+    } else {
+      upd['entitlements.bodybuilding.plan'] = 'EXPIRED';
+    }
+    await db.collection('users').doc(uid).update(upd);
+    alert(`${email} 만료 처리 완료.`);
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
 </script>
 </body>
 </html>
