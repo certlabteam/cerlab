@@ -378,6 +378,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mcq-result button{background:#0C447C;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-size:13.5px;font-weight:800;cursor:pointer}
 /* 과목 아코디언 (원본 감평사 방식) */
 #mcqView .sec-lbl{font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 6px}
+#mcqView .mcq-exam-title{font-size:20px;font-weight:800;color:#0C447C;margin:2px 2px 14px}
 #mcqView .scard{border-radius:16px;border:1.5px solid #E2E8F0;overflow:hidden;background:#fff;margin-bottom:10px}
 #mcqView .scard-hd{display:flex;align-items:center;gap:10px;padding:14px 15px;cursor:pointer;user-select:none}
 #mcqView .sdot{width:6px;height:6px;border-radius:50%;background:#0C447C;flex-shrink:0}
@@ -522,7 +523,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 </div>
 
 <div class="header">
-  <div class="brand-area">
+  <div class="brand-area" onclick="goHome()" style="cursor:pointer">
     <div class="logo">CertLab</div>
     <div class="slogan">도전하는 사람들의 성공을 돕습니다</div>
   </div>
@@ -2216,6 +2217,8 @@ function renderMCQ(){
 }
 function renderMcqHome(root){
   let html='';
+  const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name)||'';
+  if(examNm) html+='<div class="mcq-exam-title">'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
   const due=srDueCertCount(mqCert);
   html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
