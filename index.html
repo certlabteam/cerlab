@@ -351,16 +351,27 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .opt.wr .onum{background:#DC2626;border-color:#DC2626;color:#fff}
 #mcqView .opt.wr .otxt{color:#B91C1C}
 #mcqView .opt.dim{opacity:.55}
+#mcqView .jaryo{font-size:13.5px;font-weight:500;line-height:1.6;color:#334155;white-space:pre-wrap;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:11px 13px;margin:0 0 15px}
 #mcqView .exp{margin-top:13px;border-top:1px dashed #E2E8F0;padding-top:12px}
-#mcqView .exp .al{font-size:13px;font-weight:800;color:#15803D;margin-bottom:6px}
-#mcqView .exp .al.bad{color:#B91C1C}
-#mcqView .exp .note{font-size:12px;color:#64748B;line-height:1.6}
-#mcqView .exp-opts{margin-top:9px;display:flex;flex-direction:column;gap:5px}
-#mcqView .exp-opts .eo{font-size:12px;color:#475569;line-height:1.5;padding:6px 9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px}
-#mcqView .exp-opts .eo b{color:#64748B;margin-right:3px}
-#mcqView .exp-opts .eo.ok{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
-#mcqView .exp-opts .eo.ok b{color:#16A34A}
-#mcqView .mcq-foot{display:flex;gap:9px;margin-top:14px}
+#mcqView .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+#mcqView .exp-ti{font-size:15px;font-weight:800;color:#0F172A}
+#mcqView .exp-st{font-size:13px;font-weight:800}
+#mcqView .exp .note{font-size:12.5px;color:#475569;line-height:1.65;margin-bottom:10px}
+#mcqView .exp-opts{display:flex;flex-direction:column;gap:9px}
+#mcqView .exp-opts .eo{font-size:13px;line-height:1.55}
+#mcqView .exp-opts .eo-q{color:#0F172A;font-weight:600;margin-bottom:2px}
+#mcqView .exp-opts .eo-a{color:#475569;padding-left:2px}
+#mcqView .exp-opts .eo-a.eo-red{color:#A32D2D}
+#mcqView .exp-opts .eo-a.eo-grn{color:#0F6E56}
+#mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#0C447C;background:#E6F1FB;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
+#mcqView .mn-box{margin:14px 0 0;padding:11px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:12px}
+#mcqView .mn-code{font-size:16px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
+#mcqView .mn-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
+#mcqView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
+#mcqView .concept-ti{font-size:12px;font-weight:800;color:#185FA5;margin-bottom:7px}
+#mcqView .concept-row{font-size:12.5px;color:#3A4A5E;line-height:1.6;margin-bottom:5px}
+#mcqView .concept-row b{color:#0C447C}
+#mcqView .mcq-foot{display:flex;gap:9px;margin:14px 0}
 #mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
 #mcqView .mbtn:disabled{opacity:.4}
 #mcqView .mbtn-prev{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0}
@@ -2437,6 +2448,44 @@ async function resolveImages(scope){
     }catch(_){}
   }
 }
+// 해설 줄 판정 색 (빨강 우선 → 초록 → 중립). '정답'은 '정답이다'만 초록(결론단일 중립 유지)
+function verdictColor(t){
+  if(!t) return '';
+  const red=['옳지 않다','적절하지 않다','부적절','틀리다','틀린','아니다','다르다','않는다','맞지 않','일치하지 않','수 없다'];
+  const grn=['옳다','적절하다','정답이다','해당한다','대상이다','맞다'];
+  for(const m of red){ if(t.indexOf(m)>=0) return 'eo-red'; }
+  for(const m of grn){ if(t.indexOf(m)>=0) return 'eo-grn'; }
+  return '';
+}
+function splitJaryo(qt){
+  if(!qt) return {q:qt||'', jaryo:''};
+  const b=qt.indexOf('[');
+  if(b>0) return {q:qt.slice(0,b).trim(), jaryo:qt.slice(b).trim()};
+  const nl=qt.indexOf('\n');
+  if(nl>0) return {q:qt.slice(0,nl).trim(), jaryo:qt.slice(nl+1).trim()};
+  const qm=qt.indexOf('?');
+  if(qm>0 && qm<qt.length-1){
+    let head=qt.slice(0,qm+1); let rest=qt.slice(qm+1);
+    const m=rest.match(/^\s*(\([^)]*\))/);
+    if(m){ head+=' '+m[1]; rest=rest.slice(m[0].length); }
+    rest=rest.trim();
+    if(rest.length>=10) return {q:head.trim(), jaryo:rest};
+  }
+  return {q:qt, jaryo:''};
+}
+function mnBoxHTML(mn){
+  if(!mn) return '';
+  let code='', desc='';
+  if(typeof mn==='string') code=mn; else { code=mn.code||''; desc=mn.desc||''; }
+  if(!code) return '';
+  return '<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+}
+function conceptBoxHTML(c){
+  if(!Array.isArray(c) || !c.length) return '';
+  const rows=c.map(it=> (it&&it.t)?('<div class="cc-row"><b>'+it.t+'</b> — '+(it.d||'')+'</div>'):'').join('');
+  if(!rows) return '';
+  return '<div class="concept-box"><div class="concept-ti">개념설명</div>'+rows+'</div>';
+}
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
@@ -2454,15 +2503,30 @@ function renderMcqExam(root){
   }).join('');
   let expHTML='';
   if(showExp){ const okk=isCorr(q.ans,sel);
+    const ansN=ansArr(q.ans);
+    const statusTxt = okk?'정답':(sel?'오답':'미응답');
+    const statusCol = okk?'#0F6E56':'#A32D2D';
+    const multiTxt = isMulti?(ansN.length===5?' (전항정답)':' (복수정답)'):'';
     let body='';
-    const hasExp=q.exp && (q.exp.s || (q.exp.o && q.exp.o.some(Boolean)));
-    if(hasExp){
-      if(q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
-      if(q.exp.o && q.exp.o.some(Boolean)){
-        body+='<div class="exp-opts">'+q.exp.o.map((t,i)=> t?('<div class="eo'+(ansArr(q.ans).includes(i+1)?' ok':'')+'"><b>'+(i+1)+'</b> '+t+'</div>'):'').join('')+'</div>';
-      }
-    } else { body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>'; }
-    expHTML='<div class="exp"><div class="al'+(okk?'':' bad')+'">'+(okk?'✓ 정답':(sel?'✕ 오답':'미응답'))+' · 정답 '+ansLabel(q.ans)+'번'+(isMulti?(ansArr(q.ans).length===5?' (전항정답)':' (복수정답)'):'')+'</div>'+body+'</div>'; }
+    const hasO = q.exp && q.exp.o && q.exp.o.some(Boolean);
+    if(q.exp && q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
+    if(hasO){
+      body+='<div class="exp-opts">'+q.exp.o.map(function(t,i){
+        if(!t && !(q.opts&&q.opts[i])) return '';
+        var isAns=ansN.includes(i+1);
+        var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+q.opts[i]+(isAns?' <span class="eo-badge">정답</span>':'')+'</div>':'';
+        var expTxt=t?'<div class="eo-a '+verdictColor(t)+'">'+t+'</div>':'';
+        return '<div class="eo">'+optTxt+expTxt+'</div>';
+      }).join('')+'</div>';
+    }
+    if(!q.exp || (!q.exp.s && !hasO)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
+    if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
+      body+='<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+    if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){ return (it&&it.t)?'<div class="concept-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>':''; }).join('')+'</div>';
+    }
+    expHTML='<div class="exp"><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
+  const jr=splitJaryo(q.q);
   const subjTag=((mqDiag||mqReview)&&q._subj)?'<span class="qsubj">'+q._subj+'</span>':'';
   const tags=subjTag+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
   root.innerHTML=
@@ -2471,10 +2535,11 @@ function renderMcqExam(root){
       '<span class="etim'+(mqTimeLeft<=300?' red':'')+'" id="mqTimer">'+mqFmt(mqTimeLeft)+'</span></div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qcard"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div>'+
-    '<div class="qtext">'+q.q+'</div>'+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+expHTML+'</div>'+
+    '<div class="qtext">'+jr.q+'</div>'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
-    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?'채점 ✓':'다음 ▶')+'</button></div>';
+    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?'채점 ✓':'다음 ▶')+'</button></div>'+
+    expHTML+'</div>';
   resolveImages(root);
 }
 function mqPick(qid,n){
@@ -2605,7 +2670,7 @@ function applyBank(ex,sub,doc){
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; byset[lab].push(it); });
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; byset[lab].push(it); });
     qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
   }
 }
