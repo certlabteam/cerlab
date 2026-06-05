@@ -1908,13 +1908,13 @@ function rate(result){
   isFlipped=false; learnOpen=false;
   if(srMode==='review'){
     filtered=getFiltered();
-    if(filtered.length===0){ updateStats();updateSrBanner();buildBar();buildStarBar(); renderCard(); return; }
+    if(filtered.length===0){ updateStats();updateSrBanner();buildBar();buildStarBar();updateBbAnalysis(); renderCard(); return; }
     if(current>=filtered.length) current=0;
   } else {
     if(current<filtered.length-1) current++;
-    else { updateStats();updateSrBanner(); showComplete(); return; }
+    else { updateStats();updateSrBanner();updateBbAnalysis(); showComplete(); return; }
   }
-  updateStats();updateSrBanner();buildBar();buildStarBar();
+  updateStats();updateSrBanner();buildBar();buildStarBar();updateBbAnalysis();
   renderCard();
 }
 
