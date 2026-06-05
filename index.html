@@ -339,6 +339,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer}
 #mcqView .opt .onum{width:23px;height:23px;border-radius:50%;border:1.5px solid #CBD5E1;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
 #mcqView .opt .otxt{font-size:13.5px;line-height:1.55;color:#0F172A;font-weight:500;flex:1}
+#mcqView .opt.opt-img{flex-direction:column;align-items:stretch}
+#mcqView .opt.opt-img .onum{margin-bottom:4px}
+#mcqView .opt .oimg{width:100%}
+#mcqView .opt .oimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
 #mcqView .opt.sel{border-color:#0F172A}
 #mcqView .opt.cor{background:#F0FDF4;border-color:#16A34A}
 #mcqView .opt.cor .onum{background:#16A34A;border-color:#16A34A;color:#fff}
@@ -2410,6 +2414,26 @@ function resumeMcqExam(id,si){
 }
 function mqBackHome(){ mqStopTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
+const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const imgCache={};
+function imgInner(v){
+  if(!v) return '';
+  if(v.indexOf('img://')===0) return '<img data-imgkey="'+v.slice(6)+'" alt="" src="'+IMG_PH+'">';
+  return '<img src="'+v+'" alt="">';
+}
+async function resolveImages(scope){
+  const els=(scope||document).querySelectorAll('img[data-imgkey]');
+  for(const el of els){
+    const k=el.getAttribute('data-imgkey'); if(!k) continue;
+    el.removeAttribute('data-imgkey');
+    try{
+      let b64=imgCache[k];
+      if(!b64){ try{ b64=localStorage.getItem('img:'+k)||null; }catch(_){} }
+      if(!b64){ const d=await db.collection('images').doc(k).get(); if(d.exists && d.data().data){ b64=d.data().data; try{ localStorage.setItem('img:'+k,b64); }catch(_){} } }
+      if(b64){ imgCache[k]=b64; el.src=b64; }
+    }catch(_){}
+  }
+}
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
@@ -2421,7 +2445,9 @@ function renderMcqExam(root){
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
     else if(sel===n)cls+=' sel';
-    return '<div class="'+cls+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div><div class="otxt">'+o+'</div></div>';
+    const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
+    const otxt=o?('<div class="otxt">'+o+'</div>'):'';
+    return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';
   if(showExp){ const okk=isCorr(q.ans,sel);
@@ -2442,10 +2468,11 @@ function renderMcqExam(root){
       '<span class="etim'+(mqTimeLeft<=300?' red':'')+'" id="mqTimer">'+mqFmt(mqTimeLeft)+'</span></div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qcard"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div>'+
-    '<div class="qtext">'+q.q+'</div>'+(q.img?'<div class="qimg"><img src="'+q.img+'" alt=""></div>':'')+'<div class="opts">'+optHTML+'</div>'+expHTML+'</div>'+
+    '<div class="qtext">'+q.q+'</div>'+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+expHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?'채점 ✓':'다음 ▶')+'</button></div>';
+  resolveImages(root);
 }
 function mqPick(qid,n){
   if(!canAccess(mqCert)) return;
@@ -2575,7 +2602,7 @@ function applyBank(ex,sub,doc){
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; byset[lab].push(it); });
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; byset[lab].push(it); });
     qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
   }
 }
