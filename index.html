@@ -2246,7 +2246,7 @@ function renderMcqHome(root){
   });
   root.innerHTML=html;
 }
-function mqToggle(id){ mqOpen[id]=!mqOpen[id]; renderMCQ(); }
+function mqToggle(id){ const wasOpen=!!mqOpen[id]; mqOpen={}; if(!wasOpen) mqOpen[id]=true; renderMCQ(); }
 function mcqMasteryBadge(q){ const m=srMasteryK(mqCert,q.id); if(m==='new') return ''; const cls={weak:'sr-weak',learning:'sr-learning',master:'sr-master'}[m]; return '<span class="mq-mst '+cls+'">'+SR_MASTER_LABEL[m]+'</span>'; }
 
 /* ===== 실력 분석 / 예상점수 / 진단 ===== */
