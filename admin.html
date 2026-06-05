@@ -156,6 +156,8 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
     <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
     <button class="tab-btn" onclick="switchTab('crm')">이메일 발송</button>
+    <button class="tab-btn" onclick="switchTab('export')">데이터 내보내기</button>
+    <button class="tab-btn" onclick="switchTab('import')">데이터 업로드</button>
     <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
   </div>
 
@@ -251,6 +253,57 @@ tr:hover td{background:#FAFAFA}
           </select>
         </div>
         <div id="crmList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 데이터 내보내기 -->
+    <div class="tab-panel" id="panel-export">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">데이터 내보내기 (현재 Firestore → JSON)</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="expCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <button class="btn-sm btn-extend" onclick="exportData()">⬇ JSON 다운로드</button>
+          </div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="expStatus" style="font-size:13px;color:#6E6256">자격증을 고르고 다운로드를 누르면 현재 서비스 중인 데이터를 JSON으로 받습니다.</div>
+          <div style="font-size:11px;color:#A89C8E;margin-top:10px;line-height:1.6">
+            ※ 이 파일이 <b>현재 Firestore에 올라가 있는 최신 데이터</b>입니다. 데이터방에서 이 파일을 받아 수정한 뒤, 업로드 페이지로 다시 올리면 됩니다.<br>
+            ※ 형식은 업로드와 호환됩니다 (manifest + banks).
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 데이터 업로드 -->
+    <div class="tab-panel" id="panel-import">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">데이터 업로드 (JSON → Firestore banks)</div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="impDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">통합 번들(내보내기 파일) 또는 과목별 파일(bodybuilding__B.json 등) 모두 가능</span>
+          </div>
+          <input id="impFile" type="file" accept=".json,application/json" multiple hidden>
+          <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="impBump" checked> 버전 자동 +1 (캐시 갱신)
+          </label>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin:12px 0">
+            ⚠️ 실행하면 banks 문서를 <b>덮어씁니다</b>(set/overwrite). manifest는 건드리지 않습니다. 아래 "현재 ver → 새 ver"를 확인 후 실행하세요.
+          </div>
+          <table id="impTbl" style="display:none;width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="color:#8A7E70"><th style="text-align:left;padding:7px 10px">문서 ID</th><th style="text-align:left;padding:7px 10px">cert/subject</th><th style="text-align:right;padding:7px 10px">현재 ver</th><th style="text-align:right;padding:7px 10px">새 ver</th><th style="text-align:right;padding:7px 10px">문항수</th><th style="text-align:left;padding:7px 10px">상태</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button id="impRun" class="btn-sm btn-extend" disabled onclick="impUpload()">⬆ 업로드 실행</button>
+            <button class="btn-sm" onclick="impRefresh()" style="background:#EDE9FB;color:#5B50C0">현재 ver 새로고침</button>
+          </div>
+          <div id="impLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+        </div>
       </div>
     </div>
 
@@ -381,6 +434,8 @@ function switchTab(name) {
   event.target.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
   if(name==='crm') renderCrm();
+  if(name==='export') openExportTab();
+  if(name==='import') impInit();
 }
 
 // ===== 데이터 로드 =====
@@ -763,6 +818,126 @@ function filterMembers() {
   }));
 }
 function closeMemberDetail(){ const el=document.getElementById('memberDetailModal'); if(el) el.classList.add('hidden'); }
+// ===== 데이터 내보내기 =====
+let _expExams = null;
+async function openExportTab(){
+  if(_expExams) return;
+  try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists && m.data().exams)||[]; }catch(e){ _expExams=[]; }
+  const sel=document.getElementById('expCert'); if(!sel) return;
+  sel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
+    + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+}
+let impItems=[]; let _impInited=false;
+function impLog(msg,color){ const el=document.getElementById('impLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
+function impInit(){
+  if(_impInited) return; _impInited=true;
+  const drop=document.getElementById('impDrop'), file=document.getElementById('impFile');
+  if(!drop||!file) return;
+  drop.onclick=()=>file.click();
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#185FA5';}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
+  drop.addEventListener('drop',e=>impHandleFiles(e.dataTransfer.files));
+  file.addEventListener('change',e=>impHandleFiles(e.target.files));
+  const bump=document.getElementById('impBump'); if(bump) bump.addEventListener('change',impRender);
+}
+async function impHandleFiles(fileList){
+  const files=[...fileList].filter(f=>/\.json$/i.test(f.name));
+  if(!files.length){ impLog('JSON 파일이 없습니다.','#f85149'); return; }
+  for(const f of files){
+    let parsed=null;
+    try{ parsed=JSON.parse(await f.text()); }catch(e){ impLog(f.name+': JSON 파싱 실패','#f85149'); continue; }
+    // (가) 통합 번들: {banks:[{docId,data}]}
+    if(parsed && Array.isArray(parsed.banks)){
+      parsed.banks.forEach(b=>{
+        const docId=b.docId||''; const data=b.data||{};
+        const [cert,subject]=docId.split('__');
+        if(!docId||!cert||!subject){ impLog('번들 내 잘못된 docId: '+docId,'#f85149'); return; }
+        const count=Array.isArray(data.questions)?data.questions.length:-1;
+        impItems=impItems.filter(it=>it.docId!==docId);
+        impItems.push({docId,cert,subject,data,count,version:data.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
+      });
+      impLog(f.name+': 번들 '+parsed.banks.length+'개 문서 인식');
+    }
+    // 과목별 파일: {cert,subject,...,questions:[]}
+    else if(parsed && parsed.cert && parsed.subject){
+      const docId=parsed.cert+'__'+parsed.subject;
+      const count=Array.isArray(parsed.questions)?parsed.questions.length:-1;
+      impItems=impItems.filter(it=>it.docId!==docId);
+      impItems.push({docId,cert:parsed.cert,subject:parsed.subject,data:parsed,count,version:parsed.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
+    }
+    else { impLog(f.name+': 형식 불명 (번들도 과목파일도 아님)','#f85149'); }
+  }
+  await impLoadVersions(); impRender(); document.getElementById('impRun').disabled=!impItems.some(it=>it.status==='ready');
+}
+async function impLoadVersions(){
+  for(const it of impItems){ if(!it.docId) continue; try{ const snap=await db.collection('banks').doc(it.docId).get(); it.curVer=snap.exists?(snap.data().version??'(없음)'):'(신규)'; }catch(e){ it.curVer='읽기실패'; } }
+}
+function impNewVer(it){
+  if(it.status==='bad') return '-';
+  const bump=document.getElementById('impBump'); if(bump && !bump.checked) return it.version;
+  const base=(typeof it.curVer==='number')?it.curVer:(typeof it.version==='number'?it.version:0);
+  return base+1;
+}
+function impRender(){
+  const tbl=document.getElementById('impTbl'); const tb=tbl.querySelector('tbody');
+  tbl.style.display=impItems.length?'table':'none';
+  tb.innerHTML=impItems.map(it=>{
+    const st=it.status==='bad'?('오류: '+it.err):it.status==='done'?'완료':'준비됨';
+    const col=it.status==='bad'?'#f85149':it.status==='done'?'#15793F':'#185FA5';
+    return '<tr style="border-bottom:1px solid #EFE9E2">'
+      +'<td style="padding:7px 10px">'+(it.docId||'-')+'</td>'
+      +'<td style="padding:7px 10px">'+(it.cert||'-')+' / '+(it.subject||'-')+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;color:#8A7E70">'+it.curVer+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;color:#15793F;font-weight:600">'+impNewVer(it)+'</td>'
+      +'<td style="padding:7px 10px;text-align:right">'+(it.count>=0?it.count:'-')+'</td>'
+      +'<td style="padding:7px 10px;color:'+col+'">'+st+'</td></tr>';
+  }).join('');
+}
+async function impRefresh(){ await impLoadVersions(); impRender(); impLog('현재 버전 새로고침 완료'); }
+async function impUpload(){
+  const ready=impItems.filter(it=>it.status==='ready');
+  if(!ready.length) return;
+  const lines=ready.map(it=>'  '+it.docId+': ver '+it.curVer+' → '+impNewVer(it)+' (문항 '+it.count+')').join('\n');
+  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+'\n\nmanifest는 변경하지 않습니다.')){ impLog('업로드 취소됨.'); return; }
+  document.getElementById('impRun').disabled=true;
+  for(const it of ready){
+    try{
+      const nv=impNewVer(it);
+      const payload=Object.assign({}, it.data, {version:nv});
+      await db.collection('banks').doc(it.docId).set(payload);
+      const back=await db.collection('banks').doc(it.docId).get(); const bd=back.data()||{};
+      it.status='done'; it.curVer=bd.version??nv;
+      impLog('✓ '+it.docId+' 업로드 완료 — ver '+(bd.version)+', 문항 '+(Array.isArray(bd.questions)?bd.questions.length:'?'),'#15793F');
+    }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); impLog('✗ '+it.docId+' 실패: '+(e.message||e),'#f85149'); }
+    impRender();
+  }
+  impLog('— 작업 종료 — (앱에서 Ctrl+Shift+R로 캐시 갱신)','#5B50C0');
+}
+async function exportData(){
+  const sel=document.getElementById('expCert'); const pick=(sel&&sel.value)||'__all';
+  const st=document.getElementById('expStatus');
+  st.textContent='읽는 중... 잠시만요.';
+  try{
+    const m=await db.collection('manifest').doc('exams').get();
+    const exams=(m.exists && m.data().exams)||[];
+    const target = pick==='__all' ? exams : exams.filter(e=>e.id===pick);
+    if(!target.length){ st.textContent='해당 자격증을 manifest에서 찾지 못했습니다.'; return; }
+    const banks=[]; let qcnt=0;
+    for(const e of target){
+      for(const sub of (e.subjects||[])){
+        const docId=e.id+'__'+sub.code;
+        try{ const bd=await db.collection('banks').doc(docId).get(); if(bd.exists){ const data=bd.data(); banks.push({docId, data}); qcnt+=((data.questions||[]).length); } }catch(_){}
+      }
+    }
+    const bundle={ manifest:{ exams: target, updatedAt:(m.exists&&m.data().updatedAt)||null }, banks, exportedAt:new Date().toISOString() };
+    const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download='certlab_export_'+(pick==='__all'?'all':pick)+'_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    st.innerHTML='✅ 내보내기 완료 — 문서 <b>'+banks.length+'</b>개 · 문항 <b>'+qcnt.toLocaleString()+'</b>개. 다운로드된 JSON이 현재 서비스 데이터입니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
 // ===== 이메일 발송 (등급별 대상 추출) =====
 function crmSegment(seg){
   return allMembers.filter(m=>{
