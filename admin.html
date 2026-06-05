@@ -273,6 +273,13 @@ tr:hover td{background:#FAFAFA}
             ※ 이 파일이 <b>현재 Firestore에 올라가 있는 최신 데이터</b>입니다. 데이터방에서 이 파일을 받아 수정한 뒤, 업로드 페이지로 다시 올리면 됩니다.<br>
             ※ 형식은 업로드와 호환됩니다 (manifest + banks).
           </div>
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
+          <div class="table-title" style="margin-bottom:8px">manifest 버전 동기화</div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin-bottom:10px">
+            앱은 manifest의 version으로 캐시를 갱신합니다. bank를 새로 올렸는데 화면에 안 보이면, 이 버튼으로 <b>manifest version을 각 bank의 실제 version과 일치</b>시키세요. (불일치 시 옛 데이터가 캐싱됨)
+          </div>
+          <button class="btn-sm btn-extend" onclick="syncManifest()">🔄 manifest ↔ bank 버전 동기화</button>
+          <div id="syncStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
         </div>
       </div>
     </div>
@@ -1016,6 +1023,36 @@ async function impUpload(){
     impRender();
   }
   impLog('— 작업 종료 — (앱에서 Ctrl+Shift+R로 캐시 갱신)','#5B50C0');
+}
+// ===== manifest ↔ bank 버전 동기화 =====
+async function syncManifest(){
+  const st=document.getElementById('syncStatus');
+  st.textContent='읽는 중...';
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    if(!mSnap.exists){ st.textContent='manifest/exams 문서가 없습니다.'; return; }
+    const manifest=mSnap.data();
+    const exams=manifest.exams||[];
+    let changes=[]; 
+    for(const ex of exams){
+      ex.versions = ex.versions || {};
+      for(const sub of (ex.subjects||[])){
+        try{
+          const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+          if(!bd.exists) continue;
+          const bankVer = bd.data().version;
+          if(typeof bankVer==='number' && ex.versions[sub.code]!==bankVer){
+            changes.push(ex.id+'/'+sub.code+': '+(ex.versions[sub.code]??'-')+' → '+bankVer);
+            ex.versions[sub.code]=bankVer;
+          }
+        }catch(_){}
+      }
+    }
+    if(!changes.length){ st.innerHTML='✅ 이미 모두 일치합니다. 변경 없음.'; return; }
+    if(!confirm('manifest version을 bank와 일치시킵니다 ('+changes.length+'건):\n\n'+changes.join('\n')+'\n\n적용할까요?')){ st.textContent='취소됨.'; return; }
+    await db.collection('manifest').doc('exams').update({ exams: exams });
+    st.innerHTML='✅ 동기화 완료 — '+changes.length+'건 갱신.<br><span style="font-size:11px;color:#A89C8E">'+changes.join('<br>')+'</span><br>앱에서 Ctrl+Shift+R 하면 새 데이터가 보입니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
 }
 async function exportData(){
   const sel=document.getElementById('expCert'); const pick=(sel&&sel.value)||'__all';
