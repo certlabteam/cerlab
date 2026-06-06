@@ -1028,10 +1028,15 @@ async function loadUserData() {
       srDiagnostics = Array.isArray(data.diagnostics) ? data.diagnostics : [];
       srMigrateIfNeeded();
       srApplyToCards();
-      if (data.solveCount) {
-        solveCount = data.solveCount;
-        document.getElementById('statCount').textContent = solveCount;
+      if (data.solveCountByCert && typeof data.solveCountByCert==='object') {
+        solveCountByCert = data.solveCountByCert;
+      } else if (data.solveCount) {
+        solveCountByCert = { bodybuilding: data.solveCount };   // 레거시 단일값 → 생체로 이관
+      } else {
+        solveCountByCert = {};
       }
+      solveCount = totalSolve();
+      setStatCountUI();
       refresh();
       if (activeCert === 'appraiser') renderMCQ();
     }
@@ -1053,7 +1058,7 @@ function srApplyToCards(){
 function srLoadLocal(){
   try{ const raw=localStorage.getItem('sr:'+SR_CERT); if(!raw) return;
     const o=JSON.parse(raw); srProgress=o.p||{}; srExamOverride=o.e||{};
-    if(o.c){ solveCount=o.c; const el=document.getElementById('statCount'); if(el) el.textContent=solveCount; }
+    if(o.c){ solveCountByCert.bodybuilding=o.c; solveCount=totalSolve(); setStatCountUI(); }
     srApplyToCards();
   }catch(_){}
 }
@@ -1084,7 +1089,7 @@ async function saveUserData() {
     ];
     const favoriteList = D.filter(c=>c.fav).map(c=>'bodybuilding‖'+c.s+'‖'+c.q);
     await db.collection('userData').doc(currentUser.uid).set({
-      wrongList, favoriteList, solveCount,
+      wrongList, favoriteList, solveCount: totalSolve(), solveCountByCert,
       cardProgress: srProgress, examDates: srExamOverride, diagnostics: srDiagnostics,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -1623,7 +1628,11 @@ let currentSubj='전체';
 let isFlipped=false;
 let learnOpen=false;
 let currentStar=0;
-let solveCount=0;
+let solveCount=0;                 // 레거시 미러(전체 합계 — admin 호환)
+let solveCountByCert={};           // 시험별 푼 횟수 {cert:n}
+function solveOf(cert){ return solveCountByCert[cert]||0; }
+function totalSolve(){ let s=0; for(const k in solveCountByCert) s+=(solveCountByCert[k]||0); return s; }
+function setStatCountUI(){ const el=document.getElementById('statCount'); if(el) el.textContent=solveOf('bodybuilding'); }
 
 /* ===== 자동복습(Spaced Repetition) 코어 ===== */
 const SR_CERT='bodybuilding';
@@ -1787,7 +1796,7 @@ function updateStats(){
   document.getElementById('statTotal').textContent=t;
   document.getElementById('statWrong').textContent=w;
   document.getElementById('statDone').textContent=t>0?Math.round((t-w)/t*100)+'%':'0%';
-  document.getElementById('statCount').textContent=solveCount;
+  setStatCountUI();
   document.getElementById('wrongCount').textContent='오답 '+w+'개';
 }
 
@@ -1906,10 +1915,12 @@ function flipCard(){
   renderCard();
 }
 
-function countUp(){
-  solveCount++;
-  document.getElementById('statCount').textContent=solveCount;
-  checkMilestone(solveCount);
+function countUp(cert){
+  cert = cert || activeCertId();
+  solveCountByCert[cert]=(solveCountByCert[cert]||0)+1;
+  solveCount=totalSolve();
+  setStatCountUI();
+  checkMilestone(totalSolve());
   srSaveDebounced();
 }
 
@@ -1923,7 +1934,7 @@ function srSaveDebounced(force){
 function srFlush(){
   srDirtyCount=0; if(srSaveTimer){clearTimeout(srSaveTimer);srSaveTimer=null;}
   if(currentUser) saveUserData();
-  else { try{ localStorage.setItem('sr:'+SR_CERT, JSON.stringify({p:srProgress,e:srExamOverride,c:solveCount})); }catch(_){} }
+  else { try{ localStorage.setItem('sr:'+SR_CERT, JSON.stringify({p:srProgress,e:srExamOverride,c:solveOf('bodybuilding')})); }catch(_){} }
 }
 window.addEventListener('beforeunload',()=>{ if(srDirtyCount>0) srFlush(); });
 
@@ -1934,7 +1945,7 @@ function rate(result){
   if(!canAccess('bodybuilding')) return;
   const card=filtered[current];
   srRate(card,result);
-  countUp();
+  countUp('bodybuilding');
   { const e=userEnt.bodybuilding;
     if(e.plan==='GUEST') guestCounts.bodybuilding++;
     if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
@@ -2042,7 +2053,7 @@ function toggleWrong(){
   // 오답 표시 후 다음 문제로 이동
   if(current<filtered.length-1){
     if(!canAccess('bodybuilding'))return;
-    countUp();
+    countUp('bodybuilding');
     { const e=userEnt.bodybuilding;
       if(e.plan==='GUEST') guestCounts.bodybuilding++;
       if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
@@ -2595,6 +2606,7 @@ function mqPick(qid,n){
   if(firstTime){
     const q=mqQuestions().find(x=>x.id===qid);
     if(q){ srRateMcq(mqCert,q,n); srSaveDebounced(); }
+    countUp(mqCert);
     const e=userEnt[mqCert];
     if(e.plan==='GUEST') guestCounts[mqCert]++;
     if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount(mqCert); } }
