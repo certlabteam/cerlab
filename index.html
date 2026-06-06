@@ -1811,16 +1811,17 @@ function buildLearnHTML(card){
 }
 
 function buildLearnPanel(data){
-  const kws=data.keywords.map(k=>'<span class="learn-keyword">'+k+'</span>').join('');
-  const pts=data.points.map(p=>'<li>'+p+'</li>').join('');
-  return '<div class="learn-section"><div class="learn-section-title">핵심 개념</div>'
-    +'<div class="learn-section-body">'+data.concept+'</div></div>'
-    +'<div class="learn-section"><div class="learn-section-title">포인트 정리</div>'
-    +'<div class="learn-section-body"><ul>'+pts+'</ul></div></div>'
-    +'<div class="learn-section"><div class="learn-section-title">시험관 답변 예시</div>'
-    +'<div class="learn-section-body">'+data.extra+'</div></div>'
-    +'<div class="learn-section"><div class="learn-section-title">핵심 키워드</div>'
-    +'<div class="learn-section-body">'+kws+'</div></div>';
+  data=data||{};
+  const kws=(Array.isArray(data.keywords)?data.keywords:[]).map(k=>'<span class="learn-keyword">'+k+'</span>').join('');
+  const pts=(Array.isArray(data.points)?data.points:[]).map(p=>'<li>'+p+'</li>').join('');
+  const concept=data.concept||'';
+  const extra=data.extra||'';
+  let h='';
+  if(concept) h+='<div class="learn-section"><div class="learn-section-title">핵심 개념</div><div class="learn-section-body">'+concept+'</div></div>';
+  if(pts) h+='<div class="learn-section"><div class="learn-section-title">포인트 정리</div><div class="learn-section-body"><ul>'+pts+'</ul></div></div>';
+  if(extra) h+='<div class="learn-section"><div class="learn-section-title">시험관 답변 예시</div><div class="learn-section-body">'+extra+'</div></div>';
+  if(kws) h+='<div class="learn-section"><div class="learn-section-title">핵심 키워드</div><div class="learn-section-body">'+kws+'</div></div>';
+  return h;
 }
 
 function toggleLearn(){
@@ -1859,8 +1860,8 @@ function renderCard(){
   const statusDot='<div class="sr-dot '+dotCls+'" title="'+SR_MASTER_LABEL[mst]+'">'+SR_MASTER_LABEL[mst]+'</div>';
   const starCount=card.star||0;
   const starDot=starCount>0?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
-  const learnHTML=isFlipped?buildLearnHTML(card):'';
-  const mnemonicHTML=isFlipped?buildMnemonic(card):'';
+  const learnHTML=isFlipped?(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})():'';
+  const mnemonicHTML=isFlipped?(function(){try{return buildMnemonic(card);}catch(e){console.error('mnemonic 렌더 오류',e);return '';}})():'';
   const reportBtn=isFlipped?`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`:'';
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
   area.innerHTML=
@@ -2555,8 +2556,8 @@ function renderMcqExam(root){
         return '<div class="eo">'+optTxt+expTxt+'</div>';
       }).join('')+'</div>';
     } else if(oFilled===1){
-      // 결론 한 줄만 (ㄱㄴㄷ형 등) — 중립으로 한 줄만 표시
-      body+='<div class="note">'+oArr.filter(Boolean)[0]+'</div>';
+      // 결론 한 줄만 (ㄱㄴㄷ형 등) — 정답색(초록)으로 한 줄만 표시 (빨강 마커 적용 안 함)
+      body+='<div class="exp-opts"><div class="eo"><div class="eo-a eo-grn">'+oArr.filter(Boolean)[0]+'</div></div></div>';
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
     if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
