@@ -2737,7 +2737,12 @@ loadAllBanks().then(()=>{
   }
 })();
 let pwaDeferred=null;
-function pwaIsIOS(){ const ua=navigator.userAgent; return /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1); }
+function pwaIsAndroid(){ return /android/i.test(navigator.userAgent); }
+function pwaIsIOS(){
+  if(pwaIsAndroid()) return false;                 // 안드로이드는 절대 iOS 아님(데스크톱모드 오판 방지)
+  const ua=navigator.userAgent;
+  return /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1);
+}
 function pwaIsMobile(){ return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent); }
 function pwaIsStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
 function pwaDismissed(){ try{ return localStorage.getItem('pwa_dismiss')==='1'; }catch(e){ return false; } }
