@@ -1172,6 +1172,7 @@ function updateAuthBar() {
           <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 +10,000원!</div>
           <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
         </div>
+        <button class="ref-acc-btn" onclick="addToHome(event)">📲 홈 화면에 추가</button>
         <button class="btn-logout" onclick="signOut()">로그아웃</button>
       </div>
     </div>`;
@@ -2739,7 +2740,31 @@ loadAllBanks().then(()=>{
     });
   }
 })();
-</script>
+// 설치 신호 캡처 (있으면 원터치 설치에 사용)
+let pwaPrompt=null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); pwaPrompt=e; });
+window.addEventListener('appinstalled', ()=>{ pwaPrompt=null; });
+function pwaStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+// 프로필 메뉴: 홈 화면에 추가
+async function addToHome(e){
+  if(e){ e.stopPropagation(); }
+  const dd=document.getElementById('userDropdown'); if(dd) dd.classList.add('hidden');
+  const ua=navigator.userAgent;
+  const isAndroid=/android/i.test(ua);
+  const isIOS=!isAndroid && (/iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1));
+  if(pwaStandalone()){ alert('이미 앱으로 설치되어 실행 중이에요.'); return; }
+  if(pwaPrompt){                       // 안드로이드·크롬·엣지: 원터치 설치
+    pwaPrompt.prompt();
+    try{ await pwaPrompt.userChoice; }catch(_){}
+    pwaPrompt=null; return;
+  }
+  if(isIOS){                           // 아이폰: 사파리 공유 안내 (alert — 무조건 닫힘)
+    alert('아이폰에서 홈 화면에 추가하기\n\n1) 사파리 하단 공유 버튼(↑)을 누르세요\n2) "홈 화면에 추가"를 선택하세요\n3) 오른쪽 위 "추가"를 누르면 끝!');
+    return;
+  }
+  // 그 외(설치 신호 없음)
+  alert('홈 화면에 추가하기\n\n· 크롬/엣지(PC·안드로이드): 주소창 오른쪽의 설치 아이콘(⊕ 또는 모니터 모양)을 누르세요. 안 보이면 잠시 후 다시 시도해 주세요.\n· 사파리(아이폰): 공유 버튼 → "홈 화면에 추가".');
+}
 
 </body>
 </html>
