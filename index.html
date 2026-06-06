@@ -19,6 +19,12 @@ gtag('config', 'G-RPZRZQ779J');
 <meta name="author" content="CertLab">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#185FA5">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CertLab">
 <link rel="canonical" href="https://certlab.ai.kr/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CertLab">
@@ -497,6 +503,23 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .anal-pct{font-size:12px;font-weight:700;color:#6E6256;width:40px;text-align:right}
 .anal-weak{margin-top:10px;font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:10px;padding:8px 10px;line-height:1.5}
 .anal-note{margin-top:8px;font-size:11px;color:#B4A99C}
+.install-btn{background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:999px;font-size:12px;font-weight:800;padding:6px 11px;cursor:pointer;white-space:nowrap}
+.install-btn:hover{background:#d8e9fa}
+.pwa-banner{position:fixed;left:12px;right:12px;bottom:12px;max-width:480px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;box-shadow:0 8px 28px rgba(15,23,42,.18);border-radius:16px;padding:12px 12px 12px 12px;display:flex;align-items:center;gap:11px;z-index:9000}
+.pwa-banner-ic{width:42px;height:42px;border-radius:11px;flex-shrink:0}
+.pwa-banner-tx{flex:1;display:flex;flex-direction:column;line-height:1.3}
+.pwa-banner-tx b{font-size:13.5px;color:#0F172A}
+.pwa-banner-tx span{font-size:11.5px;color:#64748B}
+.pwa-banner-go{background:#185FA5;color:#fff;border:none;border-radius:999px;font-size:13px;font-weight:800;padding:9px 16px;cursor:pointer;flex-shrink:0}
+.pwa-banner-x{background:transparent;border:none;color:#94A3B8;font-size:15px;cursor:pointer;padding:4px 6px;flex-shrink:0}
+.pwa-ios-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9500;display:flex;align-items:flex-end}
+.pwa-ios-sheet{background:#fff;width:100%;max-width:480px;margin:0 auto;border-radius:20px 20px 0 0;padding:20px 20px 26px;animation:pwaUp .25s ease}
+@keyframes pwaUp{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+.pwa-ios-ti{font-size:17px;font-weight:800;color:#0F172A;margin-bottom:14px;text-align:center}
+.pwa-ios-step{font-size:13.5px;color:#334155;line-height:1.5;display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.pwa-ios-step>span:first-child{width:22px;height:22px;border-radius:50%;background:#E6F1FB;color:#185FA5;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pwa-ios-share{font-size:16px}
+.pwa-ios-close{margin-top:8px;width:100%;background:#185FA5;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:800;cursor:pointer}
 </style>
 <!-- Meta Pixel Code -->
 <script>
@@ -539,6 +562,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     <div class="slogan">도전하는 사람들의 성공을 돕습니다</div>
   </div>
   <div class="header-right">
+    <button class="install-btn hidden" id="installBtn" onclick="pwaInstall()" aria-label="앱 설치" title="앱으로 설치">⬇ 앱 설치</button>
     <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
     <div class="mode-pill" id="modePill">전체</div>
     <div class="auth-bar" id="authBar">
@@ -2700,6 +2724,81 @@ loadAllBanks().then(()=>{
   if(typeof refresh==='function') refresh();
   if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
 }).catch(showDataError);
+
+/* ===== PWA: 설치 / 홈 화면에 추가 ===== */
+(function(){
+  // service worker 등록
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{ navigator.serviceWorker.register('/sw.js').catch(()=>{}); });
+  }
+})();
+let pwaDeferred=null;
+function pwaIsIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+function pwaIsStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+function pwaDismissed(){ try{ return localStorage.getItem('pwa_dismiss')==='1'; }catch(e){ return false; } }
+function pwaShowCount(){ try{ return parseInt(localStorage.getItem('pwa_shown')||'0',10); }catch(e){ return 0; } }
+function pwaBumpShow(){ try{ localStorage.setItem('pwa_shown', String(pwaShowCount()+1)); }catch(e){} }
+// 안드로이드/크롬: 설치 가능 시그널 캡처
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault(); pwaDeferred=e;
+  const b=document.getElementById('installBtn'); if(b) b.classList.remove('hidden');
+  pwaMaybeBanner();
+});
+// 설치 완료 후 정리
+window.addEventListener('appinstalled', ()=>{
+  pwaDeferred=null;
+  const b=document.getElementById('installBtn'); if(b) b.classList.add('hidden');
+  pwaHideBanner();
+});
+function pwaMaybeBanner(){
+  if(pwaIsStandalone() || pwaDismissed()) return;
+  if(pwaShowCount()>=3) return;            // 처음 3번까지만
+  if(!pwaDeferred && !pwaIsIOS()) return;  // 설치 불가 환경(아이폰 제외)이면 배너 안 띄움
+  const ban=document.getElementById('pwaBanner'); if(!ban) return;
+  ban.classList.remove('hidden'); pwaBumpShow();
+}
+function pwaHideBanner(){ const b=document.getElementById('pwaBanner'); if(b) b.classList.add('hidden'); }
+function pwaDismiss(){ pwaHideBanner(); try{ localStorage.setItem('pwa_dismiss','1'); }catch(e){} }
+async function pwaInstall(){
+  if(pwaIsIOS() && !pwaIsStandalone()){ pwaHideBanner(); pwaShowIos(); return; }   // 아이폰은 안내
+  if(pwaDeferred){
+    pwaHideBanner();
+    pwaDeferred.prompt();
+    try{ await pwaDeferred.userChoice; }catch(e){}
+    pwaDeferred=null;
+    const b=document.getElementById('installBtn'); if(b) b.classList.add('hidden');
+  } else {
+    // 설치 시그널이 없을 때(브라우저별) — 아이폰이면 안내, 아니면 무시
+    if(pwaIsIOS()) pwaShowIos();
+  }
+}
+function pwaShowIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.classList.remove('hidden'); }
+function pwaCloseIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.classList.add('hidden'); }
+// 진입 시: 아이폰이면 헤더 버튼 노출 + 첫 배너 시도
+(function(){
+  if(pwaIsStandalone()) return;
+  if(pwaIsIOS()){
+    const b=document.getElementById('installBtn'); if(b) b.classList.remove('hidden');
+    setTimeout(pwaMaybeBanner, 1500);
+  }
+})();
 </script>
+<!-- PWA 설치 배너 (처음 몇 번만) -->
+<div class="pwa-banner hidden" id="pwaBanner">
+  <img src="/icon-192.png" alt="" class="pwa-banner-ic">
+  <div class="pwa-banner-tx"><b>앱으로 설치하기</b><span>홈 화면에 추가하고 앱처럼 쓰세요</span></div>
+  <button class="pwa-banner-go" id="pwaBannerGo" onclick="pwaInstall()">설치</button>
+  <button class="pwa-banner-x" onclick="pwaDismiss()" aria-label="닫기">✕</button>
+</div>
+<!-- iOS 안내 시트 -->
+<div class="pwa-ios-mask hidden" id="pwaIosMask" onclick="pwaCloseIos()">
+  <div class="pwa-ios-sheet" onclick="event.stopPropagation()">
+    <div class="pwa-ios-ti">홈 화면에 추가</div>
+    <div class="pwa-ios-step"><span>1</span> 하단 <b>공유 버튼</b> <span class="pwa-ios-share">⬆️</span> 을 누르세요</div>
+    <div class="pwa-ios-step"><span>2</span> <b>"홈 화면에 추가"</b> 를 선택하세요</div>
+    <div class="pwa-ios-step"><span>3</span> 오른쪽 위 <b>추가</b> 를 누르면 끝!</div>
+    <button class="pwa-ios-close" onclick="pwaCloseIos()">확인</button>
+  </div>
+</div>
 </body>
 </html>
