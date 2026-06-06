@@ -565,7 +565,6 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     <div class="slogan">도전하는 사람들의 성공을 돕습니다</div>
   </div>
   <div class="header-right">
-    <button class="install-btn hidden" id="installBtn" onclick="pwaInstall()" aria-label="앱 설치" title="앱으로 설치">⬇ 앱 설치</button>
     <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
     <div class="mode-pill" id="modePill">전체</div>
     <div class="auth-bar" id="authBar">
@@ -2740,84 +2739,7 @@ loadAllBanks().then(()=>{
     });
   }
 })();
-let pwaDeferred=null;
-function pwaIsAndroid(){ return /android/i.test(navigator.userAgent); }
-function pwaIsIOS(){
-  if(pwaIsAndroid()) return false;                 // 안드로이드는 절대 iOS 아님(데스크톱모드 오판 방지)
-  const ua=navigator.userAgent;
-  return /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1);
-}
-function pwaIsMobile(){ return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent); }
-function pwaIsStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
-function pwaDismissed(){ try{ return localStorage.getItem('pwa_dismiss')==='1'; }catch(e){ return false; } }
-function pwaShowCount(){ try{ return parseInt(localStorage.getItem('pwa_shown')||'0',10); }catch(e){ return 0; } }
-function pwaBumpShow(){ try{ localStorage.setItem('pwa_shown', String(pwaShowCount()+1)); }catch(e){} }
-// 설치 가능 시그널 캡처 (PC·모바일 공통)
-window.addEventListener('beforeinstallprompt', e=>{
-  e.preventDefault(); pwaDeferred=e;
-  const b=document.getElementById('installBtn'); if(b) b.classList.remove('hidden');
-});
-// 설치 완료 후 정리
-window.addEventListener('appinstalled', ()=>{
-  pwaDeferred=null;
-  const b=document.getElementById('installBtn'); if(b) b.classList.add('hidden');
-  pwaHideBanner();
-});
-function pwaMaybeBanner(){
-  if(pwaIsStandalone()) return;            // 이미 설치됨
-  const ban=document.getElementById('pwaBanner'); if(!ban) return;
-  ban.classList.remove('hidden');
-}
-// 가입(첫 로그인) 직후 한 번만 호출
-function pwaSignupBanner(){
-  try{ if(localStorage.getItem('pwa_signup_shown')==='1') return; }catch(e){}
-  try{ localStorage.setItem('pwa_signup_shown','1'); }catch(e){}
-  if(pwaIsStandalone()) return;
-  setTimeout(pwaMaybeBanner, 1800);        // 화면 자리잡은 뒤
-}
-function pwaHideBanner(){ const b=document.getElementById('pwaBanner'); if(b) b.classList.add('hidden'); }
-function pwaDismiss(){ pwaHideBanner(); try{ localStorage.setItem('pwa_dismiss','1'); }catch(e){} }
-async function pwaInstall(){
-  if(pwaIsIOS() && !pwaIsStandalone()){ pwaHideBanner(); pwaShowIos(); return; }   // 아이폰은 안내
-  if(pwaDeferred){
-    pwaHideBanner();
-    pwaDeferred.prompt();
-    try{ await pwaDeferred.userChoice; }catch(e){}
-    pwaDeferred=null;
-    const b=document.getElementById('installBtn'); if(b) b.classList.add('hidden');
-  } else {
-    // 설치 신호가 아직/없을 때
-    if(pwaIsIOS()) { pwaShowIos(); return; }
-    if(pwaIsStandalone()){ alert('이미 앱으로 설치되어 실행 중이에요.'); return; }
-    alert('이미 설치되었거나, 잠시 후 다시 시도해 주세요.\n\n· 크롬/엣지(PC): 주소창 오른쪽의 설치 아이콘(⊕ 또는 모니터 모양)을 눌러도 설치됩니다.\n· 사파리(PC)·파이어폭스: 앱 설치를 지원하지 않아요. 크롬/엣지를 사용해 주세요.');
-  }
-}
-function pwaShowIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.classList.remove('hidden'); }
-function pwaCloseIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.classList.add('hidden'); }
-// 진입 시: 아이폰이면 헤더 버튼만 노출 (배너 자동노출은 안 함 — 가입 첫 로그인 때만)
-(function(){
-  if(pwaIsStandalone()) return;
-  if(pwaIsIOS()){
-    const b=document.getElementById('installBtn'); if(b) b.classList.remove('hidden');
-  }
-})();
 </script>
-<!-- PWA 설치 배너 (처음 몇 번만) -->
-<div class="pwa-banner hidden" id="pwaBanner">
-  <img src="/icon-192.png" alt="" class="pwa-banner-ic">
-  <div class="pwa-banner-tx"><b>앱으로 설치하기</b><span>홈 화면에 추가하고 앱처럼 쓰세요</span></div>
-  <button class="pwa-banner-go" id="pwaBannerGo" onclick="pwaInstall()">설치</button>
-  <button class="pwa-banner-x" onclick="pwaDismiss()" aria-label="닫기">✕</button>
-</div>
-<!-- iOS 안내 시트 -->
-<div class="pwa-ios-mask hidden" id="pwaIosMask" onclick="pwaCloseIos()">
-  <div class="pwa-ios-sheet" onclick="event.stopPropagation()">
-    <div class="pwa-ios-ti">아이폰·아이패드 — 홈 화면에 추가</div>
-    <div class="pwa-ios-step"><span>1</span> 사파리 <b>공유 버튼</b> <span class="pwa-ios-share">⬆️</span> 을 누르세요</div>
-    <div class="pwa-ios-step"><span>2</span> <b>"홈 화면에 추가"</b> 를 선택하세요</div>
-    <div class="pwa-ios-step"><span>3</span> 오른쪽 위 <b>추가</b> 를 누르면 끝!</div>
-    <button class="pwa-ios-close" onclick="pwaCloseIos()">확인</button>
-  </div>
-</div>
+
 </body>
 </html>
