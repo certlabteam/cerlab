@@ -1798,15 +1798,17 @@ function buildMnemonic(card){
     +(desc?'<div class="mnemonic-desc">'+desc+'</div>':'')+'</div>';
 }
 function buildLearnHTML(card){
-  if(!card.learn)return '';
+  const mnHTML=(function(){try{return buildMnemonic(card);}catch(e){return '';}})();
   const L=card.learn;
+  const panelInner=mnHTML+(L?buildLearnPanel(L):'');
+  if(!panelInner) return '';
   const btnLabel=learnOpen?'📖 해설 닫기 ▲':'📖 해설보기 ▼';
   const panelDisplay=learnOpen?'':'display:none';
   return '<div class="learn-btn-wrap"><button class="learn-btn" onclick="toggleLearn()">'+btnLabel+'</button></div>'
     +'<div class="learn-panel" id="learnPanel" style="'+panelDisplay+'">'
     +'<div class="learn-panel-header"><span class="learn-panel-title">📚 해설</span>'
     +'<button class="learn-panel-close" onclick="toggleLearn()">✕</button></div>'
-    +'<div class="learn-panel-body">'+buildLearnPanel(L)+'</div>'
+    +'<div class="learn-panel-body">'+panelInner+'</div>'
     +'</div>';
 }
 
@@ -1861,7 +1863,6 @@ function renderCard(){
   const statusDot='<div class="sr-dot '+dotCls+'" title="'+SR_MASTER_LABEL[mst]+'">'+SR_MASTER_LABEL[mst]+'</div>';
   const starCount=card.star||0;
   const starDot=starCount>0?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
-  const mnemonicHTML=isFlipped?(function(){try{return buildMnemonic(card);}catch(e){console.error('mnemonic 렌더 오류',e);return '';}})():'';
   const learnHTML=(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})();
   const reportBtn=`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`;
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
@@ -1876,7 +1877,6 @@ function renderCard(){
     +'<div class="card-text">'+card.a+'</div></div>'
     +'</div></div>'
     +'<div class="tap-hint">'+hintText+'</div>'
-    +mnemonicHTML
     +learnHTML
     +reportBtn;
 
