@@ -2729,16 +2729,21 @@ loadAllBanks().then(()=>{
 (function(){
   // service worker 등록
   if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{ navigator.serviceWorker.register('/sw.js').catch(()=>{}); });
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('/sw.js')
+        .then(r=>console.log('[PWA] SW 등록 성공:', r.scope))
+        .catch(e=>console.error('[PWA] SW 등록 실패:', e && e.message, e));
+    });
   }
 })();
 let pwaDeferred=null;
-function pwaIsIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+function pwaIsIOS(){ const ua=navigator.userAgent; return /iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1); }
+function pwaIsMobile(){ return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent); }
 function pwaIsStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
 function pwaDismissed(){ try{ return localStorage.getItem('pwa_dismiss')==='1'; }catch(e){ return false; } }
 function pwaShowCount(){ try{ return parseInt(localStorage.getItem('pwa_shown')||'0',10); }catch(e){ return 0; } }
 function pwaBumpShow(){ try{ localStorage.setItem('pwa_shown', String(pwaShowCount()+1)); }catch(e){} }
-// 안드로이드/크롬: 설치 가능 시그널 캡처
+// 설치 가능 시그널 캡처 (PC·모바일 공통)
 window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault(); pwaDeferred=e;
   const b=document.getElementById('installBtn'); if(b) b.classList.remove('hidden');
@@ -2768,8 +2773,10 @@ async function pwaInstall(){
     pwaDeferred=null;
     const b=document.getElementById('installBtn'); if(b) b.classList.add('hidden');
   } else {
-    // 설치 시그널이 없을 때(브라우저별) — 아이폰이면 안내, 아니면 무시
-    if(pwaIsIOS()) pwaShowIos();
+    // 설치 신호가 아직/없을 때
+    if(pwaIsIOS()) { pwaShowIos(); return; }
+    if(pwaIsStandalone()){ alert('이미 앱으로 설치되어 실행 중이에요.'); return; }
+    alert('이미 설치되었거나, 잠시 후 다시 시도해 주세요.\n\n· 크롬/엣지(PC): 주소창 오른쪽의 설치 아이콘(⊕ 또는 모니터 모양)을 눌러도 설치됩니다.\n· 사파리(PC)·파이어폭스: 앱 설치를 지원하지 않아요. 크롬/엣지를 사용해 주세요.');
   }
 }
 function pwaShowIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.classList.remove('hidden'); }
@@ -2793,8 +2800,8 @@ function pwaCloseIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.c
 <!-- iOS 안내 시트 -->
 <div class="pwa-ios-mask hidden" id="pwaIosMask" onclick="pwaCloseIos()">
   <div class="pwa-ios-sheet" onclick="event.stopPropagation()">
-    <div class="pwa-ios-ti">홈 화면에 추가</div>
-    <div class="pwa-ios-step"><span>1</span> 하단 <b>공유 버튼</b> <span class="pwa-ios-share">⬆️</span> 을 누르세요</div>
+    <div class="pwa-ios-ti">아이폰·아이패드 — 홈 화면에 추가</div>
+    <div class="pwa-ios-step"><span>1</span> 사파리 <b>공유 버튼</b> <span class="pwa-ios-share">⬆️</span> 을 누르세요</div>
     <div class="pwa-ios-step"><span>2</span> <b>"홈 화면에 추가"</b> 를 선택하세요</div>
     <div class="pwa-ios-step"><span>3</span> 오른쪽 위 <b>추가</b> 를 누르면 끝!</div>
     <button class="pwa-ios-close" onclick="pwaCloseIos()">확인</button>
