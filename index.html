@@ -2729,16 +2729,13 @@ loadAllBanks().then(()=>{
   if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
 }).catch(showDataError);
 
-/* ===== PWA: 설치 / 홈 화면에 추가 ===== */
+/* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
 (function(){
-  // service worker 등록
+  // 과거에 등록된 service worker / 캐시가 있으면 정리(옛 파일 캐싱 방지)
   if('serviceWorker' in navigator){
-    window.addEventListener('load', ()=>{
-      navigator.serviceWorker.register('/sw.js')
-        .then(r=>console.log('[PWA] SW 등록 성공:', r.scope))
-        .catch(e=>console.error('[PWA] SW 등록 실패:', e && e.message, e));
-    });
+    navigator.serviceWorker.getRegistrations().then(rs=>{ rs.forEach(r=>r.unregister()); }).catch(()=>{});
   }
+  if(window.caches && caches.keys){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{}); }
 })();
 // 설치 신호 캡처 (있으면 원터치 설치에 사용)
 let pwaPrompt=null;
