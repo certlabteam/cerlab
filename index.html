@@ -2480,11 +2480,14 @@ async function resolveImages(scope){
 // 해설 줄 판정 색 (빨강 우선 → 초록 → 중립). '정답'은 '정답이다'만 초록(결론단일 중립 유지)
 function verdictColor(t){
   if(!t) return '';
-  const red=['옳지 않다','적절하지 않다','부적절','틀리다','틀린','아니다','다르다','않는다','맞지 않','일치하지 않','수 없다'];
+  // 판정 전용 표현만 (일반 서술어 '수 없다·아니다·않는다·다르다'는 보기 내용과 충돌하므로 제외)
+  const red=['옳지 않다','옳지않다','적절하지 않다','적절하지않다','부적절','틀리다','틀린','맞지 않','일치하지 않','계산과 다르다'];
   const grn=['옳다','적절하다','정답이다','해당한다','대상이다','맞다'];
-  for(const m of red){ if(t.indexOf(m)>=0) return 'eo-red'; }
-  for(const m of grn){ if(t.indexOf(m)>=0) return 'eo-grn'; }
-  return '';
+  let rPos=-1, gPos=-1;
+  for(const m of red){ const i=t.lastIndexOf(m); if(i>rPos) rPos=i; }
+  for(const m of grn){ const i=t.lastIndexOf(m); if(i>gPos) gPos=i; }
+  if(rPos<0 && gPos<0) return '';      // 판정어 없으면 중립
+  return rPos>gPos ? 'eo-red' : 'eo-grn';   // 끝에 가까운 판정이 우선
 }
 function splitJaryo(qt){
   if(!qt) return {q:qt||'', jaryo:''};
