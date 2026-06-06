@@ -958,6 +958,7 @@ async function loadUserPlan(user) {
       }
       try { localStorage.removeItem('pendingRef'); } catch(_){}
       userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
+      if(typeof pwaSignupBanner==='function') pwaSignupBanner();
       return;
     }
     const data = doc.data();
@@ -2752,7 +2753,6 @@ function pwaBumpShow(){ try{ localStorage.setItem('pwa_shown', String(pwaShowCou
 window.addEventListener('beforeinstallprompt', e=>{
   e.preventDefault(); pwaDeferred=e;
   const b=document.getElementById('installBtn'); if(b) b.classList.remove('hidden');
-  pwaMaybeBanner();
 });
 // 설치 완료 후 정리
 window.addEventListener('appinstalled', ()=>{
@@ -2761,11 +2761,16 @@ window.addEventListener('appinstalled', ()=>{
   pwaHideBanner();
 });
 function pwaMaybeBanner(){
-  if(pwaIsStandalone() || pwaDismissed()) return;
-  if(pwaShowCount()>=3) return;            // 처음 3번까지만
-  if(!pwaDeferred && !pwaIsIOS()) return;  // 설치 불가 환경(아이폰 제외)이면 배너 안 띄움
+  if(pwaIsStandalone()) return;            // 이미 설치됨
   const ban=document.getElementById('pwaBanner'); if(!ban) return;
-  ban.classList.remove('hidden'); pwaBumpShow();
+  ban.classList.remove('hidden');
+}
+// 가입(첫 로그인) 직후 한 번만 호출
+function pwaSignupBanner(){
+  try{ if(localStorage.getItem('pwa_signup_shown')==='1') return; }catch(e){}
+  try{ localStorage.setItem('pwa_signup_shown','1'); }catch(e){}
+  if(pwaIsStandalone()) return;
+  setTimeout(pwaMaybeBanner, 1800);        // 화면 자리잡은 뒤
 }
 function pwaHideBanner(){ const b=document.getElementById('pwaBanner'); if(b) b.classList.add('hidden'); }
 function pwaDismiss(){ pwaHideBanner(); try{ localStorage.setItem('pwa_dismiss','1'); }catch(e){} }
@@ -2786,12 +2791,11 @@ async function pwaInstall(){
 }
 function pwaShowIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.classList.remove('hidden'); }
 function pwaCloseIos(){ const m=document.getElementById('pwaIosMask'); if(m) m.classList.add('hidden'); }
-// 진입 시: 아이폰이면 헤더 버튼 노출 + 첫 배너 시도
+// 진입 시: 아이폰이면 헤더 버튼만 노출 (배너 자동노출은 안 함 — 가입 첫 로그인 때만)
 (function(){
   if(pwaIsStandalone()) return;
   if(pwaIsIOS()){
     const b=document.getElementById('installBtn'); if(b) b.classList.remove('hidden');
-    setTimeout(pwaMaybeBanner, 1500);
   }
 })();
 </script>
