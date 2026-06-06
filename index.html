@@ -1825,6 +1825,7 @@ function buildLearnPanel(data){
 }
 
 function toggleLearn(){
+  if(!isFlipped){ isFlipped=true; learnOpen=true; renderCard(); return; }  // 앞면이면 뒤집으며 펼침
   learnOpen=!learnOpen;
   const panel=document.getElementById('learnPanel');
   const btns=document.querySelectorAll('.learn-btn');
@@ -1860,9 +1861,9 @@ function renderCard(){
   const statusDot='<div class="sr-dot '+dotCls+'" title="'+SR_MASTER_LABEL[mst]+'">'+SR_MASTER_LABEL[mst]+'</div>';
   const starCount=card.star||0;
   const starDot=starCount>0?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
-  const learnHTML=isFlipped?(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})():'';
   const mnemonicHTML=isFlipped?(function(){try{return buildMnemonic(card);}catch(e){console.error('mnemonic 렌더 오류',e);return '';}})():'';
-  const reportBtn=isFlipped?`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`:'';
+  const learnHTML=(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})();
+  const reportBtn=`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`;
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
   area.innerHTML=
     '<div class="card-scene">'
