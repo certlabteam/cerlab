@@ -153,6 +153,7 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn active" onclick="switchTab('dashboard')">대시보드</button>
     <button class="tab-btn" onclick="switchTab('payments')" id="tabPayments">결제 신청<span class="badge" id="pendingBadge" style="display:none">0</span></button>
     <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
+    <button class="tab-btn" onclick="switchTab('entitlements')">회원권 관리</button>
     <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
     <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
     <button class="tab-btn" onclick="switchTab('crm')">이메일 발송</button>
@@ -213,6 +214,19 @@ tr:hover td{background:#FAFAFA}
           </div>
         </div>
         <div id="memberList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 회원권 관리 -->
+    <div class="tab-panel" id="panel-entitlements">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">회원권 관리 <span style="font-size:12px;color:#A89C8E;font-weight:400">— 시험별 이용권 부여·연장·만료</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="search-input" id="searchEnt" placeholder="이메일 검색..." oninput="renderEntMembers()">
+          </div>
+        </div>
+        <div id="entMemberList"><div class="loading">로딩 중...</div></div>
       </div>
     </div>
 
@@ -418,6 +432,24 @@ tr:hover td{background:#FAFAFA}
   </div>
 </div>
 
+<!-- 회원권 부여/연장 모달 -->
+<div class="modal-bg hidden" id="grantModal">
+  <div class="modal" style="max-width:460px;width:92%">
+    <div class="modal-title">🎟️ 이용권 부여 / 연장</div>
+    <div class="modal-row"><span class="modal-label">회원</span><span class="modal-value" id="grantEmail"></span></div>
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">시험 선택</div>
+    <select id="grantCert" onchange="grantPreview()" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></select>
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">기간</div>
+    <div id="grantPeriods" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="margin-top:8px"><input id="grantDaysCustom" type="number" min="1" placeholder="직접 입력(일)" oninput="grantPickCustom()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></div>
+    <div class="modal-note" id="grantPreviewBox" style="margin-top:14px">시험과 기간을 선택하세요.</div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeGrantModal()">취소</button>
+      <button class="btn-modal-ok" onclick="confirmGrant()">부여 / 연장</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const ADMIN_EMAIL = 'certlab.team@gmail.com';
 const firebaseConfig = {
@@ -475,6 +507,7 @@ function switchTab(name) {
   event.target.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
   if(name==='crm') renderCrm();
+  if(name==='entitlements') renderEntMembers();
   if(name==='export') openExportTab();
   if(name==='import') impInit();
   if(name==='imgup') iuInit();
@@ -818,7 +851,7 @@ function renderMembers(list) {
   if (!list.length) { document.getElementById('memberList').innerHTML = '<div class="empty">회원이 없습니다.</div>'; return; }
   document.getElementById('memberList').innerHTML = `
     <table>
-      <thead><tr><th>이메일</th><th>등급</th><th>상태</th><th>학습량</th><th>최근 로그인</th><th>최근 학습</th><th>가입(경과)</th><th>관리</th></tr></thead>
+      <thead><tr><th>이메일</th><th>등급</th><th>상태</th><th>학습량</th><th>최근 로그인</th><th>최근 학습</th><th>가입(경과)</th></tr></thead>
       <tbody>${list.map(m => {
         const s = memberStatus(m);
         const g = memberGrade(m);
@@ -836,10 +869,6 @@ function renderMembers(list) {
           <td>${fmtWithAgo(m.lastLoginAt)}</td>
           <td>${fmtWithAgo(m._lastStudy)}</td>
           <td>${fmtDateShort(m.createdAt)} <span style="color:#A89C8E;font-size:11px">(${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</span></td>
-          <td onclick="event.stopPropagation()">
-            <button class="btn-sm btn-extend" onclick="extendMember('${m.id}','${m.email}')">연장</button>
-            <button class="btn-sm btn-expire" onclick="expireMember('${m.id}','${m.email}')" style="margin-left:4px">만료</button>
-          </td>
         </tr>`;}).join('')}
       </tbody>
     </table>`;
@@ -1397,48 +1426,139 @@ async function markReportDone(reportId) {
   } catch(e) { alert('오류: ' + e.message); }
 }
 
-// ===== 회원 관리 =====
-async function extendMember(uid, email) {
-  const days = prompt(`${email}\n연장할 일수를 입력하세요 (숫자만):`);
-  if (!days || isNaN(days) || Number(days) <= 0) return;
-  try {
-    const doc = await db.collection('users').doc(uid).get();
-    const data = doc.data() || {};
-    let base = new Date();
-    if (data.plan === 'ACTIVE' && data.expireAt) {
-      const cur = data.expireAt.toDate ? data.expireAt.toDate() : new Date(data.expireAt);
-      if (cur > base) base = cur;
-    }
-    base.setDate(base.getDate() + Number(days));
-    const ts = firebase.firestore.Timestamp.fromDate(base);
-    // 생체(top-level 미러) + 생체 entitlement 동시 반영
-    await db.collection('users').doc(uid).update({
-      plan: 'ACTIVE',
-      expireAt: ts,
-      ['entitlements.bodybuilding.plan']: 'ACTIVE',
-      ['entitlements.bodybuilding.expireAt']: ts
-    });
-    alert(`✅ ${email} ${days}일 연장 완료!\n새 만료일: ${base.toLocaleDateString('ko-KR')}`);
-    await loadAll();
-  } catch(e) { alert('오류: ' + e.message); }
+// ===== 회원권 관리 (시험별 이용권) =====
+const ENT_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory'];
+const ENT_PERIODS = [{d:14,l:'14일'},{d:30,l:'30일'},{d:90,l:'90일'},{d:365,l:'365일'}];
+let grantUid=null, grantEmailVal=null, grantDays=30;
+
+function entStatusOf(m, cert){
+  const e = (m.entitlements && m.entitlements[cert]) || null;
+  let plan = e ? e.plan : null;
+  let expireAt = e ? e.expireAt : null;
+  if(cert==='bodybuilding' && !e && m.plan){ plan=m.plan; expireAt=m.expireAt; }
+  if(!plan) return {plan:'GUEST', label:'미사용', cls:'badge-guest', exp:null};
+  let live = plan; let expDate = null;
+  if(expireAt){ expDate = expireAt.toDate ? expireAt.toDate() : new Date(expireAt); }
+  if(plan==='ACTIVE' && expDate && expDate < new Date()) live='EXPIRED';
+  const map = {ACTIVE:['이용중','badge-active'], FREE_TRIAL:['무료체험','badge-free'], EXPIRED:['만료','badge-expired'], GUEST:['미사용','badge-guest']};
+  const mm = map[live]||['?','badge-guest'];
+  return {plan:live, label:mm[0], cls:mm[1], exp:expDate};
 }
 
-async function expireMember(uid, email) {
-  if (!confirm(`${email}\n이 회원의 모든 이용권을 즉시 만료 처리하시겠어요?`)) return;
-  try {
-    const doc = await db.collection('users').doc(uid).get();
-    const data = doc.data() || {};
-    const upd = { plan: 'EXPIRED' };
-    if (data.entitlements) {
-      Object.keys(data.entitlements).forEach(c => { upd['entitlements.'+c+'.plan'] = 'EXPIRED'; });
-    } else {
-      upd['entitlements.bodybuilding.plan'] = 'EXPIRED';
-    }
-    await db.collection('users').doc(uid).update(upd);
-    alert(`${email} 만료 처리 완료.`);
-    await loadAll();
-  } catch(e) { alert('오류: ' + e.message); }
+function renderEntMembers(){
+  const q=(document.getElementById('searchEnt')||{}).value||'';
+  let list=allMembers;
+  if(q) list=allMembers.filter(m=>(m.email||'').toLowerCase().includes(q.toLowerCase()));
+  const box=document.getElementById('entMemberList');
+  if(!box) return;
+  if(!list.length){ box.innerHTML='<div class="empty">회원이 없습니다.</div>'; return; }
+  box.innerHTML = '<table><thead><tr><th>이메일</th>'
+    + ENT_CERTS.map(c=>'<th style="text-align:center">'+CERT_NAMES[c]+'</th>').join('')
+    + '<th>관리</th></tr></thead><tbody>'
+    + list.map(m=>{
+        const cells = ENT_CERTS.map(c=>{
+          const s=entStatusOf(m,c);
+          const expTxt = (s.plan==='ACTIVE'&&s.exp) ? '<div style="font-size:10px;color:#A89C8E">~'+fmtDateShort(s.exp)+'</div>' : '';
+          return '<td style="text-align:center"><span class="badge '+s.cls+'">'+s.label+'</span>'+expTxt+'</td>';
+        }).join('');
+        const em=(m.email||'').replace(/'/g,"\\'");
+        return '<tr><td>'+(m.email||'-')+'</td>'+cells
+          +'<td style="white-space:nowrap"><button class="btn-sm btn-extend" onclick="openGrant(\''+m.id+'\',\''+em+'\')">부여/연장</button>'
+          +'<button class="btn-sm btn-expire" onclick="expireMemberCert(\''+m.id+'\',\''+em+'\')" style="margin-left:4px">만료</button></td></tr>';
+      }).join('')
+    + '</tbody></table>';
 }
+
+function openGrant(uid, email){
+  grantUid=uid; grantEmailVal=email; grantDays=30;
+  document.getElementById('grantEmail').textContent=email;
+  const sel=document.getElementById('grantCert');
+  sel.innerHTML=ENT_CERTS.map(c=>'<option value="'+c+'">'+CERT_NAMES[c]+'</option>').join('');
+  document.getElementById('grantPeriods').innerHTML=ENT_PERIODS.map(p=>
+    '<button class="btn-sm" data-d="'+p.d+'" onclick="grantPickPeriod('+p.d+')" style="border:1.5px solid #E8E8E8;background:#fff">'+p.l+'</button>').join('');
+  document.getElementById('grantDaysCustom').value='';
+  grantPickPeriod(30);
+  document.getElementById('grantModal').classList.remove('hidden');
+}
+function closeGrantModal(){ document.getElementById('grantModal').classList.add('hidden'); grantUid=null; }
+function grantPickPeriod(d){
+  grantDays=d;
+  document.getElementById('grantDaysCustom').value='';
+  document.querySelectorAll('#grantPeriods button').forEach(b=>{
+    const on=Number(b.dataset.d)===d;
+    b.style.background=on?'#1D9E75':'#fff'; b.style.color=on?'#fff':'#5F5E5A'; b.style.borderColor=on?'#1D9E75':'#E8E8E8';
+  });
+  grantPreview();
+}
+function grantPickCustom(){
+  const v=Number(document.getElementById('grantDaysCustom').value);
+  if(v>0){ grantDays=v; document.querySelectorAll('#grantPeriods button').forEach(b=>{ b.style.background='#fff'; b.style.color='#5F5E5A'; b.style.borderColor='#E8E8E8'; }); }
+  grantPreview();
+}
+function grantPreview(){
+  const cert=document.getElementById('grantCert').value;
+  const m=allMembers.find(x=>x.id===grantUid);
+  let base=new Date();
+  let cur=null;
+  if(m){ cur=entStatusOf(m,cert); if(cur.plan==='ACTIVE'&&cur.exp&&cur.exp>base) base=new Date(cur.exp); }
+  const newExp=new Date(base); newExp.setDate(newExp.getDate()+grantDays);
+  const curTxt=(cur&&cur.plan==='ACTIVE'&&cur.exp)?('현재 만료 '+fmtDateShort(cur.exp)+' → '):'신규 부여 → ';
+  document.getElementById('grantPreviewBox').innerHTML=
+    '<b>'+CERT_NAMES[cert]+'</b> · '+grantDays+'일<br>'+curTxt+'<b style="color:#1D9E75">새 만료일 '+newExp.toLocaleDateString('ko-KR')+'</b>';
+}
+async function confirmGrant(){
+  if(!grantUid) return;
+  const cert=document.getElementById('grantCert').value;
+  if(!grantDays||grantDays<=0){ alert('기간을 선택하세요.'); return; }
+  try{
+    const doc=await db.collection('users').doc(grantUid).get();
+    const data=doc.data()||{};
+    const e=(data.entitlements&&data.entitlements[cert])||null;
+    let base=new Date();
+    if(e&&e.plan==='ACTIVE'&&e.expireAt){ const c=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); if(c>base) base=c; }
+    base.setDate(base.getDate()+Number(grantDays));
+    const ts=firebase.firestore.Timestamp.fromDate(base);
+    const upd={};
+    upd['entitlements.'+cert+'.plan']='ACTIVE';
+    upd['entitlements.'+cert+'.expireAt']=ts;
+    upd['entitlements.'+cert+'.planDays']=Number(grantDays);
+    if(cert==='bodybuilding'){ upd.plan='ACTIVE'; upd.expireAt=ts; upd.planDays=Number(grantDays); }
+    await db.collection('users').doc(grantUid).update(upd);
+    closeGrantModal();
+    alert('✅ '+grantEmailVal+'\n['+CERT_NAMES[cert]+'] '+grantDays+'일 부여 완료\n새 만료일: '+base.toLocaleDateString('ko-KR'));
+    await loadAll();
+    renderEntMembers();
+  }catch(e){ alert('오류: '+e.message); }
+}
+
+async function expireMemberCert(uid, email){
+  const m=allMembers.find(x=>x.id===uid);
+  const actives = ENT_CERTS.filter(c=>{ const s=m?entStatusOf(m,c):null; return s&&s.plan==='ACTIVE'; });
+  if(!actives.length){ alert(email+'\n활성 이용권이 없습니다.'); return; }
+  const menu = actives.map((c,i)=>(i+1)+') '+CERT_NAMES[c]).join('\n');
+  const pick = prompt(email+'\n만료할 시험 번호를 선택하세요:\n'+menu+'\n\n0) 전체 만료');
+  if(pick===null) return;
+  const n=Number(pick);
+  try{
+    if(n===0){
+      const doc=await db.collection('users').doc(uid).get(); const data=doc.data()||{};
+      const upd={plan:'EXPIRED'};
+      if(data.entitlements){ Object.keys(data.entitlements).forEach(c=>{ upd['entitlements.'+c+'.plan']='EXPIRED'; }); }
+      else { upd['entitlements.bodybuilding.plan']='EXPIRED'; }
+      await db.collection('users').doc(uid).update(upd);
+      alert(email+' 전체 만료 처리 완료.');
+    } else if(n>=1&&n<=actives.length){
+      const cert=actives[n-1];
+      const upd={}; upd['entitlements.'+cert+'.plan']='EXPIRED';
+      if(cert==='bodybuilding') upd.plan='EXPIRED';
+      await db.collection('users').doc(uid).update(upd);
+      alert(email+'\n['+CERT_NAMES[cert]+'] 만료 처리 완료.');
+    } else { alert('잘못된 번호입니다.'); return; }
+    await loadAll();
+    renderEntMembers();
+  }catch(e){ alert('오류: '+e.message); }
+}
+
 </script>
 </body>
 </html>
