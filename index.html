@@ -2483,11 +2483,13 @@ function verdictColor(t){
   // 판정 전용 표현만 (일반 서술어 '수 없다·아니다·않는다·다르다'는 보기 내용과 충돌하므로 제외)
   const red=['옳지 않다','옳지않다','적절하지 않다','적절하지않다','부적절','틀리다','틀린','맞지 않','일치하지 않','계산과 다르다'];
   const grn=['옳다','적절하다','정답이다','해당한다','대상이다','맞다'];
+  // '부적절'이 있으면 그 안의 '적절하다'는 초록으로 세지 않도록 제거 후 판정
+  const tg=t.replace(/부적절/g,'');
   let rPos=-1, gPos=-1;
   for(const m of red){ const i=t.lastIndexOf(m); if(i>rPos) rPos=i; }
-  for(const m of grn){ const i=t.lastIndexOf(m); if(i>gPos) gPos=i; }
+  for(const m of grn){ const i=tg.lastIndexOf(m); if(i>gPos) gPos=i; }
   if(rPos<0 && gPos<0) return '';      // 판정어 없으면 중립
-  return rPos>gPos ? 'eo-red' : 'eo-grn';   // 끝에 가까운 판정이 우선
+  return rPos>=gPos ? 'eo-red' : 'eo-grn';   // 동률이면 빨강 우선(부정 우선)
 }
 function splitJaryo(qt){
   if(!qt) return {q:qt||'', jaryo:''};
@@ -2540,18 +2542,23 @@ function renderMcqExam(root){
     const statusCol = okk?'#0F6E56':'#A32D2D';
     const multiTxt = isMulti?(ansN.length===5?' (전항정답)':' (복수정답)'):'';
     let body='';
-    const hasO = q.exp && q.exp.o && q.exp.o.some(Boolean);
+    const oArr=(q.exp && q.exp.o)||[];
+    const oFilled=oArr.filter(Boolean).length;
     if(q.exp && q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
-    if(hasO){
-      body+='<div class="exp-opts">'+q.exp.o.map(function(t,i){
-        if(!t && !(q.opts&&q.opts[i])) return '';
+    if(oFilled>=2){
+      // 보기별 해설: 설명이 있는 보기만(빈 보기는 건너뛰어 위로 채움)
+      body+='<div class="exp-opts">'+oArr.map(function(t,i){
+        if(!t) return '';
         var isAns=ansN.includes(i+1);
         var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+q.opts[i]+(isAns?' <span class="eo-badge">정답</span>':'')+'</div>':'';
-        var expTxt=t?'<div class="eo-a '+verdictColor(t)+'">'+t+'</div>':'';
+        var expTxt='<div class="eo-a '+verdictColor(t)+'">'+t+'</div>';
         return '<div class="eo">'+optTxt+expTxt+'</div>';
       }).join('')+'</div>';
+    } else if(oFilled===1){
+      // 결론 한 줄만 (ㄱㄴㄷ형 등) — 중립으로 한 줄만 표시
+      body+='<div class="note">'+oArr.filter(Boolean)[0]+'</div>';
     }
-    if(!q.exp || (!q.exp.s && !hasO)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
+    if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
     if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
       body+='<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
@@ -2704,6 +2711,9 @@ function applyBank(ex,sub,doc){
     const byset={},order=[];
     qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; byset[lab].push(it); });
     qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
+    // 최신 회차/연도가 위로 — 라벨 내 가장 큰 숫자 기준 내림차순
+    const setKey=lab=>{ const m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };
+    qb[sub.code].sets.sort((a,b)=>setKey(b.label)-setKey(a.label));
   }
 }
 function showDataError(err){
