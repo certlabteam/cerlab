@@ -2553,6 +2553,21 @@ function stripRepeatedOpt(exp, opt){
   e=e.replace(/^[\s.·,)\]]+/,'').trim();   // 남은 앞쪽 구두점 정리
   return e;
 }
+function isComboQuestion(opts){
+  // 보기들이 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ·가/나/다/라/마 조합(+구분자)으로만 이루어진 문제인지
+  if(!Array.isArray(opts) || opts.length<2) return false;
+  var markerOnly=/^[ㄱ-ㅎ가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자
+  var hasJamo=/[ㄱ-ㅎ]/, comboCnt=0, ok=0;
+  for(var i=0;i<opts.length;i++){
+    var o=String(opts[i]||'').trim();
+    if(!o) return false;
+    if(o.length>14) return false;                 // 마커 조합은 짧음(일반 서술 보기 배제)
+    if(!markerOnly.test(o)) return false;
+    if(hasJamo.test(o) || /[가나다라마바사아]/.test(o)) ok++;
+    if(o.replace(/[\s,·、ㆍ/]/g,'').length>=2) comboCnt++;  // 2글자 이상 = 조합
+  }
+  return ok===opts.length && comboCnt>=1;           // 모든 보기가 마커형 + 최소 1개는 조합
+}
 function verdictColor(t){
   if(!t) return '';
   // 색은 '선지 내용의 참/거짓'만 판정 (정답 여부는 ✅ 아이콘이 따로 표시 — '정답이다'는 색 마커 아님)
@@ -2623,10 +2638,13 @@ function renderMcqExam(root){
     const oFilled=oArr.filter(Boolean).length;
     if(q.exp && q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
     if(oFilled>=2){
+      var combo=isComboQuestion(q.opts);
       // 보기별 해설: 설명이 있는 보기만(빈 보기는 건너뛰어 위로 채움)
+      // 조합형(ㄱㄴㄷㄹ·가나다라)은 정답 보기만 표시
       body+='<div class="exp-opts">'+oArr.map(function(t,i){
         if(!t) return '';
         var isAns=ansN.includes(i+1);
+        if(combo && !isAns) return '';                    // 조합형: 정답 외 보기 숨김
         var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);   // 보기 문장 통째 반복분 제거
         var sv=splitVerdict(ex);                          // 판정 분리(보기줄로 올림)
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
