@@ -374,6 +374,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-verdict{font-size:12px;font-weight:700;margin-left:6px;white-space:nowrap}
 #mcqView .exp-opts .eo-verdict.eo-red{color:#A32D2D}
 #mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
+#mcqView .exp-opts .eo-ex{margin-top:5px;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12px;line-height:1.55;color:#5E4A2A}
+#mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 #mcqView .mn-box{margin:14px 0 0;padding:11px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:12px}
 #mcqView .mn-code{font-size:16px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
@@ -2599,6 +2601,19 @@ function splitJaryo(qt){
   }
   return {q:qt, jaryo:''};
 }
+function parseJaryoStmts(qt){
+  // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문을 줄 단위로 추출 → [{k,t}, ...]
+  var jaryo=(splitJaryo(qt).jaryo)||qt||'';
+  var lines=String(jaryo).split(/\r?\n/);
+  var out=[], cur=null;
+  var mk=/^\s*([ㄱ-ㅁ])[.\s·)\]]\s*(.*)$/;
+  for(var i=0;i<lines.length;i++){
+    var m=lines[i].match(mk);
+    if(m){ cur={k:m[1], t:(m[2]||'').trim()}; out.push(cur); }
+    else if(cur && lines[i].trim()){ cur.t+=(cur.t?' ':'')+lines[i].trim(); }  // 여러 줄 지문 이어붙임
+  }
+  return out;
+}
 function mnBoxHTML(mn){
   if(!mn) return '';
   let code='', desc='';
@@ -2637,24 +2652,50 @@ function renderMcqExam(root){
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
     if(q.exp && q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
-    if(oFilled>=2){
-      var combo=isComboQuestion(q.opts);
-      // 보기별 해설: 설명이 있는 보기만(빈 보기는 건너뛰어 위로 채움)
-      // 조합형(ㄱㄴㄷㄹ·가나다라)은 정답 보기만 표시
+    var isCombo=isComboQuestion(q.opts);
+    var stmts = isCombo ? parseJaryoStmts(q.q) : [];
+    var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
+    var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
+    if(comboOK){
+      // 콤보: ㄱㄴㄷㄹ 지문별 펼침 (exp.o는 지문 순서). 정답 지문에 ✅, 맨 아래 정답 보기 조합 줄.
+      var ansLabels=ansN.map(function(n){ return (q.opts&&q.opts[n-1])?q.opts[n-1]:''; }).join(' ');  // 정답 보기에 포함된 지문 마커
+      body+='<div class="exp-opts">'+stmts.map(function(s,i){
+        var raw=oArr[i]||'';
+        var ex=stripRepeatedOpt(raw, s.t);
+        var sv=splitVerdict(ex);
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var inAns = ansLabels.indexOf(s.k)>=0;
+        var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
+        var q1='<div class="eo-q">'+s.k+'. '+s.t+verdictTag+ansTag+'</div>';
+        var a1= sv.rest ? ('<div class="eo-a">'+sv.rest+'</div>') : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+String(exArr[i]).trim()+'</div>' : '';
+        return '<div class="eo">'+q1+a1+exTxt+'</div>';
+      }).join('')+'</div>';
+      // 정답 보기 조합 줄
+      var cCirc=['①','②','③','④','⑤'];
+      var comboLine=ansN.map(function(n){
+        var lab=cCirc[n-1]||('('+n+')');
+        return '<div class="eo-q">정답 보기 '+lab+'. '+((q.opts&&q.opts[n-1])||'')+' <span class="eo-verdict eo-grn">옳다</span> <span class="eo-badge">✅ 정답</span></div>';
+      }).join('');
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">정답 지문들의 조합이다.</div></div></div>';
+    } else if(oFilled>=2){
+      // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
+      var fbCombo = isCombo && !comboOK;
       body+='<div class="exp-opts">'+oArr.map(function(t,i){
         if(!t) return '';
         var isAns=ansN.includes(i+1);
-        if(combo && !isAns) return '';                    // 조합형: 정답 외 보기 숨김
-        var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);   // 보기 문장 통째 반복분 제거
-        var sv=splitVerdict(ex);                          // 판정 분리(보기줄로 올림)
+        if(fbCombo && !isAns) return '';                  // 폴백: 콤보 파싱 실패 → 정답 보기만
+        var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);
+        var sv=splitVerdict(ex);
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
         var ansTag = isAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
         var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+q.opts[i]+verdictTag+ansTag+'</div>':'';
         var expTxt= sv.rest ? ('<div class="eo-a">'+sv.rest+'</div>') : '';
-        return '<div class="eo">'+optTxt+expTxt+'</div>';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+String(exArr[i]).trim()+'</div>' : '';
+        return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
       }).join('')+'</div>';
     } else if(oFilled===1){
-      // 결론 한 줄(ㄱㄴㄷ형 등) — 색은 내용 참/거짓(verdictColor)으로 판정, 정답 여부는 ✅ 아이콘이 따로 표시
+      // 결론 한 줄(ㄱㄴㄷ형 등)
       var concl=oArr.filter(Boolean)[0];
       body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+concl+'</div></div></div>';
     }
