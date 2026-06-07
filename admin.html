@@ -287,6 +287,35 @@ tr:hover td{background:#FAFAFA}
             ※ 이 파일이 <b>현재 Firestore에 올라가 있는 최신 데이터</b>입니다. 데이터방에서 이 파일을 받아 수정한 뒤, 업로드 페이지로 다시 올리면 됩니다.<br>
             ※ 형식은 업로드와 호환됩니다 (manifest + banks).
           </div>
+
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
+
+          <!-- 이미지 내보내기 -->
+          <div class="table-title" style="margin-bottom:8px">🖼️ 이미지 내보내기 (images → JSON 백업)</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <input id="imgExpPrefix" placeholder="키 접두어(선택) 예: ksh76_" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;width:220px">
+            <button class="btn-sm btn-extend" onclick="exportImages()">⬇ 이미지 JSON 다운로드</button>
+          </div>
+          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">접두어를 비우면 <b>전체</b> 이미지를 받습니다. 특정 회차만 받으려면 접두어(예: <b>ksh76_</b>)를 입력하세요.</div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:8px">
+            ⚠️ 이미지가 많으면 파일이 큽니다(수십 MB+). 느리면 접두어로 회차별로 나눠 받으세요. 이 파일은 <b>이미지 백업/이전</b>용입니다.
+          </div>
+
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
+
+          <!-- 이미지 가져오기 -->
+          <div class="table-title" style="margin-bottom:8px">📥 이미지 가져오기 (JSON 백업 → images 복구)</div>
+          <div id="imgImpDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:22px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 이미지 백업 <b>JSON</b>을 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">위 "이미지 내보내기"로 받은 파일을 그대로 올리면 됩니다</span>
+          </div>
+          <input id="imgImpFile" type="file" accept=".json,application/json" hidden>
+          <div id="imgImpStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
+          <div style="margin-top:10px"><button id="imgImpRun" class="btn-sm btn-extend" disabled onclick="importImages()">⬆ 이미지 복구 실행</button></div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
+            ⚠️ 같은 키가 이미 있으면 <b>덮어씁니다</b>. (이미지 업로드 탭이 "새 이미지 추가"라면, 여기는 "백업 JSON 일괄 복구"입니다.)
+          </div>
+          <div id="imgImpLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:200px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
         </div>
       </div>
     </div>
@@ -508,7 +537,7 @@ function switchTab(name) {
   document.getElementById('panel-'+name).classList.add('active');
   if(name==='crm') renderCrm();
   if(name==='entitlements') renderEntMembers();
-  if(name==='export') openExportTab();
+  if(name==='export'){ openExportTab(); imgImpInit(); }
   if(name==='import') impInit();
   if(name==='imgup') iuInit();
 }
@@ -1153,7 +1182,75 @@ async function exportData(){
     st.innerHTML='✅ 내보내기 완료 — 문서 <b>'+banks.length+'</b>개 · 문항 <b>'+qcnt.toLocaleString()+'</b>개. 다운로드된 JSON이 현재 서비스 데이터입니다.';
   }catch(e){ st.textContent='오류: '+e.message; }
 }
-// ===== 이메일 발송 (등급별 대상 추출) =====
+
+// ===== 이미지 내보내기 (images → JSON) =====
+async function exportImages(){
+  const st=document.getElementById('imgExpStatus');
+  const prefix=(document.getElementById('imgExpPrefix').value||'').trim();
+  st.textContent='읽는 중... 이미지가 많으면 시간이 걸립니다.';
+  try{
+    let q=db.collection('images');
+    let snap;
+    if(prefix){
+      // 접두어 범위 쿼리 (key 기준) — 문서ID 범위로 조회
+      snap=await db.collection('images').orderBy(firebase.firestore.FieldPath.documentId())
+        .startAt(prefix).endAt(prefix+'\uf8ff').get();
+    } else {
+      snap=await db.collection('images').get();
+    }
+    const images=[]; let bytes=0;
+    snap.forEach(doc=>{ const d=doc.data()||{}; images.push({key:doc.id, data:d.data||''}); bytes+=(d.data||'').length; });
+    if(!images.length){ st.textContent='해당하는 이미지가 없습니다.'+(prefix?(' (접두어: '+prefix+')'):''); return; }
+    const bundle={ images, exportedAt:new Date().toISOString(), prefix:prefix||null, count:images.length };
+    const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download='certlab_images_'+(prefix?prefix.replace(/[^a-zA-Z0-9]/g,''):'all')+'_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    st.innerHTML='✅ 이미지 <b>'+images.length+'</b>개 내보내기 완료 (약 '+(Math.round(bytes/1024/1024*10)/10)+'MB).';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+
+// ===== 이미지 가져오기 (JSON → images 복구) =====
+let imgImpData=null; let _imgImpInited=false;
+function imgImpLog(msg,color){ const el=document.getElementById('imgImpLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
+function imgImpInit(){
+  if(_imgImpInited) return; _imgImpInited=true;
+  const drop=document.getElementById('imgImpDrop'), file=document.getElementById('imgImpFile'); if(!drop||!file) return;
+  drop.onclick=()=>file.click();
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#185FA5';}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
+  drop.addEventListener('drop',e=>imgImpHandle(e.dataTransfer.files));
+  file.addEventListener('change',e=>imgImpHandle(e.target.files));
+}
+async function imgImpHandle(fileList){
+  const f=[...fileList].find(x=>/\.json$/i.test(x.name)||x.type==='application/json');
+  if(!f){ imgImpLog('JSON 파일이 아닙니다.','#f85149'); return; }
+  try{
+    const txt=await f.text(); const o=JSON.parse(txt);
+    const arr=Array.isArray(o)?o:(o.images||[]);
+    const valid=arr.filter(x=>x&&x.key&&x.data);
+    if(!valid.length){ imgImpLog('이미지 항목을 찾지 못했습니다. (images 배열 필요)','#f85149'); return; }
+    imgImpData=valid;
+    document.getElementById('imgImpStatus').innerHTML='파일 인식: 이미지 <b>'+valid.length+'</b>개. "복구 실행"을 누르면 Firestore에 올립니다(같은 키 덮어쓰기).';
+    document.getElementById('imgImpRun').disabled=false;
+    imgImpLog('파일 로드: '+f.name+' — 이미지 '+valid.length+'개','#5B50C0');
+  }catch(e){ imgImpLog('파싱 오류: '+(e.message||e),'#f85149'); }
+}
+async function importImages(){
+  if(!imgImpData||!imgImpData.length) return;
+  if(!confirm(imgImpData.length+'개 이미지를 Firestore에 복구합니다. 같은 키는 덮어씁니다. 계속할까요?')){ imgImpLog('취소됨.'); return; }
+  document.getElementById('imgImpRun').disabled=true;
+  let ok=0, fail=0;
+  for(const it of imgImpData){
+    try{
+      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() });
+      ok++; if(ok%10===0) imgImpLog('... '+ok+'개 복구','#15793F');
+    }catch(e){ fail++; imgImpLog('✗ '+it.key+' 실패: '+(e.message||e),'#f85149'); }
+  }
+  imgImpLog('— 복구 완료 — 성공 '+ok+'개'+(fail?(' / 실패 '+fail+'개'):''),'#15793F');
+  document.getElementById('imgImpStatus').innerHTML='✅ 복구 완료: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패 '+fail+'개'):'')+'.';
+}
 function crmSegment(seg){
   return allMembers.filter(m=>{
     const s=memberStatus(m);
