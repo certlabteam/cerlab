@@ -419,6 +419,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exam-hd{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
 #mcqView .exam-ti{flex:1;min-width:0}
 #mcqView .etim{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;color:#0F172A;background:#F8FAFC;padding:5px 10px;border-radius:8px;border:1.5px solid #E2E8F0;letter-spacing:1px;flex-shrink:0}
+#mcqView .etim.over{color:#C2410C;border-color:#FED7AA;background:#FFF7ED;animation:none}
 #mcqView .etim.done{color:#64748B;border-color:#E2E8F0;background:#F8FAFC;font-size:13px;animation:none}
 #mcqView .etim.red{color:#DC2626;border-color:#FECACA;background:#FEF2F2;animation:mqbl .8s ease-in-out infinite}
 @keyframes mqbl{0%,100%{opacity:1}50%{opacity:.45}}
@@ -1668,11 +1669,12 @@ function srGetK(cert,id){ return srProgress[cert+'|'+id]; }
 function srMasteryK(cert,id){ const p=srGetK(cert,id); if(!p||!p.rc) return 'new'; if(!p.st) return 'weak'; if(p.st>=5) return 'master'; return 'learning'; }
 function srDueK(cert,id){ const p=srGetK(cert,id); return !!(p&&p.rc>0&&(p.nx||0)<=Date.now()); }
 function srDueCertCount(cert){ let n=0,pre=cert+'|',now=Date.now(); for(const k in srProgress){ if(k.indexOf(pre)===0){ const p=srProgress[k]; if(p&&p.rc>0&&(p.nx||0)<=now) n++; } } return n; }
-function srRateK(cert,id,result){          // 0 틀림 / 1 애매 / 2 정확
+function srRateK(cert,id,result,overtime){          // 0 틀림 / 1 애매 / 2 정확
   if(!id) return;
   const k=cert+'|'+id, now=Date.now();
   let p=srProgress[k]||{st:0,nx:0,lr:0,res:null,rc:0,cor:0,w:false};
   p.rc=(p.rc||0)+1; p.lr=now; p.res=result;
+  p.ot = !!overtime;                     // 시간종료 후 응답 여부(예상점수 제외용)
   if(result===2) p.cor=(p.cor||0)+1;     // 정답 누계 (과목 정확도·예상점수용)
   if(result===0){ p.st=Math.ceil((p.st||0)/2); p.w=true; p.nx=now+1*SR_DAY; }
   else if(result===1){ p.nx=now+srVagueInterval(cert)*SR_DAY; }
@@ -1697,9 +1699,9 @@ function srRate(card,result){
 
 /* 객관식 채점 → 복습 연결 (정답=정확, 오답=틀림. 애매 없음. ans:0 제외) */
 function mqHasAnswer(q){ return q && (Array.isArray(q.ans)? q.ans.length>0 : q.ans>0); }
-function srRateMcq(cert,q,selected){
+function srRateMcq(cert,q,selected,overtime){
   if(!mqHasAnswer(q)) return;            // 정답 미확정 문항은 복습 집계 제외
-  srRateK(cert, q.id, isCorr(q.ans,selected)?2:0);
+  srRateK(cert, q.id, isCorr(q.ans,selected)?2:0, overtime);
 }
 const SR_MASTER_LABEL={new:'신규',weak:'미숙',learning:'학습중',master:'숙달'};
 
@@ -2238,6 +2240,18 @@ function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERT
 rebuildQid();
 let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
 let mqTimer=null, mqTimeLeft=0, mqTimeUp=false;
+let mqOverTimer=null, mqOverStart=0, mqOvertimeSec=0, mqOvertimeCount=0;  // 시간종료 후 경과시간(초)/푼 문항 수
+function mqStopOverTimer(){ if(mqOverTimer){ clearInterval(mqOverTimer); mqOverTimer=null; } if(mqOverStart){ mqOvertimeSec+=Math.floor((Date.now()-mqOverStart)/1000); mqOverStart=0; } }
+function mqOverElapsed(){ return mqOvertimeSec + (mqOverStart?Math.floor((Date.now()-mqOverStart)/1000):0); }
+function mqStartOverTimer(){
+  mqStopOverTimer(); mqOverStart=Date.now();
+  mqOverTimer=setInterval(()=>{
+    if(mqScreen!=='exam'){ mqStopOverTimer(); return; }
+    const el=document.getElementById('mqTimer');
+    if(el){ el.textContent='+'+mqFmt(mqOverElapsed()); }
+    else { mqStopOverTimer(); }
+  },1000);
+}
 let mqMode='all', mqList=null;          // 'all' | 'wrong' | 'review'
 let mqReview=false;                       // SR 복습 세션 여부
 let mqDiag=false;                          // 진단 모의고사 세션 여부
@@ -2248,13 +2262,13 @@ function impBadge(q){ const s=impLabel(q.star||0); return s ? '<span class="imp"
 function timeBadge(q){ const v=q.time||0; if(!v) return ''; const lab={1:'빠름',2:'보통',3:'오래'}[v]||''; return '<span class="tmark t'+v+'">⌛ '+lab+'</span>'; }
 // 진행상태 저장(이어서 풀기)
 function mqPKey(sub,set){ return 'certlab_mcq_p_'+mqCert+'_'+sub+'_'+set; }
-function mqSaveProgress(){ if(mqMode!=='all') return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft})); }catch(e){} }
+function mqSaveProgress(){ if(mqMode!=='all') return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft,up:mqTimeUp,os:mqOverElapsed(),oc:mqOvertimeCount})); }catch(e){} }
 function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,set)); return v?JSON.parse(v):null; }catch(e){ return null; } }
 function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
 function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
 function mqStopTimer(){ if(mqTimer){ clearInterval(mqTimer); mqTimer=null; } }
 function mqStartTimer(){
-  mqStopTimer(); mqTimeUp=false;
+  mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0;
   mqTimer=setInterval(()=>{
     if(mqScreen!=='exam'){ mqStopTimer(); return; }
     mqTimeLeft--;
@@ -2313,7 +2327,7 @@ function mcqSubjectStats(cert){
   const qb=qbOf(cert); let totN=0;
   const per=Object.keys(qb).map(code=>{
     let cor=0,n=0;
-    qb[code].sets.forEach(st=>st.questions.forEach(q=>{ const p=srGetK(cert,q.id); if(p&&p.rc>0){ n++; if(p.res===2) cor++; } }));
+    qb[code].sets.forEach(st=>st.questions.forEach(q=>{ const p=srGetK(cert,q.id); if(p&&p.rc>0&&!p.ot){ n++; if(p.res===2) cor++; } }));
     totN+=n;
     return {code,name:qb[code].name,acc:n>0?Math.round(cor/n*100):null,n};
   });
@@ -2469,9 +2483,13 @@ function resumeMcqExam(id,si){
   mqSub=id; mqSet=si; mqMode='all'; mqShow={};
   mqList=curQB()[id].sets[si].questions;
   mqAns=saved.ans||{}; mqIdx=saved.idx||0; mqTimeLeft=(saved.t!=null&&saved.t>0?saved.t:mqList.length*60);
+  if(saved.up){   // 시간종료 후 이어풀던 세션 → 오버타임으로 복원
+    mqTimeUp=true; mqOvertimeSec=saved.os||0; mqOvertimeCount=saved.oc||0; mqOverStart=0;
+    mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); return;
+  }
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
-function mqBackHome(){ mqStopTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
@@ -2588,7 +2606,7 @@ function renderMcqExam(root){
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
       '<div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div>'+
-      '<span class="etim'+(mqTimeUp?' done':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?'시간종료':mqFmt(mqTimeLeft))+'</span></div>'+
+      '<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span></div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '</div>'+
     '<div class="qcard"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div>'+
@@ -2605,7 +2623,8 @@ function mqPick(qid,n){
   mqAns[qid]=n; mqShow[qid]=false;
   if(firstTime){
     const q=mqQuestions().find(x=>x.id===qid);
-    if(q){ srRateMcq(mqCert,q,n); srSaveDebounced(); }
+    if(q){ srRateMcq(mqCert,q,n,mqTimeUp); srSaveDebounced(); }
+    if(mqTimeUp) mqOvertimeCount++;
     countUp(mqCert);
     const e=userEnt[mqCert];
     if(e.plan==='GUEST') guestCounts[mqCert]++;
@@ -2619,7 +2638,7 @@ function mqPick(qid,n){
 function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid]; renderMCQ(); }
 function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
 function mqResult(){
-  mqStopTimer(); mqClearProgress(mqSub,mqSet);
+  mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
   const qs=mqQuestions(); let correct=0,answered=0;
   qs.forEach(q=>{ if(mqAns[q.id]!==undefined){ answered++;
     if(isCorr(q.ans,mqAns[q.id])){ correct++; delete appWrong[q.id]; }
@@ -2638,12 +2657,13 @@ function mqResult(){
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
     '<div class="rt">'+titleTxt+modeLbl+'</div>'+
     '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답'+(mqDiag?' · 진단 점수 '+pct+'점':'')+'</div>'+
+    ((mqOvertimeCount>0||mqOvertimeSec>0)?'<div class="rs" style="color:#C2410C">⏱ 시간종료 후 '+mqOvertimeCount+'문항 · 추가 +'+mqFmt(mqOverElapsed())+' <span style="font-size:11px;color:#A89C8E">(예상점수 미반영)</span></div>':'')+
     '<div class="sc"><div><div class="v ok">'+correct+'</div><div class="l">정답</div></div>'+
     '<div><div class="v bad">'+(answered-correct)+'</div><div class="l">오답</div></div>'+
     '<div><div class="v">'+pct+'%</div><div class="l">정답률</div></div></div>'+
     '<div class="rbtns">'+btns+'</div></div>';
 }
-function mqContinue(){ mqTimeUp=true; mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); }
+function mqContinue(){ mqTimeUp=true; mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); }
 function mqRetry(){
   if(mqReview){ startMcqReview(); return; }
   mqClearProgress(mqSub,mqSet);
