@@ -394,6 +394,20 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mcq-result .sc .v.ok{color:#16A34A}
 #mcqView .mcq-result .sc .v.bad{color:#DC2626}
 #mcqView .mcq-result .sc .l{font-size:11px;color:#64748B;font-weight:700;margin-top:2px}
+#mcqView .gx-wrap{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 12px;margin:4px 0 18px}
+#mcqView .gx-ti{font-size:12.5px;font-weight:800;color:#334155;margin-bottom:10px}
+#mcqView .gx-ti span{font-size:11px;font-weight:600;color:#94A3B8;margin-left:4px}
+#mcqView .gx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px}
+#mcqView .gx{font-size:13px;font-weight:800;border-radius:8px;padding:7px 0;border:1.5px solid transparent;cursor:pointer;line-height:1}
+#mcqView .gx.gx-ok{background:#DCFCE7;color:#15803D;border-color:#BBF7D0}
+#mcqView .gx.gx-bad{background:#FEE2E2;color:#B91C1C;border-color:#FECACA}
+#mcqView .gx.gx-none{background:#F1F5F9;color:#94A3B8;border-color:#E2E8F0}
+#mcqView .gx-leg{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:11.5px;color:#64748B;font-weight:700}
+#mcqView .gx-leg span{display:inline-flex;align-items:center;gap:5px}
+#mcqView .gx-d{width:11px;height:11px;border-radius:3px;display:inline-block}
+#mcqView .gx-d.gx-ok{background:#86EFAC}
+#mcqView .gx-d.gx-bad{background:#FCA5A5}
+#mcqView .gx-d.gx-none{background:#CBD5E1}
 #mcqView .mcq-result button{background:#0C447C;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-size:13.5px;font-weight:800;cursor:pointer}
 /* 과목 아코디언 (원본 감평사 방식) */
 #mcqView .sec-lbl{font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 6px}
@@ -2256,7 +2270,9 @@ let mqMode='all', mqList=null;          // 'all' | 'wrong' | 'review'
 let mqReview=false;                       // SR 복습 세션 여부
 let mqDiag=false;                          // 진단 모의고사 세션 여부
 let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
-function mqQuestions(){ return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
+let mqInReview=false, mqReviewMode='all', mqReviewList=[];
+let mqResultQs=[], mqResultAns={}, mqResultMeta=null;
+function mqQuestions(){ if(mqInReview) return mqReviewList; return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
 // 중요도(star 1~3)/소요시간(time 1~3): 값 미지정(0)이면 표시 안 함. 값은 추후 별도 입력.
 function impBadge(q){ const s=impLabel(q.star||0); return s ? '<span class="imp">'+s+'</span>' : ''; }
 function timeBadge(q){ const v=q.time||0; if(!v) return ''; const lab={1:'빠름',2:'보통',3:'오래'}[v]||''; return '<span class="tmark t'+v+'">⌛ '+lab+'</span>'; }
@@ -2489,7 +2505,7 @@ function resumeMcqExam(id,si){
   }
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
-function mqBackHome(){ mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
@@ -2604,20 +2620,23 @@ function renderMcqExam(root){
   const tags=subjTag+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
   root.innerHTML=
     '<div class="exam-sticky">'+
-    '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
-      '<div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div>'+
-      '<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span></div>'+
+    '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'">‹ '+(mqInReview?'결과':'과목')+'</button>'+
+      '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':'전체 문항'):examSet)+'</div></div>'+
+      (mqInReview?'<span class="etim done" id="mqTimer">검토</span>':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '</div>'+
     '<div class="qcard"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div>'+
     '<div class="qtext">'+jr.q+'</div>'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
-    '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
-    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?'채점 ✓':'다음 ▶')+'</button></div>'+
+    (mqInReview
+      ? '<button class="mbtn mbtn-exp" onclick="mqBackToResult()">결과로</button>'
+      : '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>')+
+    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   resolveImages(root);
 }
 function mqPick(qid,n){
+  if(mqInReview) return;
   if(!canAccess(mqCert)) return;
   const firstTime = mqAns[qid]===undefined;
   mqAns[qid]=n; mqShow[qid]=false;
@@ -2636,9 +2655,10 @@ function mqPick(qid,n){
   else { setTimeout(()=>{ if(mqScreen==='exam'){ mqResult(); } }, 650); }  // 마지막 문제 → 자동 채점
 }
 function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid]; renderMCQ(); }
-function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
+function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
 function mqResult(){
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
+  mqInReview=false;
   const qs=mqQuestions(); let correct=0,answered=0;
   qs.forEach(q=>{ if(mqAns[q.id]!==undefined){ answered++;
     if(isCorr(q.ans,mqAns[q.id])){ correct++; delete appWrong[q.id]; }
@@ -2647,24 +2667,63 @@ function mqResult(){
   if(currentUser) saveUserData();
   const total=qs.length; const pct=total?Math.round(correct/total*100):0;
   if(mqDiag){ srSaveDiagnostic(mqCert,correct,total); clearDiagProgress(mqCert); }
+  // 결과 스냅샷 (오답보기·번호그리드·결과 재표시에 사용)
+  mqResultQs=qs.slice(); mqResultAns=Object.assign({},mqAns);
+  mqResultMeta={correct,answered,total,pct,diag:mqDiag,review:mqReview,mode:mqMode,sub:mqSub,set:mqSet,
+    otc:mqOvertimeCount,ots:mqOverElapsed()};
+  renderMqResultScreen();
+}
+function renderMqResultScreen(){
+  const M=mqResultMeta; if(!M){ return; }
+  const {correct,answered,total,pct,diag}=M;
   const em=pct>=80?'🏆':pct>=60?'💪':'📚';
-  const modeLbl=mqDiag?' · 진단':mqReview?' · 복습':mqMode==='wrong'?' · 오답 다시풀기':'';
-  const titleTxt=mqDiag?'진단 모의고사':mqReview?'오늘의 복습':(curQB()[mqSub].name+' · '+curQB()[mqSub].sets[mqSet].label);
-  const btns=mqDiag
-    ? '<button onclick="mqBackHome()">📊 내 실력 분석 보기</button>'
-    : ((answered<total?'<button onclick="mqContinue()">▶ 이어서 풀기</button>':'')+'<button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
+  const modeLbl=diag?' · 진단':M.review?' · 복습':M.mode==='wrong'?' · 오답 다시풀기':'';
+  const titleTxt=diag?'진단 모의고사':M.review?'오늘의 복습':(curQB()[M.sub].name+' · '+curQB()[M.sub].sets[M.set].label);
+  // 문항별 번호 그리드 (정답 초록 / 오답 빨강 / 미응답 회색)
+  const grid=mqResultQs.map((q,i)=>{
+    const a=mqResultAns[q.id]; let cls='gx-none';
+    if(a!==undefined) cls=isCorr(q.ans,a)?'gx-ok':'gx-bad';
+    return '<button class="gx '+cls+'" onclick="mqOpenReview(\'all\','+i+')">'+(i+1)+'</button>';
+  }).join('');
+  const wrongN=mqResultQs.filter(q=>mqResultAns[q.id]!==undefined && !isCorr(q.ans,mqResultAns[q.id])).length;
+  const gridHTML=
+    '<div class="gx-wrap"><div class="gx-ti">문항별 결과 <span>번호를 누르면 해설</span></div>'+
+    '<div class="gx-grid">'+grid+'</div>'+
+    '<div class="gx-leg"><span><i class="gx-d gx-ok"></i>정답</span><span><i class="gx-d gx-bad"></i>오답</span><span><i class="gx-d gx-none"></i>미응답</span></div></div>';
+  const btns=diag
+    ? ((wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 보기 ('+wrongN+')</button>':'')+'<button onclick="mqBackHome()">📊 내 실력 분석 보기</button>')
+    : ((answered<total?'<button onclick="mqContinue()">▶ 이어서 풀기</button>':'')+
+       (wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 보기 ('+wrongN+')</button>':'')+
+       '<button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
   document.getElementById('mcqRoot').innerHTML=
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
     '<div class="rt">'+titleTxt+modeLbl+'</div>'+
-    '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답'+(mqDiag?' · 진단 점수 '+pct+'점':'')+'</div>'+
-    ((mqOvertimeCount>0||mqOvertimeSec>0)?'<div class="rs" style="color:#C2410C">⏱ 시간종료 후 '+mqOvertimeCount+'문항 · 추가 +'+mqFmt(mqOverElapsed())+' <span style="font-size:11px;color:#A89C8E">(예상점수 미반영)</span></div>':'')+
+    '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답'+(diag?' · 진단 점수 '+pct+'점':'')+'</div>'+
+    ((M.otc>0||M.ots>0)?'<div class="rs" style="color:#C2410C">⏱ 시간종료 후 '+M.otc+'문항 · 추가 +'+mqFmt(M.ots)+' <span style="font-size:11px;color:#A89C8E">(예상점수 미반영)</span></div>':'')+
     '<div class="sc"><div><div class="v ok">'+correct+'</div><div class="l">정답</div></div>'+
     '<div><div class="v bad">'+(answered-correct)+'</div><div class="l">오답</div></div>'+
     '<div><div class="v">'+pct+'%</div><div class="l">정답률</div></div></div>'+
+    gridHTML+
     '<div class="rbtns">'+btns+'</div></div>';
+  window.scrollTo(0,0);
 }
-function mqContinue(){ mqTimeUp=true; mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); }
+// 결과 검토(전체/오답만) — 단일 문항 카드 재활용, 별도 리뷰 리스트 사용
+function mqOpenReview(mode,idx){
+  mqStopTimer(); mqStopOverTimer();
+  let list = mode==='wrong'
+    ? mqResultQs.filter(q=>mqResultAns[q.id]!==undefined && !isCorr(q.ans,mqResultAns[q.id]))
+    : mqResultQs.slice();
+  if(!list.length){ alert('오답이 없습니다. 모두 맞히셨어요! 🎉'); return; }
+  mqReviewList=list; mqReviewMode=mode; mqInReview=true;
+  mqAns=Object.assign({},mqResultAns);
+  mqShow={}; list.forEach(q=>{ mqShow[q.id]=true; });   // 정답·해설 항상 펼침
+  mqIdx=Math.min(idx||0, list.length-1);
+  mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
+}
+function mqBackToResult(){ mqInReview=false; mqScreen='exam'; renderMqResultScreen(); }
+function mqContinue(){ mqInReview=false; mqTimeUp=true; mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); }
 function mqRetry(){
+  mqInReview=false;
   if(mqReview){ startMcqReview(); return; }
   mqClearProgress(mqSub,mqSet);
   const all=curQB()[mqSub].sets[mqSet].questions;
