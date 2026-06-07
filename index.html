@@ -371,7 +371,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-a{color:#475569;padding-left:2px}
 #mcqView .exp-opts .eo-a.eo-red{color:#A32D2D}
 #mcqView .exp-opts .eo-a.eo-grn{color:#0F6E56}
-#mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#0C447C;background:#E6F1FB;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
+#mcqView .exp-opts .eo-verdict{font-size:12px;font-weight:800;margin-left:6px;white-space:nowrap}
+#mcqView .exp-opts .eo-verdict.eo-red{color:#A32D2D}
+#mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
+#mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 #mcqView .mn-box{margin:14px 0 0;padding:11px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:12px}
 #mcqView .mn-code{font-size:16px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
 #mcqView .mn-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
@@ -2528,17 +2531,41 @@ async function resolveImages(scope){
   }
 }
 // 해설 줄 판정 색 (빨강 우선 → 초록 → 중립). '정답'은 '정답이다'만 초록(결론단일 중립 유지)
+function splitVerdict(ex){
+  // 해설 끝의 판정어(옳다/옳지 않다 등)를 분리 → {v:판정, vc:색클래스, rest:교정문}
+  if(!ex) return {v:'', vc:'', rest:''};
+  var m=ex.match(/\s*(옳지\s*않다|옳지않다|적절하지\s*않다|적절하지않다|부적절하다|옳다|적절하다|맞다|틀리다|틀린다)\.?\s*$/);
+  if(!m) return {v:'', vc:'', rest:ex.trim()};
+  var v=m[1].replace(/\s+/g,' ');
+  var rest=ex.slice(0, m.index).replace(/[\s.·,]+$/,'').trim();
+  return {v:v, vc:verdictColor(v), rest:rest};
+}
+function stripRepeatedOpt(exp, opt){
+  if(!exp) return '';
+  if(!opt) return exp.trim();
+  // 공백 정규화 후, 해설이 보기 문장으로 시작하면 그 반복분을 제거
+  var norm=function(s){ return String(s).replace(/\s+/g,' ').trim(); };
+  var e=norm(exp), o=norm(opt);
+  // 보기 끝의 마침표 유무 차이를 흡수
+  var oNoDot=o.replace(/[.\s]+$/,'');
+  if(e.indexOf(o)===0){ e=e.slice(o.length); }
+  else if(e.indexOf(oNoDot)===0){ e=e.slice(oNoDot.length); }
+  e=e.replace(/^[\s.·,)\]]+/,'').trim();   // 남은 앞쪽 구두점 정리
+  return e;
+}
 function verdictColor(t){
   if(!t) return '';
-  // 판정 전용 표현만 (일반 서술어 '수 없다·아니다·않는다·다르다'는 보기 내용과 충돌하므로 제외)
-  const red=['옳지 않다','옳지않다','적절하지 않다','적절하지않다','부적절','틀리다','틀린','맞지 않','일치하지 않','계산과 다르다'];
-  const grn=['옳다','적절하다','정답이다','해당한다','대상이다','맞다'];
-  // '부적절'이 있으면 그 안의 '적절하다'는 초록으로 세지 않도록 제거 후 판정
-  const tg=t.replace(/부적절/g,'');
+  // 색은 '선지 내용의 참/거짓'만 판정 (정답 여부는 ✅ 아이콘이 따로 표시 — '정답이다'는 색 마커 아님)
+  // 거짓(빨강): 옳지 않다/적절하지 않다/틀리다/다르다/아니다(판정)/부적절 등
+  const red=['옳지 않다','옳지않다','옳지 못','옳지 않은','옳지않은','적절하지 않다','적절하지않다','적절하지 않은','부적절','틀리다','틀린','맞지 않','일치하지 않','다르다','바르지 않','해당하지 않','해당되지 않'];
+  // 참(초록): 옳다/적절하다/맞다/바르다/일치한다 등
+  const grn=['옳다','옳은','적절하다','적절한','맞다','맞는','바르다','일치한다','참이다'];
+  // '부적절'이 있으면 그 안의 '적절'이 초록으로 잡히지 않도록 제거 후 초록 판정
+  const tg=t.replace(/부적절/g,'').replace(/적절하지\s*않/g,'');
   let rPos=-1, gPos=-1;
   for(const m of red){ const i=t.lastIndexOf(m); if(i>rPos) rPos=i; }
   for(const m of grn){ const i=tg.lastIndexOf(m); if(i>gPos) gPos=i; }
-  if(rPos<0 && gPos<0) return '';      // 판정어 없으면 중립
+  if(rPos<0 && gPos<0) return '';        // 판정어 없으면 중립(색 없음)
   return rPos>=gPos ? 'eo-red' : 'eo-grn';   // 동률이면 빨강 우선(부정 우선)
 }
 function splitJaryo(qt){
@@ -2600,13 +2627,18 @@ function renderMcqExam(root){
       body+='<div class="exp-opts">'+oArr.map(function(t,i){
         if(!t) return '';
         var isAns=ansN.includes(i+1);
-        var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+q.opts[i]+(isAns?' <span class="eo-badge">정답</span>':'')+'</div>':'';
-        var expTxt='<div class="eo-a '+verdictColor(t)+'">'+t+'</div>';
+        var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);   // 보기 문장 통째 반복분 제거
+        var sv=splitVerdict(ex);                          // 판정 분리(보기줄로 올림)
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var ansTag = isAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
+        var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+q.opts[i]+verdictTag+ansTag+'</div>':'';
+        var expTxt= sv.rest ? ('<div class="eo-a">'+sv.rest+'</div>') : '';
         return '<div class="eo">'+optTxt+expTxt+'</div>';
       }).join('')+'</div>';
     } else if(oFilled===1){
-      // 결론 한 줄만 (ㄱㄴㄷ형 등) — 정답색(초록)으로 한 줄만 표시 (빨강 마커 적용 안 함)
-      body+='<div class="exp-opts"><div class="eo"><div class="eo-a eo-grn">'+oArr.filter(Boolean)[0]+'</div></div></div>';
+      // 결론 한 줄(ㄱㄴㄷ형 등) — 색은 내용 참/거짓(verdictColor)으로 판정, 정답 여부는 ✅ 아이콘이 따로 표시
+      var concl=oArr.filter(Boolean)[0];
+      body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+concl+'</div></div></div>';
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
     if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
