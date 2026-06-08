@@ -3,7 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>CertLab - 생활체육지도사 보디빌딩 구술카드</title>
+<meta name="naver-site-verification" content="b0c8051f34afc49ab3bbe1f95955181cf9fdc615" />
+<meta name="google-site-verification" content="LQQCOeoEz2XvqNfY0Lmx0vGuf0gaS8iiyjxbZjIHorY" />
+<!-- Google Analytics (GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RPZRZQ779J"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-RPZRZQ779J');
+</script>
+<title>CertLab(서트랩) – 생활스포츠지도사·감정평가사 기출 자동복습·예상점수</title>
+<meta name="description" content="CertLab(서트랩)은 생활스포츠지도사 보디빌딩 구술, 감정평가사 등 자격증 기출문제를 망각곡선 자동복습·약점 분석·예상점수로 효율적으로 학습하는 자격증 학습 플랫폼입니다.">
+<meta name="keywords" content="생활스포츠지도사,생활체육지도사,보디빌딩 구술,감정평가사,감정평가사 기출,공인중개사,자격증 기출문제,자동복습,망각곡선,예상점수,오답노트,서트랩,CertLab">
+<meta name="author" content="CertLab">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#185FA5">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CertLab">
+<link rel="canonical" href="https://certlab.ai.kr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CertLab">
+<meta property="og:title" content="CertLab(서트랩) – 자격증 기출 자동복습 학습 플랫폼">
+<meta property="og:description" content="생활스포츠지도사 보디빌딩 구술, 감정평가사 등 기출문제를 자동복습·약점분석·예상점수로 똑똑하게. 합격까지 한 번에.">
+<meta property="og:url" content="https://certlab.ai.kr/">
+<meta property="og:image" content="https://certlab.ai.kr/og-image.png">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CertLab(서트랩) – 자격증 기출 자동복습 학습 플랫폼">
+<meta name="twitter:description" content="생활스포츠지도사·감정평가사 기출을 자동복습·예상점수로 똑똑하게 준비하세요.">
+<meta name="twitter:image" content="https://certlab.ai.kr/og-image.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Organization","@id":"https://certlab.ai.kr/#org","name":"CertLab","alternateName":"서트랩","url":"https://certlab.ai.kr/","logo":"https://certlab.ai.kr/og-image.png","email":"certlab.team@gmail.com"},
+{"@type":"WebSite","@id":"https://certlab.ai.kr/#site","url":"https://certlab.ai.kr/","name":"CertLab","inLanguage":"ko-KR","publisher":{"@id":"https://certlab.ai.kr/#org"}},
+{"@type":"EducationalOrganization","name":"CertLab","url":"https://certlab.ai.kr/","description":"생활스포츠지도사 보디빌딩 구술, 감정평가사 등 자격증 기출문제 자동복습·예상점수 학습 플랫폼"}
+]}
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -13,7 +53,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 :root{--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#888780;--text:#2C2C2A;--text2:#5F5E5A;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:20px;--radius-sm:12px}
 .header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
 .logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,#185FA5,#0C447C);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.mode-pill{margin-left:auto;font-size:11px;font-weight:600;background:#E6F1FB;color:#185FA5;padding:4px 12px;border-radius:20px;border:1px solid #B5D4F4}
+.mode-pill{margin-left:auto;font-size:11px;font-weight:600;background:#E6F1FB;color:#185FA5;padding:4px 12px;border-radius:20px;border:1px solid #B5D4F4;display:none}
 .mode-pill.wrong{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
 .subjects-wrap{background:#fff;padding:10px 0;border-bottom:1px solid #E6EEF8;position:relative;display:flex;align-items:center}
 .scroll-arrow{flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid #B5D4F4;border-radius:50%;cursor:pointer;font-size:14px;color:#185FA5;transition:all .15s;z-index:2;margin:0 6px}
@@ -125,7 +165,17 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .auth-bar{display:flex;align-items:center;gap:8px;margin-left:auto}
 /* ===== 통합 플랫폼: 홈/전환/슬로건 ===== */
 .brand-area{display:flex;flex-direction:column;line-height:1.05}
-.slogan{font-size:9.5px;font-weight:600;color:#7C93AD;letter-spacing:-.2px;margin-top:3px}
+.slogan{font-size:10px;font-weight:600;color:#7C93AD;letter-spacing:-.2px;margin-top:6px;white-space:nowrap}
+.home-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:16px;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;cursor:pointer;padding:0;line-height:1}
+.home-btn.hidden{display:none}
+.home-btn:active{transform:scale(.94)}
+.sr-hide{display:none}
+.user-menu{position:relative;display:flex;align-items:center}
+.avatar-btn{background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;border-radius:50%}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid #B5D4F4;border-radius:12px;box-shadow:0 6px 20px rgba(12,68,124,.15);padding:10px;display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:124px;z-index:200}
+.user-dropdown.hidden{display:none}
+.user-dropdown .plan-badge{text-align:center}
+.user-dropdown .btn-logout{width:100%}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .header-right .mode-pill{margin-left:0}
 .header-right .auth-bar{margin-left:0}
@@ -161,6 +211,20 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .btn-login{padding:6px 14px;border-radius:20px;border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
 .btn-login:active{transform:scale(.96)}
 .btn-logout{padding:5px 10px;border-radius:20px;border:1.5px solid #B5D4F4;background:#fff;color:#888780;font-size:11px;font-weight:600;cursor:pointer}
+.mile-bal{font-size:13px;color:#4A4036;padding:6px 2px;text-align:center}
+.mile-bal b{color:#C2611B}
+.ref-acc-btn{width:100%;padding:7px 10px;border:none;border-radius:10px;background:#FFF1E6;color:#C2611B;font-weight:700;font-size:12px;cursor:pointer}
+.ref-acc{margin-top:6px;padding:8px;background:#FFFBF6;border:1px solid #F1E3D3;border-radius:10px}
+.ref-acc-desc{font-size:11px;color:#7A6A50;line-height:1.5;margin-bottom:6px}
+.ref-link-box{display:flex;gap:5px;margin-top:6px}
+.ref-link-box input{flex:1;min-width:0;font-size:11px;padding:6px 8px;border:1px solid #E0D7CC;border-radius:8px;background:#fff;color:#4A4036}
+.ref-link-box button{flex:0 0 auto;padding:6px 10px;border:none;border-radius:8px;background:#185FA5;color:#fff;font-weight:700;font-size:11px;cursor:pointer}
+.welcome-mile{margin-top:12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;font-size:12px;color:#7A5A1A;line-height:1.6;text-align:center}
+.welcome-mile b{color:#C2611B;font-size:14px}
+.welcome-mile span{color:#A07A30}
+.mile-use{display:flex;align-items:center;gap:8px;padding:11px 13px;margin-bottom:10px;border:1px solid #F1D9A8;border-radius:10px;background:#FFFBF4;font-size:13px;color:#7A5A1A;cursor:pointer}
+.mile-use b{color:#C2611B}
+.mile-use input{width:16px;height:16px}
 .plan-badge{padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700}
 .plan-free{background:#E8F8F3;color:#0F6E56}
 .plan-active{background:#E6F1FB;color:#185FA5}
@@ -171,7 +235,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .auth-popup{position:fixed;inset:0;background:rgba(44,44,42,.6);display:flex;align-items:flex-end;justify-content:center;z-index:300;animation:fadeIn .2s}
 .auth-popup.hidden{display:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:32px 24px 40px;width:100%;max-width:480px;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);position:relative}
+.auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:20px 24px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);position:relative}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .auth-sheet-title{font-size:22px;font-weight:700;color:#2C2C2A;margin-bottom:6px;text-align:center}
 .auth-sheet-sub{font-size:14px;color:#888780;text-align:center;margin-bottom:24px;line-height:1.6}
@@ -206,7 +270,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .payment-note{font-size:11px;color:#B4B2A9;text-align:center;line-height:1.6}
 
 .footer{background:#fff;border-top:1px solid #F0F0F0;padding:24px 20px;text-align:center}
-.footer-brand{font-size:14px;font-weight:700;color:#2C2C2A;margin-bottom:8px}
+.footer-brand{font-size:14px;font-weight:700;color:#2C2C2A;margin-bottom:5px}
+.footer-read{font-weight:600;color:#9AA7B2;font-size:13px}
+.footer-tag{font-size:12px;color:#6E7B86;font-weight:600;margin-bottom:7px}
+.footer-desc{font-size:11.5px;color:#B4B2A9;line-height:1.7;margin:0 auto 13px;max-width:330px}
 .footer-info{font-size:11px;color:#B4B2A9;line-height:1.9}
 .footer-info a{color:#B4B2A9;text-decoration:none}
 .footer-links{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:11px}
@@ -264,6 +331,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .set-row::-webkit-scrollbar{display:none}
 #mcqView .set-btn{flex-shrink:0;font-size:11.5px;font-weight:700;color:#475569;background:#F8FAFC;border:1px solid #E2E8F0;padding:5px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
 #mcqView .set-btn.active{color:#fff;background:#0F172A;border-color:#0F172A}
+#mcqView .exam-sticky{position:sticky;top:0;z-index:40;background:#FDF8F5;padding-top:2px;margin-bottom:12px;box-shadow:0 6px 8px -6px rgba(15,23,42,.12)}
+#mcqView .exam-sticky .mq-prog{margin-bottom:8px}
 #mcqView .mq-prog{margin-bottom:12px}
 #mcqView .mq-prog .row{display:flex;justify-content:space-between;font-size:12px;color:#64748B;font-weight:700;margin-bottom:6px}
 #mcqView .mq-prog .track{height:6px;background:#E2E8F0;border-radius:99px;overflow:hidden}
@@ -272,11 +341,16 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px}
 #mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
+#mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
 #mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
 #mcqView .opts{display:flex;flex-direction:column;gap:9px}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer}
 #mcqView .opt .onum{width:23px;height:23px;border-radius:50%;border:1.5px solid #CBD5E1;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
 #mcqView .opt .otxt{font-size:13.5px;line-height:1.55;color:#0F172A;font-weight:500;flex:1}
+#mcqView .opt.opt-img{flex-direction:column;align-items:stretch}
+#mcqView .opt.opt-img .onum{margin-bottom:4px}
+#mcqView .opt .oimg{width:100%}
+#mcqView .opt .oimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
 #mcqView .opt.sel{border-color:#0F172A}
 #mcqView .opt.cor{background:#F0FDF4;border-color:#16A34A}
 #mcqView .opt.cor .onum{background:#16A34A;border-color:#16A34A;color:#fff}
@@ -285,16 +359,32 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .opt.wr .onum{background:#DC2626;border-color:#DC2626;color:#fff}
 #mcqView .opt.wr .otxt{color:#B91C1C}
 #mcqView .opt.dim{opacity:.55}
+#mcqView .jaryo{font-size:13.5px;font-weight:500;line-height:1.6;color:#334155;white-space:pre-wrap;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:11px 13px;margin:0 0 15px}
 #mcqView .exp{margin-top:13px;border-top:1px dashed #E2E8F0;padding-top:12px}
-#mcqView .exp .al{font-size:13px;font-weight:800;color:#15803D;margin-bottom:6px}
-#mcqView .exp .al.bad{color:#B91C1C}
-#mcqView .exp .note{font-size:12px;color:#64748B;line-height:1.6}
-#mcqView .exp-opts{margin-top:9px;display:flex;flex-direction:column;gap:5px}
-#mcqView .exp-opts .eo{font-size:12px;color:#475569;line-height:1.5;padding:6px 9px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px}
-#mcqView .exp-opts .eo b{color:#64748B;margin-right:3px}
-#mcqView .exp-opts .eo.ok{background:#F0FDF4;border-color:#BBF7D0;color:#15803D}
-#mcqView .exp-opts .eo.ok b{color:#16A34A}
-#mcqView .mcq-foot{display:flex;gap:9px;margin-top:14px}
+#mcqView .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+#mcqView .exp-ti{font-size:15px;font-weight:800;color:#0F172A}
+#mcqView .exp-st{font-size:13px;font-weight:800}
+#mcqView .exp .note{font-size:12.5px;color:#475569;line-height:1.65;margin-bottom:10px}
+#mcqView .exp-opts{display:flex;flex-direction:column;gap:9px}
+#mcqView .exp-opts .eo{font-size:13px;line-height:1.55}
+#mcqView .exp-opts .eo-q{color:#1E293B;font-weight:500;margin-bottom:2px}
+#mcqView .exp-opts .eo-a{color:#475569;padding-left:2px}
+#mcqView .exp-opts .eo-a.eo-red{color:#A32D2D}
+#mcqView .exp-opts .eo-a.eo-grn{color:#0F6E56}
+#mcqView .exp-opts .eo-verdict{font-size:12px;font-weight:700;margin-left:6px;white-space:nowrap}
+#mcqView .exp-opts .eo-verdict.eo-red{color:#A32D2D}
+#mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
+#mcqView .exp-opts .eo-ex{margin-top:5px;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12px;line-height:1.55;color:#5E4A2A}
+#mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
+#mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
+#mcqView .mn-box{margin:14px 0 0;padding:11px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:12px}
+#mcqView .mn-code{font-size:16px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
+#mcqView .mn-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
+#mcqView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
+#mcqView .concept-ti{font-size:12px;font-weight:800;color:#185FA5;margin-bottom:7px}
+#mcqView .concept-row{font-size:12.5px;color:#3A4A5E;line-height:1.6;margin-bottom:5px}
+#mcqView .concept-row b{color:#0C447C}
+#mcqView .mcq-foot{display:flex;gap:9px;margin:14px 0}
 #mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
 #mcqView .mbtn:disabled{opacity:.4}
 #mcqView .mbtn-prev{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0}
@@ -309,9 +399,24 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mcq-result .sc .v.ok{color:#16A34A}
 #mcqView .mcq-result .sc .v.bad{color:#DC2626}
 #mcqView .mcq-result .sc .l{font-size:11px;color:#64748B;font-weight:700;margin-top:2px}
+#mcqView .gx-wrap{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 12px;margin:4px 0 18px}
+#mcqView .gx-ti{font-size:12.5px;font-weight:800;color:#334155;margin-bottom:10px}
+#mcqView .gx-ti span{font-size:11px;font-weight:600;color:#94A3B8;margin-left:4px}
+#mcqView .gx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:6px}
+#mcqView .gx{font-size:13px;font-weight:800;border-radius:8px;padding:7px 0;border:1.5px solid transparent;cursor:pointer;line-height:1}
+#mcqView .gx.gx-ok{background:#DCFCE7;color:#15803D;border-color:#BBF7D0}
+#mcqView .gx.gx-bad{background:#FEE2E2;color:#B91C1C;border-color:#FECACA}
+#mcqView .gx.gx-none{background:#F1F5F9;color:#94A3B8;border-color:#E2E8F0}
+#mcqView .gx-leg{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:11.5px;color:#64748B;font-weight:700}
+#mcqView .gx-leg span{display:inline-flex;align-items:center;gap:5px}
+#mcqView .gx-d{width:11px;height:11px;border-radius:3px;display:inline-block}
+#mcqView .gx-d.gx-ok{background:#86EFAC}
+#mcqView .gx-d.gx-bad{background:#FCA5A5}
+#mcqView .gx-d.gx-none{background:#CBD5E1}
 #mcqView .mcq-result button{background:#0C447C;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-size:13.5px;font-weight:800;cursor:pointer}
 /* 과목 아코디언 (원본 감평사 방식) */
 #mcqView .sec-lbl{font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 6px}
+#mcqView .mcq-exam-title{font-size:20px;font-weight:800;color:#0C447C;margin:2px 2px 14px}
 #mcqView .scard{border-radius:16px;border:1.5px solid #E2E8F0;overflow:hidden;background:#fff;margin-bottom:10px}
 #mcqView .scard-hd{display:flex;align-items:center;gap:10px;padding:14px 15px;cursor:pointer;user-select:none}
 #mcqView .sdot{width:6px;height:6px;border-radius:50%;background:#0C447C;flex-shrink:0}
@@ -333,6 +438,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exam-hd{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
 #mcqView .exam-ti{flex:1;min-width:0}
 #mcqView .etim{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;color:#0F172A;background:#F8FAFC;padding:5px 10px;border-radius:8px;border:1.5px solid #E2E8F0;letter-spacing:1px;flex-shrink:0}
+#mcqView .etim.over{color:#C2410C;border-color:#FED7AA;background:#FFF7ED;animation:none}
+#mcqView .etim.done{color:#64748B;border-color:#E2E8F0;background:#F8FAFC;font-size:13px;animation:none}
 #mcqView .etim.red{color:#DC2626;border-color:#FECACA;background:#FEF2F2;animation:mqbl .8s ease-in-out infinite}
 @keyframes mqbl{0%,100%{opacity:1}50%{opacity:.45}}
 #mcqView .exam-back{background:#F1F5F9;border:none;color:#475569;font-size:13px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;flex-shrink:0}
@@ -347,6 +454,98 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 /* 결과 버튼 */
 #mcqView .mcq-result .rbtns{display:flex;gap:9px;justify-content:center}
 #mcqView .mcq-result .ghost{background:#fff;color:#475569;border:1.5px solid #E2E8F0}
+/* ===== 자동복습 UI ===== */
+.sr-banner{margin:10px 14px 4px;padding:12px 15px;background:linear-gradient(135deg,#185FA5,#0C447C);border-radius:14px;color:#fff;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.sr-banner-l{display:flex;flex-direction:column;gap:3px;text-align:left}
+.sr-banner-l b{font-size:14px}
+.sr-exam{font-size:11px;opacity:.9;text-decoration:underline}
+.sr-banner-go{font-size:12px;font-weight:700;background:#fff;color:#185FA5;padding:7px 12px;border-radius:999px;white-space:nowrap}
+.rate-row{display:flex;gap:8px;padding:4px 14px 8px;align-items:stretch}
+.rate-prev{flex:0 0 auto;border:1px solid #E2D6CC;background:#fff;border-radius:12px;padding:0 14px;font-size:13px;font-weight:700;color:#8A7D6E;cursor:pointer}
+.rate-prev:disabled{opacity:.4}
+.rate-hint{flex:1;display:flex;align-items:center;justify-content:center;font-size:12px;color:#B4A99C;border:1px dashed #E2D6CC;border-radius:12px;padding:10px}
+.rb{flex:1;display:flex;flex-direction:column;align-items:center;border:1.5px solid;border-radius:14px;padding:9px 4px;background:#fff;cursor:pointer;font-size:21px;line-height:1.1}
+.rb span{font-size:13px;font-weight:800;margin-top:3px}
+.rb i{font-size:10px;font-weight:600;font-style:normal;opacity:.8}
+.rb:active{transform:scale(.96)}
+.rb-wrong{border-color:#F2C0BC}.rb-wrong span{color:#D64B3F}.rb-wrong i{color:#CC7777}
+.rb-vague{border-color:#F3DDA6}.rb-vague span{color:#C9952B}.rb-vague i{color:#B89A4F}
+.rb-ok{border-color:#B7E0C6}.rb-ok span{color:#2E9B5E}.rb-ok i{color:#5BA97D}
+.bar-btn.mode-on{background:#185FA5;color:#fff;border-color:#185FA5}
+.sr-dot{position:absolute;top:12px;left:12px;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:#fff;z-index:2}
+.sr-dot.sr-new{background:#B4A99C}
+.sr-dot.sr-weak{background:#E24B4A}
+.sr-dot.sr-learning{background:#E0A52E}
+.sr-dot.sr-master{background:#2E9B5E}
+.mq-mst{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;color:#fff;margin-right:4px}
+.mq-mst.sr-weak{background:#E24B4A}
+.mq-mst.sr-learning{background:#E0A52E}
+.mq-mst.sr-master{background:#2E9B5E}
+.popup-x{position:sticky;top:0;float:right;width:34px;height:34px;margin:0 -4px -28px 0;background:#F0EDE8;border:1px solid #E2D6CC;border-radius:50%;font-size:18px;color:#6E6256;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:5;padding:0}
+.popup-x:hover{background:#E2D6CC}
+.report-box{position:relative}
+.home-seo{font-size:12px;color:#A89C8E;line-height:1.6;margin-top:10px;max-width:440px}
+.mnemonic{margin:14px 0 4px;padding:13px 15px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;border-radius:14px}
+.mnemonic-tag{font-size:11px;font-weight:800;color:#B97A12;margin-bottom:5px}
+.mnemonic-code{font-size:19px;font-weight:800;color:#8A5A00;letter-spacing:1px}
+.mnemonic-desc{font-size:13px;color:#7A6A50;line-height:1.6;margin-top:6px}
+.audio-bar{display:flex;gap:6px;align-items:center}
+.audio-play{flex:0 0 auto;padding:7px 14px;border:none;border-radius:999px;background:#185FA5;color:#fff;font-weight:800;font-size:13px;cursor:pointer}
+.audio-play.on{background:#A32D2D}
+.audio-opt{padding:6px 10px;border:1px solid #E0D7CC;border-radius:999px;background:#fff;color:#6E6256;font-weight:700;font-size:12px;cursor:pointer}
+.subj-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 16px 0;max-width:560px;margin:0 auto;width:100%}
+.subj-row .subj-tag{margin:0}
+#planPopup .auth-sheet{max-width:560px;width:100%;min-height:100dvh;border-radius:0;display:flex;flex-direction:column}
+.plan-hl{margin:6px 0 14px;padding:13px;border-radius:14px;background:linear-gradient(135deg,#E6F1FB,#EAF7F1);color:#15507F;font-weight:800;font-size:16px;text-align:center}
+.cmp{border:1px solid #ECE6DD;border-radius:14px;overflow:hidden;margin-bottom:16px}
+.cmp-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;align-items:center;font-size:13px;border-top:1px solid #F2ECE3}
+.cmp-row:first-child{border-top:none}
+.cmp-row span{padding:10px 8px}
+.cmp-row span:first-child{text-align:left;color:#4A4036;font-weight:600}
+.cmp-row .free{color:#A89C8E;text-align:center}
+.cmp-row .paid{color:#15793F;font-weight:800;text-align:center;background:#F1FAF4}
+.cmp-head{background:#FAF6EF;font-weight:800;color:#6E6256}
+.cmp-head span{padding:11px 8px;text-align:center}
+.cmp-head span:first-child{text-align:left}
+.cmp-head .paid{background:#E8F6EE;color:#15793F}
+.anal-card{margin:12px 14px 4px;padding:16px 16px 14px;background:#fff;border:1px solid #E2D6CC;border-radius:16px;box-shadow:0 2px 12px rgba(80,50,20,.05)}
+.anal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.anal-top b{font-size:14px;color:#2C2C2A}
+.anal-rediag,.anal-diag{border:1px solid #B5D4F4;background:#E6F1FB;color:#185FA5;font-weight:700;border-radius:999px;cursor:pointer}
+.anal-rediag{font-size:11px;padding:5px 11px}
+.anal-diag{font-size:14px;padding:11px 16px;width:100%;margin-top:10px}
+.anal-empty{font-size:13px;color:#8A7D6E;line-height:1.6}
+.anal-score{display:flex;align-items:baseline;gap:10px;margin:6px 0 12px}
+.anal-pred{font-size:34px;font-weight:800;color:#185FA5;line-height:1}
+.anal-pred small{font-size:15px;font-weight:700;margin-left:2px}
+.anal-lv{font-size:14px;font-weight:800}
+.anal-row{display:flex;align-items:center;gap:8px;margin:5px 0}
+.anal-nm{font-size:12px;color:#3C3C3A;width:96px;flex:0 0 96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.anal-bar{flex:1;height:9px;background:#F0E7DE;border-radius:999px;overflow:hidden}
+.anal-fill{height:100%;border-radius:999px;transition:width .4s}
+.anal-pct{font-size:12px;font-weight:700;color:#6E6256;width:40px;text-align:right}
+.anal-weak{margin-top:10px;font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:10px;padding:8px 10px;line-height:1.5}
+.anal-note{margin-top:8px;font-size:11px;color:#B4A99C}
+.install-btn{background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:999px;font-size:12px;font-weight:800;padding:6px 11px;cursor:pointer;white-space:nowrap}
+.install-btn:hover{background:#d8e9fa}
+.install-btn.hidden{display:none}
+.pwa-banner.hidden{display:none}
+.pwa-ios-mask.hidden{display:none}
+.pwa-banner{position:fixed;left:12px;right:12px;bottom:12px;max-width:480px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;box-shadow:0 8px 28px rgba(15,23,42,.18);border-radius:16px;padding:12px 12px 12px 12px;display:flex;align-items:center;gap:11px;z-index:9000}
+.pwa-banner-ic{width:42px;height:42px;border-radius:11px;flex-shrink:0}
+.pwa-banner-tx{flex:1;display:flex;flex-direction:column;line-height:1.3}
+.pwa-banner-tx b{font-size:13.5px;color:#0F172A}
+.pwa-banner-tx span{font-size:11.5px;color:#64748B}
+.pwa-banner-go{background:#185FA5;color:#fff;border:none;border-radius:999px;font-size:13px;font-weight:800;padding:9px 16px;cursor:pointer;flex-shrink:0}
+.pwa-banner-x{background:transparent;border:none;color:#94A3B8;font-size:15px;cursor:pointer;padding:4px 6px;flex-shrink:0}
+.pwa-ios-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9500;display:flex;align-items:flex-end}
+.pwa-ios-sheet{background:#fff;width:100%;max-width:480px;margin:0 auto;border-radius:20px 20px 0 0;padding:20px 20px 26px;animation:pwaUp .25s ease}
+@keyframes pwaUp{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+.pwa-ios-ti{font-size:17px;font-weight:800;color:#0F172A;margin-bottom:14px;text-align:center}
+.pwa-ios-step{font-size:13.5px;color:#334155;line-height:1.5;display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.pwa-ios-step>span:first-child{width:22px;height:22px;border-radius:50%;background:#E6F1FB;color:#185FA5;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pwa-ios-share{font-size:16px}
+.pwa-ios-close{margin-top:8px;width:100%;background:#185FA5;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:800;cursor:pointer}
 </style>
 <!-- Meta Pixel Code -->
 <script>
@@ -384,12 +583,12 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 </div>
 
 <div class="header">
-  <div class="brand-area">
+  <div class="brand-area" onclick="goHome()" style="cursor:pointer">
     <div class="logo">CertLab</div>
     <div class="slogan">도전하는 사람들의 성공을 돕습니다</div>
   </div>
   <div class="header-right">
-    <div class="cert-switch hidden" id="certSwitch" onclick="goHome()"><span id="certSwitchName">시험</span><span class="chev">⌄</span></div>
+    <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
     <div class="mode-pill" id="modePill">전체</div>
     <div class="auth-bar" id="authBar">
       <button class="btn-login" onclick="showLoginPopup()">로그인</button>
@@ -400,6 +599,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="home-hero">
     <h1>어떤 시험을 준비하세요?</h1>
     <p>시험을 선택해 학습을 시작하세요.</p>
+    <p class="home-seo">CertLab(서트랩)은 생활스포츠지도사 보디빌딩 구술, 감정평가사 기출문제를 망각곡선 기반 자동복습과 약점 분석, 예상점수로 효율적으로 준비하는 자격증 학습 플랫폼입니다.</p>
   </div>
   <div class="home-label">시험 선택</div>
   <div class="cert-cards">
@@ -415,22 +615,24 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     </div>
     <div class="cert-card" onclick="enterCert('realestate1')">
       <div class="cert-ic">🏠</div>
-      <div class="cert-meta"><div class="nm">공인중개사 1차</div><div class="ds">객관식 · 부동산학개론 · 민법및민사특별법</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-meta"><div class="nm">공인중개사 1차</div><div class="ds">객관식 · 부동산학개론 · 민법및민사특별법</div><span class="tag soon" id="certTag-realestate1">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" onclick="enterCert('realestate2')">
       <div class="cert-ic">🏢</div>
-      <div class="cert-meta"><div class="nm">공인중개사 2차</div><div class="ds">객관식 · 중개사법령 · 공법 · 공시법령및세법</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-meta"><div class="nm">공인중개사 2차</div><div class="ds">객관식 · 중개사법령 · 공법 · 공시법령및세법</div><span class="tag soon" id="certTag-realestate2">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" onclick="enterCert('koreanhistory')">
       <div class="cert-ic">📜</div>
-      <div class="cert-meta"><div class="nm">한국사능력검정시험 심화</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon">준비 중</span></div>
+      <div class="cert-meta"><div class="nm">한국사능력검정시험 심화</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon" id="certTag-koreanhistory">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
   </div>
 </div>
 <div class="cert-view hidden" id="bodybuildingView">
+<div id="bbAnalysis"></div>
+<div class="sr-banner" id="srBanner" onclick="srBannerClick()"></div>
 <div class="subjects-wrap">
   <button class="scroll-arrow hidden" id="arrowL" onclick="scrollSubj(-1)" aria-label="이전 과목">◀</button>
   <div class="subjects" id="subjectBar"></div>
@@ -454,24 +656,33 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="c-pill done-pill"><div class="v" id="statDone">0%</div><div class="l">정답률</div></div>
   <div class="c-pill"><div class="v" id="statCount">0</div><div class="l">푼 횟수</div></div>
 </div>
-<div class="card-area" id="cardArea"></div>
-<div class="btn-row">
-  <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)">◀<span class="lbl">이전</span></button>
-  <button class="btn btn-wrong" id="btnWrong" onclick="toggleWrong()">✕<span class="lbl">오답</span></button>
-  <button class="btn btn-next" id="btnNext" onclick="navigate(1)">✓<span class="lbl">정답</span></button>
+<div class="subj-row">
+  <div class="subj-tag" id="subjTag"></div>
+  <div class="audio-bar">
+    <button class="audio-play" id="audioPlay" onclick="ttsToggle()">🔊 듣기</button>
+    <button class="audio-opt" id="audioVoice" onclick="ttsToggleVoice()">👩 여성</button>
+    <button class="audio-opt" id="audioRate" onclick="ttsCycleRate()">1.0×</button>
+  </div>
 </div>
+<div class="card-area" id="cardArea"></div>
+<div class="rate-row" id="rateRow"></div>
 <div class="bottom-bar">
-  <button class="bar-btn" id="btnReview" onclick="toggleReview()">❌ 오답만</button>
-  <button class="bar-btn" onclick="shuffle()">🔀 섞기</button>
-  <button class="bar-btn" onclick="resetWrong()">🔄 초기화</button>
+  <button class="bar-btn" id="modeNew" onclick="setSrMode('new')">🆕 신규</button>
+  <button class="bar-btn" id="modeReview" onclick="setSrMode('review')">🔁 복습</button>
+  <button class="bar-btn" id="modeMix" onclick="setSrMode('mix')">🔀 혼합</button>
+  <button class="bar-btn" onclick="shuffle()">🎲 섞기</button>
 </div>
 </div>
 <div class="cert-view hidden" id="mcqView">
   <div class="mcq-wrap" id="mcqRoot"></div>
 </div>
 <div class="footer">
-  <div class="footer-brand">CertLab</div>
+  <div class="footer-brand">CertLab <span class="footer-read">(서트랩)</span></div>
+  <div class="footer-tag">도전하는 사람들의 성공을 돕습니다</div>
+  <div class="footer-desc">자격증·전문직 시험·학습 콘텐츠를 제공하는 교육 플랫폼입니다.</div>
   <div class="footer-links">
+    <a href="about.html" target="_blank" rel="noopener">회사소개</a>
+    <span class="sep">·</span>
     <a href="terms.html" target="_blank" rel="noopener">이용약관</a>
     <span class="sep">·</span>
     <a href="privacy.html" target="_blank" rel="noopener">개인정보 취급방침</a>
@@ -505,6 +716,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 <!-- 오류 신고 시트 -->
 <div class="report-sheet hidden" id="reportSheet">
   <div class="report-box">
+    <button class="popup-x" onclick="closeReport()" aria-label="닫기">✕</button>
     <div class="report-title">⚠️ 문제 오류 신고</div>
     <div class="report-sub" id="reportSubTitle"></div>
     <div class="report-types">
@@ -542,6 +754,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 <!-- 로그인 팝업 -->
 <div class="auth-popup hidden" id="loginPopup">
   <div class="auth-sheet">
+    <button class="popup-x" onclick="hideLoginPopup()" aria-label="닫기">✕</button>
     <div class="auth-sheet-title" id="loginTitle">🎯 무료 체험 완료</div>
     <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
     <div class="auth-features">
@@ -561,7 +774,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 <!-- 이용권 팝업 -->
 <div class="auth-popup hidden" id="planPopup">
   <div class="auth-sheet">
-    <button onclick="hidePlanPopup()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;color:#888780;cursor:pointer;line-height:1">✕</button>
+    <button class="popup-x" onclick="hidePlanPopup()" aria-label="닫기">✕</button>
     <div class="plan-sheet-title" id="planSheetTitle">⏰ 무료 체험 완료!</div>
     <div class="plan-sheet-sub" id="planSub">이용권 구매 후 전체 문제와 학습 기록을 계속 이용할 수 있습니다.</div>
     <div class="plan-stats" id="planStats"></div>
@@ -604,6 +817,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
       예금주: 박성환<br><br>
       입금 완료 신청 시 이용권이 <strong>즉시 활성화</strong>됩니다.<br>단, 결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.
     </div>
+    <div id="mileUseBox"></div>
     <input id="depositorName" placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
     <button class="btn-payment" id="btnPayment" onclick="submitPayment()">입금 완료 신청</button>
     <div class="payment-note">입금 완료 신청 시 이용권이 즉시 활성화됩니다.<br>결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.</div>
@@ -632,6 +846,58 @@ try {
 
 // ===== 사용자 상태 =====
 let currentUser = null;
+// ===== 추천/마일리지 =====
+const MILE_DAY = 86400000;
+// ===== 추천 대기정산 (추천인 본인 로그인 시 자기 문서에 적립) =====
+async function settleReferralMileage(ref, data){
+  if (!myReferralCode) return;
+  let lots = Array.isArray(data.mileageLots) ? data.mileageLots.slice() : [];
+  let hist = Array.isArray(data.mileageHistory) ? data.mileageHistory.slice() : [];
+  let changed = false;
+  const now = Date.now();
+  try {
+    const snap = await db.collection('referrals').where('referrerCode','==',myReferralCode).get();
+    for (const d of snap.docs) {
+      const r = d.data();
+      if (r.refereeUid === currentUser.uid) continue;   // 자기추천 방지
+      // 가입 보상 1,000 (1년)
+      if (!r.signupSettled) {
+        lots.push({a:1000, t:'ref_signup', at:now, exp:now+365*MILE_DAY});
+        hist.push({t:'ref_signup', a:1000, at:now, who:r.refereeEmail||null});
+        changed = true;
+        try { await d.ref.update({ signupSettled:true }); } catch(_){}
+      }
+      // 결제 보상 10,000 (1년)
+      if (r.paid && !r.paidSettled) {
+        lots.push({a:10000, t:'ref_paid', at:now, exp:now+365*MILE_DAY});
+        hist.push({t:'ref_paid', a:10000, at:now, who:r.refereeEmail||null});
+        changed = true;
+        try { await d.ref.update({ paidSettled:true }); } catch(_){}
+      }
+    }
+  } catch(_){}
+  if (changed) {
+    myMileageLots = lots;
+    try { await ref.update({ mileageLots: lots, mileageHistory: hist }); } catch(_){}
+    updateAuthBar();
+  }
+}
+
+let myReferralCode = null;
+let myMileageLots = [];   // [{a금액, t유형, at적립ms, exp만료ms}]
+// ?ref= 캡처 (로그인 팝업/리다이렉트 넘어가도 유지)
+try {
+  const _ref = new URLSearchParams(location.search).get('ref');
+  if (_ref) localStorage.setItem('pendingRef', _ref.trim().toUpperCase());
+} catch(_) {}
+function genReferralCode(uid){ return (uid||'').replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,6) || ('R'+Math.random().toString(36).slice(2,7).toUpperCase()); }
+function mileageBalance(lots){
+  const now = Date.now(); let s=0;
+  (lots||[]).forEach(l=>{ if(l && (!l.exp || l.exp>now) && !l.used) s+=(l.a||0); });
+  return s;
+}
+function myReferralLink(){ return location.origin + location.pathname + '?ref=' + (myReferralCode||''); }
+
 let userPlan = 'GUEST'; // (레거시 미러: 현재 활성 시험의 plan) GUEST | FREE_TRIAL | ACTIVE | EXPIRED
 let trialCount = 0;     // (레거시 미러: 현재 활성 시험의 무료 사용 수)
 const GUEST_LIMIT = 10;
@@ -687,13 +953,37 @@ async function loadUserPlan(user) {
     if (!doc.exists) {
       // 신규 회원: 시험별 무료체험으로 시작
       const ent = {}; ALL_CERTS.forEach(c=>ent[c]={plan:'FREE_TRIAL',trialCount:0,expireAt:null,planDays:null});
+      const now = Date.now();
+      const refCode = genReferralCode(user.uid);
+      let referredBy = null;
+      try { const pr = localStorage.getItem('pendingRef'); if (pr && pr !== refCode) referredBy = pr; } catch(_){}
+      const lots = [ {a:1000, t:'signup', at:now, exp:now+3*MILE_DAY} ];   // 가입 보너스 1,000원(3일)
       await ref.set({
         email: user.email, displayName: user.displayName, photoURL: user.photoURL,
         plan: 'FREE_TRIAL', trialCount: 0,        // 레거시 미러(관리자 호환)
         entitlements: ent,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        referralCode: refCode,
+        referredBy: referredBy || null,
+        mileageLots: lots,
+        mileageHistory: [{t:'signup', a:1000, at:now}],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      myReferralCode = refCode; myMileageLots = lots;
+      // 추천 기록(추천인 정산용) — 추천코드로 들어온 경우만
+      if (referredBy) {
+        try {
+          await db.collection('referrals').doc(user.uid).set({
+            refereeUid: user.uid, refereeEmail: user.email || null,
+            referrerCode: referredBy, paid: false,
+            signupSettled: false, paidSettled: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        } catch(_){}
+      }
+      try { localStorage.removeItem('pendingRef'); } catch(_){}
       userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
+      if(typeof pwaSignupBanner==='function') pwaSignupBanner();
       return;
     }
     const data = doc.data();
@@ -724,6 +1014,15 @@ async function loadUserPlan(user) {
       }
     }
     userEnt = ent; syncPlanMirror(); updateAuthBar(); loadUserData();
+    // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
+    myReferralCode = data.referralCode || null;
+    myMileageLots = Array.isArray(data.mileageLots) ? data.mileageLots : [];
+    if (!myReferralCode) {
+      myReferralCode = genReferralCode(user.uid);
+      try { await ref.update({ referralCode: myReferralCode }); } catch(_){}
+    }
+    settleReferralMileage(ref, data).catch(()=>{});
+    try { await ref.update({ lastLoginAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch(_){}
   } catch(e) {
     console.error('플랜 로드 오류:', e);
     userEnt = blankEnt(); userEnt.bodybuilding.plan='FREE_TRIAL'; userEnt.appraiser.plan='FREE_TRIAL';
@@ -743,14 +1042,45 @@ async function loadUserData() {
       appWrong={};
       (data.wrongList||[]).forEach(key => applyMark(key,'w',true));
       (data.favoriteList||[]).forEach(key => applyMark(key,'fav',true));
-      if (data.solveCount) {
-        solveCount = data.solveCount;
-        document.getElementById('statCount').textContent = solveCount;
+      // 자동복습 진행상황
+      srProgress = (data.cardProgress && typeof data.cardProgress==='object') ? data.cardProgress : {};
+      srExamOverride = (data.examDates && typeof data.examDates==='object') ? data.examDates : {};
+      srDiagnostics = Array.isArray(data.diagnostics) ? data.diagnostics : [];
+      srMigrateIfNeeded();
+      srApplyToCards();
+      if (data.solveCountByCert && typeof data.solveCountByCert==='object') {
+        solveCountByCert = data.solveCountByCert;
+      } else if (data.solveCount) {
+        solveCountByCert = { bodybuilding: data.solveCount };   // 레거시 단일값 → 생체로 이관
+      } else {
+        solveCountByCert = {};
       }
-      updateStats(); buildBar(); renderCard();
+      solveCount = totalSolve();
+      setStatCountUI();
+      refresh();
       if (activeCert === 'appraiser') renderMCQ();
     }
   } catch(e) { console.error('데이터 로드 오류:', e); }
+}
+
+// 기존 오답노트(w) → cardProgress 1회 마이그레이션 (미숙·오늘 복습으로 편입)
+function srMigrateIfNeeded(){
+  if (srProgress && Object.keys(srProgress).length>0) return; // 이미 있음
+  const now=Date.now(); let any=false;
+  D.forEach(c=>{ if(c.w && c.id){ srProgress[SR_CERT+'|'+c.id]={st:0,nx:now,lr:now,res:0,rc:1,w:true}; any=true; } });
+  if(any) srFlush();
+}
+// cardProgress의 오답상태(w)를 카드 객체에 반영
+function srApplyToCards(){
+  cards.forEach(c=>{ const p=srProgress[SR_CERT+'|'+c.id]; c.w=!!(p&&p.w); });
+}
+// 비로그인(게스트) localStorage 복원
+function srLoadLocal(){
+  try{ const raw=localStorage.getItem('sr:'+SR_CERT); if(!raw) return;
+    const o=JSON.parse(raw); srProgress=o.p||{}; srExamOverride=o.e||{};
+    if(o.c){ solveCountByCert.bodybuilding=o.c; solveCount=totalSolve(); setStatCountUI(); }
+    srApplyToCards();
+  }catch(_){}
 }
 // 네임스페이스 키 적용: "시험종류‖과목‖문제" (신형) / "과목||문제" (구형=생체, 무손실)
 function applyMark(key, field, val) {
@@ -779,7 +1109,8 @@ async function saveUserData() {
     ];
     const favoriteList = D.filter(c=>c.fav).map(c=>'bodybuilding‖'+c.s+'‖'+c.q);
     await db.collection('userData').doc(currentUser.uid).set({
-      wrongList, favoriteList, solveCount,
+      wrongList, favoriteList, solveCount: totalSolve(), solveCountByCert,
+      cardProgress: srProgress, examDates: srExamOverride, diagnostics: srDiagnostics,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { console.error('저장 오류:', e); }
@@ -859,10 +1190,37 @@ function updateAuthBar() {
     ? `<img class="user-avatar" src="${currentUser.photoURL}" alt="">`
     : `<div style="width:28px;height:28px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
   bar.innerHTML = `
-    ${img}
-    <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
-    <button class="btn-logout" onclick="signOut()">로그아웃</button>`;
+    <div class="user-menu" id="userMenu">
+      <button class="avatar-btn" onclick="toggleUserMenu(event)" aria-label="내 메뉴">${img}</button>
+      <div class="user-dropdown hidden" id="userDropdown">
+        <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
+        <div class="mile-bal">🪙 마일리지 <b>${mileageBalance(myMileageLots).toLocaleString()}원</b></div>
+        <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
+        <div class="ref-acc hidden" id="refAcc">
+          <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 +10,000원!</div>
+          <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
+        </div>
+        <button class="ref-acc-btn" onclick="addToHome(event)">📲 홈 화면에 추가</button>
+        <button class="btn-logout" onclick="signOut()">로그아웃</button>
+      </div>
+    </div>`;
 }
+function toggleUserMenu(e){ if(e){e.stopPropagation();} const d=document.getElementById('userDropdown'); if(d) d.classList.toggle('hidden'); }
+function copyReferralLinkW(e){
+  if(e){e.stopPropagation();}
+  const inp=document.getElementById('refLinkInputW'); const link=myReferralLink();
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(()=>alert('추천 링크가 복사되었어요!')).catch(()=>{if(inp){inp.select();document.execCommand('copy');}alert('추천 링크가 복사되었어요!');}); }
+  else { if(inp){inp.select(); try{document.execCommand('copy');}catch(_){}} alert('추천 링크가 복사되었어요!'); }
+}
+function toggleReferralAcc(e){ if(e){e.stopPropagation();} const a=document.getElementById('refAcc'); if(a) a.classList.toggle('hidden'); }
+function copyReferralLink(e){
+  if(e){e.stopPropagation();}
+  const inp=document.getElementById('refLinkInput'); if(!inp) return;
+  const link=myReferralLink();
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(()=>alert('추천 링크가 복사되었어요!')).catch(()=>{inp.select();document.execCommand('copy');alert('추천 링크가 복사되었어요!');}); }
+  else { inp.select(); try{document.execCommand('copy');}catch(_){} alert('추천 링크가 복사되었어요!'); }
+}
+document.addEventListener('click',function(e){ const m=document.getElementById('userMenu'); const d=document.getElementById('userDropdown'); if(d&&m&&!m.contains(e.target)) d.classList.add('hidden'); });
 
 // ===== 팝업 =====
 function showLoginPopup(mode='default') {
@@ -880,27 +1238,61 @@ function showLoginPopup(mode='default') {
 }
 function hideLoginPopup() { document.getElementById('loginPopup').classList.add('hidden'); }
 
+function certQuestionCount(cert){
+  try{
+    if(typeof isMcqCert==='function' && isMcqCert(cert)){
+      const qb=qbOf(cert); let n=0;
+      Object.keys(qb).forEach(s=>(qb[s].sets||[]).forEach(st=>n+=(st.questions||[]).length));
+      return n;
+    }
+    return (typeof D!=='undefined') ? D.length : 0;   // 플래시카드
+  }catch(_){ return 0; }
+}
+function totalQuestionCountAll(){
+  let n=0;
+  try{ if(typeof D!=='undefined') n+=D.length; }catch(_){}
+  try{ (MCQ_CERTS||[]).forEach(c=>{ n+=certQuestionCount(c); }); }catch(_){}
+  return n;
+}
+function examCount(){
+  let c=0;
+  try{ if(typeof D!=='undefined' && D.length>0) c++; }catch(_){}      // 플래시카드(생체)
+  try{ (MCQ_CERTS||[]).forEach(cert=>{ if(certQuestionCount(cert)>0) c++; }); }catch(_){}
+  return c;
+}
+function featureCompareHTML(totalTxt){
+  const rows=[
+    ['풀 수 있는 문제','50문제 체험','전체 '+totalTxt],
+    ['전 과목·회차 기출 + 상세해설','체험분만','✓ 전체'],
+    ['예상점수 · 약점 분석','체험분만','✓ 전체 기준'],
+    ['망각곡선 자동복습','제한','✓ 무제한'],
+    ['음성 듣기 · 암기코드','✓','✓'],
+    ['학습 기록 이어가기','✕ 체험 종료','✓ 계속']
+  ];
+  return '<div class="cmp"><div class="cmp-row cmp-head"><span>기능</span><span>무료</span><span class="paid">유료</span></div>'
+    + rows.map(r=>'<div class="cmp-row"><span>'+r[0]+'</span><span class="free">'+r[1]+'</span><span class="paid">'+r[2]+'</span></div>').join('')
+    + '</div>';
+}
 function showPlanPopup() {
   const cert = activeCertId();
-  const certName = certFull(cert);
-  let totalTxt;
-  if (cert === 'bodybuilding') totalTxt = '248문제';
-  else { const qb=qbOf(cert); const n=Object.keys(qb).reduce((a,sub)=>a+qb[sub].sets.reduce((b,st)=>b+st.questions.length,0),0); totalTxt = n>0 ? n+'문항' : '전체 문항'; }
   const titleEl = document.getElementById('planSheetTitle');
-  if (titleEl) titleEl.textContent = `⏰ ${certName} 무료 체험 완료!`;
+  if (titleEl) titleEl.textContent = `⏰ 무료 체험 완료!`;
   const subEl = document.getElementById('planSub');
-  if (subEl) subEl.textContent = `${certName} 이용권 구매 후 전체 ${totalTxt}와 학습 기록을 계속 이용할 수 있습니다.`;
+  if (subEl) subEl.textContent = `이용권을 시작하면 전체 기출문제와 상세해설, 학습 기록을 계속 이용할 수 있어요.`;
+  const n = certQuestionCount(cert);
+  const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
+  const allN = totalQuestionCountAll();
+  const exams = examCount();
+  const headTxt = (exams>0 && allN>0) ? exams+'개 시험 · 총 '+allN.toLocaleString()+'문제 수록' : '전체 기출문제 + 상세해설 수록';
   const stats = document.getElementById('planStats');
-  const learned = (userEnt[cert] && userEnt[cert].trialCount) || 0;
-  let wrong = 0;
-  if (cert === 'bodybuilding') wrong = D.filter(c=>c.w).length;
-  else { try { Object.keys(mqAns).forEach(qid=>{ /* appraiser 오답 집계 */ }); } catch(e){} }
-  const rate = learned > 0 ? Math.round((learned-wrong)/learned*100) : 0;
-  stats.innerHTML = `
-    <div class="plan-stat"><div class="v">${learned}</div><div class="l">학습 문제</div></div>
-    <div class="plan-stat"><div class="v">${rate > 0 ? rate : 0}%</div><div class="l">정답률</div></div>
-    <div class="plan-stat"><div class="v">${wrong}</div><div class="l">오답노트</div></div>`;
+  if (stats) {
+    stats.innerHTML =
+      '<div class="plan-hl">📚 '+headTxt+'</div>'
+      + featureCompareHTML(totalTxt);
+  }
   document.getElementById('planPopup').classList.remove('hidden');
+  renderPlanCards(cert);
+  mileApplyOn=false; renderMileUse();
 }
 function hidePlanPopup() { document.getElementById('planPopup').classList.add('hidden'); }
 
@@ -909,10 +1301,14 @@ function showWelcomePopup() {
   document.getElementById('loginTitle').textContent = '🎉 환영합니다!';
   document.getElementById("loginSub").textContent = "50문제 무료 체험이 시작되었습니다. 지금 바로 학습해보세요!";
   document.querySelector('.auth-features').innerHTML = `
-    <div class="auth-feature-item">전체 248문제 + 상세 해설</div>
-    <div class="auth-feature-item">오답노트 & 즐겨찾기</div>
-    <div class="auth-feature-item">랜덤 학습</div>
-    <div class="auth-feature-item">3일 무료 이용 시작!</div>`;
+    <div class="auth-feature-item">전체 기출문제 + 상세 해설</div>
+    <div class="auth-feature-item">자동복습 & 오답노트</div>
+    <div class="auth-feature-item">예상점수 & 약점 분석</div>
+    <div class="auth-feature-item">50문제 무료 체험!</div>
+    <div class="welcome-mile">🎁 가입 축하 <b>1,000원</b> 마일리지 지급! <span>(3일 안에 사용)</span><br>
+      친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +10,000원 (1년 유효)
+      <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
+    </div>`;
   document.querySelector('.btn-google-login').style.display='none';
   document.querySelector('.auth-sheet-close').textContent='학습 시작하기!';
   document.querySelector('.auth-sheet-close').style.background='linear-gradient(135deg,#185FA5,#0C447C)';
@@ -921,44 +1317,105 @@ function showWelcomePopup() {
 }
 
 // ===== 이용권 선택 & 신청 =====
+const PLAN_SETS={
+  _default:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
+            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용',pop:'⭐ 가장 인기'},
+            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  appraiser:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
+             {d:28,p:12900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 추천'},
+             {d:56,p:19900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 최고 가성비',green:1}]
+};
+function plansFor(cert){ return PLAN_SETS[cert]||PLAN_SETS._default; }
+function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
+function renderPlanCards(cert){
+  const set=plansFor(cert), box=document.querySelector('.plan-cards'); if(!box) return;
+  box.innerHTML=set.map((pl,i)=>{
+    const badge=pl.pop?('<div class="plan-badge-pop"'+(pl.green?' style="background:linear-gradient(135deg,#1D9E75,#0C447C)"':'')+'>'+pl.pop+'</div>'):'';
+    return '<div class="plan-card" id="plan'+pl.d+'" onclick="selectPlan('+pl.d+','+pl.p+')">'+badge
+      +'<div class="plan-card-top"><span class="plan-card-name">'+pl.name+'</span>'
+      +'<span class="plan-card-price">'+pl.p.toLocaleString()+'원</span></div>'
+      +'<div class="plan-card-desc">'+pl.desc+'</div></div>';
+  }).join('');
+  const mid=set[1]||set[0]; selectPlan(mid.d, mid.p);   // 기본 선택 = 추천(가운데)
+}
 function selectPlan(days, price) {
   selectedPlanDays = days;
   selectedPlanPrice = price;
   document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
   document.getElementById('plan'+days).classList.add('selected');
-  document.getElementById('btnPayment').textContent = `${price.toLocaleString()}원 입금 완료 신청`;
+  recalcPay();
+}
+let mileApplyOn = false;
+function renderMileUse(){
+  const box=document.getElementById('mileUseBox'); if(!box) return;
+  const bal=mileageBalance(myMileageLots);
+  if(bal<=0){ box.innerHTML=''; mileApplyOn=false; return; }
+  box.innerHTML='<label class="mile-use"><input type="checkbox" id="mileChk" '+(mileApplyOn?'checked':'')+' onchange="onMileToggle()"> 🪙 보유 마일리지 <b>'+bal.toLocaleString()+'원</b> 사용</label>';
+}
+function onMileToggle(){ const c=document.getElementById('mileChk'); mileApplyOn=!!(c&&c.checked); recalcPay(); }
+function recalcPay(){
+  const btn=document.getElementById('btnPayment'); if(!btn) return;
+  const price=selectedPlanPrice||0;
+  const bal=mileageBalance(myMileageLots);
+  const applied=mileApplyOn?Math.min(bal,price):0;
+  const payable=price-applied;
+  if(price<=0){ btn.textContent='이용권을 선택하세요'; return; }
+  if(payable<=0) btn.textContent='마일리지 '+applied.toLocaleString()+'원으로 결제 (즉시 활성화)';
+  else if(applied>0) btn.textContent=payable.toLocaleString()+'원 입금 신청 (마일리지 '+applied.toLocaleString()+'원 사용)';
+  else btn.textContent=price.toLocaleString()+'원 입금 완료 신청';
 }
 
+function consumeMileage(lots, amount){
+  const now=Date.now();
+  const active=lots.filter(l=>l && !l.used && (l.a>0) && (!l.exp||l.exp>now))
+    .sort((a,b)=>(a.exp||9e15)-(b.exp||9e15));   // 빨리 만료되는 것부터
+  let need=amount;
+  for(const l of active){ if(need<=0) break; const take=Math.min(l.a, need); l.a-=take; need-=take; if(l.a<=0) l.used=true; }
+  return lots.filter(l=>l && !l.used && (l.a>0));   // 소진된 lot 제거
+}
 async function submitPayment() {
   if (!currentUser) { showLoginPopup(); return; }
-  const depositorName = document.getElementById('depositorName').value.trim();
-  if (!depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
+  if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
   const cert = activeCertId();
   const certName = certFull(cert);
-  const planNames = {7:'Basic (7일)',14:'Standard (14일)',28:'Premium (28일)'};
-  if (!confirm(`[${certName}] ${planNames[selectedPlanDays]} - ${selectedPlanPrice.toLocaleString()}원
-입금자: ${depositorName}
-입금 완료 신청을 하시겠어요?`)) return;
-  if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
+  const price = selectedPlanPrice;
+  const bal = mileageBalance(myMileageLots);
+  const applied = mileApplyOn ? Math.min(bal, price) : 0;
+  const payable = price - applied;
+  const depositorName = (document.getElementById('depositorName').value||'').trim();
+  if (payable > 0 && !depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
+
+  const confMsg = payable<=0
+    ? '['+certName+'] '+planLabelOf(selectedPlanDays)+'\n마일리지 '+applied.toLocaleString()+'원으로 결제 (입금 없이 즉시 활성화)\n진행할까요?'
+    : '['+certName+'] '+planLabelOf(selectedPlanDays)+' - '+price.toLocaleString()+'원\n'+(applied>0?'마일리지 '+applied.toLocaleString()+'원 사용 + 입금 '+payable.toLocaleString()+'원\n':'')+'입금자: '+depositorName+'\n신청하시겠어요?';
+  if (!confirm(confMsg)) return;
+
   try {
     const expireAt = new Date();
     expireAt.setDate(expireAt.getDate() + selectedPlanDays);
-    // 결제 신청 기록 (즉시 자동승인 — 입금 미확인 시 관리자가 수동 철회)
+
+    if (applied > 0) {
+      myMileageLots = consumeMileage(myMileageLots, applied);
+      let hist = [];
+      try { const ud=await db.collection('users').doc(currentUser.uid).get(); hist=(ud.data()&&Array.isArray(ud.data().mileageHistory))?ud.data().mileageHistory.slice():[]; } catch(_){}
+      hist.push({t:'use', a:-applied, at:Date.now(), memo:certName});
+      try { await db.collection('users').doc(currentUser.uid).update({ mileageLots: myMileageLots, mileageHistory: hist }); } catch(_){}
+    }
+
     await db.collection('payments').add({
-      uid: currentUser.uid,
-      email: currentUser.email,
-      displayName: currentUser.displayName,
-      depositorName,
-      certType: cert,
-      certName,
+      uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
+      depositorName: depositorName || (applied>0?'(마일리지 결제)':''),
+      certType: cert, certName,
       planDays: selectedPlanDays,
-      price: selectedPlanPrice,
-      status: 'auto_approved',
-      autoApproved: true,
+      price: price,
+      mileageUsed: applied,
+      depositAmount: payable,
+      status: 'auto_approved', autoApproved: true,
+      paidByMileageOnly: payable<=0,
       approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    // 이용권 즉시 활성화 (할인코드 적용과 동일 방식)
+
     const upd = {
       ['entitlements.'+cert+'.plan']: 'ACTIVE',
       ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
@@ -967,10 +1424,12 @@ async function submitPayment() {
     if (cert === 'bodybuilding') { upd.plan = 'ACTIVE'; upd.expireAt = firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays = selectedPlanDays; }
     await db.collection('users').doc(currentUser.uid).update(upd);
     userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = selectedPlanDays;
-    syncPlanMirror();
-    updateAuthBar();
-    hidePlanPopup();
-    alert('✅ 이용권이 즉시 활성화되었습니다!\n만료일: ' + expireAt.toLocaleDateString('ko-KR') + '\n(입금 확인 후 유지됩니다.)');
+
+    // 추천 결제 보너스: 추천받아 가입했다면 내 referral 기록을 paid=true (추천인 다음 로그인 시 +10,000)
+    try { await db.collection('referrals').doc(currentUser.uid).update({ paid:true }); } catch(_){}
+
+    syncPlanMirror(); updateAuthBar(); hidePlanPopup();
+    alert((payable<=0?'✅ 마일리지로 결제 완료! 즉시 활성화되었습니다.':'✅ 이용권이 즉시 활성화되었습니다!')+'\n만료일: '+expireAt.toLocaleDateString('ko-KR')+(payable>0?'\n(입금 확인 후 유지됩니다.)':''));
     refresh();
   } catch(e) {
     alert('오류가 발생했습니다: ' + e.message);
@@ -1160,7 +1619,8 @@ function canAccess(cert) {
   return true; // ACTIVE
 }
 
-const SUBJS=['보디빌딩규정','운동생리학','스포츠영양학','웨이트트레이닝','응급처치'];
+const SUBJS=['보디빌딩규정','스포츠인권·윤리','운동생리학','스포츠영양학','웨이트트레이닝','응급처치'];
+const BB_CAT={ se:'스포츠인권·윤리' };
 const ALL_SUBJS=['전체',...SUBJS];
 const MILESTONES=[
   {n:45,stars:'⭐⭐',msg:'좋은 출발이에요! 계속 달려봐요 🏃\u200d♀️'},
@@ -1188,13 +1648,97 @@ let currentSubj='전체';
 let isFlipped=false;
 let learnOpen=false;
 let currentStar=0;
-let solveCount=0;
+let solveCount=0;                 // 레거시 미러(전체 합계 — admin 호환)
+let solveCountByCert={};           // 시험별 푼 횟수 {cert:n}
+function solveOf(cert){ return solveCountByCert[cert]||0; }
+function totalSolve(){ let s=0; for(const k in solveCountByCert) s+=(solveCountByCert[k]||0); return s; }
+function setStatCountUI(){ const el=document.getElementById('statCount'); if(el) el.textContent=solveOf('bodybuilding'); }
+
+/* ===== 자동복습(Spaced Repetition) 코어 ===== */
+const SR_CERT='bodybuilding';
+const SR_DAY=86400000;
+const SR_DAILY_CAP=40;
+const SR_DEFAULT_EXAM={ bodybuilding:'2026-06-23' };
+let srProgress={};        // { 'B_1': {st,nx,lr,res,rc,w} }
+let srDiagnostics=[];      // 진단 모의고사 스냅샷 [{cert,at,score,total}]
+let srExamOverride={};     // { bodybuilding:'YYYY-MM-DD' }
+let srMode='mix';          // 'new' | 'review' | 'mix'
+let srSaveTimer=null, srDirtyCount=0;
+
+function srExamDateOf(cert){ const s=srExamOverride[cert]||SR_DEFAULT_EXAM[cert]; return s?new Date(s+'T23:59:59'):null; }
+function srDaysLeftOf(cert){ const d=srExamDateOf(cert); return d?Math.ceil((d-Date.now())/SR_DAY):null; }
+function srExamDate(){ return srExamDateOf(SR_CERT); }
+function srDaysLeft(){ return srDaysLeftOf(SR_CERT); }
+function srCorrectInterval(streak,cert){
+  cert=cert||SR_CERT;
+  const base=[7,14,30,60,90];
+  let days=base[Math.min(streak,5)-1]||90;
+  const dl=srDaysLeftOf(cert);
+  if(dl!=null&&dl>0){
+    if(dl<=7) days=Math.min(days,2);
+    else if(dl<=21) days=Math.min(days,Math.max(1,Math.round(days/2)));
+    days=Math.min(days,Math.max(1,dl));
+  }
+  return days;
+}
+function srVagueInterval(cert){ const dl=srDaysLeftOf(cert||SR_CERT); let d=3; if(dl!=null&&dl>0){ d=dl<=7?1:Math.min(3,dl); } return d; }
+
+/* 코어: (cert,id) 기준 — 구술·객관식 공용 */
+function srGetK(cert,id){ return srProgress[cert+'|'+id]; }
+function srMasteryK(cert,id){ const p=srGetK(cert,id); if(!p||!p.rc) return 'new'; if(!p.st) return 'weak'; if(p.st>=5) return 'master'; return 'learning'; }
+function srDueK(cert,id){ const p=srGetK(cert,id); return !!(p&&p.rc>0&&(p.nx||0)<=Date.now()); }
+function srDueCertCount(cert){ let n=0,pre=cert+'|',now=Date.now(); for(const k in srProgress){ if(k.indexOf(pre)===0){ const p=srProgress[k]; if(p&&p.rc>0&&(p.nx||0)<=now) n++; } } return n; }
+function srRateK(cert,id,result,overtime){          // 0 틀림 / 1 애매 / 2 정확
+  if(!id) return;
+  const k=cert+'|'+id, now=Date.now();
+  let p=srProgress[k]||{st:0,nx:0,lr:0,res:null,rc:0,cor:0,w:false};
+  p.rc=(p.rc||0)+1; p.lr=now; p.res=result;
+  p.ot = !!overtime;                     // 시간종료 후 응답 여부(예상점수 제외용)
+  if(result===2) p.cor=(p.cor||0)+1;     // 정답 누계 (과목 정확도·예상점수용)
+  if(result===0){ p.st=Math.ceil((p.st||0)/2); p.w=true; p.nx=now+1*SR_DAY; }
+  else if(result===1){ p.nx=now+srVagueInterval(cert)*SR_DAY; }
+  else { p.st=(p.st||0)+1; p.w=false; p.nx=now+srCorrectInterval(p.st,cert)*SR_DAY; }
+  srProgress[k]=p;
+  return p;
+}
+
+/* 구술(플래시카드) 래퍼 */
+function srKey(card){ return card&&card.id?(SR_CERT+'|'+card.id):null; }
+function srGet(card){ const k=srKey(card); return k?srProgress[k]:null; }
+function srIsNew(card){ const p=srGet(card); return !p||!p.rc; }
+function srDue(card){ const p=srGet(card); return !!(p&&p.rc>0&&(p.nx||0)<=Date.now()); }
+function srMastery(card){ return card&&card.id?srMasteryK(SR_CERT,card.id):'new'; }
+function srTodayCount(){ return cards.filter(srDue).length; }
+function srRate(card,result){
+  if(!card||!card.id) return;
+  const p=srRateK(SR_CERT,card.id,result);
+  card.w=!!(p&&p.w);
+  const idx=cards.findIndex(c=>c.id===card.id); if(idx!==-1) cards[idx].w=card.w;
+}
+
+/* 객관식 채점 → 복습 연결 (정답=정확, 오답=틀림. 애매 없음. ans:0 제외) */
+function mqHasAnswer(q){ return q && (Array.isArray(q.ans)? q.ans.length>0 : q.ans>0); }
+function srRateMcq(cert,q,selected,overtime){
+  if(!mqHasAnswer(q)) return;            // 정답 미확정 문항은 복습 집계 제외
+  srRateK(cert, q.id, isCorr(q.ans,selected)?2:0, overtime);
+}
+const SR_MASTER_LABEL={new:'신규',weak:'미숙',learning:'학습중',master:'숙달'};
+
+let solveCountAfterSR=true; // marker
 
 function getWrongCount(){return cards.filter(c=>c.w).length;}
 function getFiltered(){
-  let b=reviewMode?cards.filter(c=>c.w):cards;
+  let b=cards;
+  if(srMode==='new') b=b.filter(srIsNew);
+  else if(srMode==='review') b=b.filter(srDue);
+  // 'mix' = 전체 (신규+학습한 카드 모두)
   if(currentSubj!=='전체') b=b.filter(c=>c.s===currentSubj);
   if(currentStar!==0) b=b.filter(c=>c.star===currentStar);
+  if(srMode==='review'){
+    b=b.slice().sort((x,y)=>{ const px=srGet(x)||{},py=srGet(y)||{};
+      return (px.nx||0)-(py.nx||0) || (y.star||0)-(x.star||0); });
+    if(b.length>SR_DAILY_CAP) b=b.slice(0,SR_DAILY_CAP);   // 하루 복습 상한
+  }
   return b;
 }
 function isSubjEnd(){return currentSubj!=='전체'&&!reviewMode&&current===filtered.length-1;}
@@ -1234,7 +1778,7 @@ function buildBar(){
     const btn=document.createElement('button');
     btn.className='subj-btn'+(s===currentSubj?' active':'')+(hasW?' has-wrong':'');
     btn.textContent=s==='전체'?'전체 \u2736':s;
-    btn.onclick=()=>{currentSubj=s;current=0;isFlipped=false;learnOpen=false;refresh();};
+    btn.onclick=()=>{if(typeof ttsStop==='function')ttsStop();currentSubj=s;current=0;isFlipped=false;learnOpen=false;refresh();};
     bar.appendChild(btn);
   });
   setTimeout(()=>{
@@ -1250,7 +1794,7 @@ function buildStarBar(){
   bar.innerHTML='';
   const stars=[{n:0,label:'전체'},...[3,2,1].map(n=>({n,label:impLabel(n)}))];
   stars.forEach(({n,label})=>{
-    const base=reviewMode?cards.filter(c=>c.w):cards;
+    const base=srMode==='new'?cards.filter(srIsNew):srMode==='review'?cards.filter(srDue):cards;
     const pool=currentSubj==='전체'?base:base.filter(c=>c.s===currentSubj);
     const cnt=n===0?pool.length:pool.filter(c=>c.star===n).length;
     const btn=document.createElement('button');
@@ -1273,37 +1817,50 @@ function updateStats(){
   document.getElementById('statTotal').textContent=t;
   document.getElementById('statWrong').textContent=w;
   document.getElementById('statDone').textContent=t>0?Math.round((t-w)/t*100)+'%':'0%';
-  document.getElementById('statCount').textContent=solveCount;
+  setStatCountUI();
   document.getElementById('wrongCount').textContent='오답 '+w+'개';
 }
 
+function buildMnemonic(card){
+  const m=card.mn; if(!m) return '';
+  const code = (typeof m==='string') ? m : (m.code||'');
+  const desc = (typeof m==='object' && m.desc) ? m.desc : '';
+  if(!code) return '';
+  return '<div class="mnemonic"><div class="mnemonic-tag">🧠 암기코드</div>'
+    +'<div class="mnemonic-code">'+code+'</div>'
+    +(desc?'<div class="mnemonic-desc">'+desc+'</div>':'')+'</div>';
+}
 function buildLearnHTML(card){
-  if(!card.learn)return '';
+  const mnHTML=(function(){try{return buildMnemonic(card);}catch(e){return '';}})();
   const L=card.learn;
+  const panelInner=mnHTML+(L?buildLearnPanel(L):'');
+  if(!panelInner) return '';
   const btnLabel=learnOpen?'📖 해설 닫기 ▲':'📖 해설보기 ▼';
   const panelDisplay=learnOpen?'':'display:none';
   return '<div class="learn-btn-wrap"><button class="learn-btn" onclick="toggleLearn()">'+btnLabel+'</button></div>'
     +'<div class="learn-panel" id="learnPanel" style="'+panelDisplay+'">'
     +'<div class="learn-panel-header"><span class="learn-panel-title">📚 해설</span>'
     +'<button class="learn-panel-close" onclick="toggleLearn()">✕</button></div>'
-    +'<div class="learn-panel-body">'+buildLearnPanel(L)+'</div>'
+    +'<div class="learn-panel-body">'+panelInner+'</div>'
     +'</div>';
 }
 
 function buildLearnPanel(data){
-  const kws=data.keywords.map(k=>'<span class="learn-keyword">'+k+'</span>').join('');
-  const pts=data.points.map(p=>'<li>'+p+'</li>').join('');
-  return '<div class="learn-section"><div class="learn-section-title">핵심 개념</div>'
-    +'<div class="learn-section-body">'+data.concept+'</div></div>'
-    +'<div class="learn-section"><div class="learn-section-title">포인트 정리</div>'
-    +'<div class="learn-section-body"><ul>'+pts+'</ul></div></div>'
-    +'<div class="learn-section"><div class="learn-section-title">시험관 답변 예시</div>'
-    +'<div class="learn-section-body">'+data.extra+'</div></div>'
-    +'<div class="learn-section"><div class="learn-section-title">핵심 키워드</div>'
-    +'<div class="learn-section-body">'+kws+'</div></div>';
+  data=data||{};
+  const kws=(Array.isArray(data.keywords)?data.keywords:[]).map(k=>'<span class="learn-keyword">'+k+'</span>').join('');
+  const pts=(Array.isArray(data.points)?data.points:[]).map(p=>'<li>'+p+'</li>').join('');
+  const concept=data.concept||'';
+  const extra=data.extra||'';
+  let h='';
+  if(concept) h+='<div class="learn-section"><div class="learn-section-title">핵심 개념</div><div class="learn-section-body">'+concept+'</div></div>';
+  if(pts) h+='<div class="learn-section"><div class="learn-section-title">포인트 정리</div><div class="learn-section-body"><ul>'+pts+'</ul></div></div>';
+  if(extra) h+='<div class="learn-section"><div class="learn-section-title">시험관 답변 예시</div><div class="learn-section-body">'+extra+'</div></div>';
+  if(kws) h+='<div class="learn-section"><div class="learn-section-title">핵심 키워드</div><div class="learn-section-body">'+kws+'</div></div>';
+  return h;
 }
 
 function toggleLearn(){
+  if(!isFlipped){ isFlipped=true; learnOpen=true; renderCard(); return; }  // 앞면이면 뒤집으며 펼침
   learnOpen=!learnOpen;
   const panel=document.getElementById('learnPanel');
   const btns=document.querySelectorAll('.learn-btn');
@@ -1314,46 +1871,38 @@ function toggleLearn(){
 function renderCard(){
   filtered=getFiltered();
   const area=document.getElementById('cardArea');
+  const rateRow=document.getElementById('rateRow');
   if(filtered.length===0){
-    area.innerHTML='<div class="empty"><div class="emoji">'+(reviewMode?'🎉':'🌸')+'</div><p>'+(reviewMode?'<strong>오답이 없어요!</strong><br>완벽해요 ✨':'카드가 없어요.')+'</p></div>';
+    const msg=srMode==='review'?'<strong>오늘 복습할 카드가 없어요!</strong><br>잘하고 있어요 ✨'
+             :srMode==='new'?'<strong>새 카드를 모두 학습했어요!</strong><br>복습 모드로 점검해 보세요'
+             :'카드가 없어요.';
+    area.innerHTML='<div class="empty"><div class="emoji">'+(srMode==='review'?'🎉':'🌸')+'</div><p>'+msg+'</p></div>';
     document.getElementById('progressText').textContent='0 / 0';
     document.getElementById('progressBar').style.width='0%';
-    document.getElementById('btnWrong').disabled=true;
-    document.getElementById('btnPrev').disabled=true;
-    document.getElementById('btnNext').disabled=true;
+    if(rateRow) rateRow.innerHTML='';
     return;
   }
   if(current>=filtered.length)current=filtered.length-1;
   if(current<0)current=0;
   const card=filtered[current];
+  { const st=document.getElementById('subjTag'); if(st) st.textContent=card.s; }
   const pct=Math.round((current+1)/filtered.length*100);
   document.getElementById('progressText').textContent=(current+1)+' / '+filtered.length;
   document.getElementById('progressBar').style.width=pct+'%';
-  document.getElementById('btnWrong').disabled=false;
-  document.getElementById('btnWrong').className='btn btn-wrong'+(card.w?' marked':'');
-  document.getElementById('btnPrev').disabled=current===0;
-  const nb=document.getElementById('btnNext');
-  if(isSubjEnd()){
-    nb.disabled=false;
-    nb.innerHTML='✓<span class="lbl">완료!</span>';
-    nb.style.background='linear-gradient(135deg,#9FE1CB,#9CC3EE)';
-  } else {
-    // 오답 모드에서는 마지막 문제도 정답 버튼 활성화
-    nb.disabled=(!reviewMode && current===filtered.length-1);
-    nb.innerHTML='✓<span class="lbl">정답</span>';
-    nb.style.background='';
-  }
-  const wrongDot=card.w?'<div class="wrong-dot">✕</div>':'';
+
+  // 숙달도 색뱃지
+  const mst=srMastery(card);
+  const dotCls={new:'sr-new',weak:'sr-weak',learning:'sr-learning',master:'sr-master'}[mst];
+  const statusDot='<div class="sr-dot '+dotCls+'" title="'+SR_MASTER_LABEL[mst]+'">'+SR_MASTER_LABEL[mst]+'</div>';
   const starCount=card.star||0;
-  const starDot=(!card.w&&starCount>0)?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
-  const learnHTML=isFlipped?buildLearnHTML(card):'';  // always show when flipped
-  const reportBtn=isFlipped?`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`:''; 
-  const hintText=isFlipped?'':'탭해서 뒤집기 💫';
+  const starDot=starCount>0?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
+  const learnHTML=(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})();
+  const reportBtn=`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`;
+  const hintText=isFlipped?'':'탭해서 답 확인 💫';
   area.innerHTML=
-    '<div class="subj-tag">'+card.s+'</div>'
-    +'<div class="card-scene">'
+    '<div class="card-scene">'
     +'<div class="card-inner'+(isFlipped?' flipped':'')+'" id="ci" onclick="flipCard()">'
-    +'<div class="card-face card-front'+(card.w?' is-wrong':'')+'">'+wrongDot+starDot
+    +'<div class="card-face card-front">'+statusDot+starDot
     +'<div class="card-label">Question</div>'
     +'<div class="card-text">'+card.q+'</div></div>'
     +'<div class="card-face card-back">'
@@ -1363,6 +1912,22 @@ function renderCard(){
     +'<div class="tap-hint">'+hintText+'</div>'
     +learnHTML
     +reportBtn;
+
+  // 하단 평가 버튼 (답 확인 후에만 노출)
+  if(rateRow){
+    if(!isFlipped){
+      rateRow.innerHTML=
+        '<button class="rb rb-wrong" onclick="flipCard()">❌<span>틀림</span><i>답 보기</i></button>'
+        +'<button class="rb rb-vague" onclick="flipCard()">🤔<span>애매함</span><i>답 보기</i></button>'
+        +'<button class="rb rb-ok" onclick="rate(2)">✅<span>정확함</span><i>바로 통과</i></button>';
+    } else {
+      const dl=srCorrectInterval((srGet(card)&&srGet(card).st||0)+1);
+      rateRow.innerHTML=
+        '<button class="rb rb-wrong" onclick="rate(0)">❌<span>틀림</span><i>내일 다시</i></button>'
+        +'<button class="rb rb-vague" onclick="rate(1)">🤔<span>애매함</span><i>'+srVagueInterval()+'일 후</i></button>'
+        +'<button class="rb rb-ok" onclick="rate(2)">✅<span>정확함</span><i>'+dl+'일 후</i></button>';
+    }
+  }
 }
 
 function flipCard(){
@@ -1371,12 +1936,109 @@ function flipCard(){
   renderCard();
 }
 
-function countUp(){
-  solveCount++;
-  document.getElementById('statCount').textContent=solveCount;
-  checkMilestone(solveCount);
-  if(currentUser) saveUserData();
+function countUp(cert){
+  cert = cert || activeCertId();
+  solveCountByCert[cert]=(solveCountByCert[cert]||0)+1;
+  solveCount=totalSolve();
+  setStatCountUI();
+  checkMilestone(totalSolve());
+  srSaveDebounced();
 }
+
+/* ===== SR 저장(디바운스) ===== */
+function srSaveDebounced(force){
+  srDirtyCount++;
+  if(force||srDirtyCount>=5){ srFlush(); return; }
+  if(srSaveTimer) clearTimeout(srSaveTimer);
+  srSaveTimer=setTimeout(srFlush,4000);
+}
+function srFlush(){
+  srDirtyCount=0; if(srSaveTimer){clearTimeout(srSaveTimer);srSaveTimer=null;}
+  if(currentUser) saveUserData();
+  else { try{ localStorage.setItem('sr:'+SR_CERT, JSON.stringify({p:srProgress,e:srExamOverride,c:solveOf('bodybuilding')})); }catch(_){} }
+}
+window.addEventListener('beforeunload',()=>{ if(srDirtyCount>0) srFlush(); });
+
+/* ===== SR 평가 (틀림0/애매1/정확2) ===== */
+function rate(result){
+  filtered=getFiltered();
+  if(!filtered.length) return;
+  if(!canAccess('bodybuilding')) return;
+  const card=filtered[current];
+  srRate(card,result);
+  countUp('bodybuilding');
+  { const e=userEnt.bodybuilding;
+    if(e.plan==='GUEST') guestCounts.bodybuilding++;
+    if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
+  isFlipped=false; learnOpen=false;
+  if(srMode==='review'){
+    filtered=getFiltered();
+    if(filtered.length===0){ updateStats();updateSrBanner();buildBar();buildStarBar();updateBbAnalysis(); renderCard(); return; }
+    if(current>=filtered.length) current=0;
+  } else {
+    if(current<filtered.length-1) current++;
+    else { updateStats();updateSrBanner();updateBbAnalysis(); showComplete(); return; }
+  }
+  updateStats();updateSrBanner();buildBar();buildStarBar();updateBbAnalysis();
+  renderCard();
+}
+
+function setSrMode(m){
+  if(typeof ttsStop==='function')ttsStop();
+  srMode=m; current=0; isFlipped=false; learnOpen=false;
+  refresh();
+}
+function updateModeButtons(){
+  [['modeNew','new'],['modeReview','review'],['modeMix','mix']].forEach(([id,m])=>{
+    const b=document.getElementById(id); if(b) b.classList.toggle('mode-on',srMode===m);
+  });
+}
+function bbScoreOf(m){ return m==='master'?100:m==='learning'?60:m==='weak'?20:0; }
+function bbScoreStreak(st){ return Math.min(100, 20 + (st||0)*16); }   // 0→20,1→36,2→52,3→68,4→84,5+→100
+function bbAnalysis(){
+  const per={}; SUBJS.forEach(s=>per[s]={sum:0,n:0});
+  let sum=0,n=0; const cnt={master:0,learning:0,weak:0,'new':0};
+  cards.forEach(c=>{ const p=srGetK(SR_CERT,c.id); const m=srMasteryK(SR_CERT,c.id); cnt[m]=(cnt[m]||0)+1;
+    if(p&&p.rc){ const sc=bbScoreStreak(p.st); sum+=sc; n++; if(per[c.s]){per[c.s].sum+=sc;per[c.s].n++;} } });
+  const predicted=n?Math.round(sum/n):null;
+  const perArr=SUBJS.map(s=>({name:s, score:per[s].n?Math.round(per[s].sum/per[s].n):null, n:per[s].n}));
+  return {predicted,perArr,cnt,studied:n,total:cards.length};
+}
+function updateBbAnalysis(){
+  const el=document.getElementById('bbAnalysis'); if(!el) return;
+  const a=bbAnalysis();
+  if(!a.studied){
+    el.innerHTML='<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b></div>'
+      +'<div class="anal-empty">아직 학습 데이터가 없어요. 카드를 풀면 예상점수가 표시됩니다.</div></div>';
+    return;
+  }
+  const lv=mcqLevel(a.predicted,70);
+  const weak=a.perArr.filter(p=>p.score!=null).sort((x,y)=>x.score-y.score)[0];
+  const bars=a.perArr.map(p=>{
+    const sc=p.score, w=sc==null?0:sc;
+    const col=sc==null?'#E2D6CC':sc>=80?'#2E9B5E':sc>=70?'#E0A52E':'#E24B4A';
+    return '<div class="anal-row"><span class="anal-nm">'+p.name+'</span>'
+      +'<div class="anal-bar"><div class="anal-fill" style="width:'+w+'%;background:'+col+'"></div></div>'
+      +'<span class="anal-pct">'+(sc==null?'-':sc+'%')+'</span></div>';
+  }).join('');
+  el.innerHTML='<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b>'
+    +'<span style="font-size:11px;color:#B4A99C">숙달 '+a.cnt.master+' · 학습중 '+a.cnt.learning+' · 미숙 '+a.cnt.weak+'</span></div>'
+    +'<div class="anal-score"><div class="anal-pred">'+a.predicted+'<small>점</small></div>'
+    +'<div class="anal-lv" style="color:'+lv.color+'">'+lv.label+'</div></div>'
+    +'<div class="anal-bars">'+bars+'</div>'
+    +(weak?'<div class="anal-weak">⚠️ <b>'+weak.name+'</b> 집중 학습이 필요해요 ('+weak.score+'%)</div>':'')
+    +(a.studied<10?'<div class="anal-note">더 많이 학습할수록 예상점수가 정확해져요.</div>':'')
+    +'</div>';
+}
+function updateSrBanner(){
+  const el=document.getElementById('srBanner'); if(!el) return;
+  const due=srTodayCount(); const dl=srDaysLeft();
+  const dtxt=dl!=null?(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료'):'';
+  el.innerHTML='<div class="sr-banner-l"><b>'+(dtxt?dtxt+' · ':'')+'오늘 복습 '+due+'개</b>'
+    +'<span class="sr-exam" onclick="event.stopPropagation();srEditExam()">시험일 '+(srExamOverride[SR_CERT]||SR_DEFAULT_EXAM[SR_CERT]||'미설정')+' ✎</span></div>'
+    +'<div class="sr-banner-go">'+(srMode==='review'?'복습 중':'복습 시작')+' →</div>';
+}
+function srBannerClick(){ setSrMode('review'); }
 function checkMilestone(n){
   const m=MILESTONES.find(m=>m.n===n&&!passedMilestones.has(n));
   if(!m)return;
@@ -1387,38 +2049,17 @@ function checkMilestone(n){
   document.getElementById('milestoneBox').classList.remove('hidden');
 }
 function closeMilestone(){document.getElementById('milestoneBox').classList.add('hidden');}
+function srEditExam(){
+  const cur=srExamOverride[SR_CERT]||SR_DEFAULT_EXAM[SR_CERT]||'';
+  const v=prompt('시험일을 입력하세요 (YYYY-MM-DD)',cur);
+  if(!v) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ alert('날짜 형식이 올바르지 않습니다. 예: 2026-06-23'); return; }
+  srExamOverride[SR_CERT]=v; srFlush(); refresh();
+}
 
 function navigate(dir){
-  if(dir===1&&isSubjEnd()){showComplete();return;}
-  if(dir===1&&(current<filtered.length-1||reviewMode)){
-    if(!canAccess('bodybuilding')) return;
-    // 정답 누를 때 오답 표시 해제
-    const card=filtered[current];
-    const idx=cards.findIndex(c=>c.q===card.q&&c.s===card.s);
-    if(idx!==-1&&cards[idx].w){
-      cards[idx].w=false;
-      updateStats();buildBar();
-      if(currentUser) saveUserData();
-    }
-    countUp();
-    { const e=userEnt.bodybuilding;
-      if(e.plan==='GUEST') guestCounts.bodybuilding++;
-      if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
-    isFlipped=false;learnOpen=false;
-    // 오답 모드에서 오답 해제 후 filtered 재계산
-    if(reviewMode){
-      filtered=getFiltered();
-      if(filtered.length===0){
-        // 오답 다 풀었으면 완료 화면
-        showComplete();return;
-      }
-      if(current>=filtered.length)current=0;
-    } else {
-      current++;
-    }
-    renderCard();
-  }
-  else if(dir===-1&&current>0){isFlipped=false;learnOpen=false;current--;renderCard();}
+  if(dir===1&&current<filtered.length-1){ isFlipped=false;learnOpen=false;current++;renderCard(); }
+  else if(dir===-1&&current>0){ isFlipped=false;learnOpen=false;current--;renderCard(); }
 }
 
 function toggleWrong(){
@@ -1433,7 +2074,7 @@ function toggleWrong(){
   // 오답 표시 후 다음 문제로 이동
   if(current<filtered.length-1){
     if(!canAccess('bodybuilding'))return;
-    countUp();
+    countUp('bodybuilding');
     { const e=userEnt.bodybuilding;
       if(e.plan==='GUEST') guestCounts.bodybuilding++;
       if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
@@ -1470,8 +2111,8 @@ function showComplete(){
 }
 
 function hideComplete(){document.getElementById('completeOv').classList.add('hidden');}
-function startWrongReview(){hideComplete();reviewMode=true;current=0;isFlipped=false;learnOpen=false;currentStar=0;document.getElementById('btnReview').classList.add('review-on');document.getElementById('modePill').className='mode-pill wrong';document.getElementById('modePill').textContent='오답 모드';refresh();}
-function goNext(s){hideComplete();currentSubj=s;reviewMode=false;current=0;isFlipped=false;learnOpen=false;document.getElementById('btnReview').classList.remove('review-on');document.getElementById('modePill').className='mode-pill';document.getElementById('modePill').textContent='전체';refresh();}
+function startWrongReview(){hideComplete();setSrMode('review');}
+function goNext(s){hideComplete();currentSubj=s;current=0;isFlipped=false;learnOpen=false;refresh();}
 function retrySubj(){hideComplete();current=0;isFlipped=false;learnOpen=false;renderCard();}
 
 function toggleReview(){
@@ -1493,7 +2134,82 @@ function resetWrong(){
   if(reviewMode){reviewMode=false;document.getElementById('btnReview').classList.remove('review-on');document.getElementById('modePill').className='mode-pill';document.getElementById('modePill').textContent='전체';}
   current=0;isFlipped=false;learnOpen=false;refresh();
 }
-function refresh(){buildBar();buildStarBar();updateStats();renderCard();}
+function refresh(){buildBar();buildStarBar();updateStats();updateSrBanner();updateBbAnalysis();updateModeButtons();renderCard();}
+
+/* ===== 음성 듣기 (브라우저 TTS) ===== */
+let ttsPlaying=false, ttsRate=1.0, ttsVoiceSel='female', ttsKoVoices=[];
+const TTS_RATES=[1.0,1.25,1.5];
+function ttsLoadVoices(){
+  try{ ttsKoVoices=(speechSynthesis.getVoices()||[]).filter(v=>/ko(-|_)?KR|korean|한국/i.test(v.lang+' '+v.name)); }catch(_){}
+}
+if('speechSynthesis' in window){
+  ttsLoadVoices();
+  speechSynthesis.onvoiceschanged=ttsLoadVoices;
+}
+function ttsPickVoice(){
+  if(!ttsKoVoices.length) return null;
+  const female=ttsKoVoices.find(v=>/female|여|woman|yuna|sora|heami/i.test(v.name));
+  const male=ttsKoVoices.find(v=>/male|남|man/i.test(v.name));
+  if(ttsVoiceSel==='male') return male || ttsKoVoices[1] || ttsKoVoices[0];
+  return female || ttsKoVoices[0];
+}
+function ttsSpeak(text, onend){
+  if(!text){ onend&&onend(); return; }
+  const u=new SpeechSynthesisUtterance(text.replace(/<[^>]+>/g,' '));
+  u.lang='ko-KR'; u.rate=ttsRate;
+  const v=ttsPickVoice(); if(v) u.voice=v;
+  u.onend=()=>{ if(ttsPlaying) onend&&onend(); };
+  u.onerror=()=>{ if(ttsPlaying) onend&&onend(); };
+  speechSynthesis.speak(u);
+}
+function ttsToggle(){
+  if(!('speechSynthesis' in window)){ alert('이 브라우저는 음성 읽기를 지원하지 않습니다.'); return; }
+  if(ttsPlaying){ ttsStop(); return; }
+  if(!filtered.length) return;
+  ttsPlaying=true; ttsUpdateBtn();
+  ttsPlayCurrent();
+}
+function ttsPlayCurrent(){
+  if(!ttsPlaying) return;
+  if(current>=filtered.length){ ttsStop(); return; }
+  const card=filtered[current];
+  // 화면도 답면으로 보여주며 진행
+  isFlipped=false; renderCard();
+  ttsSpeak(card.q, ()=>{
+    if(!ttsPlaying) return;
+    setTimeout(()=>{
+      if(!ttsPlaying) return;
+      isFlipped=true; renderCard();
+      ttsSpeak(card.a, ()=>{
+        if(!ttsPlaying) return;
+        if(current<filtered.length-1){ current++; setTimeout(ttsPlayCurrent, 600); }
+        else { ttsStop(); }
+      });
+    }, 800);   // 질문 후 멈춤
+  });
+}
+function ttsStop(){
+  ttsPlaying=false;
+  try{ speechSynthesis.cancel(); }catch(_){}
+  ttsUpdateBtn();
+}
+function ttsUpdateBtn(){
+  const b=document.getElementById('audioPlay'); if(b) b.innerHTML=ttsPlaying?'⏸ 정지':'🔊 듣기';
+  if(b) b.classList.toggle('on',ttsPlaying);
+}
+function ttsToggleVoice(){
+  ttsVoiceSel = ttsVoiceSel==='female'?'male':'female';
+  const b=document.getElementById('audioVoice'); if(b) b.innerHTML=ttsVoiceSel==='female'?'👩 여성':'👨 남성';
+  if(ttsPlaying){ ttsStop(); }   // 목소리 바꾸면 정지(다시 재생)
+}
+function ttsCycleRate(){
+  const i=TTS_RATES.indexOf(ttsRate); ttsRate=TTS_RATES[(i+1)%TTS_RATES.length];
+  const b=document.getElementById('audioRate'); if(b) b.textContent=ttsRate.toFixed(2).replace(/0$/,'')+'×';
+  // 재생 중이면 다음 발화부터 속도 적용 (현재 발화는 유지)
+}
+// 화면 벗어나거나 다른 곳 가면 자동 정지
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) ttsStop(); });
+window.addEventListener('beforeunload',()=>ttsStop());
 
 let tx=0;
 document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;},{passive:true});
@@ -1542,26 +2258,42 @@ const MCQ_QID2CS={};
 function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub};}))); }); }
 rebuildQid();
 let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
-let mqTimer=null, mqTimeLeft=0;
-let mqMode='all', mqList=null;          // 'all' | 'wrong'
+let mqTimer=null, mqTimeLeft=0, mqTimeUp=false;
+let mqOverTimer=null, mqOverStart=0, mqOvertimeSec=0, mqOvertimeCount=0;  // 시간종료 후 경과시간(초)/푼 문항 수
+function mqStopOverTimer(){ if(mqOverTimer){ clearInterval(mqOverTimer); mqOverTimer=null; } if(mqOverStart){ mqOvertimeSec+=Math.floor((Date.now()-mqOverStart)/1000); mqOverStart=0; } }
+function mqOverElapsed(){ return mqOvertimeSec + (mqOverStart?Math.floor((Date.now()-mqOverStart)/1000):0); }
+function mqStartOverTimer(){
+  mqStopOverTimer(); mqOverStart=Date.now();
+  mqOverTimer=setInterval(()=>{
+    if(mqScreen!=='exam'){ mqStopOverTimer(); return; }
+    const el=document.getElementById('mqTimer');
+    if(el){ el.textContent='+'+mqFmt(mqOverElapsed()); }
+    else { mqStopOverTimer(); }
+  },1000);
+}
+let mqMode='all', mqList=null;          // 'all' | 'wrong' | 'review'
+let mqReview=false;                       // SR 복습 세션 여부
+let mqDiag=false;                          // 진단 모의고사 세션 여부
 let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
-function mqQuestions(){ return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
+let mqInReview=false, mqReviewMode='all', mqReviewList=[];
+let mqResultQs=[], mqResultAns={}, mqResultMeta=null;
+function mqQuestions(){ if(mqInReview) return mqReviewList; return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
 // 중요도(star 1~3)/소요시간(time 1~3): 값 미지정(0)이면 표시 안 함. 값은 추후 별도 입력.
 function impBadge(q){ const s=impLabel(q.star||0); return s ? '<span class="imp">'+s+'</span>' : ''; }
 function timeBadge(q){ const v=q.time||0; if(!v) return ''; const lab={1:'빠름',2:'보통',3:'오래'}[v]||''; return '<span class="tmark t'+v+'">⌛ '+lab+'</span>'; }
 // 진행상태 저장(이어서 풀기)
 function mqPKey(sub,set){ return 'certlab_mcq_p_'+mqCert+'_'+sub+'_'+set; }
-function mqSaveProgress(){ if(mqMode!=='all') return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft})); }catch(e){} }
+function mqSaveProgress(){ if(mqMode!=='all') return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft,up:mqTimeUp,os:mqOverElapsed(),oc:mqOvertimeCount})); }catch(e){} }
 function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,set)); return v?JSON.parse(v):null; }catch(e){ return null; } }
 function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
 function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
 function mqStopTimer(){ if(mqTimer){ clearInterval(mqTimer); mqTimer=null; } }
 function mqStartTimer(){
-  mqStopTimer();
+  mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0;
   mqTimer=setInterval(()=>{
     if(mqScreen!=='exam'){ mqStopTimer(); return; }
     mqTimeLeft--;
-    if(mqTimeLeft<=0){ mqTimeLeft=0; mqStopTimer(); mqResult(); return; }
+    if(mqTimeLeft<=0){ mqTimeLeft=0; mqTimeUp=true; mqStopTimer(); mqResult(); return; }
     mqSaveProgress();
     const el=document.getElementById('mqTimer');
     if(el){ el.textContent=mqFmt(mqTimeLeft); if(mqTimeLeft<=300) el.classList.add('red'); }
@@ -1575,7 +2307,13 @@ function renderMCQ(){
   return renderMcqHome(root);
 }
 function renderMcqHome(root){
-  let html='<div class="sec-lbl">과목 선택</div>';
+  let html='';
+  const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name)||'';
+  if(examNm) html+='<div class="mcq-exam-title">'+examNm+'</div>';
+  html+=mcqAnalysisCard(mqCert);
+  const due=srDueCertCount(mqCert);
+  html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
+  html+='<div class="sec-lbl">과목 선택</div>';
   curOrder().forEach(id=>{
     const s=curQB()[id]; const open=!!mqOpen[id];
     const total=s.sets.reduce((a,st)=>a+st.questions.length,0);
@@ -1602,8 +2340,151 @@ function renderMcqHome(root){
   });
   root.innerHTML=html;
 }
-function mqToggle(id){ mqOpen[id]=!mqOpen[id]; renderMCQ(); }
+function mqToggle(id){ const wasOpen=!!mqOpen[id]; mqOpen={}; if(!wasOpen) mqOpen[id]=true; renderMCQ(); }
+function mcqMasteryBadge(q){ const m=srMasteryK(mqCert,q.id); if(m==='new') return ''; const cls={weak:'sr-weak',learning:'sr-learning',master:'sr-master'}[m]; return '<span class="mq-mst '+cls+'">'+SR_MASTER_LABEL[m]+'</span>'; }
+
+/* ===== 실력 분석 / 예상점수 / 진단 ===== */
+function mcqSubjectStats(cert){
+  const qb=qbOf(cert); let totN=0;
+  const per=Object.keys(qb).map(code=>{
+    let cor=0,n=0;
+    qb[code].sets.forEach(st=>st.questions.forEach(q=>{ const p=srGetK(cert,q.id); if(p&&p.rc>0&&!p.ot){ n++; if(p.res===2) cor++; } }));
+    totN+=n;
+    return {code,name:qb[code].name,acc:n>0?Math.round(cor/n*100):null,n};
+  });
+  const valid=per.filter(s=>s.acc!=null);
+  const predicted=valid.length?Math.round(valid.reduce((a,s)=>a+s.acc,0)/valid.length):null;
+  return {per,valid,predicted,totN};
+}
+const PASS_RULE = {
+  appraiser:    {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
+  bodybuilding: {pass:70, floor:0,  label:'평균 70점'},
+  _default:     {pass:60, floor:0,  label:'평균 60점'}
+};
+function passRule(cert){ return PASS_RULE[cert]||PASS_RULE._default; }
+// 합격 판정: 측정완료(전 과목 데이터) + 과락 + 평균
+function mcqVerdict(cert, s){
+  const rule=passRule(cert);
+  const notMeasured=s.per.filter(p=>p.acc==null);
+  if(s.predicted==null || notMeasured.length>0){
+    return {status:'insufficient', color:'#B4A99C', label:'데이터 부족', notMeasured, rule};
+  }
+  const failFloor = rule.floor>0 ? s.per.filter(p=>p.acc<rule.floor) : [];
+  if(failFloor.length){
+    return {status:'fail', color:'#E24B4A', label:'🔴 위험권 (과락)', failFloor, rule};
+  }
+  const safe=Math.max(80,rule.pass+10);
+  if(s.predicted>=safe) return {status:'safe', color:'#2E9B5E', label:'🟢 안전권', rule};
+  if(s.predicted>=rule.pass) return {status:'pass', color:'#E0A52E', label:'🟡 합격권', rule};
+  return {status:'fail', color:'#E24B4A', label:'🔴 위험권', rule};
+}
+function mcqLevel(pred,pass){
+  pass=pass||60; const safe=Math.max(80,pass+10);
+  if(pred==null) return {label:'데이터 부족',color:'#B4A99C'};
+  if(pred>=safe) return {label:'🟢 안전권',color:'#2E9B5E'};
+  if(pred>=pass) return {label:'🟡 합격권',color:'#E0A52E'};
+  return {label:'🔴 위험권',color:'#E24B4A'};
+}
+function mcqAnalysisCard(cert){
+  const s=mcqSubjectStats(cert);
+  if(s.totN===0){
+    return '<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b></div>'
+      +'<div class="anal-empty">아직 데이터가 없어요. 진단 모의고사로 현재 실력을 측정해 보세요.</div>'
+      +'<button class="anal-diag" onclick="startDiagnostic()">🎯 진단 모의고사 시작</button></div>';
+  }
+  const v=mcqVerdict(cert,s);
+  const rule=v.rule;
+  const weak=s.valid.length?s.valid.slice().sort((a,b)=>a.acc-b.acc)[0]:null;
+  const bars=s.per.map(p=>{
+    const a=p.acc, w=a==null?0:a;
+    const isFloorFail = rule.floor>0 && a!=null && a<rule.floor;
+    const col=a==null?'#E2D6CC':isFloorFail?'#E24B4A':a>=80?'#2E9B5E':a>=rule.pass?'#E0A52E':'#E24B4A';
+    return '<div class="anal-row"><span class="anal-nm">'+p.name+(isFloorFail?' <span style="color:#E24B4A;font-size:10px">과락</span>':'')+'</span>'
+      +'<div class="anal-bar"><div class="anal-fill" style="width:'+w+'%;background:'+col+'"></div></div>'
+      +'<span class="anal-pct">'+(a==null?'-':a+'%')+'</span></div>';
+  }).join('');
+  // 판정/안내 영역
+  let verdictHTML, noteHTML='';
+  if(v.status==='insufficient'){
+    const names=v.notMeasured.map(p=>p.name);
+    const moreTxt = names.length<=2 ? names.join(', ') : (names.slice(0,2).join(', ')+' 외 '+(names.length-2)+'과목');
+    verdictHTML='<div class="anal-lv" style="color:'+v.color+'">데이터 부족</div>';
+    noteHTML='<div class="anal-weak">📋 아직 <b>'+moreTxt+'</b> 측정 전이에요. 진단 모의고사를 완주하면 합격 여부를 알려드려요.</div>'
+      +'<button class="anal-diag" onclick="diagResume()">🎯 진단 모의고사 '+(diagHasSave(cert)?'이어풀기':'시작')+'</button>';
+  } else {
+    verdictHTML='<div class="anal-lv" style="color:'+v.color+'">'+v.label+'</div>';
+    if(v.status==='fail' && v.failFloor && v.failFloor.length){
+      noteHTML='<div class="anal-weak">⚠️ <b>'+v.failFloor.map(p=>p.name).join(', ')+'</b> 과락(40점 미만)이에요. 평균이 높아도 불합격이니 집중 학습이 필요해요.</div>';
+    } else if(weak){
+      noteHTML='<div class="anal-weak">⚠️ <b>'+weak.name+'</b> 집중 학습이 필요해요 ('+weak.acc+'%)</div>';
+    }
+    noteHTML+='<div class="anal-note">합격 기준: '+rule.label+'</div>';
+  }
+  return '<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b>'
+    +'<button class="anal-rediag" onclick="diagResume()">진단 '+(diagHasSave(cert)?'이어풀기':'다시')+'</button></div>'
+    +'<div class="anal-score"><div class="anal-pred">'+(s.predicted==null?'--':s.predicted)+'<small>점</small></div>'
+    +verdictHTML+'</div>'
+    +'<div class="anal-bars">'+bars+'</div>'
+    +noteHTML
+    +'</div>';
+}
+function startDiagnostic(){
+  const cert=mqCert, qb=qbOf(cert); let picked=[];
+  Object.keys(qb).forEach(code=>{
+    const pool=[]; qb[code].sets.forEach(st=>st.questions.forEach(q=>{ if(mqHasAnswer(q)){ q._subj=qb[code].name||code; pool.push(q); } }));
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    picked=picked.concat(pool.slice(0,8));
+  });
+  if(picked.length<1){ alert('진단에 사용할 문제가 아직 없습니다. (정답이 입력된 문제가 필요해요)'); return; }
+  for(let i=picked.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[picked[i],picked[j]]=[picked[j],picked[i]];}
+  clearDiagProgress(cert);
+  mqStopTimer();
+  mqDiag=true; mqReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqAns={}; mqIdx=0;
+  mqList=picked; mqTimeLeft=picked.length*60;
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function diagKey(cert){ return 'diagprog:'+cert; }
+function diagHasSave(cert){ try{ return !!localStorage.getItem(diagKey(cert)); }catch(_){ return false; } }
+function clearDiagProgress(cert){ try{ localStorage.removeItem(diagKey(cert)); }catch(_){} }
+function saveDiagProgress(){
+  if(!mqDiag || !mqList) return;
+  try{ localStorage.setItem(diagKey(mqCert), JSON.stringify({ids:mqList.map(q=>q.id), ans:mqAns, idx:mqIdx, t:mqTimeLeft, at:Date.now()})); }catch(_){}
+}
+function diagResume(){
+  if(!diagHasSave(mqCert)){ startDiagnostic(); return; }
+  let p; try{ p=JSON.parse(localStorage.getItem(diagKey(mqCert))); }catch(_){ p=null; }
+  if(!p || !p.ids || !p.ids.length){ startDiagnostic(); return; }
+  const qb=qbOf(mqCert); const byId={};
+  Object.keys(qb).forEach(code=>qb[code].sets.forEach(st=>st.questions.forEach(q=>{ byId[q.id]={q,name:qb[code].name||code}; })));
+  const list=p.ids.map(id=>{ const e=byId[id]; if(e){ e.q._subj=e.name; return e.q; } return null; }).filter(Boolean);
+  if(!list.length){ clearDiagProgress(mqCert); startDiagnostic(); return; }
+  mqStopTimer();
+  mqDiag=true; mqReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqAns=p.ans||{}; mqIdx=Math.min(p.idx||0, list.length-1);
+  mqList=list; mqTimeLeft=(p.t!=null&&p.t>0?p.t:list.length*60);
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function srSaveDiagnostic(cert,correct,total){
+  srDiagnostics.push({cert,at:Date.now(),score:total?Math.round(correct/total*100):0,total});
+  srFlush();
+}
+function startMcqReview(){
+  const qb=curQB(); const due=[];
+  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)){ q._subj=qb[id].name||id; due.push(q); } })); });
+  if(!due.length){
+    const root=document.getElementById('mcqRoot');
+    if(root) root.innerHTML='<div class="mcq-result"><div class="em">🎉</div>'
+      +'<div class="rt">오늘 복습할 문제가 없어요!</div>'
+      +'<div class="rs">복습일이 된 문제가 생기면 여기에 모아드려요.<br>새 문제를 더 풀면 복습 일정이 쌓입니다.</div>'
+      +'<div class="rbtns"><button onclick="mqBackHome()">과목 선택</button></div></div>';
+    return;
+  }
+  mqStopTimer();
+  mqReview=true; mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqAns={}; mqIdx=0;
+  mqList=due; mqTimeLeft=due.length*60;
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
 function startMcqExam(id,si,mode){
+  mqReview=false; mqDiag=false;
   mode=mode||'all';
   mqStopTimer();
   mqSub=id; mqSet=si; mqMode=mode; mqShow={};
@@ -1616,65 +2497,259 @@ function startMcqExam(id,si,mode){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
+  mqReview=false; mqDiag=false;
   mqStopTimer();
   const saved=mqLoadProgress(id,si);
   if(!saved){ startMcqExam(id,si,'all'); return; }
   mqSub=id; mqSet=si; mqMode='all'; mqShow={};
   mqList=curQB()[id].sets[si].questions;
-  mqAns=saved.ans||{}; mqIdx=saved.idx||0; mqTimeLeft=(saved.t!=null?saved.t:mqList.length*60);
+  mqAns=saved.ans||{}; mqIdx=saved.idx||0; mqTimeLeft=(saved.t!=null&&saved.t>0?saved.t:mqList.length*60);
+  if(saved.up){   // 시간종료 후 이어풀던 세션 → 오버타임으로 복원
+    mqTimeUp=true; mqOvertimeSec=saved.os||0; mqOvertimeCount=saved.oc||0; mqOverStart=0;
+    mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); return;
+  }
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
-function mqBackHome(){ mqStopTimer(); if(mqScreen==='exam') mqSaveProgress(); mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
+const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const imgCache={};
+function imgInner(v){
+  if(!v) return '';
+  if(v.indexOf('img://')===0) return '<img data-imgkey="'+v.slice(6)+'" alt="" src="'+IMG_PH+'">';
+  return '<img src="'+v+'" alt="">';
+}
+async function resolveImages(scope){
+  const els=(scope||document).querySelectorAll('img[data-imgkey]');
+  for(const el of els){
+    const k=el.getAttribute('data-imgkey'); if(!k) continue;
+    el.removeAttribute('data-imgkey');
+    try{
+      let b64=imgCache[k];
+      if(!b64){ try{ b64=localStorage.getItem('img:'+k)||null; }catch(_){} }
+      if(!b64){ const d=await db.collection('images').doc(k).get(); if(d.exists && d.data().data){ b64=d.data().data; try{ localStorage.setItem('img:'+k,b64); }catch(_){} } }
+      if(b64){ imgCache[k]=b64; el.src=b64; }
+    }catch(_){}
+  }
+}
+// 해설 줄 판정 색 (빨강 우선 → 초록 → 중립). '정답'은 '정답이다'만 초록(결론단일 중립 유지)
+function splitVerdict(ex){
+  // 해설 끝의 판정어(옳다/옳지 않다 등)를 분리 → {v:판정, vc:색클래스, rest:교정문}
+  if(!ex) return {v:'', vc:'', rest:''};
+  var m=ex.match(/\s*(옳지\s*않다|옳지않다|적절하지\s*않다|적절하지않다|부적절하다|옳다|적절하다|맞다|틀리다|틀린다)\.?\s*$/);
+  if(!m) return {v:'', vc:'', rest:ex.trim()};
+  var v=m[1].replace(/\s+/g,' ');
+  var rest=ex.slice(0, m.index).replace(/[\s.·,]+$/,'').trim();
+  return {v:v, vc:verdictColor(v), rest:rest};
+}
+function stripRepeatedOpt(exp, opt){
+  if(!exp) return '';
+  if(!opt) return exp.trim();
+  // 공백 정규화 후, 해설이 보기 문장으로 시작하면 그 반복분을 제거
+  var norm=function(s){ return String(s).replace(/\s+/g,' ').trim(); };
+  var e=norm(exp), o=norm(opt);
+  // 보기 끝의 마침표 유무 차이를 흡수
+  var oNoDot=o.replace(/[.\s]+$/,'');
+  if(e.indexOf(o)===0){ e=e.slice(o.length); }
+  else if(e.indexOf(oNoDot)===0){ e=e.slice(oNoDot.length); }
+  e=e.replace(/^[\s.·,)\]]+/,'').trim();   // 남은 앞쪽 구두점 정리
+  return e;
+}
+function isComboQuestion(opts){
+  // 보기들이 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ·가/나/다/라/마 조합(+구분자)으로만 이루어진 문제인지
+  if(!Array.isArray(opts) || opts.length<2) return false;
+  var markerOnly=/^[ㄱ-ㅎ가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자
+  var hasJamo=/[ㄱ-ㅎ]/, comboCnt=0, ok=0;
+  for(var i=0;i<opts.length;i++){
+    var o=String(opts[i]||'').trim();
+    if(!o) return false;
+    if(o.length>14) return false;                 // 마커 조합은 짧음(일반 서술 보기 배제)
+    if(!markerOnly.test(o)) return false;
+    if(hasJamo.test(o) || /[가나다라마바사아]/.test(o)) ok++;
+    if(o.replace(/[\s,·、ㆍ/]/g,'').length>=2) comboCnt++;  // 2글자 이상 = 조합
+  }
+  return ok===opts.length && comboCnt>=1;           // 모든 보기가 마커형 + 최소 1개는 조합
+}
+function verdictColor(t){
+  if(!t) return '';
+  // 색은 '선지 내용의 참/거짓'만 판정 (정답 여부는 ✅ 아이콘이 따로 표시 — '정답이다'는 색 마커 아님)
+  // 거짓(빨강): 옳지 않다/적절하지 않다/틀리다/다르다/아니다(판정)/부적절 등
+  const red=['옳지 않다','옳지않다','옳지 못','옳지 않은','옳지않은','적절하지 않다','적절하지않다','적절하지 않은','부적절','틀리다','틀린','맞지 않','일치하지 않','다르다','바르지 않','해당하지 않','해당되지 않'];
+  // 참(초록): 옳다/적절하다/맞다/바르다/일치한다 등
+  const grn=['옳다','옳은','적절하다','적절한','맞다','맞는','바르다','일치한다','참이다'];
+  // '부적절'이 있으면 그 안의 '적절'이 초록으로 잡히지 않도록 제거 후 초록 판정
+  const tg=t.replace(/부적절/g,'').replace(/적절하지\s*않/g,'');
+  let rPos=-1, gPos=-1;
+  for(const m of red){ const i=t.lastIndexOf(m); if(i>rPos) rPos=i; }
+  for(const m of grn){ const i=tg.lastIndexOf(m); if(i>gPos) gPos=i; }
+  if(rPos<0 && gPos<0) return '';        // 판정어 없으면 중립(색 없음)
+  return rPos>=gPos ? 'eo-red' : 'eo-grn';   // 동률이면 빨강 우선(부정 우선)
+}
+function splitJaryo(qt){
+  if(!qt) return {q:qt||'', jaryo:''};
+  const b=qt.indexOf('[');
+  if(b>0) return {q:qt.slice(0,b).trim(), jaryo:qt.slice(b).trim()};
+  const nl=qt.indexOf('\n');
+  if(nl>0) return {q:qt.slice(0,nl).trim(), jaryo:qt.slice(nl+1).trim()};
+  const qm=qt.indexOf('?');
+  if(qm>0 && qm<qt.length-1){
+    let head=qt.slice(0,qm+1); let rest=qt.slice(qm+1);
+    const m=rest.match(/^\s*(\([^)]*\))/);
+    if(m){ head+=' '+m[1]; rest=rest.slice(m[0].length); }
+    rest=rest.trim();
+    if(rest.length>=10) return {q:head.trim(), jaryo:rest};
+  }
+  return {q:qt, jaryo:''};
+}
+function parseJaryoStmts(qt){
+  // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문을 줄 단위로 추출 → [{k,t}, ...]
+  var jaryo=(splitJaryo(qt).jaryo)||qt||'';
+  var lines=String(jaryo).split(/\r?\n/);
+  var out=[], cur=null;
+  var mk=/^\s*([ㄱ-ㅁ])[.\s·)\]]\s*(.*)$/;
+  for(var i=0;i<lines.length;i++){
+    var m=lines[i].match(mk);
+    if(m){ cur={k:m[1], t:(m[2]||'').trim()}; out.push(cur); }
+    else if(cur && lines[i].trim()){ cur.t+=(cur.t?' ':'')+lines[i].trim(); }  // 여러 줄 지문 이어붙임
+  }
+  return out;
+}
+function mnBoxHTML(mn){
+  if(!mn) return '';
+  let code='', desc='';
+  if(typeof mn==='string') code=mn; else { code=mn.code||''; desc=mn.desc||''; }
+  if(!code) return '';
+  return '<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+}
+function conceptBoxHTML(c){
+  if(!Array.isArray(c) || !c.length) return '';
+  const rows=c.map(it=> (it&&it.t)?('<div class="cc-row"><b>'+it.t+'</b> — '+(it.d||'')+'</div>'):'').join('');
+  if(!rows) return '';
+  return '<div class="concept-box"><div class="concept-ti">개념설명</div>'+rows+'</div>';
+}
 function renderMcqExam(root){
-  const sets=curQB()[mqSub].sets;
+  const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
+  const sets=subObj?subObj.sets:[];
+  const examName=mqDiag?'진단 모의고사':mqReview?'오늘의 복습':subObj.name;
+  const examSet=mqDiag?'실력 측정':mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
   const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
   const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
     else if(sel===n)cls+=' sel';
-    return '<div class="'+cls+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div><div class="otxt">'+o+'</div></div>';
+    const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
+    const otxt=o?('<div class="otxt">'+o+'</div>'):'';
+    return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';
   if(showExp){ const okk=isCorr(q.ans,sel);
+    const ansN=ansArr(q.ans);
+    const statusTxt = okk?'정답':(sel?'오답':'미응답');
+    const statusCol = okk?'#0F6E56':'#A32D2D';
+    const multiTxt = isMulti?(ansN.length===5?' (전항정답)':' (복수정답)'):'';
     let body='';
-    const hasExp=q.exp && (q.exp.s || (q.exp.o && q.exp.o.some(Boolean)));
-    if(hasExp){
-      if(q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
-      if(q.exp.o && q.exp.o.some(Boolean)){
-        body+='<div class="exp-opts">'+q.exp.o.map((t,i)=> t?('<div class="eo'+(ansArr(q.ans).includes(i+1)?' ok':'')+'"><b>'+(i+1)+'</b> '+t+'</div>'):'').join('')+'</div>';
-      }
-    } else { body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>'; }
-    expHTML='<div class="exp"><div class="al'+(okk?'':' bad')+'">'+(okk?'✓ 정답':(sel?'✕ 오답':'미응답'))+' · 정답 '+ansLabel(q.ans)+'번'+(isMulti?(ansArr(q.ans).length===5?' (전항정답)':' (복수정답)'):'')+'</div>'+body+'</div>'; }
-  const tags=(isMulti?'<span class="qmulti">'+(ansArr(q.ans).length===5?'전항정답':'복수정답')+'</span>':'')+impBadge(q)+timeBadge(q);
+    const oArr=(q.exp && q.exp.o)||[];
+    const oFilled=oArr.filter(Boolean).length;
+    if(q.exp && q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
+    var isCombo=isComboQuestion(q.opts);
+    var stmts = isCombo ? parseJaryoStmts(q.q) : [];
+    var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
+    var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
+    if(comboOK){
+      // 콤보: ㄱㄴㄷㄹ 지문별 펼침 (exp.o는 지문 순서). 정답 지문에 ✅, 맨 아래 정답 보기 조합 줄.
+      var ansLabels=ansN.map(function(n){ return (q.opts&&q.opts[n-1])?q.opts[n-1]:''; }).join(' ');  // 정답 보기에 포함된 지문 마커
+      body+='<div class="exp-opts">'+stmts.map(function(s,i){
+        var raw=oArr[i]||'';
+        var ex=stripRepeatedOpt(raw, s.t);
+        var sv=splitVerdict(ex);
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var inAns = ansLabels.indexOf(s.k)>=0;
+        var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
+        var q1='<div class="eo-q">'+s.k+'. '+s.t+verdictTag+ansTag+'</div>';
+        var a1= sv.rest ? ('<div class="eo-a">'+sv.rest+'</div>') : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+String(exArr[i]).trim()+'</div>' : '';
+        return '<div class="eo">'+q1+a1+exTxt+'</div>';
+      }).join('')+'</div>';
+      // 정답 보기 조합 줄
+      var cCirc=['①','②','③','④','⑤'];
+      var comboLine=ansN.map(function(n){
+        var lab=cCirc[n-1]||('('+n+')');
+        return '<div class="eo-q">정답 보기 '+lab+'. '+((q.opts&&q.opts[n-1])||'')+' <span class="eo-verdict eo-grn">옳다</span> <span class="eo-badge">✅ 정답</span></div>';
+      }).join('');
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">정답 지문들의 조합이다.</div></div></div>';
+    } else if(oFilled>=2){
+      // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
+      var fbCombo = isCombo && !comboOK;
+      body+='<div class="exp-opts">'+oArr.map(function(t,i){
+        if(!t) return '';
+        var isAns=ansN.includes(i+1);
+        if(fbCombo && !isAns) return '';                  // 폴백: 콤보 파싱 실패 → 정답 보기만
+        var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);
+        var sv=splitVerdict(ex);
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var ansTag = isAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
+        var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+q.opts[i]+verdictTag+ansTag+'</div>':'';
+        var expTxt= sv.rest ? ('<div class="eo-a">'+sv.rest+'</div>') : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+String(exArr[i]).trim()+'</div>' : '';
+        return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
+      }).join('')+'</div>';
+    } else if(oFilled===1){
+      // 결론 한 줄(ㄱㄴㄷ형 등)
+      var concl=oArr.filter(Boolean)[0];
+      body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+concl+'</div></div></div>';
+    }
+    if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
+    if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
+      body+='<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+    if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){ return (it&&it.t)?'<div class="concept-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>':''; }).join('')+'</div>';
+    }
+    expHTML='<div class="exp"><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
+  const jr=splitJaryo(q.q);
+  const subjTag=((mqDiag||mqReview)&&q._subj)?'<span class="qsubj">'+q._subj+'</span>':'';
+  const tags=subjTag+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
   root.innerHTML=
-    '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
-      '<div class="exam-ti"><div class="nm">'+curQB()[mqSub].name+'</div><div class="st">'+sets[mqSet].label+'</div></div>'+
-      '<span class="etim'+(mqTimeLeft<=300?' red':'')+'" id="mqTimer">'+mqFmt(mqTimeLeft)+'</span></div>'+
+    '<div class="exam-sticky">'+
+    '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'">‹ '+(mqInReview?'결과':'과목')+'</button>'+
+      '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':'전체 문항'):examSet)+'</div></div>'+
+      (mqInReview?'<span class="etim done" id="mqTimer">검토</span>':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '</div>'+
     '<div class="qcard"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div>'+
-    '<div class="qtext">'+q.q+'</div>'+(q.img?'<div class="qimg"><img src="'+q.img+'" alt=""></div>':'')+'<div class="opts">'+optHTML+'</div>'+expHTML+'</div>'+
+    '<div class="qtext">'+jr.q+'</div>'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
-    '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
-    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?'채점 ✓':'다음 ▶')+'</button></div>';
+    (mqInReview
+      ? '<button class="mbtn mbtn-exp" onclick="mqBackToResult()">결과로</button>'
+      : '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>')+
+    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
+    expHTML+'</div>';
+  resolveImages(root);
 }
 function mqPick(qid,n){
+  if(mqInReview) return;
   if(!canAccess(mqCert)) return;
   const firstTime = mqAns[qid]===undefined;
   mqAns[qid]=n; mqShow[qid]=false;
-  if(firstTime){ const e=userEnt[mqCert];
+  if(firstTime){
+    const q=mqQuestions().find(x=>x.id===qid);
+    if(q){ srRateMcq(mqCert,q,n,mqTimeUp); srSaveDebounced(); }
+    if(mqTimeUp) mqOvertimeCount++;
+    countUp(mqCert);
+    const e=userEnt[mqCert];
     if(e.plan==='GUEST') guestCounts[mqCert]++;
     if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount(mqCert); } }
-  mqSaveProgress();
+  mqSaveProgress(); if(mqDiag) saveDiagProgress();
   renderMCQ();
   const qs=mqQuestions();
-  if(mqIdx<qs.length-1){ setTimeout(()=>{ if(mqScreen==='exam'){ mqIdx++; mqSaveProgress(); renderMCQ(); } }, 550); }
+  if(mqIdx<qs.length-1){ setTimeout(()=>{ if(mqScreen==='exam'){ mqIdx++; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); } }, 550); }
+  else { setTimeout(()=>{ if(mqScreen==='exam'){ mqResult(); } }, 650); }  // 마지막 문제 → 자동 채점
 }
 function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid]; renderMCQ(); }
-function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); renderMCQ(); window.scrollTo(0,0); }
+function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
 function mqResult(){
-  mqStopTimer(); mqClearProgress(mqSub,mqSet);
+  mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
+  mqInReview=false;
   const qs=mqQuestions(); let correct=0,answered=0;
   qs.forEach(q=>{ if(mqAns[q.id]!==undefined){ answered++;
     if(isCorr(q.ans,mqAns[q.id])){ correct++; delete appWrong[q.id]; }
@@ -1682,18 +2757,65 @@ function mqResult(){
   }});
   if(currentUser) saveUserData();
   const total=qs.length; const pct=total?Math.round(correct/total*100):0;
+  if(mqDiag){ srSaveDiagnostic(mqCert,correct,total); clearDiagProgress(mqCert); }
+  // 결과 스냅샷 (오답보기·번호그리드·결과 재표시에 사용)
+  mqResultQs=qs.slice(); mqResultAns=Object.assign({},mqAns);
+  mqResultMeta={correct,answered,total,pct,diag:mqDiag,review:mqReview,mode:mqMode,sub:mqSub,set:mqSet,
+    otc:mqOvertimeCount,ots:mqOverElapsed()};
+  renderMqResultScreen();
+}
+function renderMqResultScreen(){
+  const M=mqResultMeta; if(!M){ return; }
+  const {correct,answered,total,pct,diag}=M;
   const em=pct>=80?'🏆':pct>=60?'💪':'📚';
-  const modeLbl=mqMode==='wrong'?' · 오답 다시풀기':'';
+  const modeLbl=diag?' · 진단':M.review?' · 복습':M.mode==='wrong'?' · 오답 다시풀기':'';
+  const titleTxt=diag?'진단 모의고사':M.review?'오늘의 복습':(curQB()[M.sub].name+' · '+curQB()[M.sub].sets[M.set].label);
+  // 문항별 번호 그리드 (정답 초록 / 오답 빨강 / 미응답 회색)
+  const grid=mqResultQs.map((q,i)=>{
+    const a=mqResultAns[q.id]; let cls='gx-none';
+    if(a!==undefined) cls=isCorr(q.ans,a)?'gx-ok':'gx-bad';
+    return '<button class="gx '+cls+'" onclick="mqOpenReview(\'all\','+i+')">'+(i+1)+'</button>';
+  }).join('');
+  const wrongN=mqResultQs.filter(q=>mqResultAns[q.id]!==undefined && !isCorr(q.ans,mqResultAns[q.id])).length;
+  const gridHTML=
+    '<div class="gx-wrap"><div class="gx-ti">문항별 결과 <span>번호를 누르면 해설</span></div>'+
+    '<div class="gx-grid">'+grid+'</div>'+
+    '<div class="gx-leg"><span><i class="gx-d gx-ok"></i>정답</span><span><i class="gx-d gx-bad"></i>오답</span><span><i class="gx-d gx-none"></i>미응답</span></div></div>';
+  const btns=diag
+    ? ((wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 보기 ('+wrongN+')</button>':'')+'<button onclick="mqBackHome()">📊 내 실력 분석 보기</button>')
+    : ((answered<total?'<button onclick="mqContinue()">▶ 이어서 풀기</button>':'')+
+       (wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 보기 ('+wrongN+')</button>':'')+
+       '<button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
   document.getElementById('mcqRoot').innerHTML=
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
-    '<div class="rt">'+curQB()[mqSub].name+' · '+curQB()[mqSub].sets[mqSet].label+modeLbl+'</div>'+
-    '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답</div>'+
+    '<div class="rt">'+titleTxt+modeLbl+'</div>'+
+    '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답'+(diag?' · 진단 점수 '+pct+'점':'')+'</div>'+
+    ((M.otc>0||M.ots>0)?'<div class="rs" style="color:#C2410C">⏱ 시간종료 후 '+M.otc+'문항 · 추가 +'+mqFmt(M.ots)+' <span style="font-size:11px;color:#A89C8E">(예상점수 미반영)</span></div>':'')+
     '<div class="sc"><div><div class="v ok">'+correct+'</div><div class="l">정답</div></div>'+
     '<div><div class="v bad">'+(answered-correct)+'</div><div class="l">오답</div></div>'+
     '<div><div class="v">'+pct+'%</div><div class="l">정답률</div></div></div>'+
-    '<div class="rbtns"><button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button></div></div>';
+    gridHTML+
+    '<div class="rbtns">'+btns+'</div></div>';
+  window.scrollTo(0,0);
 }
+// 결과 검토(전체/오답만) — 단일 문항 카드 재활용, 별도 리뷰 리스트 사용
+function mqOpenReview(mode,idx){
+  mqStopTimer(); mqStopOverTimer();
+  let list = mode==='wrong'
+    ? mqResultQs.filter(q=>mqResultAns[q.id]!==undefined && !isCorr(q.ans,mqResultAns[q.id]))
+    : mqResultQs.slice();
+  if(!list.length){ alert('오답이 없습니다. 모두 맞히셨어요! 🎉'); return; }
+  mqReviewList=list; mqReviewMode=mode; mqInReview=true;
+  mqAns=Object.assign({},mqResultAns);
+  mqShow={}; list.forEach(q=>{ mqShow[q.id]=true; });   // 정답·해설 항상 펼침
+  mqIdx=Math.min(idx||0, list.length-1);
+  mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
+}
+function mqBackToResult(){ mqInReview=false; mqScreen='exam'; renderMqResultScreen(); }
+function mqContinue(){ mqInReview=false; mqTimeUp=true; mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); }
 function mqRetry(){
+  mqInReview=false;
+  if(mqReview){ startMcqReview(); return; }
   mqClearProgress(mqSub,mqSet);
   const all=curQB()[mqSub].sets[mqSet].questions;
   if(mqMode==='wrong') mqList=all.filter(q=>appWrong[q.id]);
@@ -1706,7 +2828,7 @@ function mqRetry(){
 let activeCert = null;
 function getLastCert(){ try{ return localStorage.getItem('certlab_lastCert'); }catch(e){ return null; } }
 function setLastCert(id){ try{ localStorage.setItem('certlab_lastCert', id); }catch(e){} }
-function showHome(){
+function showHome(){ if(typeof ttsStop==='function')ttsStop();
   activeCert = null;
   if(typeof mqStopTimer==='function') mqStopTimer();
   document.getElementById('homeView').classList.remove('hidden');
@@ -1772,13 +2894,16 @@ async function loadAllBanks(){
 function applyBank(ex,sub,doc){
   const qs=doc.questions||[];
   if(ex.type==='flashcard'){
-    qs.forEach(c=>D.push({s:sub.name,q:c.q,a:c.a,learn:c.learn||null,star:c.star||1,w:false,fav:false}));
+    qs.forEach(c=>{ const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,learn:c.learn||null,mn:c.mn||null,star:c.star||1,w:false,fav:false}); });
   } else {
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; byset[lab].push(it); });
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; byset[lab].push(it); });
     qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
+    // 최신 회차/연도가 위로 — 라벨 내 가장 큰 숫자 기준 내림차순
+    const setKey=lab=>{ const m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };
+    qb[sub.code].sets.sort((a,b)=>setKey(b.label)-setKey(a.label));
   }
 }
 function showDataError(err){
@@ -1789,11 +2914,58 @@ function showDataError(err){
   document.body.appendChild(b);
 }
 showHome();
+function refreshCertCards(){
+  ['realestate1','realestate2','koreanhistory'].forEach(cert=>{
+    const tag=document.getElementById('certTag-'+cert); if(!tag) return;
+    const n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
+    if(n>0){ tag.textContent='모의고사'; tag.classList.remove('soon'); }
+    else { tag.textContent='준비 중'; tag.classList.add('soon'); }
+  });
+}
 loadAllBanks().then(()=>{
   rebuildQid();
+  if(typeof refreshCertCards==='function') refreshCertCards();
+  // 비동기 로딩 전에 빈 D로 굳은 카드 스냅샷을 실데이터로 재동기화
+  if(typeof cards!=='undefined'){ cards=[...D]; filtered=[...cards]; current=0; }
+  if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
   if(typeof refresh==='function') refresh();
   if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
 }).catch(showDataError);
+
+/* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
+(function(){
+  // 과거에 등록된 service worker / 캐시가 있으면 정리(옛 파일 캐싱 방지)
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(rs=>{ rs.forEach(r=>r.unregister()); }).catch(()=>{});
+  }
+  if(window.caches && caches.keys){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{}); }
+})();
+// 설치 신호 캡처 (있으면 원터치 설치에 사용)
+let pwaPrompt=null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); pwaPrompt=e; });
+window.addEventListener('appinstalled', ()=>{ pwaPrompt=null; });
+function pwaStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+// 프로필 메뉴: 홈 화면에 추가
+async function addToHome(e){
+  if(e){ e.stopPropagation(); }
+  const dd=document.getElementById('userDropdown'); if(dd) dd.classList.add('hidden');
+  const ua=navigator.userAgent;
+  const isAndroid=/android/i.test(ua);
+  const isIOS=!isAndroid && (/iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1));
+  if(pwaStandalone()){ alert('이미 앱으로 설치되어 실행 중이에요.'); return; }
+  if(pwaPrompt){                       // 안드로이드·크롬·엣지: 원터치 설치
+    pwaPrompt.prompt();
+    try{ await pwaPrompt.userChoice; }catch(_){}
+    pwaPrompt=null; return;
+  }
+  if(isIOS){                           // 아이폰: 사파리 공유 안내 (alert — 무조건 닫힘)
+    alert('아이폰에서 홈 화면에 추가하기\n\n1) 사파리 하단 공유 버튼(↑)을 누르세요\n2) "홈 화면에 추가"를 선택하세요\n3) 오른쪽 위 "추가"를 누르면 끝!');
+    return;
+  }
+  // 그 외(설치 신호 없음)
+  alert('홈 화면에 추가하기\n\n· 크롬/엣지(PC·안드로이드): 주소창 오른쪽의 설치 아이콘(⊕ 또는 모니터 모양)을 누르세요. 안 보이면 잠시 후 다시 시도해 주세요.\n· 사파리(아이폰): 공유 버튼 → "홈 화면에 추가".');
+}
 </script>
+
 </body>
 </html>
