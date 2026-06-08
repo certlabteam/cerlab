@@ -2128,8 +2128,11 @@ function toggleReview(){
   document.getElementById('modePill').textContent=reviewMode?'오답 모드':'전체';
   refresh();
 }
-function shuffle(){
+function shuffleCards(){
   for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]];}
+}
+function shuffle(){
+  shuffleCards();
   current=0;isFlipped=false;learnOpen=false;refresh();
 }
 function resetWrong(){
@@ -2863,6 +2866,7 @@ function enterCert(id){
     document.getElementById('mcqView').classList.add('hidden');
     document.getElementById('certSwitchName').textContent = '생체2급';
     document.getElementById('modePill').style.display = '';
+    if(typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; isFlipped=false; learnOpen=false; }   // 진입 시 매번 새 순서
     refresh();
   } else if(isMcqCert(id)){
     document.getElementById('mcqView').classList.remove('hidden');
@@ -2941,6 +2945,7 @@ loadAllBanks().then(()=>{
   if(typeof refreshCertCards==='function') refreshCertCards();
   // 비동기 로딩 전에 빈 D로 굳은 카드 스냅샷을 실데이터로 재동기화
   if(typeof cards!=='undefined'){ cards=[...D]; filtered=[...cards]; current=0; }
+  if(typeof activeCert!=='undefined' && activeCert==='bodybuilding' && typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; }   // 로드 완료 시 생체면 새 순서
   if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
   if(typeof refresh==='function') refresh();
   if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
