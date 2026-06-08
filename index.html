@@ -342,7 +342,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
 #mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
-#mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
+#mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:13px 15px;margin-bottom:11px;box-shadow:0 1px 2px rgba(15,23,42,.04)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
 #mcqView .opts{display:flex;flex-direction:column;gap:9px}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer}
 #mcqView .opt .onum{width:23px;height:23px;border-radius:50%;border:1.5px solid #CBD5E1;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
@@ -398,6 +398,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mcq-result .sc .v{font-size:24px;font-weight:900;color:#0C447C}
 #mcqView .mcq-result .sc .v.ok{color:#16A34A}
 #mcqView .mcq-result .sc .v.bad{color:#DC2626}
+#mcqView .mcq-result .sc .v.none{color:#94A3B8}
 #mcqView .mcq-result .sc .l{font-size:11px;color:#64748B;font-weight:700;margin-top:2px}
 #mcqView .gx-wrap{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 12px;margin:4px 0 18px}
 #mcqView .gx-ti{font-size:12.5px;font-weight:800;color:#334155;margin-bottom:10px}
@@ -2715,9 +2716,9 @@ function renderMcqExam(root){
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':'전체 문항'):examSet)+'</div></div>'+
       (mqInReview?'<span class="etim done" id="mqTimer">검토</span>':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div><div class="qtext">'+jr.q+'</div></div>'+
     '</div>'+
-    '<div class="qcard"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div>'+
-    '<div class="qtext">'+jr.q+'</div>'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     (mqInReview
       ? '<button class="mbtn mbtn-exp" onclick="mqBackToResult()">결과로</button>'
