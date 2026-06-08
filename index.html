@@ -390,11 +390,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mbtn-prev{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0}
 #mcqView .mbtn-exp{background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4}
 #mcqView .mbtn-next{background:#0F172A;color:#fff}
-#mcqView .mcq-result{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:26px 18px;text-align:center}
+#mcqView .mcq-result{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:26px 18px;text-align:center;overflow:hidden}
 #mcqView .mcq-result .em{font-size:40px;margin-bottom:8px}
 #mcqView .mcq-result .rt{font-size:18px;font-weight:800;color:#0F172A;margin-bottom:4px}
 #mcqView .mcq-result .rs{font-size:13px;color:#64748B;margin-bottom:16px}
 #mcqView .mcq-result .sc{display:flex;justify-content:center;gap:16px;margin-bottom:18px}
+#mcqView .mcq-result .sc>div{min-width:0}
 #mcqView .mcq-result .sc .v{font-size:24px;font-weight:900;color:#0C447C}
 #mcqView .mcq-result .sc .v.ok{color:#16A34A}
 #mcqView .mcq-result .sc .v.bad{color:#DC2626}
@@ -404,7 +405,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .gx-wrap{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 12px;margin:4px 0 18px}
 #mcqView .gx-ti{font-size:12.5px;font-weight:800;color:#334155;margin-bottom:10px}
 #mcqView .gx-ti span{font-size:11px;font-weight:600;color:#94A3B8;margin-left:4px}
-#mcqView .gx-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+#mcqView .gx-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
 #mcqView .gx{font-size:13px;font-weight:800;border-radius:8px;padding:7px 0;border:1.5px solid transparent;cursor:pointer;line-height:1}
 #mcqView .gx.gx-ok{background:#DCFCE7;color:#15803D;border-color:#BBF7D0}
 #mcqView .gx.gx-bad{background:#FEE2E2;color:#B91C1C;border-color:#FECACA}
@@ -454,7 +455,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .tmark.t2{color:#185FA5;background:#E6F1FB;border-color:#B5D4F4}
 #mcqView .tmark.t3{color:#B91C1C;background:#FEF2F2;border-color:#FECACA}
 /* 결과 버튼 */
-#mcqView .mcq-result .rbtns{display:flex;gap:9px;justify-content:center}
+#mcqView .mcq-result .rbtns{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#mcqView .mcq-result .rbtns button{white-space:nowrap;padding:13px 8px;font-size:13px}
 #mcqView .mcq-result .ghost{background:#fff;color:#475569;border:1.5px solid #E2E8F0}
 /* ===== 자동복습 UI ===== */
 .sr-banner{margin:10px 14px 4px;padding:12px 15px;background:linear-gradient(135deg,#185FA5,#0C447C);border-radius:14px;color:#fff;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
@@ -2715,7 +2717,7 @@ function renderMcqExam(root){
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'">‹ '+(mqInReview?'결과':'과목')+'</button>'+
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+'</div></div>'+
-      (mqInReview?'<span class="etim done" id="mqTimer">검토</span>':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
+      (mqInReview?'':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div><div class="qtext">'+jr.q+'</div></div>'+
     '</div>'+
@@ -2785,11 +2787,11 @@ function renderMqResultScreen(){
     '<div class="gx-grid">'+grid+'</div>'+
     '<div class="gx-leg"><span><i class="gx-d gx-ok"></i>정답</span><span><i class="gx-d gx-bad"></i>오답</span><span><i class="gx-d gx-none"></i>미응답</span></div></div>';
   const btns=diag
-    ? ((wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 보기 ('+wrongN+')</button>':'')+(unansN>0?'<button onclick="mqOpenReview(\'unans\',0)">⬜ 미응답 보기 ('+unansN+')</button>':'')+'<button onclick="mqBackHome()">📊 내 실력 분석 보기</button>')
-    : ((answered<total?'<button onclick="mqContinue()">▶ 이어서 풀기</button>':'')+
-       (wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 보기 ('+wrongN+')</button>':'')+
-       (unansN>0?'<button onclick="mqOpenReview(\'unans\',0)">⬜ 미응답 보기 ('+unansN+')</button>':'')+
-       '<button onclick="mqRetry()">🔄 다시 풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
+    ? ((wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 '+wrongN+'</button>':'')+(unansN>0?'<button onclick="mqOpenReview(\'unans\',0)">⬜ 미응답 '+unansN+'</button>':'')+'<button onclick="mqBackHome()">📊 실력 분석</button>')
+    : ((answered<total?'<button onclick="mqContinue()">▶ 이어풀기</button>':'')+
+       (wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 '+wrongN+'</button>':'')+
+       (unansN>0?'<button onclick="mqOpenReview(\'unans\',0)">⬜ 미응답 '+unansN+'</button>':'')+
+       '<button onclick="mqRetry()">🔄 다시풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
   document.getElementById('mcqRoot').innerHTML=
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
     '<div class="rt">'+titleTxt+modeLbl+'</div>'+
