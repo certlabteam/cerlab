@@ -2262,7 +2262,7 @@ const MCQ_QID2CS={};
 function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub};}))); }); }
 rebuildQid();
 let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
-let mqTimer=null, mqTimeLeft=0, mqTimeUp=false;
+let mqTimer=null, mqTimeLeft=0, mqTimeUp=false, mqTimeUpIdx=-1;
 let mqOverTimer=null, mqOverStart=0, mqOvertimeSec=0, mqOvertimeCount=0;  // 시간종료 후 경과시간(초)/푼 문항 수
 function mqStopOverTimer(){ if(mqOverTimer){ clearInterval(mqOverTimer); mqOverTimer=null; } if(mqOverStart){ mqOvertimeSec+=Math.floor((Date.now()-mqOverStart)/1000); mqOverStart=0; } }
 function mqOverElapsed(){ return mqOvertimeSec + (mqOverStart?Math.floor((Date.now()-mqOverStart)/1000):0); }
@@ -2293,11 +2293,11 @@ function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set))
 function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
 function mqStopTimer(){ if(mqTimer){ clearInterval(mqTimer); mqTimer=null; } }
 function mqStartTimer(){
-  mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0;
+  mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqTimeUpIdx=-1; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0;
   mqTimer=setInterval(()=>{
     if(mqScreen!=='exam'){ mqStopTimer(); return; }
     mqTimeLeft--;
-    if(mqTimeLeft<=0){ mqTimeLeft=0; mqTimeUp=true; mqStopTimer(); mqResult(); return; }
+    if(mqTimeLeft<=0){ mqTimeLeft=0; mqTimeUp=true; mqTimeUpIdx=mqIdx; mqStopTimer(); mqResult(); return; }
     mqSaveProgress();
     const el=document.getElementById('mqTimer');
     if(el){ el.textContent=mqFmt(mqTimeLeft); if(mqTimeLeft<=300) el.classList.add('red'); }
@@ -2755,9 +2755,15 @@ function mqResult(){
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
   mqInReview=false;
   const qs=mqQuestions(); let correct=0,answered=0;
-  qs.forEach(q=>{ if(mqAns[q.id]!==undefined){ answered++;
+  const reflectUnans=(!mqReview && !mqDiag && mqMode==='all');  // 일반 풀이에서만 미응답 복습 반영
+  qs.forEach((q,i)=>{ if(mqAns[q.id]!==undefined){ answered++;
     if(isCorr(q.ans,mqAns[q.id])){ correct++; delete appWrong[q.id]; }
     else { appWrong[q.id]=true; }
+  } else if(reflectUnans && mqHasAnswer(q)){
+    // 미응답: 시간종료 전 지나친 문항(보고넘김)=틀림, 종료 후 미도달(시간부족)=애매
+    const unseen = mqTimeUp && mqTimeUpIdx>=0 && i>mqTimeUpIdx;
+    srRateK(mqCert, q.id, unseen?1:0, false);
+    if(!unseen) appWrong[q.id]=true;   // 보고넘김은 오답노트 포함
   }});
   if(currentUser) saveUserData();
   const total=qs.length; const pct=total?Math.round(correct/total*100):0;
