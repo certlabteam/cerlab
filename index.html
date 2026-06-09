@@ -344,7 +344,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
 #mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:13px 15px;margin-bottom:11px;box-shadow:0 1px 2px rgba(15,23,42,.04)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
 #mcqView .opts{display:flex;flex-direction:column;gap:9px}
-#mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer}
+#mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer;outline:none}
+#mcqView .opt:focus{outline:none}
 #mcqView .opt .onum{width:23px;height:23px;border-radius:50%;border:1.5px solid #CBD5E1;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
 #mcqView .opt .otxt{font-size:13.5px;line-height:1.55;color:#0F172A;font-weight:500;flex:1}
 #mcqView .opt.opt-img{flex-direction:column;align-items:stretch}
@@ -456,6 +457,24 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .guess-toggle.on .gdot{background:#fff}
 #mcqView .guess-tag-r{margin-left:auto;font-size:10.5px;font-weight:800;color:#4B2000;background:#FAC775;border:1px solid #E0A52E;padding:2px 9px;border-radius:999px;flex-shrink:0}
 #mcqView .guess-hint{font-size:11.5px;color:#B97A12;background:#FFF9EC;border:1px dashed #F1D9A8;border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.5}
+#mcqView .b-learn{background:#EAF0F9;color:#0C447C;border:none;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer}
+#mcqView .learn-hd{display:flex;align-items:center;gap:8px;margin:14px 0 12px}
+#mcqView .learn-step{font-size:12px;font-weight:800;color:#fff;background:#0C447C;padding:5px 12px;border-radius:999px}
+#mcqView .learn-num{font-size:12px;color:#94A3B8;font-weight:700;margin-left:auto}
+#mcqView .lcard{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:18px 16px;margin-bottom:16px}
+#mcqView .ltitle{font-size:17px;font-weight:800;color:#0C447C;margin-bottom:14px;line-height:1.4}
+#mcqView .lsum{background:#F0F6FC;border-left:3px solid #0C447C;border-radius:8px;padding:11px 13px;font-size:13.5px;line-height:1.6;color:#1E3A5F;margin-bottom:16px}
+#mcqView .lsum b{color:#0C447C}
+#mcqView .lsec{margin-bottom:15px}
+#mcqView .lsec-t{font-size:13px;font-weight:800;color:#0F172A;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+#mcqView .lsec-t .lico{width:19px;height:19px;border-radius:5px;background:#E8F0F9;color:#0C447C;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+#mcqView .lsec-d{font-size:13px;line-height:1.7;color:#334155}
+#mcqView .lsec-d b{color:#0C447C}
+#mcqView .ltrap{background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:11px 13px;margin-top:4px}
+#mcqView .ltrap .lsec-t{color:#C2410C}
+#mcqView .ltrap .lsec-t .lico{background:#FFE4CC;color:#C2410C}
+#mcqView .ltrap .lsec-d{color:#7C2D12}
+#mcqView .solve-btn{width:100%;background:#0C447C;color:#fff;border:none;border-radius:13px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;margin-top:6px}
 #mcqView .tmark{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid}
 #mcqView .tmark.t1{color:#15803D;background:#F0FDF4;border-color:#BBF7D0}
 #mcqView .tmark.t2{color:#185FA5;background:#E6F1FB;border-color:#B5D4F4}
@@ -2296,6 +2315,8 @@ let mqDiag=false;                          // 진단 모의고사 세션 여부
 let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
 let mqInReview=false, mqReviewMode='all', mqReviewList=[];
 let mqGuess={};   // 문제별 '찍었어요' 상태 {qid:true} — 맞아도 복습은 애매로
+let mqConcept=false;        // 개념학습 모드 여부
+let mqConceptPhase='learn'; // 'learn'(개념 카드) | 'solve'(문제 풀이)
 let mqResultQs=[], mqResultAns={}, mqResultMeta=null;
 function mqQuestions(){ if(mqInReview) return mqReviewList; return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
 // 중요도(star 1~3)/소요시간(time 1~3): 값 미지정(0)이면 표시 안 함. 값은 추후 별도 입력.
@@ -2352,7 +2373,7 @@ function renderMcqHome(root){
           : '<button class="b-go" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">풀기</button>';
         html+='<div class="srow"><div class="srow-left"><span class="syr">'+st.label+'</span>'+
           '<span class="swc">'+st.questions.length+'문항'+(setWrong>0?' · 오답 '+setWrong:'')+'</span></div>'+
-          '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+'</div></div>';
+          '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+'<button class="b-learn" onclick="startConceptStudy(\''+id+'\','+si+')">📖 개념학습</button></div></div>';
       });
       html+='</div>';
     }
@@ -2459,7 +2480,7 @@ function startDiagnostic(){
   for(let i=picked.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[picked[i],picked[j]]=[picked[j],picked[i]];}
   clearDiagProgress(cert);
   mqStopTimer();
-  mqDiag=true; mqReview=false; mqInReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
+  mqDiag=true; mqReview=false; mqInReview=false; mqConcept=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
   mqList=picked; mqTimeLeft=picked.length*60;
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
@@ -2479,7 +2500,7 @@ function diagResume(){
   const list=p.ids.map(id=>{ const e=byId[id]; if(e){ e.q._subj=e.name; return e.q; } return null; }).filter(Boolean);
   if(!list.length){ clearDiagProgress(mqCert); startDiagnostic(); return; }
   mqStopTimer();
-  mqDiag=true; mqReview=false; mqInReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns=p.ans||{}; mqIdx=Math.min(p.idx||0, list.length-1);
+  mqDiag=true; mqReview=false; mqInReview=false; mqConcept=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns=p.ans||{}; mqIdx=Math.min(p.idx||0, list.length-1);
   mqList=list; mqTimeLeft=(p.t!=null&&p.t>0?p.t:list.length*60);
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
@@ -2499,12 +2520,12 @@ function startMcqReview(){
     return;
   }
   mqStopTimer();
-  mqReview=true; mqInReview=false; mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
+  mqReview=true; mqInReview=false; mqConcept=false; mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
   mqList=due; mqTimeLeft=due.length*60;
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function startMcqExam(id,si,mode){
-  mqReview=false; mqDiag=false; mqInReview=false;
+  mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mode=mode||'all';
   mqStopTimer();
   mqSub=id; mqSet=si; mqMode=mode; mqShow={};
@@ -2517,7 +2538,7 @@ function startMcqExam(id,si,mode){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
-  mqReview=false; mqDiag=false; mqInReview=false;
+  mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mqStopTimer();
   const saved=mqLoadProgress(id,si);
   if(!saved){ startMcqExam(id,si,'all'); return; }
@@ -2530,7 +2551,23 @@ function resumeMcqExam(id,si){
   }
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
-// 풀던 도중 나갈 때: 그때까지 응답한 문항만 오답노트 갱신
+// ===== 개념학습 모드: 개념 카드 → 문제 풀기 → 다음 개념 → ... =====
+function startConceptStudy(id,si){
+  mqReview=false; mqDiag=false; mqInReview=false;
+  mqStopTimer(); mqStopOverTimer();
+  mqSub=id; mqSet=si; mqMode='all'; mqShow={}; mqGuess={};
+  mqList=curQB()[id].sets[si].questions;
+  if(!mqList || !mqList.length){ alert('문제 준비 중입니다.'); mqList=null; return; }
+  mqAns={}; mqIdx=0;
+  mqTimeUp=false; mqTimeLeft=mqList.length*60;   // 개념학습은 타이머 미사용(값만 보관)
+  mqConcept=true; mqConceptPhase='learn';
+  mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
+}
+// 개념 카드 → 문제 풀이로
+function mqConceptSolve(){ mqConceptPhase='solve'; renderMCQ(); window.scrollTo(0,0); }
+// 문제 풀이 → 다시 개념 카드(현재 문항)로
+function mqConceptBackToLearn(){ mqConceptPhase='learn'; renderMCQ(); window.scrollTo(0,0); }
+
 // mode==='all'(일반): 맞힘→오답제거, 틀림→오답추가 / mode==='wrong'(오답노트): 맞힘→오답제거만
 function mqFlushAnsweredToWrong(){
   if(mqReview||mqDiag) return;                 // 복습·진단 세션은 오답노트 미반영
@@ -2660,6 +2697,27 @@ function conceptBoxHTML(c){
   if(!rows) return '';
   return '<div class="concept-box"><div class="concept-ti">개념설명</div>'+rows+'</div>';
 }
+// 개념 카드 HTML: exp.learn 있으면 그걸로, 없으면 exp.c로 폴백
+function conceptCardHTML(q){
+  const L=(q.exp&&q.exp.learn)?q.exp.learn:null;
+  let body='';
+  if(L){
+    if(L.title) body+='<div class="ltitle">'+L.title+'</div>';
+    if(L.sum)   body+='<div class="lsum">💡 '+L.sum+'</div>';
+    (L.secs||[]).forEach((s,i)=>{
+      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+(s.t||'')+'</div><div class="lsec-d">'+(s.d||'')+'</div></div>';
+    });
+    if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+L.trap+'</div></div>';
+  } else {
+    // 폴백: 기존 exp.c(개념) 나열
+    const cs=(q.exp&&q.exp.c)?q.exp.c:[];
+    if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
+    cs.forEach((c,i)=>{
+      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+(c.t||'')+'</div><div class="lsec-d">'+(c.d||'')+'</div></div>';
+    });
+  }
+  return body;
+}
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
@@ -2667,6 +2725,20 @@ function renderMcqExam(root){
   const examSet=mqDiag?'실력 측정':mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
   const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
   const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
+  // 개념학습 모드 - 개념 카드 단계
+  if(mqConcept && mqConceptPhase==='learn'){
+    root.innerHTML=
+      '<div class="exam-sticky">'+
+      '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
+        '<div class="exam-ti"><div class="nm">개념학습</div><div class="st">'+(sets[mqSet]?sets[mqSet].label:'')+'</div></div></div>'+
+      '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+      '</div>'+
+      '<div class="learn-hd"><span class="learn-step">📖 개념 학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
+      '<div class="lcard">'+conceptCardHTML(q)+
+        '<button class="solve-btn" onclick="mqConceptSolve()">이 개념으로 문제 풀기 →</button></div>';
+    resolveImages(root);
+    return;
+  }
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
@@ -2803,10 +2875,10 @@ function mqToggleGuess(qid){
   }
   renderMCQ();
 }
-function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
+function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; if(mqConcept) mqConceptPhase='learn'; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
 function mqResult(){
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
-  mqInReview=false;
+  mqInReview=false; mqConcept=false;
   const qs=mqQuestions(); let correct=0,answered=0;
   const reflectUnans=(!mqReview && !mqDiag && mqMode==='all');  // 일반 풀이에서만 미응답 복습 반영
   qs.forEach((q,i)=>{ if(mqAns[q.id]!==undefined){ answered++;
@@ -2901,7 +2973,7 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
     if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
     if(typeof mqSaveProgress==='function') mqSaveProgress();
   }
-  mqInReview=false;
+  mqInReview=false; mqConcept=false;
   activeCert = null;
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
@@ -2919,7 +2991,7 @@ function enterCert(id){
     if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
     if(typeof mqSaveProgress==='function') mqSaveProgress();
   }
-  mqInReview=false;
+  mqInReview=false; mqConcept=false;
   activeCert = id;
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
