@@ -657,6 +657,11 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
       <div class="cert-meta"><div class="nm">한국사능력검정시험 심화</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon" id="certTag-koreanhistory">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
+    <div class="cert-card" onclick="enterCert('housing')">
+      <div class="cert-ic">🏢</div>
+      <div class="cert-meta"><div class="nm">주택관리사 1차</div><div class="ds">객관식 · 회계원리 · 공동주택시설개론 · 민법</div><span class="tag soon" id="certTag-housing">준비 중</span></div>
+      <div class="cert-go">›</div>
+    </div>
   </div>
 </div>
 <div class="cert-view hidden" id="bodybuildingView">
@@ -932,9 +937,9 @@ let trialCount = 0;     // (레거시 미러: 현재 활성 시험의 무료 사
 const GUEST_LIMIT = 10;
 const TRIAL_LIMIT = 50;
 // ===== 시험별 이용권(entitlements) =====
-const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory'];
-const CERT_LABELS = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사' };
-const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험 심화' };
+const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing'];
+const CERT_LABELS = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사' };
+const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험 심화', housing:'주택관리사 1차' };
 function certLabel(c){ return CERT_LABELS[c]||c; }
 function certFull(c){ return CERT_FULLNAMES[c]||c; }
 function blankEnt(){ const o={}; ALL_CERTS.forEach(c=>o[c]={plan:'GUEST',trialCount:0,expireAt:null,planDays:null}); return o; }
@@ -2278,12 +2283,19 @@ const RE2_QB = {
 const KSH_QB = {
   ksh: { name:'한국사 심화', sets:[] }
 };
+// 주택관리사보 1차 — 회계원리/공동주택시설개론/민법 (교시 구분 없이 나열). 문제는 추후 입력.
+const HM_QB = {
+  hm_acct:  { name:'회계원리', sets:[] },
+  hm_fac:   { name:'공동주택시설개론', sets:[] },
+  hm_civil: { name:'민법', sets:[] }
+};
 // 시험별 문제은행 레지스트리
 const MCQ_EXAMS = {
   appraiser:     { name:'감정평가사',     qb: APP_QB },
   realestate1:   { name:'공인중개사 1차', qb: RE1_QB },
   realestate2:   { name:'공인중개사 2차', qb: RE2_QB },
-  koreanhistory: { name:'한국사능력검정시험 심화', qb: KSH_QB }
+  koreanhistory: { name:'한국사능력검정시험 심화', qb: KSH_QB },
+  housing:       { name:'주택관리사 1차', qb: HM_QB }
 };
 const MCQ_CERTS = Object.keys(MCQ_EXAMS);
 function isMcqCert(c){ return MCQ_CERTS.indexOf(c)!==-1; }
@@ -3070,7 +3082,7 @@ function showDataError(err){
 }
 showHome();
 function refreshCertCards(){
-  ['realestate1','realestate2','koreanhistory'].forEach(cert=>{
+  ['realestate1','realestate2','koreanhistory','housing'].forEach(cert=>{
     const tag=document.getElementById('certTag-'+cert); if(!tag) return;
     const n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
     if(n>0){ tag.textContent='모의고사'; tag.classList.remove('soon'); }
