@@ -2459,7 +2459,7 @@ function startDiagnostic(){
   for(let i=picked.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[picked[i],picked[j]]=[picked[j],picked[i]];}
   clearDiagProgress(cert);
   mqStopTimer();
-  mqDiag=true; mqReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqAns={}; mqIdx=0;
+  mqDiag=true; mqReview=false; mqInReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
   mqList=picked; mqTimeLeft=picked.length*60;
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
@@ -2479,7 +2479,7 @@ function diagResume(){
   const list=p.ids.map(id=>{ const e=byId[id]; if(e){ e.q._subj=e.name; return e.q; } return null; }).filter(Boolean);
   if(!list.length){ clearDiagProgress(mqCert); startDiagnostic(); return; }
   mqStopTimer();
-  mqDiag=true; mqReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqAns=p.ans||{}; mqIdx=Math.min(p.idx||0, list.length-1);
+  mqDiag=true; mqReview=false; mqInReview=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns=p.ans||{}; mqIdx=Math.min(p.idx||0, list.length-1);
   mqList=list; mqTimeLeft=(p.t!=null&&p.t>0?p.t:list.length*60);
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
@@ -2499,12 +2499,12 @@ function startMcqReview(){
     return;
   }
   mqStopTimer();
-  mqReview=true; mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqAns={}; mqIdx=0;
+  mqReview=true; mqInReview=false; mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
   mqList=due; mqTimeLeft=due.length*60;
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function startMcqExam(id,si,mode){
-  mqReview=false; mqDiag=false;
+  mqReview=false; mqDiag=false; mqInReview=false;
   mode=mode||'all';
   mqStopTimer();
   mqSub=id; mqSet=si; mqMode=mode; mqShow={};
@@ -2517,11 +2517,11 @@ function startMcqExam(id,si,mode){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
-  mqReview=false; mqDiag=false;
+  mqReview=false; mqDiag=false; mqInReview=false;
   mqStopTimer();
   const saved=mqLoadProgress(id,si);
   if(!saved){ startMcqExam(id,si,'all'); return; }
-  mqSub=id; mqSet=si; mqMode='all'; mqShow={};
+  mqSub=id; mqSet=si; mqMode='all'; mqShow={}; mqGuess={};
   mqList=curQB()[id].sets[si].questions;
   mqAns=saved.ans||{}; mqIdx=saved.idx||0; mqTimeLeft=(saved.t!=null&&saved.t>0?saved.t:mqList.length*60);
   if(saved.up){   // 시간종료 후 이어풀던 세션 → 오버타임으로 복원
@@ -2757,9 +2757,7 @@ function renderMcqExam(root){
     '</div>'+
     '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
-    (mqInReview
-      ? '<button class="mbtn mbtn-exp" onclick="mqBackToResult()">결과로</button>'
-      : '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>')+
+    '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   resolveImages(root);
