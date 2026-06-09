@@ -1692,10 +1692,16 @@ function srGetK(cert,id){ return srProgress[cert+'|'+id]; }
 function srMasteryK(cert,id){ const p=srGetK(cert,id); if(!p||!p.rc) return 'new'; if(!p.st) return 'weak'; if(p.st>=5) return 'master'; return 'learning'; }
 function srDueK(cert,id){ const p=srGetK(cert,id); return !!(p&&p.rc>0&&(p.nx||0)<=Date.now()); }
 function srDueCertCount(cert){ let n=0,pre=cert+'|',now=Date.now(); for(const k in srProgress){ if(k.indexOf(pre)===0){ const p=srProgress[k]; if(p&&p.rc>0&&(p.nx||0)<=now) n++; } } return n; }
-function srRateK(cert,id,result,overtime){          // 0 틀림 / 1 애매 / 2 정확
+function srRateK(cert,id,result,overtime,replace){          // 0 틀림 / 1 애매 / 2 정확. replace=직전 평가 덮어쓰기
   if(!id) return;
   const k=cert+'|'+id, now=Date.now();
   let p=srProgress[k]||{st:0,nx:0,lr:0,res:null,rc:0,cor:0,w:false};
+  if(replace && p.rc>0){
+    // 같은 세션 재평가: 직전 결과의 누적(rc/cor/streak)을 되돌린 뒤 새 결과로 다시 적용
+    if(p.res===2){ p.cor=Math.max(0,(p.cor||0)-1); p.st=Math.max(0,(p.st||0)-1); }
+    // (직전이 틀림/애매면 streak는 0 또는 반감이라 정확 복원 불가 → rc만 되돌리고 streak는 새 결과로 재설정)
+    p.rc=Math.max(0,(p.rc||0)-1);
+  }
   p.rc=(p.rc||0)+1; p.lr=now; p.res=result;
   p.ot = !!overtime;                     // 시간종료 후 응답 여부(예상점수 제외용)
   if(result===2) p.cor=(p.cor||0)+1;     // 정답 누계 (과목 정확도·예상점수용)
@@ -1722,9 +1728,9 @@ function srRate(card,result){
 
 /* 객관식 채점 → 복습 연결 (정답=정확, 오답=틀림. 애매 없음. ans:0 제외) */
 function mqHasAnswer(q){ return q && (Array.isArray(q.ans)? q.ans.length>0 : q.ans>0); }
-function srRateMcq(cert,q,selected,overtime){
+function srRateMcq(cert,q,selected,overtime,replace){
   if(!mqHasAnswer(q)) return;            // 정답 미확정 문항은 복습 집계 제외
-  srRateK(cert, q.id, isCorr(q.ans,selected)?2:0, overtime);
+  srRateK(cert, q.id, isCorr(q.ans,selected)?2:0, overtime, replace);
 }
 const SR_MASTER_LABEL={new:'신규',weak:'미숙',learning:'학습중',master:'숙달'};
 
@@ -1961,7 +1967,7 @@ function srFlush(){
   if(currentUser) saveUserData();
   else { try{ localStorage.setItem('sr:'+SR_CERT, JSON.stringify({p:srProgress,e:srExamOverride,c:solveOf('bodybuilding')})); }catch(_){} }
 }
-window.addEventListener('beforeunload',()=>{ if(srDirtyCount>0) srFlush(); });
+window.addEventListener('beforeunload',()=>{ try{ if(typeof mqScreen!=='undefined' && mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag){ if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong(); if(typeof mqSaveProgress==='function') mqSaveProgress(); } }catch(_){} if(srDirtyCount>0) srFlush(); });
 
 /* ===== SR 평가 (틀림0/애매1/정확2) ===== */
 function rate(result){
@@ -2517,7 +2523,20 @@ function resumeMcqExam(id,si){
   }
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
-function mqBackHome(){ mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag) mqSaveProgress(); if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+// 풀던 도중 나갈 때: 그때까지 응답한 문항만 오답노트 갱신
+// mode==='all'(일반): 맞힘→오답제거, 틀림→오답추가 / mode==='wrong'(오답노트): 맞힘→오답제거만
+function mqFlushAnsweredToWrong(){
+  if(mqReview||mqDiag) return;                 // 복습·진단 세션은 오답노트 미반영
+  const list=(mqList&&mqList.length)?mqList:null; if(!list) return;
+  let changed=false;
+  list.forEach(q=>{
+    const a=mqAns[q.id]; if(a===undefined) return;   // 응답한 것만
+    if(isCorr(q.ans,a)){ if(appWrong[q.id]){ delete appWrong[q.id]; changed=true; } }
+    else if(mqMode==='all'){ if(!appWrong[q.id]){ appWrong[q.id]=true; changed=true; } }
+  });
+  if(changed && currentUser) saveUserData();
+}
+function mqBackHome(){ const wasReview=mqInReview; mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
@@ -2737,10 +2756,13 @@ function mqPick(qid,n){
   if(mqInReview) return;
   if(!canAccess(mqCert)) return;
   const firstTime = mqAns[qid]===undefined;
+  const changed = !firstTime && mqAns[qid]!==n;   // 답을 다른 보기로 바꾼 경우
   mqAns[qid]=n; mqShow[qid]=false;
-  if(firstTime){
+  if(firstTime || changed){
     const q=mqQuestions().find(x=>x.id===qid);
-    if(q){ srRateMcq(mqCert,q,n,mqTimeUp); srSaveDebounced(); }
+    if(q){ srRateMcq(mqCert,q,n,mqTimeUp,changed); srSaveDebounced(); }   // 최종 답 기준으로 복습 반영(답 바꾸면 덮어쓰기)
+  }
+  if(firstTime){
     if(mqTimeUp) mqOvertimeCount++;
     countUp(mqCert);
     const e=userEnt[mqCert];
@@ -2846,18 +2868,33 @@ let activeCert = null;
 function getLastCert(){ try{ return localStorage.getItem('certlab_lastCert'); }catch(e){ return null; } }
 function setLastCert(id){ try{ localStorage.setItem('certlab_lastCert', id); }catch(e){} }
 function showHome(){ if(typeof ttsStop==='function')ttsStop();
+  // 객관식 시험 풀던 중 홈으로 나가도 오답노트·진행상황 반영 (검토·복습·진단 제외)
+  if(typeof mqScreen!=='undefined' && mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag){
+    if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
+    if(typeof mqSaveProgress==='function') mqSaveProgress();
+  }
+  mqInReview=false;
   activeCert = null;
   if(typeof mqStopTimer==='function') mqStopTimer();
+  if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   document.getElementById('homeView').classList.remove('hidden');
   document.getElementById('bodybuildingView').classList.add('hidden');
   document.getElementById('mcqView').classList.add('hidden');
   document.getElementById('certSwitch').classList.add('hidden');
   document.getElementById('modePill').style.display = 'none';
+  mqScreen='home';
   syncPlanMirror(); updateAuthBar();
 }
 function enterCert(id){
+  // 객관식 시험 풀던 중 다른 시험으로 전환 시에도 오답노트·진행상황 반영
+  if(typeof mqScreen!=='undefined' && mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag){
+    if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
+    if(typeof mqSaveProgress==='function') mqSaveProgress();
+  }
+  mqInReview=false;
   activeCert = id;
   if(typeof mqStopTimer==='function') mqStopTimer();
+  if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   setLastCert(id);
   document.getElementById('homeView').classList.add('hidden');
   document.getElementById('certSwitch').classList.remove('hidden');
