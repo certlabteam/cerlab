@@ -211,6 +211,7 @@ tr:hover td{background:#FAFAFA}
               <option value="유료">유료</option>
             </select>
             <input class="search-input" id="searchMember" placeholder="이메일 검색..." oninput="filterMembers()">
+            <button class="btn-sm btn-extend" onclick="downloadMembersCSV()">📊 CSV 다운로드</button>
           </div>
         </div>
         <div id="memberList"><div class="loading">로딩 중...</div></div>
@@ -909,13 +910,46 @@ function filterPayments() {
   renderPayments(allPayments.filter(p => (p.email||'').toLowerCase().includes(q)));
 }
 function filterMembers() {
+  renderMembers(currentMemberFilter());
+}
+// 현재 회원관리 탭의 필터(검색어+등급)가 적용된 목록 반환
+function currentMemberFilter(){
   const q = (document.getElementById('searchMember').value||'').toLowerCase();
   const g = (document.getElementById('filterGrade')||{}).value || '';
-  renderMembers(allMembers.filter(m => {
+  return allMembers.filter(m => {
     if (q && !((m.email||'').toLowerCase().includes(q))) return false;
     if (g && memberGrade(m).label !== g) return false;
     return true;
-  }));
+  });
+}
+// 현재 필터된 회원 명단을 CSV로 다운로드 (마케팅용)
+function downloadMembersCSV(){
+  const list = currentMemberFilter();
+  if(!list.length){ alert('다운로드할 회원이 없습니다.'); return; }
+  const csvCell = v => {
+    var s = (v==null?'':String(v));
+    if(/[",\n]/.test(s)) s = '"'+s.replace(/"/g,'""')+'"';
+    return s;
+  };
+  const dOf = d => { if(!d) return ''; try{ var x=d.toDate?d.toDate():new Date(d); return isNaN(x)?'':x.toLocaleDateString('ko-KR'); }catch(_){ return ''; } };
+  const headers = ['이메일','등급','상태','푼 횟수','학습 문항','가입일','경과일','최근 로그인','최근 학습','추천코드','추천인'];
+  const rows = list.map(m => {
+    const g = memberGrade(m), s = memberStatus(m);
+    const stTxt = s==='ACTIVE'?'유료':s==='FREE_TRIAL'?'무료체험':s==='EXPIRED'?'만료':s;
+    const ds = (typeof daysSince==='function')? daysSince(m.createdAt) : '';
+    return [ m.email||'', g.label, stTxt, (m._solve||0), (m._studied||0),
+             dOf(m.createdAt), (ds==null?'':ds), dOf(m.lastLoginAt), dOf(m._lastStudy),
+             m.referralCode||'', m.referredBy||'' ].map(csvCell).join(',');
+  });
+  const csv = '\uFEFF' + headers.map(csvCell).join(',') + '\n' + rows.join('\n');   // BOM = 엑셀 한글 깨짐 방지
+  const gradeLabel = (document.getElementById('filterGrade')||{}).value || '전체';
+  const today = new Date().toISOString().slice(0,10);
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `certlab_회원_${gradeLabel}_${today}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 function closeMemberDetail(){ const el=document.getElementById('memberDetailModal'); if(el) el.classList.add('hidden'); }
 // ===== 데이터 내보내기 =====
