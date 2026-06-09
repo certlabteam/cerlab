@@ -457,6 +457,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .guess-toggle.on .gdot{background:#fff}
 #mcqView .guess-tag-r{margin-left:auto;font-size:10.5px;font-weight:800;color:#4B2000;background:#FAC775;border:1px solid #E0A52E;padding:2px 9px;border-radius:999px;flex-shrink:0}
 #mcqView .guess-hint{font-size:11.5px;color:#B97A12;background:#FFF9EC;border:1px dashed #F1D9A8;border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.5}
+#mcqView .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:-0.45em;margin:0 2px;line-height:1.05}
+#mcqView .frac .fn{border-bottom:1.4px solid currentColor;padding:0 2px;font-size:0.82em}
+#mcqView .frac .fd{padding:0 2px;font-size:0.82em}
+#mcqView sub{font-size:0.72em} #mcqView sup{font-size:0.72em}
 #mcqView .b-learn{background:#EAF0F9;color:#0C447C;border:none;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer}
 #mcqView .learn-hd{display:flex;align-items:center;gap:8px;margin:14px 0 12px}
 #mcqView .learn-step{font-size:12px;font-weight:800;color:#fff;background:#0C447C;padding:5px 12px;border-radius:999px}
@@ -2674,6 +2678,34 @@ function verdictColor(t){
   if(rPos<0 && gPos<0) return '';        // 판정어 없으면 중립(색 없음)
   return rPos>=gPos ? 'eo-red' : 'eo-grn';   // 동률이면 빨강 우선(부정 우선)
 }
+// 경제 수식 렌더링: 표시 직전에만 _아래첨자·^윗첨자·분수로 변환(데이터는 불변)
+// allowBareFraction(맨분수 a/b)은 경제(econ)에서만 — 회계 콤마숫자·법규 축척 오변환 방지
+function renderMath(text, allowBareFraction){
+  if(text==null) return '';
+  var s=String(text);
+  // (1) 괄호 분수 (a/b) → 플레이스홀더 [전 과목]
+  s = s.replace(/\((\d+)\/(\d+)\)/g, '\u0001$1\u0002$2\u0003');
+  // (2) 맨 분수 a/b → 분수 [econ 전용] (콤마숫자·축척·날짜 오변환 방지)
+  if(allowBareFraction){
+    s = s.replace(/(?<![\d\/.,])(\d+)\/(\d+)(?![\d\/])/g, '\u0001$1\u0002$2\u0003');
+  }
+  // (3) 윗첨자 ^토큰 / ^(그룹) / ^분수플레이스홀더 [전 과목]
+  s = s.replace(/\^(\([^)]*\)|\u0001[^\u0003]*\u0003|[A-Za-z0-9]+)/g, function(m,g){ return '<sup>'+g.replace(/^\(|\)$/g,'')+'</sup>'; });
+  // (4) 아래첨자 _토큰 (영숫자까지만 → 한글 조사 유지) [전 과목]
+  s = s.replace(/_([A-Za-z0-9]+)/g, '<sub>$1</sub>');
+  // (5) 분수 플레이스홀더 → HTML
+  s = s.replace(/\u0001([^\u0002]+)\u0002([^\u0003]+)\u0003/g, '<span class="frac"><span class="fn">$1</span><span class="fd">$2</span></span>');
+  return s;
+}
+// 문항이 경제(econ)인지 — id 접두 'e' 또는 과목코드 econ
+function isEconQ(q){
+  if(!q) return false;
+  if(q._subj==='경제학원론') return true;
+  var id=String(q.id||'');
+  return /^e\d/.test(id);   // e22_1, e26_2 …
+}
+// 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
+function rm(text, q){ return renderMath(text, isEconQ(q)); }
 function splitJaryo(qt){
   if(!qt) return {q:qt||'', jaryo:''};
   const b=qt.indexOf('[');
@@ -2721,18 +2753,18 @@ function conceptCardHTML(q){
   const L=(q.exp&&q.exp.learn)?q.exp.learn:null;
   let body='';
   if(L){
-    if(L.title) body+='<div class="ltitle">'+L.title+'</div>';
-    if(L.sum)   body+='<div class="lsum">💡 '+L.sum+'</div>';
+    if(L.title) body+='<div class="ltitle">'+rm(L.title,q)+'</div>';
+    if(L.sum)   body+='<div class="lsum">💡 '+rm(L.sum,q)+'</div>';
     (L.secs||[]).forEach((s,i)=>{
-      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+(s.t||'')+'</div><div class="lsec-d">'+(s.d||'')+'</div></div>';
+      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(s.t||'',q)+'</div><div class="lsec-d">'+rm(s.d||'',q)+'</div></div>';
     });
-    if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+L.trap+'</div></div>';
+    if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+rm(L.trap,q)+'</div></div>';
   } else {
     // 폴백: 기존 exp.c(개념) 나열
     const cs=(q.exp&&q.exp.c)?q.exp.c:[];
     if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
     cs.forEach((c,i)=>{
-      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+(c.t||'')+'</div><div class="lsec-d">'+(c.d||'')+'</div></div>';
+      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div></div>';
     });
   }
   return body;
@@ -2763,7 +2795,7 @@ function renderMcqExam(root){
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
     else if(sel===n)cls+=' sel';
     const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
-    const otxt=o?('<div class="otxt">'+o+'</div>'):'';
+    const otxt=o?('<div class="otxt">'+rm(o,q)+'</div>'):'';
     return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';
@@ -2775,7 +2807,7 @@ function renderMcqExam(root){
     let body='';
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
-    if(q.exp && q.exp.s) body+='<div class="note">'+q.exp.s+'</div>';
+    if(q.exp && q.exp.s) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
     var isCombo=isComboQuestion(q.opts);
     var stmts = isCombo ? parseJaryoStmts(q.q) : [];
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
@@ -2790,16 +2822,16 @@ function renderMcqExam(root){
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
         var inAns = ansLabels.indexOf(s.k)>=0;
         var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
-        var q1='<div class="eo-q">'+s.k+'. '+s.t+verdictTag+ansTag+'</div>';
-        var a1= sv.rest ? ('<div class="eo-a">'+sv.rest+'</div>') : '';
-        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+String(exArr[i]).trim()+'</div>' : '';
+        var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
+        var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+q1+a1+exTxt+'</div>';
       }).join('')+'</div>';
       // 정답 보기 조합 줄
       var cCirc=['①','②','③','④','⑤'];
       var comboLine=ansN.map(function(n){
         var lab=cCirc[n-1]||('('+n+')');
-        return '<div class="eo-q">정답 보기 '+lab+'. '+((q.opts&&q.opts[n-1])||'')+' <span class="eo-verdict eo-grn">옳다</span> <span class="eo-badge">✅ 정답</span></div>';
+        return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' <span class="eo-verdict eo-grn">옳다</span> <span class="eo-badge">✅ 정답</span></div>';
       }).join('');
       body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">정답 지문들의 조합이다.</div></div></div>';
     } else if(oFilled>=2){
@@ -2813,21 +2845,21 @@ function renderMcqExam(root){
         var sv=splitVerdict(ex);
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
         var ansTag = isAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
-        var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+q.opts[i]+verdictTag+ansTag+'</div>':'';
-        var expTxt= sv.rest ? ('<div class="eo-a">'+sv.rest+'</div>') : '';
-        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+String(exArr[i]).trim()+'</div>' : '';
+        var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+rm(q.opts[i],q)+verdictTag+ansTag+'</div>':'';
+        var expTxt= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
       }).join('')+'</div>';
     } else if(oFilled===1){
       // 결론 한 줄(ㄱㄴㄷ형 등)
       var concl=oArr.filter(Boolean)[0];
-      body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+concl+'</div></div></div>';
+      body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+rm(concl,q)+'</div></div></div>';
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
     if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
       body+='<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
-      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){ return (it&&it.t)?'<div class="concept-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>':''; }).join('')+'</div>';
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){ return (it&&it.t)?'<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>':''; }).join('')+'</div>';
     }
     expHTML='<div class="exp"><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
   const jr=splitJaryo(q.q);
@@ -2844,9 +2876,9 @@ function renderMcqExam(root){
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+'</div></div>'+
       (mqInReview?'':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
-    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+guessToggle+'</div><div class="qtext">'+jr.q+'</div>'+guessHint+'</div>'+
+    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+guessToggle+'</div><div class="qtext">'+rm(jr.q,q)+'</div>'+guessHint+'</div>'+
     '</div>'+
-    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
