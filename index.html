@@ -237,11 +237,22 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:20px 24px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);position:relative}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.refund-banner{background:linear-gradient(135deg,#FFF4E0,#FFE9CC);border:2px solid #F2B23C;border-radius:14px;padding:14px 16px;margin:4px 0 14px;box-shadow:0 4px 14px rgba(242,178,60,.35);animation:rbPulse 2.2s ease-in-out infinite}
+@keyframes rbPulse{0%,100%{box-shadow:0 4px 14px rgba(242,178,60,.30)}50%{box-shadow:0 4px 20px rgba(242,178,60,.55)}}
+.refund-banner .rb-ti{font-size:16px;font-weight:800;color:#A8650A;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.refund-banner .rb-sub{font-size:12.5px;color:#8A6420;margin-top:5px;line-height:1.5}
+.refund-banner .rb-tag{display:inline-block;background:#E2554B;color:#fff;font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px;margin-left:6px;vertical-align:middle}
+.refund-banner .rb-more{background:none;border:none;color:#B5730C;font-size:12px;font-weight:700;cursor:pointer;padding:7px 0 0;text-decoration:underline}
+.refund-banner .rb-detail{font-size:12px;color:#7A5A1C;line-height:1.7;margin-top:8px;padding-top:8px;border-top:1px dashed #E6C68A}
+.refund-banner .rb-detail.hidden{display:none}
 .auth-sheet-title{font-size:22px;font-weight:700;color:#2C2C2A;margin-bottom:6px;text-align:center}
 .auth-sheet-sub{font-size:14px;color:#888780;text-align:center;margin-bottom:24px;line-height:1.6}
 .auth-features{background:#F4F9FE;border-radius:16px;padding:16px 20px;margin-bottom:24px}
 .auth-feature-item{display:flex;align-items:center;gap:10px;font-size:13px;color:#3C3C3A;padding:5px 0}
 .auth-feature-item::before{content:'✓';color:#0C447C;font-weight:700;font-size:14px}
+.feat-now{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:#0C447C;padding:2px 0 6px}
+.feat-now::before{content:'📘';font-size:16px}
+.feat-all{font-size:12px;color:#6B7A8D;background:#E9F1FB;border-radius:8px;padding:6px 10px;margin:0 0 8px;text-align:center}
 .btn-google-login{width:100%;padding:16px;border-radius:var(--radius-sm);border:1.5px solid #E0E0E0;background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;font-size:15px;font-weight:700;color:#2C2C2A;cursor:pointer;transition:all .15s;margin-bottom:12px}
 .btn-google-login:active{background:#F5F5F5;transform:scale(.98)}
 .google-icon{width:20px;height:20px}
@@ -790,15 +801,49 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 </div>
 
 <!-- 로그인 팝업 -->
+<div class="auth-popup hidden" id="refundPopup">
+  <div class="auth-sheet" style="text-align:center">
+    <button class="popup-x" onclick="closeRefundPopup('day')" aria-label="닫기">✕</button>
+    <div style="font-size:40px;margin:6px 0 2px">🎉</div>
+    <div class="auth-sheet-title">합격하면 결제금액 100% 환급</div>
+    <div class="auth-sheet-sub">CertLab로 공부하고 합격하면, 합격 인증 + 후기 작성 시 결제금액을 전액 돌려드려요. <b>선착순 30명!</b></div>
+    <div class="refund-banner" style="animation:none;text-align:left">
+      <div class="rb-sub" style="margin-top:0">
+        ① 큐넷 합격 화면 캡처<br>
+        ② CertLab 활용 후기 100자 이상<br>
+        ③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>
+        → 확인 후 전액 환급!
+      </div>
+    </div>
+    <a class="btn-google-login" href="event.html" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none">자세히 보기 →</a>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('day')">닫기</button>
+      <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('week')">7일간 보지 않기</button>
+    </div>
+  </div>
+</div>
 <div class="auth-popup hidden" id="loginPopup">
   <div class="auth-sheet">
     <button class="popup-x" onclick="hideLoginPopup()" aria-label="닫기">✕</button>
     <div class="auth-sheet-title" id="loginTitle">🎯 무료 체험 완료</div>
     <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
+    <div class="refund-banner">
+      <div class="rb-ti">🎉 합격하면 결제금액 전액 환급<span class="rb-tag">선착순 30명</span></div>
+      <div class="rb-sub">CertLab로 공부하고 합격 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.</div>
+      <button class="rb-more" onclick="toggleRefundDetail()">자세히 ▾</button>
+      <div class="rb-detail hidden" id="refundDetail">
+        ① 합격 확인 화면 캡처 제출<br>
+        ② CertLab 활용 경험이 담긴 100자 이상 후기 작성<br>
+        ③ 후기 게시 동의 (마케팅·웹사이트 게시 가능)<br>
+        확인 후 결제금액 전액 환급해 드립니다.
+      </div>
+    </div>
     <div class="auth-features">
-      <div class="auth-feature-item">전체 248문제 + 상세 해설</div>
+      <div class="feat-now" id="loginFeatCount">전체 기출문제 + 상세 해설</div>
+      <div class="feat-all" id="loginFeatAll"></div>
+      <div class="auth-feature-item">망각곡선 자동복습</div>
       <div class="auth-feature-item">오답노트 & 즐겨찾기</div>
-      <div class="auth-feature-item">랜덤 학습</div>
+      <div class="auth-feature-item">예상점수 & 약점 분석</div>
       <div class="auth-feature-item">학습 기록 저장</div>
     </div>
     <button class="btn-google-login" onclick="signInWithGoogle()">
@@ -975,6 +1020,7 @@ if (firebaseReady) {
     }
     refresh();
     routeAfterAuth();
+    setTimeout(function(){ if(typeof maybeShowRefundPopup==='function') maybeShowRefundPopup(); }, 1200);
   });
 } else {
   // Firebase 미연결(미리보기/오프라인): 게스트 모드로 콘텐츠만 동작
@@ -1309,8 +1355,43 @@ function showLoginPopup(mode='default') {
     sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
   }
   popup.classList.remove('hidden');
+  // 기능 안내: 현재 시험명+문제수(위) / 전체 시험·문제수(아래)
+  try{
+    var cert=(typeof activeCertId==='function')?activeCertId():'bodybuilding';
+    var cn=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
+    var nm=(typeof CERT_FULLNAMES!=='undefined'&&CERT_FULLNAMES[cert])?CERT_FULLNAMES[cert]:'';
+    var fc=document.getElementById('loginFeatCount');
+    if(fc) fc.textContent = cn>0 ? (nm?nm+' ':'')+'전체 '+cn.toLocaleString()+'문제 + 상세 해설' : '전체 기출문제 + 상세 해설';
+    var fa=document.getElementById('loginFeatAll');
+    if(fa){
+      var allN=(typeof totalQuestionCountAll==='function')?totalQuestionCountAll():0;
+      var ex=(typeof examCount==='function')?examCount():0;
+      fa.textContent = (ex>0&&allN>0) ? '🎓 CertLab 전체 '+ex+'개 시험 · 총 '+allN.toLocaleString()+'문제 수록' : '';
+      fa.style.display = fa.textContent ? '' : 'none';
+    }
+  }catch(_){}
 }
 function hideLoginPopup() { document.getElementById('loginPopup').classList.add('hidden'); }
+// 환급 안내 팝업 — 전 사용자(기존 가입자 포함)에게. X=24시간, '7일간 보지 않기'=7일 숨김
+function maybeShowRefundPopup(){
+  try{
+    var raw=localStorage.getItem('refundPopupHide');
+    if(raw){ var until=parseInt(raw,10); if(until && Date.now()<until) return; }  // 숨김 기간 중
+    var p=document.getElementById('refundPopup'); if(!p) return;
+    // 다른 팝업(가입유도·환영·이용권)이 떠 있으면 양보
+    var busy=['loginPopup','planPopup','inappPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
+    if(busy) return;
+    p.classList.remove('hidden');
+  }catch(_){}
+}
+function closeRefundPopup(mode){
+  try{
+    var ms = mode==='week' ? 7*24*60*60*1000 : 24*60*60*1000;   // 7일 / 24시간
+    localStorage.setItem('refundPopupHide', String(Date.now()+ms));
+  }catch(_){}
+  var p=document.getElementById('refundPopup'); if(p) p.classList.add('hidden');
+}
+function toggleRefundDetail(){ var d=document.getElementById('refundDetail'); if(!d) return; var btn=event&&event.target; var open=d.classList.toggle('hidden')===false; if(btn) btn.textContent= open?'접기 ▲':'자세히 ▾'; }
 
 function certQuestionCount(cert){
   try{
@@ -1382,6 +1463,10 @@ function showWelcomePopup() {
     <div class="welcome-mile">🎁 가입 축하 <b>1,000원</b> 마일리지 지급! <span>(3일 안에 사용)</span><br>
       친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +10,000원 (1년 유효)
       <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
+    </div>
+    <div class="refund-banner" style="animation:none">
+      <div class="rb-ti">🎉 합격 환급 이벤트 참여 완료!<span class="rb-tag">선착순 30명</span></div>
+      <div class="rb-sub">합격 환급 이벤트 대상자로 등록되었어요. 합격 후 <b>합격 인증 + 후기 작성</b>하시면 결제금액을 <b>100% 환급</b>해 드립니다.</div>
     </div>`;
   document.querySelector('.btn-google-login').style.display='none';
   document.querySelector('.auth-sheet-close').textContent='학습 시작하기!';
