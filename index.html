@@ -450,6 +450,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exam-ti .st{font-size:11.5px;color:#64748B;font-weight:600}
 /* 중요도(별)·소요시간 뱃지 */
 #mcqView .imp{font-size:11px;font-weight:800;color:#C87A00;background:#FFF9F0;border:1px solid #FFEDBA;padding:2px 8px;border-radius:6px;letter-spacing:-.3px}
+#mcqView .guess-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:#8A6D1F;background:#FFF9EC;border:1.5px solid #F1D9A8;padding:4px 10px;border-radius:999px;cursor:pointer;flex-shrink:0}
+#mcqView .guess-toggle .gdot{width:8px;height:8px;border-radius:50%;background:#D9C28F}
+#mcqView .guess-toggle.on{background:#FAC775;border-color:#E0A52E;color:#4B2000}
+#mcqView .guess-toggle.on .gdot{background:#fff}
+#mcqView .guess-tag-r{margin-left:auto;font-size:10.5px;font-weight:800;color:#4B2000;background:#FAC775;border:1px solid #E0A52E;padding:2px 9px;border-radius:999px;flex-shrink:0}
+#mcqView .guess-hint{font-size:11.5px;color:#B97A12;background:#FFF9EC;border:1px dashed #F1D9A8;border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.5}
 #mcqView .tmark{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid}
 #mcqView .tmark.t1{color:#15803D;background:#F0FDF4;border-color:#BBF7D0}
 #mcqView .tmark.t2{color:#185FA5;background:#E6F1FB;border-color:#B5D4F4}
@@ -2289,6 +2295,7 @@ let mqReview=false;                       // SR 복습 세션 여부
 let mqDiag=false;                          // 진단 모의고사 세션 여부
 let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
 let mqInReview=false, mqReviewMode='all', mqReviewList=[];
+let mqGuess={};   // 문제별 '찍었어요' 상태 {qid:true} — 맞아도 복습은 애매로
 let mqResultQs=[], mqResultAns={}, mqResultMeta=null;
 function mqQuestions(){ if(mqInReview) return mqReviewList; return (mqList && mqList.length) ? mqList : curQB()[mqSub].sets[mqSet].questions; }
 // 중요도(star 1~3)/소요시간(time 1~3): 값 미지정(0)이면 표시 안 함. 값은 추후 별도 입력.
@@ -2506,7 +2513,7 @@ function startMcqExam(id,si,mode){
   else mqList=all;
   if(!mqList.length){ alert('오답이 없습니다.'); mqList=null; return; }
   if(mode==='all') mqClearProgress(id,si);   // 처음부터: 저장 삭제
-  mqAns={}; mqIdx=0; mqTimeLeft=mqList.length*60;
+  mqAns={}; mqGuess={}; mqIdx=0; mqTimeLeft=mqList.length*60;
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
@@ -2735,13 +2742,18 @@ function renderMcqExam(root){
   const jr=splitJaryo(q.q);
   const subjTag=((mqDiag||mqReview)&&q._subj)?'<span class="qsubj">'+q._subj+'</span>':'';
   const tags=subjTag+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
+  const guessOn=!!mqGuess[q.id];
+  const guessToggle = mqInReview
+    ? (guessOn?'<span class="guess-tag-r">🎲 찍음</span>':'')
+    : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+q.id+'\')"><span class="gdot"></span>🎲 찍었어요</button>';
+  const guessHint = (!mqInReview && guessOn) ? '<div class="guess-hint">확신이 없거나 <b>찍었을 때</b> 켜세요. 맞아도 <b>복습에 다시 나와요.</b></div>' : '';
   root.innerHTML=
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'">‹ '+(mqInReview?'결과':'과목')+'</button>'+
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+'</div></div>'+
       (mqInReview?'':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
-    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+'</div><div class="qtext">'+jr.q+'</div></div>'+
+    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+guessToggle+'</div><div class="qtext">'+jr.q+'</div>'+guessHint+'</div>'+
     '</div>'+
     '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+jr.jaryo+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
@@ -2760,7 +2772,11 @@ function mqPick(qid,n){
   mqAns[qid]=n; mqShow[qid]=false;
   if(firstTime || changed){
     const q=mqQuestions().find(x=>x.id===qid);
-    if(q){ srRateMcq(mqCert,q,n,mqTimeUp,changed); srSaveDebounced(); }   // 최종 답 기준으로 복습 반영(답 바꾸면 덮어쓰기)
+    if(q && mqHasAnswer(q)){
+      if(mqGuess[qid]){ srRateK(mqCert, q.id, isCorr(q.ans,n)?1:0, mqTimeUp, changed); }   // 찍음: 맞아도 애매(1), 틀리면 틀림(0)
+      else { srRateMcq(mqCert,q,n,mqTimeUp,changed); }                                        // 평소: 정답=정확(2)/오답=틀림(0)
+      srSaveDebounced();
+    }
   }
   if(firstTime){
     if(mqTimeUp) mqOvertimeCount++;
@@ -2775,6 +2791,20 @@ function mqPick(qid,n){
   else { setTimeout(()=>{ if(mqScreen==='exam'){ mqResult(); } }, 650); }  // 마지막 문제 → 자동 채점
 }
 function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid]; renderMCQ(); }
+function mqToggleGuess(qid){
+  if(mqInReview) return;
+  mqGuess[qid]=!mqGuess[qid];
+  // 이미 답을 골랐는데 찍음 상태가 바뀌면, 그 답 기준으로 복습 재반영
+  if(mqAns[qid]!==undefined){
+    const q=mqQuestions().find(x=>x.id===qid);
+    if(q && mqHasAnswer(q)){
+      const res = mqGuess[qid] ? (isCorr(q.ans,mqAns[qid])?1:0) : (isCorr(q.ans,mqAns[qid])?2:0);
+      srRateK(mqCert, q.id, res, mqTimeUp, true);   // replace=true (덮어쓰기)
+      srSaveDebounced();
+    }
+  }
+  renderMCQ();
+}
 function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
 function mqResult(){
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
