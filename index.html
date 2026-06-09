@@ -52,7 +52,7 @@ gtag('config', 'G-RPZRZQ779J');
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
 :root{--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#888780;--text:#2C2C2A;--text2:#5F5E5A;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:20px;--radius-sm:12px}
 .header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
-.event-badge{margin-left:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:10px;padding:5px 10px;line-height:1.2;flex-shrink:0;animation:ebPulse 2.2s ease-in-out infinite}
+.event-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:10px;padding:4px 9px;line-height:1.2;flex-shrink:0;animation:ebPulse 2.2s ease-in-out infinite}
 @keyframes ebPulse{0%,100%{box-shadow:0 0 0 0 rgba(242,178,60,0)}50%{box-shadow:0 0 8px 1px rgba(242,178,60,.5)}}
 .event-badge .eb-l1{font-size:12px;font-weight:800;color:#A8650A;white-space:nowrap}
 .event-badge .eb-l2{font-size:10.5px;font-weight:700;color:#B5730C;white-space:nowrap}
@@ -171,7 +171,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 /* ===== 통합 플랫폼: 홈/전환/슬로건 ===== */
 .brand-area{display:flex;flex-direction:column;line-height:1.05}
 .slogan{font-size:10px;font-weight:600;color:#7C93AD;letter-spacing:-.2px;margin-top:6px;white-space:nowrap}
-.home-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:16px;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;cursor:pointer;padding:0;line-height:1}
+.home-btn{display:none !important}
 .home-btn.hidden{display:none}
 .home-btn:active{transform:scale(.94)}
 .sr-hide{display:none}
@@ -644,12 +644,12 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     <div class="logo">CertLab</div>
     <div class="slogan">도전하는 사람들의 성공을 돕습니다</div>
   </div>
-  <a class="event-badge" href="event.html" aria-label="합격 환급 이벤트 보기">
-    <span class="eb-l1">🎉 100% 환급</span>
-    <span class="eb-l2">합격 이벤트</span>
-  </a>
   <div class="header-right">
     <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
+    <a class="event-badge" href="event.html" aria-label="합격 환급 이벤트 보기">
+      <span class="eb-l1">🎉 100% 환급</span>
+      <span class="eb-l2">합격 이벤트</span>
+    </a>
     <div class="mode-pill" id="modePill">전체</div>
     <div class="auth-bar" id="authBar">
       <button class="btn-login" onclick="showLoginPopup()">로그인</button>
