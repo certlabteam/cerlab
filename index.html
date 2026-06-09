@@ -401,6 +401,13 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .concept-ti{font-size:12px;font-weight:800;color:#185FA5;margin-bottom:7px}
 #mcqView .concept-row{font-size:12.5px;color:#3A4A5E;line-height:1.6;margin-bottom:5px}
 #mcqView .concept-row b{color:#0C447C}
+#mcqView .cc-exd{margin:6px 0 0;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12px;line-height:1.55;color:#5E4A2A}
+#mcqView .cc-ex{margin:6px 0 0;padding:7px 10px 7px 11px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:12px;line-height:1.55;color:#28425E}
+#mcqView .calc-graph{margin:0 0 10px;text-align:center}
+#mcqView .calc-graph svg{max-width:340px;width:100%;height:auto}
+#mcqView .calc-steps{margin:10px 0 0;padding:10px 12px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px}
+#mcqView .calc-steps .cs-ti{font-size:12px;font-weight:800;color:#8A5A00;margin-bottom:6px}
+#mcqView .calc-steps .cs-line{font-size:12.5px;line-height:1.7;color:#5E4A2A}
 #mcqView .mcq-foot{display:flex;gap:9px;margin:14px 0}
 #mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
 #mcqView .mbtn:disabled{opacity:.4}
@@ -445,12 +452,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .scard-arrow{width:24px;height:24px;border-radius:50%;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94A3B8;transition:transform .2s;flex-shrink:0}
 #mcqView .scard-arrow.open{transform:rotate(180deg)}
 #mcqView .scard-body{border-top:1px solid #F1F5F9}
-#mcqView .srow{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid #F1F5F9}
+#mcqView .srow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 15px;border-bottom:1px solid #F1F5F9;flex-wrap:wrap}
 #mcqView .srow:last-child{border-bottom:none}
 #mcqView .srow-left{display:flex;flex-direction:column;gap:2px}
 #mcqView .syr{font-size:13px;font-weight:700;color:#1E293B}
 #mcqView .swc{font-size:11px;color:#94A3B8;font-weight:500}
-#mcqView .sact{display:flex;gap:6px}
+#mcqView .sact{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:1;min-width:0}
 #mcqView .b-go{background:#0C447C;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer}
 #mcqView .b-fresh{color:#64748B;background:#fff;border:1.5px solid #E2E8F0;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 #mcqView .b-wr{color:#B91C1C;background:#FEF2F2;border:1.5px solid #FECACA;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
@@ -473,10 +480,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .guess-toggle.on .gdot{background:#fff}
 #mcqView .guess-tag-r{margin-left:auto;font-size:10.5px;font-weight:800;color:#4B2000;background:#FAC775;border:1px solid #E0A52E;padding:2px 9px;border-radius:999px;flex-shrink:0}
 #mcqView .guess-hint{font-size:11.5px;color:#B97A12;background:#FFF9EC;border:1px dashed #F1D9A8;border-radius:9px;padding:8px 11px;margin-top:9px;line-height:1.5}
-#mcqView .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:-0.45em;margin:0 2px;line-height:1.05}
-#mcqView .frac .fn{border-bottom:1.4px solid currentColor;padding:0 2px;font-size:0.82em}
-#mcqView .frac .fd{padding:0 2px;font-size:0.82em}
-#mcqView sub{font-size:0.72em} #mcqView sup{font-size:0.72em}
+#mcqView .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 2px;line-height:1.05}
+#mcqView .frac .fn{border-bottom:1.4px solid currentColor;padding:0 3px;font-size:0.8em}
+#mcqView .frac .fd{padding:0 3px;font-size:0.8em}
+#mcqView sub{font-size:0.7em;vertical-align:sub;line-height:0}
+#mcqView sup{font-size:0.7em;vertical-align:super;line-height:0}
 #mcqView .b-learn{background:#EAF0F9;color:#0C447C;border:none;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:800;cursor:pointer}
 #mcqView .learn-hd{display:flex;align-items:center;gap:8px;margin:14px 0 12px}
 #mcqView .learn-step{font-size:12px;font-weight:800;color:#fff;background:#0C447C;padding:5px 12px;border-radius:999px}
@@ -2999,15 +3007,38 @@ function renderMcqExam(root){
         return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
       }).join('')+'</div>';
     } else if(oFilled===1){
-      // 결론 한 줄(ㄱㄴㄷ형 등)
       var concl=oArr.filter(Boolean)[0];
-      body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+rm(concl,q)+'</div></div></div>';
+      var hasGraph = q.exp && q.exp.graph && String(q.exp.graph).trim();
+      var hasSteps = exArr.filter(Boolean).length>0;
+      if(hasGraph || hasSteps){
+        // 계산형: 정답 보기만 표시(오답 숨김) + 그래프 + 단계풀이
+        var ansIdx = oArr.findIndex(Boolean);
+        var sv1=splitVerdict(stripRepeatedOpt(concl, q.opts&&q.opts[ansIdx]));
+        var vTag = sv1.v ? ' <span class="eo-verdict '+sv1.vc+'">'+sv1.v+'</span>' : '';
+        var optLine = (q.opts&&q.opts[ansIdx]!=null) ? '<div class="eo-q">'+(ansIdx+1)+'. '+rm(q.opts[ansIdx],q)+vTag+' <span class="eo-badge">✅ 정답</span></div>' : '';
+        var aLine = sv1.rest ? '<div class="eo-a">'+rm(sv1.rest,q)+'</div>' : '';
+        body+='<div class="exp-opts"><div class="eo">'+optLine+aLine+'</div></div>';
+        if(hasGraph) body+='<div class="calc-graph">'+q.exp.graph+'</div>';   // SVG 그대로(renderMath 미적용)
+        if(hasSteps){
+          body+='<div class="calc-steps"><div class="cs-ti">풀이</div>'+
+            exArr.filter(Boolean).map(function(line){ return '<div class="cs-line">'+rm(String(line),q)+'</div>'; }).join('')+'</div>';
+        }
+      } else {
+        // 결론 한 줄(ㄱㄴㄷ형 등)
+        body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+rm(concl,q)+'</div></div></div>';
+      }
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
     if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
       body+='<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
-      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){ return (it&&it.t)?'<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>':''; }).join('')+'</div>';
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
+        if(!it||!it.t) return '';
+        var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>';
+        if(it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
+        if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
+        return row;
+      }).join('')+'</div>';
     }
     expHTML='<div class="exp"><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
   const jr=splitJaryo(q.q);
