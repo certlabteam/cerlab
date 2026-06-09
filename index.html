@@ -1085,6 +1085,7 @@ async function loadUserData() {
       srExamOverride = (data.examDates && typeof data.examDates==='object') ? data.examDates : {};
       srDiagnostics = Array.isArray(data.diagnostics) ? data.diagnostics : [];
       srMigrateIfNeeded();
+      var _merged=mergeGuestProgress();   // 비회원 때 기록을 계정에 병합(계정에 없는 것만)
       srApplyToCards();
       if (data.solveCountByCert && typeof data.solveCountByCert==='object') {
         solveCountByCert = data.solveCountByCert;
@@ -1095,8 +1096,17 @@ async function loadUserData() {
       }
       solveCount = totalSolve();
       setStatCountUI();
+      if(_merged && typeof saveUserData==='function') saveUserData();   // 병합분 계정에 저장
       refresh();
       if (activeCert === 'appraiser') renderMCQ();
+    } else {
+      // 신규 회원(userData 문서 없음): 비회원 때 기록을 계정으로 옮김
+      var _m2=mergeGuestProgress();
+      srApplyToCards();
+      solveCount=totalSolve(); setStatCountUI();
+      if(_m2 && typeof saveUserData==='function') saveUserData();
+      refresh();
+      if (activeCert === 'appraiser' && typeof renderMCQ==='function') renderMCQ();
     }
   } catch(e) { console.error('데이터 로드 오류:', e); }
 }
@@ -1111,6 +1121,32 @@ function srMigrateIfNeeded(){
 // cardProgress의 오답상태(w)를 카드 객체에 반영
 function srApplyToCards(){
   cards.forEach(c=>{ const p=srProgress[SR_CERT+'|'+c.id]; c.w=!!(p&&p.w); });
+}
+// 가입/로그인 시: 비회원 때 localStorage에 쌓인 학습기록을 계정으로 병합
+// 정책 = '계정에 없는 문제만' 게스트 기록에서 가져옴(겹치면 계정 우선). 1회성, 병합 후 게스트 기록 정리.
+function mergeGuestProgress(){
+  try{
+    var raw=localStorage.getItem('sr:'+SR_CERT); if(!raw) return false;
+    var o=JSON.parse(raw); var gp=(o&&o.p&&typeof o.p==='object')?o.p:null;
+    if(!gp) return false;
+    var added=0;
+    for(var k in gp){
+      if(!Object.prototype.hasOwnProperty.call(gp,k)) continue;
+      if(srProgress[k]===undefined){          // 계정에 없는 문제만
+        srProgress[k]=gp[k]; added++;
+      }
+    }
+    // 게스트 오답(w) 중 계정 srProgress에 새로 들어온 것 → 객관식 오답노트(appWrong)에도 반영
+    for(var k2 in srProgress){
+      var p=srProgress[k2];
+      if(p&&p.w){ var qid=k2.split('|').pop(); if(MCQ_QID2CS[qid] && !appWrong[qid]) appWrong[qid]=true; }
+    }
+    // 병합한 게스트 기록은 정리(다음 로그인 때 중복 병합 방지)
+    if(added>0){
+      try{ localStorage.removeItem('sr:'+SR_CERT); }catch(_){}
+    }
+    return added>0;
+  }catch(_){ return false; }
 }
 // 비로그인(게스트) localStorage 복원
 function srLoadLocal(){
