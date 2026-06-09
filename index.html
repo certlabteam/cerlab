@@ -2630,11 +2630,18 @@ function stripRepeatedOpt(exp, opt){
   // 공백 정규화 후, 해설이 보기 문장으로 시작하면 그 반복분을 제거
   var norm=function(s){ return String(s).replace(/\s+/g,' ').trim(); };
   var e=norm(exp), o=norm(opt);
+  var orig=e;   // 잘라내기 취소용 원본
   // 보기 끝의 마침표 유무 차이를 흡수
   var oNoDot=o.replace(/[.\s]+$/,'');
   if(e.indexOf(o)===0){ e=e.slice(o.length); }
   else if(e.indexOf(oNoDot)===0){ e=e.slice(oNoDot.length); }
   e=e.replace(/^[\s.·,)\]]+/,'').trim();   // 남은 앞쪽 구두점 정리
+  // 잘라낸 결과가 조사로 시작하면(보기+조사로 이어진 문장) 잘라내기 취소 → 주어 보존
+  // 예: 보기 '…전입금' + 해설 '…전입금은 재원이다' → '은 재원이다'가 되는 것을 방지
+  // 조사 뒤에 공백이 오는 경우만 조사로 판정(‘은 재원’=조사 / ‘은행’=명사 일부 → 제외)
+  if(e !== orig && /^(은|는|이|가|을|를|과|와|도|의|에|에서|으로|로|만|뿐|께|까지|부터|이나|나|이라도|라도|이라는|라는|라고|이라고|으로서|로서|으로써|로써|에게|한테)\s/.test(e)){
+    return orig;
+  }
   return e;
 }
 function isComboQuestion(opts){
