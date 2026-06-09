@@ -124,6 +124,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .learn-section-body ul{padding-left:16px;margin-top:4px}
 .learn-section-body li{margin-bottom:5px}
 .learn-keyword{display:inline-block;background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:6px;font-size:11px;font-weight:600;padding:2px 8px;margin:2px 3px 2px 0}
+.mnem-ti{color:#B97A12 !important;border-bottom-color:#F5E6C8 !important}
+.mnem-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
+.mnem-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
 .btn .lbl{font-size:10px;font-weight:500;opacity:.75}
@@ -394,8 +397,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-ex{margin-top:5px;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12px;line-height:1.55;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
-#mcqView .mn-box{margin:14px 0 0;padding:11px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:12px}
-#mcqView .mn-code{font-size:16px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
+#mcqView .mn-box{margin:14px 0 0}
+#mcqView .mn-ti{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#B97A12;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
+#mcqView .mn-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
 #mcqView .mn-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
 #mcqView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
 #mcqView .concept-ti{font-size:12px;font-weight:800;color:#185FA5;margin-bottom:7px}
@@ -2026,9 +2030,9 @@ function buildMnemonic(card){
   const code = (typeof m==='string') ? m : (m.code||'');
   const desc = (typeof m==='object' && m.desc) ? m.desc : '';
   if(!code) return '';
-  return '<div class="mnemonic"><div class="mnemonic-tag">🧠 암기코드</div>'
-    +'<div class="mnemonic-code">'+code+'</div>'
-    +(desc?'<div class="mnemonic-desc">'+desc+'</div>':'')+'</div>';
+  return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
+    +'<div class="learn-section-body"><span class="mnem-code">'+code+'</span>'
+    +(desc?'<div class="mnem-desc">'+desc+'</div>':'')+'</div></div>';
 }
 function buildLearnHTML(card){
   const mnHTML=(function(){try{return buildMnemonic(card);}catch(e){return '';}})();
@@ -2896,7 +2900,7 @@ function mnBoxHTML(mn){
   let code='', desc='';
   if(typeof mn==='string') code=mn; else { code=mn.code||''; desc=mn.desc||''; }
   if(!code) return '';
-  return '<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+  return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
 }
 function conceptBoxHTML(c){
   if(!Array.isArray(c) || !c.length) return '';
@@ -3030,7 +3034,7 @@ function renderMcqExam(root){
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
     if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
-      body+='<div class="mn-box"><div class="mn-code">🧠 '+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+      body+='<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
