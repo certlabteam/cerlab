@@ -125,6 +125,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .learn-section-body{font-size:13px;line-height:1.75;color:#3C3C3A}
 .learn-section-body ul{padding-left:16px;margin-top:4px}
 .learn-section-body li{margin-bottom:5px}
+.learn-img{margin:10px 0 2px;text-align:center}
+.learn-img img{max-width:100%;height:auto;border-radius:8px}
 .learn-keyword{display:inline-block;background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:6px;font-size:11px;font-weight:600;padding:2px 8px;margin:2px 3px 2px 0}
 .lc-row{font-size:13px;line-height:1.7;color:#3C3C3A;margin-bottom:9px}
 .lc-row:last-child{margin-bottom:0}
@@ -2070,7 +2072,7 @@ function buildMnemonic(card){
 function buildLearnHTML(card){
   const mnHTML=(function(){try{return buildMnemonic(card);}catch(e){return '';}})();
   const L=card.learn;
-  const panelInner=(L?buildLearnPanel(L):'')+mnHTML;
+  const panelInner=((L||card.img)?buildLearnPanel(L||{}, card.img):'')+mnHTML;
   if(!panelInner) return '';
   const btnLabel=learnOpen?'📖 학습 노트 닫기 ▲':'📖 학습 노트 보기 ▼';
   const panelDisplay=learnOpen?'':'display:none';
@@ -2082,12 +2084,13 @@ function buildLearnHTML(card){
     +'</div>';
 }
 
-function buildLearnPanel(data){
+function buildLearnPanel(data, imgKey){
   data=data||{};
   let h='';
-  // 1) 해설 (새 필드 explanation, 폴백 concept)
+  // 1) 해설 (새 필드 explanation, 폴백 concept) + 첨부 이미지
   var explain = data.explanation || data.concept || '';
-  if(explain) h+='<div class="learn-section"><div class="learn-section-title">해설</div><div class="learn-section-body">'+explain+'</div></div>';
+  var imgHTML = imgKey ? '<div class="learn-img">'+imgInner('img://'+imgKey)+'</div>' : '';
+  if(explain || imgHTML) h+='<div class="learn-section"><div class="learn-section-title">해설</div><div class="learn-section-body">'+explain+imgHTML+'</div></div>';
   // 2) 개념 (새 필드 concepts[] = {t,d,exd,ex}, 객관식 exp.c와 동일 구조)
   if(Array.isArray(data.concepts) && data.concepts.length){
     var rows=data.concepts.map(function(it){
@@ -2149,16 +2152,15 @@ function renderCard(){
   const learnHTML=(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})();
   const reportBtn=`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`;
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
-  const cardImg=(card.img)?('<div class="card-img">'+imgInner('img://'+card.img)+'</div>'):'';
   area.innerHTML=
     '<div class="card-scene">'
     +'<div class="card-inner'+(isFlipped?' flipped':'')+'" id="ci" onclick="flipCard()">'
     +'<div class="card-face card-front">'+statusDot+starDot
     +'<div class="card-label">Question</div>'
-    +'<div class="card-text">'+card.q+'</div>'+cardImg+'</div>'
+    +'<div class="card-text">'+card.q+'</div></div>'
     +'<div class="card-face card-back">'
     +'<div class="card-label">Answer</div>'
-    +'<div class="card-text">'+card.a+'</div>'+cardImg+'</div>'
+    +'<div class="card-text">'+card.a+'</div></div>'
     +'</div></div>'
     +'<div class="tap-hint">'+hintText+'</div>'
     +learnHTML
@@ -3343,7 +3345,7 @@ async function loadAllBanks(){
 function applyBank(ex,sub,doc){
   const qs=doc.questions||[];
   if(ex.type==='flashcard'){
-    qs.forEach(c=>{ const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,learn:c.learn||null,mn:c.mn||null,star:c.star||1,w:false,fav:false}); });
+    qs.forEach(c=>{ const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,img:c.img||null,learn:c.learn||null,mn:c.mn||null,star:c.star||1,w:false,fav:false}); });
   } else {
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
