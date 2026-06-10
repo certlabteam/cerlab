@@ -124,6 +124,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .learn-section-body ul{padding-left:16px;margin-top:4px}
 .learn-section-body li{margin-bottom:5px}
 .learn-keyword{display:inline-block;background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:6px;font-size:11px;font-weight:600;padding:2px 8px;margin:2px 3px 2px 0}
+.lc-row{font-size:13px;line-height:1.7;color:#3C3C3A;margin-bottom:9px}
+.lc-row:last-child{margin-bottom:0}
+.lc-row b{color:#0C447C}
+.lc-exd{margin:6px 0 0;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12.5px;line-height:1.55;color:#5E4A2A}
+.lc-ex{margin:6px 0 0;padding:7px 10px 7px 11px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:12.5px;line-height:1.55;color:#28425E}
 .mnem-ti{color:#B97A12 !important;border-bottom-color:#F5E6C8 !important}
 .mnem-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
 .mnem-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
@@ -2037,13 +2042,13 @@ function buildMnemonic(card){
 function buildLearnHTML(card){
   const mnHTML=(function(){try{return buildMnemonic(card);}catch(e){return '';}})();
   const L=card.learn;
-  const panelInner=mnHTML+(L?buildLearnPanel(L):'');
+  const panelInner=(L?buildLearnPanel(L):'')+mnHTML;
   if(!panelInner) return '';
-  const btnLabel=learnOpen?'📖 해설 닫기 ▲':'📖 해설보기 ▼';
+  const btnLabel=learnOpen?'📖 학습 노트 닫기 ▲':'📖 학습 노트 보기 ▼';
   const panelDisplay=learnOpen?'':'display:none';
   return '<div class="learn-btn-wrap"><button class="learn-btn" onclick="toggleLearn()">'+btnLabel+'</button></div>'
     +'<div class="learn-panel" id="learnPanel" style="'+panelDisplay+'">'
-    +'<div class="learn-panel-header"><span class="learn-panel-title">📚 해설</span>'
+    +'<div class="learn-panel-header"><span class="learn-panel-title">📚 학습 노트</span>'
     +'<button class="learn-panel-close" onclick="toggleLearn()">✕</button></div>'
     +'<div class="learn-panel-body">'+panelInner+'</div>'
     +'</div>';
@@ -2051,15 +2056,28 @@ function buildLearnHTML(card){
 
 function buildLearnPanel(data){
   data=data||{};
-  const kws=(Array.isArray(data.keywords)?data.keywords:[]).map(k=>'<span class="learn-keyword">'+k+'</span>').join('');
-  const pts=(Array.isArray(data.points)?data.points:[]).map(p=>'<li>'+p+'</li>').join('');
-  const concept=data.concept||'';
-  const extra=data.extra||'';
   let h='';
-  if(concept) h+='<div class="learn-section"><div class="learn-section-title">핵심 개념</div><div class="learn-section-body">'+concept+'</div></div>';
-  if(pts) h+='<div class="learn-section"><div class="learn-section-title">포인트 정리</div><div class="learn-section-body"><ul>'+pts+'</ul></div></div>';
-  if(extra) h+='<div class="learn-section"><div class="learn-section-title">시험관 답변 예시</div><div class="learn-section-body">'+extra+'</div></div>';
-  if(kws) h+='<div class="learn-section"><div class="learn-section-title">핵심 키워드</div><div class="learn-section-body">'+kws+'</div></div>';
+  // 1) 해설 (새 필드 explanation, 폴백 concept)
+  var explain = data.explanation || data.concept || '';
+  if(explain) h+='<div class="learn-section"><div class="learn-section-title">해설</div><div class="learn-section-body">'+explain+'</div></div>';
+  // 2) 개념 (새 필드 concepts[] = {t,d,exd,ex}, 객관식 exp.c와 동일 구조)
+  if(Array.isArray(data.concepts) && data.concepts.length){
+    var rows=data.concepts.map(function(it){
+      if(!it||!it.t) return '';
+      var r='<div class="lc-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>';
+      if(it.exd && String(it.exd).trim()) r+='<div class="lc-exd">💡 '+String(it.exd).trim()+'</div>';
+      if(it.ex && String(it.ex).trim()) r+='<div class="lc-ex">'+String(it.ex).trim()+'</div>';
+      return r;
+    }).join('');
+    if(rows) h+='<div class="learn-section"><div class="learn-section-title">개념</div><div class="learn-section-body">'+rows+'</div></div>';
+  } else {
+    // 폴백: 기존 points / extra / keywords (구 데이터 호환)
+    var pts=(Array.isArray(data.points)?data.points:[]).map(function(p){return '<li>'+p+'</li>';}).join('');
+    if(pts) h+='<div class="learn-section"><div class="learn-section-title">개념</div><div class="learn-section-body"><ul>'+pts+'</ul></div></div>';
+    if(data.extra) h+='<div class="learn-section"><div class="learn-section-title">시험관 답변 예시</div><div class="learn-section-body">'+data.extra+'</div></div>';
+    var kws=(Array.isArray(data.keywords)?data.keywords:[]).map(function(k){return '<span class="learn-keyword">'+k+'</span>';}).join('');
+    if(kws) h+='<div class="learn-section"><div class="learn-section-title">핵심 키워드</div><div class="learn-section-body">'+kws+'</div></div>';
+  }
   return h;
 }
 
@@ -2069,7 +2087,7 @@ function toggleLearn(){
   const panel=document.getElementById('learnPanel');
   const btns=document.querySelectorAll('.learn-btn');
   if(panel)panel.style.display=learnOpen?'block':'none';
-  btns.forEach(b=>{b.textContent=learnOpen?'📖 해설 닫기 ▲':'📖 해설보기 ▼';});
+  btns.forEach(b=>{b.textContent=learnOpen?'📖 학습 노트 닫기 ▲':'📖 학습 노트 보기 ▼';});
 }
 
 function renderCard(){
