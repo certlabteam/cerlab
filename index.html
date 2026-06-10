@@ -671,7 +671,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   </div>
   <div class="header-right">
     <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
-    <a class="event-badge" href="event.html" aria-label="합격 환급 이벤트 보기">
+    <a class="event-badge" id="eventBadge" href="event.html" style="display:none" aria-label="합격 환급 이벤트 보기">
       <span class="eb-l1">🎉 100% 환급</span>
       <span class="eb-l2">합격 이벤트</span>
     </a>
@@ -847,10 +847,10 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="auth-sheet" style="text-align:center">
     <button class="popup-x" onclick="closeRefundPopup('day')" aria-label="닫기">✕</button>
     <div style="font-size:40px;margin:6px 0 2px">🎉</div>
-    <div class="auth-sheet-title">100% 환급 이벤트에 당첨되었습니다!</div>
-    <div class="auth-sheet-sub">CertLab로 공부하고 합격하면, 합격 인증 + 후기 작성 시 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b></div>
+    <div class="auth-sheet-title" id="refundTitle">100% 환급 이벤트에 당첨되었습니다!</div>
+    <div class="auth-sheet-sub" id="refundSub">CertLab로 공부하고 합격하면, 합격 인증 + 후기 작성 시 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b></div>
     <div class="refund-banner" style="animation:none;text-align:left">
-      <div class="rb-sub" style="margin-top:0">
+      <div class="rb-sub" id="refundSteps" style="margin-top:0">
         ① 큐넷 합격 화면 캡처<br>
         ② CertLab 활용 후기 100자 이상<br>
         ③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>
@@ -864,7 +864,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
       ✓ 예상점수 & 약점 분석<br>
       ✓ 음성 듣기 · 암기코드
     </div>
-    <a class="btn-google-login" href="event.html" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none">자세히 보기 →</a>
+    <a class="btn-google-login" id="refundLink" href="event.html" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none">자세히 보기 →</a>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('day')">닫기</button>
       <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('week')">7일간 보지 않기</button>
@@ -876,9 +876,9 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     <button class="popup-x" onclick="hideLoginPopup()" aria-label="닫기">✕</button>
     <div class="auth-sheet-title" id="loginTitle">🎯 무료 체험 완료</div>
     <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
-    <div class="refund-banner">
-      <div class="rb-ti">🎉 합격하면 결제금액 전액 환급<span class="rb-tag">선착순 30명</span></div>
-      <div class="rb-sub">CertLab로 공부하고 합격 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.</div>
+    <div class="refund-banner" id="loginRefundBanner">
+      <div class="rb-ti" id="loginRbTi">🎉 합격하면 결제금액 전액 환급<span class="rb-tag">선착순 30명</span></div>
+      <div class="rb-sub" id="loginRbSub">CertLab로 공부하고 합격 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.</div>
       <button class="rb-more" onclick="toggleRefundDetail()">자세히 ▾</button>
       <div class="rb-detail hidden" id="refundDetail">
         ① 합격 확인 화면 캡처 제출<br>
@@ -1041,6 +1041,25 @@ const TRIAL_LIMIT = 50;
 const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing'];
 const CERT_LABELS = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사' };
 const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험 심화', housing:'주택관리사 1차' };
+// ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
+const EVENTS = {
+  bodybuilding: {
+    page:'event.html?cert=bodybuilding', badge:'합격 이벤트',
+    bannerLine:'🎉 합격하면 결제금액 전액 환급',
+    bannerSub:'CertLab로 공부하고 합격하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
+    popTitle:'100% 환급 이벤트에 당첨되었습니다!',
+    popSub:'CertLab로 공부하고 합격하면, 인증 + 후기 작성 시 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b>',
+    popSteps:'① 큐넷에서 환불 조건에 맞는 합격·점수 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
+  },
+  koreanhistory: {
+    page:'event.html?cert=koreanhistory', badge:'1급 환급',
+    bannerLine:'🎉 한국사 1급 달성하면 전액 환급',
+    bannerSub:'CertLab로 공부하고 심화 1급(최고 등급)을 달성하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
+    popTitle:'한국사 1급 환급 이벤트!',
+    popSub:'한국사 심화 <b>1급(최고 등급)</b>을 달성하고 후기를 작성하면 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b>',
+    popSteps:'① 한능검·정부24에서 1급 인증 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
+  }
+};
 function certLabel(c){ return CERT_LABELS[c]||c; }
 function certFull(c){ return CERT_FULLNAMES[c]||c; }
 function blankEnt(){ const o={}; ALL_CERTS.forEach(c=>o[c]={plan:'GUEST',trialCount:0,expireAt:null,planDays:null}); return o; }
@@ -1406,6 +1425,7 @@ function showLoginPopup(mode='default') {
     title.textContent = '📚 CertLab';
     sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
   }
+  if(typeof updateEventBanner==='function') updateEventBanner();
   popup.classList.remove('hidden');
   // 기능 안내: 현재 시험명+문제수(위) / 전체 시험·문제수(아래)
   try{
@@ -1425,8 +1445,27 @@ function showLoginPopup(mode='default') {
 }
 function hideLoginPopup() { document.getElementById('loginPopup').classList.add('hidden'); }
 // 환급 안내 팝업 — 전 사용자(기존 가입자 포함)에게. X=24시간, '7일간 보지 않기'=7일 숨김
+// 헤더 이벤트 배지: 홈→허브(events.html), 이벤트 있는 시험→해당 상세, 이벤트 없는 시험→숨김
+function updateEventBadge(){
+  var b=document.getElementById('eventBadge'); if(!b) return;
+  var l2=b.querySelector('.eb-l2');
+  if(activeCert===null){ b.style.display=''; b.setAttribute('href','events.html'); if(l2) l2.textContent='이벤트'; }
+  else if(EVENTS[activeCert]){ b.style.display=''; b.setAttribute('href',EVENTS[activeCert].page); if(l2) l2.textContent=EVENTS[activeCert].badge; }
+  else { b.style.display='none'; }
+}
+// 로그인/환영 팝업 안의 환급 배너: 이벤트 있는 시험만, 시험별 문구로
+function updateEventBanner(){
+  var b=document.getElementById('loginRefundBanner'); if(!b) return;
+  var ev=EVENTS[(typeof activeCertId==='function')?activeCertId():'bodybuilding'];
+  if(!ev){ b.style.display='none'; return; }
+  b.style.display='';
+  var ti=document.getElementById('loginRbTi'); if(ti) ti.innerHTML=ev.bannerLine+'<span class="rb-tag">선착순 30명</span>';
+  var sb=document.getElementById('loginRbSub'); if(sb) sb.innerHTML=ev.bannerSub;
+  var dt=document.getElementById('refundDetail'); if(dt) dt.innerHTML=ev.popSteps;
+}
 function maybeShowRefundPopup(){
   try{
+    var ev=EVENTS[activeCert]; if(!ev) return;   // 이벤트가 설정된 시험에서만 노출
     var raw=localStorage.getItem('refundPopupHide');
     if(raw){ var until=parseInt(raw,10); if(until && Date.now()<until) return; }  // 숨김 기간 중
     var p=document.getElementById('refundPopup'); if(!p) return;
@@ -1447,6 +1486,12 @@ function maybeShowRefundPopup(){
         rs.innerHTML = [line1,line2].filter(Boolean).join('<br>');
         rs.style.display = rs.innerHTML ? '' : 'none';
       }
+    }catch(_){}
+    try{
+      var _t=document.getElementById('refundTitle'); if(_t) _t.textContent=ev.popTitle;
+      var _s=document.getElementById('refundSub'); if(_s) _s.innerHTML=ev.popSub;
+      var _st=document.getElementById('refundSteps'); if(_st) _st.innerHTML=ev.popSteps;
+      var _l=document.getElementById('refundLink'); if(_l) _l.setAttribute('href',ev.page);
     }catch(_){}
     p.classList.remove('hidden');
   }catch(_){}
@@ -1535,6 +1580,7 @@ function showWelcomePopup() {
   document.querySelector('.auth-sheet-close').textContent='학습 시작하기!';
   document.querySelector('.auth-sheet-close').style.background='linear-gradient(135deg,#185FA5,#0C447C)';
   document.querySelector('.auth-sheet-close').style.color='#fff';
+  if(typeof updateEventBanner==='function') updateEventBanner();
   popup.classList.remove('hidden');
 }
 
@@ -1545,7 +1591,10 @@ const PLAN_SETS={
             {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
   appraiser:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
              {d:28,p:12900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 추천'},
-             {d:56,p:19900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 최고 가성비',green:1}]
+             {d:56,p:19900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 최고 가성비',green:1}],
+  koreanhistory:[{d:7,p:1900,name:'1주 이용권',desc:'7일 전체 이용'},
+                 {d:14,p:2900,name:'2주 이용권',desc:'14일 전체 이용',pop:'⭐ 가장 인기'},
+                 {d:28,p:3900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}]
 };
 function plansFor(cert){ return PLAN_SETS[cert]||PLAN_SETS._default; }
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
@@ -3291,6 +3340,7 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   }
   mqInReview=false; mqConcept=false;
   activeCert = null;
+  if(typeof updateEventBadge==='function') updateEventBadge();
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   document.getElementById('homeView').classList.remove('hidden');
@@ -3309,6 +3359,7 @@ function enterCert(id){
   }
   mqInReview=false; mqConcept=false;
   activeCert = id;
+  if(typeof updateEventBadge==='function') updateEventBadge();
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   setLastCert(id);
@@ -3331,6 +3382,7 @@ function enterCert(id){
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
   if(currentUser && userEnt[id] && userEnt[id].plan === 'EXPIRED'){ setTimeout(()=>showPlanPopup(), 600); }
+  if(EVENTS[id]){ setTimeout(function(){ if(typeof maybeShowRefundPopup==='function') maybeShowRefundPopup(); }, 700); }
   window.scrollTo(0,0);
 }
 function goHome(){ showHome(); }
