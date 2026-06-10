@@ -102,6 +102,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .card-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:#185FA5}
 .card-back .card-label{color:#0C447C}
 .card-text{font-size:20px;font-weight:700;line-height:1.55;color:#2C2C2A}
+.card-img{margin:14px 0 4px;text-align:center}
+.card-img img{max-width:100%;height:auto;border-radius:10px}
 .card-back .card-text{font-size:17px;color:#042C53}
 .wrong-dot{position:absolute;top:14px;right:14px;background:#E24B4A;color:#fff;font-size:11px;font-weight:800;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .star-dot{position:absolute;top:12px;right:12px;font-size:12px;line-height:1;letter-spacing:-1px}
@@ -119,7 +121,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .learn-panel-body{padding:16px 18px;max-height:380px;overflow-y:auto}
 .learn-section{margin-bottom:16px}
 .learn-section:last-child{margin-bottom:0}
-.learn-section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#0C447C;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #E6F1FB}
+.learn-section-title{font-size:13px;font-weight:800;letter-spacing:.3px;color:#0C447C;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #E6F1FB}
 .learn-section-body{font-size:13px;line-height:1.75;color:#3C3C3A}
 .learn-section-body ul{padding-left:16px;margin-top:4px}
 .learn-section-body li{margin-bottom:5px}
@@ -386,12 +388,14 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .opt.dim{opacity:.55}
 #mcqView .jaryo{font-size:13.5px;font-weight:500;line-height:1.6;color:#334155;white-space:pre-wrap;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:11px 13px;margin:0 0 15px}
 #mcqView .exp{margin-top:13px;border-top:1px dashed #E2E8F0;padding-top:12px}
+#mcqView .exp-note-hd{font-size:15px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
+#mcqView .exp-note-hd::before{content:'📚 '}
 #mcqView .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
-#mcqView .exp-ti{font-size:15px;font-weight:800;color:#0F172A}
+#mcqView .exp-ti{font-size:13px;font-weight:800;color:#0F172A}
 #mcqView .exp-st{font-size:13px;font-weight:800}
-#mcqView .exp .note{font-size:12.5px;color:#475569;line-height:1.65;margin-bottom:10px}
+#mcqView .exp .note{font-size:13px;color:#475569;line-height:1.7;margin-bottom:10px}
 #mcqView .exp-opts{display:flex;flex-direction:column;gap:9px}
-#mcqView .exp-opts .eo{font-size:13px;line-height:1.55}
+#mcqView .exp-opts .eo{font-size:13px;line-height:1.7}
 #mcqView .exp-opts .eo-q{color:#1E293B;font-weight:500;margin-bottom:2px}
 #mcqView .exp-opts .eo-a{color:#475569;padding-left:2px}
 #mcqView .exp-opts .eo-a.eo-red{color:#A32D2D}
@@ -399,24 +403,24 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-verdict{font-size:12px;font-weight:700;margin-left:6px;white-space:nowrap}
 #mcqView .exp-opts .eo-verdict.eo-red{color:#A32D2D}
 #mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
-#mcqView .exp-opts .eo-ex{margin-top:5px;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12px;line-height:1.55;color:#5E4A2A}
+#mcqView .exp-opts .eo-ex{margin-top:5px;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.6;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 #mcqView .mn-box{margin:14px 0 0}
-#mcqView .mn-ti{font-size:11px;font-weight:700;letter-spacing:1.5px;color:#B97A12;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
+#mcqView .mn-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
 #mcqView .mn-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
-#mcqView .mn-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
+#mcqView .mn-desc{font-size:13px;color:#7A6A50;line-height:1.6;margin-top:5px}
 #mcqView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
-#mcqView .concept-ti{font-size:12px;font-weight:800;color:#185FA5;margin-bottom:7px}
-#mcqView .concept-row{font-size:12.5px;color:#3A4A5E;line-height:1.6;margin-bottom:5px}
+#mcqView .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:7px}
+#mcqView .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7;margin-bottom:5px}
 #mcqView .concept-row b{color:#0C447C}
-#mcqView .cc-exd{margin:6px 0 0;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12px;line-height:1.55;color:#5E4A2A}
-#mcqView .cc-ex{margin:6px 0 0;padding:7px 10px 7px 11px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:12px;line-height:1.55;color:#28425E}
+#mcqView .cc-exd{margin:6px 0 0;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.6;color:#5E4A2A}
+#mcqView .cc-ex{margin:6px 0 0;padding:7px 10px 7px 11px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.6;color:#28425E}
 #mcqView .calc-graph{margin:0 0 10px;text-align:center}
 #mcqView .calc-graph svg{max-width:340px;width:100%;height:auto}
 #mcqView .calc-steps{margin:10px 0 0;padding:10px 12px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px}
-#mcqView .calc-steps .cs-ti{font-size:12px;font-weight:800;color:#8A5A00;margin-bottom:6px}
-#mcqView .calc-steps .cs-line{font-size:12.5px;line-height:1.7;color:#5E4A2A}
+#mcqView .calc-steps .cs-ti{font-size:13px;font-weight:800;color:#8A5A00;margin-bottom:6px}
+#mcqView .calc-steps .cs-line{font-size:13px;line-height:1.7;color:#5E4A2A}
 #mcqView .mcq-foot{display:flex;gap:9px;margin:14px 0}
 #mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
 #mcqView .mbtn:disabled{opacity:.4}
@@ -484,6 +488,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 /* 중요도(별)·소요시간 뱃지 */
 #mcqView .imp{font-size:11px;font-weight:800;color:#C87A00;background:#FFF9F0;border:1px solid #FFEDBA;padding:2px 8px;border-radius:6px;letter-spacing:-.3px}
 #mcqView .guess-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:#8A6D1F;background:#FFF9EC;border:1.5px solid #F1D9A8;padding:4px 10px;border-radius:999px;cursor:pointer;flex-shrink:0}
+#mcqView .mq-report{margin-left:auto;display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;color:#A86A2E;background:#FFF7EF;border:1.5px solid #F1D9A8;padding:4px 10px;border-radius:999px;cursor:pointer;flex-shrink:0}
+#mcqView .mq-report+.guess-toggle{margin-left:8px}
+#mcqView .mq-report:active{transform:scale(.96)}
 #mcqView .guess-toggle .gdot{width:8px;height:8px;border-radius:50%;background:#D9C28F}
 #mcqView .guess-toggle.on{background:#FAC775;border-color:#E0A52E;color:#4B2000}
 #mcqView .guess-toggle.on .gdot{background:#fff}
@@ -1713,11 +1720,20 @@ async function applyDiscount() {
 
 // ===== 오류 신고 =====
 let selectedReportType = '';
+let reportTarget = null;
 
-function openReport() {
-  const card = filtered[current];
-  if (!card) return;
-  document.getElementById('reportSubTitle').textContent = card.q.length > 30 ? card.q.slice(0,30)+'...' : card.q;
+function openReport(mcqQ) {
+  // 객관식 문항(mcqQ)이 넘어오면 그걸 신고, 없으면 생체 현재 카드
+  if(mcqQ && mcqQ.id){
+    var cs = (typeof MCQ_QID2CS!=='undefined' && MCQ_QID2CS[mcqQ.id]) ? MCQ_QID2CS[mcqQ.id] : null;
+    var subName = mcqQ._subj || (cs ? ((qbOf(cs.cert)[cs.sub]&&qbOf(cs.cert)[cs.sub].name)||cs.sub) : '');
+    reportTarget = { q: mcqQ.q||'', subject: subName, cert: (cs?cs.cert:activeCertId()), qid: mcqQ.id };
+  } else {
+    var card = filtered[current];
+    if (!card) return;
+    reportTarget = { q: card.q, subject: card.s, cert: activeCertId(), qid: null, _card: card };
+  }
+  document.getElementById('reportSubTitle').textContent = reportTarget.q.length > 30 ? reportTarget.q.slice(0,30)+'...' : reportTarget.q;
   selectedReportType = '';
   document.querySelectorAll('.report-type').forEach(t => t.classList.remove('selected'));
   document.getElementById('reportDetail').value = '';
@@ -1726,6 +1742,14 @@ function openReport() {
 
 function closeReport() {
   document.getElementById('reportSheet').classList.add('hidden');
+}
+// 객관식 현재 문항 오류신고 — qid로 현재 문항 객체를 찾아 openReport에 전달
+function openReportMcq(qid){
+  var q=null;
+  try{ if(Array.isArray(mqList)) q=mqList[mqIdx]; }catch(_){}
+  if(!q || q.id!==qid){ try{ q=(mqList||[]).find(function(x){return x&&x.id===qid;})||null; }catch(_){} }
+  if(!q){ q={id:qid, q:''}; }
+  openReport(q);
 }
 
 function selectReportType(el, type) {
@@ -1737,13 +1761,14 @@ function selectReportType(el, type) {
 async function submitReport() {
   if (!selectedReportType) { alert('오류 유형을 선택해주세요.'); return; }
   const detail = document.getElementById('reportDetail').value.trim();
-  const card = filtered[current];
+  const t = reportTarget || {};
   try {
     await db.collection('reports').add({
-      question: card.q,
-      subject: card.s,
-      cardIndex: D.findIndex(c => c.q === card.q && c.s === card.s),
-      certType: activeCertId(),
+      question: t.q || '',
+      subject: t.subject || '',
+      cardIndex: (t._card ? D.findIndex(c => c.q === t._card.q && c.s === t._card.s) : -1),
+      questionId: t.qid || '',
+      certType: t.cert || activeCertId(),
       errorType: selectedReportType,
       detail: detail || '',
       reporterUid: currentUser ? currentUser.uid : 'guest',
@@ -2121,19 +2146,21 @@ function renderCard(){
   const learnHTML=(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})();
   const reportBtn=`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`;
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
+  const cardImg=(card.img)?('<div class="card-img">'+imgInner('img://'+card.img)+'</div>'):'';
   area.innerHTML=
     '<div class="card-scene">'
     +'<div class="card-inner'+(isFlipped?' flipped':'')+'" id="ci" onclick="flipCard()">'
     +'<div class="card-face card-front">'+statusDot+starDot
     +'<div class="card-label">Question</div>'
-    +'<div class="card-text">'+card.q+'</div></div>'
+    +'<div class="card-text">'+card.q+'</div>'+cardImg+'</div>'
     +'<div class="card-face card-back">'
     +'<div class="card-label">Answer</div>'
-    +'<div class="card-text">'+card.a+'</div></div>'
+    +'<div class="card-text">'+card.a+'</div>'+cardImg+'</div>'
     +'</div></div>'
     +'<div class="tap-hint">'+hintText+'</div>'
     +learnHTML
     +reportBtn;
+  try{ resolveImages(area); }catch(_){}
 
   // 하단 평가 버튼 (답 확인 후에만 노출)
   if(rateRow){
@@ -3062,7 +3089,7 @@ function renderMcqExam(root){
         return row;
       }).join('')+'</div>';
     }
-    expHTML='<div class="exp"><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
+    expHTML='<div class="exp"><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
   const jr=splitJaryo(q.q);
   const subjTag=((mqDiag||mqReview)&&q._subj)?'<span class="qsubj">'+q._subj+'</span>':'';
   const tags=subjTag+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
@@ -3071,13 +3098,14 @@ function renderMcqExam(root){
     ? (guessOn?'<span class="guess-tag-r">🎲 찍음</span>':'')
     : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+q.id+'\')"><span class="gdot"></span>🎲 찍었어요</button>';
   const guessHint = (!mqInReview && guessOn) ? '<div class="guess-hint">확신이 없거나 <b>찍었을 때</b> 켜세요. 맞아도 <b>복습에 다시 나와요.</b></div>' : '';
+  const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고">⚠️ 신고</button>';
   root.innerHTML=
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'">‹ '+(mqInReview?'결과':'과목')+'</button>'+
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+'</div></div>'+
       (mqInReview?'':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
-    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+guessToggle+'</div><div class="qtext">'+rm(jr.q,q)+'</div>'+guessHint+'</div>'+
+    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+rm(jr.q,q)+'</div>'+guessHint+'</div>'+
     '</div>'+
     '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
