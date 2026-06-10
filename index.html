@@ -365,7 +365,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mq-prog .row{display:flex;justify-content:space-between;font-size:12px;color:#64748B;font-weight:700;margin-bottom:6px}
 #mcqView .mq-prog .track{height:6px;background:#E2E8F0;border-radius:99px;overflow:hidden}
 #mcqView .mq-prog .bar{height:100%;background:linear-gradient(90deg,#185FA5,#378ADD);border-radius:99px;transition:width .25s}
-#mcqView .qcard{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:17px 16px}
+#mcqView .mq-prog .track.prog-drag{height:7px;overflow:visible;cursor:pointer;touch-action:none;position:relative}
+#mcqView .mq-prog .track.prog-drag .bar{transition:width .1s;position:relative}
+#mcqView .mq-prog .track.prog-drag .bar::after{content:"";position:absolute;right:0;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:2.5px solid #185FA5;box-shadow:0 1px 3px rgba(15,23,42,.3)}
+#mcqView .qcard{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:17px 16px;margin-bottom:86px}
 #mcqView .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px}
 #mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
@@ -423,7 +426,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .calc-steps{margin:10px 0 0;padding:10px 12px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px}
 #mcqView .calc-steps .cs-ti{font-size:13px;font-weight:800;color:#8A5A00;margin-bottom:6px}
 #mcqView .calc-steps .cs-line{font-size:13px;line-height:1.7;color:#5E4A2A}
-#mcqView .mcq-foot{display:flex;gap:9px;margin:14px 0}
+#mcqView .mcq-foot{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;display:flex;gap:9px;margin:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E2E8F0;box-shadow:0 -4px 14px -8px rgba(15,23,42,.25);z-index:45;box-sizing:border-box}
 #mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
 #mcqView .mbtn:disabled{opacity:.4}
 #mcqView .mbtn-prev{background:#F8FAFC;color:#475569;border:1px solid #E2E8F0}
@@ -487,7 +490,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .etim-pause.on{background:#E6F1FB;color:#185FA5}
 #mcqView .etim.paused{color:#94A3B8;border-color:#CBD5E1;border-style:dashed;background:#F1F5F9;animation:none}
 @keyframes mqbl{0%,100%{opacity:1}50%{opacity:.45}}
-#mcqView .exam-back{background:#F1F5F9;border:none;color:#475569;font-size:13px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;flex-shrink:0}
+#mcqView .exam-back{background:#F1F5F9;border:none;color:#334155;cursor:pointer;flex-shrink:0;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0}
+#mcqView .exam-back:active{background:#E2E8F0}
 #mcqView .exam-ti .nm{font-size:14px;font-weight:800;color:#0F172A;line-height:1.2}
 #mcqView .exam-ti .st{font-size:11.5px;color:#64748B;font-weight:600}
 /* 중요도(별)·소요시간 뱃지 */
@@ -2527,6 +2531,7 @@ rebuildQid();
 let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
 let mqTimer=null, mqTimeLeft=0, mqTimeUp=false, mqTimeUpIdx=-1;
 let mqPaused=false;
+const BACK_ARROW='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
 let mqOverTimer=null, mqOverStart=0, mqOvertimeSec=0, mqOvertimeCount=0;  // 시간종료 후 경과시간(초)/푼 문항 수
 function mqStopOverTimer(){ if(mqOverTimer){ clearInterval(mqOverTimer); mqOverTimer=null; } if(mqOverStart){ mqOvertimeSec+=Math.floor((Date.now()-mqOverStart)/1000); mqOverStart=0; } }
 function mqOverElapsed(){ return mqOvertimeSec + (mqOverStart?Math.floor((Date.now()-mqOverStart)/1000):0); }
@@ -3005,7 +3010,7 @@ function renderMcqExam(root){
   if(mqConcept && mqConceptPhase==='learn'){
     root.innerHTML=
       '<div class="exam-sticky">'+
-      '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()">‹ 과목</button>'+
+      '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="뒤로">'+BACK_ARROW+'</button>'+
         '<div class="exam-ti"><div class="nm">개념학습</div><div class="st">'+(sets[mqSet]?sets[mqSet].label:'')+'</div></div></div>'+
       '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
       '</div>'+
@@ -3121,10 +3126,10 @@ function renderMcqExam(root){
   const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고">⚠️ 신고</button>';
   root.innerHTML=
     '<div class="exam-sticky">'+
-    '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'">‹ '+(mqInReview?'결과':'과목')+'</button>'+
+    '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="뒤로">'+BACK_ARROW+'</button>'+
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+'</div></div>'+
       (mqInReview?'':('<button class="etim-pause'+(mqPaused?' on':'')+'" onclick="mqTogglePause()" title="'+(mqPaused?'계속하기':'일시정지')+'">'+(mqPaused?'▶':'⏸')+'</button><span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+(mqPaused?' paused':'')+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
-    '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+rm(jr.q,q)+'</div>'+guessHint+'</div>'+
     '</div>'+
     '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
@@ -3176,6 +3181,17 @@ function mqToggleGuess(qid){
   renderMCQ();
 }
 function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; if(mqConcept) mqConceptPhase='learn'; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
+function mqProgStart(e){
+  var track=e.currentTarget; var total=mqQuestions().length; if(total<=1) return;
+  function idxAt(ev){ var r=track.getBoundingClientRect(); var cx=(ev.touches&&ev.touches[0])?ev.touches[0].clientX:ev.clientX; var f=(cx-r.left)/r.width; if(f<0)f=0; if(f>1)f=1; return Math.round(f*(total-1)); }
+  var target=mqIdx;
+  function move(ev){ if(ev.cancelable)ev.preventDefault(); target=idxAt(ev); var bar=track.querySelector('.bar'); if(bar) bar.style.width=((target+1)/total*100)+'%'; var lbl=document.getElementById('mqProgNum'); if(lbl) lbl.textContent=(target+1)+' / '+total+' 문항'; }
+  function end(){ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',end); document.removeEventListener('pointercancel',end);
+    if(target!==mqIdx){ mqIdx=target; if(mqConcept) mqConceptPhase='learn'; mqSaveProgress(); if(mqDiag) saveDiagProgress(); }
+    window.scrollTo(0,0); renderMCQ(); }
+  move(e);
+  document.addEventListener('pointermove',move); document.addEventListener('pointerup',end); document.addEventListener('pointercancel',end);
+}
 function mqResult(){
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
   mqInReview=false; mqConcept=false;
