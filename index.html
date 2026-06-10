@@ -1013,6 +1013,9 @@ try {
   const _ref = new URLSearchParams(location.search).get('ref');
   if (_ref) localStorage.setItem('pendingRef', _ref.trim().toUpperCase());
 } catch(_) {}
+// ?card=EP_72 딥링크 캡처 (데이터 로드 후 실행)
+let pendingCard = null;
+try { pendingCard = new URLSearchParams(location.search).get('card'); } catch(_) {}
 function genReferralCode(uid){ return (uid||'').replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,6) || ('R'+Math.random().toString(36).slice(2,7).toUpperCase()); }
 function mileageBalance(lots){
   const now = Date.now(); let s=0;
@@ -3298,6 +3301,17 @@ function enterCert(id){
   window.scrollTo(0,0);
 }
 function goHome(){ showHome(); }
+// 딥링크: 특정 생체 카드로 바로 이동 (?card=EP_72)
+function goToCard(qid){
+  if(!qid) return;
+  enterCert('bodybuilding');
+  try{
+    currentSubj='전체'; currentStar=0;
+    filtered=[...cards];   // 전체에서 찾도록
+    var idx=filtered.findIndex(function(c){return c&&c.id===qid;});
+    if(idx!==-1){ current=idx; isFlipped=false; learnOpen=false; refresh(); window.scrollTo(0,0); }
+  }catch(_){}
+}
 function routeAfterAuth(){
   if(currentUser && !activeCert){
     const last = getLastCert();
@@ -3366,6 +3380,8 @@ loadAllBanks().then(()=>{
   if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
   if(typeof refresh==='function') refresh();
   if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
+  // ?card= 딥링크 실행 (데이터 로드 완료 후 1회)
+  if(typeof pendingCard!=='undefined' && pendingCard && typeof goToCard==='function'){ var _pc=pendingCard; pendingCard=null; setTimeout(function(){ goToCard(_pc); }, 200); }
 }).catch(showDataError);
 
 /* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
