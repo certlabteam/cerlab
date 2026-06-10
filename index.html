@@ -370,7 +370,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
 #mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
-#mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:13px 15px;margin-bottom:11px;box-shadow:0 1px 2px rgba(15,23,42,.04)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
+#mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:13px 15px;margin-bottom:11px;box-shadow:0 1px 2px rgba(15,23,42,.04)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
 #mcqView .opts{display:flex;flex-direction:column;gap:9px}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer;outline:none}
 #mcqView .opt:focus{outline:none}
@@ -379,7 +379,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .opt.opt-img{flex-direction:column;align-items:stretch}
 #mcqView .opt.opt-img .onum{margin-bottom:4px}
 #mcqView .opt .oimg{width:100%}
-#mcqView .opt .oimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block}
+#mcqView .opt .oimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
 #mcqView .opt.sel{border-color:#0F172A}
 #mcqView .opt.cor{background:#F0FDF4;border-color:#16A34A}
 #mcqView .opt.cor .onum{background:#16A34A;border-color:#16A34A;color:#fff}
@@ -483,6 +483,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .etim.over{color:#C2410C;border-color:#FED7AA;background:#FFF7ED;animation:none}
 #mcqView .etim.done{color:#64748B;border-color:#E2E8F0;background:#F8FAFC;font-size:13px;animation:none}
 #mcqView .etim.red{color:#DC2626;border-color:#FECACA;background:#FEF2F2;animation:mqbl .8s ease-in-out infinite}
+#mcqView .etim-pause{background:#F1F5F9;border:none;color:#334155;font-size:15px;width:34px;height:34px;border-radius:9px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
+#mcqView .etim-pause.on{background:#E6F1FB;color:#185FA5}
+#mcqView .etim.paused{color:#94A3B8;border-color:#CBD5E1;border-style:dashed;background:#F1F5F9;animation:none}
 @keyframes mqbl{0%,100%{opacity:1}50%{opacity:.45}}
 #mcqView .exam-back{background:#F1F5F9;border:none;color:#475569;font-size:13px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;flex-shrink:0}
 #mcqView .exam-ti .nm{font-size:14px;font-weight:800;color:#0F172A;line-height:1.2}
@@ -2523,6 +2526,7 @@ function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERT
 rebuildQid();
 let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
 let mqTimer=null, mqTimeLeft=0, mqTimeUp=false, mqTimeUpIdx=-1;
+let mqPaused=false;
 let mqOverTimer=null, mqOverStart=0, mqOvertimeSec=0, mqOvertimeCount=0;  // 시간종료 후 경과시간(초)/푼 문항 수
 function mqStopOverTimer(){ if(mqOverTimer){ clearInterval(mqOverTimer); mqOverTimer=null; } if(mqOverStart){ mqOvertimeSec+=Math.floor((Date.now()-mqOverStart)/1000); mqOverStart=0; } }
 function mqOverElapsed(){ return mqOvertimeSec + (mqOverStart?Math.floor((Date.now()-mqOverStart)/1000):0); }
@@ -2555,8 +2559,8 @@ function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,s
 function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
 function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
 function mqStopTimer(){ if(mqTimer){ clearInterval(mqTimer); mqTimer=null; } }
-function mqStartTimer(){
-  mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqTimeUpIdx=-1; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0;
+function mqRunTimer(){
+  mqStopTimer();
   mqTimer=setInterval(()=>{
     if(mqScreen!=='exam'){ mqStopTimer(); return; }
     mqTimeLeft--;
@@ -2566,6 +2570,17 @@ function mqStartTimer(){
     if(el){ el.textContent=mqFmt(mqTimeLeft); if(mqTimeLeft<=300) el.classList.add('red'); }
     else { mqStopTimer(); }
   },1000);
+}
+function mqStartTimer(){
+  mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqTimeUpIdx=-1; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0; mqPaused=false;
+  mqRunTimer();
+}
+function mqTogglePause(){
+  if(mqScreen!=='exam' || mqInReview) return;
+  mqPaused=!mqPaused;
+  if(mqPaused){ mqStopTimer(); mqStopOverTimer(); }
+  else { if(mqTimeUp) mqStartOverTimer(); else mqRunTimer(); }
+  renderMCQ();
 }
 
 function renderMCQ(){
@@ -3108,7 +3123,7 @@ function renderMcqExam(root){
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'">‹ '+(mqInReview?'결과':'과목')+'</button>'+
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+'</div></div>'+
-      (mqInReview?'':('<span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
+      (mqInReview?'':('<button class="etim-pause'+(mqPaused?' on':'')+'" onclick="mqTogglePause()" title="'+(mqPaused?'계속하기':'일시정지')+'">'+(mqPaused?'▶':'⏸')+'</button><span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+(mqPaused?' paused':'')+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+rm(jr.q,q)+'</div>'+guessHint+'</div>'+
     '</div>'+
