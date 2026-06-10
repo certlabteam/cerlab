@@ -502,7 +502,7 @@ let pendingPaymentId = null;
 let pendingPaymentData = null;
 
 // 결제 상태 헬퍼 — 앱은 즉시구매를 'auto_approved'로 저장한다
-const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사' };
+const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사', housing:'주택관리사' };
 const isPaid = s => s === 'approved' || s === 'auto_approved';
 const statusBadge = s => isPaid(s) ? 'badge-approved' : (s === 'pending' ? 'badge-pending' : 'badge-revoked');
 const statusLabel = s => s === 'auto_approved' ? '자동승인' : s === 'approved' ? '승인' : s === 'pending' ? '승인대기' : s === 'revoked' ? '철회' : '거절';
@@ -1547,11 +1547,13 @@ function renderReports(list) {
   if (!list.length) { document.getElementById('reportList').innerHTML = '<div class="empty">신고 내역이 없습니다.</div>'; return; }
   document.getElementById('reportList').innerHTML = `
     <table>
-      <thead><tr><th>신고일시</th><th>과목</th><th>오류유형</th><th>신고내용</th><th>신고자</th><th>상태</th><th>처리</th></tr></thead>
+      <thead><tr><th>신고일시</th><th>시험</th><th>과목</th><th>문항ID</th><th>오류유형</th><th>신고내용</th><th>신고자</th><th>상태</th><th>처리</th></tr></thead>
       <tbody>${list.map((r,i) => `
         <tr>
           <td>${fmtDate(r.createdAt)}</td>
+          <td style="font-size:11px">${CERT_NAMES[r.certType]||r.certType||'-'}</td>
           <td style="font-size:11px">${r.subject||'-'}</td>
+          <td style="font-size:11px;color:#888780">${r.questionId||'-'}</td>
           <td><span class="badge badge-pending">${r.errorType||'-'}</span></td>
           <td style="max-width:160px">
             <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${r.question||''}">${(r.question||'').slice(0,20)}${(r.question||'').length>20?'...':''}</div>
