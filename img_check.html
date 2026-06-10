@@ -1,31 +1,53 @@
 <!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>생체 이미지 확인 — CertLab</title>
+<title>이미지 업로드 확인 — CertLab</title>
 <style>
 :root{--blue:#0C447C;--ink:#2A2620;--sub:#6E6256;--ok:#15803D;--bad:#C0392B}
 *{box-sizing:border-box}
 body{margin:0;background:#F1F5F9;font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--ink);padding:18px}
 .wrap{max-width:760px;margin:0 auto}
 h1{font-size:19px;color:var(--blue);margin:0 0 4px}
-.sub{font-size:13px;color:var(--sub);margin:0 0 18px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.sub{font-size:13px;color:var(--sub);margin:0 0 16px}
+.note{font-size:12px;color:var(--sub);background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:11px 14px;margin-bottom:14px;line-height:1.7}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.fcol{display:flex;flex-direction:column;gap:4px;min-width:150px;flex:1}
+.fcol label{font-size:11.5px;font-weight:700;color:var(--sub)}
+select{font-size:14px;padding:9px 11px;border:1px solid #CBD5E1;border-radius:9px;background:#fff;color:var(--ink);width:100%}
+.bar{display:flex;align-items:center;justify-content:space-between;margin:6px 2px 14px}
+.summary{font-size:12.5px;color:#475569}
+.summary b{color:var(--ink)}
+.sort{font-size:12px;color:var(--sub)}
+.grouphd{font-size:12.5px;font-weight:800;color:var(--blue);margin:16px 2px 8px;padding-bottom:5px;border-bottom:1px solid #E2E8F0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:12px}
 .card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
-.thumb{background:#F8FAFC;min-height:150px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #EEF2F7}
+.thumb{background:#F8FAFC;min-height:120px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #EEF2F7}
 .thumb img{max-width:100%;height:auto;display:block}
 .thumb .ph{font-size:12px;color:#B4A99C;padding:30px 10px;text-align:center}
-.meta{padding:11px 13px}
-.meta .qid{font-size:14px;font-weight:800;color:var(--ink)}
-.meta .imgid{font-size:11.5px;color:var(--sub);margin-top:2px;word-break:break-all}
+.thumb .ph.bad{color:var(--bad);font-weight:600}
+.meta{padding:10px 12px}
+.meta .qid{font-size:14px;font-weight:800}
+.meta .kind{font-size:10.5px;font-weight:700;color:#185FA5;background:#E6F1FB;border-radius:5px;padding:1px 6px;margin-left:5px}
+.meta .imgid{font-size:11.5px;color:var(--sub);margin-top:3px;word-break:break-all}
 .meta .st{font-size:11.5px;font-weight:700;margin-top:6px}
 .st.ok{color:var(--ok)}.st.bad{color:var(--bad)}.st.load{color:#9AA3AE}
-.gobtn{display:block;text-align:center;margin:8px 13px 13px;padding:9px;border-radius:9px;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;text-decoration:none;font-size:13px;font-weight:700}
-.note{font-size:12px;color:var(--sub);background:#fff;border:1px solid #E2E8F0;border-radius:10px;padding:12px 14px;margin-bottom:16px;line-height:1.7}
+.gobtn{display:block;text-align:center;margin:6px 12px 12px;padding:8px;border-radius:9px;background:#185FA5;color:#fff;text-decoration:none;font-size:12.5px;font-weight:700}
+.empty{font-size:13px;color:var(--sub);text-align:center;padding:40px 10px}
 </style></head>
 <body><div class="wrap">
-<h1>🖼️ 생체 이미지 업로드 확인</h1>
-<p class="sub">올린 이미지가 잘 매칭되는지 확인하고, 버튼으로 해당 문항을 앱에서 바로 열 수 있어요.</p>
-<div class="note">✅ 그림이 보이면 업로드 성공 · ❌ "이미지 없음"이면 admin 이미지 탭에서 그 id로 다시 등록 (파일명과 정확히 일치).<br>"이 문항 보기"는 <b>certlab.ai.kr/?card=문항id</b>로 앱을 엽니다.</div>
-<div class="grid" id="grid"></div>
+<h1>🖼️ 이미지 업로드 확인</h1>
+<p class="sub">시험·과목을 골라 이미지 매칭을 확인하고, 문항을 앱에서 바로 열 수 있어요.</p>
+<div class="note">✅ 그림이 보이면 업로드 성공 · ❌ "이미지 없음"이면 admin 이미지 탭에서 그 id로 다시 등록(파일명과 정확히 일치).<br>"이 문항 보기"는 <b>certlab.ai.kr/?card=문항id</b>로 앱을 엽니다.</div>
+
+<div class="filters">
+  <div class="fcol"><label>시험</label><select id="examSel"><option value="">불러오는 중…</option></select></div>
+  <div class="fcol"><label>과목</label><select id="subSel"><option value="">전체 과목</option></select></div>
+  <div class="fcol"><label>회차</label><select id="setSel"><option value="">전체 회차</option></select></div>
+</div>
+<div class="bar">
+  <div class="summary" id="summary">스캔 중…</div>
+  <div class="sort">↓ 최신순</div>
+</div>
+<div id="grid"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -43,53 +65,150 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const SITE = 'https://certlab.ai.kr/';
 
-// 문항 ↔ 이미지 매핑 (지시서 기준)
-const ITEMS = [
-  { qid:'EP_42', img:'sarcomere' },
-  { qid:'EP_50', img:'crossbridge_cycle' },
-  { qid:'EP_51', img:'anatomy_planes' },
-  { qid:'EP_56', img:'knee_ligaments' },
-  { qid:'EP_61', img:'lever_classes' },
-  { qid:'EP_83', img:'lever_classes' },
-  { qid:'EP_72', img:'heart_conduction' },
-  { qid:'EP_79', img:'rotator_cuff' },
-  { qid:'B_8',  img:'pose_bb_men7' },
-  { qid:'B_57', img:'pose_classic_physique' },
-  { qid:'B_64', img:'pose_bikini_turns' },
-  { qid:'B_69', img:'pose_mens_physique' },
-];
+const examSel=document.getElementById('examSel');
+const subSel=document.getElementById('subSel');
+const grid=document.getElementById('grid');
+const summaryEl=document.getElementById('summary');
 
-const grid = document.getElementById('grid');
-ITEMS.forEach(it=>{
-  const card=document.createElement('div'); card.className='card';
-  card.innerHTML =
-    '<div class="thumb" id="th_'+it.qid+'"><div class="ph">불러오는 중…</div></div>'+
-    '<div class="meta"><div class="qid">'+it.qid+'</div><div class="imgid">'+it.img+'</div>'+
-    '<div class="st load" id="st_'+it.qid+'">확인 중…</div></div>'+
-    '<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(it.qid)+'" target="_blank">이 문항 보기 →</a>';
-  grid.appendChild(card);
-});
-
-// 이미지 캐시(같은 id 공유 시 1번만 조회)
-const cache={};
+const imgCache={};
 async function fetchImg(id){
-  if(cache[id]!==undefined) return cache[id];
-  try{ const d=await db.collection('images').doc(id).get(); const b=(d.exists && d.data().data)?d.data().data:null; cache[id]=b; return b; }
-  catch(e){ cache[id]=null; return null; }
+  if(imgCache[id]!==undefined) return imgCache[id];
+  try{ const d=await db.collection('images').doc(id).get(); const b=(d.exists && d.data().data)?d.data().data:null; imgCache[id]=b; return b; }
+  catch(e){ imgCache[id]=null; return null; }
 }
-(async()=>{
-  for(const it of ITEMS){
-    const th=document.getElementById('th_'+it.qid);
-    const st=document.getElementById('st_'+it.qid);
-    const b64=await fetchImg(it.img);
-    if(b64){
-      th.innerHTML='<img src="'+b64+'" alt="'+it.img+'">';
-      st.className='st ok'; st.textContent='✅ 업로드됨';
-    } else {
-      th.innerHTML='<div class="ph">❌ 이미지 없음</div>';
-      st.className='st bad'; st.textContent='❌ 미등록 ('+it.img+')';
+function normKey(v){ if(!v) return null; v=String(v).trim(); return v.indexOf('img://')===0?v.slice(6):v; }
+function maxNum(s){ const m=String(s||'').match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; }
+
+let ITEMS=[];   // {exam,examName,sub,subName,qid,setLabel,n,key,kind}
+let EXAMS=[];   // {id,name,subs:[{code,name}]}
+let renderToken=0;
+
+async function loadAll(){
+  let manifest;
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    if(!mSnap.exists){ summaryEl.textContent='manifest/exams 문서가 없어요.'; return; }
+    manifest=mSnap.data();
+  }catch(e){ summaryEl.textContent='데이터를 불러오지 못했어요.'; return; }
+
+  for(const ex of (manifest.exams||[])){
+    const exItem={id:ex.id, name:ex.name||ex.id, subs:[]};
+    for(const sub of (ex.subjects||[])){
+      let snap;
+      try{ snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get(); }catch(e){ continue; }
+      if(!snap.exists) continue;
+      const qs=(snap.data().questions)||[];
+      let hasImg=false;
+      const setSet={};
+      qs.forEach(q=>{
+        const setLabel=q.set||'';
+        const n=maxNum(setLabel);
+        const base={exam:ex.id, examName:ex.name||ex.id, sub:sub.code, subName:(sub.name||sub.code), qid:q.id, setLabel:setLabel, n:n};
+        const mark=()=>{ hasImg=true; if(setLabel) setSet[setLabel]=n; };
+        const ik=normKey(q.img);
+        if(ik){ ITEMS.push(Object.assign({},base,{key:ik,kind:'본문'})); mark(); }
+        if(Array.isArray(q.optImg)){
+          q.optImg.forEach((o,i)=>{ const ok=normKey(o); if(ok){ ITEMS.push(Object.assign({},base,{key:ok,kind:'선지'+(i+1)})); mark(); } });
+        }
+      });
+      if(hasImg) exItem.subs.push({code:sub.code, name:(sub.name||sub.code), sets:Object.keys(setSet).map(l=>({label:l,n:setSet[l]}))});
     }
+    if(exItem.subs.length) EXAMS.push(exItem);
   }
-})();
+  buildExamSel();
+  render();
+}
+
+function buildExamSel(){
+  if(!EXAMS.length){ examSel.innerHTML='<option value="">(이미지 없음)</option>'; summaryEl.textContent='이미지가 달린 문항이 없어요.'; return; }
+  examSel.innerHTML='<option value="">전체 시험</option>'+EXAMS.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
+  buildSubSel();
+}
+function buildSubSel(){
+  const ex=EXAMS.find(e=>e.id===examSel.value);
+  let opts='<option value="">전체 과목</option>';
+  if(ex) opts+=ex.subs.map(s=>'<option value="'+s.code+'">'+s.name+'</option>').join('');
+  subSel.innerHTML=opts;
+  buildSetSel();
+}
+function buildSetSel(){
+  const ex=EXAMS.find(e=>e.id===examSel.value);
+  const setMap={};
+  if(ex){
+    const subs = subSel.value ? ex.subs.filter(s=>s.code===subSel.value) : ex.subs;
+    subs.forEach(s=>(s.sets||[]).forEach(st=>{ if(st.label) setMap[st.label]=st.n; }));
+  }
+  const labels=Object.keys(setMap).sort((a,b)=>setMap[b]-setMap[a]);
+  setSel.innerHTML='<option value="">전체 회차</option>'+labels.map(l=>'<option value="'+l+'">'+l+'</option>').join('');
+}
+const setSel=document.getElementById('setSel');
+examSel.onchange=function(){ buildSubSel(); render(); };
+subSel.onchange=function(){ buildSetSel(); render(); };
+setSel.onchange=function(){ render(); };
+
+function render(){
+  const token=++renderToken;
+  const exF=examSel.value, subF=subSel.value, setF=setSel.value;
+  let items=ITEMS.filter(it=>(!exF||it.exam===exF)&&(!subF||it.sub===subF)&&(!setF||it.setLabel===setF));
+  if(!items.length){ grid.innerHTML='<div class="empty">해당 조건의 이미지 문항이 없어요.</div>'; summaryEl.textContent='전체 0'; return; }
+
+  // 그룹화: 시험·과목·회차(set)
+  const groups={}; const order=[];
+  items.forEach(it=>{
+    const gk=it.exam+'||'+it.sub+'||'+it.setLabel;
+    if(!groups[gk]){ groups[gk]={key:gk,it:it,n:it.n,rows:[]}; order.push(gk); }
+    groups[gk].rows.push(it);
+    if(it.n>groups[gk].n) groups[gk].n=it.n;
+  });
+  // 그룹: 시험은 manifest 순서로 묶고, 그 안에서 회차 최신순(n 큰 것 먼저), 동률은 과목명순
+  order.sort((a,b)=>{
+    const ga=groups[a],gb=groups[b];
+    const ia=EXAMS.findIndex(e=>e.id===ga.it.exam), ib=EXAMS.findIndex(e=>e.id===gb.it.exam);
+    if(ia!==ib) return ia-ib;
+    if(gb.n!==ga.n) return gb.n-ga.n;
+    return ga.it.subName.localeCompare(gb.it.subName,'ko');
+  });
+
+  let html='';
+  order.forEach(gk=>{
+    const g=groups[gk];
+    g.rows.sort((a,b)=>String(a.qid).localeCompare(String(b.qid),undefined,{numeric:true}));
+    let hd=(exF?'':g.it.examName+' · ')+g.it.subName+(g.it.setLabel?' · '+g.it.setLabel:'');
+    html+='<div class="grouphd">'+hd+'</div><div class="grid">';
+    g.rows.forEach((it,idx)=>{
+      const cid=gk.replace(/[^a-zA-Z0-9]/g,'_')+'_'+idx;
+      html+='<div class="card">'
+        +'<div class="thumb" id="th_'+cid+'"><div class="ph">불러오는 중…</div></div>'
+        +'<div class="meta"><div class="qid">'+it.qid+'<span class="kind">'+it.kind+'</span></div>'
+        +'<div class="imgid">'+it.key+'</div>'
+        +'<div class="st load" id="st_'+cid+'">확인 중…</div></div>'
+        +'<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(it.qid)+'" target="_blank">이 문항 보기 →</a>'
+        +'</div>';
+      it._cid=cid;
+    });
+    html+='</div>';
+  });
+  grid.innerHTML=html;
+
+  // 비동기 이미지 조회 + 요약 갱신
+  let ok=0,bad=0,done=0; const total=items.length;
+  summaryEl.innerHTML='전체 <b>'+total+'</b> · 확인 중…';
+  (async()=>{
+    for(const it of items){
+      if(token!==renderToken) return;
+      const th=document.getElementById('th_'+it._cid);
+      const st=document.getElementById('st_'+it._cid);
+      if(!th||!st) continue;
+      const b64=await fetchImg(it.key);
+      if(token!==renderToken) return;
+      if(b64){ th.innerHTML='<img src="'+b64+'" alt="'+it.key+'">'; st.className='st ok'; st.textContent='✅ 업로드됨'; ok++; }
+      else{ th.innerHTML='<div class="ph bad">❌ 이미지 없음</div>'; st.className='st bad'; st.textContent='❌ 미등록'; bad++; }
+      done++;
+      summaryEl.innerHTML='전체 <b>'+total+'</b> · <span style="color:var(--ok)">✅ '+ok+'</span> · <span style="color:var(--bad)">❌ '+bad+'</span>'+(done<total?' · 확인 중…':'');
+    }
+  })();
+}
+
+loadAll();
 </script>
 </body></html>
