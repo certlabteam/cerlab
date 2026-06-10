@@ -3337,6 +3337,22 @@ function goHome(){ showHome(); }
 // 딥링크: 특정 생체 카드로 바로 이동 (?card=EP_72)
 function goToCard(qid){
   if(!qid) return;
+  // 객관식 문항이면 해당 시험·과목·세트·문항으로 이동(진행상황 보존)
+  var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
+  if(cs){
+    enterCert(cs.cert);   // mqCert 세팅 + mcqView 표시
+    try{
+      var qb=qbOf(cs.cert), subObj=qb&&qb[cs.sub];
+      if(subObj&&subObj.sets){
+        for(var si=0;si<subObj.sets.length;si++){
+          var qi=subObj.sets[si].questions.findIndex(function(q){return q&&q.id===qid;});
+          if(qi!==-1){ resumeMcqExam(cs.sub,si); mqIdx=qi; mqShow={}; renderMCQ(); window.scrollTo(0,0); return; }
+        }
+      }
+    }catch(_){}
+    return;
+  }
+  // 생체 플래시카드
   enterCert('bodybuilding');
   try{
     currentSubj='전체'; currentStar=0;
