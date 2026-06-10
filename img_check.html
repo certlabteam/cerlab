@@ -46,7 +46,7 @@ select{font-size:14px;padding:9px 11px;border:1px solid #CBD5E1;border-radius:9p
 </div>
 <div class="bar">
   <div class="summary" id="summary">스캔 중…</div>
-  <div class="sort">↓ 최신순</div>
+  <div class="sort" id="sortBtn" onclick="cycleSort()" style="cursor:pointer;user-select:none" title="정렬 전환">↓ 최신순</div>
 </div>
 <div id="grid"></div>
 </div>
@@ -147,48 +147,61 @@ examSel.onchange=function(){ buildSubSel(); render(); };
 subSel.onchange=function(){ buildSetSel(); render(); };
 setSel.onchange=function(){ render(); };
 
+let sortMode=0; const SORT_LABELS=['↓ 최신순','↓ 이름순','↓ 과목순'];
+function cycleSort(){ sortMode=(sortMode+1)%3; const b=document.getElementById('sortBtn'); if(b) b.textContent=SORT_LABELS[sortMode]; render(); }
 function render(){
   const token=++renderToken;
   const exF=examSel.value, subF=subSel.value, setF=setSel.value;
   let items=ITEMS.filter(it=>(!exF||it.exam===exF)&&(!subF||it.sub===subF)&&(!setF||it.setLabel===setF));
   if(!items.length){ grid.innerHTML='<div class="empty">해당 조건의 이미지 문항이 없어요.</div>'; summaryEl.textContent='전체 0'; return; }
 
-  // 그룹화: 시험·과목·회차(set)
-  const groups={}; const order=[];
-  items.forEach(it=>{
-    const gk=it.exam+'||'+it.sub+'||'+it.setLabel;
-    if(!groups[gk]){ groups[gk]={key:gk,it:it,n:it.n,rows:[]}; order.push(gk); }
-    groups[gk].rows.push(it);
-    if(it.n>groups[gk].n) groups[gk].n=it.n;
-  });
-  // 그룹: 시험은 manifest 순서로 묶고, 그 안에서 회차 최신순(n 큰 것 먼저), 동률은 과목명순
-  order.sort((a,b)=>{
-    const ga=groups[a],gb=groups[b];
-    const ia=EXAMS.findIndex(e=>e.id===ga.it.exam), ib=EXAMS.findIndex(e=>e.id===gb.it.exam);
-    if(ia!==ib) return ia-ib;
-    if(gb.n!==ga.n) return gb.n-ga.n;
-    return ga.it.subName.localeCompare(gb.it.subName,'ko');
-  });
+  // 카드 1장 HTML (공통)
+  function cardHTML(it, cid){
+    it._cid=cid;
+    return '<div class="card">'
+      +'<div class="thumb" id="th_'+cid+'"><div class="ph">불러오는 중…</div></div>'
+      +'<div class="meta"><div class="qid">'+it.qid+'<span class="kind">'+it.kind+'</span></div>'
+      +'<div class="imgid">'+it.key+'</div>'
+      +'<div class="st load" id="st_'+cid+'">확인 중…</div></div>'
+      +'<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(it.qid)+'" target="_blank">이 문항 보기 →</a>'
+      +'</div>';
+  }
 
   let html='';
-  order.forEach(gk=>{
-    const g=groups[gk];
-    g.rows.sort((a,b)=>String(a.qid).localeCompare(String(b.qid),undefined,{numeric:true}));
-    let hd=(exF?'':g.it.examName+' · ')+g.it.subName+(g.it.setLabel?' · '+g.it.setLabel:'');
-    html+='<div class="grouphd">'+hd+'</div><div class="grid">';
-    g.rows.forEach((it,idx)=>{
-      const cid=gk.replace(/[^a-zA-Z0-9]/g,'_')+'_'+idx;
-      html+='<div class="card">'
-        +'<div class="thumb" id="th_'+cid+'"><div class="ph">불러오는 중…</div></div>'
-        +'<div class="meta"><div class="qid">'+it.qid+'<span class="kind">'+it.kind+'</span></div>'
-        +'<div class="imgid">'+it.key+'</div>'
-        +'<div class="st load" id="st_'+cid+'">확인 중…</div></div>'
-        +'<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(it.qid)+'" target="_blank">이 문항 보기 →</a>'
-        +'</div>';
-      it._cid=cid;
-    });
+  if(sortMode===1){
+    // 이름순: 전체 평면, 키(key) 가나다/알파벳/숫자순
+    const rows=items.slice().sort((a,b)=>String(a.key).localeCompare(String(b.key),undefined,{numeric:true,sensitivity:'base'}));
+    html+='<div class="grouphd">전체 · 이름순 ('+rows.length+')</div><div class="grid">';
+    rows.forEach((it,idx)=>{ html+=cardHTML(it,'nm_'+idx); });
     html+='</div>';
-  });
+  } else {
+    // 최신순=시험·과목·회차 그룹 / 과목순=시험·과목 그룹
+    const byset=(sortMode===0);
+    const groups={}, order=[];
+    items.forEach(it=>{
+      const gk=byset ? (it.exam+'||'+it.sub+'||'+it.setLabel) : (it.exam+'||'+it.sub);
+      if(!groups[gk]){ groups[gk]={key:gk,it:it,n:it.n,rows:[]}; order.push(gk); }
+      groups[gk].rows.push(it);
+      if(it.n>groups[gk].n) groups[gk].n=it.n;
+    });
+    order.sort((a,b)=>{
+      const ga=groups[a],gb=groups[b];
+      const ia=EXAMS.findIndex(e=>e.id===ga.it.exam), ib=EXAMS.findIndex(e=>e.id===gb.it.exam);
+      if(ia!==ib) return ia-ib;                                 // 시험은 manifest 순서
+      if(sortMode===0 && gb.n!==ga.n) return gb.n-ga.n;         // 최신순: 회차 큰 것 먼저
+      return ga.it.subName.localeCompare(gb.it.subName,'ko');   // 과목명순
+    });
+    order.forEach(gk=>{
+      const g=groups[gk];
+      g.rows.sort((a,b)=> sortMode===0
+        ? String(a.qid).localeCompare(String(b.qid),undefined,{numeric:true})
+        : String(a.key).localeCompare(String(b.key),undefined,{numeric:true,sensitivity:'base'}));
+      let hd=(exF?'':g.it.examName+' · ')+g.it.subName+((sortMode===0&&g.it.setLabel)?' · '+g.it.setLabel:'');
+      html+='<div class="grouphd">'+hd+'</div><div class="grid">';
+      g.rows.forEach((it,idx)=>{ html+=cardHTML(it, gk.replace(/[^a-zA-Z0-9]/g,'_')+'_'+idx); });
+      html+='</div>';
+    });
+  }
   grid.innerHTML=html;
 
   // 비동기 이미지 조회 + 요약 갱신
