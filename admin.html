@@ -75,6 +75,12 @@ tr:hover td{background:#FAFAFA}
 .grade{display:inline-block;min-width:22px;text-align:center;padding:2px 8px;border-radius:8px;font-weight:800;font-size:12px}
 .joincert{display:inline-block;font-size:11px;font-weight:700;border-radius:7px;padding:2px 8px;background:#EEF2F7;color:#2C5A8C}
 .cchip{display:inline-block;font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px;margin:1px 3px 1px 0}
+.sec{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:18px;overflow:hidden}
+.sec-hd{padding:14px 20px;border-bottom:1px solid #F0F0F0;font-size:15px;font-weight:700;color:#2C2C2A}
+.sec-hd small{font-weight:400;color:#A89C8E;font-size:12px;margin-left:6px}
+.sbar{height:8px;border-radius:5px;background:#EEF2F7;overflow:hidden;min-width:60px}
+.sbar > i{display:block;height:100%;background:linear-gradient(90deg,#7F77DD,#185FA5)}
+.subtgl{border:none;background:#EDE9FB;color:#5B50C0;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;cursor:pointer}
 .g-a{background:#E6F4EA;color:#15793F}
 .g-b{background:#E6F1FB;color:#185FA5}
 .g-c{background:#FFF6E6;color:#B5851A}
@@ -155,6 +161,7 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn active" onclick="switchTab('dashboard')">대시보드</button>
     <button class="tab-btn" onclick="switchTab('payments')" id="tabPayments">결제 신청<span class="badge" id="pendingBadge" style="display:none">0</span></button>
     <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
+    <button class="tab-btn" onclick="switchTab('stats')">📊 학습 통계</button>
     <button class="tab-btn" onclick="switchTab('entitlements')">회원권 관리</button>
     <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
     <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
@@ -218,6 +225,16 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div id="memberList"><div class="loading">로딩 중...</div></div>
       </div>
+    </div>
+
+    <!-- 학습 통계 -->
+    <div class="tab-panel" id="panel-stats">
+      <div class="sec"><div class="sec-hd">① 시험별 총 학습량 <small>전체 회원 합산</small></div><div id="statsTotals"><div class="loading">집계 중…</div></div></div>
+      <div class="sec"><div class="sec-hd">② 시험별 활성 학습자 <small>최근 그 시험을 푼 회원 수</small></div><div id="statsActive"></div></div>
+      <div class="sec"><div class="sec-hd">③ 상위 학습자 <small>시험별 Top 5 · 무료회원 ⭐ 전환 유망</small></div>
+        <div style="padding:12px 20px 0"><select id="statsTopCert" onchange="renderStatsTop()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"></select></div>
+        <div id="statsTop"></div></div>
+      <div class="sec"><div class="sec-hd">④ 가입 시험 분포 <small>가입 시점에 보던 시험 · 이번 업데이트 이후 가입분부터</small></div><div id="statsSignup"></div></div>
     </div>
 
     <!-- 회원권 관리 -->
@@ -539,28 +556,7 @@ function perCertTable(per){
     +arr.map(x=>'<tr><td style="'+td+'">'+(x.c==='_etc'?'기타':certLabel(x.c))+'</td><td style="text-align:right;'+td+'">'+x.solve.toLocaleString()+'</td><td style="text-align:right;'+td+'">'+x.studied.toLocaleString()+'</td></tr>').join('')
     +'</tbody></table>';
 }
-// 문항ID→시험 매핑 (banks 1회 로드, 버전 시그니처로 localStorage 캐시)
-let QID2CERT=null;
-async function buildQid2Cert(){
-  if(QID2CERT) return QID2CERT;
-  try{
-    const m=await db.collection('manifest').doc('exams').get();
-    const exams=(m.exists&&m.data().exams)||[];
-    const sig=JSON.stringify(exams.map(e=>[e.id,(e.subjects||[]).map(s=>s.code),e.versions||null]));
-    try{ const c=localStorage.getItem('qid2cert_v1'); if(c){ const o=JSON.parse(c); if(o&&o.sig===sig&&o.map){ QID2CERT=o.map; return QID2CERT; } } }catch(_){}
-    const map={};
-    for(const ex of exams){
-      for(const sub of (ex.subjects||[])){
-        try{ const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
-          if(bd.exists){ (bd.data().questions||[]).forEach(q=>{ if(q&&q.id!=null) map[String(q.id)]=ex.id; }); }
-        }catch(_){}
-      }
-    }
-    QID2CERT=map;
-    try{ localStorage.setItem('qid2cert_v1', JSON.stringify({sig, map})); }catch(_){}
-    return QID2CERT;
-  }catch(_){ QID2CERT={}; return QID2CERT; }
-}
+// 문항ID→시험 매핑은 불필요 — cardProgress 키가 이미 'cert|문항id' 형식이라 키 prefix로 시험 판별
 
 // ===== Auth =====
 auth.onAuthStateChanged(user => {
@@ -591,6 +587,7 @@ function switchTab(name) {
   event.target.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
   if(name==='crm') renderCrm();
+  if(name==='stats') renderStats();
   if(name==='entitlements') renderEntMembers();
   if(name==='export'){ openExportTab(); imgImpInit(); }
   if(name==='import') impInit();
@@ -738,8 +735,7 @@ async function loadMembers() {
       if (c.used && c.usedBy) (codeByUid[c.usedBy] = codeByUid[c.usedBy] || []).push(d.id);
     });
     renderMembers(allMembers);   // 우선 빠르게 표시 (학습량은 '…')
-    const qmap = await buildQid2Cert();   // 문항ID→시험 매핑 (1회, 캐시)
-    // 회원별 학습량(userData) 비동기 로드 후 갱신
+    // 회원별 학습량(userData) 비동기 로드 후 갱신 — cardProgress 키는 'cert|문항id' 형식
     await Promise.all(allMembers.map(async m => {
       try {
         const ud = await db.collection('userData').doc(m.id).get();
@@ -753,8 +749,9 @@ async function loadMembers() {
           keys.forEach(k => {
             const p=cp[k]; const rc=(p && p.rc) ? p.rc : 0;
             tries += rc; if(p && p.lr && p.lr>lastLr) lastLr=p.lr;
-            const cert = qmap[k] || '_etc';
-            (per[cert] = per[cert] || {solve:0, studied:0}); per[cert].solve += rc; per[cert].studied++;
+            const bar = k.indexOf('|'); const cert = bar>0 ? k.slice(0,bar) : '_etc';
+            (per[cert] = per[cert] || {solve:0, studied:0, lr:0}); per[cert].solve += rc; per[cert].studied++;
+            if(p && p.lr && p.lr>per[cert].lr) per[cert].lr=p.lr;
           });
           m._solve = tries; m._lastStudy = lastLr||null; m._perCert = per;
         } else { m._solve = 0; m._studied = 0; m._lastStudy = null; m._perCert = {}; }
@@ -1415,6 +1412,7 @@ function crmCopyEmails(seg){
 }
 function openMemberDetail(uid){
   const m = allMembers.find(x=>x.id===uid); if(!m) return;
+  MD_UID = uid; MD_PERSUB = null;
   const g = memberGrade(m); const s = memberStatus(m);
   // 활성 이용권(자격증별 만료)
   const ents = m.entitlements||{};
@@ -1447,12 +1445,166 @@ function openMemberDetail(uid){
     + row('최근 학습', m._lastStudy?`${fmtDateShort(m._lastStudy)} (${agoTxt(m._lastStudy)})`:'<span style="color:#B4A99C">기록 없음</span>')
     + row('가입 시험', signupCertHTML(m))
     + row('학습량(전체)', `푼 횟수 <b>${(m._solve||0).toLocaleString()}</b> · 학습문항 <b>${m._studied||0}</b>`)
-    + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">시험별 풀이</div>${perCertTable(m._perCert)}`
+    + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">시험별 풀이 <span style="font-weight:400;color:#A89C8E;font-size:11px">— 상세 ▾ 누르면 과목별</span></div>${perCertTableExpandable(m._perCert, uid)}`
     + row('마일리지', `${bal.toLocaleString()}원`)
     + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">활성 이용권</div>${entHTML}`
     + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">사용 쿠폰</div>${codeHTML}`
     + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">결제 이력 (${pays.length})</div><div style="margin-top:4px">${payHTML}</div>`;
   document.getElementById('memberDetailModal').classList.remove('hidden');
+}
+
+// ===== 회원 상세: 시험별 → 과목별 펼침 (안 A) =====
+let MD_UID=null, MD_PERSUB=null, QID2SUB=null;
+// 문항ID→과목 매핑 ('cert|qid' → 과목명). banks 1회 로드, 버전 시그니처로 localStorage 캐시
+async function buildQid2Sub(){
+  if(QID2SUB) return QID2SUB;
+  try{
+    const m=await db.collection('manifest').doc('exams').get();
+    const exams=(m.exists&&m.data().exams)||[];
+    const sig=JSON.stringify(exams.map(e=>[e.id,(e.subjects||[]).map(s=>[s.code,s.name]),e.versions||null]));
+    try{ const c=localStorage.getItem('qid2sub_v1'); if(c){ const o=JSON.parse(c); if(o&&o.sig===sig&&o.map){ QID2SUB=o.map; return QID2SUB; } } }catch(_){}
+    const map={};
+    for(const ex of exams){
+      for(const sub of (ex.subjects||[])){
+        try{ const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+          if(bd.exists){ (bd.data().questions||[]).forEach(q=>{ if(q&&q.id!=null) map[ex.id+'|'+q.id]=(sub.name||sub.code); }); }
+        }catch(_){}
+      }
+    }
+    QID2SUB=map;
+    try{ localStorage.setItem('qid2sub_v1', JSON.stringify({sig, map})); }catch(_){}
+    return QID2SUB;
+  }catch(_){ QID2SUB={}; return QID2SUB; }
+}
+// 한 회원의 cardProgress를 시험·과목별 집계 (상세 첫 클릭 시 1회)
+async function prepMemberSubs(uid){
+  if(MD_PERSUB && MD_PERSUB._uid===uid) return MD_PERSUB;
+  const map=await buildQid2Sub();
+  let cp={};
+  try{ const ud=await db.collection('userData').doc(uid).get(); if(ud.exists){ const d=ud.data(); cp=(d.cardProgress&&typeof d.cardProgress==='object')?d.cardProgress:{}; } }catch(_){}
+  const per={};
+  Object.keys(cp).forEach(k=>{
+    const p=cp[k]; const rc=(p&&p.rc)?p.rc:0;
+    const bar=k.indexOf('|'); const cert=bar>0?k.slice(0,bar):'_etc';
+    const sub=map[k]||'기타';
+    (per[cert]=per[cert]||{}); (per[cert][sub]=per[cert][sub]||{solve:0,studied:0});
+    per[cert][sub].solve+=rc; per[cert][sub].studied++;
+  });
+  per._uid=uid; MD_PERSUB=per; return per;
+}
+async function toggleSub(uid, cert){
+  const rowEl=document.getElementById('sub_'+cert); const btn=document.getElementById('sbtn_'+cert);
+  if(!rowEl) return;
+  if(rowEl.style.display!=='none'){ rowEl.style.display='none'; if(btn) btn.textContent='상세 ▾'; return; }
+  rowEl.style.display=''; if(btn) btn.textContent='상세 ▴';
+  const cell=rowEl.firstElementChild;
+  if(rowEl.dataset.loaded==='1') return;
+  cell.innerHTML='<div style="padding:8px 4px;color:#A89C8E;font-size:12px">집계 중…</div>';
+  try{
+    const per=await prepMemberSubs(uid);
+    const obj=(per[cert]||{});
+    const subs=Object.keys(obj).map(s=>({s,solve:obj[s].solve,studied:obj[s].studied})).sort((a,b)=>b.solve-a.solve);
+    if(!subs.length){ cell.innerHTML='<div style="padding:8px 4px;color:#B4A99C;font-size:12px">과목 정보 없음</div>'; }
+    else {
+      cell.innerHTML='<div style="display:grid;grid-template-columns:1fr auto auto;gap:3px 16px;padding:7px 4px">'
+        +'<div style="font-size:10.5px;color:#A89C8E">과목</div><div style="font-size:10.5px;color:#A89C8E;text-align:right">푼 횟수</div><div style="font-size:10.5px;color:#A89C8E;text-align:right">학습문항</div>'
+        + subs.map(x=>'<div style="padding-left:12px;color:#6E6256;font-size:12px">└ '+x.s+'</div>'
+            +'<div style="text-align:right;font-size:12px;font-weight:600">'+x.solve.toLocaleString()+'</div>'
+            +'<div style="text-align:right;font-size:12px;color:#8A7E70">'+x.studied.toLocaleString()+'</div>').join('')
+        +'</div>';
+    }
+    rowEl.dataset.loaded='1';
+  }catch(e){ cell.innerHTML='<div style="padding:8px 4px;color:#A32D2D;font-size:12px">불러오기 실패</div>'; }
+}
+function perCertTableExpandable(per, uid){
+  if(!per) return '<span style="color:#B4A99C">기록 없음</span>';
+  const arr=Object.keys(per).map(c=>({c,solve:per[c].solve,studied:per[c].studied})).filter(x=>x.solve>0||x.studied>0);
+  if(!arr.length) return '<span style="color:#B4A99C">기록 없음</span>';
+  arr.sort((a,b)=>b.solve-a.solve);
+  const th='padding:4px 8px;font-size:11px;color:#8A7E70;background:#FAFAFA';
+  const td='padding:4px 8px;font-size:12.5px;border-bottom:1px solid #F3F0EC';
+  let h='<table style="width:100%;border-collapse:collapse;margin-top:4px">'
+    +'<thead><tr><th style="text-align:left;'+th+'">시험</th><th style="text-align:right;'+th+'">푼 횟수</th><th style="text-align:right;'+th+'">학습문항</th><th style="'+th+'"></th></tr></thead><tbody>';
+  arr.forEach(x=>{
+    const label=x.c==='_etc'?'기타':certLabel(x.c);
+    h+='<tr><td style="'+td+'">'+label+'</td><td style="text-align:right;'+td+'">'+x.solve.toLocaleString()+'</td><td style="text-align:right;'+td+'">'+x.studied.toLocaleString()+'</td>'
+      +'<td style="text-align:right;'+td+'">'+(x.c==='_etc'?'':'<button class="subtgl" id="sbtn_'+x.c+'" onclick="toggleSub(\''+uid+'\',\''+x.c+'\')">상세 ▾</button>')+'</td></tr>';
+    if(x.c!=='_etc') h+='<tr id="sub_'+x.c+'" style="display:none"><td colspan="4" style="background:#FBF9F6;padding:0 10px"></td></tr>';
+  });
+  h+='</tbody></table>';
+  return h;
+}
+
+// ===== 학습 통계 탭 =====
+let STATS=null;
+function renderStats(){
+  const totals={}, active={}, top={}, signup={}; let signupNone=0;
+  const now=Date.now(), D7=7*86400000, D30=30*86400000;
+  allMembers.forEach(m=>{
+    const per=m._perCert||{};
+    Object.keys(per).forEach(c=>{
+      const v=per[c];
+      (totals[c]=totals[c]||{solve:0,studied:0,members:0}); totals[c].solve+=v.solve; totals[c].studied+=v.studied; totals[c].members++;
+      (active[c]=active[c]||{a7:0,a30:0,total:0}); active[c].total++;
+      const lr=v.lr||0; if(lr&&now-lr<=D7) active[c].a7++; if(lr&&now-lr<=D30) active[c].a30++;
+      (top[c]=top[c]||[]).push({email:m.email||'-', solve:v.solve, lr:lr, free:memberStatus(m)==='FREE_TRIAL', m:m});
+    });
+    if(m.signupCert){ signup[m.signupCert]=(signup[m.signupCert]||0)+1; } else signupNone++;
+  });
+  Object.keys(top).forEach(c=>top[c].sort((a,b)=>b.solve-a.solve));
+  STATS={totals,active,top,signup,signupNone};
+  renderStatsTotals(); renderStatsActive(); renderStatsSignup();
+  const certs=Object.keys(totals).filter(c=>c!=='_etc').sort((a,b)=>totals[b].solve-totals[a].solve);
+  const sel=document.getElementById('statsTopCert');
+  if(sel) sel.innerHTML=certs.map(c=>'<option value="'+c+'">'+certLabel(c)+'</option>').join('');
+  renderStatsTop();
+}
+function renderStatsTotals(){
+  const t=STATS.totals; const arr=Object.keys(t).map(c=>({c,solve:t[c].solve,studied:t[c].studied,members:t[c].members})).sort((a,b)=>b.solve-a.solve);
+  const max=Math.max(1,...arr.map(x=>x.solve));
+  const box=document.getElementById('statsTotals');
+  if(!arr.length){ box.innerHTML='<div class="empty">학습 기록이 없습니다.</div>'; return; }
+  box.innerHTML='<table><thead><tr><th>시험</th><th>총 푼 횟수</th><th style="width:200px">분포</th><th>총 학습문항</th><th>학습 회원 수</th></tr></thead><tbody>'
+    + arr.map(x=>'<tr><td><span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+(x.c==='_etc'?'기타':certShort(x.c))+'</span></td>'
+        +'<td style="font-weight:700">'+x.solve.toLocaleString()+'</td>'
+        +'<td><div class="sbar"><i style="width:'+Math.round(x.solve/max*100)+'%"></i></div></td>'
+        +'<td>'+x.studied.toLocaleString()+'</td><td>'+x.members.toLocaleString()+'명</td></tr>').join('')
+    + '</tbody></table>';
+}
+function renderStatsActive(){
+  const a=STATS.active; const arr=Object.keys(a).filter(c=>c!=='_etc').map(c=>({c,a7:a[c].a7,a30:a[c].a30,total:a[c].total})).sort((x,y)=>y.a30-x.a30);
+  const box=document.getElementById('statsActive');
+  if(!arr.length){ box.innerHTML='<div class="empty">기록이 없습니다.</div>'; return; }
+  box.innerHTML='<table><thead><tr><th>시험</th><th>최근 7일</th><th>최근 30일</th><th>전체 학습 회원</th></tr></thead><tbody>'
+    + arr.map(x=>'<tr><td><span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+certShort(x.c)+'</span></td>'
+        +'<td style="font-weight:700;color:#15793F">'+x.a7.toLocaleString()+'명</td>'
+        +'<td>'+x.a30.toLocaleString()+'명</td><td>'+x.total.toLocaleString()+'명</td></tr>').join('')
+    + '</tbody></table>';
+}
+function renderStatsTop(){
+  const sel=document.getElementById('statsTopCert'); const cert=(sel&&sel.value)||'';
+  const box=document.getElementById('statsTop'); if(!box) return;
+  if(!STATS||!cert||!STATS.top[cert]){ box.innerHTML='<div class="empty">데이터가 없습니다.</div>'; return; }
+  const list=STATS.top[cert].slice(0,5);
+  box.innerHTML='<table><thead><tr><th>#</th><th>이메일</th><th>등급</th><th>상태</th><th>푼 횟수(이 시험)</th><th>최근 학습</th></tr></thead><tbody>'
+    + list.map((x,i)=>{ const g=memberGrade(x.m); return '<tr style="cursor:pointer" onclick="openMemberDetail(\''+x.m.id+'\')">'
+        +'<td>'+(i+1)+'</td><td>'+(x.free?'⭐ ':'')+x.email+'</td>'
+        +'<td><span class="grade '+g.cls+'">'+g.label+'</span></td><td>'+memberBadges(x.m)+'</td>'
+        +'<td style="font-weight:700">'+x.solve.toLocaleString()+'</td>'
+        +'<td>'+(x.lr?fmtWithAgo(x.lr):'<span style="color:#C9BFB2">-</span>')+'</td></tr>'; }).join('')
+    + '</tbody></table>';
+}
+function renderStatsSignup(){
+  const s=STATS.signup; const arr=Object.keys(s).map(c=>({c,n:s[c]})).sort((a,b)=>b.n-a.n);
+  const max=Math.max(1,...arr.map(x=>x.n));
+  const box=document.getElementById('statsSignup');
+  let html='<table><thead><tr><th>가입 시험</th><th>가입자 수</th><th style="width:200px">비중</th></tr></thead><tbody>';
+  if(!arr.length){ html+='<tr><td colspan="3" style="color:#B4A99C;padding:14px 16px">아직 가입 시험 기록이 없습니다. (이번 업데이트 이후 가입분부터 집계)</td></tr>'; }
+  else { html+=arr.map(x=>'<tr><td><span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+certShort(x.c)+'</span></td>'
+      +'<td style="font-weight:700">'+x.n.toLocaleString()+'</td>'
+      +'<td><div class="sbar"><i style="width:'+Math.round(x.n/max*100)+'%"></i></div></td></tr>').join(''); }
+  html+='<tr><td><span style="color:#C9BFB2">기록 없음 <small style="color:#C9BFB2">(기존 회원)</small></span></td><td style="font-weight:700;color:#A89C8E">'+STATS.signupNone.toLocaleString()+'</td><td></td></tr></tbody></table>';
+  box.innerHTML=html;
 }
 
 // ===== 승인/거절 (레거시 pending 건 전용) =====
