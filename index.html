@@ -374,11 +374,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
 #mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
 #mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:13px 15px;margin-bottom:11px;box-shadow:0 1px 2px rgba(15,23,42,.04)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
-#mcqView .opts{display:flex;flex-direction:column;gap:9px}
+#mcqView .opts{display:flex;flex-direction:column;gap:10px}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer;outline:none}
 #mcqView .opt:focus{outline:none}
 #mcqView .opt .onum{width:23px;height:23px;border-radius:50%;border:1.5px solid #CBD5E1;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
-#mcqView .opt .otxt{font-size:13.5px;line-height:1.55;color:#0F172A;font-weight:500;flex:1}
+#mcqView .opt .otxt{font-size:13.5px;line-height:1.62;color:#0F172A;font-weight:500;flex:1}
 #mcqView .opt.opt-img{flex-direction:column;align-items:stretch}
 #mcqView .opt.opt-img .onum{margin-bottom:4px}
 #mcqView .opt .oimg{width:100%}
@@ -392,42 +392,57 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .opt.wr .otxt{color:#B91C1C}
 #mcqView .opt.dim{opacity:.55}
 #mcqView .jaryo{font-size:13.5px;font-weight:500;line-height:1.6;color:#334155;white-space:pre-wrap;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:11px 13px;margin:0 0 15px}
+#mcqView .jaryo .jr-row{display:flex;align-items:baseline;line-height:1.95}
+#mcqView .jaryo .jr-l{flex:0 0 auto;display:inline-block}
+#mcqView .jaryo .jr-r{font-variant-numeric:tabular-nums;white-space:nowrap}
+#mcqView .jaryo .jr-line{line-height:1.7}
+#mcqView .jaryo .jr-stmt{display:flex;align-items:flex-start;gap:8px;line-height:1.75;margin-bottom:8px}
+#mcqView .jaryo .jr-stmt:last-child{margin-bottom:0}
+#mcqView .jaryo .jr-stmt-t{flex:1;min-width:0}
+#mcqView .jaryo .jr-ox{flex-shrink:0;display:inline-flex;gap:5px;margin-top:1px}
+#mcqView .jaryo .jox{width:27px;height:27px;border-radius:7px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:13px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
+#mcqView .jaryo .jox:active{transform:scale(.92)}
+#mcqView .jaryo .jox-o.on{background:#E8F8F1;border-color:#1D9E75;color:#0F6E56}
+#mcqView .jaryo .jox-x.on{background:#FCEBEB;border-color:#E24B4A;color:#C0322F}
 #mcqView .exp{margin-top:13px;border-top:1px dashed #E2E8F0;padding-top:12px}
 #mcqView .exp-note-hd{font-size:15px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
 #mcqView .exp-note-hd::before{content:'📚 '}
-#mcqView .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
+#mcqView .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
 #mcqView .exp-ti{font-size:13px;font-weight:800;color:#0F172A}
 #mcqView .exp-st{font-size:13px;font-weight:800}
-#mcqView .exp .note{font-size:13px;color:#475569;line-height:1.7;margin-bottom:10px}
-#mcqView .exp-opts{display:flex;flex-direction:column;gap:9px}
-#mcqView .exp-opts .eo{font-size:13px;line-height:1.7}
-#mcqView .exp-opts .eo-q{color:#1E293B;font-weight:500;margin-bottom:2px}
+#mcqView .exp .note{font-size:13px;color:#475569;line-height:1.72;margin-bottom:12px}
+#mcqView .exp-opts{display:flex;flex-direction:column;gap:0}
+#mcqView .exp-opts .eo{font-size:13px;line-height:1.72;margin-bottom:12px;padding-bottom:11px;border-bottom:1px dashed #E2E8F0}
+#mcqView .exp-opts .eo:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+#mcqView .exp-opts .eo-q{color:#1E293B;font-weight:600;margin-bottom:6px}
 #mcqView .exp-opts .eo-q-img{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 #mcqView .exp-opts .eo-oimg img{max-height:60px;width:auto;vertical-align:middle;border:1px solid #E2E8F0;border-radius:6px;margin:0 2px}
-#mcqView .exp-opts .eo-a{color:#475569;padding-left:2px}
+#mcqView .exp-opts .eo-a{color:#475569;line-height:1.72;padding-left:2px}
 #mcqView .exp-opts .eo-a.eo-red{color:#A32D2D}
 #mcqView .exp-opts .eo-a.eo-grn{color:#0F6E56}
 #mcqView .exp-opts .eo-verdict{font-size:12px;font-weight:700;margin-left:6px;white-space:nowrap}
 #mcqView .exp-opts .eo-verdict.eo-red{color:#A32D2D}
 #mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
-#mcqView .exp-opts .eo-ex{margin-top:5px;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.6;color:#5E4A2A}
+#mcqView .exp-opts .eo-ex{margin-top:7px;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 #mcqView .mn-box{margin:14px 0 0}
 #mcqView .mn-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
 #mcqView .mn-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
-#mcqView .mn-desc{font-size:13px;color:#7A6A50;line-height:1.6;margin-top:5px}
+#mcqView .mn-desc{font-size:13px;color:#7A6A50;line-height:1.65;margin-top:5px}
 #mcqView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
-#mcqView .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:7px}
-#mcqView .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7;margin-bottom:5px}
+#mcqView .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
+#mcqView .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7;margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed #E2E8F0}
+#mcqView .concept-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 #mcqView .concept-row b{color:#0C447C}
-#mcqView .cc-exd{margin:6px 0 0;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.6;color:#5E4A2A}
-#mcqView .cc-ex{margin:6px 0 0;padding:7px 10px 7px 11px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.6;color:#28425E}
+#mcqView .cc-exd{margin:6px 0 0;padding:7px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
+#mcqView .cc-ex{margin:6px 0 0;padding:7px 10px 7px 11px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.65;color:#28425E}
 #mcqView .calc-graph{margin:0 0 10px;text-align:center}
 #mcqView .calc-graph svg{max-width:340px;width:100%;height:auto}
-#mcqView .calc-steps{margin:10px 0 0;padding:10px 12px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px}
-#mcqView .calc-steps .cs-ti{font-size:13px;font-weight:800;color:#8A5A00;margin-bottom:6px}
-#mcqView .calc-steps .cs-line{font-size:13px;line-height:1.7;color:#5E4A2A}
+#mcqView .calc-steps{margin:10px 0 0;padding:12px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px}
+#mcqView .calc-steps .cs-ti{font-size:13px;font-weight:800;color:#8A5A00;margin-bottom:9px}
+#mcqView .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em}
+#mcqView .calc-steps .cs-line:last-child{margin-bottom:0;font-weight:700;color:#7A4E00}
 #mcqView .mcq-foot{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;display:flex;gap:9px;margin:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E2E8F0;box-shadow:0 -4px 14px -8px rgba(15,23,42,.25);z-index:45;box-sizing:border-box}
 #mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
 #mcqView .mbtn:disabled{opacity:.4}
@@ -3126,6 +3141,57 @@ function conceptCardHTML(q){
   }
   return body;
 }
+// 조합형 ㄱㄴㄷㄹ 텍스트 진술 끝에 O/X 자가체크 버튼(기능 없음·펜 대용). 이미지 진술은 마커 없어 자동 제외.
+function markComboStmts(scope){
+  (scope||document).querySelectorAll('#mcqView .jaryo').forEach(function(el){
+    if(el.dataset.oxed) return;
+    var mk=/^\s*([\u3131-\u3141])[.\s·)\]]/;
+    var lines=el.innerHTML.split(/\r?\n/);
+    if(!lines.some(function(l){ return mk.test(l); })){ el.dataset.oxed=1; return; }
+    var groups=[], cur=null;
+    lines.forEach(function(ln){
+      if(mk.test(ln)){ cur={lines:[ln]}; groups.push(cur); }
+      else if(cur && ln.trim()){ cur.lines.push(ln); }
+      else groups.push({intro:ln});
+    });
+    el.innerHTML=groups.map(function(g){
+      if(g.intro!=null) return g.intro.trim()?'<div class="jr-line">'+g.intro+'</div>':'';
+      return '<div class="jr-stmt"><span class="jr-stmt-t">'+g.lines.join('<br>')+'</span>'+
+        '<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
+        '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span></div>';
+    }).join('');
+    el.dataset.oxed=1;
+  });
+}
+function joxToggle(btn){
+  var on=btn.classList.contains('on');
+  var wrap=btn.parentNode;
+  wrap.querySelectorAll('.jox').forEach(function(b){ b.classList.remove('on'); });
+  if(!on) btn.classList.add('on');   // 켜진 걸 다시 누르면 해제(토글)
+}
+// 자료박스(.jaryo): "항목명\t금액" 줄을 flex 2열로 정렬(금액 ₩ 세로 정렬). TAB 없는 줄은 그대로.
+function fmtJaryo(scope){
+  (scope||document).querySelectorAll('#mcqView .jaryo').forEach(function(el){
+    if(el.dataset.aligned) return;
+    var html=el.innerHTML;
+    if(html.indexOf('\t')<0){ el.dataset.aligned=1; return; }
+    var lines=html.split(/\n/);
+    var meas=document.createElement('span');
+    meas.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font:inherit';
+    el.appendChild(meas);
+    var maxW=0;
+    lines.forEach(function(ln){ var i=ln.indexOf('\t'); if(i>=0){ meas.textContent=ln.slice(0,i); if(meas.offsetWidth>maxW) maxW=meas.offsetWidth; } });
+    meas.textContent='   '; var pad3=meas.offsetWidth;   // 공백 3칸
+    el.removeChild(meas);
+    var labelW=maxW+pad3;
+    el.innerHTML=lines.map(function(ln){
+      var i=ln.indexOf('\t');
+      if(i<0) return '<div class="jr-line">'+ln+'</div>';
+      return '<div class="jr-row"><span class="jr-l" style="min-width:'+labelW+'px">'+ln.slice(0,i)+'</span><span class="jr-r">'+ln.slice(i+1)+'</span></div>';
+    }).join('');
+    el.dataset.aligned=1;
+  });
+}
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
@@ -3247,7 +3313,7 @@ function renderMcqExam(root){
     expHTML='<div class="exp"><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
   const jr=splitJaryo(q.q);
   const subjTag=((mqDiag||mqReview)&&q._subj)?'<span class="qsubj">'+q._subj+'</span>':'';
-  const tags=subjTag+mcqMasteryBadge(q)+impBadge(q)+timeBadge(q);
+  const tags=subjTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q);
   const guessOn=!!mqGuess[q.id];
   const guessToggle = mqInReview
     ? (guessOn?'<span class="guess-tag-r">🎲 찍음</span>':'')
@@ -3268,7 +3334,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
-  resolveImages(root);
+  resolveImages(root); fmtJaryo(root); if(!mqInReview && isComboQuestion(q.opts)) markComboStmts(root);
 }
 function mqPick(qid,n){
   if(mqInReview) return;
