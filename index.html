@@ -1125,6 +1125,7 @@ async function loadUserPlan(user) {
         email: user.email, displayName: user.displayName, photoURL: user.photoURL,
         plan: 'FREE_TRIAL', trialCount: 0,        // 레거시 미러(관리자 호환)
         entitlements: ent,
+        signupCert: (typeof activeCert!=='undefined' ? (activeCert||null) : null),  // 가입 시점에 보던 시험
         referralCode: refCode,
         referredBy: referredBy || null,
         mileageLots: lots,
