@@ -497,6 +497,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .b-go{background:#0C447C;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer}
 #mcqView .b-fresh{color:#64748B;background:#fff;border:1.5px solid #E2E8F0;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 #mcqView .b-wr{color:#B91C1C;background:#FEF2F2;border:1.5px solid #FECACA;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+#mcqView .b-un{color:#7A4E00;background:#FFF7E6;border:1.5px solid #F1D9A8;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 /* 시험 헤더 */
 #mcqView .exam-hd{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
 #mcqView .exam-ti{flex:1;min-width:0}
@@ -2649,7 +2650,7 @@ function impBadge(q){ const s=impLabel(q.star||0); return s ? '<span class="imp"
 function timeBadge(q){ const v=q.time||0; if(!v) return ''; const lab={1:'빠름',2:'보통',3:'오래'}[v]||''; return '<span class="tmark t'+v+'">⌛ '+lab+'</span>'; }
 // 진행상태 저장(이어서 풀기)
 function mqPKey(sub,set){ return 'certlab_mcq_p_'+mqCert+'_'+sub+'_'+set; }
-function mqSaveProgress(){ if(mqMode!=='all') return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft,up:mqTimeUp,os:mqOverElapsed(),oc:mqOvertimeCount})); }catch(e){} }
+function mqSaveProgress(){ if(mqMode!=='all') return; if(mqInReview||mqConcept) return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft,up:mqTimeUp,os:mqOverElapsed(),oc:mqOvertimeCount})); }catch(e){} }
 function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,set)); return v?JSON.parse(v):null; }catch(e){ return null; } }
 function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
 function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
@@ -2703,13 +2704,15 @@ function renderMcqHome(root){
       if(s.sets.length===0){ html+='<div class="srow"><span class="swc" style="padding:4px 0">문제 준비 중입니다.</span></div>'; }
       s.sets.forEach((st,si)=>{
         const setWrong=st.questions.filter(q=>appWrong[q.id]).length;
+        const setUnans=st.questions.filter(q=>srMasteryK(mqCert,q.id)==='new').length;
+        const showUnans=setUnans>0 && setUnans<st.questions.length;   // 일부만 안 푼 회차에만 노출
         const hasSave=!!mqLoadProgress(id,si);
         const goBtns = hasSave
           ? '<button class="b-go" onclick="resumeMcqExam(\''+id+'\','+si+')">이어풀기</button><button class="b-fresh" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">처음부터</button>'
           : '<button class="b-go" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">풀기</button>';
         html+='<div class="srow"><div class="srow-left"><span class="syr">'+st.label+'</span>'+
-          '<span class="swc">'+st.questions.length+'문항'+(setWrong>0?' · 오답 '+setWrong:'')+'</span></div>'+
-          '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+(setConceptReady(mqCert,id,si)?'<button class="b-learn" onclick="startConceptStudy(\''+id+'\','+si+')">📖 선행학습</button>':'')+'</div></div>';
+          '<span class="swc">'+st.questions.length+'문항'+(setWrong>0?' · 오답 '+setWrong:'')+(showUnans?' · 미응답 '+setUnans:'')+'</span></div>'+
+          '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+(showUnans?'<button class="b-un" onclick="startMcqExam(\''+id+'\','+si+',\'unans\')">미응답</button>':'')+(setConceptReady(mqCert,id,si)?'<button class="b-learn" onclick="startConceptStudy(\''+id+'\','+si+')">📖 선행학습</button>':'')+'</div></div>';
       });
       html+='</div>';
     }
@@ -2867,8 +2870,9 @@ function startMcqExam(id,si,mode){
   mqSub=id; mqSet=si; mqMode=mode; mqShow={};
   const all=curQB()[id].sets[si].questions;
   if(mode==='wrong') mqList=all.filter(q=>appWrong[q.id]);
+  else if(mode==='unans') mqList=all.filter(q=>srMasteryK(mqCert,q.id)==='new');
   else mqList=all;
-  if(!mqList.length){ alert('오답이 없습니다.'); mqList=null; return; }
+  if(!mqList.length){ alert(mode==='unans'?'미응답 문항이 없습니다. 모두 푸셨어요! 👍':'오답이 없습니다. 모두 맞히셨어요! 🎉'); mqList=null; return; }
   if(mode==='all') mqClearProgress(id,si);   // 처음부터: 저장 삭제
   mqWrongStreak=0; mqConceptOffered=false;
   mqAns={}; mqGuess={}; mqIdx=0; mqTimeLeft=mqList.length*60;
