@@ -719,7 +719,7 @@ function filterMile(){
 async function loadPayments() {
   try {
     const snap = await db.collection('payments').orderBy('createdAt','desc').get();
-    allPayments = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    allPayments = snap.docs.map(d => ({id:d.id, ...d.data()})).filter(p => !isExcludedPay(p));
     renderPayments(allPayments);
     renderRecentPayments();
     updatePendingBadge();
