@@ -366,11 +366,16 @@ tr:hover td{background:#FAFAFA}
             <button id="impRun" class="btn-sm btn-extend" disabled onclick="impUpload()">⬆ 업로드 실행</button>
             <button class="btn-sm" onclick="impRefresh()" style="background:#EDE9FB;color:#5B50C0">현재 ver 새로고침</button>
             <button class="btn-sm btn-extend" onclick="syncManifest()">🔄 manifest 버전 동기화</button>
+            <button class="btn-sm" onclick="registerManifestExams()" style="background:#E6F4EA;color:#15793F">🗂 매니페스트 등록(새 시험)</button>
           </div>
           <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
             업로드 후 앱에 새 데이터가 안 보이면 <b>"manifest 버전 동기화"</b>를 누르세요. (manifest version을 각 bank의 실제 version과 일치시켜 캐시를 갱신합니다.)
           </div>
           <div id="syncStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
+          <div style="background:#EAF3EC;border:1px solid #BFE0C6;border-radius:8px;padding:9px 12px;color:#2E7D46;font-size:11.5px;margin-top:10px">
+            새 시험(예: 주택관리사)을 처음 올릴 땐, 위에서 <b>manifest 포함 번들</b>을 올린 뒤 <b>"매니페스트 등록(새 시험)"</b>을 누르세요. 기존 시험은 그대로 두고 <b>새 시험만 추가</b>합니다(삭제·덮어쓰기 없음).
+          </div>
+          <div id="regManifestStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
           <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
           <div class="table-title" style="margin-bottom:8px">version +1 강제 갱신 (전체 사용자 캐시 갱신)</div>
           <div style="background:#FDECEC;border:1px solid #F3C6C6;border-radius:8px;padding:9px 12px;color:#A32D2D;font-size:11.5px;margin-bottom:10px">
@@ -1105,7 +1110,7 @@ async function iuUpload(){
   }
   iuLog('— 작업 종료 — 문항 JSON에 img://키 로 연결하세요.','#5B50C0');
 }
-let impItems=[]; let _impInited=false;
+let impItems=[]; let _impInited=false; let impBundleManifest=null;
 function impLog(msg,color){ const el=document.getElementById('impLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
 function impInit(){
   if(_impInited) return; _impInited=true;
@@ -1144,6 +1149,7 @@ async function impHandleFiles(fileList){
         impItems.push({docId,cert,subject,data,count,version:data.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
       });
       impLog(f.name+': 번들 '+parsed.banks.length+'개 문서 인식');
+      if(parsed.manifest && Array.isArray(parsed.manifest.exams)){ impBundleManifest=parsed.manifest; impLog(f.name+': manifest 인식 ('+parsed.manifest.exams.length+'개 시험) — "매니페스트 등록(새 시험)"으로 추가 가능','#5B50C0'); }
     }
     // 과목별 파일: {cert,subject,...,questions:[]}
     else if(parsed && parsed.cert && parsed.subject){
@@ -1256,6 +1262,33 @@ async function syncManifest(){
     if(!confirm('manifest version을 bank와 일치시킵니다 ('+changes.length+'건):\n\n'+changes.join('\n')+'\n\n적용할까요?')){ st.textContent='취소됨.'; return; }
     await db.collection('manifest').doc('exams').update({ exams: exams });
     st.innerHTML='✅ 동기화 완료 — '+changes.length+'건 갱신.<br><span style="font-size:11px;color:#A89C8E">'+changes.join('<br>')+'</span><br>앱에서 Ctrl+Shift+R 하면 새 데이터가 보입니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+// ===== 매니페스트 등록: 번들의 새 시험을 레지스트리에 merge (추가만, 삭제·덮어쓰기 없음) =====
+async function registerManifestExams(){
+  const st=document.getElementById('regManifestStatus');
+  if(!impBundleManifest || !Array.isArray(impBundleManifest.exams) || !impBundleManifest.exams.length){
+    st.innerHTML='먼저 <b>manifest가 포함된 번들 JSON</b>을 위 영역에 올려주세요. (번들에 "manifest" 키가 있어야 합니다)'; return;
+  }
+  st.textContent='읽는 중...';
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    const cur=(mSnap.exists && mSnap.data())||{};
+    const exams=Array.isArray(cur.exams)?cur.exams.slice():[];
+    const haveIds=new Set(exams.map(e=>e&&e.id));
+    const toAdd=[], skip=[];
+    impBundleManifest.exams.forEach(e=>{ if(!e||!e.id) return; if(haveIds.has(e.id)) skip.push(e.id); else toAdd.push(e); });
+    if(!toAdd.length){
+      st.innerHTML='추가할 <b>새 시험이 없습니다</b>. (이미 등록됨: '+(skip.join(', ')||'-')+')<br><span style="font-size:11px;color:#A89C8E">※ 이미 있는 시험의 과목·버전을 바꾸려면 "manifest 버전 동기화"를 쓰세요.</span>';
+      return;
+    }
+    const lines=toAdd.map(e=>'  + '+e.id+' ('+(e.name||'')+') · 과목 '+((e.subjects||[]).map(s=>s.code).join(', '))).join('\n');
+    if(!confirm('아래 새 시험을 매니페스트에 추가합니다.\n기존 시험은 그대로 유지(삭제·덮어쓰기 없음).\n\n'+lines+(skip.length?('\n\n이미 등록되어 건너뜀: '+skip.join(', ')):'')+'\n\n계속할까요?')){ st.textContent='취소됨.'; return; }
+    const merged=exams.concat(toAdd);
+    if(mSnap.exists) await db.collection('manifest').doc('exams').update({ exams: merged });
+    else await db.collection('manifest').doc('exams').set({ exams: merged });
+    st.innerHTML='✅ 등록 완료 — 추가 <b>'+toAdd.length+'</b>개 ('+toAdd.map(e=>e.id).join(', ')+').<br>'
+      +'<span style="font-size:11px;color:#A89C8E">은행(banks)이 업로드돼 있으면 앱에서 Ctrl+Shift+R 후 노출됩니다. 안 보이면 위 "⬆ 업로드 실행"으로 banks도 올렸는지 확인하세요.</span>';
   }catch(e){ st.textContent='오류: '+e.message; }
 }
 async function exportData(){
