@@ -402,6 +402,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts{display:flex;flex-direction:column;gap:9px}
 #mcqView .exp-opts .eo{font-size:13px;line-height:1.7}
 #mcqView .exp-opts .eo-q{color:#1E293B;font-weight:500;margin-bottom:2px}
+#mcqView .exp-opts .eo-q-img{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+#mcqView .exp-opts .eo-oimg img{max-height:60px;width:auto;vertical-align:middle;border:1px solid #E2E8F0;border-radius:6px;margin:0 2px}
 #mcqView .exp-opts .eo-a{color:#475569;padding-left:2px}
 #mcqView .exp-opts .eo-a.eo-red{color:#A32D2D}
 #mcqView .exp-opts .eo-a.eo-grn{color:#0F6E56}
@@ -3134,7 +3136,10 @@ function renderMcqExam(root){
         var sv=splitVerdict(ex);
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
         var ansTag = isAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
-        var optTxt=(q.opts&&q.opts[i])?'<div class="eo-q">'+(i+1)+'. '+rm(q.opts[i],q)+verdictTag+ansTag+'</div>':'';
+        var _hasT = q.opts && q.opts[i];
+        var _hasI = q.optImg && q.optImg[i];
+        var _ob = _hasT ? rm(q.opts[i],q) : (_hasI ? '<span class="eo-oimg">'+imgInner(q.optImg[i])+'</span>' : '');
+        var optTxt = (_hasT || _hasI) ? '<div class="eo-q'+((_hasI && !_hasT)?' eo-q-img':'')+'">'+(i+1)+'. '+_ob+verdictTag+ansTag+'</div>' : '';
         var expTxt= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
