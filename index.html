@@ -378,7 +378,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px 13px;cursor:pointer;outline:none}
 #mcqView .opt:focus{outline:none}
 #mcqView .opt .onum{width:23px;height:23px;border-radius:50%;border:1.5px solid #CBD5E1;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
-#mcqView .opt .otxt{font-size:13.5px;line-height:1.62;color:#0F172A;font-weight:500;flex:1}
+#mcqView .opt .otxt{font-size:13.5px;line-height:1.62;color:#0F172A;font-weight:500;flex:1;display:flow-root}
 #mcqView .opt.opt-img{flex-direction:column;align-items:stretch}
 #mcqView .opt.opt-img .onum{margin-bottom:4px}
 #mcqView .opt .oimg{width:100%}
@@ -396,14 +396,15 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .jaryo .jr-l{flex:0 0 auto;display:inline-block}
 #mcqView .jaryo .jr-r{font-variant-numeric:tabular-nums;white-space:nowrap}
 #mcqView .jaryo .jr-line{line-height:1.7}
-#mcqView .jaryo .jr-stmt{display:flex;align-items:flex-start;gap:8px;line-height:1.75;margin-bottom:8px}
+#mcqView .jaryo .jr-stmt{display:flow-root;line-height:1.85;margin-bottom:9px}
 #mcqView .jaryo .jr-stmt:last-child{margin-bottom:0}
-#mcqView .jaryo .jr-stmt-t{flex:1;min-width:0}
-#mcqView .jaryo .jr-ox{flex-shrink:0;display:inline-flex;gap:5px;margin-top:1px}
-#mcqView .jaryo .jox{width:27px;height:27px;border-radius:7px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:13px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
-#mcqView .jaryo .jox:active{transform:scale(.92)}
-#mcqView .jaryo .jox-o.on{background:#E8F8F1;border-color:#1D9E75;color:#0F6E56}
-#mcqView .jaryo .jox-x.on{background:#FCEBEB;border-color:#E24B4A;color:#C0322F}
+#mcqView .jaryo .jr-stmt-t{min-width:0}
+#mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:4px;margin:1px 0 0 8px}
+#mcqView .jox{width:21px;height:21px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:11.5px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
+#mcqView .jox:active{transform:scale(.92)}
+#mcqView .jox-o.on{background:#E8F8F1;border-color:#1D9E75;color:#0F6E56}
+#mcqView .jox-x.on{background:#FCEBEB;border-color:#E24B4A;color:#C0322F}
+#mcqView .opt-ox{float:right;display:inline-flex;gap:4px;margin:1px 0 0 8px}
 #mcqView .exp{margin-top:13px;border-top:1px dashed #E2E8F0;padding-top:12px}
 #mcqView .exp-note-hd{font-size:15px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
 #mcqView .exp-note-hd::before{content:'📚 '}
@@ -2708,7 +2709,7 @@ function renderMcqHome(root){
           : '<button class="b-go" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">풀기</button>';
         html+='<div class="srow"><div class="srow-left"><span class="syr">'+st.label+'</span>'+
           '<span class="swc">'+st.questions.length+'문항'+(setWrong>0?' · 오답 '+setWrong:'')+'</span></div>'+
-          '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+'<button class="b-learn" onclick="startConceptStudy(\''+id+'\','+si+')">📖 선행학습</button></div></div>';
+          '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+(setConceptReady(mqCert,id,si)?'<button class="b-learn" onclick="startConceptStudy(\''+id+'\','+si+')">📖 선행학습</button>':'')+'</div></div>';
       });
       html+='</div>';
     }
@@ -3214,11 +3215,13 @@ function renderMcqExam(root){
     return;
   }
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
+  const optOX = !mqInReview && !isComboQuestion(q.opts);   // 일반형 보기에 O/X 자가체크(조합형은 자료 ㄱㄴㄷㄹ에 부착)
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
     else if(sel===n)cls+=' sel';
     const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
-    const otxt=o?('<div class="otxt">'+rm(o,q)+'</div>'):'';
+    const oxBtns=(optOX && o && !showExp)?'<span class="opt-ox"><button type="button" class="jox jox-o" onclick="event.stopPropagation();joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="event.stopPropagation();joxToggle(this)">X</button></span>':'';
+    const otxt=o?('<div class="otxt">'+rm(o,q)+oxBtns+'</div>'):'';
     return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';
