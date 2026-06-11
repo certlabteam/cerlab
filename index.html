@@ -545,6 +545,18 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .lsec-d{font-size:13px;line-height:1.7;color:#334155}
 #mcqView .lsec-d b{color:#0C447C}
 #mcqView .ltrap{background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:11px 13px;margin-top:4px}
+.lblk{margin:16px 0 0}
+.lblk-h{font-size:15px;font-weight:800;color:#0C447C;margin-bottom:7px}
+.lblk .lrow{font-size:13px;line-height:1.7;color:#334155;padding:5px 0;border-bottom:1px solid #EEF2F7}
+.lblk .lrow:last-child{border-bottom:none;padding-bottom:0}
+.lblk .lk{font-weight:700;color:#0F172A;font-variant-numeric:tabular-nums}
+.lblk .ldot{color:#94A3B8;margin:0 7px}
+.lcue,.lwrap{font-size:13px;line-height:1.7;margin-top:15px;padding-left:12px;border-left:3px solid #CBD5E1}
+.lcue{border-left-color:#0E7490}
+.lwrap{border-left-color:#C2410C}
+.lcue-tag,.lwrap-tag{display:inline-block;font-weight:800;margin-right:7px}
+.lcue-tag{color:#0E7490}
+.lwrap-tag{color:#C2410C}
 #mcqView .ltrap .lsec-t{color:#C2410C}
 #mcqView .ltrap .lsec-t .lico{background:#FFE4CC;color:#C2410C}
 #mcqView .ltrap .lsec-d{color:#7C2D12}
@@ -3131,11 +3143,30 @@ function conceptCardHTML(q){
   let body='';
   if(L){
     if(L.title) body+='<div class="ltitle">'+rm(L.title,q)+'</div>';
-    if(L.sum)   body+='<div class="lsum">💡 '+rm(L.sum,q)+'</div>';
+    if(L.sum)   body+='<div class="lsum">💡 '+rm(L.sum,q)+'</div>';   // v1 호환(신규엔 없음)
     (L.secs||[]).forEach((s,i)=>{
       body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(s.t||'',q)+'</div><div class="lsec-d">'+rm(s.d||'',q)+'</div></div>';
     });
-    if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+rm(L.trap,q)+'</div></div>';
+    // 연표 (timeline): {y,e}
+    if(Array.isArray(L.timeline)&&L.timeline.length){
+      body+='<div class="lblk"><div class="lblk-h">연표</div>';
+      L.timeline.forEach(it=>{ body+='<div class="lrow"><span class="lk">'+rm(it.y||'',q)+'</span><span class="ldot">·</span>'+rm(it.e||'',q)+'</div>'; });
+      body+='</div>';
+    }
+    // 인물/장소/조약 (n,d 공통)
+    const ndBlock=(arr,label)=>{
+      if(!Array.isArray(arr)||!arr.length) return '';
+      let h='<div class="lblk"><div class="lblk-h">'+label+'</div>';
+      arr.forEach(it=>{ h+='<div class="lrow"><span class="lk">'+rm(it.n||'',q)+'</span><span class="ldot">·</span>'+rm(it.d||'',q)+'</div>'; });
+      return h+'</div>';
+    };
+    body+=ndBlock(L.people,'인물');
+    body+=ndBlock(L.places,'장소·유적');
+    body+=ndBlock(L.treaties,'조약');
+    // 판별 단서 (cue) / 마무리·오답 정리 (wrap)
+    if(L.cue)  body+='<div class="lcue"><span class="lcue-tag">이렇게 나오면</span>'+rm(L.cue,q)+'</div>';
+    if(L.wrap) body+='<div class="lwrap"><span class="lwrap-tag">정리</span>'+rm(L.wrap,q)+'</div>';
+    if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+rm(L.trap,q)+'</div></div>';   // v1 호환
   } else {
     // 폴백: 기존 exp.c(개념) 나열
     const cs=(q.exp&&q.exp.c)?q.exp.c:[];
