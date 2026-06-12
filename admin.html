@@ -1196,11 +1196,35 @@ async function impUpload(){
   for(const it of ready){
     try{
       const nv=impNewVer(it);
-      const payload=Object.assign({}, it.data, {version:nv});
-      await db.collection('banks').doc(it.docId).set(payload);
-      const back=await db.collection('banks').doc(it.docId).get(); const bd=back.data()||{};
-      it.status='done'; it.curVer=bd.version??nv;
-      impLog('✓ '+it.docId+' 업로드 완료 — ver '+(bd.version)+', 문항 '+(Array.isArray(bd.questions)?bd.questions.length:'?'),'#15793F');
+      const data=it.data;
+      const qs=Array.isArray(data.questions)?data.questions:[];
+      // 회차 키 = q.set 우선, 없으면 id 앞부분(예: c26_1 → c26). 등장 순서 보존.
+      const order=[], map={}; let allKey=qs.length>0;
+      qs.forEach(function(q){
+        var s=q.set;
+        if(s==null||s===''){ var m=String(q.id||'').match(/^([A-Za-z]+\d+)_/); s=m?m[1]:null; }
+        if(s==null||s===''){ allKey=false; return; }
+        if(!map[s]){ map[s]=[]; order.push(s); } map[s].push(q);
+      });
+      if(allKey && order.length){
+        for(const s of order){
+          await db.collection('banks').doc(it.docId+'__'+s).set({ set:s, version:nv, questions:map[s] });
+        }
+        await db.collection('banks').doc(it.docId).set({ version:nv, cert:data.cert, subject:data.subject, name:data.name||'', shards:order.slice(), count:qs.length });
+        it.status='done'; it.curVer=nv;
+        impLog('✓ '+it.docId+' 샤딩 업로드 — ver '+nv+', 회차 '+order.length+'개·문항 '+qs.length,'#15793F');
+      } else {
+        const payload=Object.assign({}, data, {version:nv});
+        var approxBytes=0; try{ approxBytes=new Blob([JSON.stringify(payload)]).size; }catch(_){ try{ approxBytes=unescape(encodeURIComponent(JSON.stringify(payload))).length; }catch(__){} }
+        if(approxBytes>1000000){
+          it.status='bad'; it.err='샤딩 불가(문항에 set·id회차 정보 없음) + 1MB 초과 ('+approxBytes.toLocaleString()+'B). set 또는 id(예: c26_1)를 넣어 주세요.';
+          impLog('✗ '+it.docId+' 업로드 중단 — 샤딩 불가 + 1MB 초과('+approxBytes.toLocaleString()+'B). 문항 set/id 회차정보 필요','#f85149');
+          impRender(); continue;
+        }
+        await db.collection('banks').doc(it.docId).set(payload);
+        it.status='done'; it.curVer=nv;
+        impLog('✓ '+it.docId+' 업로드 완료(단일) — ver '+nv+', 문항 '+qs.length,'#15793F');
+      }
     }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); impLog('✗ '+it.docId+' 실패: '+(e.message||e),'#f85149'); }
     impRender();
   }
@@ -1304,7 +1328,13 @@ async function exportData(){
     for(const e of target){
       for(const sub of (e.subjects||[])){
         const docId=e.id+'__'+sub.code;
-        try{ const bd=await db.collection('banks').doc(docId).get(); if(bd.exists){ const data=bd.data(); banks.push({docId, data}); qcnt+=((data.questions||[]).length); } }catch(_){}
+        try{ const bd=await db.collection('banks').doc(docId).get(); if(bd.exists){ let data=bd.data();
+          if(Array.isArray(data.shards)&&data.shards.length){
+            const qs=[];
+            for(const s of data.shards){ const sd=await db.collection('banks').doc(docId+'__'+s).get(); if(sd.exists&&Array.isArray(sd.data().questions)) qs.push.apply(qs,sd.data().questions); }
+            data=Object.assign({},data,{questions:qs}); delete data.shards; delete data.count;
+          }
+          banks.push({docId, data}); qcnt+=((data.questions||[]).length); } }catch(_){}
       }
     }
     const bundle={ manifest:{ exams: target, updatedAt:(m.exists&&m.data().updatedAt)||null }, banks, exportedAt:new Date().toISOString() };
@@ -1505,7 +1535,14 @@ async function buildQid2Sub(){
     for(const ex of exams){
       for(const sub of (ex.subjects||[])){
         try{ const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
-          if(bd.exists){ (bd.data().questions||[]).forEach(q=>{ if(q&&q.id!=null) map[ex.id+'|'+q.id]=(sub.name||sub.code); }); }
+          if(bd.exists){ const bdata=bd.data();
+            let qlist=bdata.questions||[];
+            if((!qlist||!qlist.length) && Array.isArray(bdata.shards)){
+              qlist=[];
+              for(const s of bdata.shards){ try{ const sd=await db.collection('banks').doc(ex.id+'__'+sub.code+'__'+s).get(); if(sd.exists&&Array.isArray(sd.data().questions)) qlist=qlist.concat(sd.data().questions); }catch(_){} }
+            }
+            qlist.forEach(q=>{ if(q&&q.id!=null) map[ex.id+'|'+q.id]=(sub.name||sub.code); });
+          }
         }catch(_){}
       }
     }
