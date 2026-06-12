@@ -427,20 +427,17 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-ex{margin-top:7px;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
-#mcqView .oxcmp{margin-top:6px;background:#FBFAF8;border:1px solid #EEE7E0;border-radius:11px;padding:12px 13px}
-#mcqView .oxcmp-h{font-size:12.5px;font-weight:800;color:#7A5A3A;margin-bottom:10px}
-#mcqView .oxc-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:7px 0;border-top:1px dashed #ECE4DB}
-#mcqView .oxc-row:first-of-type{border-top:none;padding-top:0}
-#mcqView .oxc-row.bad{background:#FFF6EE;margin:0 -7px;padding:7px;border-radius:8px}
-#mcqView .oxc-k{font-size:13px;font-weight:800;color:#0F172A;min-width:16px}
-#mcqView .oxc-l{font-size:10.5px;color:#A99F95;font-weight:700}
-#mcqView .oxc-chip{font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 9px}
-#mcqView .oxc-o{color:#0F6E56;background:#E8F8F1}
-#mcqView .oxc-x{color:#C0322F;background:#FCEBEB}
-#mcqView .oxc-arr{color:#CFC6BC;font-size:12px}
-#mcqView .oxc-ok{color:#15793F;font-size:11.5px;font-weight:800;margin-left:auto}
-#mcqView .oxc-no{color:#C2410C;font-size:11.5px;font-weight:800;margin-left:auto}
-#mcqView .oxc-foot{font-size:11.5px;color:#9A8F86;margin-top:9px;line-height:1.5}
+#mcqView .oxcmp{margin-top:12px;padding-top:11px;border-top:1px solid #EEF0F2}
+#mcqView .oxcmp-h{font-size:12px;font-weight:700;color:#64748B;margin-bottom:7px}
+#mcqView .oxc-tbl{width:100%;border-collapse:collapse;font-size:13px}
+#mcqView .oxc-tbl th{font-size:11px;font-weight:700;color:#94A0AB;padding:5px 8px;border-bottom:1px solid #EAEDF0;text-align:center}
+#mcqView .oxc-tbl th:first-child{text-align:left}
+#mcqView .oxc-tbl td{padding:7px 8px;border-bottom:1px solid #F2F4F6;text-align:center;font-weight:800}
+#mcqView .oxc-tbl tr:last-child td{border-bottom:none}
+#mcqView .oxc-tbl .oxc-k{text-align:left;color:#0F172A;font-weight:800}
+#mcqView .oxc-tbl .oxc-o{color:#0F6E56}
+#mcqView .oxc-tbl .oxc-x{color:#A32D2D}
+#mcqView .oxc-tbl tr.oxc-miss td{background:#FBF6F5}
 #mcqView .oximg{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px;padding:11px 12px;background:#F8FAFC;border:1px dashed #D7DEE7;border-radius:10px}
 #mcqView .oximg-hd{flex-basis:100%;font-size:11.5px;font-weight:800;color:#64748B;margin-bottom:2px}
 #mcqView .oxg{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #E7ECF1;border-radius:9px;padding:5px 7px}
@@ -593,6 +590,14 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .sr-banner-l b{font-size:14px}
 .sr-exam{font-size:11px;opacity:.9;text-decoration:underline}
 .sr-banner-go{font-size:12px;font-weight:700;background:#fff;color:#185FA5;padding:7px 12px;border-radius:999px;white-space:nowrap}
+.weak-card{margin:10px 14px 4px;background:#fff;border:1px solid #E8EBEF;border-radius:14px;padding:4px 4px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.weak-hd{font-size:13px;font-weight:800;color:#A3461A;padding:11px 12px 9px;display:flex;align-items:center;gap:8px}
+.weak-hd span{font-size:11px;font-weight:700;color:#B0A79E}
+.weak-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid #F2F4F6}
+.weak-info{flex:1;min-width:0;text-align:left}
+.weak-t{font-size:14px;font-weight:800;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.weak-s{font-size:11.5px;color:#94A0AB;margin-top:2px}
+.weak-go{font-size:12px;font-weight:800;color:#fff;background:#0F6E56;border:none;border-radius:9px;padding:8px 13px;flex-shrink:0;cursor:pointer}
 .rate-row{display:flex;gap:8px;padding:4px 14px 8px;align-items:stretch}
 .rate-prev{flex:0 0 auto;border:1px solid #E2D6CC;background:#fff;border-radius:12px;padding:0 14px;font-size:13px;font-weight:700;color:#8A7D6E;cursor:pointer}
 .rate-prev:disabled{opacity:.4}
@@ -2669,6 +2674,7 @@ let mqReview=false;                       // SR 복습 세션 여부
 let mqDiag=false;                          // 진단 모의고사 세션 여부
 let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
 let mqInReview=false, mqReviewMode='all', mqReviewList=[];
+let mqGather=false, mqGatherLabel='', mqWeakCache=[];
 let mqGuess={};   // 문제별 '찍었어요' 상태 {qid:true} — 맞아도 복습은 애매로
 let mqConcept=false;        // 개념학습 모드 여부
 let mqConceptPhase='learn'; // 'learn'(개념 카드) | 'solve'(문제 풀이)
@@ -2730,6 +2736,16 @@ function renderMcqHome(root){
   html+=mcqAnalysisCard(mqCert);
   const due=srDueCertCount(mqCert);
   html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
+  mqWeakCache=mqWeakConcepts(mqCert);
+  if(mqWeakCache.length){
+    html+='<div class="weak-card"><div class="weak-hd">📉 약점 개념<span>2번 이상 틀린 개념</span></div>';
+    mqWeakCache.slice(0,6).forEach(function(c,i){
+      html+='<div class="weak-row"><div class="weak-info"><div class="weak-t">'+mqEsc(c.t)+'</div>'+
+        '<div class="weak-s">'+c.n+'문항 틀림 · 전체 '+c.total+'문항</div></div>'+
+        '<button class="weak-go" onclick="gatherConcept('+i+')">모아풀기</button></div>';
+    });
+    html+='</div>';
+  }
   html+='<div class="sec-lbl">과목 선택</div>';
   curOrder().forEach(id=>{
     const s=curQB()[id]; const open=!!mqOpen[id];
@@ -2886,6 +2902,41 @@ function srSaveDiagnostic(cert,correct,total){
   srDiagnostics.push({cert,at:Date.now(),score:total?Math.round(correct/total*100):0,total});
   srFlush();
 }
+// ===== 약점 개념(B): 오답노트(appWrong) → 개념(exp.c) 집계 =====
+function mqEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cQTitles(q){ return (((q.exp&&q.exp.c)||[]).map(function(c){return (c&&c.t||'').trim();}).filter(Boolean)); }
+function gatherConceptQs(cert, title){      // 그 개념이 든 전 회차 문항 모음
+  var qb=qbOf(cert), out=[];
+  Object.keys(qb).forEach(function(sub){ qb[sub].sets.forEach(function(st){ st.questions.forEach(function(q){
+    if(cQTitles(q).indexOf(title)>=0) out.push(q);
+  }); }); });
+  return out;
+}
+function mqWeakConcepts(cert){              // 2번 이상 틀린 개념만, 틀린 수 내림차순
+  var qb=qbOf(cert), tally={};
+  Object.keys(qb).forEach(function(sub){ qb[sub].sets.forEach(function(st){ st.questions.forEach(function(q){
+    if(!appWrong[q.id]) return;
+    var seen={};
+    cQTitles(q).forEach(function(t){ if(seen[t]) return; seen[t]=1; (tally[t]=tally[t]||{t:t,n:0}).n++; });
+  }); }); });
+  var list=Object.keys(tally).map(function(k){return tally[k];}).filter(function(x){return x.n>=2;});
+  list.sort(function(a,b){return b.n-a.n;});
+  list.forEach(function(c){ c.total=gatherConceptQs(cert,c.t).length; });
+  return list;
+}
+function gatherConcept(i){
+  var c=mqWeakCache[i]; if(!c) return;
+  var list=gatherConceptQs(mqCert, c.t);
+  if(!list.length){ alert('해당 개념 문항이 없습니다.'); return; }
+  startGatherExam(c.t, list);
+}
+function startGatherExam(label, list){      // 개념 모아풀기 (복습류 커스텀 세션)
+  mqStopTimer(); mqStopOverTimer();
+  mqReview=true; mqInReview=false; mqDiag=false; mqConcept=false; mqGather=true; mqGatherLabel=label;
+  mqMode='review'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
+  mqList=list.slice(); mqTimeLeft=mqList.length*60;
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
 function startMcqReview(){
   const qb=curQB(); const due=[];
   curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)){ q._subj=qb[id].name||id; due.push(q); } })); });
@@ -3012,7 +3063,7 @@ function mqFlushAnsweredToWrong(){
   });
   if(changed && currentUser) saveUserData();
 }
-function mqBackHome(){ const wasReview=mqInReview; mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ const wasReview=mqInReview; mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqGather=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
@@ -3054,24 +3105,21 @@ function verdictIsO(v){
 function oxCompareHTML(q, oArr){
   try{
     var st = (typeof mqOX!=='undefined') && mqOX[q.id]; if(!st) return '';
-    var rows=[], hasMiss=false, firstMiss='';
-    function chip(isO){ return isO?'<span class="oxc-chip oxc-o">⭕ 옳다</span>':'<span class="oxc-chip oxc-x">❌ 옳지 않다</span>'; }
+    var rows=[];
+    function cell(isO){ return '<td class="'+(isO?'oxc-o':'oxc-x')+'">'+(isO?'O':'X')+'</td>'; }
     function pushRow(label, key, oraw, optText){
       var mark=st[key]; if(!mark) return;                          // 안 찍은 건 비교 제외
       var sv=splitVerdict(stripRepeatedOpt(oraw, optText));
       var actO=verdictIsO(sv.v); if(actO===null) return;           // 판정 못 뽑으면 제외
       var myO=(mark==='O'), miss=(myO!==actO);
-      if(miss && !firstMiss){ firstMiss = label+' — '+(myO?'‘옳다’로 봤지만 실은 옳지 않다':'‘옳지 않다’로 봤지만 실은 옳다'); }
-      if(miss) hasMiss=true;
-      var res = miss?'<span class="oxc-no">✗ 어긋남</span>':'<span class="oxc-ok">✓ 일치</span>';
-      rows.push('<div class="oxc-row'+(miss?' bad':'')+'"><span class="oxc-k">'+label+'</span><span class="oxc-l">내</span>'+chip(myO)+'<span class="oxc-arr">→</span><span class="oxc-l">정답</span>'+chip(actO)+res+'</div>');
+      rows.push('<tr'+(miss?' class="oxc-miss"':'')+'><td class="oxc-k">'+label+'</td>'+cell(myO)+cell(actO)+'</tr>');
     }
     var stmts=comboStmtList(q);
     if(stmts.length){ stmts.forEach(function(s,i){ pushRow(s.k, 's'+s.k, oArr[i]||'', s.t); }); }
     else { (q.opts||[]).forEach(function(opt,i){ pushRow(String(i+1), 'o'+i, oArr[i]||'', opt); }); }
     if(!rows.length) return '';
-    var foot = hasMiss ? firstMiss+'. 여기서 갈렸다.' : '찍은 O/X가 모두 정답과 일치했다.';
-    return '<div class="oxcmp"><div class="oxcmp-h">🔎 내 O/X vs 정답</div>'+rows.join('')+'<div class="oxc-foot">'+foot+'</div></div>';
+    return '<div class="oxcmp"><div class="oxcmp-h">🔎 내 O/X vs 정답</div>'+
+      '<table class="oxc-tbl"><thead><tr><th>항목</th><th>내 선택</th><th>정답</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
   }catch(_){ return ''; }
 }
 function stripRepeatedOpt(exp, opt){
@@ -3358,8 +3406,8 @@ function fmtJaryo(scope){
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
-  const examName=mqDiag?'진단 모의고사':mqReview?'오늘의 복습':subObj.name;
-  const examSet=mqDiag?'실력 측정':mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
+  const examName=mqGather?('약점: '+mqGatherLabel):mqDiag?'진단 모의고사':mqReview?'오늘의 복습':subObj.name;
+  const examSet=mqGather?(mqList?mqList.length+'문항 모아풀기':'모아풀기'):mqDiag?'실력 측정':mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
   const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
   const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
   mqCurId=(q&&q.id)||null;
@@ -3563,7 +3611,7 @@ function mqProgStart(e){
 function mqResult(){
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
   try{ localStorage.removeItem('certlab_mcq_active'); }catch(_){}
-  mqInReview=false; mqConcept=false;
+  mqInReview=false; mqConcept=false; mqGather=false;
   const qs=mqQuestions(); let correct=0,answered=0;
   const reflectUnans=(!mqReview && !mqDiag && mqMode==='all');  // 일반 풀이에서만 미응답 복습 반영
   qs.forEach((q,i)=>{ if(mqAns[q.id]!==undefined){ answered++;
