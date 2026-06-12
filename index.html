@@ -3177,10 +3177,12 @@ function verdictColor(t){
 function renderMath(text, allowBareFraction){
   if(text==null) return '';
   var s=String(text);
-  // (1) 괄호 분수 (a/b) → 플레이스홀더 [전 과목]
+  // (1) 괄호 분수 (a/b) 숫자/숫자 → 플레이스홀더 [전 과목]
   s = s.replace(/\((\d+)\/(\d+)\)/g, '\u0001$1\u0002$2\u0003');
   // (2) 맨 분수 a/b → 분수 [econ 전용] (콤마숫자·축척·날짜 오변환 방지)
   if(allowBareFraction){
+    // (1b) 괄호 분수 (한글단위·변수 분모 포함) (150/시간),(P_x/P_y) → 분수 [econ 전용]
+    s = s.replace(/\(([^()\/\u0001-\u0003]+)\/([^()\/\u0001-\u0003]+)\)/g, '\u0001$1\u0002$2\u0003');
     s = s.replace(/(?<![\d\/.,])(\d+)\/(\d+)(?![\d\/])/g, '\u0001$1\u0002$2\u0003');
   }
   // (3) 윗첨자 ^토큰 / ^(그룹) / ^분수플레이스홀더 [전 과목]
