@@ -494,7 +494,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mcq-result button{background:#0C447C;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-size:13.5px;font-weight:800;cursor:pointer}
 /* 과목 아코디언 (원본 감평사 방식) */
 #mcqView .sec-lbl{font-size:10px;font-weight:700;color:#94A3B8;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 6px}
-#mcqView .mcq-exam-title{font-size:20px;font-weight:800;color:#0C447C;margin:2px 2px 14px}
+#mcqView .mcq-exam-title{font-size:20px;font-weight:800;color:#0C447C;margin:2px 2px 14px;display:flex;align-items:center;gap:5px}
+#mcqView .exam-home-back{background:none;border:none;color:#0C447C;padding:3px;margin-left:-5px;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0;border-radius:8px}
+#mcqView .exam-home-back:active{background:#EAF0F8}
 #mcqView .scard{border-radius:16px;border:1.5px solid #E2E8F0;overflow:hidden;background:#fff;margin-bottom:10px}
 #mcqView .scard-hd{display:flex;align-items:center;gap:10px;padding:14px 15px;cursor:pointer;user-select:none}
 #mcqView .sdot{width:6px;height:6px;border-radius:50%;background:#0C447C;flex-shrink:0}
@@ -590,9 +592,16 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .sr-banner-l b{font-size:14px}
 .sr-exam{font-size:11px;opacity:.9;text-decoration:underline}
 .sr-banner-go{font-size:12px;font-weight:700;background:#fff;color:#185FA5;padding:7px 12px;border-radius:999px;white-space:nowrap}
-.weak-card{margin:10px 14px 4px;background:#fff;border:1px solid #E8EBEF;border-radius:14px;padding:4px 4px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
-.weak-hd{font-size:13px;font-weight:800;color:#A3461A;padding:11px 12px 9px;display:flex;align-items:center;gap:8px}
-.weak-hd span{font-size:11px;font-weight:700;color:#B0A79E}
+.weak-card{margin:10px 14px 4px;background:#fff;border:1px solid #E8EBEF;border-radius:14px;padding:0;box-shadow:0 1px 3px rgba(15,23,42,.06);overflow:hidden}
+.weak-hd{display:flex;align-items:center;gap:8px;padding:13px 14px;cursor:pointer;user-select:none}
+.weak-ico{font-size:14px}
+.weak-nm{font-size:14px;font-weight:800;color:#A3461A}
+.weak-cnt{font-size:12.5px;font-weight:800;color:#C2410C;background:#FBEEE8;border-radius:8px;padding:2px 9px}
+.weak-arrow{margin-left:auto;width:24px;height:24px;border-radius:50%;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94A3B8;transition:transform .2s;flex-shrink:0}
+.weak-arrow.open{transform:rotate(180deg)}
+.weak-body{padding:0 4px 4px}
+.weak-note{font-size:11px;color:#B0A79E;padding:9px 12px 6px;border-top:1px solid #F2F4F6}
+.weak-note + .weak-row{border-top:none}
 .weak-row{display:flex;align-items:center;gap:11px;padding:11px 12px;border-top:1px solid #F2F4F6}
 .weak-info{flex:1;min-width:0;text-align:left}
 .weak-t{font-size:14px;font-weight:800;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2674,7 +2683,7 @@ let mqReview=false;                       // SR 복습 세션 여부
 let mqDiag=false;                          // 진단 모의고사 세션 여부
 let appWrong={};                        // 객관식 오답 (qid 기준, 시험 간 고유)
 let mqInReview=false, mqReviewMode='all', mqReviewList=[];
-let mqGather=false, mqGatherLabel='', mqWeakCache=[];
+let mqGather=false, mqGatherLabel='', mqWeakCache=[], mqWeakOpen=false;
 let mqGuess={};   // 문제별 '찍었어요' 상태 {qid:true} — 맞아도 복습은 애매로
 let mqConcept=false;        // 개념학습 모드 여부
 let mqConceptPhase='learn'; // 'learn'(개념 카드) | 'solve'(문제 풀이)
@@ -2732,18 +2741,25 @@ function renderMCQ(){
 function renderMcqHome(root){
   let html='';
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name)||'';
-  if(examNm) html+='<div class="mcq-exam-title">'+examNm+'</div>';
+  if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
   const due=srDueCertCount(mqCert);
   html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
   mqWeakCache=mqWeakConcepts(mqCert);
   if(mqWeakCache.length){
-    html+='<div class="weak-card"><div class="weak-hd">📉 약점 개념<span>2번 이상 틀린 개념</span></div>';
-    mqWeakCache.slice(0,6).forEach(function(c,i){
-      html+='<div class="weak-row"><div class="weak-info"><div class="weak-t">'+mqEsc(c.t)+'</div>'+
-        '<div class="weak-s">'+c.n+'문항 틀림 · 전체 '+c.total+'문항</div></div>'+
-        '<button class="weak-go" onclick="gatherConcept('+i+')">모아풀기</button></div>';
-    });
+    html+='<div class="weak-card"><div class="weak-hd" onclick="mqWeakToggle()">'+
+      '<span class="weak-ico">📉</span><span class="weak-nm">약점 개념</span>'+
+      '<span class="weak-cnt">'+mqWeakCache.length+'개</span>'+
+      '<span class="weak-arrow'+(mqWeakOpen?' open':'')+'">▼</span></div>';
+    if(mqWeakOpen){
+      html+='<div class="weak-body"><div class="weak-note">2번 이상 틀린 개념 · 모아풀기로 약한 단원 통째 훈련</div>';
+      mqWeakCache.forEach(function(c,i){
+        html+='<div class="weak-row"><div class="weak-info"><div class="weak-t">'+mqEsc(c.t)+'</div>'+
+          '<div class="weak-s">'+c.n+'문항 틀림 · 전체 '+c.total+'문항</div></div>'+
+          '<button class="weak-go" onclick="gatherConcept('+i+')">모아풀기</button></div>';
+      });
+      html+='</div>';
+    }
     html+='</div>';
   }
   html+='<div class="sec-lbl">과목 선택</div>';
@@ -2775,7 +2791,8 @@ function renderMcqHome(root){
   });
   root.innerHTML=html;
 }
-function mqToggle(id){ const wasOpen=!!mqOpen[id]; mqOpen={}; if(!wasOpen) mqOpen[id]=true; renderMCQ(); }
+function mqToggle(id){ const wasOpen=!!mqOpen[id]; mqOpen={}; mqWeakOpen=false; if(!wasOpen) mqOpen[id]=true; renderMCQ(); }
+function mqWeakToggle(){ mqWeakOpen=!mqWeakOpen; if(mqWeakOpen) mqOpen={}; renderMCQ(); }
 function mcqMasteryBadge(q){ const m=srMasteryK(mqCert,q.id); if(m==='new') return ''; const cls={weak:'sr-weak',learning:'sr-learning',master:'sr-master'}[m]; return '<span class="mq-mst '+cls+'">'+SR_MASTER_LABEL[m]+'</span>'; }
 
 /* ===== 실력 분석 / 예상점수 / 진단 ===== */
@@ -3868,6 +3885,47 @@ function showDataError(err){
   document.body.appendChild(b);
 }
 showHome();
+
+/* ===== 폰 백버튼: 앱 안에서 단계적으로 뒤로 (실수 종료 방지) ===== */
+var clLastBack=0;
+function clOpenOverlay(){
+  var ids=['conceptOfferPopup','reportSheet','csSheet','planPopup','refundPopup','loginPopup','inappPopup','milestoneBox','completeOv','userDropdown'];
+  for(var i=0;i<ids.length;i++){ var el=document.getElementById(ids[i]); if(el && !el.classList.contains('hidden')) return el; }
+  return null;
+}
+function clToast(msg){
+  var t=document.getElementById('clToast');
+  if(!t){ t=document.createElement('div'); t.id='clToast'; t.style.cssText='position:fixed;left:50%;bottom:66px;transform:translateX(-50%);background:rgba(20,20,24,.92);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:100000;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap'; document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.opacity='0'; },1700);
+}
+function clHandleBack(){
+  var ov=clOpenOverlay();
+  if(ov){ ov.classList.add('hidden'); return true; }
+  if(typeof activeCert!=='undefined' && activeCert){
+    if(typeof isMcqCert==='function' && isMcqCert(activeCert) && typeof mqScreen!=='undefined'){
+      if(mqInReview){ if(typeof mqBackToResult==='function') mqBackToResult(); return true; }
+      if(mqScreen==='exam'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
+      if(mqScreen==='home'){ showHome(); return true; }
+    }
+    showHome(); return true;   // 플래시카드 등 기타 과목 → 메인 홈
+  }
+  return false;   // 메인 홈 → 종료 단계
+}
+(function(){ try{
+  history.replaceState({cl:'root'},'');
+  history.pushState({cl:'app'},'');
+  window.addEventListener('popstate', function(){
+    if(clHandleBack()){
+      history.pushState({cl:'app'},'');                 // 재무장: 앱 안에 머무름
+    } else {
+      var now=Date.now();
+      if(now-clLastBack<2000){ history.back(); }         // 2초 내 두 번째 → 종료
+      else { clLastBack=now; clToast('한 번 더 누르면 종료됩니다'); history.pushState({cl:'app'},''); }
+    }
+  });
+}catch(_){ } })();
+
 function refreshCertCards(){
   ['realestate1','realestate2','koreanhistory','housing'].forEach(cert=>{
     const tag=document.getElementById('certTag-'+cert); if(!tag) return;
