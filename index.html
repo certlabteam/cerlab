@@ -441,6 +441,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .oxc-ok{color:#15793F;font-size:11.5px;font-weight:800;margin-left:auto}
 #mcqView .oxc-no{color:#C2410C;font-size:11.5px;font-weight:800;margin-left:auto}
 #mcqView .oxc-foot{font-size:11.5px;color:#9A8F86;margin-top:9px;line-height:1.5}
+#mcqView .oximg{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px;padding:11px 12px;background:#F8FAFC;border:1px dashed #D7DEE7;border-radius:10px}
+#mcqView .oximg-hd{flex-basis:100%;font-size:11.5px;font-weight:800;color:#64748B;margin-bottom:2px}
+#mcqView .oxg{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #E7ECF1;border-radius:9px;padding:5px 7px}
+#mcqView .oxg-k{font-size:13px;font-weight:800;color:#0F172A;min-width:13px;text-align:center}
 #mcqView .mn-box{margin:14px 0 0}
 #mcqView .mn-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
 #mcqView .mn-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
@@ -3047,7 +3051,7 @@ function verdictIsO(v){
   if(/옳지|적절하지|부적절|틀리/.test(v)) return false;
   return null;
 }
-function oxCompareHTML(q, useCombo, stmts, oArr){
+function oxCompareHTML(q, oArr){
   try{
     var st = (typeof mqOX!=='undefined') && mqOX[q.id]; if(!st) return '';
     var rows=[], hasMiss=false, firstMiss='';
@@ -3062,7 +3066,8 @@ function oxCompareHTML(q, useCombo, stmts, oArr){
       var res = miss?'<span class="oxc-no">✗ 어긋남</span>':'<span class="oxc-ok">✓ 일치</span>';
       rows.push('<div class="oxc-row'+(miss?' bad':'')+'"><span class="oxc-k">'+label+'</span><span class="oxc-l">내</span>'+chip(myO)+'<span class="oxc-arr">→</span><span class="oxc-l">정답</span>'+chip(actO)+res+'</div>');
     }
-    if(useCombo){ (stmts||[]).forEach(function(s,i){ pushRow(s.k, 's'+s.k, oArr[i]||'', s.t); }); }
+    var stmts=comboStmtList(q);
+    if(stmts.length){ stmts.forEach(function(s,i){ pushRow(s.k, 's'+s.k, oArr[i]||'', s.t); }); }
     else { (q.opts||[]).forEach(function(opt,i){ pushRow(String(i+1), 'o'+i, oArr[i]||'', opt); }); }
     if(!rows.length) return '';
     var foot = hasMiss ? firstMiss+'. 여기서 갈렸다.' : '찍은 O/X가 모두 정답과 일치했다.';
@@ -3163,18 +3168,37 @@ function splitJaryo(qt){
   }
   return {q:qt, jaryo:''};
 }
-function parseJaryoStmts(qt){
-  // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문을 줄 단위로 추출 → [{k,t}, ...]
-  var jaryo=(splitJaryo(qt).jaryo)||qt||'';
-  var lines=String(jaryo).split(/\r?\n/);
-  var out=[], cur=null;
-  var mk=/^\s*([ㄱ-ㅁ])[.\s·)\]]\s*(.*)$/;
-  for(var i=0;i<lines.length;i++){
-    var m=lines[i].match(mk);
-    if(m){ cur={k:m[1], t:(m[2]||'').trim()}; out.push(cur); }
-    else if(cur && lines[i].trim()){ cur.t+=(cur.t?' ':'')+lines[i].trim(); }  // 여러 줄 지문 이어붙임
+// ㄱ~ㅁ 지문 마커를 줄바꿈/인라인 모두 인식해 분리 → {intro, stmts:[{k,t}]}
+function splitStmtMarkers(text){
+  var s=String(text||'').replace(/<br\s*\/?>/gi,'\n');
+  var re=/(^|\s)([ㄱ-ㅁ])[.\u00B7)\]]/g, m, hits=[];
+  while((m=re.exec(s))){ hits.push({k:m[2], mAt:m.index+m[1].length, tAt:re.lastIndex}); }
+  if(!hits.length) return {intro:s.trim(), stmts:[]};
+  var intro=s.slice(0, hits[0].mAt).trim();
+  var stmts=[];
+  for(var i=0;i<hits.length;i++){
+    var end=(i+1<hits.length)?hits[i+1].mAt:s.length;
+    stmts.push({k:hits[i].k, t:s.slice(hits[i].tAt, end).replace(/\s+/g,' ').trim()});
   }
-  return out;
+  return {intro:intro, stmts:stmts};
+}
+function parseJaryoStmts(qt){
+  // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문 추출(줄·인라인 모두) → [{k,t}, ...]
+  var jaryo=(splitJaryo(qt).jaryo)||qt||'';
+  return splitStmtMarkers(jaryo).stmts;
+}
+// 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
+function comboLettersFromOpts(opts){
+  var order='ㄱㄴㄷㄹㅁ', seen={};
+  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅁ]/g)||[]).forEach(function(c){ seen[c]=1; }); });
+  return order.split('').filter(function(c){ return seen[c]; });
+}
+// 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1
+function comboStmtList(q){
+  var st=parseJaryoStmts(q.q);
+  if(st.length) return st;
+  if(isComboQuestion(q.opts)) return comboLettersFromOpts(q.opts).map(function(k){ return {k:k, t:''}; });
+  return [];
 }
 function mnBoxHTML(mn){
   if(!mn) return '';
@@ -3233,24 +3257,54 @@ function conceptCardHTML(q){
 function markComboStmts(scope){
   (scope||document).querySelectorAll('#mcqView .jaryo').forEach(function(el){
     if(el.dataset.oxed) return;
-    var mk=/^\s*([\u3131-\u3141])[.\s·)\]]/;
-    var lines=el.innerHTML.split(/\r?\n/);
-    if(!lines.some(function(l){ return mk.test(l); })){ el.dataset.oxed=1; return; }
-    var groups=[], cur=null;
-    lines.forEach(function(ln){
-      if(mk.test(ln)){ cur={lines:[ln]}; groups.push(cur); }
-      else if(cur && ln.trim()){ cur.lines.push(ln); }
-      else groups.push({intro:ln});
-    });
-    el.innerHTML=groups.map(function(g){
-      if(g.intro!=null) return g.intro.trim()?'<div class="jr-line">'+g.intro+'</div>':'';
-      var _lt=(g.lines[0].match(mk)||[])[1]||'';
-      return '<div class="jr-stmt"><span class="jr-stmt-t">'+g.lines.join('<br>')+'</span>'+
-        '<span class="jr-ox" data-oxk="s'+_lt+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
+    function stmtHTML(inner, letter){
+      return '<div class="jr-stmt"><span class="jr-stmt-t">'+inner+'</span>'+
+        '<span class="jr-ox" data-oxk="s'+letter+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
         '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span></div>';
-    }).join('');
-    el.dataset.oxed=1;
+    }
+    var html=el.innerHTML;
+    var hasTag=/<(?!br\s*\/?>)[a-zA-Z]/.test(html);   // <br> 외 태그(이미지·표 등) 포함 여부
+    if(hasTag){
+      // 태그 섞인 자료: 기존 줄 기준 처리(안전)
+      var mk=/^\s*([\u3131-\u3141])[.\s·)\]]/;
+      var lines=html.split(/\r?\n/);
+      if(!lines.some(function(l){ return mk.test(l); })){ el.dataset.oxed=1; return; }
+      var groups=[], cur=null;
+      lines.forEach(function(ln){
+        if(mk.test(ln)){ cur={lines:[ln]}; groups.push(cur); }
+        else if(cur && ln.trim()){ cur.lines.push(ln); }
+        else groups.push({intro:ln});
+      });
+      el.innerHTML=groups.map(function(g){
+        if(g.intro!=null) return g.intro.trim()?'<div class="jr-line">'+g.intro+'</div>':'';
+        return stmtHTML(g.lines.join('<br>'), (g.lines[0].match(mk)||[])[1]||'');
+      }).join('');
+      el.dataset.oxed=1; return;
+    }
+    // 평문 자료: 인라인·줄 모두 마커 단위로 분리
+    var res=splitStmtMarkers(html);
+    if(!res.stmts.length){ el.dataset.oxed=1; return; }
+    var out='';
+    if(res.intro) out+='<div class="jr-line">'+res.intro.replace(/\n/g,'<br>')+'</div>';
+    out+=res.stmts.map(function(s){ return stmtHTML(s.k+'. '+s.t, s.k); }).join('');
+    el.innerHTML=out; el.dataset.oxed=1;
   });
+}
+// 이미지형 조합형(지문이 이미지에 있는 경우): 이미지 아래 ㄱㄴㄷㄹ O/X 줄
+function imgComboOXRow(q){
+  try{
+    if(mqInReview) return '';
+    if(!isComboQuestion(q.opts)) return '';
+    if(parseJaryoStmts(q.q).length) return '';     // 자료 텍스트에 지문 있으면 기존(지문별) 방식
+    var letters=comboLettersFromOpts(q.opts);
+    if(letters.length<2) return '';
+    var groups=letters.map(function(k){
+      return '<span class="oxg" data-oxk="s'+k+'"><span class="oxg-k">'+k+'</span>'+
+        '<button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
+        '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>';
+    }).join('');
+    return '<div class="oximg"><div class="oximg-hd">내 O/X 체크</div>'+groups+'</div>';
+  }catch(_){ return ''; }
 }
 function joxToggle(btn){
   var on=btn.classList.contains('on');
@@ -3414,7 +3468,7 @@ function renderMcqExam(root){
       }
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
-    body += oxCompareHTML(q, isCombo && comboOK, stmts, oArr);   // 1단계: 내 O/X vs 정답
+    body += oxCompareHTML(q, oArr);   // 1단계: 내 O/X vs 정답 (텍스트·이미지·일반 통합)
     if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
       body+='<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
@@ -3445,7 +3499,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+rm(jr.q,q)+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
