@@ -3621,7 +3621,22 @@ async function loadAllBanks(){
       try{ const c=localStorage.getItem(ck); if(c) doc=JSON.parse(c); }catch(e){}
       if(!doc){
         const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
-        if(snap.exists){ doc=snap.data(); try{ localStorage.setItem(ck,JSON.stringify(doc)); }catch(e){} }
+        if(snap.exists){
+          const meta=snap.data();
+          if(Array.isArray(meta.shards) && meta.shards.length){
+            // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
+            const parts=await Promise.all(meta.shards.map(function(sid){
+              return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
+            }));
+            const qs=[];
+            parts.forEach(function(p){ if(p&&p.exists){ const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
+            if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
+            else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
+          } else {
+            doc=meta;   // 기존 단일 문서(하위호환 폴백)
+          }
+          try{ localStorage.setItem(ck,JSON.stringify(doc)); }catch(e){}
+        }
       }
       if(doc) applyBank(ex,sub,doc);
     }
