@@ -905,10 +905,15 @@ async function impUpload(){
       const nv=impNewVer(it);
       const data=it.data;
       const qs=Array.isArray(data.questions)?data.questions:[];
-      // q.set 그룹핑(등장 순서 보존). 모든 문항에 set이 있으면 회차 샤딩(Option B).
-      const order=[], map={}; let allSet=qs.length>0;
-      qs.forEach(function(q){ var s=q.set; if(s==null||s===''){ allSet=false; return; } if(!map[s]){ map[s]=[]; order.push(s); } map[s].push(q); });
-      if(allSet && order.length){
+      // 회차 키 = q.set 우선, 없으면 id 앞부분(예: c26_1 → c26). 등장 순서 보존.
+      const order=[], map={}; let allKey=qs.length>0;
+      qs.forEach(function(q){
+        var s=q.set;
+        if(s==null||s===''){ var m=String(q.id||'').match(/^([A-Za-z]+\d+)_/); s=m?m[1]:null; }
+        if(s==null||s===''){ allKey=false; return; }
+        if(!map[s]){ map[s]=[]; order.push(s); } map[s].push(q);
+      });
+      if(allKey && order.length){
         for(const s of order){
           await db.collection('banks').doc(it.docId+'__'+s).set({ set:s, version:nv, questions:map[s] });
         }
@@ -917,6 +922,13 @@ async function impUpload(){
         impLog('✓ '+it.docId+' 샤딩 업로드 — ver '+nv+', 회차 '+order.length+'개·문항 '+qs.length,'#15793F');
       } else {
         const payload=Object.assign({}, data, {version:nv});
+        // 샤딩 불가(set·id회차 없음)인데 1MB 근접이면 원시 에러 대신 명확히 안내
+        var approxBytes=0; try{ approxBytes=new Blob([JSON.stringify(payload)]).size; }catch(_){ try{ approxBytes=unescape(encodeURIComponent(JSON.stringify(payload))).length; }catch(__){} }
+        if(approxBytes>1000000){
+          it.status='bad'; it.err='샤딩 불가(문항에 set·id회차 정보 없음) + 1MB 초과 ('+approxBytes.toLocaleString()+'B). set 또는 id(예: c26_1)를 넣어 주세요.';
+          impLog('✗ '+it.docId+' 업로드 중단 — 샤딩 불가 + 1MB 초과('+approxBytes.toLocaleString()+'B). 문항 set/id 회차정보 필요','#f85149');
+          impRender(); continue;
+        }
         await db.collection('banks').doc(it.docId).set(payload);
         it.status='done'; it.curVer=nv;
         impLog('✓ '+it.docId+' 업로드 완료(단일) — ver '+nv+', 문항 '+qs.length,'#15793F');
