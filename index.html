@@ -3092,7 +3092,11 @@ function splitVerdict(ex){
   var m=ex.match(/\s*(옳지\s*않다|옳지않다|적절하지\s*않다|적절하지않다|부적절하다|옳다|적절하다|맞다|틀리다|틀린다)\.?\s*$/);
   if(!m) return {v:'', vc:'', rest:ex.trim()};
   var v=m[1].replace(/\s+/g,' ');
-  var rest=ex.slice(0, m.index).replace(/[\s.·,]+$/,'').trim();
+  // 판정어가 문장 맨앞(^)이거나 마침표 바로 뒤(=독립 판정문)일 때만 본문에서 제거.
+  // 문장에 붙은 판정어("…쓴 이 보기는 옳지 않다")는 본문에 남겨 끊김 방지(배지는 그대로 표시).
+  var before=ex.slice(0, m.index);
+  var standalone=(before===''||/[.。]\s*$/.test(before));
+  var rest=standalone ? before.replace(/[\s.·,]+$/,'').trim() : ex.trim();
   return {v:v, vc:verdictColor(v), rest:rest};
 }
 // O/X 자가체크 → 실제 정답 판정 비교 (1단계)
