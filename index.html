@@ -444,8 +444,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .oxg-k{font-size:13px;font-weight:800;color:#0F172A;min-width:13px;text-align:center}
 #mcqView .mn-box{margin:14px 0 0}
 #mcqView .mn-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
-#mcqView .mn-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
-#mcqView .mn-desc{font-size:13px;color:#7A6A50;line-height:1.65;margin-top:5px}
+#mcqView .mn-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
+#mcqView .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
+#mcqView .mn-code .k,#mcqView .mn-desc .k{color:#C0392B;font-weight:800}
 #mcqView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
 #mcqView .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
 #mcqView .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7}
@@ -3223,12 +3224,40 @@ function isEconQ(q){
 }
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
 function rm(text, q){ return renderMath(text, isEconQ(q)); }
+// 한 줄짜리 인라인 조합형: "( ㄱ. … ㄴ. … ㄷ. … ㄹ. … )"처럼 괄호 안에 ㄱ.지문이 묶인 그룹을
+// 자료(jaryo)로 떼어낸다. 진술 내부 괄호 대비 → 괄호 균형으로 그룹 끝을 잡고,
+// 단서 괄호 등 그 외 텍스트(앞+뒤)는 stem으로 합친다.
+function extractInlineComboGroup(qt){
+  var s=String(qt||'');
+  if(!/[ㄱ-ㅁ]\s*[.\u00B7)\]]/.test(s)) return null;       // 진술 마커 자체가 없으면 패스
+  for(var i=0;i<s.length;i++){
+    if(s[i]!=='(') continue;
+    var depth=0, j=i;
+    for(; j<s.length; j++){
+      if(s[j]==='(') depth++;
+      else if(s[j]===')'){ depth--; if(depth===0) break; }
+    }
+    if(depth!==0) return null;                              // 닫는 괄호 불균형 → 시도 중단
+    var inner=s.slice(i+1, j);
+    var marks=inner.match(/(^|\s)[ㄱ-ㅁ]\s*[.\u00B7)\]]/g); // 그룹 내 진술 마커들
+    if(/(^|\s)ㄱ\s*[.\u00B7)\]]/.test(inner) && marks && marks.length>=2){
+      var before=s.slice(0,i).trim();
+      var after=s.slice(j+1).trim();                        // 단서 "(단, …)" 등 — stem 유지
+      var stem=(before+(after?' '+after:'')).trim();
+      return {q:stem, jaryo:inner.trim()};
+    }
+    i=j;                                                    // 이 괄호 그룹은 자료 아님 → 건너뛰고 계속
+  }
+  return null;
+}
 function splitJaryo(qt){
   if(!qt) return {q:qt||'', jaryo:''};
   const b=qt.indexOf('[');
   if(b>0) return {q:qt.slice(0,b).trim(), jaryo:qt.slice(b).trim()};
   const nl=qt.indexOf('\n');
   if(nl>0) return {q:qt.slice(0,nl).trim(), jaryo:qt.slice(nl+1).trim()};
+  const inl=extractInlineComboGroup(qt);                   // 인라인 조합형 폴백
+  if(inl) return inl;
   const qm=qt.indexOf('?');
   if(qm>0 && qm<qt.length-1){
     let head=qt.slice(0,qm+1); let rest=qt.slice(qm+1);
