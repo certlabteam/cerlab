@@ -2630,7 +2630,7 @@ function curOrder(){ return Object.keys(curQB()); }
 const MCQ_QID2CS={};
 function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub};}))); }); }
 rebuildQid();
-let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={};
+let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={}, mqOX={}, mqCurId=null;
 let mqTimer=null, mqTimeLeft=0, mqTimeUp=false, mqTimeUpIdx=-1;
 let mqPaused=false;
 const BACK_ARROW='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
@@ -2665,6 +2665,9 @@ function mqPKey(sub,set){ return 'certlab_mcq_p_'+mqCert+'_'+sub+'_'+set; }
 function mqSaveProgress(){ if(mqMode!=='all') return; if(mqInReview||mqConcept) return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft,up:mqTimeUp,os:mqOverElapsed(),oc:mqOvertimeCount})); }catch(e){} }
 function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,set)); return v?JSON.parse(v):null; }catch(e){ return null; } }
 function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
+// O/X 자가체크 영속 저장 — 문항별 {qid:{o0|sㄱ ...:'O'|'X'}}. 새로고침·오답노트에서 재사용
+function mqOXSave(){ try{ localStorage.setItem('certlab_mcq_ox', JSON.stringify(mqOX)); }catch(e){} }
+function mqOXLoad(){ try{ var v=localStorage.getItem('certlab_mcq_ox'); if(v){ var o=JSON.parse(v); if(o&&typeof o==='object') mqOX=o; } }catch(e){} }
 function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
 function mqStopTimer(){ if(mqTimer){ clearInterval(mqTimer); mqTimer=null; } }
 function mqRunTimer(){
@@ -2693,6 +2696,12 @@ function mqTogglePause(){
 
 function renderMCQ(){
   const root=document.getElementById('mcqRoot'); if(!root) return;
+  // 새로고침 자동복귀용 '현재 풀이 중' 포인터 — 일반 풀이 화면일 때만 저장, 그 외 화면이면 해제
+  try{
+    if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqConcept && mqMode==='all'){
+      localStorage.setItem('certlab_mcq_active', JSON.stringify({cert:mqCert,sub:mqSub,set:mqSet}));
+    } else { localStorage.removeItem('certlab_mcq_active'); }
+  }catch(_){}
   if(mqScreen==='exam') return renderMcqExam(root);
   return renderMcqHome(root);
 }
@@ -2885,7 +2894,7 @@ function startMcqExam(id,si,mode){
   else if(mode==='unans') mqList=all.filter(q=>srMasteryK(mqCert,q.id)==='new');
   else mqList=all;
   if(!mqList.length){ alert(mode==='unans'?'미응답 문항이 없습니다. 모두 푸셨어요! 👍':'오답이 없습니다. 모두 맞히셨어요! 🎉'); mqList=null; return; }
-  if(mode==='all') mqClearProgress(id,si);   // 처음부터: 저장 삭제
+  if(mode==='all'){ mqClearProgress(id,si); all.forEach(function(q){ delete mqOX[q.id]; }); mqOXSave(); }   // 처음부터: 저장·O/X 삭제
   mqWrongStreak=0; mqConceptOffered=false;
   mqAns={}; mqGuess={}; mqIdx=0; mqTimeLeft=mqList.length*60;
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
@@ -3192,8 +3201,9 @@ function markComboStmts(scope){
     });
     el.innerHTML=groups.map(function(g){
       if(g.intro!=null) return g.intro.trim()?'<div class="jr-line">'+g.intro+'</div>':'';
+      var _lt=(g.lines[0].match(mk)||[])[1]||'';
       return '<div class="jr-stmt"><span class="jr-stmt-t">'+g.lines.join('<br>')+'</span>'+
-        '<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
+        '<span class="jr-ox" data-oxk="s'+_lt+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
         '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span></div>';
     }).join('');
     el.dataset.oxed=1;
@@ -3204,6 +3214,26 @@ function joxToggle(btn){
   var wrap=btn.parentNode;
   wrap.querySelectorAll('.jox').forEach(function(b){ b.classList.remove('on'); });
   if(!on) btn.classList.add('on');   // 켜진 걸 다시 누르면 해제(토글)
+  // 문항별 저장(이전/다음 이동 후에도 유지). 키 = data-oxk(대상), 값 = O|X
+  try{
+    var k=wrap.getAttribute('data-oxk');
+    if(k && mqCurId){
+      if(!mqOX[mqCurId]) mqOX[mqCurId]={};
+      if(on) delete mqOX[mqCurId][k];                                   // 껐으면 제거
+      else mqOX[mqCurId][k]= btn.classList.contains('jox-o')?'O':'X';   // 켰으면 O/X 저장
+      if(!Object.keys(mqOX[mqCurId]).length) delete mqOX[mqCurId];
+      mqOXSave();
+    }
+  }catch(_){}
+}
+// 저장된 O/X를 현재 문항 화면에 다시 칠하기
+function restoreOX(root){
+  if(!mqCurId) return;
+  var st=mqOX[mqCurId]; if(!st) return;
+  (root||document).querySelectorAll('#mcqView [data-oxk]').forEach(function(wrap){
+    var v=st[wrap.getAttribute('data-oxk')]; if(!v) return;
+    var b=wrap.querySelector(v==='O'?'.jox-o':'.jox-x'); if(b) b.classList.add('on');
+  });
 }
 // 자료박스(.jaryo): "항목명\t금액" 줄을 flex 2열로 정렬(금액 ₩ 세로 정렬). TAB 없는 줄은 그대로.
 function fmtJaryo(scope){
@@ -3235,6 +3265,7 @@ function renderMcqExam(root){
   const examSet=mqDiag?'실력 측정':mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
   const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
   const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
+  mqCurId=(q&&q.id)||null;
   // 개념학습 모드 - 개념 카드 단계
   if(mqConcept && mqConceptPhase==='learn'){
     root.innerHTML=
@@ -3255,7 +3286,7 @@ function renderMcqExam(root){
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
     else if(sel===n)cls+=' sel';
     const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
-    const oxBtns=(optOX && o && !showExp)?'<span class="opt-ox"><button type="button" class="jox jox-o" onclick="event.stopPropagation();joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="event.stopPropagation();joxToggle(this)">X</button></span>':'';
+    const oxBtns=(optOX && o && !showExp)?'<span class="opt-ox" data-oxk="o'+i+'"><button type="button" class="jox jox-o" onclick="event.stopPropagation();joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="event.stopPropagation();joxToggle(this)">X</button></span>':'';
     const otxt=o?('<div class="otxt">'+rm(o,q)+oxBtns+'</div>'):'';
     return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
@@ -3288,13 +3319,16 @@ function renderMcqExam(root){
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+q1+a1+exTxt+'</div>';
       }).join('')+'</div>';
-      // 정답 보기 조합 줄
+      // 정답 보기 조합 줄 — 문제 유형(옳지 않은/적절하지 않은/틀린 계열)에 맞춰 판정 라벨
       var cCirc=['①','②','③','④','⑤'];
+      var stemText = String(q.q||'').split(/ㄱ\s*[.\uFF0E]/)[0];   // 첫 지문(ㄱ.) 앞 질문부만 — 지문 속 '않/아닌' 오탐 방지
+      var stemNeg = /(옳지\s*않|옳지않|적절하지\s*않|적절하지않|틀린|틀리는|아닌\s*것|해당하지\s*않)/.test(stemText);
+      var pickVerdict = stemNeg ? '<span class="eo-verdict eo-red">옳지 않다</span>' : '<span class="eo-verdict eo-grn">옳다</span>';
       var comboLine=ansN.map(function(n){
         var lab=cCirc[n-1]||('('+n+')');
-        return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' <span class="eo-verdict eo-grn">옳다</span> <span class="eo-badge">✅ 정답</span></div>';
+        return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' '+pickVerdict+' <span class="eo-badge">✅ 정답</span></div>';
       }).join('');
-      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">정답 지문들의 조합이다.</div></div></div>';
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">'+(stemNeg?'옳지 않은 지문들의 조합이다.':'정답 지문들의 조합이다.')+'</div></div></div>';
     } else if(oFilled>=2){
       // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
       var fbCombo = isCombo && !comboOK;
@@ -3372,7 +3406,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
-  resolveImages(root); fmtJaryo(root); if(!mqInReview && isComboQuestion(q.opts)) markComboStmts(root);
+  resolveImages(root); fmtJaryo(root); if(!mqInReview && isComboQuestion(q.opts)) markComboStmts(root); restoreOX(root);
 }
 function mqPick(qid,n){
   if(mqInReview) return;
@@ -3430,6 +3464,7 @@ function mqProgStart(e){
 }
 function mqResult(){
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
+  try{ localStorage.removeItem('certlab_mcq_active'); }catch(_){}
   mqInReview=false; mqConcept=false;
   const qs=mqQuestions(); let correct=0,answered=0;
   const reflectUnans=(!mqReview && !mqDiag && mqMode==='all');  // 일반 풀이에서만 미응답 복습 반영
@@ -3509,6 +3544,7 @@ function mqRetry(){
   if(mqReview){ startMcqReview(); return; }
   mqClearProgress(mqSub,mqSet);
   const all=curQB()[mqSub].sets[mqSet].questions;
+  all.forEach(function(q){ delete mqOX[q.id]; }); mqOXSave();   // 다시 풀기 → O/X 초기화
   if(mqMode==='wrong') mqList=all.filter(q=>appWrong[q.id]);
   else mqList=all;
   if(!mqList.length){ alert('다시 풀 문항이 없습니다.'); mqBackHome(); return; }
@@ -3606,6 +3642,20 @@ function routeAfterAuth(){
     if(last === 'bodybuilding' || last === 'appraiser') enterCert(last);
   }
 }
+// 새로고침 시 풀던 문항 화면으로 자동 복귀 (포인터 + 저장된 진행상황이 있을 때만)
+function mqAutoResume(){
+  try{
+    var raw=localStorage.getItem('certlab_mcq_active'); if(!raw) return false;
+    var a=JSON.parse(raw); if(!a||!a.cert||a.sub==null||a.set==null) return false;
+    if(typeof isMcqCert==='function' && !isMcqCert(a.cert)) return false;
+    if(!localStorage.getItem('certlab_mcq_p_'+a.cert+'_'+a.sub+'_'+a.set)) return false;   // 진행상황 없으면 복원 안 함
+    enterCert(a.cert);   // mqCert 세팅 + mcqView
+    var qb=(typeof qbOf==='function')?qbOf(a.cert):(typeof curQB==='function'?curQB():null);
+    if(!(qb && qb[a.sub] && qb[a.sub].sets && qb[a.sub].sets[a.set])) return false;
+    resumeMcqExam(a.sub, a.set);
+    return true;
+  }catch(_){ return false; }
+}
 
 /* ===== Firestore 문제은행 로더 (버전 캐시) ===== */
 async function loadAllBanks(){
@@ -3682,7 +3732,9 @@ loadAllBanks().then(()=>{
   if(typeof activeCert!=='undefined' && activeCert==='bodybuilding' && typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; }   // 로드 완료 시 생체면 새 순서
   if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
   if(typeof refresh==='function') refresh();
-  if(typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
+  if(typeof mqOXLoad==='function') mqOXLoad();   // 저장된 O/X 복원(새로고침·오답노트용)
+  var _resumed=false; try{ if(typeof mqAutoResume==='function') _resumed=mqAutoResume(); }catch(_){}
+  if(!_resumed && typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
   // ?card= 딥링크 실행 (데이터 로드 완료 후 1회)
   if(typeof pendingCard!=='undefined' && pendingCard && typeof goToCard==='function'){ var _pc=pendingCard; pendingCard=null; setTimeout(function(){ goToCard(_pc); }, 200); }
 }).catch(showDataError);
