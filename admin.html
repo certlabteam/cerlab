@@ -1299,20 +1299,42 @@ async function registerManifestExams(){
     const mSnap=await db.collection('manifest').doc('exams').get();
     const cur=(mSnap.exists && mSnap.data())||{};
     const exams=Array.isArray(cur.exams)?cur.exams.slice():[];
-    const haveIds=new Set(exams.map(e=>e&&e.id));
-    const toAdd=[], skip=[];
-    impBundleManifest.exams.forEach(e=>{ if(!e||!e.id) return; if(haveIds.has(e.id)) skip.push(e.id); else toAdd.push(e); });
-    if(!toAdd.length){
-      st.innerHTML='추가할 <b>새 시험이 없습니다</b>. (이미 등록됨: '+(skip.join(', ')||'-')+')<br><span style="font-size:11px;color:#A89C8E">※ 이미 있는 시험의 과목·버전을 바꾸려면 "manifest 버전 동기화"를 쓰세요.</span>';
+    const byId=new Map(exams.map(e=>[e&&e.id, e]));
+    const toAdd=[], skip=[], subjAdds=[];
+    for(const e of impBundleManifest.exams){
+      if(!e||!e.id) continue;
+      const exist=byId.get(e.id);
+      if(!exist){ toAdd.push(e); continue; }
+      // 기존 시험: subjects에 없는 새 과목만 병합 (기존 과목 무수정)
+      exist.subjects=Array.isArray(exist.subjects)?exist.subjects:[];
+      exist.versions=exist.versions||{};
+      const haveCodes=new Set(exist.subjects.map(s=>s&&s.code));
+      let added=0;
+      for(const s of (e.subjects||[])){
+        if(!s||!s.code||haveCodes.has(s.code)) continue;
+        let bv=(e.versions&&typeof e.versions[s.code]==='number')?e.versions[s.code]:1;
+        try{ const bd=await db.collection('banks').doc(e.id+'__'+s.code).get(); if(bd.exists && typeof bd.data().version==='number') bv=bd.data().version; }catch(_){}
+        exist.subjects.push({code:s.code, name:s.name||s.code});
+        exist.versions[s.code]=bv; added++;
+        subjAdds.push(e.id+' / '+s.code+' ('+(s.name||'')+') v'+bv);
+      }
+      if(!added) skip.push(e.id);
+    }
+    if(!toAdd.length && !subjAdds.length){
+      st.innerHTML='추가할 <b>새 시험·새 과목이 없습니다</b>. (이미 등록됨: '+(skip.join(', ')||'-')+')<br><span style="font-size:11px;color:#A89C8E">※ 기존 과목의 버전만 바꾸려면 "manifest 버전 동기화"를 쓰세요.</span>';
       return;
     }
-    const lines=toAdd.map(e=>'  + '+e.id+' ('+(e.name||'')+') · 과목 '+((e.subjects||[]).map(s=>s.code).join(', '))).join('\n');
-    if(!confirm('아래 새 시험을 매니페스트에 추가합니다.\n기존 시험은 그대로 유지(삭제·덮어쓰기 없음).\n\n'+lines+(skip.length?('\n\n이미 등록되어 건너뜀: '+skip.join(', ')):'')+'\n\n계속할까요?')){ st.textContent='취소됨.'; return; }
+    const lines=[].concat(
+      toAdd.map(e=>'  + 새 시험 '+e.id+' ('+(e.name||'')+') · 과목 '+((e.subjects||[]).map(s=>s.code).join(', '))),
+      subjAdds.map(x=>'  + 새 과목 '+x)
+    );
+    if(!confirm('아래를 매니페스트에 추가합니다.\n기존 시험·과목은 그대로 유지(삭제·덮어쓰기 없음).\n\n'+lines.join('\n')+'\n\n계속할까요?')){ st.textContent='취소됨.'; return; }
     const merged=exams.concat(toAdd);
     if(mSnap.exists) await db.collection('manifest').doc('exams').update({ exams: merged });
     else await db.collection('manifest').doc('exams').set({ exams: merged });
-    st.innerHTML='✅ 등록 완료 — 추가 <b>'+toAdd.length+'</b>개 ('+toAdd.map(e=>e.id).join(', ')+').<br>'
-      +'<span style="font-size:11px;color:#A89C8E">은행(banks)이 업로드돼 있으면 앱에서 Ctrl+Shift+R 후 노출됩니다. 안 보이면 위 "⬆ 업로드 실행"으로 banks도 올렸는지 확인하세요.</span>';
+    st.innerHTML='✅ 등록 완료 — 새 시험 <b>'+toAdd.length+'</b>개, 새 과목 <b>'+subjAdds.length+'</b>개.<br>'
+      +'<span style="font-size:11px;color:#A89C8E">앱에서 Ctrl+Shift+R(또는 ?v=숫자) 후 노출됩니다. 안 보이면 위 "⬆ 업로드 실행"으로 banks도 올렸는지 확인하세요.</span>'
+      +(subjAdds.length?('<br><span style="font-size:11px;color:#0C447C">새 과목: '+subjAdds.join(' · ')+'</span>'):'');
   }catch(e){ st.textContent='오류: '+e.message; }
 }
 async function exportData(){
