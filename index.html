@@ -2047,18 +2047,10 @@ function srDaysLeftOf(cert){ const d=srExamDateOf(cert); return d?Math.ceil((d-D
 function srExamDate(){ return srExamDateOf(SR_CERT); }
 function srDaysLeft(){ return srDaysLeftOf(SR_CERT); }
 function srCorrectInterval(streak,cert){
-  cert=cert||SR_CERT;
   const base=[7,14,30,60,90];
-  let days=base[Math.min(streak,5)-1]||90;
-  const dl=srDaysLeftOf(cert);
-  if(dl!=null&&dl>0){
-    if(dl<=7) days=Math.min(days,2);
-    else if(dl<=21) days=Math.min(days,Math.max(1,Math.round(days/2)));
-    days=Math.min(days,Math.max(1,dl));
-  }
-  return days;
+  return base[Math.min(streak,5)-1]||90;
 }
-function srVagueInterval(cert){ const dl=srDaysLeftOf(cert||SR_CERT); let d=3; if(dl!=null&&dl>0){ d=dl<=7?1:Math.min(3,dl); } return d; }
+function srVagueInterval(cert){ return 3; }
 
 /* 코어: (cert,id) 기준 — 구술·객관식 공용 */
 function srGetK(cert,id){ return srProgress[cert+'|'+id]; }
@@ -3429,6 +3421,14 @@ function joxToggle(btn){
       mqOXSave();
     }
   }catch(_){}
+  // A-2: 복습 세션(mqReview)에서 O/X 자가체크를 켜면 그 문항을 '봤음'으로 1회 차감(애매=3일 뒤 재등장).
+  //  - 보기 탭으로 채점한 문항(mqAns 있음)·이미 복습에서 빠진 문항(srDueK=false)은 제외 → 중복/덮어쓰기 없음.
+  try{
+    if(mqReview && !mqInReview && !on && mqCurId && mqAns[mqCurId]===undefined && typeof srDueK==='function' && srDueK(mqCert,mqCurId)){
+      srRateK(mqCert, mqCurId, 1, false, false);
+      if(typeof srSaveDebounced==='function') srSaveDebounced();
+    }
+  }catch(_){}
 }
 // 저장된 O/X를 현재 문항 화면에 다시 칠하기
 function restoreOX(root){
@@ -3655,7 +3655,9 @@ function mqToggleGuess(qid){
   }
   renderMCQ();
 }
-function mqNav(d){ const qs=mqQuestions(); if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; if(mqConcept) mqConceptPhase='learn'; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
+function mqNav(d){ const qs=mqQuestions();
+  if(d===1 && mqReview && !mqInReview){ const cq=qs[mqIdx]; if(cq && cq.id && mqAns[cq.id]===undefined && typeof srDueK==='function' && srDueK(mqCert,cq.id)){ srRateK(mqCert,cq.id,1,false,false); if(typeof srSaveDebounced==='function') srSaveDebounced(); } }   // 가: 복습에서 '다음'으로 넘기면 안 푼 문항도 '봤음=애매(3일)'로 1회 차감
+  if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; if(mqConcept) mqConceptPhase='learn'; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
 function mqProgStart(e){
   var track=e.currentTarget; var total=mqQuestions().length; if(total<=1) return;
   function idxAt(ev){ var r=track.getBoundingClientRect(); var cx=(ev.touches&&ev.touches[0])?ev.touches[0].clientX:ev.clientX; var f=(cx-r.left)/r.width; if(f<0)f=0; if(f>1)f=1; return Math.round(f*(total-1)); }
