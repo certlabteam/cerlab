@@ -101,6 +101,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .card-back{background:linear-gradient(135deg,#EFF6FD 0%,#E6F1FB 100%);border:2px solid #9CC3EE;transform:rotateY(180deg)}
 .card-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;color:#185FA5}
 .card-back .card-label{color:#0C447C}
+.ntag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:11px;margin-left:7px;background:#FFF1E3;color:#D9650C;border:1px solid #F4C48A;letter-spacing:0;vertical-align:middle;white-space:nowrap}
 .card-text{font-size:20px;font-weight:700;line-height:1.55;color:#2C2C2A}
 .card-img{margin:14px 0 4px;text-align:center}
 .card-img img{max-width:100%;height:auto;border-radius:10px}
@@ -134,8 +135,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .lc-exd{margin:7px 0 0;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:12.5px;line-height:1.65;color:#5E4A2A}
 .lc-ex{margin:7px 0 0;padding:8px 11px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:12.5px;line-height:1.65;color:#28425E}
 .mnem-ti{color:#B97A12 !important;border-bottom-color:#F5E6C8 !important}
-.mnem-code{font-size:15px;font-weight:800;color:#8A5A00;letter-spacing:.5px}
-.mnem-desc{font-size:12.5px;color:#7A6A50;line-height:1.6;margin-top:5px}
+.mnem-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
+.mnem-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
+.mnem-code .k,.mnem-desc .k{color:#C0392B;font-weight:800}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
 .btn .lbl{font-size:10px;font-weight:500;opacity:.75}
@@ -399,7 +401,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .jaryo .jr-stmt{display:flow-root;line-height:1.85;margin-bottom:9px}
 #mcqView .jaryo .jr-stmt:last-child{margin-bottom:0}
 #mcqView .jaryo .jr-stmt-t{min-width:0}
-#mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:4px;margin:1px 0 0 8px}
+#mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
 #mcqView .jox{width:24px;height:24px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:12px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
 #mcqView .jox:active{transform:scale(.92)}
 #mcqView .jox-o.on{background:#E8F8F1;border-color:#1D9E75;color:#0F6E56}
@@ -1994,7 +1996,7 @@ function canAccess(cert) {
   return true; // ACTIVE
 }
 
-const SUBJS=['보디빌딩규정','스포츠인권·윤리','운동생리학','스포츠영양학','웨이트트레이닝','응급처치'];
+const SUBJS=['보디빌딩규정','스포츠인권·윤리','운동생리학','스포츠영양학','웨이트트레이닝','응급처치','실기'];
 const BB_CAT={ se:'스포츠인권·윤리' };
 const ALL_SUBJS=['전체',...SUBJS];
 const MILESTONES=[
@@ -2202,6 +2204,11 @@ function updateStats(){
   document.getElementById('wrongCount').textContent='오답 '+w+'개';
 }
 
+function newTypeBadge(card){
+  if(!card || !card.since) return '';
+  if(Number(card.since) !== new Date().getFullYear()) return '';
+  return '<span class="ntag">'+card.since+'년 기출'+(card.newType?' 신유형':'')+'</span>';
+}
 function buildMnemonic(card){
   const m=card.mn; if(!m) return '';
   const code = (typeof m==='string') ? m : (m.code||'');
@@ -2298,7 +2305,7 @@ function renderCard(){
     '<div class="card-scene">'
     +'<div class="card-inner'+(isFlipped?' flipped':'')+'" id="ci" onclick="flipCard()">'
     +'<div class="card-face card-front">'+statusDot+starDot
-    +'<div class="card-label">Question</div>'
+    +'<div class="card-label">Question'+newTypeBadge(card)+'</div>'
     +'<div class="card-text">'+card.q+'</div></div>'
     +'<div class="card-face card-back">'
     +'<div class="card-label">Answer</div>'
@@ -3894,7 +3901,7 @@ async function loadAllBanks(){
 function applyBank(ex,sub,doc){
   const qs=doc.questions||[];
   if(ex.type==='flashcard'){
-    qs.forEach(c=>{ const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,img:c.img||null,learn:c.learn||null,mn:c.mn||null,star:c.star||1,w:false,fav:false}); });
+    qs.forEach(c=>{ const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,img:c.img||null,learn:c.learn||null,mn:c.mn||null,star:c.star||1,since:c.since||null,newType:c.newType||false,w:false,fav:false}); });
   } else {
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
