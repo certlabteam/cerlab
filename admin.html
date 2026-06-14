@@ -580,7 +580,8 @@ async function loadCodes() {
     allCodes.sort((a,b)=> (a.code||'').localeCompare(b.code||'', undefined, {numeric:true}));
     renderCodes(allCodes);
   } catch(e) {
-    document.getElementById('codeList').innerHTML = '<div class="empty">할인코드를 불러올 수 없습니다. (Firestore 읽기 권한 확인 필요)</div>';
+    console.error('[loadCodes]',e);
+    document.getElementById('codeList').innerHTML = '<div class="empty">불러오기 실패: '+(e&&e.code?e.code:(e&&e.message?e.message:e))+'</div>';
   }
 }
 function certNameShort(c){ return c==='appraiser'?'감정평가사':c==='bodybuilding'?'생체2급':c||'전체'; }
@@ -688,7 +689,7 @@ async function loadPayments() {
     renderPayments(allPayments);
     renderRecentPayments();
     updatePendingBadge();
-  } catch(e) { document.getElementById('paymentList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+  } catch(e) { console.error('[loadPayments]',e); document.getElementById('paymentList').innerHTML = '<div class="empty">불러오기 실패: '+(e&&e.code?e.code:(e&&e.message?e.message:e))+'</div>'; }
 }
 
 async function loadMembers() {
@@ -728,7 +729,7 @@ async function loadMembers() {
     }));
     const q = (document.getElementById('searchMember')||{}).value || '';
     renderMembers(q ? allMembers.filter(m => (m.email||'').toLowerCase().includes(q.toLowerCase())) : allMembers);
-  } catch(e) { document.getElementById('memberList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+  } catch(e) { console.error('[loadMembers]',e); document.getElementById('memberList').innerHTML = '<div class="empty">불러오기 실패: '+(e&&e.code?e.code:(e&&e.message?e.message:e))+'</div>'; }
 }
 
 // 회원이 어떤 자격증이든 유효한 이용권을 가졌는지 판정 (top-level + entitlements)
@@ -1806,7 +1807,7 @@ async function loadReports() {
     allReports = snap.docs.map(d => ({id:d.id, ...d.data()}));
     renderReports(allReports);
     updateReportBadge();
-  } catch(e) { document.getElementById('reportList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+  } catch(e) { console.error('[loadReports]',e); document.getElementById('reportList').innerHTML = '<div class="empty">불러오기 실패: '+(e&&e.code?e.code:(e&&e.message?e.message:e))+'</div>'; }
 }
 
 function updateReportBadge() {
