@@ -11,6 +11,8 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
 :root{--pink:#D4537E;--purple:#7F77DD;--green:#1D9E75;--red:#E24B4A;--blue:#185FA5;--gray:#888780}
+
+/* 로그인 화면 */
 .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FFF5F8,#F0EDFF)}
 .login-box{background:#fff;border-radius:24px;padding:40px 32px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.08);text-align:center}
 .login-logo{font-size:28px;font-weight:800;background:linear-gradient(135deg,#D4537E,#7F77DD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
@@ -19,14 +21,115 @@ body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .btn-google:hover{background:#F5F5F5}
 .google-icon{width:20px;height:20px}
 .login-note{font-size:12px;color:#B4B2A9;margin-top:16px}
+
+/* 메인 레이아웃 */
 .admin-wrap{display:none;min-height:100vh;flex-direction:column}
 .admin-header{background:#fff;border-bottom:1px solid #E8E8E8;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
 .admin-logo{font-size:18px;font-weight:800;background:linear-gradient(135deg,#D4537E,#7F77DD);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .admin-user{display:flex;align-items:center;gap:10px;font-size:13px;color:#888780}
 .btn-logout{padding:6px 14px;border-radius:20px;border:1.5px solid #E8E8E8;background:#fff;font-size:12px;color:#888780;cursor:pointer}
 .btn-logout:hover{background:#F5F5F5}
+
+/* 탭 */
+.admin-tabs{background:#fff;border-bottom:1px solid #E8E8E8;padding:0 24px;display:flex;gap:0}
+.tab-btn{padding:14px 20px;font-size:14px;font-weight:600;color:#888780;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab-btn.active{color:#7F77DD;border-bottom-color:#7F77DD}
+.tab-btn .badge{display:inline-block;background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
+/* 콘텐츠 */
 .admin-content{padding:24px;max-width:1200px;margin:0 auto;width:100%}
-.test-msg{background:#E6F1FB;border:1px solid #185FA5;color:#185FA5;padding:12px;border-radius:8px;text-align:center;margin:20px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* 대시보드 카드 */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.dash-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.dash-card .label{font-size:12px;color:#888780;margin-bottom:8px}
+.dash-card .value{font-size:28px;font-weight:700;color:#2C2C2A}
+.dash-card.pink .value{color:#D4537E}
+.dash-card.purple .value{color:#7F77DD}
+.dash-card.green .value{color:#1D9E75}
+.dash-card.red .value{color:#E24B4A}
+.dash-card.blue .value{color:#185FA5}
+.dash-card.orange .value{color:#BA7517}
+
+/* 테이블 */
+.table-wrap{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0F0F0}
+.table-title{font-size:15px;font-weight:700;color:#2C2C2A}
+.search-input{padding:8px 14px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;width:220px}
+.search-input:focus{border-color:#7F77DD}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:12px;font-weight:600;color:#888780;background:#FAFAFA;border-bottom:1px solid #F0F0F0}
+td{padding:12px 16px;font-size:13px;color:#2C2C2A;border-bottom:1px solid #F8F8F8;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAFA}
+
+/* 배지 */
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-free{background:#E8F8F3;color:#0F6E56}
+.badge-active{background:#E6F1FB;color:#185FA5}
+.badge-expired{background:#FCEBEB;color:#A32D2D}
+.badge-guest{background:#F4EEF9;color:#534AB7}
+.badge-coupon{background:#FFF1E6;color:#C2611B}
+.grade{display:inline-block;min-width:22px;text-align:center;padding:2px 8px;border-radius:8px;font-weight:800;font-size:12px}
+.joincert{display:inline-block;font-size:11px;font-weight:700;border-radius:7px;padding:2px 8px;background:#EEF2F7;color:#2C5A8C}
+.cchip{display:inline-block;font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px;margin:1px 3px 1px 0}
+.sec{background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:18px;overflow:hidden}
+.sec-hd{padding:14px 20px;border-bottom:1px solid #F0F0F0;font-size:15px;font-weight:700;color:#2C2C2A}
+.sec-hd small{font-weight:400;color:#A89C8E;font-size:12px;margin-left:6px}
+.sbar{height:8px;border-radius:5px;background:#EEF2F7;overflow:hidden;min-width:60px}
+.sbar > i{display:block;height:100%;background:linear-gradient(90deg,#7F77DD,#185FA5)}
+.subtgl{border:none;background:#EDE9FB;color:#5B50C0;font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;cursor:pointer}
+.g-a{background:#E6F4EA;color:#15793F}
+.g-b{background:#E6F1FB;color:#185FA5}
+.g-c{background:#FFF6E6;color:#B5851A}
+.g-d{background:#F1EFEC;color:#9A8F80}
+.g-paid{background:#EDE9FB;color:#5B50C0}
+.g-none{background:#F1EFEC;color:#C9BFB2}
+.badge-pending{background:#FFF9F0;color:#BA7517}
+.badge-approved{background:#E8F8F3;color:#0F6E56}
+.badge-rejected{background:#FCEBEB;color:#A32D2D}
+.badge-revoked{background:#FCEBEB;color:#A32D2D}
+
+/* 버튼 */
+.btn-sm{padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-approve{background:#E8F8F3;color:#0F6E56}
+.btn-approve:hover{background:#1D9E75;color:#fff}
+.btn-reject{background:#FCEBEB;color:#A32D2D}
+.btn-reject:hover{background:#E24B4A;color:#fff}
+.btn-extend{background:#E6F1FB;color:#185FA5}
+.btn-extend:hover{background:#185FA5;color:#fff}
+.btn-expire{background:#FFF9F0;color:#BA7517}
+.btn-expire:hover{background:#BA7517;color:#fff}
+.btn-primary{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none}
+
+/* 로딩 */
+.loading{text-align:center;padding:40px;color:#888780;font-size:14px}
+.empty{text-align:center;padding:40px;color:#B4B2A9;font-size:14px}
+
+/* 모달 */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal-bg.hidden{display:none}
+.modal{background:#fff;border-radius:20px;padding:28px;width:100%;max-width:400px;margin:16px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F5F5F5;font-size:14px}
+.modal-row:last-of-type{border-bottom:none}
+.modal-label{color:#888780}
+.modal-value{font-weight:600}
+.modal-note{font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:10px;padding:10px 12px;margin-top:14px;line-height:1.6}
+.modal-btns{display:flex;gap:10px;margin-top:20px}
+.modal-btns button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+.btn-modal-ok{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff}
+.btn-modal-cancel{background:#F4EEF9;color:#7F77DD}
+
+/* 반응형 */
+@media(max-width:600px){
+  .admin-content{padding:16px}
+  .dash-grid{grid-template-columns:repeat(2,1fr)}
+  th:nth-child(n+4),td:nth-child(n+4){display:none}
+  .search-input{width:140px}
+}
 </style>
 </head>
 <body>
@@ -47,23 +150,379 @@ body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 <!-- 관리자 메인 -->
 <div class="admin-wrap" id="adminWrap">
   <div class="admin-header">
-    <div class="admin-logo">CertLab 관리자</div>
+    <div class="admin-logo">CertLab Admin</div>
     <div class="admin-user">
-      <span id="adminEmail">-</span>
+      <span id="adminEmail"></span>
       <button class="btn-logout" onclick="adminLogout()">로그아웃</button>
     </div>
   </div>
 
+  <div class="admin-tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">대시보드</button>
+    <button class="tab-btn" onclick="switchTab('payments')" id="tabPayments">결제 신청<span class="badge" id="pendingBadge" style="display:none">0</span></button>
+    <button class="tab-btn" onclick="switchTab('members')">회원 관리</button>
+    <button class="tab-btn" onclick="switchTab('stats')">📊 학습 통계</button>
+    <button class="tab-btn" onclick="switchTab('entitlements')">회원권 관리</button>
+    <button class="tab-btn" onclick="switchTab('codes')">할인코드</button>
+    <button class="tab-btn" onclick="switchTab('mileage')">마일리지</button>
+    <button class="tab-btn" onclick="switchTab('crm')">이메일 발송</button>
+    <button class="tab-btn" onclick="switchTab('export')">데이터 내보내기</button>
+    <button class="tab-btn" onclick="switchTab('import')">데이터 업로드</button>
+    <button class="tab-btn" onclick="switchTab('imgup')">이미지 업로드</button>
+    <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
+  </div>
+
   <div class="admin-content">
-    <div class="test-msg">
-      ✅ Google 로그인 테스트 성공!<br>
-      <b id="testEmail">로그인 계정: -</b>
+
+    <!-- 대시보드 -->
+    <div class="tab-panel active" id="panel-dashboard">
+      <div class="dash-grid">
+        <div class="dash-card"><div class="label">전체 회원</div><div class="value" id="statTotal">-</div></div>
+        <div class="dash-card purple"><div class="label">무료 체험</div><div class="value" id="statFree">-</div></div>
+        <div class="dash-card green"><div class="label">유료 회원</div><div class="value" id="statActive">-</div></div>
+        <div class="dash-card red"><div class="label">만료</div><div class="value" id="statExpired">-</div></div>
+        <div class="dash-card orange"><div class="label">승인 대기</div><div class="value" id="statPending">-</div></div>
+        <div class="dash-card pink"><div class="label">이번 달 매출</div><div class="value" id="statRevenue">-</div></div>
+        <div class="dash-card green"><div class="label">전환율 (유료/전체)</div><div class="value" id="statConv">-</div></div>
+        <div class="dash-card"><div class="label">최근 7일 가입</div><div class="value" id="statNew7">-</div></div>
+        <div class="dash-card purple"><div class="label">최근 7일 결제</div><div class="value" id="statPay7">-</div></div>
+        <div class="dash-card orange"><div class="label">학습 20회↑ 무료회원<br><span style="font-size:10px;font-weight:500">전환 유망</span></div><div class="value" id="statHot">-</div></div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">최근 결제 신청</div></div>
+        <div id="recentPayments"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 결제 신청 -->
+    <div class="tab-panel" id="panel-payments">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">결제 신청 목록</div>
+          <input class="search-input" id="searchPayment" placeholder="이메일 검색..." oninput="filterPayments()">
+        </div>
+        <div id="paymentList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 회원 관리 -->
+    <div class="tab-panel" id="panel-members">
+      <!-- 사용자 상세 조회 -->
+      <div class="table-wrap" style="margin-bottom:32px;background:#F9F7F5;border-radius:16px;border:1px solid #EDE9E5;padding:20px">
+        <div class="table-title" style="color:#7F77DD;margin-bottom:16px">🔍 사용자 데이터 상세 조회</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+          <div style="flex:1;min-width:200px">
+            <label style="display:block;font-size:12px;color:#888780;margin-bottom:6px;font-weight:500">이메일 또는 UID</label>
+            <input id="userDetailInput" placeholder="예: hyunjomi@gmail.com" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+          </div>
+          <button class="btn-sm" onclick="lookupUserDetail()" style="background:#7F77DD;color:#fff;border:none;cursor:pointer;font-weight:600">조회</button>
+        </div>
+        <div id="userDetailResult" style="margin-top:16px"></div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">회원 목록</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="filterGrade" onchange="filterMembers()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="">전체 등급</option>
+              <option value="A">A (31회↑)</option>
+              <option value="B">B (11~30회)</option>
+              <option value="C">C (1~10회)</option>
+              <option value="D">D (0회)</option>
+              <option value="유료">유료</option>
+            </select>
+            <input class="search-input" id="searchMember" placeholder="이메일 검색..." oninput="filterMembers()">
+            <button class="btn-sm btn-extend" onclick="downloadMembersCSV()">📊 CSV 다운로드</button>
+          </div>
+        </div>
+        <div id="memberList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 학습 통계 -->
+    <div class="tab-panel" id="panel-stats">
+      <div class="sec"><div class="sec-hd">① 시험별 총 학습량 <small>전체 회원 합산</small></div><div id="statsTotals"><div class="loading">집계 중…</div></div></div>
+      <div class="sec"><div class="sec-hd">② 시험별 활성 학습자 <small>최근 그 시험을 푼 회원 수</small></div><div id="statsActive"></div></div>
+      <div class="sec"><div class="sec-hd">③ 상위 학습자 <small>시험별 Top 5 · 무료회원 ⭐ 전환 유망</small></div>
+        <div style="padding:12px 20px 0"><select id="statsTopCert" onchange="renderStatsTop()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"></select></div>
+        <div id="statsTop"></div></div>
+      <div class="sec"><div class="sec-hd">④ 가입 시험 분포 <small>가입 시점에 보던 시험 · 이번 업데이트 이후 가입분부터</small></div><div id="statsSignup"></div></div>
+    </div>
+
+    <!-- 회원권 관리 -->
+    <div class="tab-panel" id="panel-entitlements">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">회원권 관리 <span style="font-size:12px;color:#A89C8E;font-weight:400">— 시험별 이용권 부여·연장·만료</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="search-input" id="searchEnt" placeholder="이메일 검색..." oninput="renderEntMembers()">
+          </div>
+        </div>
+        <div id="entMemberList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 할인코드 -->
+    <div class="tab-panel" id="panel-codes">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">할인코드 사용 현황</div>
+          <input class="search-input" id="searchCode" placeholder="코드/이메일 검색..." oninput="filterCodes()">
+        </div>
+        <div id="codeList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 마일리지 -->
+    <div class="tab-panel" id="panel-mileage">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">마일리지 / 추천 현황</div>
+          <input class="search-input" id="searchMile" placeholder="이메일/코드 검색..." oninput="filterMile()">
+        </div>
+        <div id="mileList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 이메일 발송 -->
+    <div class="tab-panel" id="panel-crm">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">이메일 발송 (등급별 대상 추출)</div>
+          <select id="crmSeg" onchange="renderCrm()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            <option value="all">전체</option>
+            <option value="free">무료체험</option>
+            <option value="paid">유료</option>
+            <option value="A">A (31회↑)</option>
+            <option value="B">B (11~30회)</option>
+            <option value="C">C (1~10회)</option>
+            <option value="D">D (0회)</option>
+          </select>
+        </div>
+        <div id="crmList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 데이터 내보내기 -->
+    <div class="tab-panel" id="panel-export">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">데이터 내보내기 (현재 Firestore → JSON)</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="expCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <button class="btn-sm btn-extend" onclick="exportData()">⬇ JSON 다운로드</button>
+          </div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="expStatus" style="font-size:13px;color:#6E6256">자격증을 고르고 다운로드를 누르면 현재 서비스 중인 데이터를 JSON으로 받습니다.</div>
+          <div style="font-size:11px;color:#A89C8E;margin-top:10px;line-height:1.6">
+            ※ 이 파일이 <b>현재 Firestore에 올라가 있는 최신 데이터</b>입니다. 데이터방에서 이 파일을 받아 수정한 뒤, 업로드 페이지로 다시 올리면 됩니다.<br>
+            ※ 형식은 업로드와 호환됩니다 (manifest + banks).
+          </div>
+
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
+
+          <!-- 이미지 내보내기 -->
+          <div class="table-title" style="margin-bottom:8px">🖼️ 이미지 내보내기 (images → JSON 백업)</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <select id="imgExpCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <button class="btn-sm btn-extend" onclick="exportImages()">⬇ 이미지 JSON 다운로드</button>
+          </div>
+          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">자격증을 고르고 다운로드를 누르면 해당 자격증 문제에 쓰인 이미지를 JSON으로 받습니다. <b>전체</b>를 고르면 모든 이미지를 받습니다.</div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:8px">
+            ⚠️ 이미지가 많으면 파일이 큽니다(수십 MB+). 느리면 자격증별로 나눠 받으세요. 이 파일은 <b>이미지 백업/이전</b>용입니다.
+          </div>
+
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
+
+          <!-- 이미지 가져오기 -->
+          <div class="table-title" style="margin-bottom:8px">📥 이미지 가져오기 (JSON 백업 → images 복구)</div>
+          <div id="imgImpDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:22px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 이미지 백업 <b>JSON</b>을 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">위 "이미지 내보내기"로 받은 파일을 그대로 올리면 됩니다</span>
+          </div>
+          <input id="imgImpFile" type="file" accept=".json,application/json" hidden>
+          <div id="imgImpStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
+          <div style="margin-top:10px"><button id="imgImpRun" class="btn-sm btn-extend" disabled onclick="importImages()">⬆ 이미지 복구 실행</button></div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
+            ⚠️ 같은 키가 이미 있으면 <b>덮어씁니다</b>. (이미지 업로드 탭이 "새 이미지 추가"라면, 여기는 "백업 JSON 일괄 복구"입니다.)
+          </div>
+          <div id="imgImpLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:200px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 데이터 업로드 -->
+    <div class="tab-panel" id="panel-import">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">데이터 업로드 (JSON → Firestore banks)</div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="impDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">통합 번들(내보내기 파일) 또는 과목별 파일(bodybuilding__B.json 등) 모두 가능</span>
+          </div>
+          <input id="impFile" type="file" accept=".json,application/json" multiple hidden>
+          <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="impBump" checked> 버전 자동 +1 (캐시 갱신)
+          </label>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin:12px 0">
+            ⚠️ 실행하면 banks 문서를 <b>덮어씁니다</b>(set/overwrite). manifest는 건드리지 않습니다. 아래 "현재 ver → 새 ver"를 확인 후 실행하세요.
+          </div>
+          <table id="impTbl" style="display:none;width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="color:#8A7E70"><th style="text-align:left;padding:7px 10px">문서 ID</th><th style="text-align:left;padding:7px 10px">cert/subject</th><th style="text-align:right;padding:7px 10px">현재 ver</th><th style="text-align:right;padding:7px 10px">새 ver</th><th style="text-align:right;padding:7px 10px">문항수</th><th style="text-align:left;padding:7px 10px">상태</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button id="impRun" class="btn-sm btn-extend" disabled onclick="impUpload()">⬆ 업로드 실행</button>
+            <button class="btn-sm" onclick="impRefresh()" style="background:#EDE9FB;color:#5B50C0">현재 ver 새로고침</button>
+            <button class="btn-sm btn-extend" onclick="syncManifest()">🔄 manifest 버전 동기화</button>
+            <button class="btn-sm" onclick="registerManifestExams()" style="background:#E6F4EA;color:#15793F;margin-left:auto">🗂 매니페스트 등록(새 시험)</button>
+          </div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
+            업로드 후 앱에 새 데이터가 안 보이면 <b>"manifest 버전 동기화"</b>를 누르세요. (manifest version을 각 bank의 실제 version과 일치시켜 캐시를 갱신합니다.)
+          </div>
+          <div id="syncStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
+          <div style="background:#EAF3EC;border:1px solid #BFE0C6;border-radius:8px;padding:9px 12px;color:#2E7D46;font-size:11.5px;margin-top:10px">
+            새 시험(예: 주택관리사)을 처음 올릴 땐, 위에서 <b>manifest 포함 번들</b>을 올린 뒤 <b>"매니페스트 등록(새 시험)"</b>을 누르세요. 기존 시험은 그대로 두고 <b>새 시험만 추가</b>합니다(삭제·덮어쓰기 없음).
+          </div>
+          <div id="regManifestStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
+          <div class="table-title" style="margin-bottom:8px">version +1 강제 갱신 (전체 사용자 캐시 갱신)</div>
+          <div style="background:#FDECEC;border:1px solid #F3C6C6;border-radius:8px;padding:9px 12px;color:#A32D2D;font-size:11.5px;margin-bottom:10px">
+            데이터(문항)는 그대로인데 version만 같아서 사용자들이 옛 데이터를 캐싱 중일 때 사용. 선택한 자격증의 <b>bank·manifest version을 모두 +1</b> 올려 모든 사용자가 새로 받게 합니다.
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="bumpCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">자격증 선택...</option></select>
+            <button class="btn-sm btn-expire" onclick="forceBump()">⬆ version +1 실행</button>
+          </div>
+          <div id="bumpStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
+          <div id="impLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이미지 업로드 -->
+    <div class="tab-panel" id="panel-imgup">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">이미지 업로드 (문항·보기 이미지 → Firestore)</div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="iuDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 이미지(PNG/JPG)를 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">파일명이 곧 키입니다 — 예: ksh74_q13_1.png → 키 <b>ksh74_q13_1</b> → 문항에 <b>img://ksh74_q13_1</b></span>
+          </div>
+          <input id="iuFile" type="file" accept="image/*" multiple hidden>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin:12px 0">
+            업로드 시 가로 최대 1000px로 자동 리사이즈·압축해 <b>images/{키}</b> 문서에 저장합니다. 같은 키면 덮어씁니다.
+          </div>
+          <table id="iuTbl" style="display:none;width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead><tr style="color:#8A7E70"><th style="text-align:left;padding:7px 10px">미리보기</th><th style="text-align:left;padding:7px 10px">키</th><th style="text-align:left;padding:7px 10px">참조값</th><th style="text-align:right;padding:7px 10px">용량</th><th style="text-align:left;padding:7px 10px">상태</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="margin-top:12px"><button id="iuRun" class="btn-sm btn-extend" disabled onclick="iuUpload()">⬆ 이미지 업로드 실행</button></div>
+          <div id="iuLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오류 신고 -->
+    <div class="tab-panel" id="panel-reports">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">문제 오류 신고 목록</div>
+          <select id="filterStatus" onchange="filterReports()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            <option value="all">전체</option>
+            <option value="pending">처리 대기</option>
+            <option value="done">처리 완료</option>
+          </select>
+        </div>
+        <div id="reportList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 승인 모달 (레거시 pending 대응) -->
+<div class="modal-bg hidden" id="approveModal">
+  <div class="modal">
+    <div class="modal-title">✅ 이용권 승인</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="modalEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">입금자</span><span class="modal-value" id="modalDepositor"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="modalPlan"></span></div>
+    <div class="modal-row"><span class="modal-label">금액</span><span class="modal-value" id="modalPrice"></span></div>
+    <div class="modal-row"><span class="modal-label">만료일</span><span class="modal-value" id="modalExpire"></span></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-modal-ok" onclick="confirmApprove()">승인 확정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 거절 모달 (레거시 pending 대응) -->
+<div class="modal-bg hidden" id="rejectModal">
+  <div class="modal">
+    <div class="modal-title">❌ 결제 거절</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="rejectEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="rejectPlan"></span></div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-reject" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600" onclick="confirmReject()">거절 확정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 철회 모달 (자동승인 건 입금 미확인 시) -->
+<div class="modal-bg hidden" id="revokeModal">
+  <div class="modal">
+    <div class="modal-title">⛔ 이용권 철회</div>
+    <div class="modal-row"><span class="modal-label">이메일</span><span class="modal-value" id="revokeEmail"></span></div>
+    <div class="modal-row"><span class="modal-label">자격증</span><span class="modal-value" id="revokeCert"></span></div>
+    <div class="modal-row"><span class="modal-label">플랜</span><span class="modal-value" id="revokePlan"></span></div>
+    <div class="modal-note">입금이 확인되지 않은 건을 철회합니다. 해당 회원의 이 자격증 이용권이 즉시 <b>만료</b>되고, 결제 기록은 <b>철회</b>로 표시됩니다.</div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-reject" style="flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600" onclick="confirmRevoke()">철회 확정</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="memberDetailModal">
+  <div class="modal" style="max-width:540px;width:92%;max-height:86vh;overflow-y:auto">
+    <div class="modal-title">👤 회원 상세</div>
+    <div id="mdBody"><div class="loading">로딩 중...</div></div>
+    <div class="modal-btns"><button class="btn-modal-cancel" style="flex:1" onclick="closeMemberDetail()">닫기</button></div>
+  </div>
+</div>
+
+<!-- 회원권 부여/연장 모달 -->
+<div class="modal-bg hidden" id="grantModal">
+  <div class="modal" style="max-width:460px;width:92%">
+    <div class="modal-title">🎟️ 이용권 부여 / 연장</div>
+    <div class="modal-row"><span class="modal-label">회원</span><span class="modal-value" id="grantEmail"></span></div>
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">시험 선택</div>
+    <select id="grantCert" onchange="grantPreview()" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></select>
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">기간</div>
+    <div id="grantPeriods" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="margin-top:8px"><input id="grantDaysCustom" type="number" min="1" placeholder="직접 입력(일)" oninput="grantPickCustom()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></div>
+    <div class="modal-note" id="grantPreviewBox" style="margin-top:14px">시험과 기간을 선택하세요.</div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeGrantModal()">취소</button>
+      <button class="btn-modal-ok" onclick="confirmGrant()">부여 / 연장</button>
     </div>
   </div>
 </div>
 
 <script>
-// ===== Firebase 초기화 =====
+const ADMIN_EMAIL = 'certlab.team@gmail.com';
+// 집계·목록에서 제외할 테스트/관리자 계정 (소문자)
+const EXCLUDED_EMAILS = ['certlab.team@gmail.com','f45dodam@gmail.com','makeshiness@gmail.com'];
+function isExcludedMember(m){ return EXCLUDED_EMAILS.includes((m && m.email || '').toLowerCase()); }
+function isExcludedPay(p){ return EXCLUDED_EMAILS.includes((p && p.email || '').toLowerCase()); }
 const firebaseConfig = {
   apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
   authDomain: "certlab-c3bcb.firebaseapp.com",
@@ -72,45 +531,1543 @@ const firebaseConfig = {
   messagingSenderId: "698827699707",
   appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
-
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-// ===== Google 로그인 =====
-async function adminLogin() {
-  try {
-    await auth.signInWithPopup(googleProvider);
-  } catch(e) {
-    if(e.code !== 'auth/popup-closed-by-user') {
-      alert('로그인 오류: ' + e.message);
-    }
-  }
-}
+let allPayments = [];
+let allMembers = [];
+let codeByUid = {};   // { uid: ['CODE1', ...] } — 무료/할인 코드 사용 매핑
+let pendingPaymentId = null;
+let pendingPaymentData = null;
 
-function adminLogout() {
-  if(confirm('로그아웃 하시겠어요?')) {
-    auth.signOut();
-  }
-}
+// 결제 상태 헬퍼 — 앱은 즉시구매를 'auto_approved'로 저장한다
+const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사', housing:'주택관리사' };
+const isPaid = s => s === 'approved' || s === 'auto_approved';
+const statusBadge = s => isPaid(s) ? 'badge-approved' : (s === 'pending' ? 'badge-pending' : 'badge-revoked');
+const statusLabel = s => s === 'auto_approved' ? '자동승인' : s === 'approved' ? '승인' : s === 'pending' ? '승인대기' : s === 'revoked' ? '철회' : '거절';
+const certNameOf = p => p.certName || CERT_NAMES[p.certType] || p.certType || '생체2급';
 
-// ===== 인증 상태 감시 =====
+// ===== 가입 시험 + 시험별 풀이 =====
+const CERT_SHORT = { bodybuilding:'생체', appraiser:'감평사', realestate1:'중개1', realestate2:'중개2', koreanhistory:'한국사', housing:'주택관리사' };
+const CERT_CHIP = { appraiser:'background:#E6F1FB;color:#185FA5', koreanhistory:'background:#FFF1E0;color:#A8650A', bodybuilding:'background:#E9F7EF;color:#1D7A4D', realestate1:'background:#F4EEF9;color:#5B50C0', realestate2:'background:#FBEAF1;color:#B23A76', housing:'background:#EAF3EC;color:#2E7D46', _etc:'background:#F0ECE6;color:#9B9082' };
+function certLabel(c){ return CERT_NAMES[c]||c||'기타'; }
+function certShort(c){ return CERT_SHORT[c]||CERT_NAMES[c]||c||'기타'; }
+function signupCertHTML(m){
+  if(!m.signupCert) return '<span style="color:#C9BFB2;font-size:12px">기록 없음</span>';
+  return '<span class="joincert">'+certLabel(m.signupCert)+'</span>';
+}
+function perCertChips(per, max){
+  if(!per) return '';
+  const arr=Object.keys(per).map(c=>({c, solve:per[c].solve, studied:per[c].studied})).filter(x=>x.solve>0||x.studied>0);
+  arr.sort((a,b)=>b.solve-a.solve);
+  const top=arr.slice(0, max||2);
+  return top.map(x=>'<span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+certShort(x.c==='_etc'?'_etc':x.c)+' '+x.solve.toLocaleString()+'</span>').join('')
+    + (arr.length>top.length?'<span class="cchip" style="'+CERT_CHIP._etc+'">+'+(arr.length-top.length)+'</span>':'');
+}
+function perCertTable(per){
+  if(!per) return '<span style="color:#B4A99C">기록 없음</span>';
+  const arr=Object.keys(per).map(c=>({c, solve:per[c].solve, studied:per[c].studied})).filter(x=>x.solve>0||x.studied>0);
+  if(!arr.length) return '<span style="color:#B4A99C">기록 없음</span>';
+  arr.sort((a,b)=>b.solve-a.solve);
+  const th='padding:4px 8px;font-size:11px;color:#8A7E70;background:#FAFAFA';
+  const td='padding:4px 8px;font-size:12.5px;border-bottom:1px solid #F3F0EC';
+  return '<table style="width:100%;border-collapse:collapse;margin-top:4px">'
+    +'<thead><tr><th style="text-align:left;'+th+'">시험</th><th style="text-align:right;'+th+'">푼 횟수</th><th style="text-align:right;'+th+'">학습문항</th></tr></thead><tbody>'
+    +arr.map(x=>'<tr><td style="'+td+'">'+(x.c==='_etc'?'기타':certLabel(x.c))+'</td><td style="text-align:right;'+td+'">'+x.solve.toLocaleString()+'</td><td style="text-align:right;'+td+'">'+x.studied.toLocaleString()+'</td></tr>').join('')
+    +'</tbody></table>';
+}
+// 문항ID→시험 매핑은 불필요 — cardProgress 키가 이미 'cert|문항id' 형식이라 키 prefix로 시험 판별
+
+// ===== Auth =====
 auth.onAuthStateChanged(user => {
-  if(user) {
-    // 로그인됨
+  if (user && user.email === ADMIN_EMAIL) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminWrap').style.display = 'flex';
     document.getElementById('adminEmail').textContent = user.email;
-    document.getElementById('testEmail').textContent = '로그인 계정: ' + user.email;
-    console.log('✅ 로그인 성공:', user.email);
+    loadAll();
+  } else if (user) {
+    auth.signOut();
+    alert('관리자 계정만 접근 가능합니다.');
   } else {
-    // 로그아웃됨
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('adminWrap').style.display = 'none';
-    console.log('로그아웃 상태');
   }
 });
+
+async function adminLogin() {
+  try { await auth.signInWithPopup(googleProvider); }
+  catch(e) { if(e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message); }
+}
+function adminLogout() { if(confirm('로그아웃 하시겠어요?')) auth.signOut(); }
+
+// ===== 탭 =====
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='crm') renderCrm();
+  if(name==='stats') renderStats();
+  if(name==='entitlements') renderEntMembers();
+  if(name==='export'){ openExportTab(); imgImpInit(); }
+  if(name==='import') impInit();
+  if(name==='imgup') iuInit();
+}
+
+// ===== 데이터 로드 =====
+async function loadAll() {
+  await Promise.all([loadPayments(), loadMembers(), loadReports(), loadCodes(), loadMileage()]);
+  renderMembers(allMembers);   // 결제·쿠폰 로드 후 출처 배지 반영해 재렌더
+  renderMileage();             // 회원·추천 로드 후 마일리지 재계산
+  loadDashboard();
+}
+
+let allCodes = [];
+async function loadCodes() {
+  try {
+    const snap = await db.collection('discountCodes').get();
+    allCodes = snap.docs.map(d => ({code:d.id, ...d.data()}));
+    // 코드명 순 정렬 (TEST01, TEST02 …)
+    allCodes.sort((a,b)=> (a.code||'').localeCompare(b.code||'', undefined, {numeric:true}));
+    renderCodes(allCodes);
+  } catch(e) {
+    document.getElementById('codeList').innerHTML = '<div class="empty">할인코드를 불러올 수 없습니다. (Firestore 읽기 권한 확인 필요)</div>';
+  }
+}
+function certNameShort(c){ return c==='appraiser'?'감정평가사':c==='bodybuilding'?'생체2급':c||'전체'; }
+function renderCodes(list) {
+  if (!list.length) { document.getElementById('codeList').innerHTML = '<div class="empty">할인코드가 없습니다.</div>'; return; }
+  const usedN = list.filter(c=>c.used).length;
+  document.getElementById('codeList').innerHTML = `
+    <div style="padding:12px 20px;font-size:13px;color:#6E6256;border-bottom:1px solid #F0F0F0">
+      전체 <b>${list.length}</b>개 · 사용 <b style="color:#2E9B5E">${usedN}</b>개 · 미사용 <b style="color:#A89C8E">${list.length-usedN}</b>개</div>
+    <table>
+      <thead><tr><th>코드</th><th>적용 시험</th><th>기간</th><th>상태</th><th>사용자</th><th>사용일</th></tr></thead>
+      <tbody>${list.map(c => `
+        <tr>
+          <td style="font-weight:700">${c.code}</td>
+          <td>${certNameShort(c.certType)}</td>
+          <td>${c.days||7}일</td>
+          <td><span class="badge ${c.used?'badge-approved':'badge-pending'}">${c.used?'사용됨':'미사용'}</span></td>
+          <td>${c.usedByEmail||'-'}</td>
+          <td>${c.usedAt?fmtDateShort(c.usedAt):'-'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+function filterCodes() {
+  const q = document.getElementById('searchCode').value.toLowerCase();
+  renderCodes(allCodes.filter(c => (c.code||'').toLowerCase().includes(q) || (c.usedByEmail||'').toLowerCase().includes(q)));
+}
+
+// ===== 마일리지 / 추천 현황 =====
+let allReferrals = [];
+async function loadMileage() {
+  try {
+    const snap = await db.collection('referrals').get();
+    allReferrals = snap.docs.map(d => ({id:d.id, ...d.data()}));
+  } catch(e) { allReferrals = []; }
+  renderMileage();
+}
+function mileBalanceOf(m){
+  const now=Date.now(); let s=0;
+  (m.mileageLots||[]).forEach(l=>{ if(l && !l.used && (!l.exp||l.exp>now)) s+=(l.a||0); });
+  return s;
+}
+function mileHistSum(m, neg){
+  let s=0; (m.mileageHistory||[]).forEach(h=>{ const a=h.a||0; if(neg){ if(a<0) s+=-a; } else { if(a>0) s+=a; } }); return s;
+}
+function memberByUid(uid){ return allMembers.find(x=>x.id===uid); }
+function memberByEmail(em){ if(!em) return null; em=em.toLowerCase(); return allMembers.find(x=>(x.email||'').toLowerCase()===em); }
+function renderMileage(list){
+  const box=document.getElementById('mileList'); if(!box) return;
+  const members = list || allMembers;
+  // 추천인(자기 코드로 가입자가 1명 이상 있는 회원)만 헤더로
+  let refers = members.map(m=>{
+    const code=m.referralCode||'';
+    const refs=allReferrals.filter(r=>r.referrerCode && code && r.referrerCode===code && r.refereeUid!==m.id);
+    const paidRefs=refs.filter(r=>r.paid).length;
+    const expectedMax = 1000 + refs.length*1000 + paidRefs*10000;
+    const earned = mileHistSum(m,false);   // 받은 적립금(이력 기준)
+    const used = mileHistSum(m,true);       // 사용 적립금
+    const bal = mileBalanceOf(m);
+    const selfRef = !!(m.referredBy && code && m.referredBy===code);
+    const overMax = bal > expectedMax;
+    const suspect = overMax || selfRef;
+    return {m,code,refs,paidRefs,earned,used,bal,suspect,overMax,selfRef};
+  }).filter(r=> r.refs.length>0);
+  refers.sort((a,b)=> (Number(b.suspect)-Number(a.suspect)) || (b.earned-a.earned));
+  if(!refers.length){ box.innerHTML='<div class="empty">추천으로 가입한 내역이 없습니다.</div>'; return; }
+  const suspectN=refers.filter(r=>r.suspect).length;
+  let html='<div style="padding:12px 20px;font-size:13px;color:#6E6256;border-bottom:1px solid #F0F0F0">'
+    +'추천인 <b>'+refers.length+'</b>명 · 의심 <b style="color:#A32D2D">'+suspectN+'</b>명</div>'
+    +'<table><thead><tr><th>추천인 / 가입자</th><th>결제</th><th>받은 적립금</th><th>사용 적립금</th><th>상태</th></tr></thead><tbody>';
+  refers.forEach((r,i)=>{
+    // 추천인 헤더 줄
+    html+='<tr style="background:#F4F6FA'+(r.suspect?';background:#FFF6F6':'')+';font-weight:700">'
+      +'<td>👤 '+(r.m.email||'-')+' <span style="color:#8A7E70;font-weight:500">('+r.refs.length+'명 추천)</span></td>'
+      +'<td>'+r.paidRefs+'결제</td>'
+      +'<td style="color:#15793F">+'+r.earned.toLocaleString()+'원</td>'
+      +'<td style="color:#A32D2D">-'+r.used.toLocaleString()+'원</td>'
+      +'<td>'+(r.suspect?'<span class="badge badge-revoked">⚠ 의심'+(r.overMax?' (잔액초과)':'')+(r.selfRef?' (자기추천)':'')+'</span>':'<span class="badge badge-approved">정상</span>')+'</td></tr>';
+    // 가입자 한 명씩
+    r.refs.forEach(rf=>{
+      const gm = memberByUid(rf.refereeUid) || memberByEmail(rf.refereeEmail);
+      const gEarned = gm? mileHistSum(gm,false):0;
+      const gUsed = gm? mileHistSum(gm,true):0;
+      const joined = gm && gm.createdAt ? (gm.createdAt.toDate?gm.createdAt.toDate():new Date(gm.createdAt)).toLocaleDateString('ko-KR') : '';
+      html+='<tr style="font-size:13px">'
+        +'<td style="padding-left:28px;color:#4A4036">└ '+(rf.refereeEmail||rf.refereeUid)+(joined?' <span style="color:#B4A99C">'+joined+' 가입</span>':'')+'</td>'
+        +'<td>'+(rf.paid?'<span style="color:#15793F">결제함</span>':'<span style="color:#B4A99C">가입만</span>')+'</td>'
+        +'<td style="color:#15793F">+'+gEarned.toLocaleString()+'원</td>'
+        +'<td style="color:#A32D2D">-'+gUsed.toLocaleString()+'원</td>'
+        +'<td></td></tr>';
+    });
+  });
+  html+='</tbody></table>';
+  box.innerHTML=html;
+}
+function filterMile(){
+  const q=document.getElementById('searchMile').value.toLowerCase();
+  renderMileage(allMembers.filter(m=>(m.email||'').toLowerCase().includes(q)||(m.referralCode||'').toLowerCase().includes(q)||(m.referredBy||'').toLowerCase().includes(q)));
+}
+
+async function loadPayments() {
+  try {
+    const snap = await db.collection('payments').orderBy('createdAt','desc').get();
+    allPayments = snap.docs.map(d => ({id:d.id, ...d.data()})).filter(p => !isExcludedPay(p));
+    renderPayments(allPayments);
+    renderRecentPayments();
+    updatePendingBadge();
+  } catch(e) { document.getElementById('paymentList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+async function loadMembers() {
+  try {
+    const [usnap, csnap] = await Promise.all([
+      db.collection('users').orderBy('createdAt','desc').get(),
+      db.collection('discountCodes').get().catch(()=>null)
+    ]);
+    allMembers = usnap.docs.map(d => ({id:d.id, ...d.data()})).filter(m => !isExcludedMember(m));
+    codeByUid = {};
+    if (csnap) csnap.docs.forEach(d => {
+      const c = d.data();
+      if (c.used && c.usedBy) (codeByUid[c.usedBy] = codeByUid[c.usedBy] || []).push(d.id);
+    });
+    renderMembers(allMembers);   // 우선 빠르게 표시 (학습량은 '…')
+    // 회원별 학습량(userData) 비동기 로드 후 갱신 — cardProgress 키는 'cert|문항id' 형식
+    await Promise.all(allMembers.map(async m => {
+      try {
+        const ud = await db.collection('userData').doc(m.id).get();
+        if (ud.exists) {
+          const d = ud.data();
+          const cp = d.cardProgress && typeof d.cardProgress==='object' ? d.cardProgress : {};
+          const keys = Object.keys(cp);
+          m._studied = keys.length;
+          // 푼 횟수·학습문항은 자동복습 기록(cardProgress) 기준만 사용 (옛 solveCount 폴백 제거)
+          let tries = 0, lastLr = 0; const per = {};
+          keys.forEach(k => {
+            const p=cp[k]; const rc=(p && p.rc) ? p.rc : 0;
+            tries += rc; if(p && p.lr && p.lr>lastLr) lastLr=p.lr;
+            const bar = k.indexOf('|'); const cert = bar>0 ? k.slice(0,bar) : '_etc';
+            (per[cert] = per[cert] || {solve:0, studied:0, lr:0}); per[cert].solve += rc; per[cert].studied++;
+            if(p && p.lr && p.lr>per[cert].lr) per[cert].lr=p.lr;
+          });
+          m._solve = tries; m._lastStudy = lastLr||null; m._perCert = per;
+        } else { m._solve = 0; m._studied = 0; m._lastStudy = null; m._perCert = {}; }
+      } catch(_) { m._solve = 0; m._studied = 0; m._lastStudy = null; m._perCert = {}; }
+    }));
+    const q = (document.getElementById('searchMember')||{}).value || '';
+    renderMembers(q ? allMembers.filter(m => (m.email||'').toLowerCase().includes(q.toLowerCase())) : allMembers);
+  } catch(e) { document.getElementById('memberList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+// 회원이 어떤 자격증이든 유효한 이용권을 가졌는지 판정 (top-level + entitlements)
+function daysSince(ts){ if(!ts) return null; const d=ts.toDate?ts.toDate():new Date(ts); return Math.floor((Date.now()-d.getTime())/86400000); }
+function agoTxt(ts){ const n=daysSince(ts); if(n==null) return ''; return n<=0?'오늘':(n+'일 전'); }
+function fmtWithAgo(ts){ if(!ts) return '<span style="color:#C9BFB2">-</span>'; return fmtDateShort(ts)+' <span style="color:#A89C8E;font-size:11px">('+agoTxt(ts)+')</span>'; }
+function memberGrade(m){
+  const s=memberStatus(m);
+  if(s==='ACTIVE') return {label:'유료', cls:'g-paid'};
+  if(s!=='FREE_TRIAL') return {label:'-', cls:'g-none'};   // 만료·게스트는 등급 없음
+  const n=m._solve||0;
+  if(n>=31) return {label:'A', cls:'g-a'};   // 31회 이상
+  if(n>=11) return {label:'B', cls:'g-b'};   // 11~30회
+  if(n>=1)  return {label:'C', cls:'g-c'};   // 1~10회
+  return {label:'D', cls:'g-d'};             // 0회
+}
+function memberStatus(m) {
+  const now = new Date();
+  const live = ent => {
+    if (!ent || ent.plan !== 'ACTIVE') return false;
+    if (!ent.expireAt) return true;
+    const d = ent.expireAt.toDate ? ent.expireAt.toDate() : new Date(ent.expireAt);
+    return d > now;
+  };
+  if (m.plan === 'ACTIVE' && live({plan:'ACTIVE', expireAt:m.expireAt})) return 'ACTIVE';
+  if (m.entitlements && Object.values(m.entitlements).some(live)) return 'ACTIVE';
+  if (m.plan === 'EXPIRED') return 'EXPIRED';
+  if (m.plan === 'FREE_TRIAL' || (m.entitlements && Object.values(m.entitlements).some(e=>e&&e.plan==='FREE_TRIAL'))) return 'FREE_TRIAL';
+  return m.plan || 'GUEST';
+}
+
+function loadDashboard() {
+  const now = new Date();
+  const total = allMembers.length;
+  let free=0, active=0, expired=0;
+  allMembers.forEach(m => {
+    const s = memberStatus(m);
+    if (s === 'ACTIVE') active++;
+    else if (s === 'EXPIRED') expired++;
+    else if (s === 'FREE_TRIAL') free++;
+  });
+  const pending = allPayments.filter(p => p.status === 'pending').length;
+
+  // 이번 달 매출 — 자동승인/승인 건 모두 집계 (철회/거절 제외)
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const revenue = allPayments
+    .filter(p => {
+      if (!isPaid(p.status)) return false;
+      if (isExcludedPay(p)) return false;
+      const ref = p.approvedAt || p.createdAt;
+      if (!ref) return false;
+      const d = ref.toDate ? ref.toDate() : new Date(ref);
+      return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
+    })
+    .reduce((sum, p) => sum + (p.depositAmount!=null ? p.depositAmount : (p.price || 0)), 0);
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statFree').textContent = free;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statExpired').textContent = expired;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statRevenue').textContent = revenue.toLocaleString() + '원';
+
+  // ===== CRM 통계 =====
+  const WEEK = 7*86400000; const nowMs = now.getTime();
+  const dOf = (t)=> t ? (t.toDate?t.toDate():new Date(t)) : null;
+  // 전환율 = 유료 / 전체
+  const conv = total>0 ? Math.round(active/total*100) : 0;
+  // 최근 7일 가입
+  const new7 = allMembers.filter(m=>{ const d=dOf(m.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
+  // 최근 7일 결제(결제 건 기준, 철회/거절 제외)
+  const pay7 = allPayments.filter(p=>{ if(!isPaid(p.status)) return false; if(isExcludedPay(p)) return false; const d=dOf(p.approvedAt||p.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
+  // 학습 20회 이상 무료회원
+  const hot = allMembers.filter(m=> memberStatus(m)==='FREE_TRIAL' && (m._solve||0)>=20 ).length;
+
+  const setT=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setT('statConv', conv+'%');
+  setT('statNew7', new7+'명');
+  setT('statPay7', pay7+'건');
+  setT('statHot', hot+'명');
+}
+
+function updatePendingBadge() {
+  const pending = allPayments.filter(p => p.status === 'pending').length;
+  const badge = document.getElementById('pendingBadge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+}
+
+// ===== 렌더링 =====
+const planNames = {7:'Basic (7일)', 14:'Standard (14일)', 28:'Premium (28일)'};
+const planBadge = p => p === 'FREE_TRIAL' ? 'badge-free' : p === 'ACTIVE' ? 'badge-active' : p === 'EXPIRED' ? 'badge-expired' : 'badge-guest';
+const planLabel = p => p === 'FREE_TRIAL' ? '무료체험' : p === 'ACTIVE' ? '이용중' : p === 'EXPIRED' ? '만료' : p;
+// 이용 출처 판정 (결제/쿠폰) — payments·discountCodes와 대조
+function memberSource(m){
+  const em = (m.email||'').toLowerCase();
+  const paid = allPayments.some(p => isPaid(p.status) && (p.uid===m.id || (p.email&&em&&p.email.toLowerCase()===em)));
+  const coupon = allCodes.some(c => c.used && (c.usedBy===m.id || (c.usedByEmail&&em&&c.usedByEmail.toLowerCase()===em)));
+  return {paid, coupon};
+}
+function memberBadges(m){
+  const s = memberStatus(m);
+  if(s==='ACTIVE'){
+    const src=memberSource(m); const out=[];
+    if(src.paid) out.push('<span class="badge badge-active">유료</span>');
+    if(src.coupon) out.push('<span class="badge badge-coupon">쿠폰</span>');
+    if(!out.length) out.push('<span class="badge badge-active">이용중</span>');
+    return out.join(' ');
+  }
+  return `<span class="badge ${planBadge(s)}">${planLabel(s)}</span>`;
+}
+
+function fmtDate(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function fmtDateShort(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ko-KR', {year:'2-digit',month:'2-digit',day:'2-digit'});
+}
+function daysLeft(ts) {
+  if (!ts) return '-';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Math.ceil((d - new Date()) / 86400000);
+  return diff > 0 ? diff + '일' : '만료';
+}
+
+function renderRecentPayments() {
+  const recent = allPayments.slice(0, 5);
+  if (!recent.length) { document.getElementById('recentPayments').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
+  document.getElementById('recentPayments').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th></tr></thead>
+      <tbody>${recent.map(p => `
+        <tr>
+          <td>${p.email||'-'}</td>
+          <td style="font-size:11px">${certNameOf(p)}</td>
+          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
+          <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
+          <td>${fmtDate(p.createdAt)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderPayments(list) {
+  if (!list.length) { document.getElementById('paymentList').innerHTML = '<div class="empty">결제 신청이 없습니다.</div>'; return; }
+  document.getElementById('paymentList').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>입금자</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
+      <tbody>${list.map(p => `
+        <tr>
+          <td>${p.email||'-'}</td>
+          <td><strong>${p.depositorName||'-'}</strong></td>
+          <td style="font-size:11px">${certNameOf(p)}</td>
+          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
+          <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
+          <td>${fmtDate(p.createdAt)}</td>
+          <td>${
+            p.status==='pending' ? `
+              <button class="btn-sm btn-approve" onclick="openApprove('${p.id}')">승인</button>
+              <button class="btn-sm btn-reject" onclick="openReject('${p.id}')" style="margin-left:4px">거절</button>`
+            : isPaid(p.status) ? `
+              <button class="btn-sm btn-reject" onclick="openRevoke('${p.id}')">철회</button>`
+            : '-'}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function renderMembers(list) {
+  if (!list.length) { document.getElementById('memberList').innerHTML = '<div class="empty">회원이 없습니다.</div>'; return; }
+  document.getElementById('memberList').innerHTML = `
+    <table>
+      <thead><tr><th>이메일</th><th>등급</th><th>상태</th><th>가입 시험</th><th>학습량</th><th>최근 로그인</th><th>최근 학습</th><th>가입(경과)</th></tr></thead>
+      <tbody>${list.map(m => {
+        const s = memberStatus(m);
+        const g = memberGrade(m);
+        const learn = m._solve==null ? '<span style="color:#B4A99C">…</span>'
+          : `<div style="display:flex;gap:12px">
+               <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${(m._solve||0).toLocaleString()}</div><div style="font-size:10px;color:#A89C8E">푼 횟수</div></div>
+               <div style="text-align:center"><div style="font-weight:700;color:#2C2C2A">${m._studied||0}</div><div style="font-size:10px;color:#A89C8E">학습문항</div></div>
+             </div>${(()=>{ const ch=perCertChips(m._perCert,2); return ch?('<div style="margin-top:3px">'+ch+'</div>'):''; })()}`;
+        return `
+        <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
+          <td>${m.email||'-'}</td>
+          <td><span class="grade ${g.cls}">${g.label}</span></td>
+          <td>${memberBadges(m)}</td>
+          <td>${signupCertHTML(m)}</td>
+          <td>${learn}</td>
+          <td>${fmtWithAgo(m.lastLoginAt)}</td>
+          <td>${fmtWithAgo(m._lastStudy)}</td>
+          <td>${fmtDateShort(m.createdAt)} <span style="color:#A89C8E;font-size:11px">(${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</span></td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ===== 검색 =====
+function filterPayments() {
+  const q = document.getElementById('searchPayment').value.toLowerCase();
+  renderPayments(allPayments.filter(p => (p.email||'').toLowerCase().includes(q)));
+}
+function filterMembers() {
+  renderMembers(currentMemberFilter());
+}
+// 현재 회원관리 탭의 필터(검색어+등급)가 적용된 목록 반환
+function currentMemberFilter(){
+  const q = (document.getElementById('searchMember').value||'').toLowerCase();
+  const g = (document.getElementById('filterGrade')||{}).value || '';
+  return allMembers.filter(m => {
+    if (q && !((m.email||'').toLowerCase().includes(q))) return false;
+    if (g && memberGrade(m).label !== g) return false;
+    return true;
+  });
+}
+// 현재 필터된 회원 명단을 CSV로 다운로드 (마케팅용)
+function downloadMembersCSV(){
+  const list = currentMemberFilter();
+  if(!list.length){ alert('다운로드할 회원이 없습니다.'); return; }
+  const csvCell = v => {
+    var s = (v==null?'':String(v));
+    if(/[",\n]/.test(s)) s = '"'+s.replace(/"/g,'""')+'"';
+    return s;
+  };
+  const dOf = d => { if(!d) return ''; try{ var x=d.toDate?d.toDate():new Date(d); return isNaN(x)?'':x.toLocaleDateString('ko-KR'); }catch(_){ return ''; } };
+  const headers = ['이메일','등급','상태','가입 시험','푼 횟수','학습 문항','가입일','경과일','최근 로그인','최근 학습','추천코드','추천인'];
+  const rows = list.map(m => {
+    const g = memberGrade(m), s = memberStatus(m);
+    const stTxt = s==='ACTIVE'?'유료':s==='FREE_TRIAL'?'무료체험':s==='EXPIRED'?'만료':s;
+    const ds = (typeof daysSince==='function')? daysSince(m.createdAt) : '';
+    return [ m.email||'', g.label, stTxt, (m.signupCert?certLabel(m.signupCert):''), (m._solve||0), (m._studied||0),
+             dOf(m.createdAt), (ds==null?'':ds), dOf(m.lastLoginAt), dOf(m._lastStudy),
+             m.referralCode||'', m.referredBy||'' ].map(csvCell).join(',');
+  });
+  const csv = '\uFEFF' + headers.map(csvCell).join(',') + '\n' + rows.join('\n');   // BOM = 엑셀 한글 깨짐 방지
+  const gradeLabel = (document.getElementById('filterGrade')||{}).value || '전체';
+  const today = new Date().toISOString().slice(0,10);
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `certlab_회원_${gradeLabel}_${today}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function closeMemberDetail(){ const el=document.getElementById('memberDetailModal'); if(el) el.classList.add('hidden'); }
+// ===== 데이터 내보내기 =====
+let _expExams = null;
+async function openExportTab(){
+  if(_expExams) return;
+  try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists && m.data().exams)||[]; }catch(e){ _expExams=[]; }
+  const sel=document.getElementById('expCert'); if(!sel) return;
+  sel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
+    + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+  const isel=document.getElementById('imgExpCert');
+  if(isel) isel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
+    + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+}
+// ===== 이미지 업로드 (리사이즈/압축 → images/{키}) =====
+let iuItems=[]; let _iuInited=false;
+function iuLog(msg,color){ const el=document.getElementById('iuLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
+function iuInit(){
+  if(_iuInited) return; _iuInited=true;
+  const drop=document.getElementById('iuDrop'), file=document.getElementById('iuFile'); if(!drop||!file) return;
+  drop.onclick=()=>file.click();
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#185FA5';}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
+  drop.addEventListener('drop',e=>iuHandle(e.dataTransfer.files));
+  file.addEventListener('change',e=>iuHandle(e.target.files));
+}
+function iuResize(file, maxW){
+  return new Promise((res,rej)=>{
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.width, h=img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      // 흑백 도판/사진 모두 무난한 jpeg 0.82 (그래프·선명도 필요시 png로) — 우선 jpeg로 용량 최소화
+      let out=c.toDataURL('image/jpeg',0.82);
+      // 너무 크면 더 줄임
+      res(out);
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('이미지 디코드 실패')); };
+    img.src=url;
+  });
+}
+async function iuHandle(fileList){
+  const files=[...fileList].filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name));
+  if(!files.length){ iuLog('이미지 파일이 없습니다.','#f85149'); return; }
+  for(const f of files){
+    const key=f.name.replace(/\.[^.]+$/,'').trim();
+    if(!key){ iuLog(f.name+': 키 추출 실패','#f85149'); continue; }
+    let data='', status='ready', err='';
+    try{ data=await iuResize(f,1000); }catch(e){ status='bad'; err=e.message; }
+    const bytes=data?Math.round(data.length*0.75):0;
+    if(data && bytes>900000){ status='bad'; err='압축 후에도 0.9MB 초과 (이미지를 더 작게 잘라주세요)'; }
+    iuItems=iuItems.filter(it=>it.key!==key);
+    iuItems.push({name:f.name, key, data, bytes, status, err});
+    if(err) iuLog(f.name+': '+err,'#f85149');
+  }
+  iuRender(); document.getElementById('iuRun').disabled=!iuItems.some(it=>it.status==='ready');
+}
+function iuRender(){
+  const tbl=document.getElementById('iuTbl'); const tb=tbl.querySelector('tbody');
+  tbl.style.display=iuItems.length?'table':'none';
+  tb.innerHTML=iuItems.map(it=>{
+    const st=it.status==='bad'?('오류: '+it.err):it.status==='done'?'완료':'준비됨';
+    const col=it.status==='bad'?'#f85149':it.status==='done'?'#15793F':'#185FA5';
+    const kb=it.bytes?(Math.round(it.bytes/1024)+'KB'):'-';
+    const prev=it.data?'<img src="'+it.data+'" style="width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid #E5E7EB">':'-';
+    return '<tr style="border-bottom:1px solid #EFE9E2">'
+      +'<td style="padding:7px 10px">'+prev+'</td>'
+      +'<td style="padding:7px 10px"><b>'+it.key+'</b></td>'
+      +'<td style="padding:7px 10px;color:#5B50C0">img://'+it.key+'</td>'
+      +'<td style="padding:7px 10px;text-align:right">'+kb+'</td>'
+      +'<td style="padding:7px 10px;color:'+col+'">'+st+'</td></tr>';
+  }).join('');
+}
+async function iuUpload(){
+  const ready=iuItems.filter(it=>it.status==='ready');
+  if(!ready.length) return;
+  if(!confirm(ready.length+'개 이미지를 업로드합니다. 계속할까요?')){ iuLog('취소됨.'); return; }
+  document.getElementById('iuRun').disabled=true;
+  for(const it of ready){
+    try{
+      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() });
+      it.status='done';
+      iuLog('✓ '+it.key+' 업로드 완료 ('+Math.round(it.bytes/1024)+'KB) → img://'+it.key,'#15793F');
+    }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); iuLog('✗ '+it.key+' 실패: '+(e.message||e),'#f85149'); }
+    iuRender();
+  }
+  iuLog('— 작업 종료 — 문항 JSON에 img://키 로 연결하세요.','#5B50C0');
+}
+let impItems=[]; let _impInited=false; let impBundleManifest=null;
+function impLog(msg,color){ const el=document.getElementById('impLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
+function impInit(){
+  if(_impInited) return; _impInited=true;
+  // version +1 대상 자격증 드롭다운 채우기
+  (async()=>{
+    try{
+      const m=await db.collection('manifest').doc('exams').get();
+      const exams=(m.exists&&m.data().exams)||[];
+      const sel=document.getElementById('bumpCert');
+      if(sel) sel.innerHTML='<option value="">자격증 선택...</option>'+exams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+    }catch(_){}
+  })();
+  const drop=document.getElementById('impDrop'), file=document.getElementById('impFile');
+  if(!drop||!file) return;
+  drop.onclick=()=>file.click();
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#185FA5';}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
+  drop.addEventListener('drop',e=>impHandleFiles(e.dataTransfer.files));
+  file.addEventListener('change',e=>impHandleFiles(e.target.files));
+  const bump=document.getElementById('impBump'); if(bump) bump.addEventListener('change',impRender);
+}
+async function impHandleFiles(fileList){
+  const files=[...fileList].filter(f=>/\.json$/i.test(f.name));
+  if(!files.length){ impLog('JSON 파일이 없습니다.','#f85149'); return; }
+  for(const f of files){
+    let parsed=null;
+    try{ parsed=JSON.parse(await f.text()); }catch(e){ impLog(f.name+': JSON 파싱 실패','#f85149'); continue; }
+    // (가) 통합 번들: {banks:[{docId,data}]}
+    if(parsed && Array.isArray(parsed.banks)){
+      parsed.banks.forEach(b=>{
+        const docId=b.docId||''; const data=b.data||{};
+        const [cert,subject]=docId.split('__');
+        if(!docId||!cert||!subject){ impLog('번들 내 잘못된 docId: '+docId,'#f85149'); return; }
+        const count=Array.isArray(data.questions)?data.questions.length:-1;
+        impItems=impItems.filter(it=>it.docId!==docId);
+        impItems.push({docId,cert,subject,data,count,version:data.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
+      });
+      impLog(f.name+': 번들 '+parsed.banks.length+'개 문서 인식');
+      if(parsed.manifest && Array.isArray(parsed.manifest.exams)){ impBundleManifest=parsed.manifest; impLog(f.name+': manifest 인식 ('+parsed.manifest.exams.length+'개 시험) — "매니페스트 등록(새 시험)"으로 추가 가능','#5B50C0'); }
+    }
+    // 과목별 파일: {cert,subject,...,questions:[]}
+    else if(parsed && parsed.cert && parsed.subject){
+      const docId=parsed.cert+'__'+parsed.subject;
+      const count=Array.isArray(parsed.questions)?parsed.questions.length:-1;
+      impItems=impItems.filter(it=>it.docId!==docId);
+      impItems.push({docId,cert:parsed.cert,subject:parsed.subject,data:parsed,count,version:parsed.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
+    }
+    else { impLog(f.name+': 형식 불명 (번들도 과목파일도 아님)','#f85149'); }
+  }
+  await impLoadVersions(); impRender(); document.getElementById('impRun').disabled=!impItems.some(it=>it.status==='ready');
+}
+async function impLoadVersions(){
+  for(const it of impItems){ if(!it.docId) continue; try{ const snap=await db.collection('banks').doc(it.docId).get(); it.curVer=snap.exists?(snap.data().version??'(없음)'):'(신규)'; }catch(e){ it.curVer='읽기실패'; } }
+}
+function impNewVer(it){
+  if(it.status==='bad') return '-';
+  const bump=document.getElementById('impBump'); if(bump && !bump.checked) return it.version;
+  const base=(typeof it.curVer==='number')?it.curVer:(typeof it.version==='number'?it.version:0);
+  return base+1;
+}
+function impRender(){
+  const tbl=document.getElementById('impTbl'); const tb=tbl.querySelector('tbody');
+  tbl.style.display=impItems.length?'table':'none';
+  tb.innerHTML=impItems.map(it=>{
+    const st=it.status==='bad'?('오류: '+it.err):it.status==='done'?'완료':'준비됨';
+    const col=it.status==='bad'?'#f85149':it.status==='done'?'#15793F':'#185FA5';
+    return '<tr style="border-bottom:1px solid #EFE9E2">'
+      +'<td style="padding:7px 10px">'+(it.docId||'-')+'</td>'
+      +'<td style="padding:7px 10px">'+(it.cert||'-')+' / '+(it.subject||'-')+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;color:#8A7E70">'+it.curVer+'</td>'
+      +'<td style="padding:7px 10px;text-align:right;color:#15793F;font-weight:600">'+impNewVer(it)+'</td>'
+      +'<td style="padding:7px 10px;text-align:right">'+(it.count>=0?it.count:'-')+'</td>'
+      +'<td style="padding:7px 10px;color:'+col+'">'+st+'</td></tr>';
+  }).join('');
+}
+async function impRefresh(){ await impLoadVersions(); impRender(); impLog('현재 버전 새로고침 완료'); }
+async function impUpload(){
+  const ready=impItems.filter(it=>it.status==='ready');
+  if(!ready.length) return;
+  const lines=ready.map(it=>'  '+it.docId+': ver '+it.curVer+' → '+impNewVer(it)+' (문항 '+it.count+')').join('\n');
+  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+'\n\nmanifest는 변경하지 않습니다.')){ impLog('업로드 취소됨.'); return; }
+  document.getElementById('impRun').disabled=true;
+  for(const it of ready){
+    try{
+      const nv=impNewVer(it);
+      const data=it.data;
+      const qs=Array.isArray(data.questions)?data.questions:[];
+      // 회차 키 = q.set 우선, 없으면 id 앞부분(예: c26_1 → c26). 등장 순서 보존.
+      const order=[], map={}; let allKey=qs.length>0;
+      qs.forEach(function(q){
+        var s=q.set;
+        if(s==null||s===''){ var m=String(q.id||'').match(/^([A-Za-z]+\d+)_/); s=m?m[1]:null; }
+        if(s==null||s===''){ allKey=false; return; }
+        if(!map[s]){ map[s]=[]; order.push(s); } map[s].push(q);
+      });
+      if(allKey && order.length){
+        for(const s of order){
+          await db.collection('banks').doc(it.docId+'__'+s).set({ set:s, version:nv, questions:map[s] });
+        }
+        await db.collection('banks').doc(it.docId).set({ version:nv, cert:data.cert, subject:data.subject, name:data.name||'', shards:order.slice(), count:qs.length });
+        it.status='done'; it.curVer=nv;
+        impLog('✓ '+it.docId+' 샤딩 업로드 — ver '+nv+', 회차 '+order.length+'개·문항 '+qs.length,'#15793F');
+      } else {
+        const payload=Object.assign({}, data, {version:nv});
+        var approxBytes=0; try{ approxBytes=new Blob([JSON.stringify(payload)]).size; }catch(_){ try{ approxBytes=unescape(encodeURIComponent(JSON.stringify(payload))).length; }catch(__){} }
+        if(approxBytes>1000000){
+          it.status='bad'; it.err='샤딩 불가(문항에 set·id회차 정보 없음) + 1MB 초과 ('+approxBytes.toLocaleString()+'B). set 또는 id(예: c26_1)를 넣어 주세요.';
+          impLog('✗ '+it.docId+' 업로드 중단 — 샤딩 불가 + 1MB 초과('+approxBytes.toLocaleString()+'B). 문항 set/id 회차정보 필요','#f85149');
+          impRender(); continue;
+        }
+        await db.collection('banks').doc(it.docId).set(payload);
+        it.status='done'; it.curVer=nv;
+        impLog('✓ '+it.docId+' 업로드 완료(단일) — ver '+nv+', 문항 '+qs.length,'#15793F');
+      }
+    }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); impLog('✗ '+it.docId+' 실패: '+(e.message||e),'#f85149'); }
+    impRender();
+  }
+  impLog('— 작업 종료 — (앱에서 Ctrl+Shift+R로 캐시 갱신)','#5B50C0');
+}
+// ===== manifest ↔ bank 버전 동기화 =====
+// ===== version +1 강제 갱신 (전체 사용자 캐시 갱신) =====
+async function forceBump(){
+  const cert=(document.getElementById('bumpCert')||{}).value||'';
+  const st=document.getElementById('bumpStatus');
+  if(!cert){ st.textContent='자격증을 선택하세요.'; return; }
+  st.textContent='읽는 중...';
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    if(!mSnap.exists){ st.textContent='manifest/exams 문서가 없습니다.'; return; }
+    const manifest=mSnap.data(); const exams=manifest.exams||[];
+    const ex=exams.find(e=>e.id===cert);
+    if(!ex){ st.textContent='해당 자격증을 manifest에서 못 찾음.'; return; }
+    ex.versions=ex.versions||{};
+    const plan=[];
+    for(const sub of (ex.subjects||[])){
+      const bd=await db.collection('banks').doc(cert+'__'+sub.code).get();
+      const curBank=(bd.exists && typeof bd.data().version==='number')?bd.data().version:(ex.versions[sub.code]||1);
+      const nv=curBank+1;
+      plan.push({code:sub.code, name:sub.name, from:curBank, to:nv, exists:bd.exists});
+    }
+    if(!plan.length){ st.textContent='과목이 없습니다.'; return; }
+    if(!confirm('['+(ex.name||cert)+'] version +1 (bank·manifest 동시):\n\n'+plan.map(p=>'  '+p.code+': '+p.from+' → '+p.to).join('\n')+'\n\n전체 사용자가 새로 받게 됩니다. 적용할까요?')){ st.textContent='취소됨.'; return; }
+    // bank version +1
+    for(const p of plan){ if(p.exists){ await db.collection('banks').doc(cert+'__'+p.code).update({version:p.to}); } ex.versions[p.code]=p.to; }
+    await db.collection('manifest').doc('exams').update({ exams: exams });
+    st.innerHTML='✅ 완료 — '+plan.length+'과목 version +1.<br><span style="font-size:11px;color:#A89C8E">'+plan.map(p=>p.code+': '+p.from+'→'+p.to).join('<br>')+'</span><br>이제 모든 사용자가 새 데이터를 받습니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+async function syncManifest(){
+  const st=document.getElementById('syncStatus');
+  st.textContent='읽는 중...';
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    if(!mSnap.exists){ st.textContent='manifest/exams 문서가 없습니다.'; return; }
+    const manifest=mSnap.data();
+    const exams=manifest.exams||[];
+    let changes=[]; 
+    for(const ex of exams){
+      ex.versions = ex.versions || {};
+      for(const sub of (ex.subjects||[])){
+        try{
+          const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+          if(!bd.exists) continue;
+          const bankVer = bd.data().version;
+          if(typeof bankVer==='number' && ex.versions[sub.code]!==bankVer){
+            changes.push(ex.id+'/'+sub.code+': '+(ex.versions[sub.code]??'-')+' → '+bankVer);
+            ex.versions[sub.code]=bankVer;
+          }
+        }catch(_){}
+      }
+    }
+    if(!changes.length){ st.innerHTML='✅ 이미 모두 일치합니다. 변경 없음.'; return; }
+    if(!confirm('manifest version을 bank와 일치시킵니다 ('+changes.length+'건):\n\n'+changes.join('\n')+'\n\n적용할까요?')){ st.textContent='취소됨.'; return; }
+    await db.collection('manifest').doc('exams').update({ exams: exams });
+    st.innerHTML='✅ 동기화 완료 — '+changes.length+'건 갱신.<br><span style="font-size:11px;color:#A89C8E">'+changes.join('<br>')+'</span><br>앱에서 Ctrl+Shift+R 하면 새 데이터가 보입니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+// ===== 매니페스트 등록: 번들의 새 시험을 레지스트리에 merge (추가만, 삭제·덮어쓰기 없음) =====
+async function registerManifestExams(){
+  const st=document.getElementById('regManifestStatus');
+  if(!impBundleManifest || !Array.isArray(impBundleManifest.exams) || !impBundleManifest.exams.length){
+    st.innerHTML='먼저 <b>manifest가 포함된 번들 JSON</b>을 위 영역에 올려주세요. (번들에 "manifest" 키가 있어야 합니다)'; return;
+  }
+  st.textContent='읽는 중...';
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    const cur=(mSnap.exists && mSnap.data())||{};
+    const exams=Array.isArray(cur.exams)?cur.exams.slice():[];
+    const byId=new Map(exams.map(e=>[e&&e.id, e]));
+    const toAdd=[], skip=[], subjAdds=[];
+    for(const e of impBundleManifest.exams){
+      if(!e||!e.id) continue;
+      const exist=byId.get(e.id);
+      if(!exist){ toAdd.push(e); continue; }
+      // 기존 시험: subjects에 없는 새 과목만 병합 (기존 과목 무수정)
+      exist.subjects=Array.isArray(exist.subjects)?exist.subjects:[];
+      exist.versions=exist.versions||{};
+      const haveCodes=new Set(exist.subjects.map(s=>s&&s.code));
+      let added=0;
+      for(const s of (e.subjects||[])){
+        if(!s||!s.code||haveCodes.has(s.code)) continue;
+        let bv=(e.versions&&typeof e.versions[s.code]==='number')?e.versions[s.code]:1;
+        try{ const bd=await db.collection('banks').doc(e.id+'__'+s.code).get(); if(bd.exists && typeof bd.data().version==='number') bv=bd.data().version; }catch(_){}
+        exist.subjects.push({code:s.code, name:s.name||s.code});
+        exist.versions[s.code]=bv; added++;
+        subjAdds.push(e.id+' / '+s.code+' ('+(s.name||'')+') v'+bv);
+      }
+      if(!added) skip.push(e.id);
+    }
+    if(!toAdd.length && !subjAdds.length){
+      st.innerHTML='추가할 <b>새 시험·새 과목이 없습니다</b>. (이미 등록됨: '+(skip.join(', ')||'-')+')<br><span style="font-size:11px;color:#A89C8E">※ 기존 과목의 버전만 바꾸려면 "manifest 버전 동기화"를 쓰세요.</span>';
+      return;
+    }
+    const lines=[].concat(
+      toAdd.map(e=>'  + 새 시험 '+e.id+' ('+(e.name||'')+') · 과목 '+((e.subjects||[]).map(s=>s.code).join(', '))),
+      subjAdds.map(x=>'  + 새 과목 '+x)
+    );
+    if(!confirm('아래를 매니페스트에 추가합니다.\n기존 시험·과목은 그대로 유지(삭제·덮어쓰기 없음).\n\n'+lines.join('\n')+'\n\n계속할까요?')){ st.textContent='취소됨.'; return; }
+    const merged=exams.concat(toAdd);
+    if(mSnap.exists) await db.collection('manifest').doc('exams').update({ exams: merged });
+    else await db.collection('manifest').doc('exams').set({ exams: merged });
+    st.innerHTML='✅ 등록 완료 — 새 시험 <b>'+toAdd.length+'</b>개, 새 과목 <b>'+subjAdds.length+'</b>개.<br>'
+      +'<span style="font-size:11px;color:#A89C8E">앱에서 Ctrl+Shift+R(또는 ?v=숫자) 후 노출됩니다. 안 보이면 위 "⬆ 업로드 실행"으로 banks도 올렸는지 확인하세요.</span>'
+      +(subjAdds.length?('<br><span style="font-size:11px;color:#0C447C">새 과목: '+subjAdds.join(' · ')+'</span>'):'');
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+async function exportData(){
+  const sel=document.getElementById('expCert'); const pick=(sel&&sel.value)||'__all';
+  const st=document.getElementById('expStatus');
+  st.textContent='읽는 중... 잠시만요.';
+  try{
+    const m=await db.collection('manifest').doc('exams').get();
+    const exams=(m.exists && m.data().exams)||[];
+    const target = pick==='__all' ? exams : exams.filter(e=>e.id===pick);
+    if(!target.length){ st.textContent='해당 자격증을 manifest에서 찾지 못했습니다.'; return; }
+    const banks=[]; let qcnt=0;
+    for(const e of target){
+      for(const sub of (e.subjects||[])){
+        const docId=e.id+'__'+sub.code;
+        try{ const bd=await db.collection('banks').doc(docId).get(); if(bd.exists){ let data=bd.data();
+          if(Array.isArray(data.shards)&&data.shards.length){
+            const qs=[];
+            for(const s of data.shards){ const sd=await db.collection('banks').doc(docId+'__'+s).get(); if(sd.exists&&Array.isArray(sd.data().questions)) qs.push.apply(qs,sd.data().questions); }
+            data=Object.assign({},data,{questions:qs}); delete data.shards; delete data.count;
+          }
+          banks.push({docId, data}); qcnt+=((data.questions||[]).length); } }catch(_){}
+      }
+    }
+    const bundle={ manifest:{ exams: target, updatedAt:(m.exists&&m.data().updatedAt)||null }, banks, exportedAt:new Date().toISOString() };
+    const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download='certlab_export_'+(pick==='__all'?'all':pick)+'_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    st.innerHTML='✅ 내보내기 완료 — 문서 <b>'+banks.length+'</b>개 · 문항 <b>'+qcnt.toLocaleString()+'</b>개. 다운로드된 JSON이 현재 서비스 데이터입니다.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+
+// ===== 이미지 내보내기 (images → JSON) =====
+async function exportImages(){
+  const st=document.getElementById('imgExpStatus');
+  const sel=document.getElementById('imgExpCert'); const pick=(sel&&sel.value)||'__all';
+  st.textContent='읽는 중... 이미지가 많으면 시간이 걸립니다.';
+  try{
+    let images=[]; let bytes=0;
+    if(pick==='__all'){
+      const snap=await db.collection('images').get();
+      snap.forEach(doc=>{ const d=doc.data()||{}; images.push({key:doc.id, data:d.data||''}); bytes+=(d.data||'').length; });
+    } else {
+      // 1) 선택 자격증의 banks를 읽어 참조된 img:// 키 수집
+      if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
+      const exam=(_expExams||[]).find(e=>e.id===pick);
+      if(!exam){ st.textContent='해당 자격증을 manifest에서 찾지 못했습니다.'; return; }
+      const keySet=new Set();
+      for(const sub of (exam.subjects||[])){
+        try{
+          const bd=await db.collection('banks').doc(pick+'__'+sub.code).get();
+          if(bd.exists){
+            const txt=JSON.stringify(bd.data()||{});
+            const re=/img:\/\/([A-Za-z0-9_\-]+)/g; let m;
+            while((m=re.exec(txt))!==null){ keySet.add(m[1]); }
+          }
+        }catch(_){}
+      }
+      const keys=[...keySet];
+      if(!keys.length){ st.innerHTML='이 자격증 문제에 사용된 이미지가 없습니다. <span style="color:#A89C8E">(img:// 참조 없음)</span>'; return; }
+      // 2) 키별 이미지 문서 fetch
+      st.textContent='이미지 '+keys.length+'개 읽는 중...';
+      let miss=0;
+      for(const k of keys){
+        try{ const idoc=await db.collection('images').doc(k).get();
+          if(idoc.exists){ const d=idoc.data()||{}; images.push({key:k, data:d.data||''}); bytes+=(d.data||'').length; }
+          else miss++;
+        }catch(_){ miss++; }
+      }
+      if(!images.length){ st.textContent='참조된 이미지 키는 있으나 Firestore images에 저장된 이미지가 없습니다. (업로드 필요)'; return; }
+      var _miss=miss;
+    }
+    if(!images.length){ st.textContent='해당하는 이미지가 없습니다.'; return; }
+    const bundle={ images, exportedAt:new Date().toISOString(), cert:(pick==='__all'?null:pick), count:images.length };
+    const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download='certlab_images_'+(pick==='__all'?'all':pick)+'_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    st.innerHTML='✅ 이미지 <b>'+images.length+'</b>개 내보내기 완료 (약 '+(Math.round(bytes/1024/1024*10)/10)+'MB)'
+      + ((typeof _miss!=='undefined'&&_miss>0)?(' <span style="color:#C2410C">· 미저장 키 '+_miss+'개(업로드 안 된 이미지)</span>'):'') + '.';
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+
+// ===== 이미지 가져오기 (JSON → images 복구) =====
+let imgImpData=null; let _imgImpInited=false;
+function imgImpLog(msg,color){ const el=document.getElementById('imgImpLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
+function imgImpInit(){
+  if(_imgImpInited) return; _imgImpInited=true;
+  const drop=document.getElementById('imgImpDrop'), file=document.getElementById('imgImpFile'); if(!drop||!file) return;
+  drop.onclick=()=>file.click();
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#185FA5';}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
+  drop.addEventListener('drop',e=>imgImpHandle(e.dataTransfer.files));
+  file.addEventListener('change',e=>imgImpHandle(e.target.files));
+}
+async function imgImpHandle(fileList){
+  const f=[...fileList].find(x=>/\.json$/i.test(x.name)||x.type==='application/json');
+  if(!f){ imgImpLog('JSON 파일이 아닙니다.','#f85149'); return; }
+  try{
+    const txt=await f.text(); const o=JSON.parse(txt);
+    const arr=Array.isArray(o)?o:(o.images||[]);
+    const valid=arr.filter(x=>x&&x.key&&x.data);
+    if(!valid.length){ imgImpLog('이미지 항목을 찾지 못했습니다. (images 배열 필요)','#f85149'); return; }
+    imgImpData=valid;
+    document.getElementById('imgImpStatus').innerHTML='파일 인식: 이미지 <b>'+valid.length+'</b>개. "복구 실행"을 누르면 Firestore에 올립니다(같은 키 덮어쓰기).';
+    document.getElementById('imgImpRun').disabled=false;
+    imgImpLog('파일 로드: '+f.name+' — 이미지 '+valid.length+'개','#5B50C0');
+  }catch(e){ imgImpLog('파싱 오류: '+(e.message||e),'#f85149'); }
+}
+async function importImages(){
+  if(!imgImpData||!imgImpData.length) return;
+  if(!confirm(imgImpData.length+'개 이미지를 Firestore에 복구합니다. 같은 키는 덮어씁니다. 계속할까요?')){ imgImpLog('취소됨.'); return; }
+  document.getElementById('imgImpRun').disabled=true;
+  let ok=0, fail=0;
+  for(const it of imgImpData){
+    try{
+      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() });
+      ok++; if(ok%10===0) imgImpLog('... '+ok+'개 복구','#15793F');
+    }catch(e){ fail++; imgImpLog('✗ '+it.key+' 실패: '+(e.message||e),'#f85149'); }
+  }
+  imgImpLog('— 복구 완료 — 성공 '+ok+'개'+(fail?(' / 실패 '+fail+'개'):''),'#15793F');
+  document.getElementById('imgImpStatus').innerHTML='✅ 복구 완료: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패 '+fail+'개'):'')+'.';
+}
+function crmSegment(seg){
+  return allMembers.filter(m=>{
+    const s=memberStatus(m);
+    if(seg==='all') return true;
+    if(seg==='free') return s==='FREE_TRIAL';
+    if(seg==='paid') return s==='ACTIVE';
+    // A/B/C/D = 무료체험 회원 중 해당 등급
+    return s==='FREE_TRIAL' && memberGrade(m).label===seg;
+  });
+}
+function renderCrm(){
+  const box=document.getElementById('crmList'); if(!box) return;
+  const seg=(document.getElementById('crmSeg')||{}).value||'all';
+  const list=crmSegment(seg).slice().sort((a,b)=>(b._solve||0)-(a._solve||0));
+  const SEGLBL={all:'전체',free:'무료체험',paid:'유료',A:'등급 A',B:'등급 B',C:'등급 C',D:'등급 D'};
+  const segLabel = SEGLBL[seg]||seg;
+  if(!list.length){ box.innerHTML='<div class="empty">해당 대상이 없습니다.</div>'; return; }
+  box.innerHTML =
+    '<div style="padding:14px 20px;border-bottom:1px solid #F0F0F0">'
+    +'<div style="font-size:13px;color:#6E6256;margin-bottom:8px">'+segLabel+' · 대상 <b>'+list.length+'</b>명</div>'
+    +'<button class="btn-sm btn-extend" onclick="crmCopyEmails(\''+seg+'\')">📋 이메일 전체 복사</button>'
+    +'<div style="font-size:11px;color:#A89C8E;margin-top:8px">※ 복사한 이메일을 메일 앱의 받는사람(또는 숨은참조/BCC)에 붙여넣어 발송하세요.</div>'
+    +'</div>'
+    +'<table><thead><tr><th>이메일</th><th>등급</th><th>학습량</th><th>가입(경과)</th><th>최근 학습</th></tr></thead><tbody>'
+    + list.map(m=>{ const g=memberGrade(m); return `
+      <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
+        <td>${m.email||'-'}</td>
+        <td><span class="grade ${g.cls}">${g.label}</span></td>
+        <td>${(m._solve||0).toLocaleString()}회</td>
+        <td>${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</td>
+        <td>${m._lastStudy?fmtWithAgo(m._lastStudy):'<span style="color:#C9BFB2">없음</span>'}</td>
+      </tr>`;}).join('')
+    + '</tbody></table>';
+}
+function crmCopyEmails(seg){
+  const emails=crmSegment(seg).map(m=>m.email).filter(Boolean);
+  if(!emails.length){ alert('대상이 없습니다.'); return; }
+  navigator.clipboard.writeText(emails.join(', ')).then(()=>alert(emails.length+'명의 이메일을 복사했어요.')).catch(()=>alert('복사 실패'));
+}
+function openMemberDetail(uid){
+  const m = allMembers.find(x=>x.id===uid); if(!m) return;
+  MD_UID = uid; MD_PERSUB = null;
+  const g = memberGrade(m); const s = memberStatus(m);
+  // 활성 이용권(자격증별 만료)
+  const ents = m.entitlements||{};
+  const activeCerts = Object.keys(ents).filter(c=>{ const e=ents[c]; if(!e||e.plan!=='ACTIVE') return false; if(!e.expireAt) return true; const d=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); return d>new Date(); });
+  const entHTML = activeCerts.length
+    ? activeCerts.map(c=>`<div style="font-size:13px">• ${CERT_NAMES[c]||c} <span style="color:#15793F">~${fmtDateShort(ents[c].expireAt)} (${daysLeft(ents[c].expireAt)})</span></div>`).join('')
+    : '<span style="color:#B4A99C">활성 이용권 없음</span>';
+  // 쿠폰
+  const codes=(codeByUid[uid]||[]);
+  const codeHTML = codes.length ? codes.map(c=>`<span class="badge" style="background:#EDE9FB;color:#5B50C0">🎟 ${c}</span>`).join(' ') : '<span style="color:#B4A99C">-</span>';
+  // 마일리지 잔액
+  const bal = mileBalanceOf(m);
+  // 결제 이력
+  const pays = allPayments.filter(p=>p.uid===uid).slice().sort((a,b)=>{ const da=(a.createdAt&&a.createdAt.toDate?a.createdAt.toDate():new Date(a.createdAt||0)); const db=(b.createdAt&&b.createdAt.toDate?b.createdAt.toDate():new Date(b.createdAt||0)); return db-da; });
+  const payHTML = pays.length
+    ? pays.map(p=>{
+        const amt = p.mileageUsed>0 ? `${(p.depositAmount||0).toLocaleString()}원+마일${(p.mileageUsed||0).toLocaleString()}` : `${(p.price||0).toLocaleString()}원`;
+        return `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid #F3F0EC">
+          <span>${fmtDateShort(p.approvedAt||p.createdAt)} · ${certNameOf(p)} ${planNames[p.planDays]||(p.planDays+'일')}</span>
+          <span>${amt} <b style="color:${isPaid(p.status)?'#15793F':'#A32D2D'}">${statusLabel(p.status)}</b></span></div>`;
+      }).join('')
+    : '<span style="color:#B4A99C">결제 이력 없음</span>';
+
+  const row=(label,val)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F3F0EC"><span style="color:#8A7E70;font-size:13px">${label}</span><span style="font-weight:600;font-size:13px;text-align:right">${val}</span></div>`;
+  document.getElementById('mdBody').innerHTML =
+    row('이메일', m.email||'-')
+    + row('등급 / 상태', `<span class="grade ${g.cls}">${g.label}</span> ${memberBadges(m)}`)
+    + row('가입일', `${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일 경과'})`)
+    + row('최근 로그인', m.lastLoginAt?`${fmtDateShort(m.lastLoginAt)} (${agoTxt(m.lastLoginAt)})`:'<span style="color:#B4A99C">기록 없음</span>')
+    + row('최근 학습', m._lastStudy?`${fmtDateShort(m._lastStudy)} (${agoTxt(m._lastStudy)})`:'<span style="color:#B4A99C">기록 없음</span>')
+    + row('가입 시험', signupCertHTML(m))
+    + row('학습량(전체)', `푼 횟수 <b>${(m._solve||0).toLocaleString()}</b> · 학습문항 <b>${m._studied||0}</b>`)
+    + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">시험별 풀이 <span style="font-weight:400;color:#A89C8E;font-size:11px">— 상세 ▾ 누르면 과목별</span></div>${perCertTableExpandable(m._perCert, uid)}`
+    + row('마일리지', `${bal.toLocaleString()}원`)
+    + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">활성 이용권</div>${entHTML}`
+    + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">사용 쿠폰</div>${codeHTML}`
+    + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">결제 이력 (${pays.length})</div><div style="margin-top:4px">${payHTML}</div>`;
+  document.getElementById('memberDetailModal').classList.remove('hidden');
+}
+
+// ===== 회원 상세: 시험별 → 과목별 펼침 (안 A) =====
+let MD_UID=null, MD_PERSUB=null, QID2SUB=null;
+// 문항ID→과목 매핑 ('cert|qid' → 과목명). banks 1회 로드, 버전 시그니처로 localStorage 캐시
+async function buildQid2Sub(){
+  if(QID2SUB) return QID2SUB;
+  try{
+    const m=await db.collection('manifest').doc('exams').get();
+    const exams=(m.exists&&m.data().exams)||[];
+    const sig=JSON.stringify(exams.map(e=>[e.id,(e.subjects||[]).map(s=>[s.code,s.name]),e.versions||null]));
+    try{ const c=localStorage.getItem('qid2sub_v1'); if(c){ const o=JSON.parse(c); if(o&&o.sig===sig&&o.map){ QID2SUB=o.map; return QID2SUB; } } }catch(_){}
+    const map={};
+    for(const ex of exams){
+      for(const sub of (ex.subjects||[])){
+        try{ const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+          if(bd.exists){ const bdata=bd.data();
+            let qlist=bdata.questions||[];
+            if((!qlist||!qlist.length) && Array.isArray(bdata.shards)){
+              qlist=[];
+              for(const s of bdata.shards){ try{ const sd=await db.collection('banks').doc(ex.id+'__'+sub.code+'__'+s).get(); if(sd.exists&&Array.isArray(sd.data().questions)) qlist=qlist.concat(sd.data().questions); }catch(_){} }
+            }
+            qlist.forEach(q=>{ if(q&&q.id!=null) map[ex.id+'|'+q.id]=(sub.name||sub.code); });
+          }
+        }catch(_){}
+      }
+    }
+    QID2SUB=map;
+    try{ localStorage.setItem('qid2sub_v1', JSON.stringify({sig, map})); }catch(_){}
+    return QID2SUB;
+  }catch(_){ QID2SUB={}; return QID2SUB; }
+}
+// 한 회원의 cardProgress를 시험·과목별 집계 (상세 첫 클릭 시 1회)
+async function prepMemberSubs(uid){
+  if(MD_PERSUB && MD_PERSUB._uid===uid) return MD_PERSUB;
+  const map=await buildQid2Sub();
+  let cp={};
+  try{ const ud=await db.collection('userData').doc(uid).get(); if(ud.exists){ const d=ud.data(); cp=(d.cardProgress&&typeof d.cardProgress==='object')?d.cardProgress:{}; } }catch(_){}
+  const per={};
+  Object.keys(cp).forEach(k=>{
+    const p=cp[k]; const rc=(p&&p.rc)?p.rc:0;
+    const bar=k.indexOf('|'); const cert=bar>0?k.slice(0,bar):'_etc';
+    const sub=map[k]||'기타';
+    (per[cert]=per[cert]||{}); (per[cert][sub]=per[cert][sub]||{solve:0,studied:0});
+    per[cert][sub].solve+=rc; per[cert][sub].studied++;
+  });
+  per._uid=uid; MD_PERSUB=per; return per;
+}
+async function toggleSub(uid, cert){
+  const rowEl=document.getElementById('sub_'+cert); const btn=document.getElementById('sbtn_'+cert);
+  if(!rowEl) return;
+  if(rowEl.style.display!=='none'){ rowEl.style.display='none'; if(btn) btn.textContent='상세 ▾'; return; }
+  rowEl.style.display=''; if(btn) btn.textContent='상세 ▴';
+  const cell=rowEl.firstElementChild;
+  if(rowEl.dataset.loaded==='1') return;
+  cell.innerHTML='<div style="padding:8px 4px;color:#A89C8E;font-size:12px">집계 중…</div>';
+  try{
+    const per=await prepMemberSubs(uid);
+    const obj=(per[cert]||{});
+    const subs=Object.keys(obj).map(s=>({s,solve:obj[s].solve,studied:obj[s].studied})).sort((a,b)=>b.solve-a.solve);
+    if(!subs.length){ cell.innerHTML='<div style="padding:8px 4px;color:#B4A99C;font-size:12px">과목 정보 없음</div>'; }
+    else {
+      cell.innerHTML='<div style="display:grid;grid-template-columns:1fr auto auto;gap:3px 16px;padding:7px 4px">'
+        +'<div style="font-size:10.5px;color:#A89C8E">과목</div><div style="font-size:10.5px;color:#A89C8E;text-align:right">푼 횟수</div><div style="font-size:10.5px;color:#A89C8E;text-align:right">학습문항</div>'
+        + subs.map(x=>'<div style="padding-left:12px;color:#6E6256;font-size:12px">└ '+x.s+'</div>'
+            +'<div style="text-align:right;font-size:12px;font-weight:600">'+x.solve.toLocaleString()+'</div>'
+            +'<div style="text-align:right;font-size:12px;color:#8A7E70">'+x.studied.toLocaleString()+'</div>').join('')
+        +'</div>';
+    }
+    rowEl.dataset.loaded='1';
+  }catch(e){ cell.innerHTML='<div style="padding:8px 4px;color:#A32D2D;font-size:12px">불러오기 실패</div>'; }
+}
+function perCertTableExpandable(per, uid){
+  if(!per) return '<span style="color:#B4A99C">기록 없음</span>';
+  const arr=Object.keys(per).map(c=>({c,solve:per[c].solve,studied:per[c].studied})).filter(x=>x.solve>0||x.studied>0);
+  if(!arr.length) return '<span style="color:#B4A99C">기록 없음</span>';
+  arr.sort((a,b)=>b.solve-a.solve);
+  const th='padding:4px 8px;font-size:11px;color:#8A7E70;background:#FAFAFA';
+  const td='padding:4px 8px;font-size:12.5px;border-bottom:1px solid #F3F0EC';
+  let h='<table style="width:100%;border-collapse:collapse;margin-top:4px">'
+    +'<thead><tr><th style="text-align:left;'+th+'">시험</th><th style="text-align:right;'+th+'">푼 횟수</th><th style="text-align:right;'+th+'">학습문항</th><th style="'+th+'"></th></tr></thead><tbody>';
+  arr.forEach(x=>{
+    const label=x.c==='_etc'?'기타':certLabel(x.c);
+    h+='<tr><td style="'+td+'">'+label+'</td><td style="text-align:right;'+td+'">'+x.solve.toLocaleString()+'</td><td style="text-align:right;'+td+'">'+x.studied.toLocaleString()+'</td>'
+      +'<td style="text-align:right;'+td+'">'+(x.c==='_etc'?'':'<button class="subtgl" id="sbtn_'+x.c+'" onclick="toggleSub(\''+uid+'\',\''+x.c+'\')">상세 ▾</button>')+'</td></tr>';
+    if(x.c!=='_etc') h+='<tr id="sub_'+x.c+'" style="display:none"><td colspan="4" style="background:#FBF9F6;padding:0 10px"></td></tr>';
+  });
+  h+='</tbody></table>';
+  return h;
+}
+
+// ===== 학습 통계 탭 =====
+let STATS=null;
+function renderStats(){
+  const totals={}, active={}, top={}, signup={}; let signupNone=0;
+  const now=Date.now(), D7=7*86400000, D30=30*86400000;
+  allMembers.forEach(m=>{
+    const per=m._perCert||{};
+    Object.keys(per).forEach(c=>{
+      const v=per[c];
+      (totals[c]=totals[c]||{solve:0,studied:0,members:0}); totals[c].solve+=v.solve; totals[c].studied+=v.studied; totals[c].members++;
+      (active[c]=active[c]||{a7:0,a30:0,total:0}); active[c].total++;
+      const lr=v.lr||0; if(lr&&now-lr<=D7) active[c].a7++; if(lr&&now-lr<=D30) active[c].a30++;
+      (top[c]=top[c]||[]).push({email:m.email||'-', solve:v.solve, lr:lr, free:memberStatus(m)==='FREE_TRIAL', m:m});
+    });
+    if(m.signupCert){ signup[m.signupCert]=(signup[m.signupCert]||0)+1; } else signupNone++;
+  });
+  Object.keys(top).forEach(c=>top[c].sort((a,b)=>b.solve-a.solve));
+  STATS={totals,active,top,signup,signupNone};
+  renderStatsTotals(); renderStatsActive(); renderStatsSignup();
+  const certs=Object.keys(totals).filter(c=>c!=='_etc').sort((a,b)=>totals[b].solve-totals[a].solve);
+  const sel=document.getElementById('statsTopCert');
+  if(sel) sel.innerHTML=certs.map(c=>'<option value="'+c+'">'+certLabel(c)+'</option>').join('');
+  renderStatsTop();
+}
+function renderStatsTotals(){
+  const t=STATS.totals; const arr=Object.keys(t).map(c=>({c,solve:t[c].solve,studied:t[c].studied,members:t[c].members})).sort((a,b)=>b.solve-a.solve);
+  const max=Math.max(1,...arr.map(x=>x.solve));
+  const box=document.getElementById('statsTotals');
+  if(!arr.length){ box.innerHTML='<div class="empty">학습 기록이 없습니다.</div>'; return; }
+  box.innerHTML='<table><thead><tr><th>시험</th><th>총 푼 횟수</th><th style="width:200px">분포</th><th>총 학습문항</th><th>학습 회원 수</th></tr></thead><tbody>'
+    + arr.map(x=>'<tr><td><span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+(x.c==='_etc'?'기타':certShort(x.c))+'</span></td>'
+        +'<td style="font-weight:700">'+x.solve.toLocaleString()+'</td>'
+        +'<td><div class="sbar"><i style="width:'+Math.round(x.solve/max*100)+'%"></i></div></td>'
+        +'<td>'+x.studied.toLocaleString()+'</td><td>'+x.members.toLocaleString()+'명</td></tr>').join('')
+    + '</tbody></table>';
+}
+function renderStatsActive(){
+  const a=STATS.active; const arr=Object.keys(a).filter(c=>c!=='_etc').map(c=>({c,a7:a[c].a7,a30:a[c].a30,total:a[c].total})).sort((x,y)=>y.a30-x.a30);
+  const box=document.getElementById('statsActive');
+  if(!arr.length){ box.innerHTML='<div class="empty">기록이 없습니다.</div>'; return; }
+  box.innerHTML='<table><thead><tr><th>시험</th><th>최근 7일</th><th>최근 30일</th><th>전체 학습 회원</th></tr></thead><tbody>'
+    + arr.map(x=>'<tr><td><span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+certShort(x.c)+'</span></td>'
+        +'<td style="font-weight:700;color:#15793F">'+x.a7.toLocaleString()+'명</td>'
+        +'<td>'+x.a30.toLocaleString()+'명</td><td>'+x.total.toLocaleString()+'명</td></tr>').join('')
+    + '</tbody></table>';
+}
+function renderStatsTop(){
+  const sel=document.getElementById('statsTopCert'); const cert=(sel&&sel.value)||'';
+  const box=document.getElementById('statsTop'); if(!box) return;
+  if(!STATS||!cert||!STATS.top[cert]){ box.innerHTML='<div class="empty">데이터가 없습니다.</div>'; return; }
+  const list=STATS.top[cert].slice(0,5);
+  box.innerHTML='<table><thead><tr><th>#</th><th>이메일</th><th>등급</th><th>상태</th><th>푼 횟수(이 시험)</th><th>최근 학습</th></tr></thead><tbody>'
+    + list.map((x,i)=>{ const g=memberGrade(x.m); return '<tr style="cursor:pointer" onclick="openMemberDetail(\''+x.m.id+'\')">'
+        +'<td>'+(i+1)+'</td><td>'+(x.free?'⭐ ':'')+x.email+'</td>'
+        +'<td><span class="grade '+g.cls+'">'+g.label+'</span></td><td>'+memberBadges(x.m)+'</td>'
+        +'<td style="font-weight:700">'+x.solve.toLocaleString()+'</td>'
+        +'<td>'+(x.lr?fmtWithAgo(x.lr):'<span style="color:#C9BFB2">-</span>')+'</td></tr>'; }).join('')
+    + '</tbody></table>';
+}
+function renderStatsSignup(){
+  const s=STATS.signup; const arr=Object.keys(s).map(c=>({c,n:s[c]})).sort((a,b)=>b.n-a.n);
+  const max=Math.max(1,...arr.map(x=>x.n));
+  const box=document.getElementById('statsSignup');
+  let html='<table><thead><tr><th>가입 시험</th><th>가입자 수</th><th style="width:200px">비중</th></tr></thead><tbody>';
+  if(!arr.length){ html+='<tr><td colspan="3" style="color:#B4A99C;padding:14px 16px">아직 가입 시험 기록이 없습니다. (이번 업데이트 이후 가입분부터 집계)</td></tr>'; }
+  else { html+=arr.map(x=>'<tr><td><span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+certShort(x.c)+'</span></td>'
+      +'<td style="font-weight:700">'+x.n.toLocaleString()+'</td>'
+      +'<td><div class="sbar"><i style="width:'+Math.round(x.n/max*100)+'%"></i></div></td></tr>').join(''); }
+  html+='<tr><td><span style="color:#C9BFB2">기록 없음 <small style="color:#C9BFB2">(기존 회원)</small></span></td><td style="font-weight:700;color:#A89C8E">'+STATS.signupNone.toLocaleString()+'</td><td></td></tr></tbody></table>';
+  box.innerHTML=html;
+}
+
+// ===== 승인/거절 (레거시 pending 건 전용) =====
+function openApprove(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  const expireDate = new Date();
+  expireDate.setDate(expireDate.getDate() + (p.planDays || 14));
+  document.getElementById('modalEmail').textContent = p.email;
+  document.getElementById('modalDepositor').textContent = p.depositorName || '-';
+  document.getElementById('modalPlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('modalPrice').textContent = p.mileageUsed>0
+    ? ((p.depositAmount||0).toLocaleString()+'원 입금 + 마일리지 '+(p.mileageUsed||0).toLocaleString()+'원')
+    : (p.price||0).toLocaleString()+'원';
+  document.getElementById('modalExpire').textContent = expireDate.toLocaleDateString('ko-KR');
+  document.getElementById('approveModal').classList.remove('hidden');
+}
+
+function openReject(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  document.getElementById('rejectEmail').textContent = p.email;
+  document.getElementById('rejectPlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('rejectModal').classList.remove('hidden');
+}
+
+// ===== 철회 (자동승인 건 입금 미확인) =====
+function openRevoke(paymentId) {
+  const p = allPayments.find(x => x.id === paymentId);
+  if (!p) return;
+  pendingPaymentId = paymentId;
+  pendingPaymentData = p;
+  document.getElementById('revokeEmail').textContent = p.email;
+  document.getElementById('revokeCert').textContent = certNameOf(p);
+  document.getElementById('revokePlan').textContent = planNames[p.planDays] || p.planDays+'일';
+  document.getElementById('revokeModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('approveModal').classList.add('hidden');
+  document.getElementById('rejectModal').classList.add('hidden');
+  document.getElementById('revokeModal').classList.add('hidden');
+  pendingPaymentId = null;
+  pendingPaymentData = null;
+}
+
+async function confirmApprove() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  const p = pendingPaymentData;
+  const cert = p.certType || 'bodybuilding';
+  const expireAt = new Date();
+  expireAt.setDate(expireAt.getDate() + (p.planDays || 14));
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'approved',
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const upd = {
+      ['entitlements.'+cert+'.plan']: 'ACTIVE',
+      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
+      ['entitlements.'+cert+'.planDays']: p.planDays
+    };
+    if (cert === 'bodybuilding') { upd.plan='ACTIVE'; upd.expireAt=firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays=p.planDays; }
+    await db.collection('users').doc(p.uid).update(upd);
+    closeModal();
+    alert(`✅ ${p.email} 승인 완료!\n만료일: ${expireAt.toLocaleDateString('ko-KR')}`);
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function confirmReject() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'rejected',
+      rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    closeModal();
+    alert('거절 처리되었습니다.');
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+async function confirmRevoke() {
+  if (!pendingPaymentId || !pendingPaymentData) return;
+  const p = pendingPaymentData;
+  const cert = p.certType || 'bodybuilding';
+  try {
+    await db.collection('payments').doc(pendingPaymentId).update({
+      status: 'revoked',
+      revokedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // 회원 문서 찾기 (uid 우선, 없으면 이메일로)
+    let ref=null, data=null;
+    if (p.uid) { ref=db.collection('users').doc(p.uid); const d=await ref.get(); if(d.exists) data=d.data(); }
+    if (!data && p.email) {
+      const qs=await db.collection('users').where('email','==',p.email).limit(1).get();
+      if(!qs.empty){ ref=qs.docs[0].ref; data=qs.docs[0].data(); }
+    }
+    if (ref) {
+      const upd = { ['entitlements.'+cert+'.plan']: 'EXPIRED' };
+      // 이번에 만료시키는 것 외에 살아있는 다른 이용권이 있는지 확인
+      const ents = (data && data.entitlements) || {};
+      const now = Date.now();
+      const otherLive = Object.keys(ents).some(k => {
+        if (k===cert) return false;
+        const e=ents[k]; if(!e || e.plan!=='ACTIVE') return false;
+        if(!e.expireAt) return true;
+        const t = e.expireAt.toDate ? e.expireAt.toDate().getTime() : new Date(e.expireAt).getTime();
+        return t > now;
+      });
+      // bodybuilding(레거시 top-plan)이거나, 남은 이용권이 없으면 top-level plan도 만료
+      if (cert==='bodybuilding' || !otherLive) upd.plan='EXPIRED';
+      // 마일리지 사용분 환원 (1년 유효)
+      const used = p.mileageUsed || 0;
+      if (used > 0) {
+        const lots = Array.isArray(data && data.mileageLots) ? data.mileageLots.slice() : [];
+        lots.push({a:used, t:'refund', at:now, exp:now+365*86400000});
+        const hist = Array.isArray(data && data.mileageHistory) ? data.mileageHistory.slice() : [];
+        hist.push({t:'refund', a:used, at:now, memo:'결제 철회 환원'});
+        upd.mileageLots = lots;
+        upd.mileageHistory = hist;
+      }
+      await ref.update(upd);
+    }
+    closeModal();
+    alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`+((p.mileageUsed||0)>0?`\n사용한 마일리지 ${(p.mileageUsed||0).toLocaleString()}원을 환원했습니다.`:''));
+    await loadAll();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// ===== 오류 신고 =====
+let allReports = [];
+
+async function loadReports() {
+  try {
+    const snap = await db.collection('reports').orderBy('createdAt','desc').get();
+    allReports = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    renderReports(allReports);
+    updateReportBadge();
+  } catch(e) { document.getElementById('reportList').innerHTML = '<div class="empty">데이터를 불러올 수 없습니다.</div>'; }
+}
+
+function updateReportBadge() {
+  const pending = allReports.filter(r => r.status === 'pending').length;
+  const badge = document.getElementById('reportBadge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+}
+
+function renderReports(list) {
+  if (!list.length) { document.getElementById('reportList').innerHTML = '<div class="empty">신고 내역이 없습니다.</div>'; return; }
+  document.getElementById('reportList').innerHTML = `
+    <table>
+      <thead><tr><th>신고일시</th><th>시험</th><th>과목</th><th>문항ID</th><th>오류유형</th><th>신고내용</th><th>신고자</th><th>상태</th><th>처리</th></tr></thead>
+      <tbody>${list.map((r,i) => `
+        <tr>
+          <td>${fmtDate(r.createdAt)}</td>
+          <td style="font-size:11px">${CERT_NAMES[r.certType]||r.certType||'-'}</td>
+          <td style="font-size:11px">${r.subject||'-'}</td>
+          <td style="font-size:11px;color:#888780">${r.questionId||'-'}</td>
+          <td><span class="badge badge-pending">${r.errorType||'-'}</span></td>
+          <td style="max-width:160px">
+            <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${r.question||''}">${(r.question||'').slice(0,20)}${(r.question||'').length>20?'...':''}</div>
+            <div style="font-size:11px;color:#888780">${r.detail||'-'}</div>
+          </td>
+          <td style="font-size:11px">${r.reporterEmail||'-'}</td>
+          <td><span class="badge ${r.status==='done'?'badge-approved':'badge-pending'}">${r.status==='done'?'처리완료':'대기'}</span></td>
+          <td>${r.status==='pending'
+            ? `<button class="btn-sm btn-approve" onclick="markReportDone('${r.id}')">완료</button>`
+            : '-'}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function filterReports() {
+  const status = document.getElementById('filterStatus').value;
+  if (status === 'all') renderReports(allReports);
+  else renderReports(allReports.filter(r => r.status === status));
+}
+
+async function markReportDone(reportId) {
+  try {
+    await db.collection('reports').doc(reportId).update({
+      status: 'done',
+      doneAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await loadReports();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// ===== 회원권 관리 (시험별 이용권) =====
+const ENT_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory'];
+const ENT_PERIODS = [{d:14,l:'14일'},{d:30,l:'30일'},{d:90,l:'90일'},{d:365,l:'365일'}];
+let grantUid=null, grantEmailVal=null, grantDays=30;
+
+function entStatusOf(m, cert){
+  const e = (m.entitlements && m.entitlements[cert]) || null;
+  let plan = e ? e.plan : null;
+  let expireAt = e ? e.expireAt : null;
+  if(cert==='bodybuilding' && !e && m.plan){ plan=m.plan; expireAt=m.expireAt; }
+  if(!plan) return {plan:'GUEST', label:'미사용', cls:'badge-guest', exp:null};
+  let live = plan; let expDate = null;
+  if(expireAt){ expDate = expireAt.toDate ? expireAt.toDate() : new Date(expireAt); }
+  if(plan==='ACTIVE' && expDate && expDate < new Date()) live='EXPIRED';
+  const map = {ACTIVE:['이용중','badge-active'], FREE_TRIAL:['무료체험','badge-free'], EXPIRED:['만료','badge-expired'], GUEST:['미사용','badge-guest']};
+  const mm = map[live]||['?','badge-guest'];
+  return {plan:live, label:mm[0], cls:mm[1], exp:expDate};
+}
+
+function renderEntMembers(){
+  const q=(document.getElementById('searchEnt')||{}).value||'';
+  let list=allMembers;
+  if(q) list=allMembers.filter(m=>(m.email||'').toLowerCase().includes(q.toLowerCase()));
+  const box=document.getElementById('entMemberList');
+  if(!box) return;
+  if(!list.length){ box.innerHTML='<div class="empty">회원이 없습니다.</div>'; return; }
+  box.innerHTML = '<table><thead><tr><th>이메일</th>'
+    + ENT_CERTS.map(c=>'<th style="text-align:center">'+CERT_NAMES[c]+'</th>').join('')
+    + '<th>관리</th></tr></thead><tbody>'
+    + list.map(m=>{
+        const cells = ENT_CERTS.map(c=>{
+          const s=entStatusOf(m,c);
+          const expTxt = (s.plan==='ACTIVE'&&s.exp) ? '<div style="font-size:10px;color:#A89C8E">~'+fmtDateShort(s.exp)+'</div>' : '';
+          return '<td style="text-align:center"><span class="badge '+s.cls+'">'+s.label+'</span>'+expTxt+'</td>';
+        }).join('');
+        const em=(m.email||'').replace(/'/g,"\\'");
+        return '<tr><td>'+(m.email||'-')+'</td>'+cells
+          +'<td style="white-space:nowrap"><button class="btn-sm btn-extend" onclick="openGrant(\''+m.id+'\',\''+em+'\')">부여/연장</button>'
+          +'<button class="btn-sm btn-expire" onclick="expireMemberCert(\''+m.id+'\',\''+em+'\')" style="margin-left:4px">만료</button></td></tr>';
+      }).join('')
+    + '</tbody></table>';
+}
+
+function openGrant(uid, email){
+  grantUid=uid; grantEmailVal=email; grantDays=30;
+  document.getElementById('grantEmail').textContent=email;
+  const sel=document.getElementById('grantCert');
+  sel.innerHTML=ENT_CERTS.map(c=>'<option value="'+c+'">'+CERT_NAMES[c]+'</option>').join('');
+  document.getElementById('grantPeriods').innerHTML=ENT_PERIODS.map(p=>
+    '<button class="btn-sm" data-d="'+p.d+'" onclick="grantPickPeriod('+p.d+')" style="border:1.5px solid #E8E8E8;background:#fff">'+p.l+'</button>').join('');
+  document.getElementById('grantDaysCustom').value='';
+  grantPickPeriod(30);
+  document.getElementById('grantModal').classList.remove('hidden');
+}
+function closeGrantModal(){ document.getElementById('grantModal').classList.add('hidden'); grantUid=null; }
+function grantPickPeriod(d){
+  grantDays=d;
+  document.getElementById('grantDaysCustom').value='';
+  document.querySelectorAll('#grantPeriods button').forEach(b=>{
+    const on=Number(b.dataset.d)===d;
+    b.style.background=on?'#1D9E75':'#fff'; b.style.color=on?'#fff':'#5F5E5A'; b.style.borderColor=on?'#1D9E75':'#E8E8E8';
+  });
+  grantPreview();
+}
+function grantPickCustom(){
+  const v=Number(document.getElementById('grantDaysCustom').value);
+  if(v>0){ grantDays=v; document.querySelectorAll('#grantPeriods button').forEach(b=>{ b.style.background='#fff'; b.style.color='#5F5E5A'; b.style.borderColor='#E8E8E8'; }); }
+  grantPreview();
+}
+function grantPreview(){
+  const cert=document.getElementById('grantCert').value;
+  const m=allMembers.find(x=>x.id===grantUid);
+  let base=new Date();
+  let cur=null;
+  if(m){ cur=entStatusOf(m,cert); if(cur.plan==='ACTIVE'&&cur.exp&&cur.exp>base) base=new Date(cur.exp); }
+  const newExp=new Date(base); newExp.setDate(newExp.getDate()+grantDays);
+  const curTxt=(cur&&cur.plan==='ACTIVE'&&cur.exp)?('현재 만료 '+fmtDateShort(cur.exp)+' → '):'신규 부여 → ';
+  document.getElementById('grantPreviewBox').innerHTML=
+    '<b>'+CERT_NAMES[cert]+'</b> · '+grantDays+'일<br>'+curTxt+'<b style="color:#1D9E75">새 만료일 '+newExp.toLocaleDateString('ko-KR')+'</b>';
+}
+async function confirmGrant(){
+  if(!grantUid) return;
+  const cert=document.getElementById('grantCert').value;
+  if(!grantDays||grantDays<=0){ alert('기간을 선택하세요.'); return; }
+  try{
+    const doc=await db.collection('users').doc(grantUid).get();
+    const data=doc.data()||{};
+    const e=(data.entitlements&&data.entitlements[cert])||null;
+    let base=new Date();
+    if(e&&e.plan==='ACTIVE'&&e.expireAt){ const c=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); if(c>base) base=c; }
+    base.setDate(base.getDate()+Number(grantDays));
+    const ts=firebase.firestore.Timestamp.fromDate(base);
+    const upd={};
+    upd['entitlements.'+cert+'.plan']='ACTIVE';
+    upd['entitlements.'+cert+'.expireAt']=ts;
+    upd['entitlements.'+cert+'.planDays']=Number(grantDays);
+    if(cert==='bodybuilding'){ upd.plan='ACTIVE'; upd.expireAt=ts; upd.planDays=Number(grantDays); }
+    await db.collection('users').doc(grantUid).update(upd);
+    closeGrantModal();
+    alert('✅ '+grantEmailVal+'\n['+CERT_NAMES[cert]+'] '+grantDays+'일 부여 완료\n새 만료일: '+base.toLocaleDateString('ko-KR'));
+    await loadAll();
+    renderEntMembers();
+  }catch(e){ alert('오류: '+e.message); }
+}
+
+async function expireMemberCert(uid, email){
+  const m=allMembers.find(x=>x.id===uid);
+  const actives = ENT_CERTS.filter(c=>{ const s=m?entStatusOf(m,c):null; return s&&s.plan==='ACTIVE'; });
+  if(!actives.length){ alert(email+'\n활성 이용권이 없습니다.'); return; }
+  const menu = actives.map((c,i)=>(i+1)+') '+CERT_NAMES[c]).join('\n');
+  const pick = prompt(email+'\n만료할 시험 번호를 선택하세요:\n'+menu+'\n\n0) 전체 만료');
+  if(pick===null) return;
+  const n=Number(pick);
+  try{
+    if(n===0){
+      const doc=await db.collection('users').doc(uid).get(); const data=doc.data()||{};
+      const upd={plan:'EXPIRED'};
+      if(data.entitlements){ Object.keys(data.entitlements).forEach(c=>{ upd['entitlements.'+c+'.plan']='EXPIRED'; }); }
+      else { upd['entitlements.bodybuilding.plan']='EXPIRED'; }
+      await db.collection('users').doc(uid).update(upd);
+      alert(email+' 전체 만료 처리 완료.');
+    } else if(n>=1&&n<=actives.length){
+      const cert=actives[n-1];
+      const upd={}; upd['entitlements.'+cert+'.plan']='EXPIRED';
+      if(cert==='bodybuilding') upd.plan='EXPIRED';
+      await db.collection('users').doc(uid).update(upd);
+      alert(email+'\n['+CERT_NAMES[cert]+'] 만료 처리 완료.');
+    } else { alert('잘못된 번호입니다.'); return; }
+    await loadAll();
+    renderEntMembers();
+  }catch(e){ alert('오류: '+e.message); }
+}
+
+async function lookupUserDetail(){
+  const input=document.getElementById("userDetailInput").value.trim();
+  const result=document.getElementById("userDetailResult");
+  if(!input){result.innerHTML='<div style="color:#E24B4A">UID를 입력하세요.</div>';return;}
+  result.innerHTML='<div class="loading">조회 중...</div>';
+  try{
+    const uid=input;
+    const appData=await db.collection("userData").doc(uid).get();
+    if(!appData.exists){result.innerHTML='<div style="color:#E24B4A">데이터를 찾을 수 없습니다.</div>';return;}
+    const data=appData.data()||{};
+    const srProgress=data.srProgress||{};
+    const appWrong=data.appWrong||{};
+    let wrongCount=0;
+    for(let k in appWrong){let qa=appWrong[k];if(qa&&Array.isArray(qa.q))wrongCount+=qa.q.length;else if(qa)wrongCount++;}
+    let stats={};
+    for(let k in srProgress){if(srProgress[k].rc>0){let cert=k.split("|")[0];if(!stats[cert])stats[cert]={att:0,wrong:0};stats[cert].att++;}}'
+    for(let k in appWrong){let cert=k.split("|")[0];if(stats[cert]){let qa=appWrong[k];if(qa&&Array.isArray(qa.q))stats[cert].wrong+=qa.q.length;else if(qa)stats[cert].wrong++;}}'
+    let html='<div style="background:#fff;border-radius:12px;padding:16px;border:1px solid #E8E8E8"><div style="font-size:12px;color:#888780;margin-bottom:12px"><b>UID:</b> '+uid+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"><div style="background:#F5F5F5;padding:12px;border-radius:8px"><div style="font-size:11px;color:#888780">전체 오답</div><div style="font-size:20px;font-weight:700;color:#E24B4A">'+wrongCount+'개</div></div><div style="background:#F5F5F5;padding:12px;border-radius:8px"><div style="font-size:11px;color:#888780">srProgress 항목</div><div style="font-size:20px;font-weight:700;color:#7F77DD">'+Object.keys(srProgress).length+'개</div></div></div><table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="border-bottom:1px solid #E8E8E8"><th style="text-align:left;padding:8px;font-weight:600">시험</th><th style="text-align:right;padding:8px;font-weight:600">시도</th><th style="text-align:right;padding:8px;font-weight:600">오답</th><th style="text-align:right;padding:8px;font-weight:600">정답률</th></tr>';
+    for(let cert in stats){let s=stats[cert];let pct=s.att>0?Math.round((s.att-s.wrong)/s.att*100)+'%':'—';html+='<tr style="border-bottom:1px solid #F0F0F0"><td style="padding:8px">'+cert+'</td><td style="text-align:right;padding:8px">'+s.att+'</td><td style="text-align:right;padding:8px;color:#E24B4A;font-weight:600">'+s.wrong+'</td><td style="text-align:right;padding:8px;font-weight:600">'+pct+'</td></tr>';}
+    html+='</table></div>';
+    result.innerHTML=html;
+  }catch(e){result.innerHTML='<div style="color:#E24B4A">오류: '+e.message+'</div>';console.error(e);}
+}
 
 </script>
 </body>
