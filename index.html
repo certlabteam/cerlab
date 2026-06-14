@@ -2201,9 +2201,11 @@ function buildStarBar(){
 
 function updateStats(){
   const t=cards.length,w=getWrongCount();
+  // 정답률 = 맞힌 문항 ÷ 실제로 푼(시도한) 고유문항. 시도 = srProgress 응답기록(rc>0)이 있는 카드.
+  const att=cards.filter(c=>{ const p=c&&c.id?srProgress[SR_CERT+'|'+c.id]:null; return p&&(p.rc||0)>0; }).length;
   document.getElementById('statTotal').textContent=t;
   document.getElementById('statWrong').textContent=w;
-  document.getElementById('statDone').textContent=t>0?Math.round((t-w)/t*100)+'%':'0%';
+  document.getElementById('statDone').textContent=att>0?Math.round((att-w)/att*100)+'%':'0%';
   setStatCountUI();
   document.getElementById('wrongCount').textContent='오답 '+w+'개';
 }
