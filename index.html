@@ -2208,7 +2208,7 @@ function updateStats(){
   const correctCount=cards.filter(c=>{
     if(!c || !c.id) return false;
     const p=srProgress[SR_CERT+'|'+c.id];
-    return p&&(p.rc||0)>0 && c.c; // c.c=정답 판정
+    return p&&(p.rc||0)>0 && p.cor===1; // p.cor=1이면 정답
   }).length;
   const w=getWrongCount();
   
