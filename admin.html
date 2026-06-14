@@ -542,6 +542,7 @@ try {
   console.warn('Firebase를 불러오지 못했습니다. 로그인·동기화 없이 학습 기능만 동작합니다.', e);
 }
 
+
 async function adminLogin() {
   try { await auth.signInWithPopup(googleProvider); }
   catch(e) { if(e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message); }
