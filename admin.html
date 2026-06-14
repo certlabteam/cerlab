@@ -543,6 +543,31 @@ try {
 }
 
 
+// 결제 상태 헬퍼 — 앱은 즉시구매를 'auto_approved'로 저장한다
+const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사', housing:'주택관리사' };
+const isPaid = s => s === 'approved' || s === 'auto_approved';
+const statusBadge = s => isPaid(s) ? 'badge-approved' : (s === 'pending' ? 'badge-pending' : 'badge-revoked');
+const statusLabel = s => s === 'auto_approved' ? '자동승인' : s === 'approved' ? '승인' : s === 'pending' ? '승인대기' : s === 'revoked' ? '철회' : '거절';
+const certNameOf = p => p.certName || CERT_NAMES[p.certType] || p.certType || '생체2급';
+
+// ===== 가입 시험 + 시험별 풀이 =====
+const CERT_SHORT = { bodybuilding:'생체', appraiser:'감평사', realestate1:'중개1', realestate2:'중개2', koreanhistory:'한국사', housing:'주택관리사' };
+const CERT_CHIP = { appraiser:'background:#E6F1FB;color:#185FA5', koreanhistory:'background:#FFF1E0;color:#A8650A', bodybuilding:'background:#E9F7EF;color:#1D7A4D', realestate1:'background:#F4EEF9;color:#5B50C0', realestate2:'background:#FBEAF1;color:#B23A76', housing:'background:#EAF3EC;color:#2E7D46', _etc:'background:#F0ECE6;color:#9B9082' };
+function certLabel(c){ return CERT_NAMES[c]||c||'기타'; }
+function certShort(c){ return CERT_SHORT[c]||CERT_NAMES[c]||c||'기타'; }
+function signupCertHTML(m){
+  if(!m.signupCert) return '<span style="color:#C9BFB2;font-size:12px">기록 없음</span>';
+  return '<span class="joincert">'+certLabel(m.signupCert)+'</span>';
+}
+function perCertChips(per, max){
+  if(!per) return '';
+  const arr=Object.keys(per).map(c=>({c, solve:per[c].solve, studied:per[c].studied})).filter(x=>x.solve>0||x.studied>0);
+  arr.sort((a,b)=>b.solve-a.solve);
+  const top=arr.slice(0, max||2);
+  return top.map(x=>'<span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+certShort(x.c==='_etc'?'_etc':x.c)+' '+x.solve.toLocaleString()+'</span>').join('')
+    + (arr.length>top.length?'<span class="cchip" style="'+CERT_CHIP._etc+'">+'+(arr.length-top.length)+'</span>':'');
+}
+
 async function adminLogin() {
   try { await auth.signInWithPopup(googleProvider); }
   catch(e) { if(e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message); }
