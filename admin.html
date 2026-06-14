@@ -2016,6 +2016,27 @@ async function lookupUserDetail(){
   }catch(e){result.innerHTML='<div style="color:#E24B4A">오류: '+e.message+'</div>';console.error(e);}
 }
 
+// ===== 관리자 인증 게이트 =====
+if (firebaseReady && auth) {
+  auth.onAuthStateChanged(function(user){
+    const loginEl = document.getElementById('loginScreen');
+    const wrapEl  = document.getElementById('adminWrap');
+    if (user && (user.email||'').toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      if(loginEl) loginEl.style.display = 'none';
+      if(wrapEl)  wrapEl.style.display  = 'flex';
+      const em = document.getElementById('adminEmail');
+      if (em) em.textContent = user.email;
+      loadAll();
+    } else if (user) {
+      alert('관리자 권한이 없는 계정입니다: ' + user.email);
+      auth.signOut();
+    } else {
+      if(loginEl) loginEl.style.display = 'flex';
+      if(wrapEl)  wrapEl.style.display  = 'none';
+    }
+  });
+}
+
 </script>
 </body>
 </html>
