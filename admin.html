@@ -531,70 +531,16 @@ const firebaseConfig = {
   messagingSenderId: "698827699707",
   appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const googleProvider = new firebase.auth.GoogleAuthProvider();
-
-let allPayments = [];
-let allMembers = [];
-let codeByUid = {};   // { uid: ['CODE1', ...] } — 무료/할인 코드 사용 매핑
-let pendingPaymentId = null;
-let pendingPaymentData = null;
-
-// 결제 상태 헬퍼 — 앱은 즉시구매를 'auto_approved'로 저장한다
-const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사', housing:'주택관리사' };
-const isPaid = s => s === 'approved' || s === 'auto_approved';
-const statusBadge = s => isPaid(s) ? 'badge-approved' : (s === 'pending' ? 'badge-pending' : 'badge-revoked');
-const statusLabel = s => s === 'auto_approved' ? '자동승인' : s === 'approved' ? '승인' : s === 'pending' ? '승인대기' : s === 'revoked' ? '철회' : '거절';
-const certNameOf = p => p.certName || CERT_NAMES[p.certType] || p.certType || '생체2급';
-
-// ===== 가입 시험 + 시험별 풀이 =====
-const CERT_SHORT = { bodybuilding:'생체', appraiser:'감평사', realestate1:'중개1', realestate2:'중개2', koreanhistory:'한국사', housing:'주택관리사' };
-const CERT_CHIP = { appraiser:'background:#E6F1FB;color:#185FA5', koreanhistory:'background:#FFF1E0;color:#A8650A', bodybuilding:'background:#E9F7EF;color:#1D7A4D', realestate1:'background:#F4EEF9;color:#5B50C0', realestate2:'background:#FBEAF1;color:#B23A76', housing:'background:#EAF3EC;color:#2E7D46', _etc:'background:#F0ECE6;color:#9B9082' };
-function certLabel(c){ return CERT_NAMES[c]||c||'기타'; }
-function certShort(c){ return CERT_SHORT[c]||CERT_NAMES[c]||c||'기타'; }
-function signupCertHTML(m){
-  if(!m.signupCert) return '<span style="color:#C9BFB2;font-size:12px">기록 없음</span>';
-  return '<span class="joincert">'+certLabel(m.signupCert)+'</span>';
+let auth = null, db = null, googleProvider = null, firebaseReady = false;
+try {
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  googleProvider = new firebase.auth.GoogleAuthProvider();
+  firebaseReady = true;
+} catch (e) {
+  console.warn('Firebase를 불러오지 못했습니다. 로그인·동기화 없이 학습 기능만 동작합니다.', e);
 }
-function perCertChips(per, max){
-  if(!per) return '';
-  const arr=Object.keys(per).map(c=>({c, solve:per[c].solve, studied:per[c].studied})).filter(x=>x.solve>0||x.studied>0);
-  arr.sort((a,b)=>b.solve-a.solve);
-  const top=arr.slice(0, max||2);
-  return top.map(x=>'<span class="cchip" style="'+(CERT_CHIP[x.c]||CERT_CHIP._etc)+'">'+certShort(x.c==='_etc'?'_etc':x.c)+' '+x.solve.toLocaleString()+'</span>').join('')
-    + (arr.length>top.length?'<span class="cchip" style="'+CERT_CHIP._etc+'">+'+(arr.length-top.length)+'</span>':'');
-}
-function perCertTable(per){
-  if(!per) return '<span style="color:#B4A99C">기록 없음</span>';
-  const arr=Object.keys(per).map(c=>({c, solve:per[c].solve, studied:per[c].studied})).filter(x=>x.solve>0||x.studied>0);
-  if(!arr.length) return '<span style="color:#B4A99C">기록 없음</span>';
-  arr.sort((a,b)=>b.solve-a.solve);
-  const th='padding:4px 8px;font-size:11px;color:#8A7E70;background:#FAFAFA';
-  const td='padding:4px 8px;font-size:12.5px;border-bottom:1px solid #F3F0EC';
-  return '<table style="width:100%;border-collapse:collapse;margin-top:4px">'
-    +'<thead><tr><th style="text-align:left;'+th+'">시험</th><th style="text-align:right;'+th+'">푼 횟수</th><th style="text-align:right;'+th+'">학습문항</th></tr></thead><tbody>'
-    +arr.map(x=>'<tr><td style="'+td+'">'+(x.c==='_etc'?'기타':certLabel(x.c))+'</td><td style="text-align:right;'+td+'">'+x.solve.toLocaleString()+'</td><td style="text-align:right;'+td+'">'+x.studied.toLocaleString()+'</td></tr>').join('')
-    +'</tbody></table>';
-}
-// 문항ID→시험 매핑은 불필요 — cardProgress 키가 이미 'cert|문항id' 형식이라 키 prefix로 시험 판별
-
-// ===== Auth =====
-auth.onAuthStateChanged(user => {
-  if (user && user.email === ADMIN_EMAIL) {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminWrap').style.display = 'flex';
-    document.getElementById('adminEmail').textContent = user.email;
-    loadAll();
-  } else if (user) {
-    auth.signOut();
-    alert('관리자 계정만 접근 가능합니다.');
-  } else {
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('adminWrap').style.display = 'none';
-  }
-});
 
 async function adminLogin() {
   try { await auth.signInWithPopup(googleProvider); }
