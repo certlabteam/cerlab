@@ -138,6 +138,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnem-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
 .mnem-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-code .k,.mnem-desc .k{color:#C0392B;font-weight:800}
+.mnem-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
 .btn .lbl{font-size:10px;font-weight:500;opacity:.75}
@@ -429,6 +430,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-ex{margin-top:7px;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
+#mcqView .cv-list{margin-top:9px;display:flex;flex-direction:column}
+#mcqView .cv-item{padding:8px 0;border-bottom:1px dashed #E2E8F0;line-height:1.65;font-size:13px}
+#mcqView .cv-item:last-child{border-bottom:none}
+#mcqView .cv-item .cv-k{font-weight:800;color:#0F172A;margin-right:6px}
+#mcqView .cv-item .cv-d{color:#475569}
 #mcqView .oxcmp{margin-top:12px;padding-top:11px;border-top:1px solid #EEF0F2}
 #mcqView .oxcmp-h{font-size:12px;font-weight:700;color:#64748B;margin-bottom:7px}
 #mcqView .oxc-tbl{width:100%;border-collapse:collapse;font-size:13px}
@@ -449,6 +455,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mn-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
 #mcqView .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 #mcqView .mn-code .k,#mcqView .mn-desc .k{color:#C0392B;font-weight:800}
+#mcqView .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 #mcqView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
 #mcqView .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
 #mcqView .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7}
@@ -2206,13 +2213,22 @@ function newTypeBadge(card){
   if(Number(card.since) !== new Date().getFullYear()) return '';
   return '<span class="ntag">'+card.since+'년 기출'+(card.newType?' 신유형':'')+'</span>';
 }
+function mnChantHTML(code, cls){
+  // 암기코드 code 안의 <span class="k">글자</span>(두문자)만 뽑아 이어붙인 '모음' 한 줄. 두문자 2개 미만이면 생략.
+  if(!code) return '';
+  var m=String(code).match(/<span class=['"]k['"]>([\s\S]*?)<\/span>/g);
+  if(!m || m.length<2) return '';
+  var letters=m.map(function(s){ return s.replace(/<[^>]+>/g,''); }).join('');
+  if(!letters) return '';
+  return '<div class="'+(cls||'mn-chant')+'">'+letters+'</div>';
+}
 function buildMnemonic(card){
   const m=card.mn; if(!m) return '';
   const code = (typeof m==='string') ? m : (m.code||'');
   const desc = (typeof m==='object' && m.desc) ? m.desc : '';
   if(!code) return '';
   return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
-    +'<div class="learn-section-body"><span class="mnem-code">'+code+'</span>'
+    +'<div class="learn-section-body">'+mnChantHTML(code,'mnem-chant')+'<span class="mnem-code">'+code+'</span>'
     +(desc?'<div class="mnem-desc">'+desc+'</div>':'')+'</div></div>';
 }
 function buildLearnHTML(card){
@@ -3183,6 +3199,21 @@ function isComboQuestion(opts){
   }
   return ok===opts.length && comboCnt>=1;           // 모든 보기가 마커형 + 최소 1개는 조합
 }
+// 조합 변형형: 보기는 일반형(서술)이나 '옳은 묶음 1개만 고르는' 유형(예 형성권으로만 연결된 것).
+// 판별 = exp.ex 내용칸이 정확히 1개 & 그 인덱스 == ans-1. 데이터에 새 필드 안 넣음.
+// 계산형 분리: 계산형은 exp.o가 정답 1칸만(oFilled<=1)·그래프 동반 → oFilled>=2 & 그래프없음으로 배제.
+function isComboVariant(q){
+  if(!q||!q.exp) return false;
+  if(Array.isArray(q.ans)) return false;                         // 단일 정답만
+  var ans=q.ans|0; if(!ans) return false;
+  var ex=Array.isArray(q.exp.ex)?q.exp.ex:[];
+  var idx=-1, cnt=0;
+  for(var i=0;i<ex.length;i++){ if(ex[i]&&String(ex[i]).trim()){ cnt++; idx=i; } }
+  if(cnt!==1 || idx!==ans-1) return false;                       // ex 내용 정확히 1칸 & 정답칸
+  if(q.exp.graph && String(q.exp.graph).trim()) return false;    // 그래프 있으면 계산형
+  var o=q.exp.o||[];
+  return o.filter(Boolean).length>=2;                            // 계산형(oFilled<=1) 배제
+}
 function verdictColor(t){
   if(!t) return '';
   // 색은 '선지 내용의 참/거짓'만 판정 (정답 여부는 ✅ 아이콘이 따로 표시 — '정답이다'는 색 마커 아님)
@@ -3309,7 +3340,7 @@ function mnBoxHTML(mn){
   let code='', desc='';
   if(typeof mn==='string') code=mn; else { code=mn.code||''; desc=mn.desc||''; }
   if(!code) return '';
-  return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+  return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
 }
 function conceptBoxHTML(c){
   if(!Array.isArray(c) || !c.length) return '';
@@ -3513,6 +3544,7 @@ function renderMcqExam(root){
     var stmts = isCombo ? parseJaryoStmts(q.q) : [];
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
+    var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
     if(comboOK){
       // 콤보: ㄱㄴㄷㄹ 지문별 펼침 (exp.o는 지문 순서). 정답 지문에 ✅, 맨 아래 정답 보기 조합 줄.
       var ansLabels=ansN.map(function(n){ return (q.opts&&q.opts[n-1])?q.opts[n-1]:''; }).join(' ');  // 정답 보기에 포함된 지문 마커
@@ -3538,6 +3570,26 @@ function renderMcqExam(root){
         return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' '+pickVerdict+' <span class="eo-badge">✅ 정답</span></div>';
       }).join('');
       body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">'+(stemNeg?'옳지 않은 지문들의 조합이다.':'정답 지문들의 조합이다.')+'</div></div></div>';
+    } else if(isCV){
+      // 조합 변형형: 정답 보기 1칸만. 정답칸 예시를 보기에 나온 항목별로(중복제거) 한 줄씩 풀이.
+      var cvIdx=ansN[0]-1;
+      var cvSV=splitVerdict(stripRepeatedOpt(oArr[cvIdx]||'', q.opts&&q.opts[cvIdx]));
+      var cvOpt='<div class="eo-q">'+(cvIdx+1)+'. '+rm((q.opts&&q.opts[cvIdx])||'',q)+' <span class="eo-badge">✅ 정답</span></div>';
+      var cvA=cvSV.rest ? '<div class="eo-a">'+rm(cvSV.rest,q)+'</div>' : '';
+      var cvExRaw=String(exArr[cvIdx]||'').trim();
+      var cvRows='';
+      if(cvExRaw){
+        cvExRaw.split(/\n+/).forEach(function(line){
+          line=line.trim(); if(!line) return;
+          var ai=line.indexOf('\u2192');                              // 첫 화살표(→)
+          var nm = ai>0 ? line.slice(0,ai).trim() : '';
+          var de = ai>=0 ? line.slice(ai+1).trim() : line;
+          if(!nm || /^[\u2460-\u2473]/.test(nm)) return;              // 맺음말(권리명 없음/보기번호 종합)줄은 출력 안 함
+          cvRows+='<div class="cv-item"><span class="cv-k">'+rm(nm,q)+'</span><span class="cv-d">\u2192 '+rm(de,q)+'</span></div>';
+        });
+      }
+      var cvList=cvRows ? '<div class="cv-list">'+cvRows+'</div>' : '';
+      body+='<div class="exp-opts"><div class="eo">'+cvOpt+cvA+cvList+'</div></div>';
     } else if(oFilled>=2){
       // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
       var fbCombo = isCombo && !comboOK;
@@ -3581,8 +3633,8 @@ function renderMcqExam(root){
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
     body += oxCompareHTML(q, oArr);   // 1단계: 내 O/X vs 정답 (텍스트·이미지·일반 통합)
-    if(q.mn){ var code=(typeof q.mn==='object')?q.mn.code:q.mn; var desc=(typeof q.mn==='object')?q.mn.desc:'';
-      body+='<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+    if(q.mn||(q.exp&&q.exp.mn)){ var _mn=q.mn||q.exp.mn; var code=(typeof _mn==='object')?_mn.code:_mn; var desc=(typeof _mn==='object')?_mn.desc:'';
+      body+='<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
