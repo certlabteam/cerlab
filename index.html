@@ -2114,7 +2114,7 @@ const SR_MASTER_LABEL={new:'신규',weak:'미숙',learning:'학습중',master:'�
 
 let solveCountAfterSR=true; // marker
 
-function getWrongCount(){return cards.filter(c=>c.w).length;}
+function getWrongCount(){return cards.filter(c=>!c.c).length;}  // 정답 아닌 모든 것 = 오답+애매함
 function getFiltered(){
   let b=cards;
   if(srMode==='new') b=b.filter(srIsNew);
