@@ -3330,6 +3330,9 @@ function verdictColor(t){
 function renderMath(text, allowBareFraction){
   if(text==null) return '';
   var s=String(text);
+  // (00) 인라인 <svg>…</svg> 구간은 분수·첨자 변환에서 통째로 제외(마스킹) → 끝에서 원복. SVG 내부 _·(n/m) 오염 방지 [전 과목]
+  var _svgStash=[];
+  s = s.replace(/<svg[\s\S]*?<\/svg>/gi, function(m){ _svgStash.push(m); return '\u0005'+(_svgStash.length-1)+'\u0006'; });
   // (0) 절댓값 |…| 안 슬래시는 분수로 만들지 않고(인라인 유지) 한 덩어리로 묶어 줄바꿈 방지 [전 과목]
   s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return '<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'; });
   // (1) 괄호 분수 (a/b) 숫자/숫자 → 플레이스홀더 [전 과목]
@@ -3347,6 +3350,7 @@ function renderMath(text, allowBareFraction){
   // (5) 분수 플레이스홀더 → HTML
   s = s.replace(/\u0001([^\u0002]+)\u0002([^\u0003]+)\u0003/g, '<span class="frac"><span class="fn">$1</span><span class="fd">$2</span></span>');
   s = s.replace(/\u0004/g, '/');   // (0) 복원: 절댓값 안 슬래시
+  s = s.replace(/\u0005(\d+)\u0006/g, function(m,i){ return _svgStash[+i]||''; });   // (00) 복원: SVG 구간 원본
   return s;
 }
 // 문항이 경제(econ)인지 — id 접두 'e' 또는 과목코드 econ
@@ -3950,7 +3954,7 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   mqScreen='home';
   syncPlanMirror(); updateAuthBar();
 }
-function enterCert(id){
+async function enterCert(id){
   // 객관식 시험 풀던 중 다른 시험으로 전환 시에도 오답노트·진행상황 반영
   if(typeof mqScreen!=='undefined' && mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag){
     if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
@@ -3964,19 +3968,33 @@ function enterCert(id){
   setLastCert(id);
   document.getElementById('homeView').classList.add('hidden');
   document.getElementById('certSwitch').classList.remove('hidden');
+  // 뷰 전환 먼저(사용자가 로딩을 보게)
   if(id === 'bodybuilding'){
     document.getElementById('bodybuildingView').classList.remove('hidden');
     document.getElementById('mcqView').classList.add('hidden');
     document.getElementById('certSwitchName').textContent = '생체2급';
     document.getElementById('modePill').style.display = '';
-    if(typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; isFlipped=false; learnOpen=false; }   // 진입 시 매번 새 순서
-    refresh();
   } else if(isMcqCert(id)){
     document.getElementById('mcqView').classList.remove('hidden');
     document.getElementById('bodybuildingView').classList.add('hidden');
     document.getElementById('certSwitchName').textContent = certLabel(id);
     document.getElementById('modePill').style.display = 'none';
-    mqCert = id; mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
+    mqCert = id;
+  }
+  // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
+  if(!loadedExams[id]){
+    var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
+    if(_tgt) _tgt.innerHTML='<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
+    try{ await loadExam(id); }
+    catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
+    if(id==='bodybuilding'){ cards=[...D]; filtered=[...cards]; current=0; }
+  }
+  // 렌더
+  if(id === 'bodybuilding'){
+    if(typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; isFlipped=false; learnOpen=false; }   // 진입 시 매번 새 순서
+    refresh();
+  } else if(isMcqCert(id)){
+    mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
   }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
@@ -4033,40 +4051,58 @@ function mqAutoResume(){
   }catch(_){ return false; }
 }
 
-/* ===== Firestore 문제은행 로더 (버전 캐시) ===== */
-async function loadAllBanks(){
+/* ===== Firestore 문제은행 로더 (버전 캐시, 시험별 lazy 로드) ===== */
+var MANIFEST=null;          // manifest/exams 1회 캐시
+var loadedExams={};         // 시험별 로드 완료 플래그
+async function loadManifest(){
+  if(MANIFEST) return MANIFEST;
   if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
   const mSnap=await db.collection('manifest').doc('exams').get();
   if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
-  const manifest=mSnap.data();
-  for(const ex of (manifest.exams||[])){
-    for(const sub of (ex.subjects||[])){
-      const ver=(ex.versions&&ex.versions[sub.code])||1;
-      const ck='qb:'+ex.id+':'+sub.code+':v'+ver;
-      let doc=null;
-      try{ const c=localStorage.getItem(ck); if(c) doc=JSON.parse(c); }catch(e){}
-      if(!doc){
-        const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
-        if(snap.exists){
-          const meta=snap.data();
-          if(Array.isArray(meta.shards) && meta.shards.length){
-            // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
-            const parts=await Promise.all(meta.shards.map(function(sid){
-              return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
-            }));
-            const qs=[];
-            parts.forEach(function(p){ if(p&&p.exists){ const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
-            if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
-            else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
-          } else {
-            doc=meta;   // 기존 단일 문서(하위호환 폴백)
-          }
-          try{ localStorage.setItem(ck,JSON.stringify(doc)); }catch(e){}
-        }
+  MANIFEST=mSnap.data();
+  return MANIFEST;
+}
+// 과목 1개 로드(캐시→Firestore→샤드합치기) 후 applyBank
+async function loadOneSubject(ex, sub){
+  const ver=(ex.versions&&ex.versions[sub.code])||1;
+  const ck='qb:'+ex.id+':'+sub.code+':v'+ver;
+  let doc=null;
+  try{ const c=localStorage.getItem(ck); if(c) doc=JSON.parse(c); }catch(e){}
+  if(!doc){
+    const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+    if(snap.exists){
+      const meta=snap.data();
+      if(Array.isArray(meta.shards) && meta.shards.length){
+        // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
+        const parts=await Promise.all(meta.shards.map(function(sid){
+          return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
+        }));
+        const qs=[];
+        parts.forEach(function(p){ if(p&&p.exists){ const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
+        if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
+        else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
+      } else {
+        doc=meta;   // 기존 단일 문서(하위호환 폴백)
       }
-      if(doc) applyBank(ex,sub,doc);
+      try{ localStorage.setItem(ck,JSON.stringify(doc)); }catch(e){}
     }
   }
+  if(doc) applyBank(ex,sub,doc);
+}
+// 시험 1개의 과목들을 병렬 로드 (idempotent)
+async function loadExam(examId){
+  if(loadedExams[examId]) return;
+  await loadManifest();
+  const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
+  if(!ex){ loadedExams[examId]=true; return; }
+  await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));
+  loadedExams[examId]=true;
+  rebuildQid();
+}
+// 전체 로드(폴백·관리용; 진입 시엔 안 씀)
+async function loadAllBanks(){
+  await loadManifest();
+  for(const ex of (MANIFEST.exams||[])) await loadExam(ex.id);
   rebuildQid();
 }
 function applyBank(ex,sub,doc){
@@ -4136,14 +4172,24 @@ function clHandleBack(){
 function refreshCertCards(){
   ['realestate1','realestate2','koreanhistory','housing'].forEach(cert=>{
     const tag=document.getElementById('certTag-'+cert); if(!tag) return;
-    const n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
-    if(n>0){ tag.textContent='모의고사'; tag.classList.remove('soon'); }
+    // manifest에 이 시험이 과목과 함께 있으면 데이터 있음(lazy 로드 전이라도). 폴백: 로드된 문항수.
+    let has=false;
+    try{ const ex=MANIFEST&&(MANIFEST.exams||[]).find(e=>e.id===cert); has=!!(ex&&ex.subjects&&ex.subjects.length); }catch(e){}
+    if(!has && typeof certQuestionCount==='function') has=certQuestionCount(cert)>0;
+    if(has){ tag.textContent='모의고사'; tag.classList.remove('soon'); }
     else { tag.textContent='준비 중'; tag.classList.add('soon'); }
   });
 }
-loadAllBanks().then(()=>{
+loadManifest().then(async ()=>{
+  if(typeof refreshCertCards==='function') refreshCertCards();   // manifest 기반 — 로드 전이라도 정상 표시
+  // lazy: 진입 시 전 과목 안 받고 '첫 시험 하나'만 — 이어풀기 대상 → 마지막 본 시험 → 없으면 안 받음
+  let firstExam=null;
+  try{ const a=JSON.parse(localStorage.getItem('certlab_mcq_active')||'null'); if(a&&a.cert) firstExam=a.cert; }catch(_){}
+  if(!firstExam && typeof getLastCert==='function') firstExam=getLastCert();
+  if(firstExam && MANIFEST && (MANIFEST.exams||[]).some(e=>e.id===firstExam)){
+    try{ await loadExam(firstExam); }catch(e){ console.error('첫 시험 로드 실패',e); }
+  }
   rebuildQid();
-  if(typeof refreshCertCards==='function') refreshCertCards();
   // 비동기 로딩 전에 빈 D로 굳은 카드 스냅샷을 실데이터로 재동기화
   if(typeof cards!=='undefined'){ cards=[...D]; filtered=[...cards]; current=0; }
   if(typeof activeCert!=='undefined' && activeCert==='bodybuilding' && typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; }   // 로드 완료 시 생체면 새 순서
