@@ -3323,7 +3323,7 @@ function rm(text, q){ return renderMath(text, isEconQ(q)); }
 // 단서 괄호 등 그 외 텍스트(앞+뒤)는 stem으로 합친다.
 function extractInlineComboGroup(qt){
   var s=String(qt||'');
-  if(!/[ㄱ-ㅁ]\s*[.\u00B7)\]]/.test(s)) return null;       // 진술 마커 자체가 없으면 패스
+  if(!/[ㄱ-ㅎ]\s*[.\u00B7)\]]/.test(s)) return null;       // 진술 마커 자체가 없으면 패스
   for(var i=0;i<s.length;i++){
     if(s[i]!=='(') continue;
     var depth=0, j=i;
@@ -3333,7 +3333,7 @@ function extractInlineComboGroup(qt){
     }
     if(depth!==0) return null;                              // 닫는 괄호 불균형 → 시도 중단
     var inner=s.slice(i+1, j);
-    var marks=inner.match(/(^|\s)[ㄱ-ㅁ]\s*[.\u00B7)\]]/g); // 그룹 내 진술 마커들
+    var marks=inner.match(/(^|\s)[ㄱ-ㅎ]\s*[.\u00B7)\]]/g); // 그룹 내 진술 마커들
     if(/(^|\s)ㄱ\s*[.\u00B7)\]]/.test(inner) && marks && marks.length>=2){
       var before=s.slice(0,i).trim();
       var after=s.slice(j+1).trim();                        // 단서 "(단, …)" 등 — stem 유지
@@ -3365,7 +3365,7 @@ function splitJaryo(qt){
 // ㄱ~ㅁ 지문 마커를 줄바꿈/인라인 모두 인식해 분리 → {intro, stmts:[{k,t}]}
 function splitStmtMarkers(text){
   var s=String(text||'').replace(/<br\s*\/?>/gi,'\n');
-  var re=/(^|\s)([ㄱ-ㅁ])[.\u00B7)\]]/g, m, hits=[];
+  var re=/(^|\s)([ㄱ-ㅎ])[.\u00B7)\]]/g, m, hits=[];
   while((m=re.exec(s))){ hits.push({k:m[2], mAt:m.index+m[1].length, tAt:re.lastIndex}); }
   if(!hits.length) return {intro:s.trim(), stmts:[]};
   var intro=s.slice(0, hits[0].mAt).trim();
@@ -3383,8 +3383,8 @@ function parseJaryoStmts(qt){
 }
 // 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
 function comboLettersFromOpts(opts){
-  var order='ㄱㄴㄷㄹㅁ', seen={};
-  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅁ]/g)||[]).forEach(function(c){ seen[c]=1; }); });
+  var order='ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ', seen={};
+  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ]/g)||[]).forEach(function(c){ seen[c]=1; }); });
   return order.split('').filter(function(c){ return seen[c]; });
 }
 // 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1
