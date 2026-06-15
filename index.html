@@ -704,6 +704,49 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .pwa-ios-step>span:first-child{width:22px;height:22px;border-radius:50%;background:#E6F1FB;color:#185FA5;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .pwa-ios-share{font-size:16px}
 .pwa-ios-close{margin-top:8px;width:100%;background:#185FA5;color:#fff;border:none;border-radius:13px;padding:13px;font-size:14px;font-weight:800;cursor:pointer}
+
+/* ===== 시험장용 인쇄 ===== */
+.pr-ov{position:fixed;inset:0;background:rgba(15,23,40,.45);z-index:9000;display:flex;align-items:flex-end;justify-content:center}
+.pr-ov.hidden{display:none}
+.pr-sheet{background:#fff;width:100%;max-width:440px;border-radius:18px 18px 0 0;padding:18px 18px 26px;max-height:88vh;overflow-y:auto}
+@media(min-width:480px){.pr-ov{align-items:center}.pr-sheet{border-radius:18px}}
+.pr-sheet h3{margin:0 0 3px;font-size:17px;font-weight:800;color:#1f2733}
+.pr-sheet .pr-desc{margin:0 0 14px;font-size:12.5px;color:#6b7686}
+.pr-lbl{font-size:12px;font-weight:700;color:#6b7686;margin:14px 0 7px}
+.pr-seg{display:flex;gap:8px}
+.pr-seg button{flex:1;border:1.5px solid #d6dbe2;background:#fff;border-radius:10px;padding:11px 6px;font-size:13.5px;font-weight:700;color:#1f2733;cursor:pointer}
+.pr-seg button.on{border-color:#185FA5;background:#eef3ff;color:#185FA5}
+.pr-seg button .pr-cnt{display:block;font-size:11px;font-weight:600;color:#9aa3b0;margin-top:2px}
+.pr-seg button.on .pr-cnt{color:#185FA5}
+.pr-chips{display:flex;flex-wrap:wrap;gap:7px}
+.pr-chip{border:1.5px solid #d6dbe2;background:#fff;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700;color:#8a93a0;cursor:pointer;user-select:none}
+.pr-chip.on{border-color:#16a34a;background:#effaf1;color:#15803d}
+.pr-opts{display:flex;flex-direction:column;gap:9px;margin-top:7px}
+.pr-opt{display:flex;align-items:center;gap:8px;font-size:13px;color:#1f2733;cursor:pointer}
+.pr-opt input{width:17px;height:17px;accent-color:#185FA5}
+.pr-go{margin-top:18px;width:100%;border:0;background:#185FA5;color:#fff;border-radius:11px;padding:14px;font-size:15px;font-weight:800;cursor:pointer}
+.pr-cancel{margin-top:8px;width:100%;border:0;background:transparent;color:#6b7686;font-size:13px;font-weight:600;padding:8px;cursor:pointer}
+.pr-empty{font-size:12.5px;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:9px 11px;margin-top:10px}
+#printArea{display:none}
+@media print{body>*{display:none !important}body>#printArea{display:block !important}@page{margin:12mm}}
+#printArea .pa-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:12px}
+#printArea .pa-h .t{font-size:14px;font-weight:800}
+#printArea .pa-h .m{font-size:10px;color:#555}
+#printArea .pa-foldnote{font-size:10px;color:#666;margin:0 0 10px;text-align:center}
+#printArea .pa-sub{font-size:12px;font-weight:800;background:#eef1f5;border-left:3px solid #111;padding:3px 8px;margin:14px 0 8px;break-after:avoid}
+#printArea .pa-cols{column-count:2;column-gap:16px}
+#printArea .pa-qa{break-inside:avoid;border:1px solid #cfd6df;border-radius:6px;padding:8px 9px;margin:0 0 8px}
+#printArea .pa-q{font-size:11px;font-weight:800;line-height:1.45;margin:0 0 4px}
+#printArea .pa-q .no,#printArea .pa-qcell .no{color:#185FA5;margin-right:3px}
+#printArea .pa-a{font-size:10.5px;line-height:1.5;color:#222;margin:0}
+#printArea .pa-mn{font-size:10px;margin-top:5px;color:#7a5a16}
+#printArea .pa-mn .lab{font-weight:800;color:#b9791d;margin-right:3px}
+#printArea .pa-mn .k{color:#c0392b;font-weight:800}
+#printArea.pa-fold .pa-cols{column-count:1}
+#printArea.pa-fold .pa-qa{display:grid;grid-template-columns:1fr 1fr;column-gap:0;padding:0;overflow:hidden}
+#printArea.pa-fold .pa-qcell{padding:8px 10px;border-right:1px dashed #999;font-size:11px;font-weight:700;line-height:1.45}
+#printArea.pa-fold .pa-acell{padding:8px 10px}
+
 </style>
 <!-- Meta Pixel Code -->
 <script>
@@ -848,6 +891,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <button class="bar-btn" id="modeReview" onclick="setSrMode('review')">🔁 복습</button>
   <button class="bar-btn" id="modeMix" onclick="setSrMode('mix')">🔀 혼합</button>
   <button class="bar-btn" onclick="shuffle()">🎲 섞기</button>
+  <button class="bar-btn" onclick="openPrintSheet()">🖨️ 인쇄</button>
 </div>
 </div>
 <div class="cert-view hidden" id="mcqView">
@@ -2114,7 +2158,12 @@ const SR_MASTER_LABEL={new:'신규',weak:'미숙',learning:'학습중',master:'�
 
 let solveCountAfterSR=true; // marker
 
-function getWrongCount(){return cards.filter(c=>{const p=c&&c.id?srProgress[SR_CERT+'|'+c.id]:null;return p&&(p.rc||0)>0&&p.cor!==1;}).length;}  // 시도한 것(rc>0) 중 정답 아닌 것 = 오답+애매함
+function getWrongCount(){
+  return cards.filter(c=>{
+    const p=srProgress[SR_CERT+'|'+c.id];
+    return p&&(p.rc||0)>0&&p.cor!==1;  // 시도한 것 중 틀린 것만
+  }).length;
+}
 function getFiltered(){
   let b=cards;
   if(srMode==='new') b=b.filter(srIsNew);
@@ -2208,7 +2257,7 @@ function updateStats(){
   const correctCount=cards.filter(c=>{
     if(!c || !c.id) return false;
     const p=srProgress[SR_CERT+'|'+c.id];
-    return p&&(p.rc||0)>0 && p.cor===1; // p.cor=1이면 정답
+    return p&&(p.rc||0)>0 && c.c; // c.c=정답 판정
   }).length;
   const w=getWrongCount();
   
@@ -2269,6 +2318,7 @@ function buildLearnPanel(data, imgKey){
     var rows=data.concepts.map(function(it){
       if(!it||!it.t) return '';
       var r='<div class="lc-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>';
+      if(it.exd && String(it.exd).trim()) r+='<div class="lc-exd">💡 '+String(it.exd).trim()+'</div>';
       if(it.ex && String(it.ex).trim()) r+='<div class="lc-ex">'+String(it.ex).trim()+'</div>';
       return r;
     }).join('');
@@ -3393,11 +3443,7 @@ function conceptCardHTML(q){
     const cs=(q.exp&&q.exp.c)?q.exp.c:[];
     if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
     cs.forEach((c,i)=>{
-      var sec='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div>';
-      if(c.cx && String(c.cx).trim()) sec+='<div class="cc-ex">'+rm(String(c.cx).trim(),q)+'</div>';
-      else if(mqCert==='bodybuilding' && c.exd && String(c.exd).trim()) sec+='<div class="cc-exd">💡 '+rm(String(c.exd).trim(),q)+'</div>';
-      if(c.ex && String(c.ex).trim()) sec+='<div class="cc-ex">'+rm(String(c.ex).trim(),q)+'</div>';
-      body+=sec+'</div>';
+      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div></div>';
     });
   }
   return body;
@@ -3660,9 +3706,9 @@ function renderMcqExam(root){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>';
-        // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
+        // cx > exd 우선순위: cx 있으면 파란 예시박스, 없고 exd만 있으면 노란 💡
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
-        else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
+        else if(it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
         if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
         return row;
       }).join('')+'</div>';
@@ -4069,10 +4115,11 @@ loadAllBanks().then(()=>{
 
 /* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
 (function(){
-  // 캐시 안 하는 최소 SW 등록 → PWA 설치(beforeinstallprompt) 활성화. fetch를 네트워크로 직행시켜 옛 파일 캐시 사고 없음.
+  // 과거에 등록된 service worker / 캐시가 있으면 정리(옛 파일 캐싱 방지)
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    navigator.serviceWorker.getRegistrations().then(rs=>{ rs.forEach(r=>r.unregister()); }).catch(()=>{});
   }
+  if(window.caches && caches.keys){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{}); }
 })();
 // 설치 신호 캡처 (있으면 원터치 설치에 사용)
 let pwaPrompt=null;
@@ -4099,7 +4146,27 @@ async function addToHome(e){
   // 그 외(설치 신호 없음)
   alert('홈 화면에 추가하기\n\n· 크롬/엣지(PC·안드로이드): 주소창 오른쪽의 설치 아이콘(⊕ 또는 모니터 모양)을 누르세요. 안 보이면 잠시 후 다시 시도해 주세요.\n· 사파리(아이폰): 공유 버튼 → "홈 화면에 추가".');
 }
+
+/* ===== 시험장용 인쇄 ===== */
+let prScope='all',prSubsSel=null,prMnemonic=true,prFold=false;
+function prCardsFor(s){let b=(cards||[]).slice();if(s==='wrong')b=b.filter(c=>srMastery(c)==='weak'||srMastery(c)==='learning');return b;}
+function prSubjectsPresent(){let has={},out=[];(cards||[]).forEach(c=>{if(c&&c.s)has[c.s]=true;});(SUBJS||[]).forEach(s=>{if(has[s]){out.push(s);has[s]=false;}});(cards||[]).forEach(c=>{if(c&&c.s&&has[c.s]&&c.s!=='전체'){out.push(c.s);has[c.s]=false;}});return out;}
+function prSelectedSubs(){let p=prSubjectsPresent();if(prSubsSel===null)return p.slice();return p.filter(s=>prSubsSel[s]);}
+function prJsStr(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\'");}
+function prMnHTML(c){let m=c.mn;if(!m)return '';let code=(typeof m==='string')?m:(m.code||'');let desc=(m&&typeof m==='object'&&m.desc)?m.desc:'';if(!code)return '';return '<div class="pa-mn"><span class="lab">암기</span>'+code+(desc?' — '+desc:'')+'</div>';}
+function openPrintSheet(){prScope='all';prMnemonic=true;prFold=false;prSubsSel=null;renderPrintSheet();document.getElementById('printSheet').classList.remove('hidden');}
+function closePrintSheet(){document.getElementById('printSheet').classList.add('hidden');}
+function prSetScope(s){prScope=s;renderPrintSheet();}
+function prToggleSub(s){let p=prSubjectsPresent();if(prSubsSel===null){prSubsSel={};p.forEach(x=>{prSubsSel[x]=true;});}prSubsSel[s]=!prSubsSel[s];renderPrintSheet();}
+function prToggleOpt(w){if(w==='mn')prMnemonic=!prMnemonic;else if(w==='fold')prFold=!prFold;renderPrintSheet();}
+function renderPrintSheet(){let present=prSubjectsPresent();let allCnt=prCardsFor('all').length,wrongCnt=prCardsFor('wrong').length;let subs=prSelectedSubs();let sel=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);let chips=present.map(s=>{let on=(prSubsSel===null)||prSubsSel[s];return '<span class="pr-chip'+(on?' on':'')+'" onclick="prToggleSub(\''+prJsStr(s)+'\')">' +s+'</span>';}).join('');let html='<h3>🖨️ 시험장용 인쇄</h3><p class="pr-desc">폰 반납 대비, 종이로 들고 갈 자료를 만듭니다.</p>'+'<div class="pr-lbl">범위</div><div class="pr-seg">'+'<button class="'+(prScope==='all'?'on':'')+'" onclick="prSetScope(\'all\')">전체 과목<span class="pr-cnt">'+allCnt+'문항</span></button>'+'<button class="'+(prScope==='wrong'?'on':'')+'" onclick="prSetScope(\'wrong\')">오답 복습<span class="pr-cnt">'+wrongCnt+'문항</span></button></div>'+'<div class="pr-lbl">과목 (탭하여 켜고 끄기)</div><div class="pr-chips">'+chips+'</div>'+'<div class="pr-lbl">옵션</div><div class="pr-opts">'+'<label class="pr-opt"><input type="checkbox" '+(prMnemonic?'checked':'')+' onchange="prToggleOpt(\'mn\')"> 암기코드 포함</label>'+'<label class="pr-opt"><input type="checkbox" '+(prFold?'checked':'')+' onchange="prToggleOpt(\'fold\')"> 접지형(질문↔답, 접어서 셀프테스트)</label></div>';if(sel.length===0){html+='<div class="pr-empty">'+(prScope==='wrong'?'오답(미숙·학습중) 카드가 아직 없습니다. 카드를 풀어 복습 이력이 쌓이면 채워집니다.':'선택한 과목에 카드가 없습니다.')+'</div>'+'<button class="pr-go" disabled style="opacity:.5">인쇄할 카드 없음</button>';}else{html+='<button class="pr-go" onclick="doPrint()">인쇄 / PDF로 저장 ('+sel.length+'문항)</button>';}html+='<button class="pr-cancel" onclick="closePrintSheet()">취소</button>';document.getElementById('printSheetBody').innerHTML=html;}
+function doPrint(){let subs=prSelectedSubs();let list=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);if(!list.length)return;let groups={};subs.forEach(s=>{groups[s]=[];});list.forEach(c=>{if(!groups[c.s])groups[c.s]=[];groups[c.s].push(c);});let scopeLbl=prScope==='wrong'?'오답 복습':'전체 과목';let n=new Date();let ds=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');let body='<div class="pa-h"><span class="t">보디빌딩 2급 구술 · '+scopeLbl+'</span><span class="m">CertLab · '+ds+'</span></div>';if(prFold)body+='<div class="pa-foldnote">✂ 가운데 점선을 따라 접으면 오른쪽 답이 가려집니다 — 질문을 보고 답해 본 뒤 펴서 확인하세요.</div>';subs.forEach(s=>{let g=groups[s];if(!g||!g.length)return;body+='<div class="pa-sub">'+s+' ('+g.length+')</div><div class="pa-cols">';g.forEach((c,i)=>{let mn=prMnemonic?prMnHTML(c):'';if(prFold){body+='<div class="pa-qa"><div class="pa-qcell"><span class="no">'+(i+1)+'.</span> '+(c.q||'')+'</div>'+'<div class="pa-acell"><div class="pa-a">'+(c.a||'')+'</div>'+mn+'</div></div>';}else{body+='<div class="pa-qa"><p class="pa-q"><span class="no">'+(i+1)+'.</span>'+(c.q||'')+'</p><p class="pa-a">'+(c.a||'')+'</p>'+mn+'</div>';}});body+='</div>';});let pa=document.getElementById('printArea');if(!pa){pa=document.createElement('div');pa.id='printArea';document.body.appendChild(pa);}pa.className=prFold?'pa-fold':'';pa.innerHTML=body;closePrintSheet();setTimeout(()=>{window.print();},60);}
+
 </script>
 
+<div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
+  <div class="pr-sheet" id="printSheetBody"></div>
+</div>
+<div id="printArea"></div>
 </body>
 </html>
