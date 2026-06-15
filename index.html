@@ -1352,9 +1352,11 @@ async function loadUserData() {
       }
       solveCount = totalSolve();
       setStatCountUI();
+      var _resync=srRestoreResume(data);   // 이어풀기 동기화: Firestore가 더 최신이면 로컬에 복원
       if(_merged && typeof saveUserData==='function') saveUserData();   // 병합분 계정에 저장
       refresh();
       if (activeCert === 'appraiser') renderMCQ();
+      if (_resync && typeof activeCert!=='undefined' && activeCert && typeof isMcqCert==='function' && isMcqCert(activeCert) && typeof mqScreen!=='undefined' && mqScreen!=='exam' && typeof renderMCQ==='function') renderMCQ();   // 복원분 회차목록에 '이어풀기' 반영
     } else {
       // 신규 회원(userData 문서 없음): 비회원 때 기록을 계정으로 옮김
       var _m2=mergeGuestProgress();
@@ -1365,6 +1367,22 @@ async function loadUserData() {
       if (activeCert === 'appraiser' && typeof renderMCQ==='function') renderMCQ();
     }
   } catch(e) { console.error('데이터 로드 오류:', e); }
+}
+
+// 이어풀기 동기화 복원: Firestore resumeState가 로컬보다 최신이면(또는 로컬 없으면) localStorage에 복원
+function srRestoreResume(data){
+  try{
+    var rs=data&&data.resumeState;
+    if(!rs||!rs.active||!rs.prog) return false;
+    var a=rs.active; if(!a.cert||a.sub==null||a.set==null) return false;
+    if(typeof isMcqCert==='function' && !isMcqCert(a.cert)) return false;
+    var localTs=0;
+    try{ var lr=localStorage.getItem('certlab_mcq_active'); if(lr){ var la=JSON.parse(lr); localTs=(la&&la.ts)||0; } }catch(_){}
+    if(localTs && localTs>=(rs.ts||0)) return false;   // 이 기기가 더 최신 → 로컬 유지
+    localStorage.setItem('certlab_mcq_p_'+a.cert+'_'+a.sub+'_'+a.set, JSON.stringify(rs.prog));
+    localStorage.setItem('certlab_mcq_active', JSON.stringify({cert:a.cert,sub:a.sub,set:a.set,ts:(rs.ts||Date.now())}));
+    return true;
+  }catch(_){ return false; }
 }
 
 // 기존 오답노트(w) → cardProgress 1회 마이그레이션 (미숙·오늘 복습으로 편입)
@@ -1438,9 +1456,22 @@ async function saveUserData() {
       ...Object.keys(appWrong).filter(qid=>appWrong[qid]&&MCQ_QID2CS[qid]).map(qid=>MCQ_QID2CS[qid].cert+'‖'+MCQ_QID2CS[qid].sub+'‖'+qid)
     ];
     const favoriteList = D.filter(c=>c.fav).map(c=>'bodybuilding‖'+c.s+'‖'+c.q);
+    // 이어풀기 동기화: 진행 중인 회차 포인터+진도를 함께 저장(없으면 null) — 기기 간 이어풀기
+    let resumeState=null;
+    try{
+      const aRaw=localStorage.getItem('certlab_mcq_active');
+      if(aRaw){
+        const a=JSON.parse(aRaw);
+        if(a&&a.cert&&a.sub!=null&&a.set!=null){
+          const pRaw=localStorage.getItem('certlab_mcq_p_'+a.cert+'_'+a.sub+'_'+a.set);
+          if(pRaw){ resumeState={ active:{cert:a.cert,sub:a.sub,set:a.set}, prog:JSON.parse(pRaw), ts:(a.ts||Date.now()) }; }
+        }
+      }
+    }catch(_){ resumeState=null; }
     await db.collection('userData').doc(currentUser.uid).set({
       wrongList, favoriteList, solveCount: totalSolve(), solveCountByCert,
       cardProgress: srProgress, examDates: srExamOverride, diagnostics: srDiagnostics,
+      resumeState: resumeState,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { console.error('저장 오류:', e); }
@@ -2775,7 +2806,7 @@ function impBadge(q){ const s=impLabel(q.star||0); return s ? '<span class="imp"
 function timeBadge(q){ const v=q.time||0; if(!v) return ''; const lab={1:'빠름',2:'보통',3:'오래'}[v]||''; return '<span class="tmark t'+v+'">⌛ '+lab+'</span>'; }
 // 진행상태 저장(이어서 풀기)
 function mqPKey(sub,set){ return 'certlab_mcq_p_'+mqCert+'_'+sub+'_'+set; }
-function mqSaveProgress(){ if(mqMode!=='all') return; if(mqInReview||mqConcept) return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft,up:mqTimeUp,os:mqOverElapsed(),oc:mqOvertimeCount})); }catch(e){} }
+function mqSaveProgress(){ if(mqMode!=='all') return; if(mqInReview||mqConcept) return; if(Object.keys(mqAns).length===0 && mqIdx===0) return; try{ localStorage.setItem(mqPKey(mqSub,mqSet), JSON.stringify({ans:mqAns,idx:mqIdx,t:mqTimeLeft,up:mqTimeUp,os:mqOverElapsed(),oc:mqOvertimeCount})); }catch(e){} try{ localStorage.setItem('certlab_mcq_active', JSON.stringify({cert:mqCert,sub:mqSub,set:mqSet,ts:Date.now()})); }catch(e){} }
 function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,set)); return v?JSON.parse(v):null; }catch(e){ return null; } }
 function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
 // O/X 자가체크 영속 저장 — 문항별 {qid:{o0|sㄱ ...:'O'|'X'}}. 새로고침·오답노트에서 재사용
@@ -2812,7 +2843,7 @@ function renderMCQ(){
   // 새로고침 자동복귀용 '현재 풀이 중' 포인터 — 일반 풀이 화면일 때만 저장, 그 외 화면이면 해제
   try{
     if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqConcept && mqMode==='all'){
-      localStorage.setItem('certlab_mcq_active', JSON.stringify({cert:mqCert,sub:mqSub,set:mqSet}));
+      localStorage.setItem('certlab_mcq_active', JSON.stringify({cert:mqCert,sub:mqSub,set:mqSet,ts:Date.now()}));
     } else { localStorage.removeItem('certlab_mcq_active'); }
   }catch(_){}
   if(mqScreen==='exam') return renderMcqExam(root);
@@ -3160,7 +3191,7 @@ function mqFlushAnsweredToWrong(){
   });
   if(changed && currentUser) saveUserData();
 }
-function mqBackHome(){ const wasReview=mqInReview; mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqGather=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ const wasReview=mqInReview; mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); if(currentUser && typeof srFlush==='function') srFlush(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); mqReview=false; mqDiag=false; mqGather=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
@@ -3293,6 +3324,8 @@ function verdictColor(t){
 function renderMath(text, allowBareFraction){
   if(text==null) return '';
   var s=String(text);
+  // (0) 절댓값 |…| 안 슬래시는 분수로 만들지 않고(인라인 유지) 한 덩어리로 묶어 줄바꿈 방지 [전 과목]
+  s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return '<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'; });
   // (1) 괄호 분수 (a/b) 숫자/숫자 → 플레이스홀더 [전 과목]
   s = s.replace(/\((\d+)\/(\d+)\)/g, '\u0001$1\u0002$2\u0003');
   // (2) 맨 분수 a/b → 분수 [econ 전용] (콤마숫자·축척·날짜 오변환 방지)
@@ -3307,6 +3340,7 @@ function renderMath(text, allowBareFraction){
   s = s.replace(/_([A-Za-z0-9]+)/g, '<sub>$1</sub>');
   // (5) 분수 플레이스홀더 → HTML
   s = s.replace(/\u0001([^\u0002]+)\u0002([^\u0003]+)\u0003/g, '<span class="frac"><span class="fn">$1</span><span class="fd">$2</span></span>');
+  s = s.replace(/\u0004/g, '/');   // (0) 복원: 절댓값 안 슬래시
   return s;
 }
 // 문항이 경제(econ)인지 — id 접두 'e' 또는 과목코드 econ
