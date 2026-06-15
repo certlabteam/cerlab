@@ -2269,7 +2269,6 @@ function buildLearnPanel(data, imgKey){
     var rows=data.concepts.map(function(it){
       if(!it||!it.t) return '';
       var r='<div class="lc-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>';
-      if(it.exd && String(it.exd).trim()) r+='<div class="lc-exd">💡 '+String(it.exd).trim()+'</div>';
       if(it.ex && String(it.ex).trim()) r+='<div class="lc-ex">'+String(it.ex).trim()+'</div>';
       return r;
     }).join('');
@@ -3394,7 +3393,11 @@ function conceptCardHTML(q){
     const cs=(q.exp&&q.exp.c)?q.exp.c:[];
     if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
     cs.forEach((c,i)=>{
-      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div></div>';
+      var sec='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div>';
+      if(c.cx && String(c.cx).trim()) sec+='<div class="cc-ex">'+rm(String(c.cx).trim(),q)+'</div>';
+      else if(mqCert==='bodybuilding' && c.exd && String(c.exd).trim()) sec+='<div class="cc-exd">💡 '+rm(String(c.exd).trim(),q)+'</div>';
+      if(c.ex && String(c.ex).trim()) sec+='<div class="cc-ex">'+rm(String(c.ex).trim(),q)+'</div>';
+      body+=sec+'</div>';
     });
   }
   return body;
@@ -3657,9 +3660,9 @@ function renderMcqExam(root){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>';
-        // cx > exd 우선순위: cx 있으면 파란 예시박스, 없고 exd만 있으면 노란 💡
+        // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
-        else if(it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
+        else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
         if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
         return row;
       }).join('')+'</div>';
