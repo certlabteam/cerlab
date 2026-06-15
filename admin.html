@@ -2021,12 +2021,17 @@ async function expireMemberCert(uid, email){
 async function lookupUserDetail(){
   const input=document.getElementById("userDetailInput").value.trim();
   const result=document.getElementById("userDetailResult");
-  if(!input){result.innerHTML='<div style="color:#E24B4A">UID를 입력하세요.</div>';return;}
+  if(!input){result.innerHTML='<div style="color:#E24B4A">이메일 또는 UID를 입력하세요.</div>';return;}
   result.innerHTML='<div class="loading">조회 중...</div>';
   try{
-    const uid=input;
+    let uid=input;
+    if(input.includes('@')){                       // 이메일 입력이면 회원목록에서 UID로 변환
+      const m=memberByEmail(input);
+      if(!m){result.innerHTML='<div style="color:#E24B4A">가입 회원 목록에 없는 이메일입니다. (미가입이거나 이메일 오타)</div>';return;}
+      uid=m.id;
+    }
     const appData=await db.collection("userData").doc(uid).get();
-    if(!appData.exists){result.innerHTML='<div style="color:#E24B4A">데이터를 찾을 수 없습니다.</div>';return;}
+    if(!appData.exists){result.innerHTML='<div style="color:#E24B4A">해당 회원은 가입돼 있으나 학습 기록(userData)이 아직 없습니다.</div>';return;}
     const data=appData.data()||{};
     const srProgress=data.srProgress||{};
     const appWrong=data.appWrong||{};
