@@ -2315,12 +2315,17 @@ function mnChantHTML(code, cls){
 }
 function buildMnemonic(card){
   const m=card.mn; if(!m) return '';
-  const code = (typeof m==='string') ? m : (m.code||'');
-  const desc = (typeof m==='object' && m.desc) ? m.desc : '';
-  if(!code) return '';
-  return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
-    +'<div class="learn-section-body">'+mnChantHTML(code,'mnem-chant')+'<span class="mnem-code">'+code+'</span>'
-    +(desc?'<div class="mnem-desc">'+desc+'</div>':'')+'</div></div>';
+  // 단일 항목(문자열/객체)을 암기코드 한 박스로 — 배열 지원을 위한 내부 헬퍼
+  function oneMn(item){
+    const code = (typeof item==='string') ? item : (item&&item.code||'');
+    const desc = (typeof item==='object' && item && item.desc) ? item.desc : '';
+    if(!code) return '';
+    return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
+      +'<div class="learn-section-body">'+mnChantHTML(code,'mnem-chant')+'<span class="mnem-code">'+code+'</span>'
+      +(desc?'<div class="mnem-desc">'+desc+'</div>':'')+'</div></div>';
+  }
+  if(Array.isArray(m)) return m.map(oneMn).join('');   // 배열이면 박스 여러 개
+  return oneMn(m);                                       // 객체/문자열 단일(하위호환)
 }
 function buildLearnHTML(card){
   const mnHTML=(function(){try{return buildMnemonic(card);}catch(e){return '';}})();
@@ -2349,6 +2354,7 @@ function buildLearnPanel(data, imgKey){
     var rows=data.concepts.map(function(it){
       if(!it||!it.t) return '';
       var r='<div class="lc-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>';
+      if(activeCert==='bodybuilding' && it.exd && String(it.exd).trim()) r+='<div class="lc-exd">💡 '+String(it.exd).trim()+'</div>';   // 💡(exd)는 생체에서만
       if(it.ex && String(it.ex).trim()) r+='<div class="lc-ex">'+String(it.ex).trim()+'</div>';
       return r;
     }).join('');
