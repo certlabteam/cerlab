@@ -4069,11 +4069,10 @@ loadAllBanks().then(()=>{
 
 /* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
 (function(){
-  // 과거에 등록된 service worker / 캐시가 있으면 정리(옛 파일 캐싱 방지)
+  // 캐시 안 하는 최소 SW 등록 → PWA 설치(beforeinstallprompt) 활성화. fetch를 네트워크로 직행시켜 옛 파일 캐시 사고 없음.
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistrations().then(rs=>{ rs.forEach(r=>r.unregister()); }).catch(()=>{});
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
   }
-  if(window.caches && caches.keys){ caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{}); }
 })();
 // 설치 신호 캡처 (있으면 원터치 설치에 사용)
 let pwaPrompt=null;
