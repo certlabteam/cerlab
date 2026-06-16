@@ -1036,6 +1036,23 @@ function renderOral(q, mqCertVal){
   }
   return h;
 }
+// 문제+보기 블록 — 라이브 renderMcqExam의 qstem·qcard 구조 verbatim 이식(검토모드: mqPick onclick·O/X버튼·타이머 제거)
+function renderQuestionBlock(q){
+  if(!q || !q.q) return '';
+  var jr=splitJaryo(q.q);
+  var ansN=Array.isArray(q.ans)?q.ans:[q.ans];
+  var optHTML=(q.opts||[]).map(function(op,i){
+    var n=i+1;
+    var isAns=ansN.indexOf(n)>=0;
+    var cls='opt'+(isAns?' cor':'');
+    var hasT=op && String(op).trim();
+    var otxt=hasT?'<div class="otxt">'+rm(String(op),q)+'</div>':'';
+    var oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
+    return '<div class="'+cls+(oimg?' opt-img':'')+'"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
+  }).join('');
+  return '<div class="qstem"><div class="qhead"><div class="qnum">문제</div></div><div class="qtext">'+rm(jr.q,q)+'</div></div>'+
+    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
+}
 function renderExpFull(q, mqCertVal){
   mqCert = mqCertVal;
   var sel = Array.isArray(q.ans)?q.ans[0]:q.ans;
@@ -1239,7 +1256,10 @@ function renderOne(q){
   errBox.innerHTML='';
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   try{ showTypeBadge(q); }catch(_){}
-  try{ out.innerHTML = (!q.exp && (q.a || q.learn)) ? renderOral(q, cert) : renderExpFull(q, cert); }catch(e){ errBox.innerHTML='<div class="errx">렌더 오류: '+String(e.message)+'</div>'; }
+  try{
+    if(!q.exp && (q.a || q.learn)){ out.innerHTML = renderOral(q, cert); }
+    else { out.innerHTML = renderQuestionBlock(q) + renderExpFull(q, cert); }
+  }catch(e){ errBox.innerHTML='<div class="errx">렌더 오류: '+String(e.message)+'</div>'; }
 }
 function drawNav(){
   var nav=document.getElementById('navBar'); if(!nav) return;
