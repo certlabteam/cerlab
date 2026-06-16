@@ -47,6 +47,7 @@ gtag('config', 'G-RPZRZQ779J');
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
@@ -747,6 +748,113 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #printArea.pa-fold .pa-qcell{padding:8px 10px;border-right:1px dashed #999;font-size:11px;font-weight:700;line-height:1.45}
 #printArea.pa-fold .pa-acell{padding:8px 10px}
 
+
+/* ===== 커뮤니티 게시판 ===== */
+.cm-top{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #E6EEF8;background:#fff}
+.cm-back{font-size:18px;color:#185FA5;cursor:pointer;background:none;border:none;padding:0}
+.cm-title{font-size:16px;font-weight:700;color:#0C447C}
+.cm-tabs{display:flex;gap:6px;padding:10px 14px;background:#fff;border-bottom:1px solid #E6EEF8}
+.cm-tab{flex:1;text-align:center;padding:7px 6px;border-radius:30px;border:1.5px solid #B5D4F4;background:#fff;color:#888780;font-size:13px;font-weight:600;cursor:pointer}
+.cm-tab.on{background:#185FA5;color:#fff;border-color:#185FA5}
+.cm-body{padding:14px 16px 30px}
+.cm-write{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:13px}
+.cm-post{background:#fff;border:1px solid #B5D4F4;border-radius:12px;padding:12px 14px;margin-bottom:9px;cursor:pointer}
+.cm-cert{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-right:5px;vertical-align:middle;background:#FFF1E3;color:#D9650C;border:1px solid #F4C48A}
+.cm-pin{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-right:5px;vertical-align:middle;background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4}
+.cm-pt{font-size:14.5px;font-weight:700;margin-bottom:4px;line-height:1.45;color:#2C2C2A}
+.cm-pe{font-size:12px;color:#5F5E5A;line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cm-pm{display:flex;align-items:center;gap:9px;font-size:11px;color:#888780}
+.cm-pm .nick{font-weight:600;color:#185FA5}
+.cm-pm .sp{margin-left:auto;display:flex;gap:11px}
+.cm-empty{text-align:center;color:#888780;font-size:13px;padding:40px 16px;line-height:1.6}
+.cm-loading{text-align:center;color:#185FA5;font-size:13px;padding:30px 0;font-weight:600}
+.cm-admin-note{background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;padding:8px 11px;font-size:11.5px;color:#28425E;margin-bottom:11px;line-height:1.5}
+.cm-enter{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #B5D4F4;border-radius:14px;padding:14px;margin-top:13px;cursor:pointer}
+.cm-enter .ico{font-size:22px}
+.cm-enter .t{font-size:14px;font-weight:700;color:#0C447C}
+.cm-enter .d{font-size:11px;color:#888780;margin-top:2px}
+.cm-enter .go{margin-left:auto;color:#bbb;font-size:18px}
+
+/* 커뮤니티 상세/추천/댓글 (3단계) */
+.cm-del-btn{margin-left:auto;font-size:12px;color:#E24B4A;background:#FFF0F0;border:1px solid #F7C1C1;border-radius:8px;padding:5px 11px;cursor:pointer;font-weight:600}
+.cm-dbody{padding:16px 16px 30px}
+.cm-dtitle{font-size:17px;font-weight:800;line-height:1.45;margin-bottom:8px}
+.cm-dmeta{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#888780;padding-bottom:12px;border-bottom:1px solid #E6EEF8;margin-bottom:14px}
+.cm-dmeta .nick{font-weight:700;color:#185FA5}
+.cm-dtext{font-size:14px;line-height:1.8;color:#2C2C2A;margin-bottom:14px;word-break:break-word}
+.cm-dimg{width:100%;border-radius:10px;margin-bottom:12px}
+.cm-vote-row{display:flex;gap:10px;justify-content:center;margin:6px 0 22px}
+.cm-vote{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:30px;border:1.5px solid #B5D4F4;background:#fff;color:#5F5E5A;font-size:13px;font-weight:700;cursor:pointer}
+.cm-vote b{font-weight:800}
+.cm-vote.up.on{background:#185FA5;color:#fff;border-color:#185FA5}
+.cm-vote.down.on{background:#888780;color:#fff;border-color:#888780}
+.cm-cmt-h{font-size:12.5px;font-weight:800;color:#0C447C;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #E6F1FB}
+.cm-cmt-empty{font-size:12.5px;color:#888780;padding:8px 0 16px}
+.cm-cmt{padding:9px 0;border-bottom:1px solid #F1F4F8}
+.cm-cmt-top{display:flex;align-items:center;gap:7px;margin-bottom:3px;font-size:11px;color:#888780}
+.cm-cmt-top .nick{font-weight:700;color:#185FA5}
+.cm-cmt-del{margin-left:auto;color:#bbb;cursor:pointer}
+.cm-cmt-b{font-size:13px;line-height:1.6;color:#2C2C2A;word-break:break-word}
+.cm-cmt-input{display:flex;gap:7px;margin-top:14px}
+.cm-cmt-input input{flex:1;border:1.5px solid #B5D4F4;border-radius:10px;padding:9px 12px;font-size:13px;outline:none}
+.cm-cmt-input button{padding:0 16px;border:none;border-radius:10px;background:#185FA5;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+
+/* 커뮤니티 작성 (4단계) */
+.cm-wbody{padding:16px 16px 30px}
+.cm-field{margin-bottom:14px}
+.cm-field label{display:block;font-size:12px;font-weight:700;color:#0C447C;margin-bottom:6px}
+.cm-field input,.cm-field textarea,.cm-field select{width:100%;box-sizing:border-box;border:1.5px solid #B5D4F4;border-radius:10px;padding:11px 13px;font-size:14px;outline:none;font-family:inherit;background:#fff;color:#2C2C2A}
+.cm-field textarea{min-height:160px;resize:vertical;line-height:1.6}
+.cm-note{font-size:11px;color:#888780;margin-top:5px}
+.cm-submit{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.cm-submit:disabled{opacity:.6}
+
+/* 커뮤니티 이미지 (5단계) */
+.cm-imgrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.cm-imgth{width:64px;height:64px;border-radius:10px;background-size:cover;background-position:center;position:relative;border:1px solid #ddd}
+.cm-imgx{position:absolute;top:-6px;right:-6px;width:20px;height:20px;background:#E24B4A;color:#fff;border-radius:50%;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cm-imgadd{width:64px;height:64px;border:1.5px dashed #B5D4F4;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#185FA5;font-size:10px;cursor:pointer;background:#F7FAFE}
+.cm-imgadd span{font-size:20px;line-height:1}
+
+/* 마이페이지 (6단계) */
+.mp-body{padding:16px 16px 30px}
+.mp-prof{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.mp-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#85B7EB,#185FA5);object-fit:cover}
+.mp-nick{font-size:15px;font-weight:800;color:#2C2C2A}
+.mp-email{font-size:11px;color:#888780}
+.pt-card{background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;border-radius:14px;padding:15px;margin-bottom:16px}
+.pt-top{display:flex;align-items:center;margin-bottom:7px}
+.pt-top .l{font-size:12px;color:#9A7B3A;font-weight:700}
+.pt-detail{margin-left:auto;font-size:11.5px;font-weight:700;color:#C77A00;cursor:pointer}
+.pt-v{font-size:26px;font-weight:800;color:#C77A00}
+.pt-sub{font-size:10.5px;color:#9A7B3A;margin-top:2px}
+.mp-sec{font-size:11.5px;font-weight:800;color:#888780;margin:6px 2px 4px}
+.mp-link{display:flex;align-items:center;padding:13px 4px;font-size:13.5px;font-weight:600;border-bottom:1px solid #F1F4F8;cursor:pointer;color:#2C2C2A}
+.mp-link .e{font-size:16px;margin-right:10px}
+.mp-link::after{content:'›';margin-left:auto;color:#bbb;font-size:17px}
+.mp-sub-top{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#0C447C;margin-bottom:14px}
+.hist{display:flex;align-items:center;font-size:12.5px;padding:11px 2px;border-bottom:1px solid #F1F4F8}
+.hist .ht{flex:1;color:#2C2C2A}
+.hist .hd{font-size:10.5px;color:#aaa;margin-top:2px}
+.hist .ha{font-weight:800;font-size:14px}
+.ha.plus{color:#1D9E75}.ha.minus{color:#E24B4A}
+
+/* 메인 공지바 + 오늘의 글 (7단계) */
+.cm-notice-bar{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #B5D4F4;border-radius:12px;padding:11px 13px;margin-bottom:14px;cursor:pointer;box-shadow:inset 0 -2px 0 #FFF3D6}
+.cm-notice-bar.hidden{display:none}
+.cm-nb-ico{font-size:14px;flex-shrink:0}
+.cm-nb-roll{flex:1;min-width:0;height:18px;position:relative;overflow:hidden}
+.cm-nb-line{position:absolute;left:0;right:0;font-size:12.5px;font-weight:600;color:#2C2C2A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transform:translateY(100%);transition:.45s}
+.cm-nb-line.on{opacity:1;transform:translateY(0)}
+.cm-nb-line.out{opacity:0;transform:translateY(-100%)}
+.cm-nb-arr{color:#bbb;font-size:16px;flex-shrink:0}
+.cm-today{background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1.5px solid #F1D9A8;border-radius:12px;padding:12px 14px;margin-bottom:12px;cursor:pointer}
+.cm-today-l{font-size:11px;font-weight:800;color:#C77A00;margin-bottom:5px}
+.cm-today-t{font-size:14px;font-weight:700;line-height:1.4;margin-bottom:5px;color:#2C2C2A}
+.cm-today-m{font-size:11px;color:#9A7B3A}
+
+/* 게시글 신고 (8a) */
+.cm-rep-btn{margin-left:auto;font-size:12px;color:#C77A00;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;padding:5px 11px;cursor:pointer;font-weight:600}
 </style>
 <!-- Meta Pixel Code -->
 <script>
@@ -811,6 +919,11 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   </div>
 </div>
 <div class="home-view" id="homeView">
+  <div class="cm-notice-bar hidden" id="cmNoticeBar" onclick="cmGotoNotice()">
+    <span class="cm-nb-ico">📢</span>
+    <div class="cm-nb-roll" id="cmNbRoll"></div>
+    <span class="cm-nb-arr">›</span>
+  </div>
   <div class="home-hero">
     <h1>어떤 시험을 준비하세요?</h1>
     <p>시험을 선택해 학습을 시작하세요.</p>
@@ -848,6 +961,11 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
       <div class="cert-meta"><div class="nm">주택관리사 1차</div><div class="ds">객관식 · 회계원리 · 공동주택시설개론 · 민법</div><span class="tag soon" id="certTag-housing">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
+  </div>
+  <div class="cm-enter" onclick="openCommunity()">
+    <div class="ico">💬</div>
+    <div><div class="t">합격 후기 · 커뮤니티</div><div class="d">후기 · 건의사항 · 공지</div></div>
+    <div class="go">›</div>
   </div>
 </div>
 <div class="cert-view hidden" id="bodybuildingView">
@@ -916,6 +1034,55 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     이메일: certlab.team@gmail.com<br>
     © 2025 CertLab. All rights reserved.
   </div>
+</div>
+<div class="cert-view hidden" id="communityView">
+<div id="cmListWrap">
+  <div class="cm-top">
+    <button class="cm-back" onclick="goHome()" aria-label="뒤로">←</button>
+    <span class="cm-title">커뮤니티</span>
+  </div>
+  <div class="cm-tabs">
+    <span class="cm-tab on" id="cmTab-review" onclick="cmSwitchTab('review')">🔥 후기</span>
+    <span class="cm-tab" id="cmTab-sugg" onclick="cmSwitchTab('sugg')">🙋 건의</span>
+    <span class="cm-tab" id="cmTab-notice" onclick="cmSwitchTab('notice')">📢 공지</span>
+  </div>
+  <div class="cm-body" id="cmBody"></div>
+  </div>
+<div id="cmDetail" class="hidden">
+  <div class="cm-top">
+    <button class="cm-back" onclick="cmCloseDetail()" aria-label="목록">←</button>
+    <span class="cm-title">글</span>
+    <button class="cm-del-btn hidden" id="cmDelBtn" onclick="cmDeletePost()">삭제</button>
+    <button class="cm-rep-btn hidden" id="cmRepBtn" onclick="cmReport()">🚨 신고</button>
+  </div>
+  <div class="cm-dbody" id="cmDetailBody"></div>
+</div>
+<div id="cmWrite" class="hidden">
+  <div class="cm-top">
+    <button class="cm-back" onclick="cmCloseWrite()" aria-label="닫기">✕</button>
+    <span class="cm-title">글 작성</span>
+  </div>
+  <div class="cm-wbody">
+    <div class="cm-field"><label>게시판</label><select id="cmwBoard" onchange="cmwToggleCert()"></select></div>
+    <div class="cm-field" id="cmwCertField"><label>시험 종류</label><select id="cmwCert"></select></div>
+    <div class="cm-field"><label>닉네임</label><input id="cmwNick" maxlength="20" placeholder="게시판에서 쓸 닉네임"><div class="cm-note">한 번 정하면 다음부터 자동으로 사용돼요. (변경 가능)</div></div>
+    <div class="cm-field"><label>제목</label><input id="cmwTitle" maxlength="100" placeholder="제목"></div>
+    <div class="cm-field"><label>내용</label><textarea id="cmwBody" maxlength="5000" placeholder="준비 기간 · 공부법 · 시험장 후기 등을 적어주세요."></textarea></div>
+    <div class="cm-field"><label>사진 (최대 5장)</label>
+      <div class="cm-imgrow" id="cmImgRow"></div>
+      <input type="file" id="cmImgInput" accept="image/*" multiple style="display:none" onchange="cmPickImages(event)">
+      <div class="cm-note">올리면 자동으로 압축돼요. (장당 약 300KB)</div>
+    </div>
+    <button class="cm-submit" id="cmwSubmit" onclick="cmSubmitPost()">등록하기</button>
+  </div>
+</div>
+</div>
+<div class="cert-view hidden" id="myPageView">
+  <div class="cm-top">
+    <button class="cm-back" onclick="goHome()" aria-label="홈">←</button>
+    <span class="cm-title">마이페이지</span>
+  </div>
+  <div class="mp-body" id="mpBody"></div>
 </div>
 <div class="overlay hidden" id="completeOv">
   <div class="ov-icon" id="ovIcon">🎯</div>
@@ -1095,11 +1262,12 @@ const firebaseConfig = {
   messagingSenderId: "698827699707",
   appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
-let auth = null, db = null, googleProvider = null, firebaseReady = false;
+let auth = null, db = null, storage = null, googleProvider = null, firebaseReady = false;
 try {
   firebase.initializeApp(firebaseConfig);
   auth = firebase.auth();
   db = firebase.firestore();
+  storage = firebase.storage();
   googleProvider = new firebase.auth.GoogleAuthProvider();
   firebaseReady = true;
 } catch (e) {
@@ -1577,6 +1745,7 @@ function updateAuthBar() {
       <div class="user-dropdown hidden" id="userDropdown">
         <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
         <div class="mile-bal">🪙 마일리지 <b>${mileageBalance(myMileageLots).toLocaleString()}원</b></div>
+        <button class="ref-acc-btn" onclick="openMyPage()">👤 마이페이지</button>
         <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
         <div class="ref-acc hidden" id="refAcc">
           <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 +10,000원!</div>
@@ -3984,11 +4153,14 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   document.getElementById('homeView').classList.remove('hidden');
+  var _cmv=document.getElementById('communityView'); if(_cmv) _cmv.classList.add('hidden');
+  var _mpv=document.getElementById('myPageView'); if(_mpv) _mpv.classList.add('hidden');
   document.getElementById('bodybuildingView').classList.add('hidden');
   document.getElementById('mcqView').classList.add('hidden');
   document.getElementById('certSwitch').classList.add('hidden');
   document.getElementById('modePill').style.display = 'none';
   mqScreen='home';
+  if(typeof cmLoadNoticeBar==='function') cmLoadNoticeBar();
   syncPlanMirror(); updateAuthBar();
 }
 async function enterCert(id){
@@ -4286,6 +4458,474 @@ function prToggleSub(s){let p=prSubjectsPresent();if(prSubsSel===null){prSubsSel
 function prToggleOpt(w){if(w==='mn')prMnemonic=!prMnemonic;else if(w==='fold')prFold=!prFold;renderPrintSheet();}
 function renderPrintSheet(){let present=prSubjectsPresent();let allCnt=prCardsFor('all').length,wrongCnt=prCardsFor('wrong').length;let subs=prSelectedSubs();let sel=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);let chips=present.map(s=>{let on=(prSubsSel===null)||prSubsSel[s];return '<span class="pr-chip'+(on?' on':'')+'" onclick="prToggleSub(\''+prJsStr(s)+'\')">' +s+'</span>';}).join('');let html='<h3>🖨️ 시험장용 인쇄</h3><p class="pr-desc">폰 반납 대비, 종이로 들고 갈 자료를 만듭니다.</p>'+'<div class="pr-lbl">범위</div><div class="pr-seg">'+'<button class="'+(prScope==='all'?'on':'')+'" onclick="prSetScope(\'all\')">전체 과목<span class="pr-cnt">'+allCnt+'문항</span></button>'+'<button class="'+(prScope==='wrong'?'on':'')+'" onclick="prSetScope(\'wrong\')">오답 복습<span class="pr-cnt">'+wrongCnt+'문항</span></button></div>'+'<div class="pr-lbl">과목 (탭하여 켜고 끄기)</div><div class="pr-chips">'+chips+'</div>'+'<div class="pr-lbl">옵션</div><div class="pr-opts">'+'<label class="pr-opt"><input type="checkbox" '+(prMnemonic?'checked':'')+' onchange="prToggleOpt(\'mn\')"> 암기코드 포함</label>'+'<label class="pr-opt"><input type="checkbox" '+(prFold?'checked':'')+' onchange="prToggleOpt(\'fold\')"> 접지형(질문↔답, 접어서 셀프테스트)</label></div>';if(sel.length===0){html+='<div class="pr-empty">'+(prScope==='wrong'?'오답(미숙·학습중) 카드가 아직 없습니다. 카드를 풀어 복습 이력이 쌓이면 채워집니다.':'선택한 과목에 카드가 없습니다.')+'</div>'+'<button class="pr-go" disabled style="opacity:.5">인쇄할 카드 없음</button>';}else{html+='<button class="pr-go" onclick="doPrint()">인쇄 / PDF로 저장 ('+sel.length+'문항)</button>';}html+='<button class="pr-cancel" onclick="closePrintSheet()">취소</button>';document.getElementById('printSheetBody').innerHTML=html;}
 function doPrint(){let subs=prSelectedSubs();let list=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);if(!list.length)return;let groups={};subs.forEach(s=>{groups[s]=[];});list.forEach(c=>{if(!groups[c.s])groups[c.s]=[];groups[c.s].push(c);});let scopeLbl=prScope==='wrong'?'오답 복습':'전체 과목';let n=new Date();let ds=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');let body='<div class="pa-h"><span class="t">보디빌딩 2급 구술 · '+scopeLbl+'</span><span class="m">CertLab · '+ds+'</span></div>';if(prFold)body+='<div class="pa-foldnote">✂ 가운데 점선을 따라 접으면 오른쪽 답이 가려집니다 — 질문을 보고 답해 본 뒤 펴서 확인하세요.</div>';subs.forEach(s=>{let g=groups[s];if(!g||!g.length)return;body+='<div class="pa-sub">'+s+' ('+g.length+')</div><div class="pa-cols">';g.forEach((c,i)=>{let mn=prMnemonic?prMnHTML(c):'';if(prFold){body+='<div class="pa-qa"><div class="pa-qcell"><span class="no">'+(i+1)+'.</span> '+(c.q||'')+'</div>'+'<div class="pa-acell"><div class="pa-a">'+(c.a||'')+'</div>'+mn+'</div></div>';}else{body+='<div class="pa-qa"><p class="pa-q"><span class="no">'+(i+1)+'.</span>'+(c.q||'')+'</p><p class="pa-a">'+(c.a||'')+'</p>'+mn+'</div>';}});body+='</div>';});let pa=document.getElementById('printArea');if(!pa){pa=document.createElement('div');pa.id='printArea';document.body.appendChild(pa);}pa.className=prFold?'pa-fold':'';pa.innerHTML=body;closePrintSheet();setTimeout(()=>{window.print();},60);}
+
+
+/* ===== 커뮤니티 게시판 (2단계: 목록) ===== */
+var CM_CERT_LABEL = {bodybuilding:'생체', appraiser:'감평사', realestate1:'공인1', realestate2:'공인2', koreanhistory:'한국사', housing:'주택관리사'};
+var cmBoard = 'review';
+window._cmUserDoc = window._cmUserDoc || null;
+function cmIsAdmin(){ return !!(window._cmUserDoc && window._cmUserDoc.isAdmin); }
+async function openCommunity(){
+  if(typeof mqStopTimer==='function') mqStopTimer();
+  if(typeof mqStopOverTimer==='function') mqStopOverTimer();
+  var ids=['homeView','bodybuildingView','mcqView','myPageView'];
+  ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.add('hidden'); });
+  document.getElementById('communityView').classList.remove('hidden');
+  var cs=document.getElementById('certSwitch'); if(cs) cs.classList.remove('hidden');
+  await cmLoadUserDoc();
+  cmSwitchTab(cmBoard);
+}
+function cmSwitchTab(board){
+  cmBoard = board;
+  ['review','sugg','notice'].forEach(function(b){
+    var el=document.getElementById('cmTab-'+b); if(el) el.classList.toggle('on', b===board);
+  });
+  cmLoadList(board);
+}
+function cmEsc(t){ return (t==null?'':String(t)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function cmTimeAgo(ts){
+  if(!ts) return '';
+  var d = ts && ts.toDate ? ts.toDate() : new Date(ts);
+  var diff = (Date.now()-d.getTime())/1000;
+  if(diff<60) return '방금';
+  if(diff<3600) return Math.floor(diff/60)+'분 전';
+  if(diff<86400) return Math.floor(diff/3600)+'시간 전';
+  if(diff<2592000) return Math.floor(diff/86400)+'일 전';
+  return (d.getMonth()+1)+'월 '+d.getDate()+'일';
+}
+function cmCardHTML(p){
+  var badge='';
+  if(p.board==='review' && p.cert) badge='<span class="cm-cert">'+cmEsc(CM_CERT_LABEL[p.cert]||p.cert)+'</span>';
+  if(p.board==='notice' && p.pinned) badge='<span class="cm-pin">📌 고정</span>';
+  var meta='<span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span>';
+  var stat = (p.board==='notice') ? '' :
+    '<span class="sp"><span>\u2764\ufe0f '+(p.likeCount||0)+'</span><span>💬 '+(p.commentCount||0)+'</span></span>';
+  var body = p.body ? '<div class="cm-pe">'+cmEsc(p.body)+'</div>' : '';
+  return '<div class="cm-post" onclick="cmOpenDetail(\''+p._id+'\')">'
+    +'<div class="cm-pt">'+badge+cmEsc(p.title||'')+'</div>'+body
+    +'<div class="cm-pm">'+meta+stat+'</div></div>';
+}
+async function cmLoadList(board){
+  var body=document.getElementById('cmBody'); if(!body) return;
+  if(!firebaseReady || !db){ body.innerHTML='<div class="cm-empty">서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.</div>'; return; }
+  body.innerHTML='<div class="cm-loading">불러오는 중\u2026</div>';
+  var head='';
+  if(board==='notice'){
+    head='<div class="cm-admin-note">📢 공지는 관리자만 작성할 수 있어요.</div>';
+    if(cmIsAdmin()) head+='<button class="cm-write" onclick="cmOpenWrite()">\u270F\ufe0f 공지 작성</button>';
+  } else {
+    head='<button class="cm-write" onclick="cmOpenWrite()">\u270F\ufe0f 글 작성하기</button>';
+  }
+  try{
+    var snap=await db.collection('posts').where('board','==',board).orderBy('createdAt','desc').limit(30).get();
+    if(snap.empty){ body.innerHTML=head+'<div class="cm-empty">아직 글이 없어요.<br>첫 글을 남겨보세요!</div>'; return; }
+    var posts=[]; snap.forEach(function(doc){ var p=doc.data(); p._id=doc.id; posts.push(p); });
+    var todayHtml='';
+    if(board==='review'){
+      var now=Date.now();
+      var cand=posts.filter(function(p){ var t=(p.createdAt&&p.createdAt.toDate)?p.createdAt.toDate().getTime():0; return (p.upCount||0)>0 && (now-t)<172800000; });
+      cand.sort(function(a,b){ return (b.upCount||0)-(a.upCount||0); });
+      if(cand.length) todayHtml=cmTodayHTML(cand[0]);
+    }
+    var listHtml=''; posts.forEach(function(p){ listHtml+=cmCardHTML(p); });
+    body.innerHTML=head+todayHtml+listHtml;
+  }catch(e){
+    console.warn('cmLoadList', e);
+    var msg = (e && /index/i.test(e.message||'')) ? '목록 정렬 인덱스가 필요해요. (콘솔에서 생성)' : '목록을 불러오지 못했어요.';
+    body.innerHTML=head+'<div class="cm-empty">'+msg+'</div>';
+  }
+}
+var CM_CERTS=[['bodybuilding','생체 (생활체육지도사)'],['appraiser','감정평가사'],['realestate1','공인중개사 1차'],['realestate2','공인중개사 2차'],['koreanhistory','한국사'],['housing','주택관리사']];
+async function cmLoadUserDoc(){
+  if(!currentUser||!firebaseReady||!db){ window._cmUserDoc=null; return; }
+  try{ var d=await db.collection('users').doc(currentUser.uid).get(); window._cmUserDoc=d.exists?d.data():{}; }catch(_){ window._cmUserDoc={}; }
+}
+function cmOpenWrite(){
+  if(!currentUser){ alert('글을 쓰려면 로그인이 필요해요.'); if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  document.getElementById('cmListWrap').classList.add('hidden');
+  document.getElementById('cmDetail').classList.add('hidden');
+  document.getElementById('cmWrite').classList.remove('hidden');
+  var bsel=document.getElementById('cmwBoard');
+  var opts='<option value="review">🔥 합격 후기</option><option value="sugg">🙋 건의사항</option>';
+  if(cmIsAdmin()) opts+='<option value="notice">📢 공지사항</option>';
+  bsel.innerHTML=opts;
+  bsel.value=(cmBoard==='notice'&&!cmIsAdmin())?'review':cmBoard;
+  var csel=document.getElementById('cmwCert');
+  csel.innerHTML=CM_CERTS.map(function(c){return '<option value="'+c[0]+'">'+c[1]+'</option>';}).join('');
+  var nk=cmGetNick(); document.getElementById('cmwNick').value=(nk==='익명')?'':nk;
+  document.getElementById('cmwTitle').value=''; document.getElementById('cmwBody').value='';
+  cmFiles=[]; cmRenderImgRow();
+  cmwToggleCert();
+}
+function cmCloseWrite(){
+  document.getElementById('cmWrite').classList.add('hidden');
+  document.getElementById('cmListWrap').classList.remove('hidden');
+}
+function cmwToggleCert(){
+  var b=document.getElementById('cmwBoard').value;
+  document.getElementById('cmwCertField').style.display=(b==='review')?'block':'none';
+}
+async function cmSubmitPost(){
+  if(!currentUser){ alert('로그인이 필요해요.'); return; }
+  var board=document.getElementById('cmwBoard').value;
+  var cert=(board==='review')?document.getElementById('cmwCert').value:null;
+  var nick=(document.getElementById('cmwNick').value||'').trim();
+  var title=(document.getElementById('cmwTitle').value||'').trim();
+  var body=(document.getElementById('cmwBody').value||'').trim();
+  if(board==='notice'&&!cmIsAdmin()){ alert('공지는 관리자만 작성할 수 있어요.'); return; }
+  if(!nick){ alert('닉네임을 입력해 주세요.'); return; }
+  if(nick.length>20){ alert('닉네임은 20자 이내로 해주세요.'); return; }
+  if(!title){ alert('제목을 입력해 주세요.'); return; }
+  if(!body){ alert('내용을 입력해 주세요.'); return; }
+  var btn=document.getElementById('cmwSubmit'); btn.disabled=true; btn.textContent='등록 중\u2026';
+  try{
+    if(!window._cmUserDoc || window._cmUserDoc.boardNick!==nick){
+      try{ await db.collection('users').doc(currentUser.uid).set({boardNick:nick},{merge:true}); window._cmUserDoc=window._cmUserDoc||{}; window._cmUserDoc.boardNick=nick; }catch(_){}
+    }
+    var _pref=db.collection('posts').doc(); var _pid=_pref.id;
+    var _imgs=[];
+    if(cmFiles && cmFiles.length){ btn.textContent='사진 올리는 중…'; _imgs=await cmUploadImages(_pid, cmFiles); btn.textContent='등록 중…'; }
+    await _pref.set({
+      board:board, cert:cert, title:title, body:body,
+      authorUid:currentUser.uid, authorNick:nick, authorPhoto:(currentUser.photoURL||null),
+      images:_imgs, upCount:0, downCount:0, commentCount:0, pinned:false,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    btn.disabled=false; btn.textContent='등록하기';
+    cmBoard=board; cmCloseWrite(); cmSwitchTab(board);
+    alert('등록됐어요!');
+  }catch(e){
+    console.warn('cmSubmitPost',e); btn.disabled=false; btn.textContent='등록하기';
+    alert('등록 중 오류가 났어요.'+((/permission/i.test(e.message||''))?'\n(공지는 관리자만 작성할 수 있어요)':''));
+  }
+}
+var cmCurPost=null, cmMyVote=0;
+function cmGetNick(){
+  if(window._cmUserDoc && window._cmUserDoc.boardNick) return window._cmUserDoc.boardNick;
+  if(currentUser && currentUser.displayName) return currentUser.displayName;
+  return '익명';
+}
+async function cmOpenDetail(id){
+  var _cv=document.getElementById('communityView');
+  if(_cv && _cv.classList.contains('hidden')){ ['homeView','bodybuildingView','mcqView','myPageView'].forEach(function(x){var el=document.getElementById(x); if(el) el.classList.add('hidden');}); _cv.classList.remove('hidden'); var _cs=document.getElementById('certSwitch'); if(_cs) _cs.classList.remove('hidden'); }
+  document.getElementById('cmListWrap').classList.add('hidden');
+  var d=document.getElementById('cmDetail'); d.classList.remove('hidden');
+  var box=document.getElementById('cmDetailBody'); box.innerHTML='<div class="cm-loading">불러오는 중\u2026</div>';
+  if(!firebaseReady||!db){ box.innerHTML='<div class="cm-empty">서버에 연결할 수 없어요.</div>'; return; }
+  try{
+    var doc=await db.collection('posts').doc(id).get();
+    if(!doc.exists){ box.innerHTML='<div class="cm-empty">삭제되었거나 없는 글이에요.</div>'; return; }
+    var p=doc.data(); p._id=id; cmCurPost=p; cmMyVote=0;
+    if(currentUser){
+      try{ var vd=await db.collection('posts').doc(id).collection('votes').doc(currentUser.uid).get(); if(vd.exists) cmMyVote=vd.data().v||0; }catch(_){}
+    }
+    box.innerHTML=cmRenderDetail(p);
+    var delBtn=document.getElementById('cmDelBtn');
+    var canDel=currentUser && (p.authorUid===currentUser.uid || cmIsAdmin());
+    if(delBtn) delBtn.classList.toggle('hidden', !canDel);
+    var repBtn=document.getElementById('cmRepBtn');
+    var canRep=currentUser && p.authorUid!==currentUser.uid;
+    if(repBtn) repBtn.classList.toggle('hidden', !canRep);
+    cmRefreshVoteUI();
+    if(p.board!=='notice') cmLoadComments();
+  }catch(e){ console.warn('cmOpenDetail',e); box.innerHTML='<div class="cm-empty">글을 불러오지 못했어요.</div>'; }
+}
+function cmCloseDetail(){
+  document.getElementById('cmDetail').classList.add('hidden');
+  document.getElementById('cmListWrap').classList.remove('hidden');
+  cmLoadList(cmBoard);
+}
+function cmRenderDetail(p){
+  var badge='';
+  if(p.board==='review'&&p.cert) badge='<span class="cm-cert">'+cmEsc(CM_CERT_LABEL[p.cert]||p.cert)+'</span>';
+  if(p.board==='notice'&&p.pinned) badge='<span class="cm-pin">📌 고정</span>';
+  var imgs='';
+  if(Array.isArray(p.images)) p.images.forEach(function(u){ imgs+='<img class="cm-dimg" src="'+cmEsc(u)+'" alt="">'; });
+  var votes=(p.board==='notice')?'':
+    '<div class="cm-vote-row">'
+    +'<button class="cm-vote up" id="cmUpBtn" onclick="cmVote(1)">👍 추천 <b id="cmUpN">'+(p.upCount||0)+'</b></button>'
+    +'<button class="cm-vote down" id="cmDownBtn" onclick="cmVote(-1)">👎 비공감 <b id="cmDownN">'+(p.downCount||0)+'</b></button>'
+    +'</div>';
+  var cmt=(p.board==='notice')?'':
+    '<div id="cmComments"></div>'
+    +'<div class="cm-cmt-input"><input id="cmCmtInput" maxlength="1000" placeholder="댓글을 입력하세요"><button onclick="cmAddComment()">등록</button></div>';
+  return '<div class="cm-dtitle">'+badge+cmEsc(p.title||'')+'</div>'
+    +'<div class="cm-dmeta"><span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span></div>'
+    +'<div class="cm-dtext">'+cmEsc(p.body||'').replace(/\n/g,'<br>')+'</div>'+imgs+votes+cmt;
+}
+function cmRefreshVoteUI(){
+  var un=document.getElementById('cmUpN'), dn=document.getElementById('cmDownN');
+  if(un&&cmCurPost) un.textContent=cmCurPost.upCount||0;
+  if(dn&&cmCurPost) dn.textContent=cmCurPost.downCount||0;
+  var ub=document.getElementById('cmUpBtn'), db2=document.getElementById('cmDownBtn');
+  if(ub) ub.classList.toggle('on', cmMyVote===1);
+  if(db2) db2.classList.toggle('on', cmMyVote===-1);
+}
+async function cmVote(v){
+  if(!currentUser){ alert('추천하려면 로그인이 필요해요.'); return; }
+  if(!cmCurPost) return;
+  var pref=db.collection('posts').doc(cmCurPost._id);
+  var vref=pref.collection('votes').doc(currentUser.uid);
+  var nUp,nDown,nV;
+  try{
+    await db.runTransaction(async function(tx){
+      var pd=await tx.get(pref); var vd=await tx.get(vref);
+      if(!pd.exists) throw new Error('no post');
+      var up=pd.data().upCount||0, down=pd.data().downCount||0;
+      var cur=vd.exists?(vd.data().v||0):0;
+      nV=(cur===v)?0:v;
+      if(cur===1) up--; else if(cur===-1) down--;
+      if(nV===1) up++; else if(nV===-1) down++;
+      up=Math.max(0,up); down=Math.max(0,down);
+      if(nV===0) tx.delete(vref); else tx.set(vref,{v:nV, at:firebase.firestore.FieldValue.serverTimestamp()});
+      tx.update(pref,{upCount:up, downCount:down});
+      nUp=up; nDown=down;
+    });
+    cmCurPost.upCount=nUp; cmCurPost.downCount=nDown; cmMyVote=nV;
+    cmRefreshVoteUI();
+  }catch(e){ console.warn('cmVote',e); alert('처리 중 오류가 났어요.'); }
+}
+async function cmLoadComments(){
+  var box=document.getElementById('cmComments'); if(!box||!cmCurPost) return;
+  try{
+    var snap=await db.collection('posts').doc(cmCurPost._id).collection('comments').orderBy('createdAt','asc').get();
+    var html='<div class="cm-cmt-h">댓글 '+snap.size+'</div>';
+    if(snap.empty) html+='<div class="cm-cmt-empty">첫 댓글을 남겨보세요.</div>';
+    snap.forEach(function(dc){
+      var c=dc.data(); var canDel=currentUser&&(c.authorUid===currentUser.uid||cmIsAdmin());
+      html+='<div class="cm-cmt"><div class="cm-cmt-top"><span class="nick">'+cmEsc(c.authorNick||'익명')+'</span><span>'+cmTimeAgo(c.createdAt)+'</span>'
+        +(canDel?'<span class="cm-cmt-del" onclick="cmDeleteComment(\''+dc.id+'\')">삭제</span>':'')
+        +'</div><div class="cm-cmt-b">'+cmEsc(c.body).replace(/\n/g,'<br>')+'</div></div>';
+    });
+    box.innerHTML=html;
+  }catch(e){ console.warn('cmLoadComments',e); box.innerHTML='<div class="cm-cmt-empty">댓글을 불러오지 못했어요.</div>'; }
+}
+async function cmAddComment(){
+  if(!currentUser){ alert('댓글을 쓰려면 로그인이 필요해요.'); return; }
+  if(!cmCurPost) return;
+  var inp=document.getElementById('cmCmtInput'); var t=(inp.value||'').trim();
+  if(!t) return;
+  if(t.length>1000){ alert('댓글이 너무 길어요(1000자 이내).'); return; }
+  var pref=db.collection('posts').doc(cmCurPost._id);
+  try{
+    await pref.collection('comments').add({ body:t, authorUid:currentUser.uid, authorNick:cmGetNick(), createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+    await pref.update({ commentCount:firebase.firestore.FieldValue.increment(1) });
+    inp.value=''; cmCurPost.commentCount=(cmCurPost.commentCount||0)+1;
+    cmLoadComments();
+  }catch(e){ console.warn('cmAddComment',e); alert('댓글 등록 중 오류가 났어요.'); }
+}
+async function cmDeleteComment(cid){
+  if(!cmCurPost) return;
+  if(!confirm('댓글을 삭제할까요?')) return;
+  var pref=db.collection('posts').doc(cmCurPost._id);
+  try{
+    await pref.collection('comments').doc(cid).delete();
+    await pref.update({ commentCount:firebase.firestore.FieldValue.increment(-1) });
+    cmCurPost.commentCount=Math.max(0,(cmCurPost.commentCount||1)-1);
+    cmLoadComments();
+  }catch(e){ console.warn('cmDeleteComment',e); alert('삭제 중 오류가 났어요.'); }
+}
+async function cmDeletePost(){
+  if(!cmCurPost) return;
+  if(!confirm('이 글을 삭제할까요? 삭제하면 되돌릴 수 없어요.')) return;
+  try{
+    await db.collection('posts').doc(cmCurPost._id).delete();
+    cmCloseDetail();
+  }catch(e){ console.warn('cmDeletePost',e); alert('삭제 중 오류가 났어요.'); }
+}
+
+
+/* 커뮤니티 이미지 업로드 (5단계) */
+var cmFiles=[];
+function cmPickImages(e){
+  var fs=e.target.files; if(!fs) return;
+  for(var i=0;i<fs.length && cmFiles.length<5;i++){
+    if(fs[i].size>10*1024*1024){ alert('10MB 이하 이미지만 올릴 수 있어요.'); continue; }
+    if(!/^image\//.test(fs[i].type)) continue;
+    cmFiles.push(fs[i]);
+  }
+  e.target.value=''; cmRenderImgRow();
+}
+function cmRemoveImg(idx){ cmFiles.splice(idx,1); cmRenderImgRow(); }
+function cmRenderImgRow(){
+  var row=document.getElementById('cmImgRow'); if(!row) return;
+  var h='';
+  cmFiles.forEach(function(f,idx){
+    var u=URL.createObjectURL(f);
+    h+='<div class="cm-imgth" style="background-image:url('+u+')"><span class="cm-imgx" onclick="cmRemoveImg('+idx+')">\u00d7</span></div>';
+  });
+  if(cmFiles.length<5) h+='<div class="cm-imgadd" onclick="document.getElementById(\'cmImgInput\').click()"><span>+</span>사진</div>';
+  row.innerHTML=h;
+}
+function cmResizeImage(file, maxDim, quality){
+  return new Promise(function(resolve,reject){
+    var url=URL.createObjectURL(file); var img=new Image();
+    img.onload=function(){
+      URL.revokeObjectURL(url);
+      var w=img.width,h=img.height;
+      if(w>=h){ if(w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; } }
+      else { if(h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; } }
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      c.toBlob(function(b){ b?resolve(b):reject(new Error('blob')); },'image/jpeg',quality);
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); reject(new Error('imgload')); };
+    img.src=url;
+  });
+}
+async function cmUploadImages(pid, files){
+  if(!storage) throw new Error('storage 미초기화');
+  var urls=[];
+  for(var i=0;i<files.length;i++){
+    var blob=await cmResizeImage(files[i],1600,0.82);
+    var ref=storage.ref('board/'+pid+'/'+Date.now()+'_'+i+'.jpg');
+    await ref.put(blob,{contentType:'image/jpeg'});
+    urls.push(await ref.getDownloadURL());
+  }
+  return urls;
+}
+
+
+/* 마이페이지 (6단계) */
+function cmHistDate(at){ if(!at) return ''; var d=new Date(at); return (d.getMonth()+1)+'/'+d.getDate(); }
+function mpHistLabel(t){
+  var m={signup:'가입 축하', ref_signup:'추천 가입 보상', ref_paid:'추천 결제 보상',
+    board_post:'글 작성', board_comment:'댓글 작성', board_post_cancel:'글 삭제 회수',
+    board_comment_cancel:'댓글 삭제 회수', purchase:'이용권 결제 사용', use:'이용권 결제 사용', event:'이벤트 보너스'};
+  return m[t]||t||'포인트 변동';
+}
+async function openMyPage(){
+  if(!currentUser){ alert('로그인이 필요해요.'); if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  var dd=document.getElementById('userDropdown'); if(dd) dd.classList.add('hidden');
+  if(typeof mqStopTimer==='function') mqStopTimer();
+  if(typeof mqStopOverTimer==='function') mqStopOverTimer();
+  ['homeView','bodybuildingView','mcqView','communityView'].forEach(function(id){var el=document.getElementById(id); if(el) el.classList.add('hidden');});
+  document.getElementById('myPageView').classList.remove('hidden');
+  var cs=document.getElementById('certSwitch'); if(cs) cs.classList.remove('hidden');
+  await cmLoadUserDoc();
+  mpRenderHome();
+}
+function mpRenderHome(){
+  var box=document.getElementById('mpBody'); if(!box) return;
+  var nick=cmGetNick(); var email=(currentUser&&currentUser.email)||'';
+  var bal=(typeof mileageBalance==='function')?mileageBalance(myMileageLots):0;
+  var av=(currentUser&&currentUser.photoURL)?'<img class="mp-av" src="'+cmEsc(currentUser.photoURL)+'" alt="">':'<div class="mp-av"></div>';
+  box.innerHTML=
+    '<div class="mp-prof">'+av+'<div><div class="mp-nick">'+cmEsc(nick)+'</div><div class="mp-email">'+cmEsc(email)+'</div></div></div>'
+    +'<div class="pt-card"><div class="pt-top"><span class="l">💰 보유 포인트</span><span class="pt-detail" onclick="mpShowHistory()">상세내역 \u203a</span></div>'
+    +'<div class="pt-v">'+bal.toLocaleString()+' P</div><div class="pt-sub">이용권 결제에 사용 (1P = 1원)</div></div>'
+    +'<div class="mp-sec">활동</div>'
+    +'<div class="mp-link" onclick="mpShowMyPosts()"><span class="e">📝</span>내가 쓴 글</div>'
+    +'<div class="mp-link" onclick="mpShowMyComments()"><span class="e">💬</span>내가 쓴 댓글</div>'
+    +'<div class="mp-sec">회원정보</div>'
+    +'<div class="mp-link" onclick="mpChangeNick()"><span class="e">\u270F\ufe0f</span>닉네임 변경</div>';
+}
+function mpShowHistory(){
+  var box=document.getElementById('mpBody'); if(!box) return;
+  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>포인트 내역</span></div>';
+  var hist=(window._cmUserDoc&&Array.isArray(window._cmUserDoc.mileageHistory))?window._cmUserDoc.mileageHistory.slice():[];
+  hist.sort(function(a,b){return (b.at||0)-(a.at||0);});
+  var h=top;
+  if(!hist.length) h+='<div class="cm-empty">아직 내역이 없어요.</div>';
+  hist.forEach(function(x){
+    var amt=(x.a==null?0:x.a); var sign=amt>=0?'+':''; var cls=amt>=0?'plus':'minus';
+    h+='<div class="hist"><div class="ht">'+cmEsc(mpHistLabel(x.t))+'<div class="hd">'+cmHistDate(x.at)+'</div></div><div class="ha '+cls+'">'+sign+amt.toLocaleString()+'</div></div>';
+  });
+  box.innerHTML=h;
+}
+async function mpShowMyPosts(){
+  var box=document.getElementById('mpBody'); if(!box) return;
+  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>내가 쓴 글</span></div>';
+  box.innerHTML=top+'<div class="cm-loading">불러오는 중\u2026</div>';
+  try{
+    var snap=await db.collection('posts').where('authorUid','==',currentUser.uid).orderBy('createdAt','desc').limit(50).get();
+    var h=top;
+    if(snap.empty) h+='<div class="cm-empty">아직 쓴 글이 없어요.</div>';
+    snap.forEach(function(doc){ var p=doc.data(); p._id=doc.id; h+=cmCardHTML(p); });
+    box.innerHTML=h;
+  }catch(e){ console.warn('mpShowMyPosts',e); box.innerHTML=top+'<div class="cm-empty">'+((/index/i.test(e.message||''))?'목록 인덱스가 필요해요. (콘솔에서 생성)':'불러오지 못했어요.')+'</div>'; }
+}
+async function mpShowMyComments(){
+  var box=document.getElementById('mpBody'); if(!box) return;
+  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>내가 쓴 댓글</span></div>';
+  box.innerHTML=top+'<div class="cm-loading">불러오는 중\u2026</div>';
+  try{
+    var snap=await db.collectionGroup('comments').where('authorUid','==',currentUser.uid).orderBy('createdAt','desc').limit(50).get();
+    var h=top;
+    if(snap.empty) h+='<div class="cm-empty">아직 쓴 댓글이 없어요.</div>';
+    snap.forEach(function(dc){
+      var c=dc.data(); var pid=(dc.ref.parent&&dc.ref.parent.parent)?dc.ref.parent.parent.id:'';
+      h+='<div class="cm-post" onclick="cmOpenDetail(\''+pid+'\')"><div class="cm-pe" style="-webkit-line-clamp:3">'+cmEsc(c.body||'').replace(/\n/g,'<br>')+'</div><div class="cm-pm"><span>'+cmTimeAgo(c.createdAt)+'</span></div></div>';
+    });
+    box.innerHTML=h;
+  }catch(e){ console.warn('mpShowMyComments',e); box.innerHTML=top+'<div class="cm-empty">'+((/index/i.test(e.message||''))?'목록 인덱스가 필요해요. (콘솔에서 생성)':'불러오지 못했어요.')+'</div>'; }
+}
+async function mpChangeNick(){
+  if(!currentUser) return;
+  var cur=cmGetNick(); if(cur==='익명') cur='';
+  var nv=prompt('새 닉네임을 입력하세요 (20자 이내)', cur);
+  if(nv==null) return; nv=nv.trim();
+  if(!nv){ alert('닉네임을 입력해 주세요.'); return; }
+  if(nv.length>20){ alert('닉네임은 20자 이내로 해주세요.'); return; }
+  try{
+    await db.collection('users').doc(currentUser.uid).set({boardNick:nv},{merge:true});
+    window._cmUserDoc=window._cmUserDoc||{}; window._cmUserDoc.boardNick=nv;
+    mpRenderHome(); alert('닉네임이 변경됐어요.');
+  }catch(e){ console.warn('mpChangeNick',e); alert('변경 중 오류가 났어요.'); }
+}
+
+
+/* 메인 공지바 + 오늘의 글 (7단계) */
+var _cmNbItems=[], _cmNbIdx=0, _cmNbTimer=null;
+async function cmLoadNoticeBar(){
+  var bar=document.getElementById('cmNoticeBar'); if(!bar) return;
+  if(!firebaseReady||!db){ bar.classList.add('hidden'); return; }
+  try{
+    var snap=await db.collection('posts').where('board','==','notice').orderBy('createdAt','desc').limit(5).get();
+    _cmNbItems=[]; snap.forEach(function(d){ var p=d.data(); _cmNbItems.push({id:d.id, title:p.title||''}); });
+    if(!_cmNbItems.length){ bar.classList.add('hidden'); if(_cmNbTimer){clearInterval(_cmNbTimer);_cmNbTimer=null;} return; }
+    bar.classList.remove('hidden');
+    var roll=document.getElementById('cmNbRoll');
+    roll.innerHTML=_cmNbItems.map(function(it,i){ return '<div class="cm-nb-line'+(i===0?' on':'')+'">'+cmEsc(it.title)+'</div>'; }).join('');
+    _cmNbIdx=0;
+    if(_cmNbTimer){ clearInterval(_cmNbTimer); _cmNbTimer=null; }
+    if(_cmNbItems.length>1){
+      _cmNbTimer=setInterval(function(){
+        var lines=roll.querySelectorAll('.cm-nb-line'); if(lines.length<2) return;
+        var cur=lines[_cmNbIdx]; _cmNbIdx=(_cmNbIdx+1)%lines.length; var nx=lines[_cmNbIdx];
+        cur.classList.remove('on'); cur.classList.add('out');
+        nx.classList.remove('out'); nx.classList.add('on');
+        setTimeout(function(){ cur.classList.remove('out'); },500);
+      },3000);
+    }
+  }catch(e){ console.warn('cmLoadNoticeBar',e); bar.classList.add('hidden'); }
+}
+function cmGotoNotice(){ cmBoard='notice'; openCommunity(); }
+function cmTodayHTML(p){
+  var badge=(p.cert)?'<span class="cm-cert">'+cmEsc(CM_CERT_LABEL[p.cert]||p.cert)+'</span>':'';
+  return '<div class="cm-today" onclick="cmOpenDetail(\''+p._id+'\')">'
+    +'<div class="cm-today-l">🏆 오늘의 글</div>'
+    +'<div class="cm-today-t">'+badge+cmEsc(p.title||'')+'</div>'
+    +'<div class="cm-today-m">'+cmEsc(p.authorNick||'익명')+' · 👍 '+(p.upCount||0)+' · 💬 '+(p.commentCount||0)+'</div></div>';
+}
+
+
+/* 게시글 신고 (8a) */
+async function cmReport(){
+  if(!currentUser){ alert('신고하려면 로그인이 필요해요.'); return; }
+  if(!cmCurPost) return;
+  var reason=prompt('신고 사유를 적어주세요 (욕설 · 광고 · 도배 등)');
+  if(reason==null) return; reason=(reason||'').trim();
+  try{
+    await db.collection('reports').add({
+      postId:cmCurPost._id, postTitle:(cmCurPost.title||''), board:(cmCurPost.board||''),
+      reason:(reason||'(사유 없음)'), reporterUid:currentUser.uid, reporterNick:cmGetNick(),
+      status:'open', createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert('신고가 접수됐어요. 검토 후 조치할게요.');
+  }catch(e){ console.warn('cmReport',e); alert('신고 중 오류가 났어요.'); }
+}
 
 </script>
 
