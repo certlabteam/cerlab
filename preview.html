@@ -717,6 +717,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   #mcqView{max-width:480px;margin:0 auto}
   .panel h2{font-size:13px;margin:0 0 8px;color:#334155}
   textarea{width:100%;box-sizing:border-box;height:460px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;border:1px solid #CBD5E1;border-radius:8px;padding:10px;resize:vertical}
+  #src.dragover{border:2px dashed #0C447C;background:#F0F6FF}
   .ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
   label{font-size:12.5px;color:#475569;font-weight:700}
   select{font-size:13px;padding:6px 10px;border:1px solid #CBD5E1;border-radius:8px;background:#fff}
@@ -730,7 +731,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   <h1>CertLab 해설 렌더 미리보기 <span style="font-size:12px;color:#94A3B8;font-weight:400">(데이터방용 · 해설 전체)</span></h1>
   <div class="sub">문항 JSON을 붙여넣으면 <b>실제 앱과 동일한 로직·CSS</b>로 해설 전체가 렌더된다 — 보기별 해설(exp.o)·조합형 진술 펼침(ㄱ~ㅎ)·계산형 단계풀이(exp.ex)·암기코드(exp.mn)·개념설명(exp.c: d·cx·exd💡·ex).<br>💡(exd)는 시험 종류가 <b>생체보디빌딩</b>일 때만 표시된다. 라이브 index.html 해설 빌드 함수를 그대로 옮긴 것이라 여기 보이는 모습 = 앱 모습이다.</div>
   <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
-  <div class="grid"><div class="panel"><h2>문항 JSON (수정해서 보세요)</h2><textarea id="src" spellcheck="false"></textarea></div><div class="panel"><h2>미리보기 (해설)</h2><div id="navBar"></div><div id="typeBadge"></div><div id="errBox"></div><div id="mcqView"></div></div></div>
+  <div class="grid"><div class="panel"><h2>문항 JSON (붙여넣기·파일 드래그&드롭·수정)</h2><textarea id="src" spellcheck="false"></textarea></div><div class="panel"><h2>미리보기 (해설)</h2><div id="navBar"></div><div id="typeBadge"></div><div id="errBox"></div><div id="mcqView"></div></div></div>
   <div class="note">· 라이브 index.html의 해설 본체 + 의존 헬퍼(조합형 파싱·verdict·oxCompare·renderMath 등)를 라인 단위로 그대로 추출(재구현 아님 → 드리프트 방지).<br>· 이미지(img://·optImg)는 Firestore 자료라 여기선 [이미지: 키] 라벨로만 보인다. '내 O/X vs 정답' 표는 사용자 입력용이라 안 나온다.<br>· 조합형은 q의 진술 마커(ㄱ.ㄴ.ㄷ…) 개수와 exp.o 개수가 같아야 진술별로 펼쳐진다(다르면 보기별/정답보기 폴백).</div>
 </div>
 <script>
@@ -1299,9 +1300,9 @@ function render(){
 document.getElementById('cert').addEventListener('change', render);
 document.getElementById('src').addEventListener('input', function(){ _idx=0; render(); });
 document.getElementById('sample').addEventListener('change', function(){ document.getElementById('src').value=JSON.stringify(SAMPLES[this.value],null,2); render(); });
-// JSON 파일 열기 — 붙여넣기 깨짐(따옴표·줄바꿈) 회피, 파일째 읽어 렌더
-document.getElementById('jsonFile').addEventListener('change', function(){
-  var f=this.files && this.files[0]; if(!f) return;
+// 파일 → src 로더 (파일열기·드래그드롭 공용): 붙여넣기 깨짐 회피, BOM 제거
+function pvLoadFile(f){
+  if(!f) return;
   var nameEl=document.getElementById('fileName'); if(nameEl) nameEl.textContent=f.name;
   var rd=new FileReader();
   rd.onload=function(){
@@ -1313,8 +1314,24 @@ document.getElementById('jsonFile').addEventListener('change', function(){
   };
   rd.onerror=function(){ var eb=document.getElementById('errBox'); if(eb) eb.innerHTML='<div class="errx">파일 읽기 실패</div>'; };
   rd.readAsText(f,'utf-8');
+}
+// 파일 열기 버튼
+document.getElementById('jsonFile').addEventListener('change', function(){
+  pvLoadFile(this.files && this.files[0]);
   this.value='';   // 같은 파일 다시 선택 가능하게 초기화
 });
+// 드래그&드롭 — textarea(#src)에 JSON 파일 떨구면 로드. 화면 밖 드롭은 무시(브라우저 페이지 이동 방지)
+(function(){
+  ['dragover','drop'].forEach(function(ev){ document.addEventListener(ev, function(e){ e.preventDefault(); }); });
+  var sx=document.getElementById('src'); if(!sx) return;
+  sx.addEventListener('dragover', function(e){ e.preventDefault(); e.stopPropagation(); sx.classList.add('dragover'); });
+  sx.addEventListener('dragleave', function(){ sx.classList.remove('dragover'); });
+  sx.addEventListener('drop', function(e){
+    e.preventDefault(); e.stopPropagation(); sx.classList.remove('dragover');
+    var dt=e.dataTransfer, f=dt && dt.files && dt.files[0];
+    if(f) pvLoadFile(f);
+  });
+})();
 document.getElementById('src').value=JSON.stringify(SAMPLES.combo,null,2);
 render();
 
