@@ -1066,7 +1066,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="cm-wbody">
     <div class="cm-field"><label>게시판</label><select id="cmwBoard" onchange="cmwToggleCert()"></select></div>
     <div class="cm-field" id="cmwCertField"><label>시험 종류</label><select id="cmwCert"></select></div>
-    <div class="cm-field"><label>닉네임</label><input id="cmwNick" maxlength="20" placeholder="게시판에서 쓸 닉네임"><div class="cm-note">한 번 정하면 다음부터 자동으로 사용돼요. (변경 가능)</div></div>
+    <div class="cm-field"><label>닉네임</label><input id="cmwNick" maxlength="20" placeholder="게시판에서 쓸 닉네임"><div class="cm-note">한 번 정하면 바꿀 수 없어요. 신중히 입력해 주세요.</div></div>
     <div class="cm-field"><label>제목</label><input id="cmwTitle" maxlength="100" placeholder="제목"></div>
     <div class="cm-field"><label>내용</label><textarea id="cmwBody" maxlength="5000" placeholder="준비 기간 · 공부법 · 시험장 후기 등을 적어주세요."></textarea></div>
     <div class="cm-field"><label>사진 (최대 5장)</label>
@@ -4154,6 +4154,7 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   document.getElementById('homeView').classList.remove('hidden');
+  var _ft=document.querySelector('.footer'); if(_ft) _ft.classList.remove('hidden');
   var _cmv=document.getElementById('communityView'); if(_cmv) _cmv.classList.add('hidden');
   var _mpv=document.getElementById('myPageView'); if(_mpv) _mpv.classList.add('hidden');
   document.getElementById('bodybuildingView').classList.add('hidden');
@@ -4465,13 +4466,14 @@ function doPrint(){let subs=prSelectedSubs();let list=prCardsFor(prScope).filter
 var CM_CERT_LABEL = {bodybuilding:'생체', appraiser:'감평사', realestate1:'공인1', realestate2:'공인2', koreanhistory:'한국사', housing:'주택관리사'};
 var cmBoard = 'review';
 window._cmUserDoc = window._cmUserDoc || null;
-function cmIsAdmin(){ return !!(window._cmUserDoc && window._cmUserDoc.isAdmin); }
+function cmIsAdmin(){ return !!((window._cmUserDoc && window._cmUserDoc.isAdmin) || (currentUser && currentUser.email==='certlab.team@gmail.com')); }
 async function openCommunity(){
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   var ids=['homeView','bodybuildingView','mcqView','myPageView'];
   ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.add('hidden'); });
   document.getElementById('communityView').classList.remove('hidden');
+  var _ft=document.querySelector('.footer'); if(_ft) _ft.classList.add('hidden');
   var cs=document.getElementById('certSwitch'); if(cs) cs.classList.remove('hidden');
   await cmLoadUserDoc();
   cmSwitchTab(cmBoard);
@@ -4553,7 +4555,9 @@ function cmOpenWrite(){
   bsel.value=(cmBoard==='notice'&&!cmIsAdmin())?'review':cmBoard;
   var csel=document.getElementById('cmwCert');
   csel.innerHTML=CM_CERTS.map(function(c){return '<option value="'+c[0]+'">'+c[1]+'</option>';}).join('');
-  var nk=cmGetNick(); document.getElementById('cmwNick').value=(nk==='익명')?'':nk;
+  var _nkEl=document.getElementById('cmwNick');
+  if(window._cmUserDoc && window._cmUserDoc.boardNick){ _nkEl.value=window._cmUserDoc.boardNick; _nkEl.readOnly=true; _nkEl.style.background='#F1EFEC'; }
+  else { var nk=cmGetNick(); _nkEl.value=(nk==='익명')?'':nk; _nkEl.readOnly=false; _nkEl.style.background=''; }
   document.getElementById('cmwTitle').value=''; document.getElementById('cmwBody').value='';
   cmFiles=[]; cmRenderImgRow();
   cmwToggleCert();
@@ -4576,11 +4580,12 @@ async function cmSubmitPost(){
   if(board==='notice'&&!cmIsAdmin()){ alert('공지는 관리자만 작성할 수 있어요.'); return; }
   if(!nick){ alert('닉네임을 입력해 주세요.'); return; }
   if(nick.length>20){ alert('닉네임은 20자 이내로 해주세요.'); return; }
+  if(window._cmUserDoc && window._cmUserDoc.boardNick){ nick=window._cmUserDoc.boardNick; }  // 닉 잠금: 기존 닉 강제
   if(!title){ alert('제목을 입력해 주세요.'); return; }
   if(!body){ alert('내용을 입력해 주세요.'); return; }
   var btn=document.getElementById('cmwSubmit'); btn.disabled=true; btn.textContent='등록 중\u2026';
   try{
-    if(!window._cmUserDoc || window._cmUserDoc.boardNick!==nick){
+    if(currentUser && (!window._cmUserDoc || !window._cmUserDoc.boardNick)){
       try{ await db.collection('users').doc(currentUser.uid).set({boardNick:nick},{merge:true}); window._cmUserDoc=window._cmUserDoc||{}; window._cmUserDoc.boardNick=nick; }catch(_){}
     }
     var _pref=db.collection('posts').doc(); var _pid=_pref.id;
@@ -4803,6 +4808,7 @@ async function openMyPage(){
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   ['homeView','bodybuildingView','mcqView','communityView'].forEach(function(id){var el=document.getElementById(id); if(el) el.classList.add('hidden');});
   document.getElementById('myPageView').classList.remove('hidden');
+  var _ft=document.querySelector('.footer'); if(_ft) _ft.classList.add('hidden');
   var cs=document.getElementById('certSwitch'); if(cs) cs.classList.remove('hidden');
   await cmLoadUserDoc();
   mpRenderHome();
@@ -4820,7 +4826,7 @@ function mpRenderHome(){
     +'<div class="mp-link" onclick="mpShowMyPosts()"><span class="e">📝</span>내가 쓴 글</div>'
     +'<div class="mp-link" onclick="mpShowMyComments()"><span class="e">💬</span>내가 쓴 댓글</div>'
     +'<div class="mp-sec">회원정보</div>'
-    +'<div class="mp-link" onclick="mpChangeNick()"><span class="e">\u270F\ufe0f</span>닉네임 변경</div>';
+    +((window._cmUserDoc && window._cmUserDoc.boardNick) ? '<div class="mp-link" style="opacity:.6;cursor:default"><span class="e">\u270F\ufe0f</span>닉네임 '+cmEsc(window._cmUserDoc.boardNick)+' (변경 불가)</div>' : '<div class="mp-link" onclick="mpChangeNick()"><span class="e">\u270F\ufe0f</span>닉네임 설정</div>');
 }
 function mpShowHistory(){
   var box=document.getElementById('mpBody'); if(!box) return;
@@ -4864,6 +4870,7 @@ async function mpShowMyComments(){
 }
 async function mpChangeNick(){
   if(!currentUser) return;
+  if(window._cmUserDoc && window._cmUserDoc.boardNick){ alert('닉네임은 한 번 정하면 바꿀 수 없어요.'); return; }
   var cur=cmGetNick(); if(cur==='익명') cur='';
   var nv=prompt('새 닉네임을 입력하세요 (20자 이내)', cur);
   if(nv==null) return; nv=nv.trim();
