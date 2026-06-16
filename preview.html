@@ -725,7 +725,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   <h1>CertLab 해설 렌더 미리보기 <span style="font-size:12px;color:#94A3B8;font-weight:400">(데이터방용 · 해설 전체)</span></h1>
   <div class="sub">문항 JSON을 붙여넣으면 <b>실제 앱과 동일한 로직·CSS</b>로 해설 전체가 렌더된다 — 보기별 해설(exp.o)·조합형 진술 펼침(ㄱ~ㅎ)·계산형 단계풀이(exp.ex)·암기코드(exp.mn)·개념설명(exp.c: d·cx·exd💡·ex).<br>💡(exd)는 시험 종류가 <b>생체보디빌딩</b>일 때만 표시된다. 라이브 index.html 해설 빌드 함수를 그대로 옮긴 것이라 여기 보이는 모습 = 앱 모습이다.</div>
   <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
-  <div class="grid"><div class="panel"><h2>문항 JSON (수정해서 보세요)</h2><textarea id="src" spellcheck="false"></textarea></div><div class="panel"><h2>미리보기 (해설)</h2><div id="typeBadge"></div><div id="errBox"></div><div id="mcqView"></div></div></div>
+  <div class="grid"><div class="panel"><h2>문항 JSON (수정해서 보세요)</h2><textarea id="src" spellcheck="false"></textarea></div><div class="panel"><h2>미리보기 (해설)</h2><div id="navBar"></div><div id="typeBadge"></div><div id="errBox"></div><div id="mcqView"></div></div></div>
   <div class="note">· 라이브 index.html의 해설 본체 + 의존 헬퍼(조합형 파싱·verdict·oxCompare·renderMath 등)를 라인 단위로 그대로 추출(재구현 아님 → 드리프트 방지).<br>· 이미지(img://·optImg)는 Firestore 자료라 여기선 [이미지: 키] 라벨로만 보인다. '내 O/X vs 정답' 표는 사용자 입력용이라 안 나온다.<br>· 조합형은 q의 진술 마커(ㄱ.ㄴ.ㄷ…) 개수와 exp.o 개수가 같아야 진술별로 펼쳐진다(다르면 보기별/정답보기 폴백).</div>
 </div>
 <script>
@@ -1232,17 +1232,47 @@ function showTypeBadge(q){
   el.innerHTML=rows;
 }
 
-function render(){
+var _items=null, _idx=0;   // 배열 입력 시 문항 목록·현재 인덱스
+function renderOne(q){
   var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
-  var cert=document.getElementById('cert').value, raw=document.getElementById('src').value;
+  var cert=document.getElementById('cert').value;
   errBox.innerHTML='';
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
-  var q; try{ q=JSON.parse(raw); }catch(e){ errBox.innerHTML='<div class="errx">JSON 오류: '+String(e.message)+'</div>'; out.innerHTML=''; return; }
   try{ showTypeBadge(q); }catch(_){}
   try{ out.innerHTML = (!q.exp && (q.a || q.learn)) ? renderOral(q, cert) : renderExpFull(q, cert); }catch(e){ errBox.innerHTML='<div class="errx">렌더 오류: '+String(e.message)+'</div>'; }
 }
+function drawNav(){
+  var nav=document.getElementById('navBar'); if(!nav) return;
+  if(!_items){ nav.innerHTML=''; return; }
+  var id=(_items[_idx]&&_items[_idx].id)?(' · '+_items[_idx].id):'';
+  nav.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px">'+
+    '<button id="navPrev" style="padding:5px 12px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;cursor:pointer;font-weight:700">◀ 이전</button>'+
+    '<span style="font-weight:800;color:#0C447C">'+(_idx+1)+' / '+_items.length+'<span style="color:#94A3B8;font-weight:600">'+id+'</span></span>'+
+    '<button id="navNext" style="padding:5px 12px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;cursor:pointer;font-weight:700">다음 ▶</button>'+
+    '</div>';
+  document.getElementById('navPrev').onclick=function(){ if(_idx>0){_idx--; renderOne(_items[_idx]); drawNav();} };
+  document.getElementById('navNext').onclick=function(){ if(_idx<_items.length-1){_idx++; renderOne(_items[_idx]); drawNav();} };
+}
+function render(){
+  var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
+  var raw=document.getElementById('src').value;
+  errBox.innerHTML='';
+  var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
+  var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
+  var data; try{ data=JSON.parse(raw); }catch(e){ errBox.innerHTML='<div class="errx">JSON 오류: '+String(e.message)+'</div>'; out.innerHTML=''; _items=null; return; }
+  // 배열(회차 파일 등)이면 문항 목록으로, 단일 객체면 그 하나만
+  if(Array.isArray(data)){
+    var arr=data.filter(function(x){ return x && typeof x==='object'; });
+    if(!arr.length){ errBox.innerHTML='<div class="errx">빈 배열이다.</div>'; out.innerHTML=''; _items=null; return; }
+    _items=arr; if(_idx>=arr.length) _idx=0;
+    drawNav(); renderOne(_items[_idx]);
+  } else {
+    _items=null;
+    renderOne(data);
+  }
+}
 document.getElementById('cert').addEventListener('change', render);
-document.getElementById('src').addEventListener('input', render);
+document.getElementById('src').addEventListener('input', function(){ _idx=0; render(); });
 document.getElementById('sample').addEventListener('change', function(){ document.getElementById('src').value=JSON.stringify(SAMPLES[this.value],null,2); render(); });
 // JSON 파일 열기 — 붙여넣기 깨짐(따옴표·줄바꿈) 회피, 파일째 읽어 렌더
 document.getElementById('jsonFile').addEventListener('change', function(){
@@ -1253,6 +1283,7 @@ document.getElementById('jsonFile').addEventListener('change', function(){
     var txt=String(rd.result||'');
     if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);   // BOM 제거
     document.getElementById('src').value=txt;
+    _idx=0;
     render();
   };
   rd.onerror=function(){ var eb=document.getElementById('errBox'); if(eb) eb.innerHTML='<div class="errx">파일 읽기 실패</div>'; };
