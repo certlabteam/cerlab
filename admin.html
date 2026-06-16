@@ -170,6 +170,7 @@ tr:hover td{background:#FAFAFA}
     <button class="tab-btn" onclick="switchTab('import')">데이터 업로드</button>
     <button class="tab-btn" onclick="switchTab('imgup')">이미지 업로드</button>
     <button class="tab-btn" onclick="switchTab('reports')" id="tabReports">오류 신고<span class="badge" id="reportBadge" style="display:none">0</span></button>
+    <button class="tab-btn" onclick="switchTab('preview')">🔍 문항 미리보기</button>
   </div>
 
   <div class="admin-content">
@@ -441,6 +442,14 @@ tr:hover td{background:#FAFAFA}
           </select>
         </div>
         <div id="reportList"><div class="loading">로딩 중...</div></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-preview">
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">🔍 문항 미리보기 (JSON → 앱과 동일하게 렌더)</div></div>
+        <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">문항 JSON을 붙여넣고 렌더하면 실제 앱(index.html)과 동일한 로직·CSS로 보입니다 — 보기별 해설·조합형·cx 예시박스·암기코드(mn)·계산형 단계풀이. 라이브 렌더 코드를 그대로 쓰므로 여기 보이는 모습 = 앱 모습입니다.</div>
+        <iframe id="pvFrame" src="preview.html" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#EAF1FA"></iframe>
       </div>
     </div>
 
