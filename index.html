@@ -3455,6 +3455,8 @@ function splitVerdict(ex){
   var rest=standalone ? before.replace(/[\s.·,]+$/,'').trim() : ex.trim();
   return {v:v, vc:verdictColor(v), rest:rest};
 }
+// 판정 배지 표시 문구를 표준 축(옳음/옳지 않음)으로 정규화 — 표시 전용(로직 verdictIsO는 원본 v 사용)
+function verdictLabel(v){ if(!v) return v; if(/옳지|적절하지|부적절|틀리|틀린/.test(v)) return '옳지 않음'; if(/옳다|적절하다|맞다/.test(v)) return '옳음'; return v; }
 // O/X 자가체크 → 실제 정답 판정 비교 (1단계)
 function verdictIsO(v){
   if(!v) return null;
@@ -3901,7 +3903,7 @@ function renderMcqExam(root){
         var raw=oArr[i]||'';
         var ex=stripRepeatedOpt(raw, s.t);
         var sv=splitVerdict(ex);
-        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
         var inAns = ansLabels.indexOf(s.k)>=0;
         var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
         var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
@@ -3913,7 +3915,7 @@ function renderMcqExam(root){
       var cCirc=['①','②','③','④','⑤'];
       var stemText = String(q.q||'').split(/ㄱ\s*[.\uFF0E]/)[0];   // 첫 지문(ㄱ.) 앞 질문부만 — 지문 속 '않/아닌' 오탐 방지
       var stemNeg = /(옳지\s*않|옳지않|적절하지\s*않|적절하지않|틀린|틀리는|아닌\s*것|해당하지\s*않)/.test(stemText);
-      var pickVerdict = stemNeg ? '<span class="eo-verdict eo-red">옳지 않다</span>' : '<span class="eo-verdict eo-grn">옳다</span>';
+      var pickVerdict = stemNeg ? '<span class="eo-verdict eo-red">옳지 않음</span>' : '<span class="eo-verdict eo-grn">옳음</span>';
       var comboLine=ansN.map(function(n){
         var lab=cCirc[n-1]||('('+n+')');
         return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' '+pickVerdict+' <span class="eo-badge">✅ 정답</span></div>';
@@ -3948,7 +3950,7 @@ function renderMcqExam(root){
         if(fbCombo && !isAns) return '';                  // 폴백: 콤보 파싱 실패 → 정답 보기만
         var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);
         var sv=splitVerdict(ex);
-        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
         var ansTag = isAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
         var _hasT = q.opts && q.opts[i];
         var _hasI = q.optImg && q.optImg[i];
@@ -3966,7 +3968,7 @@ function renderMcqExam(root){
         // 계산형: 정답 보기만 표시(오답 숨김) + 그래프 + 단계풀이
         var ansIdx = oArr.findIndex(Boolean);
         var sv1=splitVerdict(stripRepeatedOpt(concl, q.opts&&q.opts[ansIdx]));
-        var vTag = sv1.v ? ' <span class="eo-verdict '+sv1.vc+'">'+sv1.v+'</span>' : '';
+        var vTag = sv1.v ? ' <span class="eo-verdict '+sv1.vc+'">'+verdictLabel(sv1.v)+'</span>' : '';
         var optLine = (q.opts&&q.opts[ansIdx]!=null) ? '<div class="eo-q">'+(ansIdx+1)+'. '+rm(q.opts[ansIdx],q)+vTag+' <span class="eo-badge">✅ 정답</span></div>' : '';
         var aLine = sv1.rest ? '<div class="eo-a">'+rm(sv1.rest,q)+'</div>' : '';
         body+='<div class="exp-opts"><div class="eo">'+optLine+aLine+'</div></div>';
