@@ -1757,7 +1757,7 @@ function updateAuthBar() {
       <button class="avatar-btn" onclick="toggleUserMenu(event)" aria-label="내 메뉴">${img}</button>
       <div class="user-dropdown hidden" id="userDropdown">
         <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
-        <div class="mile-bal">🪙 마일리지 <b>${mileageBalance(myMileageLots).toLocaleString()}원</b></div>
+        <div class="mile-bal">💰 포인트 <b>${mileageBalance(myMileageLots).toLocaleString()}P</b></div>
         <button class="ref-acc-btn" onclick="openMyPage()">👤 마이페이지</button>
         <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
         <div class="ref-acc hidden" id="refAcc">
@@ -1945,7 +1945,7 @@ function showWelcomePopup() {
     <div class="auth-feature-item">자동복습 & 오답노트</div>
     <div class="auth-feature-item">예상점수 & 약점 분석</div>
     <div class="auth-feature-item">50문제 무료 체험!</div>
-    <div class="welcome-mile">🎁 가입 축하 <b>1,000원</b> 마일리지 지급! <span>(3일 안에 사용)</span><br>
+    <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(3일 안에 사용)</span><br>
       친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +10,000원 (1년 유효)
       <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
     </div>`;
@@ -1995,7 +1995,7 @@ function renderMileUse(){
   const box=document.getElementById('mileUseBox'); if(!box) return;
   const bal=mileageBalance(myMileageLots);
   if(bal<=0){ box.innerHTML=''; mileApplyOn=false; return; }
-  box.innerHTML='<label class="mile-use"><input type="checkbox" id="mileChk" '+(mileApplyOn?'checked':'')+' onchange="onMileToggle()"> 🪙 보유 마일리지 <b>'+bal.toLocaleString()+'원</b> 사용</label>';
+  box.innerHTML='<label class="mile-use"><input type="checkbox" id="mileChk" '+(mileApplyOn?'checked':'')+' onchange="onMileToggle()"> 💰 보유 포인트 <b>'+bal.toLocaleString()+'P</b> 사용</label>';
 }
 function onMileToggle(){ const c=document.getElementById('mileChk'); mileApplyOn=!!(c&&c.checked); recalcPay(); }
 function recalcPay(){
@@ -2005,8 +2005,8 @@ function recalcPay(){
   const applied=mileApplyOn?Math.min(bal,price):0;
   const payable=price-applied;
   if(price<=0){ btn.textContent='이용권을 선택하세요'; return; }
-  if(payable<=0) btn.textContent='마일리지 '+applied.toLocaleString()+'원으로 결제 (즉시 활성화)';
-  else if(applied>0) btn.textContent=payable.toLocaleString()+'원 입금 신청 (마일리지 '+applied.toLocaleString()+'원 사용)';
+  if(payable<=0) btn.textContent='포인트 '+applied.toLocaleString()+'P로 결제 (즉시 활성화)';
+  else if(applied>0) btn.textContent=payable.toLocaleString()+'원 입금 신청 (포인트 '+applied.toLocaleString()+'P 사용)';
   else btn.textContent=price.toLocaleString()+'원 입금 완료 신청';
 }
 
@@ -2031,8 +2031,8 @@ async function submitPayment() {
   if (payable > 0 && !depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
 
   const confMsg = payable<=0
-    ? '['+certName+'] '+planLabelOf(selectedPlanDays)+'\n마일리지 '+applied.toLocaleString()+'원으로 결제 (입금 없이 즉시 활성화)\n진행할까요?'
-    : '['+certName+'] '+planLabelOf(selectedPlanDays)+' - '+price.toLocaleString()+'원\n'+(applied>0?'마일리지 '+applied.toLocaleString()+'원 사용 + 입금 '+payable.toLocaleString()+'원\n':'')+'입금자: '+depositorName+'\n신청하시겠어요?';
+    ? '['+certName+'] '+planLabelOf(selectedPlanDays)+'\n포인트 '+applied.toLocaleString()+'P로 결제 (입금 없이 즉시 활성화)\n진행할까요?'
+    : '['+certName+'] '+planLabelOf(selectedPlanDays)+' - '+price.toLocaleString()+'원\n'+(applied>0?'포인트 '+applied.toLocaleString()+'P 사용 + 입금 '+payable.toLocaleString()+'원\n':'')+'입금자: '+depositorName+'\n신청하시겠어요?';
   if (!confirm(confMsg)) return;
 
   try {
@@ -2049,7 +2049,7 @@ async function submitPayment() {
 
     await db.collection('payments').add({
       uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
-      depositorName: depositorName || (applied>0?'(마일리지 결제)':''),
+      depositorName: depositorName || (applied>0?'(포인트 결제)':''),
       certType: cert, certName,
       planDays: selectedPlanDays,
       price: price,
@@ -2074,7 +2074,7 @@ async function submitPayment() {
     try { await db.collection('referrals').doc(currentUser.uid).update({ paid:true }); } catch(_){}
 
     syncPlanMirror(); updateAuthBar(); hidePlanPopup();
-    alert((payable<=0?'✅ 마일리지로 결제 완료! 즉시 활성화되었습니다.':'✅ 이용권이 즉시 활성화되었습니다!')+'\n만료일: '+expireAt.toLocaleDateString('ko-KR')+(payable>0?'\n(입금 확인 후 유지됩니다.)':''));
+    alert((payable<=0?'✅ 포인트로 결제 완료! 즉시 활성화되었습니다.':'✅ 이용권이 즉시 활성화되었습니다!')+'\n만료일: '+expireAt.toLocaleDateString('ko-KR')+(payable>0?'\n(입금 확인 후 유지됩니다.)':''));
     refresh();
   } catch(e) {
     alert('오류가 발생했습니다: ' + e.message);
@@ -4854,7 +4854,8 @@ async function openMyPage(){
 function mpRenderHome(){
   var box=document.getElementById('mpBody'); if(!box) return;
   var nick=cmGetNick(); var email=(currentUser&&currentUser.email)||'';
-  var bal=(typeof mileageBalance==='function')?mileageBalance(myMileageLots):0;
+  var _lots=(window._cmUserDoc && Array.isArray(window._cmUserDoc.mileageLots))?window._cmUserDoc.mileageLots:myMileageLots;
+  var bal=(typeof mileageBalance==='function')?mileageBalance(_lots):0;
   var av=(currentUser&&currentUser.photoURL)?'<img class="mp-av" src="'+cmEsc(currentUser.photoURL)+'" alt="">':'<div class="mp-av"></div>';
   box.innerHTML=
     '<div class="mp-prof">'+av+'<div><div class="mp-nick">'+cmEsc(nick)+'</div><div class="mp-email">'+cmEsc(email)+'</div></div></div>'
