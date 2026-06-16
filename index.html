@@ -94,6 +94,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .card-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 20px}
 .subj-tag{font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:3px 10px;border-radius:20px;margin-bottom:10px}
 .card-scene{width:100%;perspective:1000px}
+.card-navwrap{display:flex;align-items:center;gap:8px;width:100%}
+.card-navwrap>.card-scene{flex:1 1 auto;min-width:0;width:auto}
+.cardnav{flex:0 0 auto;width:42px;height:42px;border-radius:50%;border:1.5px solid #E3DED8;background:#fff;color:#7F77DD;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:background .12s,border-color .12s}
+.cardnav:hover:not(:disabled){background:#F1EFFB;border-color:#CFC8F2}
+.cardnav:disabled{opacity:.3;cursor:default;box-shadow:none}
 .card-inner{position:relative;width:100%;min-height:220px;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.4,0,.2,1);cursor:pointer}
 .card-inner.flipped{transform:rotateY(180deg)}
 .card-face{position:absolute;width:100%;min-height:220px;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--radius);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:28px 22px;text-align:center}
@@ -2615,7 +2620,9 @@ function renderCard(){
   const reportBtn=`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`;
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
   area.innerHTML=
-    '<div class="card-scene">'
+    '<div class="card-navwrap">'
+    +'<button class="cardnav cardnav-prev" onclick="navigate(-1)"'+(current<=0?' disabled':'')+' aria-label="이전 카드">‹</button>'
+    +'<div class="card-scene">'
     +'<div class="card-inner'+(isFlipped?' flipped':'')+'" id="ci" onclick="flipCard()">'
     +'<div class="card-face card-front">'+statusDot+starDot
     +'<div class="card-label">Question'+newTypeBadge(card)+'</div>'
@@ -2624,6 +2631,8 @@ function renderCard(){
     +'<div class="card-label">Answer</div>'
     +'<div class="card-text">'+card.a+'</div></div>'
     +'</div></div>'
+    +'<button class="cardnav cardnav-next" onclick="navigate(1)"'+(current>=filtered.length-1?' disabled':'')+' aria-label="다음 카드">›</button>'
+    +'</div>'
     +'<div class="tap-hint">'+hintText+'</div>'
     +learnHTML
     +reportBtn;
