@@ -330,7 +330,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
 #mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
-#mcqView .qtext{font-size:15px;font-weight:600;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qbul-wrap{margin:6px 0 2px}#mcqView .qbul{display:flex;gap:7px;line-height:1.6;margin-bottom:9px}#mcqView .qbul:last-child{margin-bottom:0}#mcqView .qbul-m{flex:0 0 auto;color:#64748B;font-size:11px;line-height:1.85}#mcqView .qbul-t{flex:1;min-width:0;font-weight:500;white-space:normal}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:none;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
+#mcqView .qtext{font-size:15px;font-weight:400;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qbul-wrap{margin:6px 0 2px}#mcqView .qbul{display:flex;gap:7px;line-height:1.6;margin-bottom:9px}#mcqView .qbul:last-child{margin-bottom:0}#mcqView .qbul-m{flex:0 0 auto;color:#64748B;font-size:11px;line-height:1.85}#mcqView .qbul-t{flex:1;min-width:0;font-weight:500;white-space:normal}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:none;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
 #mcqView .opts{display:flex;flex-direction:column;gap:8px;padding:0}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#fff;border:none;border-radius:12px;padding:13px 13px;cursor:pointer;outline:none;box-shadow:0 1px 2px rgba(15,23,42,.06)}#mcqView .opt:last-child{border-bottom:none}
 #mcqView .opt:focus{outline:none}
@@ -1080,7 +1080,15 @@ function renderQuestionBlock(q){
     var oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
     return '<div class="'+cls+(oimg?' opt-img':'')+'"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
-  return '<div class="qstem"><div class="qhead"><div class="qnum">문제</div></div><div class="qtext">'+bulletStem(rm(jr.q,q))+'</div></div>'+
+  // 앱 헤더 정적 재현(미리보기용·동작 없음): 진행바 + 번호 + ★중요도 + ⌛시간 + 신고 + 찍었어요
+  var pvIdx=(_items&&_items.length)?_idx:0, pvTot=(_items&&_items.length)?_items.length:1;
+  var pct=33;   // 미리보기 진행바는 ~1/3 찬 걸로 고정(검수용 정적 표시)
+  var impS=q.star?(q.star===1?'\u2605':'\u2605'+q.star):'';
+  var impB=impS?'<span class="imp">'+impS+'</span>':'';
+  var tv=q.time||0, tlab={1:'\ube60\ub984',2:'\ubcf4\ud1b5',3:'\uc624\ub798'}[tv]||'';
+  var timeB=tv?'<span class="tmark t'+tv+'">\u231b '+tlab+'</span>':'';
+  var progBar='<div class="exam-sticky"><div class="mq-prog"><div class="row"><span>'+(pvIdx+1)+' / '+pvTot+' \ubb38\ud56d</span><span></span></div><div class="track prog-drag"><div class="bar" style="width:'+pct+'%"></div></div></div></div>';
+  return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+bulletStem(rm(jr.q,q))+'</div></div>'+
     '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
 }
 function renderExpFull(q, mqCertVal){
