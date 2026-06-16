@@ -1353,6 +1353,7 @@ async function loadUserData() {
       solveCount = totalSolve();
       setStatCountUI();
       var _resync=srRestoreResume(data);   // 이어풀기 동기화: Firestore가 더 최신이면 로컬에 복원
+      try{ srMergeOX(data); }catch(e){}    // 내 O/X 동기화: Firestore↔로컬 합치기(union, 로컬 우선)
       if(_merged && typeof saveUserData==='function') saveUserData();   // 병합분 계정에 저장
       refresh();
       if (activeCert === 'appraiser') renderMCQ();
@@ -1385,7 +1386,26 @@ function srRestoreResume(data){
   }catch(_){ return false; }
 }
 
-// 기존 오답노트(w) → cardProgress 1회 마이그레이션 (미숙·오늘 복습으로 편입)
+// 내 O/X 동기화: Firestore oxState를 로컬 mqOX에 합친다(union, 로컬 우선) — 기기 간 O/X 보존
+function srMergeOX(data){
+  try{
+    var fx=data&&data.oxState;
+    if(!fx||typeof fx!=='object') return false;
+    if(typeof mqOX==='undefined'||!mqOX) return false;
+    var changed=false;
+    for(var qid in fx){
+      if(!fx.hasOwnProperty(qid)) continue;
+      var fEntry=fx[qid]; if(!fEntry||typeof fEntry!=='object') continue;
+      if(!mqOX[qid]){ mqOX[qid]=Object.assign({},fEntry); changed=true; continue; }
+      for(var k in fEntry){
+        if(!fEntry.hasOwnProperty(k)) continue;
+        if(!(k in mqOX[qid])){ mqOX[qid][k]=fEntry[k]; changed=true; }   // 로컬에 없는 것만 채움(로컬 우선)
+      }
+    }
+    if(changed && typeof mqOXSave==='function') mqOXSave();
+    return changed;
+  }catch(_){ return false; }
+}
 function srMigrateIfNeeded(){
   if (srProgress && Object.keys(srProgress).length>0) return; // 이미 있음
   const now=Date.now(); let any=false;
@@ -1472,6 +1492,7 @@ async function saveUserData() {
       wrongList, favoriteList, solveCount: totalSolve(), solveCountByCert,
       cardProgress: srProgress, examDates: srExamOverride, diagnostics: srDiagnostics,
       resumeState: resumeState,
+      oxState: (typeof mqOX!=='undefined' && mqOX) ? mqOX : {},
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { console.error('저장 오류:', e); }
