@@ -95,11 +95,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .subj-tag{font-size:11px;font-weight:600;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:3px 10px;border-radius:20px;margin-bottom:10px}
 .card-scene{width:100%;perspective:1000px}
 .card-navwrap{position:relative;width:100%}
-.cardnav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:30px;height:48px;border:none;background:transparent;box-shadow:none;color:#7F77DD;font-size:30px;font-weight:700;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;text-shadow:0 1px 2px rgba(255,255,255,.9);transition:opacity .12s}
-.cardnav-prev{left:-16px}
-.cardnav-next{right:-16px}
+.cardnav{position:absolute;top:0;bottom:0;height:auto;z-index:5;width:34px;border:none;background:transparent;box-shadow:none;color:#2E6FBE;font-size:40px;font-weight:300;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;text-shadow:0 1px 2px rgba(255,255,255,.9);transition:opacity .12s}
+.cardnav-prev{left:-22px}
+.cardnav-next{right:-22px}
 .cardnav:hover:not(:disabled){opacity:.55}
-.cardnav:disabled{opacity:.2;cursor:default}
+.cardnav:disabled{opacity:.18;cursor:default}
 .card-inner{position:relative;width:100%;min-height:220px;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.4,0,.2,1);cursor:pointer}
 .card-inner.flipped{transform:rotateY(180deg)}
 .card-face{position:absolute;width:100%;min-height:220px;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--radius);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:28px 22px;text-align:center}
