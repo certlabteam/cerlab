@@ -2227,7 +2227,10 @@ function getFiltered(){
   if(srMode==='review'){
     b=b.slice().sort((x,y)=>{ const px=srGet(x)||{},py=srGet(y)||{};
       return (px.nx||0)-(py.nx||0) || (y.star||0)-(x.star||0); });
-    if(b.length>SR_DAILY_CAP) b=b.slice(0,SR_DAILY_CAP);   // 하루 복습 상한
+    if(b.length>SR_DAILY_CAP) b=b.slice(0,SR_DAILY_CAP);   // 하루 복습 상한(복습일 급한 것 우선 선정)
+    // 표시는 과목별로 묶어서 — 같은 과목이 연속으로 쫙 나오게(선정은 위 복습일순 유지)
+    var _so={}; (ALL_SUBJS||[]).forEach(function(s,i){ _so[s]=i; });
+    b=b.slice().sort((x,y)=>((_so[x.s]==null?999:_so[x.s])-(_so[y.s]==null?999:_so[y.s])));
   }
   return b;
 }
@@ -3104,7 +3107,9 @@ function startGatherExam(label, list){      // 개념 모아풀기 (복습류 �
 }
 function startMcqReview(){
   const qb=curQB(); const due=[];
-  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)){ q._subj=qb[id].name||id; due.push(q); } })); });
+  const _sord={}; curOrder().forEach((id,i)=>{ _sord[id]=i; });   // 과목 순서 인덱스
+  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)){ q._subj=qb[id].name||id; q._grp=(_sord[id]||0); due.push(q); } })); });
+  due.sort((a,b)=>((a._grp||0)-(b._grp||0)));   // 같은 과목끼리 연속으로 쫙(이미 묶이지만 보장)
   if(!due.length){
     const root=document.getElementById('mcqRoot');
     if(root) root.innerHTML='<div class="mcq-result"><div class="em">🎉</div>'
