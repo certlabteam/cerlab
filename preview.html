@@ -1092,8 +1092,21 @@ function renderQuestionBlock(q){
   var tv=q.time||0, tlab={1:'\ube60\ub984',2:'\ubcf4\ud1b5',3:'\uc624\ub798'}[tv]||'';
   var timeB=tv?'<span class="tmark t'+tv+'">\u231b '+tlab+'</span>':'';
   var progBar='<div class="exam-sticky"><div class="mq-prog"><div class="row"><span>'+(pvIdx+1)+' / '+pvTot+' \ubb38\ud56d</span><span></span></div><div class="track prog-drag"><div class="bar" style="width:'+pct+'%"></div></div></div></div>';
+  // 문제 자료(jr.jaryo)의 ㄱ/ㄴ/ㄷ 지문을 줄바꿈+hanging indent로 쪼개 렌더(2개 이상일 때). 표·단일은 raw.
+  var jaryoHTML='';
+  if(jr.jaryo){
+    var jp=splitStmtMarkers(jr.jaryo);
+    if(jp.stmts && jp.stmts.length>=2){
+      jaryoHTML='<div class="jaryo">'
+        + (jp.intro?'<div style="margin-bottom:6px">'+rm(jp.intro,q)+'</div>':'')
+        + jp.stmts.map(function(st){ return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span></div>'; }).join('')
+        + '</div>';
+    } else {
+      jaryoHTML='<div class="jaryo">'+rm(jr.jaryo,q)+'</div>';
+    }
+  }
   return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+bulletStem(rm(jr.q,q))+'</div></div>'+
-    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
+    '<div class="qcard">'+jaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
 }
 function renderExpFull(q, mqCertVal){
   mqCert = mqCertVal;
