@@ -769,6 +769,8 @@ function splitVerdict(ex){
   var rest=standalone ? before.replace(/[\s.·,]+$/,'').trim() : ex.trim();
   return {v:v, vc:verdictColor(v), rest:rest};
 }
+// 판정 배지 표시 문구를 표준 축(옳음/옳지 않음)으로 정규화 — 표시 전용(로직 verdictIsO는 원본 v 사용)
+function verdictLabel(v){ if(!v) return v; if(/옳지|적절하지|부적절|틀리|틀린/.test(v)) return '옳지 않음'; if(/옳다|적절하다|맞다/.test(v)) return '옳음'; return v; }
 // O/X 자가체크 → 실제 정답 판정 비교 (1단계)
 
 function verdictIsO(v){
@@ -1054,6 +1056,8 @@ function renderOral(q, mqCertVal){
   var panelInner = buildLearnPanel(L, q.img||null) + buildMnemonic(q);
   var ntag = (q.since && Number(q.since)===new Date().getFullYear())
     ? '<span style="margin-left:8px;font-size:11px;font-weight:700;background:#FFE4C2;color:#B45309;border-radius:6px;padding:2px 7px">'+q.since+'년 기출'+(q.newType?' 신유형':'')+'</span>' : '';
+  // 구술 문제(질문) 프롬프트 — 모범답안 위에 표시(검수 시 무엇을 묻는지 보이게)
+  var qHead = q.q ? '<div class="qstem"><div class="qhead"><div class="qnum" style="width:auto;padding:0 9px">구술</div></div><div class="qtext">'+rm(q.q,q)+'</div></div>' : '';
   var h = '<div style="background:#fff;border:2px solid #9CC3EE;border-radius:var(--radius);padding:16px 18px;margin-bottom:4px">'
     + '<div style="font-size:13px;font-weight:800;color:#0C447C;margin-bottom:8px">모범답안'+ntag+'</div>'
     + '<div style="font-size:14px;line-height:1.8;color:#2C2C2A">'+(q.a||'')+'</div>'
@@ -1064,7 +1068,7 @@ function renderOral(q, mqCertVal){
        + '<div class="learn-panel-body">'+panelInner+'</div>'
        + '</div>';
   }
-  return h;
+  return qHead + h;
 }
 // 문제+보기 블록 — 라이브 renderMcqExam의 qstem·qcard 구조 verbatim 이식(검토모드: mqPick onclick·O/X버튼·타이머 제거)
 function renderQuestionBlock(q){
@@ -1118,7 +1122,7 @@ function renderExpFull(q, mqCertVal){
         var raw=oArr[i]||'';
         var ex=stripRepeatedOpt(raw, s.t);
         var sv=splitVerdict(ex);
-        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
         var inAns = ansLabels.indexOf(s.k)>=0;
         var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
         var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
@@ -1130,7 +1134,7 @@ function renderExpFull(q, mqCertVal){
       var cCirc=['①','②','③','④','⑤'];
       var stemText = String(q.q||'').split(/ㄱ\s*[.\uFF0E]/)[0];   // 첫 지문(ㄱ.) 앞 질문부만 — 지문 속 '않/아닌' 오탐 방지
       var stemNeg = /(옳지\s*않|옳지않|적절하지\s*않|적절하지않|틀린|틀리는|아닌\s*것|해당하지\s*않)/.test(stemText);
-      var pickVerdict = stemNeg ? '<span class="eo-verdict eo-red">옳지 않다</span>' : '<span class="eo-verdict eo-grn">옳다</span>';
+      var pickVerdict = stemNeg ? '<span class="eo-verdict eo-red">옳지 않음</span>' : '<span class="eo-verdict eo-grn">옳음</span>';
       var comboLine=ansN.map(function(n){
         var lab=cCirc[n-1]||('('+n+')');
         return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' '+pickVerdict+' <span class="eo-badge">✅ 정답</span></div>';
@@ -1165,7 +1169,7 @@ function renderExpFull(q, mqCertVal){
         if(fbCombo && !isAns) return '';                  // 폴백: 콤보 파싱 실패 → 정답 보기만
         var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);
         var sv=splitVerdict(ex);
-        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+sv.v+'</span>' : '';
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
         var ansTag = isAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
         var _hasT = q.opts && q.opts[i];
         var _hasI = q.optImg && q.optImg[i];
@@ -1183,7 +1187,7 @@ function renderExpFull(q, mqCertVal){
         // 계산형: 정답 보기만 표시(오답 숨김) + 그래프 + 단계풀이
         var ansIdx = oArr.findIndex(Boolean);
         var sv1=splitVerdict(stripRepeatedOpt(concl, q.opts&&q.opts[ansIdx]));
-        var vTag = sv1.v ? ' <span class="eo-verdict '+sv1.vc+'">'+sv1.v+'</span>' : '';
+        var vTag = sv1.v ? ' <span class="eo-verdict '+sv1.vc+'">'+verdictLabel(sv1.v)+'</span>' : '';
         var optLine = (q.opts&&q.opts[ansIdx]!=null) ? '<div class="eo-q">'+(ansIdx+1)+'. '+rm(q.opts[ansIdx],q)+vTag+' <span class="eo-badge">✅ 정답</span></div>' : '';
         var aLine = sv1.rest ? '<div class="eo-a">'+rm(sv1.rest,q)+'</div>' : '';
         body+='<div class="exp-opts"><div class="eo">'+optLine+aLine+'</div></div>';
