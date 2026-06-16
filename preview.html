@@ -1289,6 +1289,8 @@ function render(){
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
   var data; try{ data=JSON.parse(raw); }catch(e){ errBox.innerHTML='<div class="errx">JSON 오류: '+String(e.message)+'</div>'; out.innerHTML=''; _items=null; return; }
+  // 평면 번들 {version,cert,name,subject,questions:[...]}이면 questions 배열을 풀어 쓴다
+  if(data && !Array.isArray(data) && Array.isArray(data.questions)) data=data.questions;
   // 배열(회차 파일 등)이면 문항 목록으로, 단일 객체면 그 하나만
   if(Array.isArray(data)){
     var arr=data.filter(function(x){ return x && typeof x==='object'; });
