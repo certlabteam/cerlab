@@ -3642,6 +3642,12 @@ function splitJaryo(qt){
   if(nl>0) return {q:qt.slice(0,nl).trim(), jaryo:qt.slice(nl+1).trim()};
   const inl=extractInlineComboGroup(qt);                   // 인라인 조합형 폴백
   if(inl) return inl;
+  // 괄호 라벨 빈칸 ( ㄱ )( ㄴ ): 첫 라벨 빈칸부터 자료로 (질문 끝 (단,…) 조건 grab보다 우선)
+  var _bk=qt.match(/\(\s*[\u3131-\u314E]\s*\)/);
+  if(_bk){
+    var _h=qt.slice(0,_bk.index).trim(), _r=qt.slice(_bk.index).trim();
+    if(_h && _r.length>=6) return {q:_h, jaryo:_r};
+  }
   const qm=qt.indexOf('?');
   if(qm>0 && qm<qt.length-1){
     let head=qt.slice(0,qm+1); let rest=qt.slice(qm+1);
@@ -3670,6 +3676,38 @@ function parseJaryoStmts(qt){
   // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문 추출(줄·인라인 모두) → [{k,t}, ...]
   var jaryo=(splitJaryo(qt).jaryo)||qt||'';
   return splitStmtMarkers(jaryo).stmts;
+}
+
+// 괄호빈칸 짝맞추기형: 질문의 ( ㄱ )( ㄴ ) 빈칸과 그 설명 추출 → [{k,t}]
+function parseBlankStmts(qt){
+  var s=String(qt||''), re=/\(\s*([\u3131-\u314E])\s*\)/g, m, hits=[];
+  while((m=re.exec(s))){ hits.push({k:m[1], at:m.index, end:re.lastIndex}); }
+  if(!hits.length) return [];
+  var out=[];
+  for(var i=0;i<hits.length;i++){
+    var st=hits[i].end, en=(i+1<hits.length)?hits[i+1].at:s.length;
+    var t=s.slice(st,en).replace(/^[\s:\uFF1A]+/,'').replace(/\s+/g,' ').trim();
+    out.push({k:hits[i].k, t:t});
+  }
+  return out;
+}
+// 정답 보기("ㄱ: 제외지, ㄴ: 체비지")에서 빈칸별 정답 용어 추출 → {ㄱ:'제외지', ㄴ:'체비지'}
+function blankPairTerms(opt){
+  var map={};
+  String(opt||'').split(/[,\uFF0C\u00B7\/]/).forEach(function(seg){
+    var mm=seg.match(/([\u3131-\u314E])\s*[:\uFF1A]\s*(.+)/);
+    if(mm) map[mm[1]]=mm[2].trim();
+  });
+  return map;
+}
+
+// ( ㄱ )( ㄴ ) 빈칸 자료를 빈칸마다 줄내림(hanging). 빈칸 2개 미만이면 null.
+function jaryoBlanksHTML(jaryoText, q){
+  var bs=parseBlankStmts(jaryoText);
+  if(bs.length<2) return null;
+  return '<div class="jaryo">'+bs.map(function(st){
+    return '<div class="jr-stmt"><span class="jr-stmt-t">( '+st.k+' ) '+rm(st.t,q)+'</span></div>';
+  }).join('')+'</div>';
 }
 // 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
 function comboLettersFromOpts(opts){
@@ -3898,6 +3936,7 @@ function renderMcqExam(root){
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
+    var blankStmts=(!comboOK && !isCV)?parseBlankStmts(q.q):[];   // 괄호빈칸 짝맞추기
     if(comboOK){
       // 콤보: ㄱㄴㄷㄹ 지문별 펼침 (exp.o는 지문 순서). 정답 지문에 ✅, 맨 아래 정답 보기 조합 줄.
       var ansLabels=ansN.map(function(n){ return (q.opts&&q.opts[n-1])?q.opts[n-1]:''; }).join(' ');  // 정답 보기에 포함된 지문 마커
@@ -3943,6 +3982,21 @@ function renderMcqExam(root){
       }
       var cvList=cvRows ? '<div class="cv-list">'+cvRows+'</div>' : '';
       body+='<div class="exp-opts"><div class="eo">'+cvOpt+cvA+cvList+'</div></div>';
+    } else if(blankStmts.length>=2 && oFilled===blankStmts.length){
+      // 괄호빈칸 짝맞추기: 빈칸(ㄱ/ㄴ)별로 exp.o 매핑 + 정답 용어 표시
+      var bTerms=blankPairTerms((q.opts && q.opts[ansN[0]-1])||'');
+      body+='<div class="exp-opts">'+blankStmts.map(function(st,i){
+        var term=bTerms[st.k]||'';
+        var raw=oArr[i]||'';
+        var sv=splitVerdict(stripRepeatedOpt(raw, st.t));
+        var termTag = term ? ' <span class="eo-badge">\u2192 '+rm(term,q)+'</span>' : '';
+        var head='<div class="eo-q">'+st.k+'. '+rm(st.t,q)+termTag+'</div>';
+        var a1=(sv.rest||raw) ? '<div class="eo-a">'+rm(sv.rest||raw,q)+'</div>' : '';
+        var exTxt=(exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">\uC608\uC2DC</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
+        return '<div class="eo">'+head+a1+exTxt+'</div>';
+      }).join('')+'</div>';
+      var bCirc=['\u2460','\u2461','\u2462','\u2463','\u2464'];
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">\uC815\uB2F5 \uBCF4\uAE30 '+(bCirc[ansN[0]-1]||('('+ansN[0]+')'))+'. '+rm((q.opts&&q.opts[ansN[0]-1])||'',q)+' <span class="eo-badge">\u2705 \uC815\uB2F5</span></div></div></div>';
     } else if(oFilled>=2){
       // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
       var fbCombo = isCombo && !comboOK;
@@ -4026,7 +4080,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+bulletStem(rm(jr.q,q))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+(jr.jaryo?'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+(jr.jaryo?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>'):'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
