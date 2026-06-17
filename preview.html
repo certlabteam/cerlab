@@ -316,7 +316,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .set-row::-webkit-scrollbar{display:none}
 #mcqView .set-btn{flex-shrink:0;font-size:11.5px;font-weight:700;color:#475569;background:#F8FAFC;border:1px solid #E2E8F0;padding:5px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
 #mcqView .set-btn.active{color:#fff;background:#0F172A;border-color:#0F172A}
-#mcqView .exam-sticky{position:sticky;top:0;z-index:40;background:#FDF8F5;padding-top:2px;margin-bottom:12px;box-shadow:0 6px 8px -6px rgba(15,23,42,.12)}
+#mcqView{word-break:keep-all;overflow-wrap:break-word}#mcqView .exam-sticky{position:sticky;top:0;z-index:40;background:#FDF8F5;padding-top:2px;margin-bottom:12px;box-shadow:0 6px 8px -6px rgba(15,23,42,.12)}
 #mcqView .exam-sticky .mq-prog{margin-bottom:8px}
 #mcqView .mq-prog{margin-bottom:12px}
 #mcqView .mq-prog .row{display:flex;justify-content:space-between;font-size:12px;color:#64748B;font-weight:700;margin-bottom:6px}
@@ -330,7 +330,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
 #mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
-#mcqView .qtext{font-size:15px;font-weight:500;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qbul-wrap{margin:6px 0 2px}#mcqView .qbul{display:flex;gap:7px;line-height:1.6;margin-bottom:9px}#mcqView .qbul:last-child{margin-bottom:0}#mcqView .qbul-m{flex:0 0 auto;color:#64748B;font-size:11px;line-height:1.85}#mcqView .qbul-t{flex:1;min-width:0;font-weight:500;white-space:normal}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:none;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
+#mcqView .qtext{font-size:15px;font-weight:500;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qtext .qpara{margin:0 0 12px;line-height:1.85}#mcqView .qtext .qpara:last-child{margin-bottom:0}#mcqView .qbul-wrap{margin:6px 0 2px}#mcqView .qbul{display:flex;gap:7px;line-height:1.6;margin-bottom:9px}#mcqView .qbul:last-child{margin-bottom:0}#mcqView .qbul-m{flex:0 0 auto;color:#64748B;font-size:11px;line-height:1.85}#mcqView .qbul-t{flex:1;min-width:0;font-weight:500;white-space:normal}#mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}#mcqView .qstem{background:#fff;border:none;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
 #mcqView .opts{display:flex;flex-direction:column;gap:8px;padding:0}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#fff;border:none;border-radius:12px;padding:13px 13px;cursor:pointer;outline:none;box-shadow:0 1px 2px rgba(15,23,42,.06)}#mcqView .opt:last-child{border-bottom:none}
 #mcqView .opt:focus{outline:none}
@@ -357,7 +357,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .jaryo .jr-stmt:last-child{margin-bottom:0}
 #mcqView .jaryo .jr-stmt-t{min-width:0}
 #mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
-#mcqView .jaryo .jr-stmt{padding-left:1.5em;text-indent:-1.5em}
+#mcqView .jaryo .jr-stmt{padding-left:1.7em;text-indent:-1.7em}
 #mcqView .jox{width:24px;height:24px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:12px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
 #mcqView .jox:active{transform:scale(.92)}
 #mcqView .jox-o.on{background:#E8F8F1;border-color:#1D9E75;color:#0F6E56}
@@ -904,6 +904,15 @@ function isEconQ(q){
 
 function rm(text, q){ return renderMath(text, isEconQ(q)); }
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
+function stemHTML(html){
+  // 순수 산문 스템만 문장(…다.) 단위로 단락 분리. ○/ㄱㄴㄷ 조합·자료형, 1문장은 기존 그대로.
+  if(!html) return html;
+  if(html.indexOf('\u25CB')>=0 || /(^|\n)\s*[ㄱ-ㅎ]\s*[.\u00B7)\]]/.test(html)) return bulletStem(html);
+  var marked=String(html).replace(/(다[.])\s+/g,'$1\u0001');
+  var parts=marked.split('\u0001').filter(function(s){return s.trim();});
+  if(parts.length<2) return html;
+  return parts.map(function(s){return '<div class="qpara">'+s.trim()+'</div>';}).join('');
+}
 function bulletStem(html){
   if(!html || html.indexOf('\u25CB')<0) return html;
   var lines=String(html).split('\n'), out='', buf=[], textRun=[];
@@ -1153,7 +1162,7 @@ function renderQuestionBlock(q){
       jaryoHTML='<div class="jaryo">'+rm(jr.jaryo,q)+'</div>';
     }
   }
-  return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+bulletStem(rm(jr.q,q))+'</div></div>'+
+  return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+stemHTML(rm(jr.q,q))+'</div></div>'+
     '<div class="qcard">'+jaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
 }
 function renderExpFull(q, mqCertVal){
@@ -1189,7 +1198,7 @@ function renderExpFull(q, mqCertVal){
         var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
         var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
-        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+q1+a1+exTxt+'</div>';
       }).join('')+'</div>';
       // 정답 보기 조합 줄 — 문제 유형(옳지 않은/적절하지 않은/틀린 계열)에 맞춰 판정 라벨
@@ -1232,7 +1241,7 @@ function renderExpFull(q, mqCertVal){
         var termTag = term ? ' <span class="eo-badge">\u2192 '+rm(term,q)+'</span>' : '';
         var head='<div class="eo-q">'+st.k+'. '+rm(st.t,q)+termTag+'</div>';
         var a1=(sv.rest||raw) ? '<div class="eo-a">'+rm(sv.rest||raw,q)+'</div>' : '';
-        var exTxt=(exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">\uC608\uC2DC</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
+        var exTxt=(exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+head+a1+exTxt+'</div>';
       }).join('')+'</div>';
       var bCirc=['\u2460','\u2461','\u2462','\u2463','\u2464'];
@@ -1253,7 +1262,7 @@ function renderExpFull(q, mqCertVal){
         var _ob = _hasT ? rm(q.opts[i],q) : (_hasI ? '<span class="eo-oimg">'+imgInner(q.optImg[i])+'</span>' : '');
         var optTxt = (_hasT || _hasI) ? '<div class="eo-q'+((_hasI && !_hasT)?' eo-q-img':'')+'">'+(i+1)+'. '+_ob+verdictTag+ansTag+'</div>' : '';
         var expTxt= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
-        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예시</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
       }).join('')+'</div>';
     } else if(oFilled===1){
