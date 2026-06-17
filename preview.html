@@ -60,6 +60,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .card-img{margin:14px 0 4px;text-align:center}
 .card-img img{max-width:100%;height:auto;border-radius:10px}
 .card-back .card-text{font-size:17px;color:#042C53}
+#mcqView .pv-oralcard{position:relative;transform:none;min-height:auto;width:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px 22px;border-radius:var(--radius);text-align:center;margin-bottom:12px}
 .wrong-dot{position:absolute;top:14px;right:14px;background:#E24B4A;color:#fff;font-size:11px;font-weight:800;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .star-dot{position:absolute;top:12px;right:12px;font-size:12px;line-height:1;letter-spacing:-1px}
 .tap-hint{margin-top:12px;font-size:11px;color:#B4B2A9;text-align:center;min-height:18px}
@@ -1108,20 +1109,17 @@ function renderOral(q, mqCertVal){
   var L = q.learn || {};
   var panelInner = buildLearnPanel(L, q.img||null) + buildMnemonic(q);
   var ntag = (q.since && Number(q.since)===new Date().getFullYear())
-    ? '<span style="margin-left:8px;font-size:11px;font-weight:700;background:#FFE4C2;color:#B45309;border-radius:6px;padding:2px 7px">'+q.since+'년 기출'+(q.newType?' 신유형':'')+'</span>' : '';
-  // 구술 문제(질문) 프롬프트 — 모범답안 위에 표시(검수 시 무엇을 묻는지 보이게)
-  var qHead = q.q ? '<div class="qstem"><div class="qhead"><div class="qnum" style="width:auto;padding:0 9px">구술</div></div><div class="qtext">'+rm(q.q,q)+'</div></div>' : '';
-  var h = '<div style="background:#fff;border:2px solid #9CC3EE;border-radius:var(--radius);padding:16px 18px;margin-bottom:4px">'
-    + '<div style="font-size:13px;font-weight:800;color:#0C447C;margin-bottom:8px">모범답안'+ntag+'</div>'
-    + '<div style="font-size:14px;line-height:1.8;color:#2C2C2A">'+(q.a||'')+'</div>'
-    + '</div>';
+    ? '<span class="ntag">'+q.since+'년 기출'+(q.newType?' 신유형':'')+'</span>' : '';
+  // 실앱 구술 카드(Question/Answer)와 동일 — 뒤집기만 빼고 정적으로 위아래 배치
+  var h = '<div class="pv-oralcard card-front"><div class="card-label">Question'+ntag+'</div><div class="card-text">'+(q.q?rm(q.q,q):'')+'</div></div>'
+    + '<div class="pv-oralcard card-back"><div class="card-label">Answer</div><div class="card-text">'+(q.a||'')+'</div></div>';
   if(panelInner){
     h += '<div class="learn-panel">'
        + '<div class="learn-panel-header"><span class="learn-panel-title">📚 학습 노트</span></div>'
        + '<div class="learn-panel-body">'+panelInner+'</div>'
        + '</div>';
   }
-  return qHead + h;
+  return h;
 }
 // 문제+보기 블록 — 라이브 renderMcqExam의 qstem·qcard 구조 verbatim 이식(검토모드: mqPick onclick·O/X버튼·타이머 제거)
 function renderQuestionBlock(q){
@@ -1379,6 +1377,26 @@ function showTypeBadge(q){
   if(detected.indexOf('인식 실패')>=0){
     rows+='<span style="padding:3px 9px;border-radius:7px;background:#FDE2E1;color:#A32D2D;font-weight:800">⚠️ exp.o 개수=진술 수인지 확인</span>';
   }
+  // CV(조합형 변형) 검수 경고 — 데이터방 전달(2026-06-17)
+  var isCVintent=(intended.toUpperCase()==='CV');
+  var isCVrecog=(detected.indexOf('조합 변형형')>=0);
+  if(isCVintent && !isCVrecog){
+    rows+='<span style="padding:3px 9px;border-radius:7px;background:#FDE2E1;color:#A32D2D;font-weight:800">⚠️ CV 의도인데 조합변형 인식 안 됨 — exp.ex 정답칸 1줄·oFilled≥2·단일정답 확인</span>';
+  } else if(isCVrecog && intended && !isCVintent){
+    rows+='<span style="padding:3px 9px;border-radius:7px;background:#FBF1E6;color:#92600A;font-weight:800">⚠️ 조합변형으로 인식됨 — type을 CV로 갱신 권장</span>';
+  }
+  // 매칭 짝형(ㄱ: 용어 / ㄱ-용어)인데 보기별로 떨어짐 → CV 검토(type 없어도)
+  try{
+    if(!isCVintent && detected.indexOf('보기별')>=0){
+      var _opts=(q.opts||[]), _pairRe=/^\s*[\u3131-\u314E]\s*[:：\-]\s*\S/;
+      var _pc=_opts.filter(function(o){ return _pairRe.test(String(o||'')); }).length;
+      var _shape=_opts.length>=2 && _pc>=Math.max(2, Math.ceil(_opts.length*0.6));
+      var _isPair=(typeof parseBlankStmts==='function') && parseBlankStmts(q.q||'').length>=2;
+      if(_shape && !isComboQuestion(_opts) && !_isPair){
+        rows+='<span style="padding:3px 9px;border-radius:7px;background:#FBF1E6;color:#92600A;font-weight:800">⚠️ 연결/빈칸 매칭형으로 보임 — CV(조합형 변형) 검토</span>';
+      }
+    }
+  }catch(_){}
   rows+='</div>';
   el.innerHTML=rows;
 }
