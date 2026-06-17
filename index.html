@@ -4852,12 +4852,21 @@ async function cmOpenDetail(id){
     if(p.board!=='notice') cmLoadComments();
   }catch(e){ console.warn('cmOpenDetail',e); box.innerHTML='<div class="cm-empty">글을 불러오지 못했어요.</div>'; }
 }
+function cmIsMobileShare(){
+  try{
+    if(!navigator.share) return false;
+    var coarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+    var mobileUA = /Android|iPhone|iPad|iPod|Mobile|Silk/i.test(navigator.userAgent||'');
+    return !!(coarse || mobileUA);
+  }catch(_){ return false; }
+}
 function cmSharePost(){
   var p=(typeof cmCurPost!=='undefined')?cmCurPost:null;
   if(!p||!p._id) return;
   var url=location.origin+location.pathname+'#post/'+p._id;
   var title=p.title||'CertLab';
-  try{ if(navigator.share){ navigator.share({title:title, url:url}).catch(function(){}); return; } }catch(_){}
+  // 모바일=네이티브 공유창 / PC=바로 링크 복사
+  if(cmIsMobileShare()){ try{ navigator.share({title:title, url:url}).catch(function(){}); return; }catch(_){} }
   try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ if(typeof clToast==='function') clToast('링크가 복사되었어요'); }).catch(function(){ cmCopyFallback(url); }); return; } }catch(_){}
   cmCopyFallback(url);
 }
