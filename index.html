@@ -1068,6 +1068,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="cm-top">
     <button class="cm-back" onclick="cmCloseDetail()" aria-label="목록">←</button>
     <span class="cm-title">글</span>
+    <button class="cm-rep-btn" id="cmShareBtn" onclick="cmSharePost()" style="background:#E6F1FB;color:#185FA5;border-color:#B5D4F4">🔗 공유</button>
     <button class="cm-del-btn hidden" id="cmDelBtn" onclick="cmDeletePost()">삭제</button>
     <button class="cm-rep-btn hidden" id="cmRepBtn" onclick="cmReport()">🚨 신고</button>
   </div>
@@ -1917,10 +1918,19 @@ function closeGuestFeatPopup(){
   try{ localStorage.setItem('guestFeatPopupHide', String(Date.now()+30*24*60*60*1000)); }catch(_){}
   var p=document.getElementById('guestFeatPopup'); if(p) p.classList.add('hidden');
 }
-function goGuestFeatNotice(){
+async function goGuestFeatNotice(){
   closeGuestFeatPopup();
   cmBoard='notice';
   if(typeof openCommunity==='function') openCommunity();
+  // 고정(📌)된 공지글이 있으면 그 글로 바로 펼침 — 없으면 공지 탭 목록
+  try{
+    if(typeof db!=='undefined' && db){
+      var qs=await db.collection('posts').where('board','==','notice').orderBy('createdAt','desc').limit(20).get();
+      var target=null;
+      qs.forEach(function(d){ if(!target && d.data().pinned===true) target=d.id; });
+      if(target) setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(target); }, 140);
+    }
+  }catch(_){}
 }
 function toggleRefundDetail(){ var d=document.getElementById('refundDetail'); if(!d) return; var btn=event&&event.target; var open=d.classList.toggle('hidden')===false; if(btn) btn.textContent= open?'접기 ▲':'자세히 ▾'; }
 
@@ -4821,6 +4831,7 @@ async function cmOpenDetail(id){
   if(_cv && _cv.classList.contains('hidden')){ ['homeView','bodybuildingView','mcqView','myPageView'].forEach(function(x){var el=document.getElementById(x); if(el) el.classList.add('hidden');}); _cv.classList.remove('hidden'); var _cs=document.getElementById('certSwitch'); if(_cs) _cs.classList.remove('hidden'); }
   document.getElementById('cmListWrap').classList.add('hidden');
   var d=document.getElementById('cmDetail'); d.classList.remove('hidden');
+  try{ history.replaceState(history.state, '', '#post/'+id); }catch(_){}
   var box=document.getElementById('cmDetailBody'); box.innerHTML='<div class="cm-loading">불러오는 중\u2026</div>';
   if(!firebaseReady||!db){ box.innerHTML='<div class="cm-empty">서버에 연결할 수 없어요.</div>'; return; }
   try{
@@ -4841,8 +4852,38 @@ async function cmOpenDetail(id){
     if(p.board!=='notice') cmLoadComments();
   }catch(e){ console.warn('cmOpenDetail',e); box.innerHTML='<div class="cm-empty">글을 불러오지 못했어요.</div>'; }
 }
+function cmSharePost(){
+  var p=(typeof cmCurPost!=='undefined')?cmCurPost:null;
+  if(!p||!p._id) return;
+  var url=location.origin+location.pathname+'#post/'+p._id;
+  var title=p.title||'CertLab';
+  try{ if(navigator.share){ navigator.share({title:title, url:url}).catch(function(){}); return; } }catch(_){}
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(function(){ if(typeof clToast==='function') clToast('링크가 복사되었어요'); }).catch(function(){ cmCopyFallback(url); }); return; } }catch(_){}
+  cmCopyFallback(url);
+}
+function cmCopyFallback(url){
+  try{ var i=document.createElement('input'); i.value=url; i.style.position='fixed'; i.style.opacity='0'; document.body.appendChild(i); i.select(); document.execCommand('copy'); document.body.removeChild(i); if(typeof clToast==='function') clToast('링크가 복사되었어요'); }
+  catch(_){ try{ prompt('아래 링크를 복사하세요', url); }catch(__){} }
+}
+function clRouteFromHash(){
+  var h=location.hash||''; var m=h.match(/^#post\/(.+)$/);
+  if(!m||!m[1]) return false;
+  var id=decodeURIComponent(m[1]);
+  if(typeof openCommunity==='function') openCommunity();
+  setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(id); }, 220);
+  return true;
+}
+(function(){
+  function tryRoute(n){
+    if(typeof firebaseReady!=='undefined' && firebaseReady && typeof openCommunity==='function'){ clRouteFromHash(); return; }
+    if(n>0) setTimeout(function(){ tryRoute(n-1); }, 300);
+  }
+  window.addEventListener('load', function(){ if((location.hash||'').indexOf('#post/')===0) tryRoute(20); });
+  window.addEventListener('hashchange', function(){ if((location.hash||'').indexOf('#post/')===0) clRouteFromHash(); });
+})();
 function cmCloseDetail(){
   document.getElementById('cmDetail').classList.add('hidden');
+  try{ if((location.hash||'').indexOf('#post/')===0) history.replaceState(history.state, '', location.pathname+location.search); }catch(_){}
   document.getElementById('cmListWrap').classList.remove('hidden');
   cmLoadList(cmBoard);
 }
