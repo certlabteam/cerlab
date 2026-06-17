@@ -48,6 +48,7 @@ gtag('config', 'G-RPZRZQ779J');
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
@@ -1281,6 +1282,10 @@ const firebaseConfig = {
 let auth = null, db = null, storage = null, googleProvider = null, firebaseReady = false;
 try {
   firebase.initializeApp(firebaseConfig);
+  firebase.appCheck().activate(
+    new firebase.appCheck.ReCaptchaV3Provider('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2'),
+    true
+  );
   auth = firebase.auth();
   db = firebase.firestore();
   storage = firebase.storage();
