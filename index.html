@@ -1866,7 +1866,7 @@ function maybeShowRefundPopup(){
     if(raw){ var until=parseInt(raw,10); if(until && Date.now()<until) return; }  // 숨김 기간 중
     var p=document.getElementById('refundPopup'); if(!p) return;
     // 다른 팝업(가입유도·환영·이용권)이 떠 있으면 양보
-    var busy=['loginPopup','planPopup','inappPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
+    var busy=['loginPopup','planPopup','inappPopup','guestFeatPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
     if(busy) return;
     // 장점 줄: 지금 보던 시험 문제수 + 전체 통계
     try{
