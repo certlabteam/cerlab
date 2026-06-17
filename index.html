@@ -3790,13 +3790,13 @@ function conceptCardHTML(q){
   return body;
 }
 // 조합형 ㄱㄴㄷㄹ 텍스트 진술 끝에 O/X 자가체크 버튼(기능 없음·펜 대용). 이미지 진술은 마커 없어 자동 제외.
-function markComboStmts(scope){
+function markComboStmts(scope, addOX){
   (scope||document).querySelectorAll('#mcqView .jaryo').forEach(function(el){
     if(el.dataset.oxed) return;
     function stmtHTML(inner, letter){
-      return '<div class="jr-stmt"><span class="jr-stmt-t">'+inner+'</span>'+
-        '<span class="jr-ox" data-oxk="s'+letter+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
-        '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span></div>';
+      var ox = addOX ? ('<span class="jr-ox" data-oxk="s'+letter+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
+        '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>') : '';
+      return '<div class="jr-stmt"><span class="jr-stmt-t">'+inner+'</span>'+ox+'</div>';
     }
     var html=el.innerHTML;
     var hasTag=/<(?!br\s*\/?>)[a-zA-Z]/.test(html);   // <br> 외 태그(이미지·표 등) 포함 여부
@@ -4095,7 +4095,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
-  resolveImages(root); fmtJaryo(root); if(!mqInReview && isComboQuestion(q.opts)) markComboStmts(root); restoreOX(root);
+  resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && isComboQuestion(q.opts)); restoreOX(root);
 }
 function mqPick(qid,n){
   if(mqInReview) return;
