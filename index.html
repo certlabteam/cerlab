@@ -1312,10 +1312,10 @@ async function settleReferralMileage(ref, data){
         changed = true;
         try { await d.ref.update({ signupSettled:true }); } catch(_){}
       }
-      // 결제 보상 10,000 (1년)
+      // 결제 보상 2,000 (1년)
       if (r.paid && !r.paidSettled) {
-        lots.push({a:10000, t:'ref_paid', at:now, exp:now+365*MILE_DAY});
-        hist.push({t:'ref_paid', a:10000, at:now, who:r.refereeEmail||null});
+        lots.push({a:2000, t:'ref_paid', at:now, exp:now+365*MILE_DAY});
+        hist.push({t:'ref_paid', a:2000, at:now, who:r.refereeEmail||null});
         changed = true;
         try { await d.ref.update({ paidSettled:true }); } catch(_){}
       }
@@ -1407,7 +1407,7 @@ async function loadUserPlan(user) {
       const refCode = genReferralCode(user.uid);
       let referredBy = null;
       try { const pr = localStorage.getItem('pendingRef'); if (pr && pr !== refCode) referredBy = pr; } catch(_){}
-      const lots = [ {a:1000, t:'signup', at:now, exp:now+3*MILE_DAY} ];   // 가입 보너스 1,000원(3일)
+      const lots = [ {a:1000, t:'signup', at:now, exp:now+7*MILE_DAY} ];   // 가입 보너스 1,000원(7일)
       await ref.set({
         email: user.email, displayName: user.displayName, photoURL: user.photoURL,
         plan: 'FREE_TRIAL', trialCount: 0,        // 레거시 미러(관리자 호환)
@@ -1737,7 +1737,7 @@ function updateAuthBar() {
         <button class="ref-acc-btn" onclick="openMyPage()">👤 마이페이지</button>
         <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
         <div class="ref-acc hidden" id="refAcc">
-          <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 +10,000원!</div>
+          <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 +2,000원!</div>
           <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
         </div>
         <button class="ref-acc-btn" onclick="addToHome(event)">📲 홈 화면에 추가</button>
@@ -1918,7 +1918,7 @@ function showWelcomePopup() {
     <div class="auth-feature-item">예상점수 & 약점 분석</div>
     <div class="auth-feature-item">50문제 무료 체험!</div>
     <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(3일 안에 사용)</span><br>
-      친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +10,000원 (1년 유효)
+      친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +2,000원 (1년 유효)
       <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
     </div>`;
   document.querySelector('.btn-google-login').style.display='none';
@@ -2042,7 +2042,7 @@ async function submitPayment() {
     await db.collection('users').doc(currentUser.uid).update(upd);
     userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = selectedPlanDays;
 
-    // 추천 결제 보너스: 추천받아 가입했다면 내 referral 기록을 paid=true (추천인 다음 로그인 시 +10,000)
+    // 추천 결제 보너스: 추천받아 가입했다면 내 referral 기록을 paid=true (추천인 다음 로그인 시 +2,000)
     try { await db.collection('referrals').doc(currentUser.uid).update({ paid:true }); } catch(_){}
 
     syncPlanMirror(); updateAuthBar(); hidePlanPopup();
@@ -4609,6 +4609,7 @@ async function cmLoadList(board){
     var snap=await db.collection('posts').where('board','==',board).orderBy('createdAt','desc').limit(30).get();
     if(snap.empty){ body.innerHTML=head+'<div class="cm-empty">아직 글이 없어요.<br>첫 글을 남겨보세요!</div>'; return; }
     var posts=[]; snap.forEach(function(doc){ var p=doc.data(); p._id=doc.id; posts.push(p); });
+    posts.sort(function(a,b){ return (b.pinned?1:0)-(a.pinned?1:0); });   // 고정 글 맨 위로(작성일 최신순은 쿼리에서 유지)
     var todayHtml='';
     if(board==='review'){
       var now=Date.now();
