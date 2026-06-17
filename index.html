@@ -1918,19 +1918,12 @@ function closeGuestFeatPopup(){
   try{ localStorage.setItem('guestFeatPopupHide', String(Date.now()+30*24*60*60*1000)); }catch(_){}
   var p=document.getElementById('guestFeatPopup'); if(p) p.classList.add('hidden');
 }
-async function goGuestFeatNotice(){
+function goGuestFeatNotice(){
   closeGuestFeatPopup();
   cmBoard='notice';
   if(typeof openCommunity==='function') openCommunity();
-  // 고정(📌)된 공지글이 있으면 그 글로 바로 펼침 — 없으면 공지 탭 목록
-  try{
-    if(typeof db!=='undefined' && db){
-      var qs=await db.collection('posts').where('board','==','notice').orderBy('createdAt','desc').limit(20).get();
-      var target=null;
-      qs.forEach(function(d){ if(!target && d.data().pinned===true) target=d.id; });
-      if(target) setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(target); }, 140);
-    }
-  }catch(_){}
+  // 안내 공지글로 바로 펼침 (글 ID 고정 연결)
+  setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail('XSVOWwoSkxFanqOqbFJX'); }, 220);
 }
 function toggleRefundDetail(){ var d=document.getElementById('refundDetail'); if(!d) return; var btn=event&&event.target; var open=d.classList.toggle('hidden')===false; if(btn) btn.textContent= open?'접기 ▲':'자세히 ▾'; }
 
