@@ -1184,6 +1184,21 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     </div>
   </div>
 </div>
+<div class="auth-popup hidden" id="guestFeatPopup">
+  <div class="auth-sheet" style="text-align:center">
+    <button class="popup-x" onclick="closeGuestFeatPopup()" aria-label="닫기">✕</button>
+    <div style="font-size:40px;margin:6px 0 2px">🧠</div>
+    <div class="auth-sheet-title">방금 푼 문제, 이렇게 내 점수가 됩니다</div>
+    <div class="auth-sheet-sub">CertLab은 푼 문제를 그냥 흘려보내지 않아요. 가입하면 이 3가지가 자동으로 작동해요.</div>
+    <div style="text-align:left;font-size:13.5px;color:#3C3C3A;line-height:1.85;background:#F4F8FC;border-radius:12px;padding:13px 15px;margin:10px 2px 12px">
+      📈 <b>망각곡선 자동복습</b><br><span style="color:#64748B;font-size:12.5px">까먹을 때쯤 알아서 다시 띄워줘요</span><br>
+      🎯 <b>예상 점수</b><br><span style="color:#64748B;font-size:12.5px">지금 실력이면 몇 점인지 바로 보여줘요</span><br>
+      📌 <b>약점 분석 · 오답노트</b><br><span style="color:#64748B;font-size:12.5px">틀린 개념만 모아 집중 공략</span>
+    </div>
+    <button class="btn-google-login" onclick="goGuestFeatNotice()" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;width:100%">어떻게 작동하는지 보기 →</button>
+    <button class="auth-sheet-close" style="width:100%;margin-top:8px" onclick="closeGuestFeatPopup()">닫기</button>
+  </div>
+</div>
 <div class="auth-popup hidden" id="loginPopup">
   <div class="auth-sheet">
     <button class="popup-x" onclick="hideLoginPopup()" aria-label="닫기">✕</button>
@@ -1882,6 +1897,30 @@ function closeRefundPopup(mode){
     localStorage.setItem('refundPopupHide', String(Date.now()+ms));
   }catch(_){}
   var p=document.getElementById('refundPopup'); if(p) p.classList.add('hidden');
+}
+
+// 게스트 5문제 풀이 시 1회 기능 안내(망각곡선·예상점수·약점분석). 닫기/이동 → 30일 숨김(기존 팝업과 동일 방식)
+function bumpGuestSolved(){
+  if(currentUser) return;
+  var n; try{ n=(parseInt(localStorage.getItem('clGuestQ')||'0',10)||0)+1; localStorage.setItem('clGuestQ',String(n)); }catch(_){ return; }
+  if(n>=5) maybeShowGuestFeatPopup();
+}
+function maybeShowGuestFeatPopup(){
+  if(currentUser) return;
+  try{ var raw=localStorage.getItem('guestFeatPopupHide'); if(raw){ var u=parseInt(raw,10); if(u && Date.now()<u) return; } }catch(_){}
+  var p=document.getElementById('guestFeatPopup'); if(!p || !p.classList.contains('hidden')) return;
+  var busy=['loginPopup','planPopup','inappPopup','refundPopup','conceptOfferPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
+  if(busy) return;
+  p.classList.remove('hidden');
+}
+function closeGuestFeatPopup(){
+  try{ localStorage.setItem('guestFeatPopupHide', String(Date.now()+30*24*60*60*1000)); }catch(_){}
+  var p=document.getElementById('guestFeatPopup'); if(p) p.classList.add('hidden');
+}
+function goGuestFeatNotice(){
+  closeGuestFeatPopup();
+  cmBoard='notice';
+  if(typeof openCommunity==='function') openCommunity();
 }
 function toggleRefundDetail(){ var d=document.getElementById('refundDetail'); if(!d) return; var btn=event&&event.target; var open=d.classList.toggle('hidden')===false; if(btn) btn.textContent= open?'접기 ▲':'자세히 ▾'; }
 
@@ -2707,7 +2746,7 @@ function rate(result){
   srRate(card,result);
   countUp('bodybuilding');
   { const e=userEnt.bodybuilding;
-    if(e.plan==='GUEST') guestCounts.bodybuilding++;
+    if(e.plan==='GUEST') guestCounts.bodybuilding++; if(typeof bumpGuestSolved==='function') bumpGuestSolved();
     if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
   isFlipped=false; learnOpen=false;
   if(srMode==='review'){
@@ -2815,7 +2854,7 @@ function toggleWrong(){
     if(!canAccess('bodybuilding'))return;
     countUp('bodybuilding');
     { const e=userEnt.bodybuilding;
-      if(e.plan==='GUEST') guestCounts.bodybuilding++;
+      if(e.plan==='GUEST') guestCounts.bodybuilding++; if(typeof bumpGuestSolved==='function') bumpGuestSolved();
       if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
     isFlipped=false;learnOpen=false;current++;renderCard();
   } else if(isSubjEnd()){
@@ -4148,7 +4187,7 @@ function mqPick(qid,n){
     if(mqTimeUp) mqOvertimeCount++;
     countUp(mqCert);
     const e=userEnt[mqCert];
-    if(e.plan==='GUEST') guestCounts[mqCert]++;
+    if(e.plan==='GUEST'){ guestCounts[mqCert]++; if(typeof bumpGuestSolved==='function') bumpGuestSolved(); }
     if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount(mqCert); } }
   mqSaveProgress(); if(mqDiag) saveDiagProgress();
   renderMCQ();
