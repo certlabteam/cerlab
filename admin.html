@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
@@ -1608,7 +1609,7 @@ function openMemberDetail(uid){
     + row('가입 시험', signupCertHTML(m))
     + row('학습량(전체)', `푼 횟수 <b>${(m._solve||0).toLocaleString()}</b> · 학습문항 <b>${m._studied||0}</b>`)
     + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">시험별 풀이 <span style="font-weight:400;color:#A89C8E;font-size:11px">— 상세 ▾ 누르면 과목별</span></div>${perCertTableExpandable(m._perCert, uid)}`
-    + row('마일리지', `${bal.toLocaleString()}원`)
+    + `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F0EC"><span style="color:#8A7E70;font-size:13px">포인트 잔액</span><span style="font-weight:600;font-size:13px"><b>${bal.toLocaleString()}P</b> <button class="btn-sm" onclick="cmaGrantPointsUid('${uid}','${(m.email||'').replace(/'/g,'')}')" style="background:#EAF5EE;color:#15793F;border:1px solid #B7E0C5;cursor:pointer;margin-left:6px">+ 포인트 지급</button></span></div>`
     + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">활성 이용권</div>${entHTML}`
     + `<div style="margin-top:8px;font-weight:700;font-size:12px;color:#8A7E70">사용 쿠폰</div>${codeHTML}`
     + `<div style="margin-top:10px;font-weight:700;font-size:12px;color:#8A7E70">결제 이력 (${pays.length})</div><div style="margin-top:4px">${payHTML}</div>`
@@ -2178,6 +2179,34 @@ const CMA_BOARD = {review:'합격후기', sugg:'건의', notice:'공지'};
 let cmaPosts = [], cmaReports = [];
 function cmaEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
+// ===== 포인트 수동 지급 / 이벤트 환급 철회 (Cloud Function 호출, asia-northeast3) =====
+function cmaFns(){ return firebase.app().functions('asia-northeast3'); }
+async function cmaGrantPointsUid(uid, label){
+  if(!uid){ alert('대상 회원 정보(uid)가 없습니다.'); return; }
+  const amtStr = prompt((label?label+' 님께\n':'')+'지급할 포인트(원)를 입력하세요. (1P = 1원)');
+  if(amtStr===null) return;
+  const amount = Math.floor(Number(String(amtStr).replace(/[,\s]/g,'')));
+  if(!(amount>0)){ alert('금액이 올바르지 않습니다.'); return; }
+  const memo = prompt('지급 사유(메모, 선택)','') || '';
+  if(!confirm(amount.toLocaleString()+'P 를 지급할까요?\n사유: '+(memo||'(없음)'))) return;
+  try{
+    const r = await cmaFns().httpsCallable('grantPointsAdmin')({uid:uid, amount:amount, memo:memo});
+    alert('✅ 지급 완료. 현재 잔액 '+(((r.data&&r.data.balance)||0).toLocaleString())+'P');
+  }catch(e){ alert('지급 실패: '+(e&&e.message?e.message:e)); }
+}
+function cmaGrantPost(pid){ const p=cmaPosts.find(x=>x.id===pid); if(!p) return; cmaGrantPointsUid(p.authorUid, p.authorNick||p.authorUid); }
+async function cmaRevokeEvent(pid){
+  const p=cmaPosts.find(x=>x.id===pid); if(!p) return;
+  if(!p.authorUid || !p.cert){ alert('이 글은 작성자·자격증 정보가 없어 철회할 수 없습니다.'); return; }
+  const cn=(typeof CERT_NAMES!=='undefined'&&CERT_NAMES[p.cert])?CERT_NAMES[p.cert]:p.cert;
+  if(!confirm('['+cn+'] 이벤트 환급 포인트를 회수하고,\n이 회원의 해당 자격증 재지급을 영구 차단할까요?\n작성자: '+(p.authorNick||p.authorUid))) return;
+  try{
+    const r = await cmaFns().httpsCallable('revokeEventRefund')({uid:p.authorUid, cert:p.cert});
+    const took=(r.data&&r.data.reclaimed)||0;
+    alert(took>0 ? ('✅ '+took.toLocaleString()+'P 회수 완료. 잔액 '+(((r.data&&r.data.balance)||0).toLocaleString())+'P') : '회수할 이벤트 포인트가 없습니다 (이미 회수됐거나 미지급).');
+  }catch(e){ alert('철회 실패: '+(e&&e.message?e.message:e)); }
+}
+
 function cmaInit(){ cmaLoadReports(); cmaLoadPosts(); }
 
 // --- 공지 작성 ---
@@ -2256,7 +2285,7 @@ function cmaRenderPosts(){
         <td style="font-size:11px">${cmaEsc(p.authorNick||'-')}</td>
         <td style="font-size:11px">▲${p.upCount||0} ▼${p.downCount||0}</td>
         <td><button class="btn-sm" onclick="cmaToggleComments('${p.id}')" style="background:#F1EFFB;color:#5B50C0;border:none;cursor:pointer">💬 ${p.commentCount||0}</button></td>
-        <td><button class="btn-sm" onclick="cmaDeletePost('${p.id}')" style="background:#FDECEC;color:#A32D2D;border:1px solid #F0C9C9;cursor:pointer">삭제</button></td>
+        <td style="white-space:nowrap"><button class="btn-sm" onclick="cmaGrantPost('${p.id}')" style="background:#EAF5EE;color:#15793F;border:1px solid #B7E0C5;cursor:pointer">💰 지급</button>${p.board==='review'?`<button class="btn-sm" onclick="cmaRevokeEvent('${p.id}')" style="background:#FFF3E0;color:#C2611B;border:1px solid #F0D3A8;cursor:pointer;margin-left:3px">철회</button>`:''}<button class="btn-sm" onclick="cmaDeletePost('${p.id}')" style="background:#FDECEC;color:#A32D2D;border:1px solid #F0C9C9;cursor:pointer;margin-left:3px">삭제</button></td>
       </tr>
       <tr id="cmaCmRow-${p.id}" style="display:none"><td colspan="7" style="background:#FAFAF8;padding:0"><div id="cmaCmBox-${p.id}" style="padding:10px 16px"></div></td></tr>`).join('')
     + '</tbody></table>';
