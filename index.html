@@ -3487,6 +3487,25 @@ function oxCompareHTML(q, oArr){
       '<table class="oxc-tbl"><thead><tr><th>항목</th><th>내 선택</th><th>정답</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';
   }catch(_){ return ''; }
 }
+// 표시한 O/X가 정답(exp.o 판정)과 전부 일치하면 true. 틀린 표시가 하나라도 있으면 false.
+// 안 찍은 항목·판정 못 뽑는 항목(계산형 등)은 제외 → O/X를 아예 안 하면 불이익 없음.
+function oxAllMatch(q){
+  try{
+    var st = (typeof mqOX!=='undefined') && mqOX[q.id]; if(!st) return true;
+    var oArr = (q.exp && q.exp.o) || [];
+    var stmts = comboStmtList(q);
+    var items = stmts.length
+      ? stmts.map(function(s,i){ return {key:'s'+s.k, oraw:oArr[i]||'', txt:s.t}; })
+      : (q.opts||[]).map(function(opt,i){ return {key:'o'+i, oraw:oArr[i]||'', txt:opt}; });
+    for(var j=0;j<items.length;j++){
+      var mark=st[items[j].key]; if(!mark) continue;
+      var sv=splitVerdict(stripRepeatedOpt(items[j].oraw, items[j].txt));
+      var actO=verdictIsO(sv.v); if(actO===null) continue;
+      if((mark==='O')!==actO) return false;
+    }
+    return true;
+  }catch(_){ return true; }
+}
 function stripRepeatedOpt(exp, opt){
   if(!exp) return '';
   if(!opt) return exp.trim();
@@ -3866,6 +3885,16 @@ function joxToggle(btn){
       if(typeof srSaveDebounced==='function') srSaveDebounced();
     }
   }catch(_){}
+  // 답을 이미 고른 문항에서 O/X를 바꾸면 재평가 — 정답이어도 표시한 O/X가 틀리면 애매(1)로 복습 유지.
+  try{
+    if(!mqInReview && mqCurId && mqAns[mqCurId]!==undefined && !mqGuess[mqCurId]){
+      var _q=mqQuestions().find(function(x){ return x.id===mqCurId; });
+      if(_q && mqHasAnswer(_q)){
+        srRateK(mqCert, mqCurId, isCorr(_q.ans, mqAns[mqCurId]) ? (oxAllMatch(_q)?2:1) : 0, mqTimeUp, true);
+        if(typeof srSaveDebounced==='function') srSaveDebounced();
+      }
+    }
+  }catch(_){}
 }
 // 저장된 O/X를 현재 문항 화면에 다시 칠하기
 function restoreOX(root){
@@ -4107,7 +4136,7 @@ function mqPick(qid,n){
     const q=mqQuestions().find(x=>x.id===qid);
     if(q && mqHasAnswer(q)){
       if(mqGuess[qid]){ srRateK(mqCert, q.id, isCorr(q.ans,n)?1:0, mqTimeUp, changed); }   // 찍음: 맞아도 애매(1), 틀리면 틀림(0)
-      else { srRateMcq(mqCert,q,n,mqTimeUp,changed); }                                        // 평소: 정답=정확(2)/오답=틀림(0)
+      else { srRateK(mqCert, q.id, isCorr(q.ans,n) ? (oxAllMatch(q)?2:1) : 0, mqTimeUp, changed); }   // 평소: 정답=정확(2)/오답=틀림(0). 단 정답이어도 O/X 자가체크 틀리면 애매(1)→복습 유지
       srSaveDebounced();
     }
   }
