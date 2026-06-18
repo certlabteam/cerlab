@@ -66,6 +66,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const SITE = 'https://certlab.ai.kr/';
 
+// '이 문항 보기' — 설치 PWA가 같은 scope 링크를 앱창으로 캡처하는 걸 피하려 window.open 새 탭으로 연다.
+// ctrl/cmd/shift/가운데클릭은 브라우저 기본동작(새 탭/새 창) 유지.
+function goCard(e, url){
+  if(e && (e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)) return true;
+  if(e) e.preventDefault();
+  window.open(url, '_blank');
+  return false;
+}
+
 const examSel=document.getElementById('examSel');
 const subSel=document.getElementById('subSel');
 const grid=document.getElementById('grid');
@@ -181,7 +190,7 @@ function render(){
       +'<div class="meta"><div class="qid">'+it.qid+'<span class="kind">'+it.kind+'</span></div>'
       +'<div class="imgid">'+it.key+'</div>'
       +'<div class="st load" id="st_'+cid+'">확인 중…</div></div>'
-      +'<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(it.qid)+'&cert='+encodeURIComponent(it.exam)+'" target="_blank">이 문항 보기 →</a>'
+      +'<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(it.qid)+'&cert='+encodeURIComponent(it.exam)+'" target="_blank" rel="noopener" onclick="return goCard(event,this.href)">이 문항 보기 →</a>'
       +'</div>';
   }
 
