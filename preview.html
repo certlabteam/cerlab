@@ -359,11 +359,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .jaryo .jr-stmt-t{min-width:0}
 #mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
 #mcqView .jaryo .jr-stmt{padding-left:1.7em;text-indent:-1.7em}
-#mcqView .jox{width:24px;height:24px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:12px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
+#mcqView .jox{width:30px;height:30px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:13px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
 #mcqView .jox:active{transform:scale(.92)}
 #mcqView .jox-o.on{background:#E8F8F1;border-color:#1D9E75;color:#0F6E56}
 #mcqView .jox-x.on{background:#FCEBEB;border-color:#E24B4A;color:#C0322F}
-#mcqView .opt-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
+#mcqView .opt-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}#mcqView .qbul .jr-ox{display:inline-flex;gap:14px;flex:0 0 auto;align-self:flex-start;margin-top:1px}
 #mcqView .exp{margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:15px 15px;word-break:keep-all;overflow-wrap:break-word}
 #mcqView .exp-note-hd{font-size:15px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
 #mcqView .exp-note-hd::before{content:'📚 '}
@@ -1016,6 +1016,29 @@ function splitStmtMarkers(text){
   return {intro:intro, stmts:stmts};
 }
 
+// 개수형(COUNT): type==="COUNT" 또는 "몇 개"+○진술 2개↑ (index.html과 동일 로직)
+function isCountType(q){
+  if(!q || !Array.isArray(q.opts)) return false;
+  if(q.type==='COUNT') return true;
+  if(!/몇\s*개/.test(String(q.q||''))) return false;
+  return (String(q.q||'').match(/○/g)||[]).length>=2;
+}
+function splitCountStmts(text){
+  var s=String(text||''); var i=s.indexOf('○');
+  if(i<0) return {head:s.trim(), stmts:[]};
+  var head=s.slice(0,i).trim();
+  var stmts=s.slice(i).split('○').map(function(t){return t.trim();}).filter(function(t){return t;});
+  return {head:head, stmts:stmts};
+}
+function countStemHTML(rawStem, q, withOX){
+  var sp=splitCountStmts(rawStem);
+  var head=sp.head ? '<div class="qpara">'+rm(sp.head,q)+'</div>' : '';
+  var rows=sp.stmts.map(function(t,i){
+    var oxb=withOX?('<span class="jr-ox" style="margin-left:auto" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
+    return '<div class="qbul"><span class="qbul-m">○</span><span class="qbul-t">'+rm(t,q)+'</span>'+oxb+'</div>';
+  }).join('');
+  return head+'<div class="qbul-wrap">'+rows+'</div>';
+}
 function parseJaryoStmts(qt){
   // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문 추출(줄·인라인 모두) → [{k,t}, ...]
   var jaryo=(splitJaryo(qt).jaryo)||qt||'';
@@ -1198,7 +1221,7 @@ function renderQuestionBlock(q){
   var progBar='<div class="exam-sticky"><div class="mq-prog"><div class="row"><span>'+(pvIdx+1)+' / '+pvTot+' \ubb38\ud56d</span><span></span></div><div class="track prog-drag"><div class="bar" style="width:'+pct+'%"></div></div></div></div>';
   // 문제 자료(jr.jaryo)의 ㄱ/ㄴ/ㄷ 지문을 줄바꿈+hanging indent로 쪼개 렌더(2개 이상일 때). 표·단일은 raw.
   var jaryoHTML='';
-  if(jr.jaryo){
+  if(jr.jaryo && !isCountType(q)){
     var jp=splitStmtMarkers(jr.jaryo);
     if(jp.stmts && jp.stmts.length>=2){
       jaryoHTML='<div class="jaryo">'
@@ -1219,7 +1242,7 @@ function renderQuestionBlock(q){
       jaryoHTML='<div class="jaryo">'+rm(jr.jaryo,q)+'</div>';
     }
   }
-  return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+stemHTML(rm(jr.q,q))+'</div></div>'+
+  return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,true):stemHTML(rm(jr.q,q)))+'</div></div>'+
     '<div class="qcard">'+jaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
 }
 function renderExpFull(q, mqCertVal){
@@ -1243,7 +1266,20 @@ function renderExpFull(q, mqCertVal){
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
     var blankStmts=(!comboOK && !isCV)?parseBlankStmts(q.q):[];   // 괄호빈칸 짝맞추기
-    if(comboOK){
+    if(isCountType(q)){
+      var cStmts=splitCountStmts(q.q).stmts;
+      body+='<div class="exp-opts">'+cStmts.map(function(t,i){
+        var raw=oArr[i]||'';
+        var sv=splitVerdict(stripRepeatedOpt(raw, t));
+        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
+        var q1='<div class="eo-q">○ '+rm(t,q)+verdictTag+'</div>';
+        var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
+        return '<div class="eo">'+q1+a1+'</div>';
+      }).join('')+'</div>';
+      var trueCount=cStmts.reduce(function(acc,t,i){ var sv2=splitVerdict(oArr[i]||''); return acc+(verdictIsO(sv2.v)===true?1:0); },0);
+      var ansOpt=(q.opts&&q.opts[ansN[0]-1])||'';
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">옳은 것 '+trueCount+'개 → 정답 '+(ansN[0])+'번'+(ansOpt?'('+rm(ansOpt,q)+')':'')+'</div></div></div>';
+    } else if(comboOK){
       // 콤보: ㄱㄴㄷㄹ 지문별 펼침 (exp.o는 지문 순서). 정답 지문에 ✅, 맨 아래 정답 보기 조합 줄.
       var ansLabels=ansN.map(function(n){ return (q.opts&&q.opts[n-1])?q.opts[n-1]:''; }).join(' ');  // 정답 보기에 포함된 지문 마커
       body+='<div class="exp-opts">'+stmts.map(function(s,i){
@@ -1428,6 +1464,7 @@ function detectRenderType(q){
   if(!q.exp && (q.a || q.learn)) return '구술(ORAL)';
   var oArr=(q.exp && q.exp.o) || [];
   var oFilled=oArr.filter(Boolean).length;
+  if(isCountType(q)) return '개수형(COUNT · ○진술 '+splitCountStmts(q.q||'').stmts.length+'개)';
   var isCombo=isComboQuestion(q.opts||[]);
   var stmts=isCombo ? parseJaryoStmts(q.q||'') : [];
   if(isCombo && stmts.length>0 && stmts.length===oFilled) return '조합형(진술 펼침)';
