@@ -428,6 +428,17 @@ tr:hover td{background:#FAFAFA}
             새 시험(예: 주택관리사)을 처음 올릴 땐, 위에서 <b>manifest 포함 번들</b>을 올린 뒤 <b>"매니페스트 등록(새 시험)"</b>을 누르세요. 기존 시험은 그대로 두고 <b>새 시험만 추가</b>합니다(삭제·덮어쓰기 없음).
           </div>
           <div id="regManifestStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
+
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:14px 0">
+          <div class="table-title" style="margin-bottom:6px">✏️ 시험 이름 바꾸기 (manifest)</div>
+          <div style="font-size:11.5px;color:#A89C8E;margin-bottom:8px">내보내기·시험목록에 보이는 <b>시험 이름</b>만 고칩니다. 예: "주택관리사" → "주택관리사 1차". (문항·데이터는 안 건드림)</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn-sm" onclick="loadRenameExams()" style="background:#EDE9FB;color:#5B50C0">목록 불러오기</button>
+            <select id="renameExamSel" onchange="renameExamPick()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">— 먼저 목록 불러오기 —</option></select>
+            <input id="renameExamInput" placeholder="새 이름" style="padding:7px 12px;border-radius:8px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:160px">
+            <button class="btn-sm" onclick="renameExam()" style="background:#E6F4EA;color:#15793F">이름 저장</button>
+          </div>
+          <div id="renameExamStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
           <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
           <div class="table-title" style="margin-bottom:8px">version +1 강제 갱신 (전체 사용자 캐시 갱신)</div>
           <div style="background:#FDECEC;border:1px solid #F3C6C6;border-radius:8px;padding:9px 12px;color:#A32D2D;font-size:11.5px;margin-bottom:10px">
@@ -1627,6 +1638,45 @@ async function registerManifestExams(){
     st.innerHTML='✅ 등록 완료 — 새 시험 <b>'+toAdd.length+'</b>개, 새 과목 <b>'+subjAdds.length+'</b>개.<br>'
       +'<span style="font-size:11px;color:#A89C8E">앱에서 Ctrl+Shift+R(또는 ?v=숫자) 후 노출됩니다. 안 보이면 위 "⬆ 업로드 실행"으로 banks도 올렸는지 확인하세요.</span>'
       +(subjAdds.length?('<br><span style="font-size:11px;color:#0C447C">새 과목: '+subjAdds.join(' · ')+'</span>'):'');
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+let _renameExams=null;
+function _esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+async function loadRenameExams(){
+  const st=document.getElementById('renameExamStatus'); st.textContent='불러오는 중...';
+  try{ const m=await db.collection('manifest').doc('exams').get(); _renameExams=(m.exists && Array.isArray(m.data().exams))?m.data().exams:[]; }
+  catch(e){ st.textContent='오류: '+e.message; return; }
+  const sel=document.getElementById('renameExamSel');
+  sel.innerHTML='<option value="">— 시험 선택 —</option>'+_renameExams.map(e=>'<option value="'+_esc(e.id)+'">'+_esc((e.name||e.id)+' ('+e.id+')')+'</option>').join('');
+  document.getElementById('renameExamInput').value='';
+  st.textContent=_renameExams.length+'개 시험. 바꿀 시험을 고르세요.';
+}
+function renameExamPick(){
+  const id=document.getElementById('renameExamSel').value;
+  const e=(_renameExams||[]).find(x=>x&&x.id===id);
+  document.getElementById('renameExamInput').value=e?(e.name||''):'';
+}
+async function renameExam(){
+  const st=document.getElementById('renameExamStatus');
+  const id=document.getElementById('renameExamSel').value;
+  const nm=(document.getElementById('renameExamInput').value||'').trim();
+  if(!id){ st.textContent='시험을 먼저 고르세요.'; return; }
+  if(!nm){ st.textContent='새 이름을 입력하세요.'; return; }
+  try{
+    const m=await db.collection('manifest').doc('exams').get();
+    if(!m.exists){ st.textContent='manifest/exams 문서가 없습니다.'; return; }
+    const exams=(m.data().exams||[]).slice();
+    const idx=exams.findIndex(x=>x&&x.id===id);
+    if(idx<0){ st.textContent='해당 시험을 manifest에서 못 찾음.'; return; }
+    const old=exams[idx].name||'';
+    if(old===nm){ st.textContent='이름이 같습니다. 변경 없음.'; return; }
+    if(!confirm('시험 이름을 바꿉니다:\n\n'+id+'\n"'+old+'" → "'+nm+'"\n\n계속할까요?')){ st.textContent='취소됨.'; return; }
+    exams[idx]=Object.assign({},exams[idx],{name:nm});
+    await db.collection('manifest').doc('exams').update({ exams: exams });
+    _renameExams=exams; _expExams=null;
+    const sel=document.getElementById('renameExamSel');
+    sel.innerHTML='<option value="">— 시험 선택 —</option>'+exams.map(e=>'<option value="'+_esc(e.id)+'"'+(e.id===id?' selected':'')+'>'+_esc((e.name||e.id)+' ('+e.id+')')+'</option>').join('');
+    st.innerHTML='✅ 이름 변경 완료 — <b>'+_esc(id)+'</b>: "'+_esc(nm)+'"<br><span style="font-size:11px;color:#A89C8E">내보내기 드롭다운/앱은 탭 다시 열거나 Ctrl+Shift+R 후 반영.</span>';
   }catch(e){ st.textContent='오류: '+e.message; }
 }
 async function exportData(){
