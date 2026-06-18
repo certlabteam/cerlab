@@ -61,7 +61,7 @@ const REGISTRY=[
   {id:'realestate2', name:'공인중개사 2차', subs:[{code:'re2_law',name:'공인중개사법령 및 중개실무'},{code:'re2_public',name:'부동산공법'},{code:'re2_tax',name:'부동산공시법령 및 세법'}]},
   {id:'koreanhistory', name:'한국사능력검정시험 심화', subs:[{code:'ksh',name:'한국사 심화'}]},
   {id:'housing', name:'주택관리사 1차', subs:[{code:'hm_acct',name:'회계원리'},{code:'hm_fac',name:'공동주택시설개론'},{code:'hm_civil',name:'민법'}]},
-  {id:'housing2', name:'주택관리사 2차', subs:[{code:'hm2_law',name:'주택관리관계법규'},{code:'hm2_pract',name:'공동주택관리실무'}]}
+  {id:'housing2', name:'주택관리사 2차', subs:[{code:'hm2_law',name:'주택관리관계법규'},{code:'hm2_mgmt',name:'공동주택관리실무'}]}
 ];
 
 const statusEl=document.getElementById('status');
@@ -135,6 +135,10 @@ function render(){
   const byChant={};
   Object.keys(MASTER).forEach(id=>{ const c=mnChantLetters(MASTER[id].code); if(c){ (byChant[c]=byChant[c]||[]).push(id); } });
   const dups=Object.keys(byChant).filter(c=>byChant[c].length>1).map(c=>({chant:c, ids:byChant[c]}));
+  // 4b) keyword 군집: 같은 keyword를 2개 이상 코드가 가짐(개념 같은데 모음 다른 중복 보조 탐지)
+  const byKw={};
+  Object.keys(MASTER).forEach(id=>{ (MASTER[id].keywords||[]).forEach(kw=>{ kw=String(kw||'').trim(); if(kw){ (byKw[kw]=byKw[kw]||[]).push(id); } }); });
+  const kwClusters=Object.keys(byKw).filter(kw=>byKw[kw].length>1).map(kw=>({kw, ids:byKw[kw]})).sort((a,b)=>b.ids.length-a.ids.length);
   // 4) 직접입력 mn (이관 후보)
   const direct=DIRECT.slice();
 
@@ -160,6 +164,13 @@ function render(){
     +'<div class="desc">두문자 \'모음\'이 같은 코드들. 같은 개념의 중복 등록일 수 있으니 하나로 합칠지 검토.</div>';
   if(!dups.length) h+='<div class="empty">없음 ✅</div>';
   else h+=dups.map(d=>'<div class="row"><span class="chant">'+esc(d.chant)+'</span><div class="meta">'+d.ids.map(id=>'<span class="pill">'+esc(id)+'</span>').join('')+'</div></div>').join('');
+  h+='</div>';
+
+  // keyword 군집 (중복 보조)
+  h+='<div class="sec"><h2>🧩 keyword 군집 <span class="cnt '+(kwClusters.length?'warn':'ok')+'">'+kwClusters.length+'</span></h2>'
+    +'<div class="desc">같은 <b>keyword</b>를 단 코드가 2개 이상 — 두문자 \'모음\'이 달라도 개념이 겹칠 수 있는 중복 후보(모음 중복이 놓치는 경우 보조).</div>';
+  if(!kwClusters.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=kwClusters.map(c=>'<div class="row"><b>'+esc(c.kw)+'</b><div class="meta">'+c.ids.map(id=>'<span class="pill">'+esc(id)+'</span>').join('')+'</div></div>').join('');
   h+='</div>';
 
   // 직접입력 (이관 후보)
