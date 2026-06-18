@@ -505,21 +505,25 @@ tr:hover td{background:#FAFAFA}
       <div class="table-wrap">
         <div class="table-header"><div class="table-title">📑 암기코드 마스터</div>
           <div style="margin-left:auto;display:flex;gap:8px">
-            <button class="btn-sm" onclick="mnemNew()" style="background:#EEF;color:#4338CA">+ 새 코드</button>
             <button class="btn-sm" onclick="mnemLoad()" style="background:#F1F5F9;color:#475569">새로고침</button>
           </div>
         </div>
         <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">재사용·과목겹침 개념만 등록(일회성은 문항에 직접입력). 문항에선 <b>mn://id</b>로 참조 → 한 곳 수정=전 과목 반영. 두문자는 <b>&lt;span class="k"&gt;글자&lt;/span&gt;</b>로 표기.</div>
         <div id="mnemStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 20px 12px;border-bottom:1px solid #F0F0F0;margin-bottom:6px">
-          <button class="btn-sm" onclick="mnemExport()" style="background:#E6F4EA;color:#15793F">⬇ 백업(JSON)</button>
-          <span id="mnemImpDrop" style="cursor:pointer;font-size:12px;color:#475569;border:1.5px dashed #CBD5E1;border-radius:8px;padding:6px 12px">📥 복구 JSON 끌어다 놓기 / 클릭</span>
-          <input id="mnemImpFile" type="file" accept=".json,application/json" style="display:none">
-          <button id="mnemImpRun" class="btn-sm" onclick="mnemImport()" disabled style="background:#F1F5F9;color:#475569">복구 실행</button>
-          <span id="mnemImpStatus" style="font-size:11.5px;color:#A89C8E"></span>
+        <div style="padding:6px 20px 12px;border-bottom:1px solid #F0F0F0;margin-bottom:6px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <button class="btn-sm" onclick="mnemExport()" style="background:#E6F4EA;color:#15793F;flex:0 0 auto">⬇ 암기코드 내보내기</button>
+            <span style="font-size:12px;color:#A89C8E">등록된 코드 전부를 JSON 파일로 다운로드(백업)</span>
+          </div>
+          <div style="display:flex;align-items:stretch;gap:12px;flex-wrap:wrap">
+            <button class="btn-sm" onclick="document.getElementById('mnemImpFile').click()" style="background:#FAEEDA;color:#854F0B;flex:0 0 auto">⬆ 암기코드 올리기</button>
+            <span id="mnemImpDrop" style="cursor:pointer;flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 12px;color:#94A3B8;font-size:12px">📁 여기로 JSON 파일을 끌어다 놓기</span>
+            <input id="mnemImpFile" type="file" accept=".json,application/json" style="display:none">
+            <span id="mnemImpStatus" style="font-size:11.5px;color:#A89C8E;align-self:center"></span>
+          </div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
-          <div style="flex:1;min-width:300px"><div id="mnemList"></div></div>
+          <div style="flex:1;min-width:300px"><div style="font-size:11px;color:#A89C8E;margin-bottom:8px;display:flex;align-items:center;gap:8px">암기코드 관리 <button class="btn-sm" onclick="mnemNew()" style="background:#EEF;color:#4338CA;padding:2px 9px;font-size:11px">+ 새 코드</button></div><div id="mnemList"></div></div>
           <div style="flex:1;min-width:320px">
             <div id="mnemEditor" style="display:none;background:#FAFAFA;border:1px solid #EEE;border-radius:12px;padding:16px">
               <div style="font-weight:700;margin-bottom:10px" id="mnemEditTi">코드 편집</div>
@@ -843,8 +847,8 @@ function mnemImpHandle(fileList){
       var valid=arr.filter(function(x){ return x&&x.id&&x.code; });
       if(!valid.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='mnemonics 항목 없음 (id·code 필요)';} return; }
       _mnemImpData=valid;
-      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: 코드 <b>'+valid.length+'</b>개. "복구 실행"→ Firestore 덮어쓰기.'; }
-      var run=document.getElementById('mnemImpRun'); if(run) run.disabled=false;
+      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: 코드 <b>'+valid.length+'</b>개 — 올리는 중…'; }
+      mnemImport();
     }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
   };
   rd.readAsText(f);
