@@ -1461,6 +1461,11 @@ async function impHandleFiles(fileList){
       impItems=impItems.filter(it=>it.docId!==docId);
       impItems.push({docId,cert:parsed.cert,subject:parsed.subject,data:parsed,count,version:parsed.version,curVer:'?',status:count<0?'bad':'ready',err:count<0?'questions 배열 아님':''});
     }
+    // 독립 manifest 파일: {manifest:{exams:[...]}} (banks 없이 단독)
+    else if(parsed && parsed.manifest && Array.isArray(parsed.manifest.exams)){
+      impBundleManifest=parsed.manifest;
+      impLog(f.name+': manifest 인식 ('+parsed.manifest.exams.length+'개 시험) — "매니페스트 등록(새 시험)"으로 추가 가능','#5B50C0');
+    }
     else { impLog(f.name+': 형식 불명 (번들도 과목파일도 아님)','#f85149'); }
   }
   await impLoadVersions(); impRender(); document.getElementById('impRun').disabled=!impItems.some(it=>it.status==='ready');
