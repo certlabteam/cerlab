@@ -988,6 +988,11 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
       <div class="cert-meta"><div class="nm">주택관리사 1차</div><div class="ds">객관식 · 회계원리 · 공동주택시설개론 · 민법</div><span class="tag soon" id="certTag-housing">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
+    <div class="cert-card" onclick="enterCert('housing2')">
+      <div class="cert-ic">🏢</div>
+      <div class="cert-meta"><div class="nm">주택관리사 2차</div><div class="ds">객관식+주관식 · 주택관리관계법규 · 공동주택관리실무</div><span class="tag soon" id="certTag-housing2">준비 중</span></div>
+      <div class="cert-go">›</div>
+    </div>
   </div>
 </div>
 <div class="cert-view hidden" id="bodybuildingView">
@@ -1383,9 +1388,9 @@ let trialCount = 0;     // (레거시 미러: 현재 활성 시험의 무료 사
 const GUEST_LIMIT = 10;
 const TRIAL_LIMIT = 50;
 // ===== 시험별 이용권(entitlements) =====
-const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing'];
-const CERT_LABELS = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사' };
-const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험 심화', housing:'주택관리사 1차' };
+const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing','housing2'];
+const CERT_LABELS = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
+const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험 심화', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
 // ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
 const EVENTS = {
   bodybuilding: {
@@ -3041,13 +3046,19 @@ const HM_QB = {
   hm_fac:   { name:'공동주택시설개론', sets:[] },
   hm_civil: { name:'민법', sets:[] }
 };
+// 주택관리사보 2차 — 주택관리관계법규/공동주택관리실무 (객관식+주관식 SA).
+const HM2_QB = {
+  hm2_law:   { name:'주택관리관계법규', sets:[] },
+  hm2_pract: { name:'공동주택관리실무', sets:[] }
+};
 // 시험별 문제은행 레지스트리
 const MCQ_EXAMS = {
   appraiser:     { name:'감정평가사',     qb: APP_QB },
   realestate1:   { name:'공인중개사 1차', qb: RE1_QB },
   realestate2:   { name:'공인중개사 2차', qb: RE2_QB },
   koreanhistory: { name:'한국사능력검정시험 심화', qb: KSH_QB },
-  housing:       { name:'주택관리사 1차', qb: HM_QB }
+  housing:       { name:'주택관리사 1차', qb: HM_QB },
+  housing2:      { name:'주택관리사 2차', qb: HM2_QB }
 };
 const MCQ_CERTS = Object.keys(MCQ_EXAMS);
 function isMcqCert(c){ return MCQ_CERTS.indexOf(c)!==-1; }
@@ -4705,7 +4716,7 @@ function clHandleBack(){
 }catch(_){ } })();
 
 function refreshCertCards(){
-  ['realestate1','realestate2','koreanhistory','housing'].forEach(cert=>{
+  ['realestate1','realestate2','koreanhistory','housing','housing2'].forEach(cert=>{
     const tag=document.getElementById('certTag-'+cert); if(!tag) return;
     // manifest에 이 시험이 과목과 함께 있으면 데이터 있음(lazy 로드 전이라도). 폴백: 로드된 문항수.
     let has=false;
@@ -4791,7 +4802,7 @@ function doPrint(){let subs=prSelectedSubs();let list=prCardsFor(prScope).filter
 
 
 /* ===== 커뮤니티 게시판 (2단계: 목록) ===== */
-var CM_CERT_LABEL = {bodybuilding:'생체', appraiser:'감평사', realestate1:'공인1', realestate2:'공인2', koreanhistory:'한국사', housing:'주택관리사'};
+var CM_CERT_LABEL = {bodybuilding:'생체', appraiser:'감평사', realestate1:'공인1', realestate2:'공인2', koreanhistory:'한국사', housing:'주택관리사', housing2:'주관2'};
 var cmBoard = 'review';
 window._cmUserDoc = window._cmUserDoc || null;
 function cmIsAdmin(){ return !!((window._cmUserDoc && window._cmUserDoc.isAdmin) || (currentUser && currentUser.email==='certlab.team@gmail.com')); }
@@ -4866,7 +4877,7 @@ async function cmLoadList(board){
     body.innerHTML=head+'<div class="cm-empty">'+msg+'</div>';
   }
 }
-var CM_CERTS=[['bodybuilding','생체 (생활체육지도사)'],['appraiser','감정평가사'],['realestate1','공인중개사 1차'],['realestate2','공인중개사 2차'],['koreanhistory','한국사'],['housing','주택관리사']];
+var CM_CERTS=[['bodybuilding','생체 (생활체육지도사)'],['appraiser','감정평가사'],['realestate1','공인중개사 1차'],['realestate2','공인중개사 2차'],['koreanhistory','한국사'],['housing','주택관리사'],['housing2','주택관리사 2차']];
 async function cmLoadUserDoc(){
   if(!currentUser||!firebaseReady||!db){ window._cmUserDoc=null; return; }
   try{ var d=await db.collection('users').doc(currentUser.uid).get(); window._cmUserDoc=d.exists?d.data():{}; }catch(_){ window._cmUserDoc={}; }
