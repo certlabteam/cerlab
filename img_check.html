@@ -84,67 +84,73 @@ let ITEMS=[];   // {exam,examName,sub,subName,qid,setLabel,n,key,kind}
 let EXAMS=[];   // {id,name,subs:[{code,name}]}
 let renderToken=0;
 
-async function loadAll(){
+async function initSelects(){
   let manifest;
   try{
     const mSnap=await db.collection('manifest').doc('exams').get();
     if(!mSnap.exists){ summaryEl.textContent='manifest/exams 문서가 없어요.'; return; }
     manifest=mSnap.data();
   }catch(e){ summaryEl.textContent='데이터를 불러오지 못했어요.'; return; }
-
-  for(const ex of (manifest.exams||[])){
-    const exItem={id:ex.id, name:ex.name||ex.id, subs:[]};
-    for(const sub of (ex.subjects||[])){
-      let snap;
-      try{ snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get(); }catch(e){ continue; }
-      if(!snap.exists) continue;
-      const qs=(snap.data().questions)||[];
-      let hasImg=false;
-      const setSet={};
-      qs.forEach(q=>{
-        const setLabel=q.set||'';
-        const n=maxNum(setLabel);
-        const base={exam:ex.id, examName:ex.name||ex.id, sub:sub.code, subName:(sub.name||sub.code), qid:q.id, setLabel:setLabel, n:n};
-        const mark=()=>{ hasImg=true; if(setLabel) setSet[setLabel]=n; };
-        const ik=normKey(q.img);
-        if(ik){ ITEMS.push(Object.assign({},base,{key:ik,kind:'본문'})); mark(); }
-        if(Array.isArray(q.optImg)){
-          q.optImg.forEach((o,i)=>{ const ok=normKey(o); if(ok){ ITEMS.push(Object.assign({},base,{key:ok,kind:'선지'+(i+1)})); mark(); } });
-        }
-      });
-      if(hasImg) exItem.subs.push({code:sub.code, name:(sub.name||sub.code), sets:Object.keys(setSet).map(l=>({label:l,n:setSet[l]}))});
-    }
-    if(exItem.subs.length) EXAMS.push(exItem);
-  }
+  // manifest만으로 시험·과목 셀렉트 구성 (banks fetch 안 함)
+  EXAMS=(manifest.exams||[]).map(ex=>({ id:ex.id, name:ex.name||ex.id,
+    subs:(ex.subjects||[]).map(su=>({code:su.code, name:su.name||su.code})) })).filter(e=>e.subs.length);
   buildExamSel();
-  render();
+  buildSubSel();
+  summaryEl.textContent='시험과 과목을 선택하면 그 과목만 불러옵니다.';
+}
+
+// 선택한 과목의 bank만 fetch해 ITEMS에 적재 (한 번 받으면 캐시)
+const loadedSet={};
+async function loadBank(examId, sub){
+  const k=examId+'__'+sub.code;
+  if(loadedSet[k]) return;
+  loadedSet[k]=true;
+  let snap;
+  try{ snap=await db.collection('banks').doc(k).get(); }catch(e){ loadedSet[k]=false; return; }
+  if(!snap.exists) return;
+  const qs=(snap.data().questions)||[];
+  const ex=EXAMS.find(e=>e.id===examId);
+  qs.forEach(q=>{
+    const setLabel=q.set||''; const n=maxNum(setLabel);
+    const base={exam:examId, examName:(ex?ex.name:examId), sub:sub.code, subName:sub.name, qid:q.id, setLabel:setLabel, n:n};
+    const ik=normKey(q.img);
+    if(ik){ ITEMS.push(Object.assign({},base,{key:ik,kind:'본문'})); }
+    if(Array.isArray(q.optImg)){
+      q.optImg.forEach((o,i)=>{ const ok=normKey(o); if(ok){ ITEMS.push(Object.assign({},base,{key:ok,kind:'선지'+(i+1)})); } });
+    }
+  });
+}
+// 현재 선택 범위(시험+과목)에 필요한 bank만 로드. 시험 미선택=로드 안 함, 과목 미선택=그 시험 전 과목.
+async function ensureScope(){
+  const ex=EXAMS.find(e=>e.id===examSel.value);
+  if(!ex) return;
+  const subs = subSel.value ? ex.subs.filter(s=>s.code===subSel.value) : ex.subs;
+  const need = subs.filter(s=>!loadedSet[ex.id+'__'+s.code]);
+  if(need.length){ grid.innerHTML='<div class="empty">불러오는 중…</div>'; summaryEl.textContent='불러오는 중…'; }
+  for(const s of subs){ await loadBank(ex.id, s); }
 }
 
 function buildExamSel(){
-  if(!EXAMS.length){ examSel.innerHTML='<option value="">(이미지 없음)</option>'; summaryEl.textContent='이미지가 달린 문항이 없어요.'; return; }
-  examSel.innerHTML='<option value="">전체 시험</option>'+EXAMS.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
-  buildSubSel();
+  if(!EXAMS.length){ examSel.innerHTML='<option value="">(시험 없음)</option>'; summaryEl.textContent='manifest에 시험이 없어요.'; return; }
+  examSel.innerHTML='<option value="">시험 선택…</option>'+EXAMS.map(e=>'<option value="'+e.id+'">'+e.name+'</option>').join('');
 }
 function buildSubSel(){
   const ex=EXAMS.find(e=>e.id===examSel.value);
   let opts='<option value="">전체 과목</option>';
   if(ex) opts+=ex.subs.map(s=>'<option value="'+s.code+'">'+s.name+'</option>').join('');
   subSel.innerHTML=opts;
-  buildSetSel();
 }
 function buildSetSel(){
-  const ex=EXAMS.find(e=>e.id===examSel.value);
+  const exF=examSel.value, subF=subSel.value, cur=setSel.value;
   const setMap={};
-  if(ex){
-    const subs = subSel.value ? ex.subs.filter(s=>s.code===subSel.value) : ex.subs;
-    subs.forEach(s=>(s.sets||[]).forEach(st=>{ if(st.label) setMap[st.label]=st.n; }));
-  }
+  ITEMS.filter(it=>(!exF||it.exam===exF)&&(!subF||it.sub===subF)).forEach(it=>{ if(it.setLabel) setMap[it.setLabel]=it.n; });
   const labels=Object.keys(setMap).sort((a,b)=>setMap[b]-setMap[a]);
   setSel.innerHTML='<option value="">전체 회차</option>'+labels.map(l=>'<option value="'+l+'">'+l+'</option>').join('');
+  if(labels.indexOf(cur)>=0) setSel.value=cur;
 }
 const setSel=document.getElementById('setSel');
-examSel.onchange=function(){ buildSubSel(); render(); };
-subSel.onchange=function(){ buildSetSel(); render(); };
+examSel.onchange=async function(){ buildSubSel(); await ensureScope(); buildSetSel(); render(); };
+subSel.onchange=async function(){ await ensureScope(); buildSetSel(); render(); };
 setSel.onchange=function(){ render(); };
 
 let sortMode=0; const SORT_LABELS=['↓ 최신순','↓ 이름순','↓ 과목순'];
@@ -153,7 +159,10 @@ function render(){
   const token=++renderToken;
   const exF=examSel.value, subF=subSel.value, setF=setSel.value;
   let items=ITEMS.filter(it=>(!exF||it.exam===exF)&&(!subF||it.sub===subF)&&(!setF||it.setLabel===setF));
-  if(!items.length){ grid.innerHTML='<div class="empty">해당 조건의 이미지 문항이 없어요.</div>'; summaryEl.textContent='전체 0'; return; }
+  if(!items.length){
+    if(!examSel.value){ grid.innerHTML='<div class="empty">시험을 선택하세요. (선택한 과목만 불러옵니다)</div>'; summaryEl.textContent=''; return; }
+    grid.innerHTML='<div class="empty">이 과목엔 이미지 문항이 없어요.</div>'; summaryEl.textContent='전체 0'; return;
+  }
 
   // 카드 1장 HTML (공통)
   function cardHTML(it, cid){
@@ -223,6 +232,6 @@ function render(){
   })();
 }
 
-loadAll();
+initSelects();
 </script>
 </body></html>
