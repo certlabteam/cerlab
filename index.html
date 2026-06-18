@@ -1373,8 +1373,8 @@ try {
   if (_ref) localStorage.setItem('pendingRef', _ref.trim().toUpperCase());
 } catch(_) {}
 // ?card=EP_72 딥링크 캡처 (데이터 로드 후 실행)
-let pendingCard = null;
-try { pendingCard = new URLSearchParams(location.search).get('card'); } catch(_) {}
+let pendingCard = null, pendingCardCert = null;
+try { var _dlp=new URLSearchParams(location.search); pendingCard=_dlp.get('card'); pendingCardCert=_dlp.get('cert'); } catch(_) {}
 function genReferralCode(uid){ return (uid||'').replace(/[^a-zA-Z0-9]/g,'').toUpperCase().slice(0,6) || ('R'+Math.random().toString(36).slice(2,7).toUpperCase()); }
 function mileageBalance(lots){
   const now = Date.now(); let s=0;
@@ -4528,12 +4528,17 @@ async function enterCert(id){
 }
 function goHome(){ showHome(); }
 // 딥링크: 특정 생체 카드로 바로 이동 (?card=EP_72)
-function goToCard(qid){
+async function goToCard(qid, certHint){
   if(!qid) return;
   // 객관식 문항이면 해당 시험·과목·세트·문항으로 이동(진행상황 보존)
   var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
+  // 맵에 없고 cert 힌트가 MCQ 시험이면, 그 시험을 로드(lazy)한 뒤 다시 찾기
+  if(!cs && certHint && typeof isMcqCert==='function' && isMcqCert(certHint)){
+    try{ await enterCert(certHint); }catch(_){}
+    cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
+  }
   if(cs){
-    enterCert(cs.cert);   // mqCert 세팅 + mcqView 표시
+    try{ await enterCert(cs.cert); }catch(_){}   // mqCert 세팅 + mcqView 표시 + 콘텐츠 로드
     try{
       var qb=qbOf(cs.cert), subObj=qb&&qb[cs.sub];
       if(subObj&&subObj.sets){
@@ -4543,9 +4548,11 @@ function goToCard(qid){
         }
       }
     }catch(_){}
-    return;
+    return;   // 시험엔 진입했으나 문항 못 찾음 — 생체로 떨어뜨리지 않음
   }
-  // 생체 플래시카드
+  // cert 힌트가 생체 아닌 다른 시험이면, 생체 폴백 대신 그 시험 화면으로
+  if(certHint && certHint!=='bodybuilding'){ try{ await enterCert(certHint); }catch(_){} return; }
+  // 생체 플래시카드 (cert 힌트 없거나 생체)
   enterCert('bodybuilding');
   try{
     currentSubj='전체'; currentStar=0;
@@ -4745,7 +4752,7 @@ loadManifest().then(async ()=>{
   var _resumed=false; try{ if(typeof mqAutoResume==='function') _resumed=mqAutoResume(); }catch(_){}
   if(!_resumed && typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
   // ?card= 딥링크 실행 (데이터 로드 완료 후 1회)
-  if(typeof pendingCard!=='undefined' && pendingCard && typeof goToCard==='function'){ var _pc=pendingCard; pendingCard=null; setTimeout(function(){ goToCard(_pc); }, 200); }
+  if(typeof pendingCard!=='undefined' && pendingCard && typeof goToCard==='function'){ var _pc=pendingCard, _cc=(typeof pendingCardCert!=='undefined')?pendingCardCert:null; pendingCard=null; setTimeout(function(){ goToCard(_pc,_cc); }, 200); }
 }).catch(showDataError);
 
 /* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
