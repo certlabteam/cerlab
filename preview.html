@@ -1121,6 +1121,50 @@ function renderOral(q, mqCertVal){
   }
   return h;
 }
+// ===== 선행학습 카드(exp.learn v2) — 라이브 index.html conceptCardHTML verbatim 이식 =====
+function conceptCardHTML(q){
+  const L=(q.exp&&q.exp.learn)?q.exp.learn:null;
+  let body='';
+  if(L){
+    if(L.title) body+='<div class="ltitle">'+rm(L.title,q)+'</div>';
+    if(L.sum)   body+='<div class="lsum">💡 '+rm(L.sum,q)+'</div>';   // v1 호환(신규엔 없음)
+    (L.secs||[]).forEach((s,i)=>{
+      body+='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(s.t||'',q)+'</div><div class="lsec-d">'+rm(s.d||'',q)+'</div></div>';
+    });
+    // 연표 (timeline): {y,e}
+    if(Array.isArray(L.timeline)&&L.timeline.length){
+      body+='<div class="lblk"><div class="lblk-h">연표</div>';
+      L.timeline.forEach(it=>{ body+='<div class="lrow"><span class="lk">'+rm(it.y||'',q)+'</span><span class="ldot">·</span>'+rm(it.e||'',q)+'</div>'; });
+      body+='</div>';
+    }
+    // 인물/장소/조약 (n,d 공통)
+    const ndBlock=(arr,label)=>{
+      if(!Array.isArray(arr)||!arr.length) return '';
+      let h='<div class="lblk"><div class="lblk-h">'+label+'</div>';
+      arr.forEach(it=>{ h+='<div class="lrow"><span class="lk">'+rm(it.n||'',q)+'</span><span class="ldot">·</span>'+rm(it.d||'',q)+'</div>'; });
+      return h+'</div>';
+    };
+    body+=ndBlock(L.people,'인물');
+    body+=ndBlock(L.places,'장소·유적');
+    body+=ndBlock(L.treaties,'조약');
+    // 판별 단서 (cue) / 마무리·오답 정리 (wrap)
+    if(L.cue)  body+='<div class="lcue"><span class="lcue-tag">이렇게 나오면</span>'+rm(L.cue,q)+'</div>';
+    if(L.wrap) body+='<div class="lwrap"><span class="lwrap-tag">정리</span>'+rm(L.wrap,q)+'</div>';
+    if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+rm(L.trap,q)+'</div></div>';   // v1 호환
+  } else {
+    // 폴백: 기존 exp.c(개념) 나열
+    const cs=(q.exp&&q.exp.c)?q.exp.c:[];
+    if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
+    cs.forEach((c,i)=>{
+      var sec='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div>';
+      if(c.cx && String(c.cx).trim()) sec+='<div class="cc-ex">'+rm(String(c.cx).trim(),q)+'</div>';
+      else if(mqCert==='bodybuilding' && c.exd && String(c.exd).trim()) sec+='<div class="cc-exd">💡 '+rm(String(c.exd).trim(),q)+'</div>';
+      if(c.ex && String(c.ex).trim()) sec+='<div class="cc-ex">'+rm(String(c.ex).trim(),q)+'</div>';
+      body+=sec+'</div>';
+    });
+  }
+  return body;
+}
 // 문제+보기 블록 — 라이브 renderMcqExam의 qstem·qcard 구조 verbatim 이식(검토모드: mqPick onclick·O/X버튼·타이머 제거)
 function renderQuestionBlock(q){
   if(!q || !q.q) return '';
@@ -1410,7 +1454,15 @@ function renderOne(q){
   try{ showTypeBadge(q); }catch(_){}
   try{
     if(!q.exp && (q.a || q.learn)){ out.innerHTML = renderOral(q, cert); }
-    else { out.innerHTML = renderQuestionBlock(q) + renderExpFull(q, cert); }
+    else {
+      var _learn='';
+      if(q.exp && q.exp.learn){
+        mqCert = cert;
+        _learn = '<div class="learn-hd"><span class="learn-step">📖 선행학습</span><span class="learn-num">미리보기</span></div>'
+               + '<div class="lcard">'+conceptCardHTML(q)+'</div>';
+      }
+      out.innerHTML = _learn + renderQuestionBlock(q) + renderExpFull(q, cert);
+    }
   }catch(e){ errBox.innerHTML='<div class="errx">렌더 오류: '+String(e.message)+'</div>'; }
 }
 function drawNav(){
