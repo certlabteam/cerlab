@@ -4658,12 +4658,23 @@ async function loadManifest(){
   MANIFEST=mSnap.data();
   return MANIFEST;
 }
+// QB 캐시 신선도: 같은 버전 재업로드도 이 시간 안에 자동 반영(버전 미범프 안전망). 0이면 TTL 무시(영구 캐시).
+const QB_TTL_MS=6*60*60*1000;   // 6시간
 // 과목 1개 로드(캐시→Firestore→샤드합치기) 후 applyBank
 async function loadOneSubject(ex, sub){
   const ver=(ex.versions&&ex.versions[sub.code])||1;
   const ck='qb:'+ex.id+':'+sub.code+':v'+ver;
   let doc=null;
-  try{ const c=localStorage.getItem(ck); if(c) doc=JSON.parse(c); }catch(e){}
+  try{
+    const c=localStorage.getItem(ck);
+    if(c){
+      const w=JSON.parse(c);
+      if(w && w.__qbts){                                       // 신형 캐시 {__qbts, d}
+        if(!QB_TTL_MS || (Date.now()-w.__qbts)<=QB_TTL_MS) doc=w.d;   // TTL 이내만 사용
+      }
+      // 구형(타임스탬프 없는 raw)·TTL초과 → doc=null 유지 → 아래서 1회 갱신·신형 재기록
+    }
+  }catch(e){}
   if(!doc){
     const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
     if(snap.exists){
@@ -4680,7 +4691,12 @@ async function loadOneSubject(ex, sub){
       } else {
         doc=meta;   // 기존 단일 문서(하위호환 폴백)
       }
-      try{ localStorage.setItem(ck,JSON.stringify(doc)); }catch(e){}
+      try{
+        // 같은 과목의 옛 버전 캐시 키 청소(잔재 누적·용량초과 방지)
+        const pfx='qb:'+ex.id+':'+sub.code+':v';
+        for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k && k!==ck && k.indexOf(pfx)===0) localStorage.removeItem(k); }
+        localStorage.setItem(ck,JSON.stringify({__qbts:Date.now(), d:doc}));
+      }catch(e){}
     }
   }
   if(doc) applyBank(ex,sub,doc);
