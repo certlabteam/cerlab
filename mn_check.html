@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>암기코드 점검 — CertLab</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#F6F8FB;color:#1F2937;padding:18px;line-height:1.5}
+  h1{font-size:18px;margin:0 0 4px}
+  .sub{font-size:12.5px;color:#6B7280;margin-bottom:14px}
+  .bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .btn{padding:9px 16px;border-radius:10px;border:none;background:#185FA5;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+  .btn.sec{background:#EEF2F7;color:#334155}
+  #status{font-size:12.5px;color:#185FA5;font-weight:600}
+  .sec{background:#fff;border:1px solid #E8EDF3;border-radius:14px;padding:14px 16px;margin-bottom:14px}
+  .sec h2{font-size:14.5px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+  .cnt{font-size:12px;font-weight:800;padding:2px 9px;border-radius:20px}
+  .cnt.ok{background:#E8F8F1;color:#0F6E56}
+  .cnt.warn{background:#FDE7C9;color:#9A5B00}
+  .cnt.err{background:#FDE2E1;color:#A32D2D}
+  .desc{font-size:12px;color:#94A3B8;margin-bottom:8px}
+  .row{padding:8px 10px;border:1px solid #EEF1F5;border-radius:9px;margin-bottom:6px;font-size:13px}
+  .row .k{font-family:monospace;font-weight:700}
+  .row .meta{font-size:11px;color:#94A3B8;margin-top:2px}
+  .chant{color:#C0322F;font-weight:800;letter-spacing:1px}
+  .gobtn{display:inline-block;margin-top:5px;padding:4px 10px;border-radius:7px;background:#185FA5;color:#fff;text-decoration:none;font-size:11.5px;font-weight:700}
+  .empty{color:#94A3B8;font-size:12.5px;padding:6px 2px}
+  .pill{display:inline-block;font-family:monospace;font-size:11px;background:#F1F5F9;color:#475569;border-radius:6px;padding:1px 7px;margin:1px 3px 1px 0}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<h1>📑 암기코드 점검</h1>
+<div class="sub">전 과목 문항의 <b>mn://</b> 참조와 마스터(mnemonics)를 대조합니다. 깨진 참조·미사용 코드·중복 두문자·직접입력(이관 후보)을 잡아냅니다.</div>
+<div class="bar">
+  <button class="btn" onclick="scanAll()">전체 스캔</button>
+  <button class="btn sec" onclick="location.reload()">초기화</button>
+  <span id="status">"전체 스캔"을 누르면 마스터 + 전 과목 banks를 읽어 대조합니다.</span>
+</div>
+<div id="out"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+  authDomain: "certlab-c3bcb.firebaseapp.com",
+  projectId: "certlab-c3bcb",
+  storageBucket: "certlab-c3bcb.firebasestorage.app",
+  messagingSenderId: "698827699707",
+  appId: "1:698827699707:web:b08d492f408ac444fa875e"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const SITE = 'https://certlab.ai.kr/';
+
+// 엔진/img_check와 동일한 시험·과목 레지스트리 (★엔진에 시험·과목 추가 시 여기도 갱신)
+const REGISTRY=[
+  {id:'appraiser', name:'감정평가사', subs:[{code:'civil',name:'민법'},{code:'law',name:'감정평가관계법규'},{code:'econ',name:'경제학원론'},{code:'acct',name:'회계학'},{code:'real',name:'부동산학원론'}]},
+  {id:'realestate1', name:'공인중개사 1차', subs:[{code:'re1_intro',name:'부동산학개론'},{code:'re1_civil',name:'민법 및 민사특별법'}]},
+  {id:'realestate2', name:'공인중개사 2차', subs:[{code:'re2_law',name:'공인중개사법령 및 중개실무'},{code:'re2_public',name:'부동산공법'},{code:'re2_tax',name:'부동산공시법령 및 세법'}]},
+  {id:'koreanhistory', name:'한국사능력검정시험 심화', subs:[{code:'ksh',name:'한국사 심화'}]},
+  {id:'housing', name:'주택관리사 1차', subs:[{code:'hm_acct',name:'회계원리'},{code:'hm_fac',name:'공동주택시설개론'},{code:'hm_civil',name:'민법'}]},
+  {id:'housing2', name:'주택관리사 2차', subs:[{code:'hm2_law',name:'주택관리관계법규'},{code:'hm2_pract',name:'공동주택관리실무'}]}
+];
+
+const statusEl=document.getElementById('status');
+const outEl=document.getElementById('out');
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>([\s\S]*?)<\/span>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
+
+const MASTER={};   // id -> {name,code,desc,certs,...}
+const REFS={};     // id -> [{exam,sub,qid}]
+const DIRECT=[];   // {exam,sub,qid,code}
+
+async function loadMaster(){
+  const snap=await db.collection('mnemonics').get();
+  snap.forEach(d=>{ MASTER[d.id]=d.data()||{}; });
+}
+async function scanBank(examId, sub){
+  const k=examId+'__'+sub.code;
+  let snap; try{ snap=await db.collection('banks').doc(k).get(); }catch(e){ return; }
+  if(!snap.exists) return;
+  const data=snap.data();
+  let qs=Array.isArray(data.questions)?data.questions:[];
+  if((!qs.length) && Array.isArray(data.shards)){
+    for(const sh of data.shards){
+      try{ const sd=await db.collection('banks').doc(k+'__'+sh).get(); if(sd.exists && Array.isArray(sd.data().questions)) qs=qs.concat(sd.data().questions); }catch(_){}
+    }
+  }
+  qs.forEach(q=>{
+    const mn=q.mn||(q.exp&&q.exp.mn); if(!mn) return;
+    const list=Array.isArray(mn)?mn:[mn];
+    list.forEach(item=>{
+      if(typeof item==='string' && item.indexOf('mn://')===0){
+        const id=item.slice(5);
+        (REFS[id]=REFS[id]||[]).push({exam:examId, sub:sub.code, qid:q.id});
+      } else {
+        const code=(typeof item==='object')?(item&&item.code||''):(typeof item==='string'?item:'');
+        if(code) DIRECT.push({exam:examId, sub:sub.code, qid:q.id, code:code});
+      }
+    });
+  });
+}
+async function scanAll(){
+  for(const k in MASTER) delete MASTER[k];
+  for(const k in REFS) delete REFS[k];
+  DIRECT.length=0;
+  outEl.innerHTML='';
+  try{
+    statusEl.textContent='마스터(mnemonics) 불러오는 중…';
+    await loadMaster();
+    let i=0, tot=REGISTRY.reduce((a,e)=>a+e.subs.length,0);
+    for(const ex of REGISTRY){
+      for(const su of ex.subs){
+        i++; statusEl.textContent='스캔 '+i+'/'+tot+' — '+ex.name+' / '+su.name;
+        await scanBank(ex.id, su);
+      }
+    }
+    statusEl.textContent='완료 — 마스터 '+Object.keys(MASTER).length+'개, 참조 '+Object.keys(REFS).length+'종, 직접입력 '+DIRECT.length+'건';
+    render();
+  }catch(e){ statusEl.textContent='스캔 실패: '+e.message; }
+}
+
+function refLabel(r){ return r.exam+' / '+r.sub+' / '+r.qid; }
+function goLink(r){ return '<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(r.qid)+'&cert='+encodeURIComponent(r.exam)+'" target="_blank">이 문항 보기 →</a>'; }
+
+function render(){
+  // 1) 깨진 참조: mn://id 인데 마스터에 id 없음
+  const broken=[];
+  Object.keys(REFS).forEach(id=>{ if(!MASTER[id]) REFS[id].forEach(r=>broken.push(Object.assign({id:id},r))); });
+  // 2) 미사용 코드: 마스터에 있는데 아무 문항도 참조 안 함
+  const unused=Object.keys(MASTER).filter(id=>!REFS[id]).sort();
+  // 3) 중복 두문자: 마스터 코드의 두문자 '모음'이 같은 것끼리
+  const byChant={};
+  Object.keys(MASTER).forEach(id=>{ const c=mnChantLetters(MASTER[id].code); if(c){ (byChant[c]=byChant[c]||[]).push(id); } });
+  const dups=Object.keys(byChant).filter(c=>byChant[c].length>1).map(c=>({chant:c, ids:byChant[c]}));
+  // 4) 직접입력 mn (이관 후보)
+  const direct=DIRECT.slice();
+
+  let h='';
+
+  // 깨진 참조
+  h+='<div class="sec"><h2>🔗 깨진 참조 <span class="cnt '+(broken.length?'err':'ok')+'">'+broken.length+'</span></h2>'
+    +'<div class="desc">문항이 <b>mn://id</b>로 참조하는데 마스터에 그 id가 없음 → 앱에서 암기코드 칸이 빈 채로 렌더됩니다.</div>';
+  if(!broken.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=broken.map(b=>'<div class="row"><span class="k">mn://'+esc(b.id)+'</span> — 마스터에 없음<div class="meta">'+esc(refLabel(b))+'</div>'+goLink(b)+'</div>').join('');
+  h+='</div>';
+
+  // 미사용 코드
+  h+='<div class="sec"><h2>🗂 미사용 코드 <span class="cnt '+(unused.length?'warn':'ok')+'">'+unused.length+'</span></h2>'
+    +'<div class="desc">마스터에 등록됐지만 아무 문항도 <b>mn://</b>로 참조하지 않는 코드. (예정 사용이면 그대로 두고, 불필요하면 삭제 검토)</div>';
+  if(!unused.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=unused.map(id=>{ const m=MASTER[id]; const c=mnChantLetters(m.code);
+    return '<div class="row"><span class="k">'+esc(id)+'</span> '+esc(m.name||'')+(c?' <span class="chant">'+esc(c)+'</span>':'')+'</div>'; }).join('');
+  h+='</div>';
+
+  // 중복 두문자
+  h+='<div class="sec"><h2>👯 중복 두문자 <span class="cnt '+(dups.length?'warn':'ok')+'">'+dups.length+'</span></h2>'
+    +'<div class="desc">두문자 \'모음\'이 같은 코드들. 같은 개념의 중복 등록일 수 있으니 하나로 합칠지 검토.</div>';
+  if(!dups.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=dups.map(d=>'<div class="row"><span class="chant">'+esc(d.chant)+'</span><div class="meta">'+d.ids.map(id=>'<span class="pill">'+esc(id)+'</span>').join('')+'</div></div>').join('');
+  h+='</div>';
+
+  // 직접입력 (이관 후보)
+  h+='<div class="sec"><h2>📥 직접입력 mn (이관 후보) <span class="cnt '+(direct.length?'warn':'ok')+'">'+direct.length+'</span></h2>'
+    +'<div class="desc">문항에 직접 입력된 암기코드(참조 아님). 재사용·과목겹침 개념이면 마스터로 옮기고 <b>mn://id</b> 참조로 바꾸는 게 좋습니다. (일회성이면 그대로 OK)</div>';
+  if(!direct.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=direct.map(d=>{ const c=mnChantLetters(d.code);
+    return '<div class="row">'+(c?'<span class="chant">'+esc(c)+'</span> ':'')+'<span style="font-size:12px;color:#475569">'+esc(d.code).slice(0,120)+'</span><div class="meta">'+esc(refLabel(d))+'</div>'+goLink(d)+'</div>'; }).join('');
+  h+='</div>';
+
+  outEl.innerHTML=h;
+}
+</script>
+</body>
+</html>
