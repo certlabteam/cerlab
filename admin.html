@@ -197,6 +197,7 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="export" onclick="switchTab('export')">데이터 내보내기</div>
         <div class="cat-item" data-tab="import" onclick="switchTab('import')">데이터 업로드</div>
         <div class="cat-item" data-tab="imgup" onclick="switchTab('imgup')">이미지 업로드</div>
+        <div class="cat-item" data-tab="imgcheck" onclick="switchTab('imgcheck')">🖼️ 이미지 확인</div>
         <div class="cat-item" data-tab="preview" onclick="switchTab('preview')">🔍 문항 미리보기</div>
       </div>
     </div>
@@ -485,6 +486,15 @@ tr:hover td{background:#FAFAFA}
         <div class="table-header"><div class="table-title">🔍 문항 미리보기 (JSON → 앱과 동일하게 렌더)</div></div>
         <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">문항 JSON을 붙여넣고 렌더하면 실제 앱(index.html)과 동일한 로직·CSS로 보입니다 — 보기별 해설·조합형·cx 예시박스·암기코드(mn)·계산형 단계풀이. 라이브 렌더 코드를 그대로 쓰므로 여기 보이는 모습 = 앱 모습입니다.</div>
         <iframe id="pvFrame" src="preview.html" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#EAF1FA"></iframe>
+      </div>
+    </div>
+
+    <!-- 🖼️ 이미지 확인 -->
+    <div class="tab-panel" id="panel-imgcheck">
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">🖼️ 이미지 업로드 확인</div></div>
+        <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">시험·과목·회차를 골라 img:// 참조 문항과 실제 업로드된 이미지를 매칭 확인합니다. ✅ 그림이 보이면 업로드 성공 · ❌ "이미지 없음"이면 그 id로 재등록 필요.</div>
+        <iframe id="imgChkFrame" src="img_check.html" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#EAF1FA"></iframe>
       </div>
     </div>
 
