@@ -84,16 +84,19 @@ let ITEMS=[];   // {exam,examName,sub,subName,qid,setLabel,n,key,kind}
 let EXAMS=[];   // {id,name,subs:[{code,name}]}
 let renderToken=0;
 
+// 엔진 index.html의 MCQ_EXAMS와 동일한 시험·과목 레지스트리(manifest 비의존).
+// ★ 엔진에 시험/과목을 추가하면 여기도 동일하게 갱신할 것.
+const REGISTRY=[
+  {id:'appraiser', name:'감정평가사', subs:[{code:'civil',name:'민법'},{code:'law',name:'감정평가관계법규'},{code:'econ',name:'경제학원론'},{code:'acct',name:'회계학'},{code:'real',name:'부동산학원론'}]},
+  {id:'realestate1', name:'공인중개사 1차', subs:[{code:'re1_intro',name:'부동산학개론'},{code:'re1_civil',name:'민법 및 민사특별법'}]},
+  {id:'realestate2', name:'공인중개사 2차', subs:[{code:'re2_law',name:'공인중개사법령 및 중개실무'},{code:'re2_public',name:'부동산공법'},{code:'re2_tax',name:'부동산공시법령 및 세법'}]},
+  {id:'koreanhistory', name:'한국사능력검정시험 심화', subs:[{code:'ksh',name:'한국사 심화'}]},
+  {id:'housing', name:'주택관리사 1차', subs:[{code:'hm_acct',name:'회계원리'},{code:'hm_fac',name:'공동주택시설개론'},{code:'hm_civil',name:'민법'}]},
+  {id:'housing2', name:'주택관리사 2차', subs:[{code:'hm2_law',name:'주택관리관계법규'},{code:'hm2_pract',name:'공동주택관리실무'}]}
+];
 async function initSelects(){
-  let manifest;
-  try{
-    const mSnap=await db.collection('manifest').doc('exams').get();
-    if(!mSnap.exists){ summaryEl.textContent='manifest/exams 문서가 없어요.'; return; }
-    manifest=mSnap.data();
-  }catch(e){ summaryEl.textContent='데이터를 불러오지 못했어요.'; return; }
-  // manifest만으로 시험·과목 셀렉트 구성 (banks fetch 안 함)
-  EXAMS=(manifest.exams||[]).map(ex=>({ id:ex.id, name:ex.name||ex.id,
-    subs:(ex.subjects||[]).map(su=>({code:su.code, name:su.name||su.code})) })).filter(e=>e.subs.length);
+  // manifest 비의존: 엔진 레지스트리 그대로 사용 → 새 시험(housing2 등)이 등록 절차 없이 즉시 노출.
+  EXAMS=REGISTRY.map(e=>({ id:e.id, name:e.name, subs:e.subs.map(su=>({code:su.code, name:su.name})) }));
   buildExamSel();
   buildSubSel();
   summaryEl.textContent='시험과 과목을 선택하면 그 과목만 불러옵니다.';
