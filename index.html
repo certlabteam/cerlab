@@ -486,6 +486,17 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .calc-steps .cs-ti{font-size:13px;font-weight:800;color:#8A5A00;margin-bottom:9px}
 #mcqView .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em}
 #mcqView .calc-steps .cs-line:last-child{margin-bottom:0;font-weight:700;color:#7A4E00}
+/* ===== 주관식(SA) 단답형 빈칸 ===== */
+#mcqView .sa-list{display:flex;flex-direction:column;gap:12px;margin:2px 0 0}
+#mcqView .sa-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+#mcqView .sa-lab{flex:0 0 auto;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;background:#EEF2F7;border-radius:7px;font-weight:800;color:#334155;font-size:14px}
+#mcqView .sa-in{flex:1 1 140px;min-width:120px;padding:10px 12px;border:1.5px solid #CBD5E1;border-radius:9px;font-size:15px;color:#1E293B;background:#fff;box-sizing:border-box}
+#mcqView .sa-in:focus{outline:none;border-color:#185FA5;box-shadow:0 0 0 3px rgba(24,95,165,.12)}
+#mcqView .sa-in.cor{border-color:#0F6E56;background:#ECFDF5;color:#0F6E56;font-weight:700}
+#mcqView .sa-in.wr{border-color:#A32D2D;background:#FEF2F2;color:#A32D2D;font-weight:700}
+#mcqView .sa-ok{color:#0F6E56;font-weight:800;font-size:16px}
+#mcqView .sa-no{color:#A32D2D;font-weight:800;font-size:16px}
+#mcqView .sa-ans{flex:1 0 100%;font-size:13px;color:#0F6E56;font-weight:700;padding-left:34px}
 #mcqView .mcq-foot{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;display:flex;gap:9px;margin:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #E2E8F0;box-shadow:0 -4px 14px -8px rgba(15,23,42,.25);z-index:45;box-sizing:border-box}
 #mcqView .mbtn{flex:1;border:none;border-radius:13px;padding:12px 0;font-size:13.5px;font-weight:800;cursor:pointer}
 #mcqView .mbtn:disabled{opacity:.4}
@@ -2432,7 +2443,7 @@ function srRate(card,result){
 }
 
 /* 객관식 채점 → 복습 연결 (정답=정확, 오답=틀림. 애매 없음. ans:0 제외) */
-function mqHasAnswer(q){ return q && (Array.isArray(q.ans)? q.ans.length>0 : q.ans>0); }
+function mqHasAnswer(q){ return q && (isSA(q) ? true : (Array.isArray(q.ans)? q.ans.length>0 : q.ans>0)); }
 function srRateMcq(cert,q,selected,overtime,replace){
   if(!mqHasAnswer(q)) return;            // 정답 미확정 문항은 복습 집계 제외
   srRateK(cert, q.id, isCorr(q.ans,selected)?2:0, overtime, replace);
@@ -3463,7 +3474,7 @@ function mqFlushAnsweredToWrong(){
   let changed=false;
   list.forEach(q=>{
     const a=mqAns[q.id]; if(a===undefined) return;   // 응답한 것만
-    if(isCorr(q.ans,a)){ if(appWrong[q.id]){ delete appWrong[q.id]; changed=true; } }
+    if(mqCorrect(q,a)){ if(appWrong[q.id]){ delete appWrong[q.id]; changed=true; } }
     else if(mqMode==='all'){ if(!appWrong[q.id]){ appWrong[q.id]=true; changed=true; } }
   });
   if(changed && currentUser) saveUserData();
@@ -3936,7 +3947,7 @@ function joxToggle(btn){
     if(!mqInReview && mqCurId && mqAns[mqCurId]!==undefined && !mqGuess[mqCurId]){
       var _q=mqQuestions().find(function(x){ return x.id===mqCurId; });
       if(_q && mqHasAnswer(_q)){
-        srRateK(mqCert, mqCurId, isCorr(_q.ans, mqAns[mqCurId]) ? (oxAllMatch(_q)?2:1) : 0, mqTimeUp, true);
+        srRateK(mqCert, mqCurId, mqCorrect(_q, mqAns[mqCurId]) ? (oxAllMatch(_q)?2:1) : 0, mqTimeUp, true);
         if(typeof srSaveDebounced==='function') srSaveDebounced();
       }
     }
@@ -3974,6 +3985,109 @@ function fmtJaryo(scope){
     el.dataset.aligned=1;
   });
 }
+// ===== 주관식(SA) 단답형 빈칸 — blanks[] 보유 문항. 객관식 경로와 완전 분리 =====
+function isSA(q){ return !!(q && Array.isArray(q.blanks) && q.blanks.length); }
+function saNormTerm(s){
+  s=String(s==null?'':s).normalize('NFC').trim().replace(/\s+/g,'');
+  s=s.replace(/['"\u201C\u201D\u2018\u2019()\u300C\u300D\u300E\u300F\u00B7\u318D]/g,'');
+  s=s.replace(/[A-Za-z]+/g,function(m){return m.toLowerCase();});
+  return s;
+}
+function saNumTok(s){ var m=String(s==null?'':s).match(/-?\d+(?:\.\d+)?/); return m?Number(m[0]):null; }
+function saBlankOK(b, val){
+  if(b==null) return false;
+  if(val==null || String(val).trim()==='') return false;
+  var acc=(Array.isArray(b.accept)&&b.accept.length)?b.accept:[b.ans];
+  var nv=saNormTerm(val);
+  for(var i=0;i<acc.length;i++){ if(nv!=='' && saNormTerm(acc[i])===nv) return true; }   // 정규화 문자열 일치(공통)
+  if(b.kind==='num'){                                                                       // 수치 비교
+    var iv=saNumTok(val); if(iv===null) return false;
+    for(var j=0;j<acc.length;j++){ var av=saNumTok(acc[j]); if(av!==null && av===iv) return true; }
+  }
+  return false;
+}
+function saGrade(q, ansObj){
+  ansObj=(ansObj&&typeof ansObj==='object')?ansObj:{};
+  var per=q.blanks.map(function(b){ return saBlankOK(b, ansObj[b.label]); });
+  var n=per.filter(Boolean).length;
+  return { per:per, n:n, m:q.blanks.length, allOK:(n===q.blanks.length) };
+}
+function saAnswered(q, ansObj){
+  ansObj=(ansObj&&typeof ansObj==='object')?ansObj:{};
+  return q.blanks.every(function(b){ var v=ansObj[b.label]; return v!=null && String(v).trim()!==''; });
+}
+// 중앙 채점 분기: SA면 saGrade(전부 정답일 때만 정답), 아니면 기존 isCorr
+function mqCorrect(q, a){ return isSA(q) ? saGrade(q, a).allOK : isCorr(q.ans, a); }
+// 빈칸 입력 → mqAns[qid]={label:value}. 재렌더 안 함(입력 포커스 유지)
+function saInput(qid, label, val){
+  if(!mqAns[qid] || typeof mqAns[qid]!=='object') mqAns[qid]={};
+  mqAns[qid][label]=val;
+  if(typeof mqSaveProgress==='function') mqSaveProgress();
+}
+function renderSaExam(root, q, qs, pct, examName, examSet){
+  var qid=q.id;
+  var ansObj=(mqAns[qid]&&typeof mqAns[qid]==='object')?mqAns[qid]:{};
+  var showExp=mqShow[qid];
+  var stem=q.q||''; var jaryo=q.jaryo||'';
+  var curSubj=(q&&q._subj)?q._subj:'';
+  var tags=(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q);
+  var guessOn=!!mqGuess[qid];
+  var guessToggle = mqInReview ? (guessOn?'<span class="guess-tag-r">\uD83C\uDFB2 \uCC0D\uC74C</span>':'')
+    : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+qid+'\')"><span class="gdot"></span>\uD83C\uDFB2 \uCC0D\uC5C8\uC5B4\uC694</button>';
+  var mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+qid+'\')" title="\uBB38\uC81C \uC624\uB958 \uC2E0\uACE0">\u26A0\uFE0F \uC2E0\uACE0</button>';
+  var inputs=q.blanks.map(function(b){
+    var v=(ansObj[b.label]!=null)?String(ansObj[b.label]):'';
+    var ok=showExp?saBlankOK(b,v):null;
+    var cls='sa-in'+(showExp?(ok?' cor':' wr'):'');
+    var im=(b.kind==='num')?' inputmode="numeric"':'';
+    var dis=showExp?' disabled':'';
+    var mark=showExp?(ok?'<span class="sa-ok">\u2713</span>':'<span class="sa-no">\u2717</span>'):'';
+    var ansShow=showExp?'<div class="sa-ans">\uC815\uB2F5: '+rm(String(b.ans||''),q)+'</div>':'';
+    return '<div class="sa-row"><span class="sa-lab">'+b.label+'</span>'+
+      '<input class="'+cls+'" type="text"'+im+dis+' value="'+v.replace(/"/g,'&quot;')+'" oninput="saInput(\''+qid+'\',\''+b.label+'\',this.value)" placeholder="\uB2F5 \uC785\uB825">'+
+      mark+ansShow+'</div>';
+  }).join('');
+  var expHTML='';
+  if(showExp){
+    var g=saGrade(q,ansObj);
+    var statusTxt=g.allOK?'\uC815\uB2F5':(saAnswered(q,ansObj)?'\uC624\uB2F5':'\uBBF8\uC751\uB2F5');
+    var statusCol=g.allOK?'#0F6E56':'#A32D2D';
+    var body='';
+    if(q.exp && q.exp.s) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
+    var oArr=(q.exp&&q.exp.o)||[];
+    if(oArr.length){
+      body+='<div class="exp-opts">'+q.blanks.map(function(b,i){
+        var ex=oArr[i]||'';
+        return '<div class="eo"><div class="eo-q">'+b.label+'. '+rm(String(b.ans||''),q)+'</div>'+(ex?'<div class="eo-a">'+rm(String(ex),q)+'</div>':'')+'</div>';
+      }).join('')+'</div>';
+    }
+    if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
+      body+='<div class="concept-box"><div class="concept-ti">\uAC1C\uB150\uC124\uBA85</div>'+q.exp.c.map(function(it){
+        if(!it||!it.t) return '';
+        var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' \u2014 '+rm(it.d,q):'')+'</div>';
+        if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
+        if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
+        return row;
+      }).join('')+'</div>';
+    }
+    expHTML='<div class="exp"><div class="exp-note-hd">\uD559\uC2B5 \uB178\uD2B8</div><div class="exp-hd"><span class="exp-ti">\uD574\uC124</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' \u00B7 '+g.n+'/'+g.m+' \uC815\uB2F5</span></div>'+body+'</div>';
+  }
+  root.innerHTML=
+    '<div class="exam-sticky">'+
+    '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="\uB4A4\uB85C">'+BACK_ARROW+'</button>'+
+      '<div class="exam-ti"><div class="nm">'+(mqInReview?'\uACB0\uACFC \uAC80\uD1A0':examName)+'</div><div class="st">'+(mqInReview?'\uC804\uCCB4 \uBB38\uD56D':examSet)+(curSubj?' \u00B7 '+curSubj:'')+'</div></div>'+
+      (mqInReview?'':('<button class="etim-pause'+(mqPaused?' on':'')+'" onclick="mqTogglePause()" title="'+(mqPaused?'\uACC4\uC18D\uD558\uAE30':'\uC77C\uC2DC\uC815\uC9C0')+'">'+(mqPaused?'\u25B6':'\u23F8')+'</button><span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+(mqPaused?' paused':'')+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
+    '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
+    '</div>'+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+rm(jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+
+    '<div class="sa-list">'+inputs+'</div>'+
+    '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
+    '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
+    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'\uACB0\uACFC\uB85C \u2713':'\uCC44\uC810 \u2713'):'\uB2E4\uC74C \u25B6')+'</button></div>'+
+    expHTML+'</div>';
+  resolveImages(root); if(typeof fmtJaryo==='function') fmtJaryo(root);
+}
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
@@ -3996,6 +4110,7 @@ function renderMcqExam(root){
     resolveImages(root);
     return;
   }
+  if(isSA(q)){ renderSaExam(root,q,qs,pct,examName,examSet); return; }
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
   const optOX = !mqInReview && !isComboQuestion(q.opts);   // 일반형 보기에 O/X 자가체크(조합형은 자료 ㄱㄴㄷㄹ에 부착)
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
@@ -4199,7 +4314,10 @@ function mqPick(qid,n){
   if(mqIdx<qs.length-1){ setTimeout(()=>{ if(mqScreen==='exam'){ mqIdx++; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); } }, 550); }
   else { setTimeout(()=>{ if(mqScreen==='exam'){ mqResult(); } }, 650); }  // 마지막 문제 → 자동 채점
 }
-function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid]; renderMCQ(); }
+function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid];
+  if(mqShow[qid] && !mqInReview){ var _q=mqQuestions().find(function(x){return x.id===qid;});
+    if(_q && isSA(_q) && saAnswered(_q,mqAns[qid]) && !mqGuess[qid]){ srRateK(mqCert, qid, saGrade(_q,mqAns[qid]).allOK?2:0, mqTimeUp, true); if(typeof srSaveDebounced==='function') srSaveDebounced(); } }
+  renderMCQ(); }
 function mqToggleGuess(qid){
   if(mqInReview) return;
   mqGuess[qid]=!mqGuess[qid];
@@ -4207,7 +4325,7 @@ function mqToggleGuess(qid){
   if(mqAns[qid]!==undefined){
     const q=mqQuestions().find(x=>x.id===qid);
     if(q && mqHasAnswer(q)){
-      const res = mqGuess[qid] ? (isCorr(q.ans,mqAns[qid])?1:0) : (isCorr(q.ans,mqAns[qid])?2:0);
+      const _ok = mqCorrect(q,mqAns[qid]); const res = mqGuess[qid] ? (_ok?1:0) : (_ok?2:0);
       srRateK(mqCert, q.id, res, mqTimeUp, true);   // replace=true (덮어쓰기)
       srSaveDebounced();
     }
@@ -4235,7 +4353,7 @@ function mqResult(){
   const qs=mqQuestions(); let correct=0,answered=0;
   const reflectUnans=(!mqReview && !mqDiag && mqMode==='all');  // 일반 풀이에서만 미응답 복습 반영
   qs.forEach((q,i)=>{ if(mqAns[q.id]!==undefined){ answered++;
-    if(isCorr(q.ans,mqAns[q.id])){ correct++; delete appWrong[q.id]; }
+    if(mqCorrect(q,mqAns[q.id])){ correct++; delete appWrong[q.id]; }
     else { appWrong[q.id]=true; }
   } else if(reflectUnans && mqHasAnswer(q)){
     // 미응답: 시간종료 전 지나친 문항(보고넘김)=틀림, 종료 후 미도달(시간부족)=애매
