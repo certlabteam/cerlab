@@ -3519,7 +3519,11 @@ const imgCache={};
 function imgInner(v){
   if(!v) return '';
   if(v.indexOf('img://')===0) return '<img data-imgkey="'+v.slice(6)+'" alt="" src="'+IMG_PH+'">';
-  return '<img src="'+v+'" alt="">';
+  // 실제 URL·절대경로·데이터/블롭 URI는 그대로 src
+  if(/^(https?:)?\/\//.test(v) || v.indexOf('/')===0 || v.indexOf('data:')===0 || v.indexOf('blob:')===0)
+    return '<img src="'+v+'" alt="">';
+  // 그 외 = Firestore 이미지 키(맨 키, img:// 접두사 누락분 방어) → images/{키} 조회
+  return '<img data-imgkey="'+v+'" alt="" src="'+IMG_PH+'">';
 }
 async function resolveImages(scope){
   const els=(scope||document).querySelectorAll('img[data-imgkey]');
