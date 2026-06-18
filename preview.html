@@ -526,6 +526,15 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .learn-step{font-size:12px;font-weight:800;color:#fff;background:#0C447C;padding:5px 12px;border-radius:999px}
 #mcqView .learn-num{font-size:12px;color:#94A3B8;font-weight:700;margin-left:auto}
 #mcqView .lcard{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:18px 16px;margin-bottom:16px}
+#mcqView .sa-plist{display:flex;flex-direction:column;gap:10px;margin:4px 0 0}
+#mcqView .sa-prow{border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;background:#fff}
+#mcqView .sa-phd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#mcqView .sa-lab{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;background:#EEF2F7;border-radius:7px;font-weight:800;color:#334155;font-size:13px}
+#mcqView .sa-pans{font-weight:800;color:#0F6E56;font-size:15px}
+#mcqView .sa-kind{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
+#mcqView .sa-kind.k-term{background:#E6F1FB;color:#185FA5}
+#mcqView .sa-kind.k-num{background:#FBF1E6;color:#92600A}
+#mcqView .sa-acc{font-size:12px;color:#64748B;margin-top:5px}
 #mcqView .ltitle{font-size:17px;font-weight:800;color:#0C447C;margin-bottom:14px;line-height:1.4}
 #mcqView .lsum{background:#F0F6FC;border-left:3px solid #0C447C;border-radius:8px;padding:11px 13px;font-size:13.5px;line-height:1.6;color:#1E3A5F;margin-bottom:16px}
 #mcqView .lsum b{color:#0C447C}
@@ -1390,8 +1399,32 @@ oral2: {"set":"EP","id":"EP_60","q":"교감신경과 부교감신경에 대해 �
 
 
 // 엔진이 이 문항을 어떤 형식으로 그리는지 자동판별(렌더 분기와 동일 기준). 형식 '코드 목록'은 안 들고 있음 — 분기 결과만 반환.
+// ===== 주관식(SA) 단답형 — 검수 카드(정답·허용답·kind·해설 한눈에). 라이브 엔진 renderSaExam과 동일 스키마 =====
+function isSA(q){ return !!(q && Array.isArray(q.blanks) && q.blanks.length); }
+function renderSaPreview(q, cert){
+  var stem=q.q||'', jaryo=q.jaryo||'';
+  var blanksHTML=(q.blanks||[]).map(function(b,i){
+    var acc=(Array.isArray(b.accept)&&b.accept.length)?b.accept:[b.ans];
+    var kindTag='<span class="sa-kind '+(b.kind==='num'?'k-num':'k-term')+'">'+(b.kind==='num'?'숫자':'용어')+'</span>';
+    var accTag=(acc.length>1)?('<div class="sa-acc">허용: '+acc.map(function(a){return rm(String(a),q);}).join(' / ')+'</div>'):'';
+    var ex=(q.exp&&q.exp.o&&q.exp.o[i])?('<div class="eo-a">'+rm(String(q.exp.o[i]),q)+'</div>'):'';
+    return '<div class="sa-prow"><div class="sa-phd"><span class="sa-lab">'+b.label+'</span><span class="sa-pans">'+rm(String(b.ans||''),q)+'</span>'+kindTag+'</div>'+accTag+ex+'</div>';
+  }).join('');
+  var concept='';
+  if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
+    concept='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
+      if(!it||!it.t) return '';
+      var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>';
+      if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
+      if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
+      return row;
+    }).join('')+'</div>';
+  }
+  return '<div class="qtext" style="margin-bottom:12px">'+stemHTML(rm(stem,q))+'</div>'+(jaryo?('<div class="jaryo">'+rm(jaryo,q)+'</div>'):'')+'<div class="sa-plist">'+blanksHTML+'</div>'+concept;
+}
 function detectRenderType(q){
   if(!q || typeof q!=='object') return '?';
+  if(isSA(q)) return '주관식(SA · 빈칸 '+q.blanks.length+'개)';
   if(!q.exp && (q.a || q.learn)) return '구술(ORAL)';
   var oArr=(q.exp && q.exp.o) || [];
   var oFilled=oArr.filter(Boolean).length;
@@ -1454,6 +1487,7 @@ function renderOne(q){
   try{ showTypeBadge(q); }catch(_){}
   try{
     if(!q.exp && (q.a || q.learn)){ out.innerHTML = renderOral(q, cert); }
+    else if(isSA(q)){ out.innerHTML = renderSaPreview(q, cert); }
     else {
       var _learn='';
       if(q.exp && q.exp.learn){
