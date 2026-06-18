@@ -4111,6 +4111,11 @@ function renderMcqExam(root){
     return;
   }
   if(isSA(q)){ renderSaExam(root,q,qs,pct,examName,examSet); return; }
+  if(q && q.type==='SA' && !isSA(q)){   // type=SA인데 blanks 유실 → 객관식 오인 방지, 데이터 오류 조기 경고
+    root.innerHTML='<div class="exam-sticky"><div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="\uB4A4\uB85C">'+BACK_ARROW+'</button><div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div></div></div>'+
+      '<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:14px;line-height:1.6">\u26A0\uFE0F \uC8FC\uAD00\uC2DD(SA) \uBB38\uD56D\uC778\uB370 blanks\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uB370\uC774\uD130 \uD655\uC778 \uD544\uC694 ('+(q.id||'')+')</div>';
+    return;
+  }
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
   const optOX = !mqInReview && !isComboQuestion(q.opts);   // 일반형 보기에 O/X 자가체크(조합형은 자료 ㄱㄴㄷㄹ에 부착)
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
