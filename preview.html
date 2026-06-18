@@ -1386,6 +1386,10 @@ function renderExpFull(q, mqCertVal){
       var _mn=q.mn||q.exp.mn; 
       var mnList=Array.isArray(_mn)?_mn:(_mn&&(typeof _mn==='object'||typeof _mn==='string')?[_mn]:[]);
       mnList.forEach(function(mn,idx){
+        if(typeof mn==='string' && mn.indexOf('mn://')===0){
+          body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+'<div class="mn-code" style="color:#7F77DD;font-family:monospace;font-size:13px">'+mn+' <span style="color:#A89C8E;font-size:11px">(마스터 참조 — 앱에서 코드로 치환)</span></div></div>';
+          return;
+        }
         var code=(typeof mn==='object')?mn.code:(typeof mn==='string'?mn:'');
         var desc=(typeof mn==='object')?mn.desc:'';
         body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+''+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
