@@ -91,6 +91,14 @@ function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['
 // 앱(index.html)과 동일하게 암기코드 박스 렌더. code/desc는 esc 안 함(=앱처럼 <span class='k'> 두문자가 빨간 볼드로 살아남).
 function mnChantHTML(code){ var letters=mnChantLetters(code); return letters?('<div class="mn-chant">'+letters+'</div>'):''; }
 function mnBox(code, desc){ if(!code) return ''; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+// 중복검사용: 코드 본문에서 태그·공백 제거한 정규화 문자열(본문 동일 판정 기준)
+function normCode(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').trim(); }
+// 통합 풀 항목(마스터 또는 직접입력) 1개를 클릭 가능한 pill로
+function poolItem(e){
+  if(e.src==='master') return '<span class="pill">mn://'+esc(e.id)+'</span>';
+  var r=e.ref;
+  return '<a class="pill" href="'+SITE+'?card='+encodeURIComponent(r.qid)+'&cert='+encodeURIComponent(r.exam)+'" target="_blank" rel="noopener" onclick="return goCard(event,this.href)" style="text-decoration:none" title="'+esc(examName(r.exam)+' / '+subName(r.exam,r.sub))+'">'+esc(r.qid)+' ↗</a>';
+}
 
 const MASTER={};   // id -> {name,code,desc,certs,...}
 const REFS={};     // id -> [{exam,sub,qid}]
@@ -183,10 +191,18 @@ function render(){
   Object.keys(REFS).forEach(id=>{ if(!MASTER[id]) REFS[id].forEach(r=>broken.push(Object.assign({id:id},r))); });
   // 2) 미사용 코드: 마스터에 있는데 아무 문항도 참조 안 함
   const unused=Object.keys(MASTER).filter(id=>!REFS[id]).sort();
-  // 3) 중복 두문자: 마스터 코드의 두문자 '모음'이 같은 것끼리
+  // 3) 중복 검사용 통합 풀 (마스터 코드 + 직접입력 코드 전체)
+  const POOL=[];   // {code, src:'master'|'direct', id?, ref?{exam,sub,qid}}
+  Object.keys(MASTER).forEach(id=>{ const c=MASTER[id].code||''; if(c) POOL.push({code:c, src:'master', id:id}); });
+  DIRECT.forEach(d=>{ if(d.code) POOL.push({code:d.code, src:'direct', ref:{exam:d.exam,sub:d.sub,qid:d.qid}}); });
+  // 3a) 본문 동일: 태그·공백 제거 후 똑같은 코드가 2곳 이상 (이관 강력후보)
+  const bySame={};
+  POOL.forEach((e,i)=>{ const n=normCode(e.code); if(n){ (bySame[n]=bySame[n]||[]).push(i); } });
+  const sameDups=Object.keys(bySame).filter(n=>bySame[n].length>1).map(n=>({items:bySame[n].map(i=>POOL[i])})).sort((a,b)=>b.items.length-a.items.length);
+  // 3b) 두문자 중복: 두문자 '모음'이 같은 코드끼리 (본문은 다를 수 있음)
   const byChant={};
-  Object.keys(MASTER).forEach(id=>{ const c=mnChantLetters(MASTER[id].code); if(c){ (byChant[c]=byChant[c]||[]).push(id); } });
-  const dups=Object.keys(byChant).filter(c=>byChant[c].length>1).map(c=>({chant:c, ids:byChant[c]}));
+  POOL.forEach((e,i)=>{ const c=mnChantLetters(e.code); if(c){ (byChant[c]=byChant[c]||[]).push(i); } });
+  const dups=Object.keys(byChant).filter(c=>byChant[c].length>1).map(c=>({chant:c, items:byChant[c].map(i=>POOL[i])})).sort((a,b)=>b.items.length-a.items.length);
   // 4b) keyword 군집: 같은 keyword를 2개 이상 코드가 가짐(개념 같은데 모음 다른 중복 보조 탐지)
   const byKw={};
   Object.keys(MASTER).forEach(id=>{ (MASTER[id].keywords||[]).forEach(kw=>{ kw=String(kw||'').trim(); if(kw){ (byKw[kw]=byKw[kw]||[]).push(id); } }); });
@@ -234,11 +250,18 @@ function render(){
     return '<div class="row"><span class="k">'+esc(id)+'</span> '+esc(m.name||'')+(c?' <span class="chant">'+esc(c)+'</span>':'')+'</div>'; }).join('');
   h+='</div>';
 
-  // 중복 두문자
+  // 본문 동일 암기코드 (이관 강력후보) — 마스터+직접입력 전체
+  h+='<div class="sec"><h2>📋 본문 동일 암기코드 <span class="cnt '+(sameDups.length?'warn':'ok')+'">'+sameDups.length+'</span></h2>'
+    +'<div class="desc">태그·공백 빼고 <b>본문이 똑같은</b> 암기코드가 2곳 이상 — 마스터·직접입력을 모두 비교합니다. 진짜 중복이라 <b>마스터 1개로 합치고 mn:// 참조로 바꾸기</b> 강력 후보.</div>';
+  if(!sameDups.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=sameDups.map(g=>'<div class="row">'+mnBox(g.items[0].code,'')+'<div class="meta"><b>'+g.items.length+'곳</b> · '+g.items.map(poolItem).join(' ')+'</div></div>').join('');
+  h+='</div>';
+
+  // 중복 두문자 (마스터+직접입력 전체)
   h+='<div class="sec"><h2>👯 중복 두문자 <span class="cnt '+(dups.length?'warn':'ok')+'">'+dups.length+'</span></h2>'
-    +'<div class="desc">두문자 \'모음\'이 같은 코드들. 같은 개념의 중복 등록일 수 있으니 하나로 합칠지 검토.</div>';
+    +'<div class="desc">두문자 \'모음\'이 같은 코드들(마스터+직접입력 전체 비교). 본문이 같으면 위 \'본문 동일\'과 겹치고, 본문이 다르면 같은 개념을 다르게 외운 중복 후보일 수 있어 검토.</div>';
   if(!dups.length) h+='<div class="empty">없음 ✅</div>';
-  else h+=dups.map(d=>'<div class="row"><span class="chant">'+esc(d.chant)+'</span><div class="meta">'+d.ids.map(id=>'<span class="pill">'+esc(id)+'</span>').join('')+'</div></div>').join('');
+  else h+=dups.map(d=>'<div class="row"><span class="chant">'+esc(d.chant)+'</span> <span class="x">'+d.items.length+'개</span><div class="meta">'+d.items.map(poolItem).join(' ')+'</div></div>').join('');
   h+='</div>';
 
   // keyword 군집 (중복 보조)
