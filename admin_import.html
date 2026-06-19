@@ -292,8 +292,11 @@ tr:hover td{background:#FAFAFA}
           <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;font-size:13px;cursor:pointer">
             <input type="checkbox" id="impBump" checked> 버전 자동 +1 (캐시 갱신)
           </label>
+          <label style="display:inline-flex;align-items:center;gap:7px;margin-top:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="impSyncManifest" checked> manifest 버전 동기화 (전원 즉시 반영)
+          </label>
           <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin:12px 0">
-            ⚠️ 실행하면 banks 문서를 <b>덮어씁니다</b>(set/overwrite). manifest는 건드리지 않습니다. 아래 "현재 ver → 새 ver"를 확인 후 실행하세요.
+            ⚠️ 실행하면 banks 문서를 <b>덮어씁니다</b>(set/overwrite). <b>manifest 버전 동기화</b>를 켜면 해당 cert/과목의 manifest <code>versions</code>만 새 버전으로 올려 <b>모든 사용자가 즉시</b> 새 데이터를 받습니다(exams·subjects 구조는 안 건드림). 끄면 manifest 그대로(클라이언트는 캐시 TTL 후 또는 Ctrl+Shift+R로 반영). 아래 "현재 ver → 새 ver"를 확인 후 실행하세요.
           </div>
           <table id="impTbl" style="display:none;width:100%;border-collapse:collapse;font-size:12.5px">
             <thead><tr style="color:#8A7E70"><th style="text-align:left;padding:7px 10px">문서 ID</th><th style="text-align:left;padding:7px 10px">cert/subject</th><th style="text-align:right;padding:7px 10px">현재 ver</th><th style="text-align:right;padding:7px 10px">새 ver</th><th style="text-align:right;padding:7px 10px">문항수</th><th style="text-align:left;padding:7px 10px">상태</th></tr></thead>
@@ -903,7 +906,9 @@ async function impUpload(){
   const ready=impItems.filter(it=>it.status==='ready');
   if(!ready.length) return;
   const lines=ready.map(it=>'  '+it.docId+': ver '+it.curVer+' → '+impNewVer(it)+' (문항 '+it.count+')').join('\n');
-  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+'\n\nmanifest는 변경하지 않습니다.')){ impLog('업로드 취소됨.'); return; }
+  const _sync=document.getElementById('impSyncManifest');
+  const _mfNote=(_sync && _sync.checked)?'manifest 버전도 동기화됩니다 (전원 즉시 반영).':'manifest는 변경하지 않습니다.';
+  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+'\n\n'+_mfNote)){ impLog('업로드 취소됨.'); return; }
   document.getElementById('impRun').disabled=true;
   for(const it of ready){
     try{
@@ -941,7 +946,38 @@ async function impUpload(){
     }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); impLog('✗ '+it.docId+' 실패: '+(e.message||e),'#f85149'); }
     impRender();
   }
-  impLog('— 작업 종료 — (앱에서 Ctrl+Shift+R로 캐시 갱신)','#5B50C0');
+  // manifest 버전 동기화(전원 즉시 반영)
+  const _syncEl=document.getElementById('impSyncManifest');
+  const _done=ready.filter(it=>it.status==='done');
+  if(_syncEl && _syncEl.checked && _done.length){ await impSyncManifestVersions(_done); }
+  impLog('— 작업 종료 —'+((_syncEl&&_syncEl.checked)?' (manifest 동기화 포함 · 전원 즉시 반영)':' (manifest 미동기화 · 캐시 TTL 후 또는 Ctrl+Shift+R로 반영)'),'#5B50C0');
+}
+// 업로드된 cert/과목의 manifest versions[과목]만 새 버전으로 갱신(구조 불변·기등록만). 새 cert/과목은 건드리지 않음.
+async function impSyncManifestVersions(done){
+  try{
+    const ref=db.collection('manifest').doc('exams');
+    const snap=await ref.get();
+    if(!snap.exists){ impLog('⚠ manifest/exams 문서가 없어 버전 동기화 건너뜀.','#C2410C'); return; }
+    const exams=(snap.data().exams||[]).map(e=>Object.assign({},e));
+    let changed=0; const missing=[];
+    for(const it of done){
+      const ex=exams.find(e=>e.id===it.cert);
+      if(!ex){ missing.push(it.cert+'/'+it.subject+'(cert 미등록)'); continue; }
+      const hasSub=Array.isArray(ex.subjects)&&ex.subjects.some(s=>s.code===it.subject);
+      if(!hasSub){ missing.push(it.cert+'/'+it.subject+'(과목 미등록)'); continue; }
+      const nv=(typeof it.curVer==='number')?it.curVer:Number(it.curVer);
+      if(!isFinite(nv)){ missing.push(it.cert+'/'+it.subject+'(버전 불명)'); continue; }
+      const cur=(ex.versions&&ex.versions[it.subject]);
+      if(cur!==nv){ ex.versions=Object.assign({},ex.versions,{[it.subject]:nv}); changed++; impLog('  manifest '+it.cert+'.'+it.subject+' ver '+(cur==null?'(없음)':cur)+' → '+nv,'#15793F'); }
+    }
+    if(changed){
+      await ref.update({ exams });
+      impLog('✓ manifest 버전 동기화 완료 — '+changed+'개 과목. 전원 즉시 새 데이터 수신.','#15793F');
+    } else {
+      impLog('manifest 버전 변경 없음(이미 동일).','#5B50C0');
+    }
+    if(missing.length) impLog('⚠ manifest 미반영: '+missing.join(', ')+' — 새 cert/과목은 manifest 등록이 먼저 필요(개발방).','#C2410C');
+  }catch(e){ impLog('✗ manifest 동기화 실패: '+(e.message||e),'#f85149'); }
 }
 async function exportData(){
   const sel=document.getElementById('expCert'); const pick=(sel&&sel.value)||'__all';
