@@ -937,7 +937,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   </div>
   <div class="header-right">
     <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
-    <a class="event-badge" id="eventBadge" href="event.html" style="display:none" aria-label="합격 환급 이벤트 보기">
+    <a class="event-badge" id="eventBadge" href="#" style="display:none" aria-label="합격 환급 이벤트 보기">
       <span class="eb-l1">🎉 100% 환급</span>
       <span class="eb-l2">합격 이벤트</span>
     </a>
@@ -1194,7 +1194,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
       ✓ 예상점수 & 약점 분석<br>
       ✓ 음성 듣기 · 암기코드
     </div>
-    <a class="btn-google-login" id="refundLink" href="event.html" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none">자세히 보기 →</a>
+    <a class="btn-google-login" id="refundLink" href="#" onclick="closeRefundPopup('day')" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none">자세히 보기 →</a>
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('day')">닫기</button>
       <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('week')">7일간 보지 않기</button>
@@ -1394,7 +1394,7 @@ const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사',
 // ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
 const EVENTS = {
   bodybuilding: {
-    page:'event.html?cert=bodybuilding', badge:'합격 이벤트',
+    page:'#post/LOk5j9wje78LqxRt34SW', badge:'합격 이벤트',
     bannerLine:'🎉 합격하면 결제금액 전액 환급',
     bannerSub:'CertLab로 공부하고 합격하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
     popTitle:'100% 환급 이벤트에 당첨되었습니다!',
@@ -1402,7 +1402,7 @@ const EVENTS = {
     popSteps:'① 큐넷에서 환불 조건에 맞는 합격·점수 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
   },
   koreanhistory: {
-    page:'event.html?cert=koreanhistory', badge:'1급 환급',
+    page:'#post/LOk5j9wje78LqxRt34SW', badge:'1급 환급',
     bannerLine:'🎉 한국사 1급 달성하면 전액 환급',
     bannerSub:'CertLab로 공부하고 심화 1급(최고 등급)을 달성하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
     popTitle:'한국사 1급 환급 이벤트!',
@@ -1410,7 +1410,7 @@ const EVENTS = {
     popSteps:'① 한능검·정부24에서 1급 인증 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
   },
   appraiser: {
-    page:'event.html?cert=appraiser', badge:'합격 환급',
+    page:'#post/LOk5j9wje78LqxRt34SW', badge:'합격 환급',
     bannerLine:'🎉 감정평가사 합격하면 전액 환급',
     bannerSub:'CertLab로 공부하고 감정평가사에 합격하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
     popTitle:'감정평가사 합격 환급 이벤트!',
@@ -1857,12 +1857,12 @@ function showLoginPopup(mode='default') {
 }
 function hideLoginPopup() { document.getElementById('loginPopup').classList.add('hidden'); }
 // 환급 안내 팝업 — 전 사용자(기존 가입자 포함)에게. X=24시간, '7일간 보지 않기'=7일 숨김
-// 헤더 이벤트 배지: 홈→허브(events.html), 이벤트 있는 시험→해당 상세, 이벤트 없는 시험→숨김
+// 헤더 이벤트 배지: 홈→공통 환급글, 이벤트 있는 시험→해당 글, 이벤트 없는 시험→숨김
 function updateEventBadge(){
   var b=document.getElementById('eventBadge'); if(!b) return;
   var l2=b.querySelector('.eb-l2');
-  if(activeCert===null){ b.style.display=''; b.setAttribute('href','events.html'); if(l2) l2.textContent='이벤트'; }
-  else if(EVENTS[activeCert]){ b.style.display=''; b.setAttribute('href',EVENTS[activeCert].page); if(l2) l2.textContent=EVENTS[activeCert].badge; }
+  if(activeCert===null){ b.style.display=''; b.setAttribute('href','#post/LOk5j9wje78LqxRt34SW'); if(l2) l2.textContent='이벤트'; }
+  else if(EVENTS[activeCert] && EVENTS[activeCert].page){ b.style.display=''; b.setAttribute('href',EVENTS[activeCert].page); if(l2) l2.textContent=EVENTS[activeCert].badge; }
   else { b.style.display='none'; }
 }
 // 로그인/환영 팝업 안의 환급 배너: 이벤트 있는 시험만, 시험별 문구로
@@ -1903,7 +1903,7 @@ function maybeShowRefundPopup(){
       var _t=document.getElementById('refundTitle'); if(_t) _t.textContent=ev.popTitle;
       var _s=document.getElementById('refundSub'); if(_s) _s.innerHTML=ev.popSub;
       var _st=document.getElementById('refundSteps'); if(_st) _st.innerHTML=ev.popSteps;
-      var _l=document.getElementById('refundLink'); if(_l) _l.setAttribute('href',ev.page);
+      var _l=document.getElementById('refundLink'); if(_l){ if(ev.page){ _l.setAttribute('href',ev.page); _l.style.display=''; } else { _l.style.display='none'; } }
     }catch(_){}
     p.classList.remove('hidden');
   }catch(_){}
