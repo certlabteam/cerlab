@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>암기코드 이관 검토 — CertLab</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#F6F8FB;color:#1F2937;padding:18px;line-height:1.5}
+  h1{font-size:18px;margin:0 0 4px}
+  .sub{font-size:12.5px;color:#6B7280;margin-bottom:14px}
+  .bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .btn{padding:9px 16px;border-radius:10px;border:none;background:#185FA5;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+  .btn.sec{background:#EEF2F7;color:#334155}
+  #status{font-size:12.5px;color:#185FA5;font-weight:600}
+  #drop{border:1.5px dashed #CBD5E1;border-radius:10px;padding:14px;text-align:center;color:#94A3B8;font-size:13px;cursor:pointer;margin-bottom:14px;background:#fff}
+  #drop.over{border-color:#185FA5;color:#185FA5;background:#EFF6FF}
+  .grp{background:#fff;border:1px solid #E8EDF3;border-radius:14px;padding:14px 16px;margin-bottom:14px}
+  .grphd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .gno{font-size:12px;font-weight:800;background:#EEF2F7;color:#334155;border-radius:20px;padding:2px 10px}
+  .gchant{font-size:15px;font-weight:800;color:#C0322F;letter-spacing:1px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:720px){.cols{grid-template-columns:1fr}}
+  .col{border:1px solid #EEF1F5;border-radius:10px;padding:10px 12px;background:#FBFDFF}
+  .coltag{font-size:11px;font-weight:800;margin-bottom:8px;letter-spacing:.3px}
+  .coltag.l{color:#475569}
+  .coltag.r{color:#0F6E56}
+  .cand{margin-bottom:10px}
+  .qids{font-size:11px;color:#94A3B8;margin-top:4px;display:flex;gap:6px;flex-wrap:wrap}
+  .qpill{font-family:monospace;font-size:11px;background:#F1F5F9;color:#475569;border-radius:6px;padding:1px 7px;text-decoration:none}
+  .qpill:hover{background:#E2E8F0}
+  .pid{font-family:monospace;font-weight:700;color:#185FA5;font-size:12.5px}
+  .merge{font-size:11px;font-weight:800;border-radius:6px;padding:1px 8px;margin-left:6px}
+  .merge.yes{background:#E8F8F1;color:#0F6E56}
+  .merge.no{background:#FDE7C9;color:#9A5B00}
+  .reason{font-size:12px;color:#64748B;margin-top:8px;line-height:1.6}
+  .decision{font-size:12px;margin-top:10px;padding:8px 10px;border-radius:8px;background:#FFF7E6;border:1px solid #F1D9A8;color:#854F0B}
+  .empty{color:#94A3B8;font-size:13px;padding:20px;text-align:center}
+  /* ===== 앱(index.html)과 동일한 암기코드 박스 렌더 ===== */
+  .mn-box{margin:6px 0 0;padding:10px 13px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;border-radius:12px}
+  .mn-ti{font-size:12px;font-weight:800;color:#B97A12;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
+  .mn-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
+  .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
+  .mn-code .k,.mn-desc .k{color:#C0392B;font-weight:800}
+  .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
+</style>
+</head>
+<body>
+<h1>🔀 암기코드 이관 검토</h1>
+<div class="sub">디바가 준 검토 JSON(<b>review</b>)을 열면, 그룹별로 좌측 <b>후보 코드들</b>과 우측 <b>통합안</b>을 앱에 뜨는 모습 그대로 비교합니다. 보기 전용입니다.</div>
+<div class="bar">
+  <button class="btn" onclick="document.getElementById('file').click()">📁 JSON 파일 열기</button>
+  <button class="btn sec" onclick="location.reload()">초기화</button>
+  <input id="file" type="file" accept=".json,application/json" style="display:none">
+  <span id="status">검토 JSON을 열어주세요.</span>
+</div>
+<div id="drop">여기로 JSON 파일을 끌어다 놓거나, 위 "JSON 파일 열기"를 누르세요.</div>
+<div id="out"></div>
+
+<script>
+const SITE='https://certlab.ai.kr/';
+const outEl=document.getElementById('out');
+const statusEl=document.getElementById('status');
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>([\s\S]*?)<\/span>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
+function mnChantHTML(code){ var l=mnChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
+// 앱과 동일하게 — code/desc는 esc 안 함(<span class='k'> 두문자가 빨간 볼드로 살아남)
+function mnBox(code, desc){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+function goCard(e,url){ if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)) return true; if(e) e.preventDefault(); window.open(url,'_blank'); return false; }
+// "exam/sub/qid" → 클릭 가능한 pill (qid로 앱 열기)
+function qidPill(q){
+  var parts=String(q||'').split('/');
+  if(parts.length>=3){ var ex=parts[0], qid=parts[parts.length-1];
+    return '<a class="qpill" href="'+SITE+'?card='+encodeURIComponent(qid)+'&cert='+encodeURIComponent(ex)+'" target="_blank" rel="noopener" onclick="return goCard(event,this.href)">'+esc(q)+' ↗</a>';
+  }
+  return '<span class="qpill">'+esc(q)+'</span>';
+}
+
+function render(data){
+  var rows = (data && Array.isArray(data.review)) ? data.review : (Array.isArray(data)?data:null);
+  if(!rows){ outEl.innerHTML='<div class="empty">형식 오류: 최상위에 <b>review</b> 배열이 필요합니다.</div>'; statusEl.textContent='형식 오류'; return; }
+  if(!rows.length){ outEl.innerHTML='<div class="empty">검토 항목이 없습니다.</div>'; statusEl.textContent='0개'; return; }
+  var mergeYes=rows.filter(function(g){return g&&g.proposal&&g.proposal.merge;}).length;
+  statusEl.textContent='그룹 '+rows.length+'개 · 통합 추천 '+mergeYes+'개';
+  var h=rows.map(function(g){
+    g=g||{};
+    var cands=Array.isArray(g.candidates)?g.candidates:[];
+    var p=g.proposal||{};
+    // 좌: 후보들
+    var left=cands.length ? cands.map(function(c){
+      var qids=Array.isArray(c.qids)?c.qids:[];
+      return '<div class="cand">'+mnBox(c.code,'')+'<div class="qids">'+qids.map(qidPill).join('')+'</div></div>';
+    }).join('') : '<div class="empty" style="padding:8px">후보 없음</div>';
+    // 우: 통합안
+    var mergeBadge = ('merge' in p) ? ('<span class="merge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>') : '';
+    var right='<div>'+(p.id?'<span class="pid">'+esc(p.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 미정</span>')+mergeBadge+'</div>'
+      +mnBox(p.code,p.desc)
+      +(p.reason?'<div class="reason">💡 '+esc(p.reason)+'</div>':'');
+    var decision = (g.decision && String(g.decision).trim()) ? '<div class="decision"><b>Chris 메모:</b> '+esc(g.decision)+'</div>' : '';
+    return '<div class="grp">'
+      +'<div class="grphd"><span class="gno">그룹 '+esc(g.group!=null?g.group:'?')+'</span>'+(g.chant?'<span class="gchant">'+esc(g.chant)+'</span>':'')+'<span style="font-size:11px;color:#94A3B8">후보 '+cands.length+'개</span></div>'
+      +'<div class="cols">'
+      +'<div class="col"><div class="coltag l">후보 코드 (현재 직접입력)</div>'+left+'</div>'
+      +'<div class="col"><div class="coltag r">통합안 (디바 제안)</div>'+right+decision+'</div>'
+      +'</div></div>';
+  }).join('');
+  outEl.innerHTML=h;
+}
+
+function handleFile(f){
+  if(!f){ return; }
+  if(!/\.json$/i.test(f.name) && f.type!=='application/json'){ statusEl.textContent='JSON 파일이 아닙니다.'; return; }
+  statusEl.textContent='읽는 중…';
+  var r=new FileReader();
+  r.onload=function(){ try{ var d=JSON.parse(r.result); render(d); }catch(e){ outEl.innerHTML='<div class="empty">JSON 파싱 오류: '+esc(e.message)+'</div>'; statusEl.textContent='파싱 오류'; } };
+  r.onerror=function(){ statusEl.textContent='읽기 실패'; };
+  r.readAsText(f);
+}
+
+document.getElementById('file').addEventListener('change', function(e){ handleFile(e.target.files[0]); });
+var drop=document.getElementById('drop');
+drop.addEventListener('click', function(){ document.getElementById('file').click(); });
+['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); }); });
+['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); }); });
+drop.addEventListener('drop', function(e){ if(e.dataTransfer&&e.dataTransfer.files) handleFile(e.dataTransfer.files[0]); });
+</script>
+</body>
+</html>
