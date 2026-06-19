@@ -27,6 +27,25 @@
   .gobtn{display:inline-block;margin-top:5px;padding:4px 10px;border-radius:7px;background:#185FA5;color:#fff;text-decoration:none;font-size:11.5px;font-weight:700}
   .empty{color:#94A3B8;font-size:12.5px;padding:6px 2px}
   .pill{display:inline-block;font-family:monospace;font-size:11px;background:#F1F5F9;color:#475569;border-radius:6px;padding:1px 7px;margin:1px 3px 1px 0}
+  select{padding:8px 11px;border:1px solid #CBD5E1;border-radius:9px;background:#fff;color:#1F2937;font-size:13px}
+  .subgrp{border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#FBFDFF}
+  .subgrp .shd{font-size:13px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .subgrp .smeta{font-size:11px;color:#94A3B8;font-weight:600}
+  .codeline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:5px 8px;border:1px solid #EEF1F5;border-radius:8px;margin-bottom:4px;font-size:12.5px;background:#fff}
+  .codeline .id{font-family:monospace;font-weight:700;color:#185FA5}
+  .codeline .ok{color:#0F6E56;font-weight:700}
+  .codeline .bad{color:#A32D2D;font-weight:700}
+  .codeline .x{color:#64748B;font-size:11px}
+  /* ===== 앱(index.html)과 동일한 암기코드 박스 렌더 ===== */
+  .mn-box{margin:8px 0 0;padding:10px 13px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;border-radius:12px}
+  .mn-ti{font-size:12px;font-weight:800;color:#B97A12;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
+  .mn-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
+  .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
+  .mn-code .k,.mn-desc .k{color:#C0392B;font-weight:800}
+  .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
+  .mnentry{margin-bottom:10px}
+  .enmeta{font-size:11px;color:#94A3B8;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .enmeta .src{font-family:monospace;background:#F1F5F9;border-radius:5px;padding:1px 6px;color:#475569}
 </style>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -37,6 +56,7 @@
 <div class="bar">
   <button class="btn" onclick="scanAll()">전체 스캔</button>
   <button class="btn sec" onclick="location.reload()">초기화</button>
+  <select id="mnSubSel" style="display:none" onchange="render()"><option value="">전체 과목</option></select>
   <span id="status">"전체 스캔"을 누르면 마스터 + 전 과목 banks를 읽어 대조합니다.</span>
 </div>
 <div id="out"></div>
@@ -68,10 +88,14 @@ const statusEl=document.getElementById('status');
 const outEl=document.getElementById('out');
 function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>([\s\S]*?)<\/span>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
+// 앱(index.html)과 동일하게 암기코드 박스 렌더. code/desc는 esc 안 함(=앱처럼 <span class='k'> 두문자가 빨간 볼드로 살아남).
+function mnChantHTML(code){ var letters=mnChantLetters(code); return letters?('<div class="mn-chant">'+letters+'</div>'):''; }
+function mnBox(code, desc){ if(!code) return ''; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
 
 const MASTER={};   // id -> {name,code,desc,certs,...}
 const REFS={};     // id -> [{exam,sub,qid}]
-const DIRECT=[];   // {exam,sub,qid,code}
+const DIRECT=[];   // {exam,sub,qid,code,desc}
+const SUBMN={};    // 'exam||sub' -> [{qid,code,desc,source:'ref'|'direct',refId,broken}]  (앱 표시 순서)
 
 async function loadMaster(){
   const snap=await db.collection('mnemonics').get();
@@ -91,20 +115,29 @@ async function scanBank(examId, sub){
   qs.forEach(q=>{
     const mn=q.mn||(q.exp&&q.exp.mn); if(!mn) return;
     const list=Array.isArray(mn)?mn:[mn];
+    const key=examId+'||'+sub.code;
     list.forEach(item=>{
+      let code='', desc='', source='direct', refId='', broken=false;
       if(typeof item==='string' && item.indexOf('mn://')===0){
-        const id=item.slice(5);
-        (REFS[id]=REFS[id]||[]).push({exam:examId, sub:sub.code, qid:q.id});
-      } else {
-        const code=(typeof item==='object')?(item&&item.code||''):(typeof item==='string'?item:'');
-        if(code) DIRECT.push({exam:examId, sub:sub.code, qid:q.id, code:code});
+        source='ref'; refId=item.slice(5);
+        const m=MASTER[refId];
+        if(m){ code=m.code||''; desc=m.desc||''; } else { broken=true; }
+        (REFS[refId]=REFS[refId]||[]).push({exam:examId, sub:sub.code, qid:q.id});
+      } else if(item && typeof item==='object'){
+        code=item.code||''; desc=item.desc||'';
+        DIRECT.push({exam:examId, sub:sub.code, qid:q.id, code:code, desc:desc});
+      } else if(typeof item==='string'){
+        code=item;
+        DIRECT.push({exam:examId, sub:sub.code, qid:q.id, code:code, desc:''});
       }
+      (SUBMN[key]=SUBMN[key]||[]).push({qid:q.id, code:code, desc:desc, source:source, refId:refId, broken:broken});
     });
   });
 }
 async function scanAll(){
   for(const k in MASTER) delete MASTER[k];
   for(const k in REFS) delete REFS[k];
+  for(const k in SUBMN) delete SUBMN[k];
   DIRECT.length=0;
   outEl.innerHTML='';
   try{
@@ -118,12 +151,31 @@ async function scanAll(){
       }
     }
     statusEl.textContent='완료 — 마스터 '+Object.keys(MASTER).length+'개, 참조 '+Object.keys(REFS).length+'종, 직접입력 '+DIRECT.length+'건';
+    populateSubSel();
     render();
   }catch(e){ statusEl.textContent='스캔 실패: '+e.message; }
 }
 
 function refLabel(r){ return r.exam+' / '+r.sub+' / '+r.qid; }
-function goLink(r){ return '<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(r.qid)+'&cert='+encodeURIComponent(r.exam)+'" target="_blank">이 문항 보기 →</a>'; }
+function goLink(r){ return '<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(r.qid)+'&cert='+encodeURIComponent(r.exam)+'" target="_blank" rel="noopener" onclick="return goCard(event,this.href)">이 문항 보기 →</a>'; }
+function goCard(e,url){ if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)) return true; if(e) e.preventDefault(); window.open(url,'_blank'); return false; }
+// 과목 헬퍼
+function subKey(exam,sub){ return exam+'||'+sub; }
+function examName(exam){ const e=REGISTRY.find(x=>x.id===exam); return e?e.name:exam; }
+function subName(exam,subcode){ const e=REGISTRY.find(x=>x.id===exam); const s=e&&e.subs.find(x=>x.code===subcode); return s?s.name:subcode; }
+function usedSubs(){
+  const set={};
+  Object.keys(SUBMN).forEach(k=>set[k]=1);
+  const ordered=[];
+  REGISTRY.forEach(e=>e.subs.forEach(s=>{ const k=subKey(e.id,s.code); if(set[k]) ordered.push(k); }));
+  return ordered;
+}
+function populateSubSel(){
+  const sel=document.getElementById('mnSubSel'); if(!sel) return;
+  const subs=usedSubs();
+  sel.innerHTML='<option value="">전체 과목</option>'+subs.map(k=>{ const p=k.split('||'); return '<option value="'+esc(k)+'">'+esc(examName(p[0])+' · '+subName(p[0],p[1]))+'</option>'; }).join('');
+  sel.style.display=subs.length?'':'none';
+}
 
 function render(){
   // 1) 깨진 참조: mn://id 인데 마스터에 id 없음
@@ -143,6 +195,29 @@ function render(){
   const direct=DIRECT.slice();
 
   let h='';
+
+  // 0) 과목별 암기코드 — 앱(index.html)에 표시되는 모습 그대로
+  const subFilter=(document.getElementById('mnSubSel')||{}).value||'';
+  const subKeys=usedSubs().filter(k=>!subFilter||k===subFilter);
+  h+='<div class="sec"><h2>📚 과목별 암기코드 <span class="cnt '+(subKeys.length?'ok':'warn')+'">'+subKeys.length+'과목</span></h2>'
+    +'<div class="desc">각 과목 문항의 암기코드를 <b>앱에 뜨는 모습 그대로</b> 렌더합니다(두문자 강조 포함). 항목 아래 <b>문항 번호 · 출처</b>(mn:// 참조 / 직접입력)와 "이 문항 보기"로 바로 수정하러 갈 수 있습니다. 위 드롭다운으로 과목을 골라 볼 수 있어요.</div>';
+  if(!subKeys.length) h+='<div class="empty">표시할 과목이 없습니다. "전체 스캔"을 먼저 누르세요.</div>';
+  else h+=subKeys.map(k=>{
+    const p=k.split('||'), ex=p[0], su=p[1];
+    const list=SUBMN[k]||[];
+    const refN=list.filter(x=>x.source==='ref').length, dirN=list.filter(x=>x.source==='direct').length, brokenN=list.filter(x=>x.broken).length;
+    let inner='<div class="shd">'+esc(subName(ex,su))+' <span class="smeta">'+esc(examName(ex))+' · 총 '+list.length+'개 (참조 '+refN+' · 직접 '+dirN+')'+(brokenN?(' · ⚠️ 깨짐 '+brokenN):'')+'</span></div>';
+    if(!list.length) inner+='<div class="empty" style="padding:2px">암기코드 없음</div>';
+    else inner+=list.map(e=>{
+      const box = e.broken
+        ? '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#A32D2D">⚠️ 참조 오류: mn://'+esc(e.refId)+' (마스터에 없음 → 앱에서 빈칸)</div></div>'
+        : (mnBox(e.code, e.desc) || '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 비어있음)</div></div>');
+      const src = e.source==='ref' ? ('mn://'+esc(e.refId)) : '직접입력';
+      return '<div class="mnentry">'+box+'<div class="enmeta"><span class="src">'+esc(e.qid)+'</span><span class="src">'+src+'</span>'+goLink({exam:ex,sub:su,qid:e.qid})+'</div></div>';
+    }).join('');
+    return '<div class="subgrp">'+inner+'</div>';
+  }).join('');
+  h+='</div>';
 
   // 깨진 참조
   h+='<div class="sec"><h2>🔗 깨진 참조 <span class="cnt '+(broken.length?'err':'ok')+'">'+broken.length+'</span></h2>'
@@ -177,8 +252,8 @@ function render(){
   h+='<div class="sec"><h2>📥 직접입력 mn (이관 후보) <span class="cnt '+(direct.length?'warn':'ok')+'">'+direct.length+'</span></h2>'
     +'<div class="desc">문항에 직접 입력된 암기코드(참조 아님). 재사용·과목겹침 개념이면 마스터로 옮기고 <b>mn://id</b> 참조로 바꾸는 게 좋습니다. (일회성이면 그대로 OK)</div>';
   if(!direct.length) h+='<div class="empty">없음 ✅</div>';
-  else h+=direct.map(d=>{ const c=mnChantLetters(d.code);
-    return '<div class="row">'+(c?'<span class="chant">'+esc(c)+'</span> ':'')+'<span style="font-size:12px;color:#475569">'+esc(d.code).slice(0,120)+'</span><div class="meta">'+esc(refLabel(d))+'</div>'+goLink(d)+'</div>'; }).join('');
+  else h+=direct.map(d=>{
+    return '<div class="mnentry">'+mnBox(d.code, d.desc)+'<div class="enmeta"><span class="src">'+esc(refLabel(d))+'</span>'+goLink(d)+'</div></div>'; }).join('');
   h+='</div>';
 
   outEl.innerHTML=h;
