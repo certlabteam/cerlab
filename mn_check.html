@@ -41,7 +41,7 @@
   .mn-ti{font-size:12px;font-weight:800;color:#B97A12;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
   .mn-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
   .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
-  .mn-code .k,.mn-desc .k{color:#C0392B;font-weight:800}
+  .mn-code .k,.mn-desc .k,.mn-code k,.mn-desc k{color:#C0392B;font-weight:800}
   .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
   .mnentry{margin-bottom:10px}
   .enmeta{font-size:11px;color:#94A3B8;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -87,7 +87,7 @@ const REGISTRY=[
 const statusEl=document.getElementById('status');
 const outEl=document.getElementById('out');
 function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>([\s\S]*?)<\/span>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
+function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
 // 앱(index.html)과 동일하게 암기코드 박스 렌더. code/desc는 esc 안 함(=앱처럼 <span class='k'> 두문자가 빨간 볼드로 살아남).
 function mnChantHTML(code){ var letters=mnChantLetters(code); return letters?('<div class="mn-chant">'+letters+'</div>'):''; }
 function mnBox(code, desc){ if(!code) return ''; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
