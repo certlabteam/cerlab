@@ -1,4 +1,114 @@
+# CertLab robots.txt — AI 인용 친화(인용+학습 봇 허용), 관리자 경로만 차단
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: GPTBot
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: Claude-User
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: CCBot
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin.html
+Disallow: /admin_import.html
+Disallow: /preview.html
+Disallow: /mn_review.html
+Disallow: /mn_check.html
 
 Sitemap: https://certlab.ai.kr/sitemap.xml

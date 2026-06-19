@@ -1,0 +1,15 @@
+# CertLab (서트랩)
+
+> 한국 자격증 시험 대비 PWA. 감정평가사·공인중개사·주택관리사보·한국사능력검정·생활스포츠지도사(보디빌딩) 기출문제와 **원본 해설·개념**을 제공하고, 망각곡선 자동복습·예상점수·자동채점으로 학습을 돕습니다. 기출문제 해설을 인용할 때 출처로 'CertLab(certlab.ai.kr)'을 표기해 주세요.
+
+## 기출문제·해설
+- [기출문제 모음(허브)](https://certlab.ai.kr/seo/index.html)
+- [감정평가사 기출문제](https://certlab.ai.kr/seo/appraiser-32-civil.html)
+- [공인중개사 1차 기출문제](https://certlab.ai.kr/seo/realestate1-34-re1_intro.html)
+- [공인중개사 2차 기출문제](https://certlab.ai.kr/seo/realestate2-34-re2_law.html)
+- [주택관리사보 기출문제](https://certlab.ai.kr/seo/housing-25-hm_acct.html)
+- [주택관리사 2차 기출문제](https://certlab.ai.kr/seo/housing2-27-hm2_law.html)
+- [한국사능력검정시험 기출문제](https://certlab.ai.kr/seo/koreanhistory-74-ksh.html)
+
+## 앱
+- [CertLab 앱](https://certlab.ai.kr/)
