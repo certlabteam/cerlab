@@ -336,9 +336,114 @@ tr:hover td{background:#FAFAFA}
 
     <!-- 이메일 발송 -->
     <div class="tab-panel" id="panel-crm">
+
+      <!-- ===== 1) 템플릿 ===== -->
+      <div class="table-wrap" style="margin-bottom:16px">
+        <div class="table-header"><div class="table-title">① 이메일 템플릿</div>
+          <button class="btn-sm btn-extend" onclick="emNewTpl()">+ 새 템플릿</button>
+        </div>
+        <div style="padding:16px 20px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="emTplSelect" onchange="emSelectTpl()" style="flex:1;min-width:220px;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">— 템플릿을 선택하세요 —</option></select>
+            <button class="btn-sm" onclick="emEditTpl()" style="background:#EDE9FB;color:#5B50C0">✏️ 편집</button>
+            <button class="btn-sm" onclick="emDelTpl()" style="background:#FCEBEB;color:#A32D2D">🗑 삭제</button>
+          </div>
+
+          <!-- 편집 폼 (기본 숨김) -->
+          <div id="emEditForm" style="display:none;margin-top:14px;padding:16px;border:1.5px solid #EDE9FB;border-radius:12px;background:#FAFAFE">
+            <div style="font-size:12px;color:#888;margin-bottom:4px">표시 이름</div>
+            <input id="emName" placeholder="예: 감평사 만료 임박 안내" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:10px">
+            <div style="font-size:12px;color:#888;margin-bottom:4px">제목</div>
+            <input id="emSubject" placeholder="예: {{nick}}님, {{cert}} 이용권이 {{daysLeft}}일 남았어요" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:10px">
+            <div style="font-size:12px;color:#888;margin-bottom:4px">분류</div>
+            <div style="margin-bottom:10px;font-size:13px">
+              <label style="margin-right:16px;cursor:pointer"><input type="radio" name="emCat" id="emCatTx" value="tx" checked> 거래성 <span style="color:#A89C8E;font-size:11px">(만료·결제·가입 — 전원 발송)</span></label>
+              <label style="cursor:pointer"><input type="radio" name="emCat" value="ad"> 광고성 <span style="color:#A89C8E;font-size:11px">(이벤트·홍보 — 동의자만·수신거부)</span></label>
+            </div>
+            <div style="font-size:12px;color:#888;margin-bottom:4px">본문 HTML <span style="color:#A89C8E">(AI가 만들어준 HTML을 그대로 붙여넣으세요)</span></div>
+            <textarea id="emHtml" rows="8" placeholder="<p>여기에 본문 HTML을 붙여넣으세요</p>" style="width:100%;padding:10px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:12px;font-family:ui-monospace,Menlo,monospace;outline:none;resize:vertical"></textarea>
+            <div style="font-size:11px;color:#A89C8E;margin-top:6px">사용 가능 변수: <code>{{nick}}</code> 닉네임 · <code>{{cert}}</code> 자격증명 · <code>{{expireDate}}</code> 만료일 · <code>{{daysLeft}}</code> 남은일수 · <code>{{email}}</code> 이메일</div>
+            <label style="display:block;margin-top:10px;font-size:13px;cursor:pointer"><input type="checkbox" id="emEnabled" checked> 활성 (체크 해제 시 발송 비활성)</label>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button class="btn-sm btn-extend" onclick="emSaveTpl()">💾 저장</button>
+              <button class="btn-sm" onclick="emCancelTpl()" style="background:#F0ECE6;color:#6E6256">취소</button>
+              <span id="emTplMsg" style="font-size:12px;color:#15793F;align-self:center"></span>
+            </div>
+          </div>
+
+          <!-- 미리보기 -->
+          <div style="margin-top:14px">
+            <div style="font-size:12px;color:#888;margin-bottom:6px">미리보기 <span style="color:#A89C8E">(실제 발송 모양 — 변수는 예시값으로 표시)</span></div>
+            <div id="emPreviewSubject" style="font-weight:600;font-size:13px;color:#2b2b2b;padding:8px 12px;background:#F3F0EC;border-radius:8px 8px 0 0">제목 미리보기</div>
+            <div id="emPreview" style="border:1.5px solid #EDE9FB;border-top:none;border-radius:0 0 10px 10px;padding:8px;background:#fff;min-height:80px;max-height:360px;overflow:auto"><div class="empty" style="padding:24px">템플릿을 선택하면 미리보기가 표시됩니다.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 2) 대상 ===== -->
+      <div class="table-wrap" style="margin-bottom:16px">
+        <div class="table-header"><div class="table-title">② 발송 대상</div>
+          <button class="btn-sm" onclick="emPreviewSeg()" style="background:#EDE9FB;color:#5B50C0">🔍 대상 미리보기</button>
+        </div>
+        <div style="padding:16px 20px;font-size:13px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+            <div>
+              <div style="font-size:12px;color:#888;margin-bottom:6px">회원 종류 <span style="color:#A89C8E">(미선택=전체)</span></div>
+              <label style="margin-right:12px;cursor:pointer"><input type="checkbox" class="emPlan" value="FREE_TRIAL"> 무료체험</label>
+              <label style="margin-right:12px;cursor:pointer"><input type="checkbox" class="emPlan" value="ACTIVE"> 유료</label>
+              <label style="cursor:pointer"><input type="checkbox" class="emPlan" value="EXPIRED"> 만료</label>
+            </div>
+            <div>
+              <div style="font-size:12px;color:#888;margin-bottom:6px">등급 <span style="color:#A89C8E">(무료체험 한정·미선택=전체)</span></div>
+              <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="emGrade" value="A"> A</label>
+              <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="emGrade" value="B"> B</label>
+              <label style="margin-right:10px;cursor:pointer"><input type="checkbox" class="emGrade" value="C"> C</label>
+              <label style="cursor:pointer"><input type="checkbox" class="emGrade" value="D"> D</label>
+            </div>
+            <div>
+              <div style="font-size:12px;color:#888;margin-bottom:6px">자격증</div>
+              <select id="emCert" style="width:100%;padding:8px 10px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">전체</option></select>
+              <select id="emScope" style="width:100%;margin-top:6px;padding:8px 10px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:12px;outline:none">
+                <option value="any">가입시험 또는 이용권</option><option value="signup">가입시험 기준</option><option value="entitlement">이용권 기준</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:12px;color:#888;margin-bottom:6px">미접속 일수 <span style="color:#A89C8E">(최근 로그인 기준)</span></div>
+              <input id="emInactMin" type="number" placeholder="최소" style="width:46%;padding:8px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"> ~
+              <input id="emInactMax" type="number" placeholder="최대" style="width:46%;padding:8px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:12px;color:#888;margin-bottom:6px">만료까지 남은 일 <span style="color:#A89C8E">(음수=만료 후)</span></div>
+              <input id="emExpMin" type="number" placeholder="최소" style="width:46%;padding:8px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"> ~
+              <input id="emExpMax" type="number" placeholder="최대" style="width:46%;padding:8px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            </div>
+            <div>
+              <div style="font-size:12px;color:#888;margin-bottom:6px">가입 경과일</div>
+              <input id="emSignMin" type="number" placeholder="최소" style="width:46%;padding:8px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"> ~
+              <input id="emSignMax" type="number" placeholder="최대" style="width:46%;padding:8px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+            </div>
+          </div>
+          <div id="emSegResult" style="margin-top:14px;padding:12px 14px;background:#F1EFFB;border-radius:10px;color:#5B50C0;font-size:13px;display:none"></div>
+        </div>
+      </div>
+
+      <!-- ===== 3) 발송 ===== -->
+      <div class="table-wrap" style="margin-bottom:16px">
+        <div class="table-header"><div class="table-title">③ 발송</div></div>
+        <div style="padding:16px 20px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn-sm" onclick="emTest()" style="background:#FFF4E0;color:#A8650A">✉️ 테스트 발송 (1명)</button>
+            <button class="btn-sm btn-extend" onclick="emSend()">🚀 본발송</button>
+            <span style="font-size:11px;color:#A89C8E">테스트는 입력한 1개 주소로만, 본발송은 위 대상 전체에게 보냅니다.</span>
+          </div>
+          <div id="emSendResult" style="margin-top:12px;font-size:13px"></div>
+        </div>
+      </div>
+
+      <!-- ===== 폴백: 등급별 추출·복사 ===== -->
       <div class="table-wrap">
         <div class="table-header">
-          <div class="table-title">이메일 발송 (등급별 대상 추출)</div>
+          <div class="table-title">빠른 추출·복사 <span style="font-size:11px;color:#A89C8E;font-weight:400">(메일앱 직접 발송용 폴백)</span></div>
           <select id="crmSeg" onchange="renderCrm()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
             <option value="all">전체</option>
             <option value="free">무료체험</option>
@@ -909,7 +1014,7 @@ function switchTab(name) {
     navEl.classList.add('active');
     const grp = navEl.closest('.cat'); if(grp) grp.classList.add('open');
   }
-  if(name==='crm') renderCrm();
+  if(name==='crm'){ renderCrm(); emInit(); }
   if(name==='stats') renderStats();
   if(name==='entitlements') renderEntMembers();
   if(name==='export'){ openExportTab(); imgImpInit(); }
@@ -1865,6 +1970,155 @@ function crmCopyEmails(seg){
   if(!emails.length){ alert('대상이 없습니다.'); return; }
   navigator.clipboard.writeText(emails.join(', ')).then(()=>alert(emails.length+'명의 이메일을 복사했어요.')).catch(()=>alert('복사 실패'));
 }
+
+/* ===== 이메일 발송 (Phase 1b) — emailTemplates CRUD + previewSegment/sendBulkEmail ===== */
+let emTpls = [], emEditingId = null, emInited = false;
+function emFns(){ return firebase.app().functions('asia-northeast3'); }
+const EM_CERTS = { appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사', bodybuilding:'생활체육지도사(보디빌딩)' };
+
+function emInit(){
+  if(!emInited){
+    const cs=document.getElementById('emCert');
+    if(cs && cs.options.length<=1){ Object.keys(EM_CERTS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=EM_CERTS[k]; cs.appendChild(o); }); }
+    emInited=true;
+  }
+  emLoadTpls();
+}
+async function emLoadTpls(){
+  const sel=document.getElementById('emTplSelect'); if(!sel) return;
+  try{
+    const snap=await db.collection('emailTemplates').get();
+    emTpls=snap.docs.map(d=>({id:d.id, ...d.data()}));
+    emTpls.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    const cur=sel.value;
+    sel.innerHTML='<option value="">— 템플릿을 선택하세요 —</option>'+
+      emTpls.map(t=>`<option value="${t.id}">${cmaEsc(t.name||'(이름없음)')}${t.enabled===false?' (비활성)':''} · ${t.category==='ad'?'광고':'거래'}</option>`).join('');
+    if(cur && emTpls.some(t=>t.id===cur)) sel.value=cur;
+    emSelectTpl();
+  }catch(e){ document.getElementById('emPreview').innerHTML='<div class="empty" style="padding:20px;color:#A32D2D">템플릿 로드 실패: '+(e&&e.message?e.message:e)+'<br><span style="font-size:11px">Firestore 규칙에 emailTemplates 관리자 권한이 필요할 수 있어요.</span></div>'; }
+}
+function emCurTpl(){ const id=(document.getElementById('emTplSelect')||{}).value; return emTpls.find(t=>t.id===id)||null; }
+
+/* 변수 치환 + 레이아웃 (functions의 layout/substitute와 동일 — 미리보기 정확도) */
+function emSubstitute(t,v){ return String(t||'').replace(/\{\{(\w+)\}\}/g,(_,k)=>(v[k]!=null?v[k]:'')); }
+function emLayout(inner,cat){
+  const sender='CertLab · 발신전용 no-reply@certlab.ai.kr';
+  const footer = cat==='ad'
+    ? '<p style="font-size:11px;color:#9a9a9a;margin-top:28px;border-top:1px solid #eee;padding-top:12px">본 메일은 광고성 정보입니다. 수신거부는 <a href="https://certlab.ai.kr/#unsub" style="color:#9a9a9a">여기</a>를 눌러주세요.<br>'+sender+'</p>'
+    : '<p style="font-size:11px;color:#9a9a9a;margin-top:28px;border-top:1px solid #eee;padding-top:12px">'+sender+'</p>';
+  return '<div style="max-width:560px;margin:0 auto;padding:8px;font-family:-apple-system,system-ui,sans-serif;color:#2b2b2b;line-height:1.65;font-size:15px"><div style="font-weight:800;font-size:20px;color:#5B50C0;margin-bottom:18px">CertLab</div>'+inner+footer+'</div>';
+}
+function emSampleVars(){ return { nick:'홍길동', email:'sample@certlab.ai.kr', cert:'감정평가사', expireDate:'2026.07.01', daysLeft:'3' }; }
+function emRenderPreview(subject, html, cat){
+  const v=emSampleVars();
+  let subj=emSubstitute(subject,v); if(cat==='ad' && !/^\(광고\)/.test(subj)) subj='(광고) '+subj;
+  document.getElementById('emPreviewSubject').textContent=subj||'(제목 없음)';
+  document.getElementById('emPreview').innerHTML=emLayout(emSubstitute(html,v),cat);
+}
+function emSelectTpl(){
+  const t=emCurTpl();
+  if(!t){ document.getElementById('emPreviewSubject').textContent='제목 미리보기'; document.getElementById('emPreview').innerHTML='<div class="empty" style="padding:24px">템플릿을 선택하면 미리보기가 표시됩니다.</div>'; return; }
+  emRenderPreview(t.subject, t.html, t.category);
+}
+function emShowForm(show){ document.getElementById('emEditForm').style.display=show?'block':'none'; document.getElementById('emTplMsg').textContent=''; }
+function emNewTpl(){
+  emEditingId=null;
+  document.getElementById('emName').value=''; document.getElementById('emSubject').value='';
+  document.getElementById('emHtml').value=''; document.getElementById('emCatTx').checked=true; document.getElementById('emEnabled').checked=true;
+  emShowForm(true);
+}
+function emEditTpl(){
+  const t=emCurTpl(); if(!t){ alert('편집할 템플릿을 먼저 선택하세요.'); return; }
+  emEditingId=t.id;
+  document.getElementById('emName').value=t.name||''; document.getElementById('emSubject').value=t.subject||'';
+  document.getElementById('emHtml').value=t.html||'';
+  document.getElementById('emCatTx').checked=(t.category!=='ad'); document.querySelector('input[name="emCat"][value="ad"]').checked=(t.category==='ad');
+  document.getElementById('emEnabled').checked=(t.enabled!==false);
+  emShowForm(true);
+}
+function emCancelTpl(){ emShowForm(false); }
+async function emSaveTpl(){
+  const name=(document.getElementById('emName').value||'').trim();
+  const subject=(document.getElementById('emSubject').value||'').trim();
+  const html=(document.getElementById('emHtml').value||'').trim();
+  const category=document.querySelector('input[name="emCat"]:checked').value;
+  const enabled=document.getElementById('emEnabled').checked;
+  if(!name||!subject||!html){ alert('이름·제목·본문 HTML은 필수입니다.'); return; }
+  const by=(firebase.auth().currentUser&&firebase.auth().currentUser.email)||'';
+  const data={ name, subject, html, category, enabled, updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedBy:by };
+  const msg=document.getElementById('emTplMsg'); msg.style.color='#888'; msg.textContent='저장 중…';
+  try{
+    if(emEditingId){ await db.collection('emailTemplates').doc(emEditingId).set(data,{merge:true}); }
+    else { const ref=await db.collection('emailTemplates').add(data); emEditingId=ref.id; }
+    msg.style.color='#15793F'; msg.textContent='✅ 저장됨';
+    await emLoadTpls();
+    document.getElementById('emTplSelect').value=emEditingId; emSelectTpl();
+    setTimeout(()=>emShowForm(false),700);
+  }catch(e){ msg.style.color='#A32D2D'; msg.textContent='저장 실패: '+(e&&e.message?e.message:e); }
+}
+async function emDelTpl(){
+  const t=emCurTpl(); if(!t){ alert('삭제할 템플릿을 먼저 선택하세요.'); return; }
+  if(!confirm('템플릿 "'+(t.name||t.id)+'" 을(를) 삭제할까요?')) return;
+  try{ await db.collection('emailTemplates').doc(t.id).delete(); await emLoadTpls(); emSelectTpl(); }
+  catch(e){ alert('삭제 실패: '+(e&&e.message?e.message:e)); }
+}
+
+/* 세그먼트 rule */
+function emNums(idMin,idMax){
+  const a=document.getElementById(idMin).value, b=document.getElementById(idMax).value;
+  if(a===''&&b==='') return null;
+  return { min:a===''?null:Number(a), max:b===''?null:Number(b) };
+}
+function emRuleFromUI(){
+  const plan=[...document.querySelectorAll('.emPlan:checked')].map(x=>x.value);
+  const grade=[...document.querySelectorAll('.emGrade:checked')].map(x=>x.value);
+  const cert=(document.getElementById('emCert').value)?[document.getElementById('emCert').value]:[];
+  const rule={ certScope:document.getElementById('emScope').value };
+  if(plan.length) rule.plan=plan;
+  if(grade.length) rule.grade=grade;
+  if(cert.length) rule.cert=cert;
+  const ina=emNums('emInactMin','emInactMax'); if(ina) rule.inactiveDays=ina;
+  const exp=emNums('emExpMin','emExpMax'); if(exp) rule.expireDays=exp;
+  const sgn=emNums('emSignMin','emSignMax'); if(sgn) rule.signupDays=sgn;
+  return rule;
+}
+async function emPreviewSeg(){
+  const box=document.getElementById('emSegResult'); box.style.display='block'; box.style.color='#5B50C0'; box.textContent='대상 계산 중…';
+  try{
+    const r=await emFns().httpsCallable('previewSegment')({ rule:emRuleFromUI() });
+    const d=r.data||{}; const sample=(d.sample||[]).slice(0,8).join(', ');
+    box.innerHTML='대상 <b>'+(d.count||0)+'</b>명'+(sample?' · 예: '+cmaEsc(sample)+(d.count>8?' …':''):'');
+  }catch(e){ box.style.color='#A32D2D'; box.textContent='대상 조회 실패: '+(e&&e.message?e.message:e); }
+}
+async function emTest(){
+  const t=emCurTpl(); if(!t){ alert('발송할 템플릿을 먼저 선택하세요.'); return; }
+  const def=(firebase.auth().currentUser&&firebase.auth().currentUser.email)||'certlab.team@gmail.com';
+  const to=prompt('테스트 메일을 받을 주소를 입력하세요.', def); if(!to) return;
+  const res=document.getElementById('emSendResult'); res.style.color='#888'; res.textContent='테스트 발송 중…';
+  try{
+    const r=await emFns().httpsCallable('sendBulkEmail')({ test:true, testTo:to, templateId:t.id });
+    const d=r.data||{}; res.style.color=d.sent?'#15793F':'#A32D2D';
+    res.innerHTML='테스트: 발송 '+(d.sent||0)+' / 실패 '+(d.failed||0)+(d.skipped?' / 제외 '+d.skipped:'')+'. <span style="color:#888">'+cmaEsc(to)+' 메일함을 확인하세요.</span>';
+  }catch(e){ res.style.color='#A32D2D'; res.textContent='테스트 실패: '+(e&&e.message?e.message:e); }
+}
+async function emSend(){
+  const t=emCurTpl(); if(!t){ alert('발송할 템플릿을 먼저 선택하세요.'); return; }
+  if(t.enabled===false){ alert('비활성 템플릿입니다. 편집에서 활성으로 바꾸세요.'); return; }
+  const rule=emRuleFromUI();
+  const res=document.getElementById('emSendResult');
+  let cnt=0;
+  try{ const pr=await emFns().httpsCallable('previewSegment')({ rule }); cnt=(pr.data&&pr.data.count)||0; }catch(e){ alert('대상 조회 실패: '+(e&&e.message?e.message:e)); return; }
+  if(!cnt){ alert('대상이 0명입니다. 조건을 확인하세요.'); return; }
+  if(!confirm('템플릿 "'+(t.name||t.id)+'"('+(t.category==='ad'?'광고성':'거래성')+')\n대상 '+cnt+'명에게 본발송합니다. 계속할까요?')) return;
+  res.style.color='#888'; res.textContent='발송 중… ('+cnt+'명, 잠시 걸릴 수 있어요)';
+  try{
+    const cert=(rule.cert&&rule.cert.length===1)?rule.cert[0]:null;
+    const r=await emFns().httpsCallable('sendBulkEmail')({ templateId:t.id, rule, targetCert:cert });
+    const d=r.data||{}; res.style.color='#15793F';
+    res.innerHTML='✅ 본발송 완료 — 발송 <b>'+(d.sent||0)+'</b> / 실패 '+(d.failed||0)+(d.skipped?' / 제외 '+d.skipped:'')+' (대상 '+(d.attempted||0)+'명)';
+  }catch(e){ res.style.color='#A32D2D'; res.textContent='발송 실패: '+(e&&e.message?e.message:e); }
+}
+
 function openMemberDetail(uid){
   const m = allMembers.find(x=>x.id===uid); if(!m) return;
   MD_UID = uid; MD_PERSUB = null;
