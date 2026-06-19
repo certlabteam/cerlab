@@ -201,6 +201,7 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="preview" onclick="switchTab('preview')">🔍 문항 미리보기</div>
         <div class="cat-item" data-tab="mnem" onclick="switchTab('mnem')">📑 암기코드 마스터</div>
         <div class="cat-item" data-tab="mncheck" onclick="switchTab('mncheck')">🔎 암기코드 점검</div>
+        <div class="cat-item" data-tab="mnreview" onclick="switchTab('mnreview')">🔀 암기코드 이관 검토</div>
       </div>
     </div>
     <div class="cat cat-single" data-tab="community">
@@ -571,6 +572,14 @@ tr:hover td{background:#FAFAFA}
         <div class="table-header"><div class="table-title">🔎 암기코드 점검</div></div>
         <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">전 과목 문항의 mn:// 참조와 마스터를 대조 — 깨진 참조·미사용 코드·중복 두문자·직접입력(이관 후보)을 잡습니다.</div>
         <iframe id="mnChkFrame" src="mn_check.html?v=3" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#F6F8FB"></iframe>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-mnreview">
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">🔀 암기코드 이관 검토</div></div>
+        <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">디바가 준 검토 JSON(review)을 열어, 그룹별로 좌(후보 코드들)·우(통합안)를 앱 모습으로 비교합니다. 보기 전용입니다.</div>
+        <iframe id="mnReviewFrame" src="mn_review.html?v=1" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#F6F8FB"></iframe>
       </div>
     </div>
 
