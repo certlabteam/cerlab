@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- updated: 2026-06-19 (KST) — mnemonics 마스터 미리보기 모드 추가(review 비교 모드와 겸용) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -50,7 +51,7 @@
 </head>
 <body>
 <h1>🔀 암기코드 이관 검토</h1>
-<div class="sub">디바가 준 검토 JSON(<b>review</b>)을 열면, 그룹별로 좌측 <b>후보 코드들</b>과 우측 <b>통합안</b>을 앱에 뜨는 모습 그대로 비교합니다. 보기 전용입니다.</div>
+<div class="sub">검토 JSON(<b>review</b>)을 열면 그룹별 좌측 <b>후보 코드들</b>·우측 <b>통합안</b>을 앱 모습 그대로 비교합니다. 마스터 JSON(<b>mnemonics</b>)을 열면 각 항목을 앱에 뜨는 모습으로 <b>미리보기</b>합니다. 보기 전용입니다.</div>
 <div class="bar">
   <button class="btn" onclick="document.getElementById('file').click()">📁 JSON 파일 열기</button>
   <button class="btn sec" onclick="location.reload()">초기화</button>
@@ -92,9 +93,28 @@ function proposalCard(p){
     +(p.reason?'<div class="reason">💡 '+esc(p.reason)+'</div>':'')
     +'</div>';
 }
+// 마스터 미리보기 카드 1장 (id → name → code → desc → keywords → certs)
+function mnemoCard(m){
+  m=m||{};
+  var kw = (Array.isArray(m.keywords)&&m.keywords.length) ? '<div style="margin-top:6px">'+m.keywords.map(function(k){return '<span class="kw">'+esc(k)+'</span>';}).join('')+'</div>' : '';
+  var certs = (Array.isArray(m.certs)&&m.certs.length) ? '<div style="margin-top:4px">'+m.certs.map(function(c){return '<span class="kw" style="background:#E8F0FB;color:#185FA5">'+esc(c)+'</span>';}).join('')+'</div>' : '';
+  return '<div class="grp">'
+    +'<div class="grphd">'+(m.id?'<span class="pid">'+esc(m.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 없음</span>')+'</div>'
+    +(m.name?'<div class="pname" style="margin-top:0">'+esc(m.name)+'</div>':'')
+    +mnBox(m.code,m.desc)
+    +kw+certs
+    +'</div>';
+}
+function renderMnemonics(rows){
+  if(!rows.length){ outEl.innerHTML='<div class="empty">mnemonics 배열이 비어 있습니다.</div>'; statusEl.textContent='0개'; return; }
+  statusEl.textContent='마스터 미리보기 · '+rows.length+'개';
+  outEl.innerHTML=rows.map(mnemoCard).join('');
+}
 function render(data){
+  // 마스터(mnemonics) 파일이면 미리보기 모드
+  if(data && Array.isArray(data.mnemonics)){ return renderMnemonics(data.mnemonics); }
   var rows = (data && Array.isArray(data.review)) ? data.review : (Array.isArray(data)?data:null);
-  if(!rows){ outEl.innerHTML='<div class="empty">형식 오류: 최상위에 <b>review</b> 배열이 필요합니다.</div>'; statusEl.textContent='형식 오류'; return; }
+  if(!rows){ outEl.innerHTML='<div class="empty">형식 오류: 최상위에 <b>review</b> 또는 <b>mnemonics</b> 배열이 필요합니다.</div>'; statusEl.textContent='형식 오류'; return; }
   if(!rows.length){ outEl.innerHTML='<div class="empty">검토 항목이 없습니다.</div>'; statusEl.textContent='0개'; return; }
   var mergeYes=rows.filter(function(g){return g&&g.proposal&&g.proposal.merge;}).length;
   statusEl.textContent='그룹 '+rows.length+'개 · 통합 추천 '+mergeYes+'개';
