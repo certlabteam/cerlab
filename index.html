@@ -4532,6 +4532,7 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   document.getElementById('homeView').classList.remove('hidden');
+  var _hd=document.querySelector('.header'); if(_hd) _hd.classList.remove('hidden');
   var _ft=document.querySelector('.footer'); if(_ft) _ft.classList.remove('hidden');
   var _cmv=document.getElementById('communityView'); if(_cmv) _cmv.classList.add('hidden');
   var _mpv=document.getElementById('myPageView'); if(_mpv) _mpv.classList.add('hidden');
@@ -4556,6 +4557,7 @@ async function enterCert(id){
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   setLastCert(id);
   document.getElementById('homeView').classList.add('hidden');
+  var _hd2=document.querySelector('.header'); if(_hd2) _hd2.classList.add('hidden');
   document.getElementById('certSwitch').classList.remove('hidden');
   // 뷰 전환 먼저(사용자가 로딩을 보게)
   if(id === 'bodybuilding'){
