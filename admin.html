@@ -440,6 +440,44 @@ tr:hover td{background:#FAFAFA}
         </div>
       </div>
 
+      <!-- ===== 4) 자동 발송 규칙 ===== -->
+      <div class="table-wrap" style="margin-bottom:16px">
+        <div class="table-header"><div class="table-title">④ 자동 발송 규칙 <span style="font-size:11px;color:#A89C8E;font-weight:400">(켜두면 무인 발송 — 스케줄=매일 12시 / 이벤트=가입·결제 직후)</span></div>
+          <button class="btn-sm btn-extend" onclick="emArNew()">+ 자동 규칙</button>
+        </div>
+        <div style="padding:16px 20px">
+          <!-- 규칙 생성 폼 (기본 숨김) -->
+          <div id="emArForm" style="display:none;margin-bottom:14px;padding:16px;border:1.5px solid #EDE9FB;border-radius:12px;background:#FAFAFE">
+            <div style="font-size:12px;color:#888;margin-bottom:4px">규칙 이름</div>
+            <input id="emArName" placeholder="예: 만료 D-3 안내 / 가입 환영" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:10px">
+            <div style="font-size:12px;color:#888;margin-bottom:4px">유형</div>
+            <div style="margin-bottom:10px;font-size:13px">
+              <label style="margin-right:16px;cursor:pointer"><input type="radio" name="emArType" id="emArTypeSch" value="schedule" checked onchange="emArTypeChange()"> 스케줄 <span style="color:#A89C8E;font-size:11px">(매일 12시, 아래 ② 대상 조건 사용)</span></label>
+              <label style="cursor:pointer"><input type="radio" name="emArType" value="event" onchange="emArTypeChange()"> 이벤트 <span style="color:#A89C8E;font-size:11px">(가입·결제 직후 1회)</span></label>
+            </div>
+            <div style="font-size:12px;color:#888;margin-bottom:4px">템플릿</div>
+            <select id="emArTpl" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:10px"><option value="">— 선택 —</option></select>
+            <div id="emArSchBox">
+              <div style="font-size:12px;color:#888;margin-bottom:4px">재발송 최소 간격(쿨다운, 일) <span style="color:#A89C8E">— 같은 사람 중복 방지</span></div>
+              <input id="emArCooldown" type="number" value="30" style="width:120px;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:6px">
+              <div style="font-size:11px;color:#A89C8E;margin-bottom:8px">⚠️ 대상은 <b>위 ② 발송 대상</b>에서 설정한 조건이 그대로 저장됩니다. 저장 전 ② 조건을 먼저 맞춰주세요. <button class="btn-sm" onclick="emPreviewSeg()" style="background:#EDE9FB;color:#5B50C0;padding:3px 8px">현재 ② 대상 보기</button></div>
+            </div>
+            <div id="emArEventBox" style="display:none">
+              <div style="font-size:12px;color:#888;margin-bottom:4px">이벤트 시점</div>
+              <select id="emArEvent" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:8px">
+                <option value="signup">가입 직후 (환영)</option><option value="payment_approved">결제 승인 직후</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-sm btn-extend" onclick="emArSave()">💾 규칙 저장</button>
+              <button class="btn-sm" onclick="emArCancel()" style="background:#F0ECE6;color:#6E6256">취소</button>
+              <span id="emArMsg" style="font-size:12px;color:#15793F;align-self:center"></span>
+            </div>
+          </div>
+          <div id="emArList"><div class="empty" style="padding:16px">등록된 자동 규칙이 없습니다.</div></div>
+        </div>
+      </div>
+
       <!-- ===== 폴백: 등급별 추출·복사 ===== -->
       <div class="table-wrap">
         <div class="table-header">
@@ -1976,13 +2014,14 @@ let emTpls = [], emEditingId = null, emInited = false;
 function emFns(){ return firebase.app().functions('asia-northeast3'); }
 const EM_CERTS = { appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사', bodybuilding:'생활체육지도사(보디빌딩)' };
 
-function emInit(){
+async function emInit(){
   if(!emInited){
     const cs=document.getElementById('emCert');
     if(cs && cs.options.length<=1){ Object.keys(EM_CERTS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=EM_CERTS[k]; cs.appendChild(o); }); }
     emInited=true;
   }
-  emLoadTpls();
+  await emLoadTpls();
+  emArLoad();
 }
 async function emLoadTpls(){
   const sel=document.getElementById('emTplSelect'); if(!sel) return;
@@ -2117,6 +2156,83 @@ async function emSend(){
     const d=r.data||{}; res.style.color='#15793F';
     res.innerHTML='✅ 본발송 완료 — 발송 <b>'+(d.sent||0)+'</b> / 실패 '+(d.failed||0)+(d.skipped?' / 제외 '+d.skipped:'')+' (대상 '+(d.attempted||0)+'명)';
   }catch(e){ res.style.color='#A32D2D'; res.textContent='발송 실패: '+(e&&e.message?e.message:e); }
+}
+
+/* ===== ④ 자동 발송 규칙 (autoRules CRUD·ON/OFF) ===== */
+let emArRules = [];
+function emArPopulateTpl(){
+  const sel=document.getElementById('emArTpl'); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— 선택 —</option>'+emTpls.map(t=>`<option value="${t.id}">${cmaEsc(t.name||t.id)}${t.enabled===false?' (비활성)':''}</option>`).join('');
+  if(cur) sel.value=cur;
+}
+async function emArLoad(){
+  emArPopulateTpl();
+  const box=document.getElementById('emArList'); if(!box) return;
+  try{
+    const snap=await db.collection('autoRules').get();
+    emArRules=snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(!emArRules.length){ box.innerHTML='<div class="empty" style="padding:16px">등록된 자동 규칙이 없습니다.</div>'; return; }
+    const tName=id=>{ const t=emTpls.find(x=>x.id===id); return t?cmaEsc(t.name||id):'<span style="color:#A32D2D">삭제된 템플릿</span>'; };
+    const EVL={signup:'가입 직후', payment_approved:'결제 승인 직후'};
+    box.innerHTML='<table><thead><tr><th>상태</th><th>이름</th><th>유형</th><th>템플릿</th><th>조건</th><th>마지막 실행</th><th></th></tr></thead><tbody>'
+      + emArRules.map(r=>{
+          const on=r.enabled!==false;
+          const cond = r.type==='event' ? (EVL[r.event]||r.event) : ('매일 12시 · 쿨다운 '+(r.cooldownDays||0)+'일');
+          const last = r.lastRunAt ? (fmtDateShort(r.lastRunAt)+' ('+(r.lastCount!=null?r.lastCount+'건':'-')+')') : '<span style="color:#C9BFB2">없음</span>';
+          return `<tr>
+            <td><button class="btn-sm" onclick="emArToggle('${r.id}',${!on})" style="background:${on?'#E6F4EA':'#F0ECE6'};color:${on?'#15793F':'#9B9082'};font-weight:700;cursor:pointer">${on?'ON':'OFF'}</button></td>
+            <td>${cmaEsc(r.name||'(이름없음)')}</td>
+            <td>${r.type==='event'?'이벤트':'스케줄'}</td>
+            <td>${tName(r.templateId)}</td>
+            <td style="font-size:12px;color:#6E6256">${cond}</td>
+            <td style="font-size:12px">${last}</td>
+            <td><button class="btn-sm" onclick="emArDel('${r.id}')" style="background:#FCEBEB;color:#A32D2D;cursor:pointer">삭제</button></td>
+          </tr>`; }).join('')
+      + '</tbody></table>';
+  }catch(e){ box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">자동 규칙 로드 실패: '+(e&&e.message?e.message:e)+'</div>'; }
+}
+function emArTypeChange(){
+  const t=document.querySelector('input[name="emArType"]:checked').value;
+  document.getElementById('emArSchBox').style.display=(t==='schedule')?'block':'none';
+  document.getElementById('emArEventBox').style.display=(t==='event')?'block':'none';
+}
+function emArNew(){
+  document.getElementById('emArName').value='';
+  document.getElementById('emArTypeSch').checked=true;
+  document.getElementById('emArTpl').value='';
+  document.getElementById('emArCooldown').value='30';
+  document.getElementById('emArEvent').value='signup';
+  emArTypeChange();
+  document.getElementById('emArMsg').textContent='';
+  document.getElementById('emArForm').style.display='block';
+}
+function emArCancel(){ document.getElementById('emArForm').style.display='none'; }
+async function emArSave(){
+  const name=(document.getElementById('emArName').value||'').trim();
+  const type=document.querySelector('input[name="emArType"]:checked').value;
+  const templateId=document.getElementById('emArTpl').value;
+  if(!name||!templateId){ alert('이름과 템플릿은 필수입니다.'); return; }
+  const data={ name, type, templateId, enabled:true, createdAt:firebase.firestore.FieldValue.serverTimestamp() };
+  if(type==='schedule'){ data.rule=emRuleFromUI(); data.cooldownDays=Number(document.getElementById('emArCooldown').value||0); }
+  else { data.event=document.getElementById('emArEvent').value; }
+  const msg=document.getElementById('emArMsg'); msg.style.color='#888'; msg.textContent='저장 중…';
+  try{
+    await db.collection('autoRules').add(data);
+    msg.style.color='#15793F'; msg.textContent='✅ 저장됨 (기본 OFF가 아니라 ON 상태이니 확인하세요)';
+    await emArLoad();
+    setTimeout(()=>emArCancel(),900);
+  }catch(e){ msg.style.color='#A32D2D'; msg.textContent='저장 실패: '+(e&&e.message?e.message:e); }
+}
+async function emArToggle(id, on){
+  try{ await db.collection('autoRules').doc(id).set({enabled:on},{merge:true}); await emArLoad(); }
+  catch(e){ alert('변경 실패: '+(e&&e.message?e.message:e)); }
+}
+async function emArDel(id){
+  const r=emArRules.find(x=>x.id===id);
+  if(!confirm('자동 규칙 "'+((r&&r.name)||id)+'" 을(를) 삭제할까요?')) return;
+  try{ await db.collection('autoRules').doc(id).delete(); await emArLoad(); }
+  catch(e){ alert('삭제 실패: '+(e&&e.message?e.message:e)); }
 }
 
 function openMemberDetail(uid){
