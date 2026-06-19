@@ -485,6 +485,57 @@ tr:hover td{background:#FAFAFA}
         </div>
       </div>
 
+      <!-- ===== 5) 시험 D-day ===== -->
+      <div class="table-wrap" style="margin-bottom:16px">
+        <div class="table-header"><div class="table-title">⑤ 시험 D-day 메일 <span style="font-size:11px;color:#A89C8E;font-weight:400">(시험일까지 D-200·D-100·D-30 학습독려 · 정보성)</span></div>
+          <button class="btn-sm" onclick="emExRefresh()" style="background:#EDE9FB;color:#5B50C0">↻ 현황 새로고침</button>
+        </div>
+        <div style="padding:16px 20px">
+          <div style="font-size:12px;color:#888;margin-bottom:8px">시험일정 현황 <span style="color:#A89C8E">(큐넷 5종 매주 자동수집 · 한국사/보디빌딩 수동입력)</span></div>
+          <div id="emExList"><div class="empty" style="padding:16px">불러오는 중…</div></div>
+
+          <div id="emExForm" style="display:none;margin-top:14px;padding:16px;border:1.5px solid #EDE9FB;border-radius:12px;background:#FAFAFE">
+            <div style="font-size:13px;font-weight:700;color:#5B50C0;margin-bottom:6px" id="emExFormTit">시험일 수동 입력</div>
+            <div style="font-size:11px;color:#A89C8E;margin-bottom:10px">회차를 여러 개 넣어두면, 지난 회차는 자동으로 건너뛰고 가장 가까운 다음 시험일로 넘어갑니다.</div>
+            <div id="emExRows"></div>
+            <button class="btn-sm" onclick="emExAddRow()" style="background:#EDE9FB;color:#5B50C0;margin:4px 0 10px">+ 회차 추가</button>
+            <div style="display:flex;gap:8px">
+              <button class="btn-sm btn-extend" onclick="emExSave()">💾 저장</button>
+              <button class="btn-sm" onclick="emExCancel()" style="background:#F0ECE6;color:#6E6256">취소</button>
+              <span id="emExMsg" style="font-size:12px;color:#15793F;align-self:center"></span>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;border-top:1px solid #F0ECE6;padding-top:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div style="font-size:12px;color:#888">D-day 발송 규칙 <span style="color:#A89C8E">(매일 11시 · 마일스톤 당일 1회)</span></div>
+              <button class="btn-sm btn-extend" onclick="emDdayNew()">+ D-day 규칙</button>
+            </div>
+            <div id="emDdayForm" style="display:none;margin-bottom:12px;padding:16px;border:1.5px solid #EDE9FB;border-radius:12px;background:#FAFAFE">
+              <div style="font-size:13px;font-weight:700;color:#5B50C0;margin-bottom:10px" id="emDdayFormTit">D-day 규칙 추가</div>
+              <div style="font-size:12px;color:#888;margin-bottom:4px">규칙 이름</div>
+              <input id="emDdayName" placeholder="예: D-30 마무리 점검" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:10px">
+              <div style="font-size:12px;color:#888;margin-bottom:4px">마일스톤</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                <span style="font-size:14px;font-weight:700;color:#5B50C0">D-</span>
+                <input id="emDdayN" type="number" min="1" max="400" value="200" style="width:90px;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+                <span style="font-size:11px;color:#A89C8E">일 전 · 1~400 자유 입력 (예: 200, 150, 30)</span>
+              </div>
+              <div style="font-size:12px;color:#888;margin-bottom:4px">템플릿</div>
+              <select id="emDdayTpl" style="width:100%;padding:9px 12px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;margin-bottom:10px"><option value="">— 선택 —</option></select>
+              <div style="font-size:12px;color:#888;margin-bottom:4px">대상 자격증 <span style="color:#A89C8E">(아무것도 안 고르면 전체)</span></div>
+              <div id="emDdayCerts" style="margin-bottom:10px;font-size:12px;line-height:1.9"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn-sm btn-extend" onclick="emDdaySave()">💾 규칙 저장</button>
+                <button class="btn-sm" onclick="emDdayCancel()" style="background:#F0ECE6;color:#6E6256">취소</button>
+                <span id="emDdayMsg" style="font-size:12px;color:#15793F;align-self:center"></span>
+              </div>
+            </div>
+            <div id="emDdayList"><div class="empty" style="padding:16px">등록된 D-day 규칙이 없습니다.</div></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== 폴백: 등급별 추출·복사 ===== -->
       <div class="table-wrap">
         <div class="table-header">
@@ -2082,6 +2133,8 @@ async function emInit(){
   }
   await emLoadTpls();
   emArLoad();
+  emExLoad();
+  emDdayLoad();
 }
 async function emLoadTpls(){
   const sel=document.getElementById('emTplSelect'); if(!sel) return;
@@ -2231,7 +2284,7 @@ async function emArLoad(){
   const box=document.getElementById('emArList'); if(!box) return;
   try{
     const snap=await db.collection('autoRules').get();
-    emArRules=snap.docs.map(d=>({id:d.id, ...d.data()}));
+    emArRules=snap.docs.map(d=>({id:d.id, ...d.data()})).filter(r=>r.type!=='dday');
     if(!emArRules.length){ box.innerHTML='<div class="empty" style="padding:16px">등록된 자동 규칙이 없습니다.</div>'; return; }
     const tName=id=>{ const t=emTpls.find(x=>x.id===id); return t?cmaEsc(t.name||id):'<span style="color:#A32D2D">삭제된 템플릿</span>'; };
     const EVL={signup:'가입 직후', payment_approved:'결제 승인 직후'};
@@ -2294,6 +2347,160 @@ async function emArDel(id){
   try{ await db.collection('autoRules').doc(id).delete(); await emArLoad(); }
   catch(e){ alert('삭제 실패: '+(e&&e.message?e.message:e)); }
 }
+
+/* ===== ⑤ 시험 D-day (examSchedules 현황·수동입력 + dday 규칙) ===== */
+const DDAY_CERTS = [
+  {c:'appraiser', n:'감정평가사 1차', src:'qnet'},
+  {c:'realestate1', n:'공인중개사 1차', src:'qnet'},
+  {c:'realestate2', n:'공인중개사 2차', src:'qnet'},
+  {c:'housing', n:'주택관리사보 1차', src:'qnet'},
+  {c:'housing2', n:'주택관리사 2차', src:'qnet'},
+  {c:'koreanhistory', n:'한국사능력검정시험', src:'manual'},
+  {c:'bodybuilding', n:'생활체육지도사(보디빌딩)', src:'manual'}
+];
+let emExData = {}, emExEditing = null, emDdayRules = [], emDdayEditing = null;
+function emExToDate(v){ if(!v) return null; if(v.toDate) return v.toDate(); if(v.seconds) return new Date(v.seconds*1000); return new Date(v); }
+function emExFmt(d){ return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+function emExFmtInput(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function emExNext(s){   // upcoming 있으면 가장 가까운 미래 회차로 승계
+  let name=s.nextExamName||'', date=emExToDate(s.nextExamDate);
+  if(Array.isArray(s.upcoming)&&s.upcoming.length){
+    const now=Date.now();
+    const fut=s.upcoming.map(u=>({name:u.name||'',date:emExToDate(u.date)})).filter(u=>u.date&&u.date.getTime()>=now).sort((a,b)=>a.date-b.date);
+    if(fut.length){ name=fut[0].name; date=fut[0].date; }
+  }
+  return {name,date};
+}
+function emExDday(date){ if(!date) return null; const t=new Date(); t.setHours(0,0,0,0); return Math.ceil((date.getTime()-t.getTime())/86400000); }
+
+async function emExLoad(){
+  const box=document.getElementById('emExList'); if(!box) return;
+  try{
+    const snap=await db.collection('examSchedules').get();
+    emExData={}; snap.docs.forEach(d=>{ emExData[d.id]=d.data(); });
+    box.innerHTML='<table><thead><tr><th>자격증</th><th>다음 시험</th><th>시험일</th><th>D-day</th><th>출처</th><th></th></tr></thead><tbody>'
+      + DDAY_CERTS.map(ci=>{
+          const s=emExData[ci.c];
+          const editBtn = ci.src==='manual' ? `<button class="btn-sm" onclick="emExEdit('${ci.c}')" style="background:#EDE9FB;color:#5B50C0">${s?'수정':'입력'}</button>` : '';
+          if(!s){ const wait = ci.src==='qnet'?'<span style="color:#A89C8E">자동(대기)</span>':'<span style="color:#A8650A">수동</span>';
+            return `<tr><td>${ci.n}</td><td colspan="3" style="color:#C9BFB2">미설정</td><td style="font-size:12px">${wait}</td><td>${editBtn}</td></tr>`; }
+          const nx=emExNext(s); const dd=emExDday(nx.date);
+          const ddTxt = dd==null?'-':(dd<0?'<span style="color:#C9BFB2">지남</span>':'<b style="color:#5B50C0">D-'+dd+'</b>');
+          const srcTxt = s.source==='qnet'?'<span style="color:#15793F">자동</span>':'<span style="color:#A8650A">수동</span>';
+          return `<tr><td>${ci.n}</td><td style="font-size:12px">${cmaEsc(nx.name||'-')}</td><td style="font-size:12px">${nx.date?emExFmt(nx.date):'-'}</td><td>${ddTxt}</td><td style="font-size:12px">${srcTxt}</td><td>${editBtn}</td></tr>`;
+        }).join('')
+      + '</tbody></table>';
+  }catch(e){ box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">시험일정 로드 실패: '+(e&&e.message?e.message:e)+'<br><span style="font-size:11px">Firestore 규칙에 examSchedules 관리자 권한이 필요할 수 있어요.</span></div>'; }
+}
+function emExRefresh(){ emExLoad(); }
+function emExEdit(cert){
+  emExEditing=cert;
+  const ci=DDAY_CERTS.find(x=>x.c===cert);
+  document.getElementById('emExFormTit').textContent=ci.n+' 시험일 입력';
+  const s=emExData[cert]||{};
+  let rows=(Array.isArray(s.upcoming)&&s.upcoming.length)?s.upcoming.map(u=>({name:u.name||'',date:emExToDate(u.date)})):[];
+  if(!rows.length && s.nextExamDate) rows=[{name:s.nextExamName||'',date:emExToDate(s.nextExamDate)}];
+  document.getElementById('emExRows').innerHTML='';
+  if(rows.length) rows.forEach(r=>emExAddRow(r.name, r.date?emExFmtInput(r.date):'')); else emExAddRow();
+  document.getElementById('emExMsg').textContent='';
+  document.getElementById('emExForm').style.display='block';
+}
+function emExAddRow(name, date){
+  const wrap=document.getElementById('emExRows');
+  const div=document.createElement('div');
+  div.className='emExRow'; div.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+  div.innerHTML='<input class="emExN" placeholder="회차명 (예: 제80회)" value="'+cmaEsc(name||'')+'" style="flex:1;padding:8px 10px;border-radius:8px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">'
+    +'<input class="emExD" type="date" value="'+(date||'')+'" style="padding:8px 10px;border-radius:8px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">'
+    +'<button class="btn-sm" onclick="this.parentNode.remove()" style="background:#FCEBEB;color:#A32D2D">✕</button>';
+  wrap.appendChild(div);
+}
+function emExCancel(){ document.getElementById('emExForm').style.display='none'; emExEditing=null; }
+async function emExSave(){
+  if(!emExEditing) return;
+  const rows=[...document.querySelectorAll('#emExRows .emExRow')].map(r=>({
+    name:(r.querySelector('.emExN').value||'').trim(),
+    date:(r.querySelector('.emExD').value||'').trim()
+  })).filter(r=>r.date);
+  if(!rows.length){ alert('시험일을 1개 이상 입력하세요.'); return; }
+  const ci=DDAY_CERTS.find(x=>x.c===emExEditing);
+  const upcoming=rows.map(r=>({name:r.name||ci.n, date:firebase.firestore.Timestamp.fromDate(new Date(r.date+'T00:00:00'))}));
+  const sorted=[...rows].sort((a,b)=>a.date<b.date?-1:1);
+  const now=new Date(); now.setHours(0,0,0,0);
+  const pick=sorted.find(r=>new Date(r.date+'T00:00:00')>=now)||sorted[0];
+  const data={ cert:emExEditing, source:'manual',
+    nextExamName:pick.name||ci.n, nextExamDate:firebase.firestore.Timestamp.fromDate(new Date(pick.date+'T00:00:00')),
+    upcoming, updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedBy:'admin' };
+  const msg=document.getElementById('emExMsg'); msg.style.color='#888'; msg.textContent='저장 중…';
+  try{ await db.collection('examSchedules').doc(emExEditing).set(data,{merge:true});
+    msg.style.color='#15793F'; msg.textContent='✅ 저장됨';
+    await emExLoad(); setTimeout(()=>emExCancel(),800);
+  }catch(e){ msg.style.color='#A32D2D'; msg.textContent='저장 실패: '+(e&&e.message?e.message:e); }
+}
+
+function emDdayPopTpl(){ const sel=document.getElementById('emDdayTpl'); if(!sel) return; const cur=sel.value;
+  sel.innerHTML='<option value="">— 선택 —</option>'+emTpls.map(t=>'<option value="'+t.id+'">'+cmaEsc(t.name||t.id)+(t.enabled===false?' (비활성)':'')+'</option>').join('');
+  if(cur) sel.value=cur; }
+function emDdayPopCerts(sel){ const box=document.getElementById('emDdayCerts'); if(!box) return;
+  box.innerHTML=DDAY_CERTS.map(ci=>'<label style="margin-right:12px;cursor:pointer"><input type="checkbox" class="emDdayCert" value="'+ci.c+'" '+(sel&&sel.includes(ci.c)?'checked':'')+'> '+ci.n+'</label>').join(''); }
+async function emDdayLoad(){
+  emDdayPopTpl();
+  const box=document.getElementById('emDdayList'); if(!box) return;
+  try{
+    const snap=await db.collection('autoRules').where('type','==','dday').get();
+    emDdayRules=snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(!emDdayRules.length){ box.innerHTML='<div class="empty" style="padding:16px">등록된 D-day 규칙이 없습니다.</div>'; return; }
+    const tName=id=>{ const t=emTpls.find(x=>x.id===id); return t?cmaEsc(t.name||id):'<span style="color:#A32D2D">삭제된 템플릿</span>'; };
+    box.innerHTML='<table><thead><tr><th>상태</th><th>이름</th><th>마일스톤</th><th>템플릿</th><th>대상</th><th>마지막</th><th></th></tr></thead><tbody>'
+      + emDdayRules.map(r=>{ const on=r.enabled!==false;
+          const certs=(r.cert&&r.cert.length)?r.cert.map(c=>{const ci=DDAY_CERTS.find(x=>x.c===c);return ci?ci.n:c;}).join(', '):'전체';
+          const last=r.lastRunAt?(fmtDateShort(r.lastRunAt)+' ('+(r.lastCount!=null?r.lastCount+'건':'-')+')'):'<span style="color:#C9BFB2">없음</span>';
+          return '<tr>'
+            +'<td><button class="btn-sm" onclick="emDdayToggle(\''+r.id+'\','+(!on)+')" style="background:'+(on?'#E6F4EA':'#F0ECE6')+';color:'+(on?'#15793F':'#9B9082')+';font-weight:700;cursor:pointer">'+(on?'ON':'OFF')+'</button></td>'
+            +'<td>'+cmaEsc(r.name||'(이름없음)')+'</td><td><b style="color:#5B50C0">D-'+r.dday+'</b></td>'
+            +'<td>'+tName(r.templateId)+'</td><td style="font-size:12px;color:#6E6256">'+cmaEsc(certs)+'</td>'
+            +'<td style="font-size:12px">'+last+'</td>'
+            +'<td><button class="btn-sm" onclick="emDdayEdit(\''+r.id+'\')" style="background:#EDE9FB;color:#5B50C0;cursor:pointer">수정</button> <button class="btn-sm" onclick="emDdayDel(\''+r.id+'\')" style="background:#FCEBEB;color:#A32D2D;cursor:pointer">삭제</button></td></tr>';
+        }).join('')
+      + '</tbody></table>';
+  }catch(e){ box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">D-day 규칙 로드 실패: '+(e&&e.message?e.message:e)+'</div>'; }
+}
+function emDdayNew(){ emDdayEditing=null;
+  document.getElementById('emDdayName').value='';
+  document.getElementById('emDdayN').value='200';
+  emDdayPopTpl(); document.getElementById('emDdayTpl').value=''; emDdayPopCerts([]);
+  document.getElementById('emDdayFormTit').textContent='D-day 규칙 추가';
+  document.getElementById('emDdayMsg').textContent=''; document.getElementById('emDdayForm').style.display='block'; }
+function emDdayEdit(id){ const r=emDdayRules.find(x=>x.id===id); if(!r) return;
+  emDdayEditing=id;
+  document.getElementById('emDdayName').value=r.name||'';
+  document.getElementById('emDdayN').value=(r.dday!=null?r.dday:'');
+  emDdayPopTpl(); document.getElementById('emDdayTpl').value=r.templateId||'';
+  emDdayPopCerts(r.cert||[]);
+  document.getElementById('emDdayFormTit').textContent='D-day 규칙 수정';
+  document.getElementById('emDdayMsg').textContent=''; document.getElementById('emDdayForm').style.display='block'; }
+function emDdayCancel(){ document.getElementById('emDdayForm').style.display='none'; emDdayEditing=null; }
+async function emDdaySave(){
+  const name=(document.getElementById('emDdayName').value||'').trim();
+  const dday=Number(document.getElementById('emDdayN').value);
+  const templateId=document.getElementById('emDdayTpl').value;
+  const cert=[...document.querySelectorAll('.emDdayCert:checked')].map(c=>c.value);
+  if(!name||!templateId){ alert('이름과 템플릿은 필수입니다.'); return; }
+  if(!(dday>=1&&dday<=400)){ alert('D값은 1~400 사이 숫자로 입력하세요.'); return; }
+  const msg=document.getElementById('emDdayMsg'); msg.style.color='#888'; msg.textContent='저장 중…';
+  try{
+    if(emDdayEditing){
+      await db.collection('autoRules').doc(emDdayEditing).set({ name, dday, templateId, cert, updatedAt:firebase.firestore.FieldValue.serverTimestamp() },{merge:true});
+      msg.style.color='#15793F'; msg.textContent='✅ 수정됨';
+    }else{
+      await db.collection('autoRules').add({ name, type:'dday', dday, templateId, cert, enabled:true, createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+      msg.style.color='#15793F'; msg.textContent='✅ 저장됨 (ON 상태)';
+    }
+    await emDdayLoad(); setTimeout(()=>emDdayCancel(),900);
+  }catch(e){ msg.style.color='#A32D2D'; msg.textContent='저장 실패: '+(e&&e.message?e.message:e); }
+}
+async function emDdayToggle(id,on){ try{ await db.collection('autoRules').doc(id).set({enabled:on},{merge:true}); await emDdayLoad(); }catch(e){ alert('변경 실패: '+(e&&e.message?e.message:e)); } }
+async function emDdayDel(id){ const r=emDdayRules.find(x=>x.id===id); if(!confirm('D-day 규칙 "'+((r&&r.name)||id)+'" 삭제할까요?')) return;
+  try{ await db.collection('autoRules').doc(id).delete(); await emDdayLoad(); }catch(e){ alert('삭제 실패: '+(e&&e.message?e.message:e)); } }
 
 function openMemberDetail(uid){
   const m = allMembers.find(x=>x.id===uid); if(!m) return;
