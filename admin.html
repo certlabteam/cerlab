@@ -204,6 +204,7 @@ tr:hover td{background:#FAFAFA}
       <div class="cat-head" onclick="catToggle(this)">📣 마케팅<span class="caret">▶</span></div>
       <div class="cat-items">
         <div class="cat-item" data-tab="crm" onclick="switchTab('crm')">이메일 발송</div>
+        <div class="cat-item" data-tab="maillog" onclick="switchTab('maillog')">이메일 발송내역</div>
         <div class="cat-item" data-tab="seo" onclick="switchTab('seo')">🌐 SEO 생성</div>
       </div>
     </div>
@@ -411,7 +412,7 @@ tr:hover td{background:#FAFAFA}
               <div style="font-size:12px;color:#888;margin-bottom:6px">자격증</div>
               <select id="emCert" style="width:100%;padding:8px 10px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">전체</option></select>
               <select id="emScope" style="width:100%;margin-top:6px;padding:8px 10px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:12px;outline:none">
-                <option value="any">가입시험 또는 이용권</option><option value="signup">가입시험 기준</option><option value="entitlement">이용권 기준</option><option value="solved">풀이 기준 (마지막 푼 시험·기록없으면 생체)</option>
+                <option value="any">가입시험 또는 이용권</option><option value="signup">가입시험 기준</option><option value="entitlement">이용권 기준</option><option value="solved">풀이 기준 (마지막 푼 시험·기록없으면 생체)</option><option value="solved">풀이 기준 (마지막 푼 시험·기록없으면 생체)</option>
               </select>
             </div>
             <div>
@@ -536,31 +537,17 @@ tr:hover td{background:#FAFAFA}
         </div>
       </div>
 
-      <!-- ===== 6) 발송 이력 ===== -->
+    </div>
+
+    <!-- 이메일 발송 내역 -->
+    <div class="tab-panel" id="panel-maillog">
       <div class="table-wrap" style="margin-bottom:16px">
-        <div class="table-header"><div class="table-title">⑥ 발송 이력 <span style="font-size:11px;color:#A89C8E;font-weight:400">(mailLog · 최근 100건)</span></div>
+        <div class="table-header"><div class="table-title">발송 이력 <span style="font-size:11px;color:#A89C8E;font-weight:400">(mailLog · 최근 100건)</span></div>
           <button class="btn-sm" onclick="emLogRefresh()" style="background:#EDE9FB;color:#5B50C0">↻ 새로고침</button>
         </div>
         <div style="padding:16px 20px">
           <div id="emLogList"><div class="empty" style="padding:16px">불러오는 중…</div></div>
         </div>
-      </div>
-
-      <!-- ===== 폴백: 등급별 추출·복사 ===== -->
-      <div class="table-wrap">
-        <div class="table-header">
-          <div class="table-title">빠른 추출·복사 <span style="font-size:11px;color:#A89C8E;font-weight:400">(메일앱 직접 발송용 폴백)</span></div>
-          <select id="crmSeg" onchange="renderCrm()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
-            <option value="all">전체</option>
-            <option value="free">무료체험</option>
-            <option value="paid">유료</option>
-            <option value="A">A (31회↑)</option>
-            <option value="B">B (11~30회)</option>
-            <option value="C">C (1~10회)</option>
-            <option value="D">D (0회)</option>
-          </select>
-        </div>
-        <div id="crmList"><div class="loading">로딩 중...</div></div>
       </div>
     </div>
 
@@ -1137,7 +1124,8 @@ function switchTab(name) {
     navEl.classList.add('active');
     const grp = navEl.closest('.cat'); if(grp) grp.classList.add('open');
   }
-  if(name==='crm'){ renderCrm(); emInit(); }
+  if(name==='crm'){ emInit(); }
+  if(name==='maillog'){ emLogLoad(); }
   if(name==='stats') renderStats();
   if(name==='entitlements') renderEntMembers();
   if(name==='export'){ openExportTab(); imgImpInit(); }
@@ -2523,21 +2511,43 @@ async function emLogLoad(){
     const todayStr=new Date().toDateString();
     let tSent=0,tFail=0;
     const trMap={manual:'수동',schedule:'스케줄',event:'이벤트',dday:'D-day'};
+    const batches={};
     const rows=snap.docs.map(d=>{ const m=d.data();
       const at=(m.at&&m.at.toDate)?m.at.toDate():(m.at?new Date(m.at):null);
       if(at && at.toDateString()===todayStr){ if(m.status==='failed') tFail++; else tSent++; }
+      if(m.batchId){ const b=batches[m.batchId]||(batches[m.batchId]={at:at,subject:m.subject||m.templateId||'-',sent:0,failed:0,total:0}); b.total++; if(m.status==='failed') b.failed++; else b.sent++; if(at&&(!b.at||at>b.at)) b.at=at; }
       const sc=m.status==='failed'?'#A32D2D':(m.status==='queued'?'#A8650A':'#15793F');
       const st=m.status==='failed'?'실패':(m.status==='queued'?'예약':'성공');
       return '<tr><td style="font-size:12px;white-space:nowrap">'+(at?emLogDT(at):'-')+'</td>'
         +'<td style="font-size:12px">'+cmaEsc(m.to||'-')+'</td>'
         +'<td style="font-size:12px">'+cmaEsc(m.subject||m.templateId||'-')+'</td>'
         +'<td style="font-size:12px;color:#888">'+(trMap[m.trigger]||m.trigger||'-')+'</td>'
-        +'<td><span style="color:'+sc+';font-weight:700;font-size:12px">'+st+'</span>'+(m.error?' <span style="color:#A32D2D;font-size:11px">!</span>':'')+'</td></tr>';
+        +'<td><span style="color:'+sc+';font-weight:700;font-size:12px">'+st+'</span>'+(m.error?' <span style="color:#A32D2D;font-size:11px;cursor:help" title="'+cmaEsc(m.error)+'">!</span>':'')+'</td></tr>';
     }).join('');
+    const failBatches=Object.entries(batches).filter(e=>e[1].failed>0).sort((a,b)=>(b[1].at||0)-(a[1].at||0));
+    let resendBox='';
+    if(failBatches.length){
+      resendBox='<div style="margin-bottom:12px">'+failBatches.map(e=>{ const id=e[0],b=e[1];
+        return '<div style="display:flex;align-items:center;gap:10px;background:#FCEFEF;border:1px solid #F3D2D2;border-radius:10px;padding:10px 14px;margin-bottom:6px;flex-wrap:wrap">'
+        +'<span style="font-size:12px;color:#A32D2D;font-weight:700">실패 '+b.failed+'건</span>'
+        +'<span style="font-size:12px;color:#666">/ '+b.total+'건 중 (성공 '+b.sent+') · '+cmaEsc(String(b.subject).slice(0,30))+'</span>'
+        +'<button class="btn-sm" style="margin-left:auto;background:#A32D2D;color:#fff" onclick="emResendFailed(\''+id+'\')">↻ 실패분 재발송</button></div>';
+      }).join('')+'</div>';
+    }
     box.innerHTML='<div style="font-size:12px;color:#5B50C0;margin-bottom:8px">오늘 발송 <b>'+tSent+'</b>건'+(tFail?' · 실패 <b style="color:#A32D2D">'+tFail+'</b>건':'')+' <span style="color:#A89C8E">· 최근 100건</span></div>'
+      +resendBox
       +'<table><thead><tr><th>시각</th><th>받는사람</th><th>제목</th><th>경로</th><th>상태</th></tr></thead><tbody>'+rows+'</tbody></table>';
   }catch(e){ var msg=(e&&e.message)?e.message:String(e);
     box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">발송 이력 로드 실패: '+cmaEsc(msg)+((msg.indexOf('index')>=0)?'<br><span style="font-size:11px">콘솔 에러 링크로 mailLog 인덱스를 생성하세요.</span>':'')+'</div>'; }
+}
+async function emResendFailed(batchId){
+  if(!confirm('이 배치의 실패 건을 재발송할까요?\n(성공한 사람은 제외, 실패한 주소에만 다시 보냅니다)')) return;
+  try{
+    const r=await emFns().httpsCallable('resendFailures')({ batchId:batchId });
+    const d=r.data||{};
+    alert('재발송 완료\n성공 '+(d.sent||0)+' / 실패 '+(d.failed||0)+(d.note?('\n'+d.note):''));
+    emLogLoad();
+  }catch(e){ alert('재발송 실패: '+(e&&e.message?e.message:e)); }
 }
 function emLogRefresh(){ emLogLoad(); }
 
