@@ -245,7 +245,7 @@ function secWrap(emoji,title,cnt,cls,desc,body){
 function scanTbl(){
   var broken=[]; Object.keys(TBLREFS).forEach(function(id){ if(!TBLM[id]) TBLREFS[id].forEach(function(l){ broken.push({id:id,loc:l}); }); });
   var unused=Object.keys(TBLM).filter(function(id){ return !TBLREFS[id]; }).sort();
-  var mism=[]; Object.keys(TBLM).forEach(function(id){ var t=TBLM[id]; if(Array.isArray(t.headers)&&Array.isArray(t.rows)){ var bad=t.rows.filter(function(r){ return !Array.isArray(r)||r.length!==t.headers.length; }).length; if(bad) mism.push({id:id,name:t.name||'',bad:bad,cols:t.headers.length}); } });
+  var mism=[]; Object.keys(TBLM).forEach(function(id){ var t=TBLM[id]; if(!t.html && Array.isArray(t.headers)&&Array.isArray(t.rows)){ var bad=t.rows.filter(function(r){ return !Array.isArray(r)||r.length!==t.headers.length; }).length; if(bad) mism.push({id:id,name:t.name||'',bad:bad,cols:t.headers.length}); } });
   return {broken:broken,unused:unused,mism:mism};
 }
 function renderTblScope(){
