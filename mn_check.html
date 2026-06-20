@@ -12,6 +12,16 @@
   .bar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
   .btn{padding:9px 16px;border-radius:10px;border:none;background:#185FA5;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
   .btn.sec{background:#EEF2F7;color:#334155}
+  .scopebtn{padding:7px 14px;border-radius:999px;border:1.5px solid #CBD5E1;background:#fff;color:#475569;font-weight:700;font-size:12.5px;cursor:pointer}
+  .scopebtn.on{background:#185FA5;color:#fff;border-color:#185FA5}
+  .sumgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+  .sumcard{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px}
+  .sumhd{font-size:14px;font-weight:800;color:#1F2937;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .sumtot{margin-left:auto;font-size:12px;font-weight:700;color:#64748B;background:#EEF2F7;border-radius:999px;padding:2px 10px}
+  .sumrow{display:flex;justify-content:space-between;font-size:12.5px;color:#64748B;padding:3px 0}
+  .sumrow.bad{color:#A32D2D;font-weight:700}
+  .sumall{margin-top:8px;padding-top:8px;border-top:1px solid #F0F0F0;font-size:12.5px;font-weight:800;text-align:center}
+  .sumall.ok{color:#15793F} .sumall.bad{color:#A32D2D}
   #status{font-size:12.5px;color:#185FA5;font-weight:600}
   .sec{background:#fff;border:1px solid #E8EDF3;border-radius:14px;padding:14px 16px;margin-bottom:14px}
   .sec h2{font-size:14.5px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
@@ -51,14 +61,21 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-<h1>📑 암기코드 점검</h1>
-<div class="sub">전 과목 문항의 <b>mn://</b> 참조와 마스터(mnemonics)를 대조합니다. 깨진 참조·미사용 코드·중복 두문자·직접입력(이관 후보)을 잡아냅니다.</div>
+<h1>🔎 데이터 스캔</h1>
+<div class="sub">전 과목 문항·개념의 참조(<b>mn:// tbl:// grp://</b>)와 마스터(암기코드·표·그래프·개념)를 대조합니다. 깨진 참조·미사용·중복·형식오류를 잡아냅니다.</div>
 <div class="bar">
   <button class="btn" onclick="scanAll()">전체 스캔</button>
   <button class="btn sec" onclick="location.reload()">초기화</button>
   <select id="mnSubSel" style="display:none" onchange="render()"><option value="">전체 과목</option></select>
-  <span id="status">"전체 스캔"을 누르면 마스터 + 전 과목 banks를 읽어 대조합니다.</span>
 </div>
+<div class="bar" id="scopeBar" style="display:none">
+  <button class="scopebtn on" data-scope="all" onclick="setScope('all')">전체</button>
+  <button class="scopebtn" data-scope="tbl" onclick="setScope('tbl')">📊 표</button>
+  <button class="scopebtn" data-scope="grp" onclick="setScope('grp')">📈 그래프</button>
+  <button class="scopebtn" data-scope="cpt" onclick="setScope('cpt')">📖 개념</button>
+  <button class="scopebtn" data-scope="mn" onclick="setScope('mn')">🔑 암기코드</button>
+</div>
+<div class="bar"><span id="status">"전체 스캔"을 누르면 마스터 + 전 과목 banks를 읽어 대조합니다.</span></div>
 <div id="out"></div>
 
 <script>
@@ -104,10 +121,30 @@ const MASTER={};   // id -> {name,code,desc,certs,...}
 const REFS={};     // id -> [{exam,sub,qid}]
 const DIRECT=[];   // {exam,sub,qid,code,desc}
 const SUBMN={};    // 'exam||sub' -> [{qid,code,desc,source:'ref'|'direct',refId,broken}]  (앱 표시 순서)
+// 표·그래프·개념 마스터 + 참조 (데이터 스캔 확장)
+const TBLM={}, GRPM={}, CPTM={};                 // id -> data
+const TBLREFS={}, GRPREFS={}, CPTREFS={};        // id -> [{exam,sub,qid} | {concept:id}]
+var SCOPE='all';
+function setScope(s){ SCOPE=s; document.querySelectorAll('.scopebtn').forEach(function(b){ b.classList.toggle('on', b.dataset.scope===s); }); var sel=document.getElementById('mnSubSel'); if(sel) sel.style.display=(s==='mn'&&usedSubs().length)?'':'none'; render(); }
+function pushRef(store,ref,loc){ if(typeof ref!=='string') return; var pfx=loc; var id=ref.indexOf('://')>=0?ref.split('://')[1]:ref; (store[id]=store[id]||[]).push(loc); }
 
 async function loadMaster(){
   const snap=await db.collection('mnemonics').get();
   snap.forEach(d=>{ MASTER[d.id]=d.data()||{}; });
+}
+async function loadOther(){
+  try{ (await db.collection('tables').get()).forEach(d=>{ TBLM[d.id]=d.data()||{}; }); }catch(e){}
+  try{ (await db.collection('graphs').get()).forEach(d=>{ GRPM[d.id]=d.data()||{}; }); }catch(e){}
+  try{ (await db.collection('concepts').get()).forEach(d=>{ CPTM[d.id]=d.data()||{}; }); }catch(e){}
+}
+// 개념이 가리키는 mn/tbl/grp도 "사용"으로 집계 + 깨진참조 탐지용
+function ingestConceptRefs(){
+  Object.keys(CPTM).forEach(function(cid){
+    var c=CPTM[cid];
+    (Array.isArray(c.mn)?c.mn:[]).forEach(function(r){ var id=String(r).replace('mn://',''); (REFS[id]=REFS[id]||[]).push({concept:cid}); });
+    (Array.isArray(c.tbl)?c.tbl:[]).forEach(function(r){ var id=String(r).replace('tbl://',''); (TBLREFS[id]=TBLREFS[id]||[]).push({concept:cid}); });
+    (Array.isArray(c.grp)?c.grp:[]).forEach(function(r){ var id=String(r).replace('grp://',''); (GRPREFS[id]=GRPREFS[id]||[]).push({concept:cid}); });
+  });
 }
 async function scanBank(examId, sub){
   const k=examId+'__'+sub.code;
@@ -121,6 +158,13 @@ async function scanBank(examId, sub){
     }
   }
   qs.forEach(q=>{
+    // 표·그래프·개념 참조 수집(exp.tbl/exp.grp/exp.cpt)
+    if(q.exp){
+      var loc={exam:examId, sub:sub.code, qid:q.id};
+      [].concat(q.exp.tbl||[]).forEach(function(r){ if(typeof r==='string'&&r.indexOf('tbl://')===0){ var id=r.slice(6); (TBLREFS[id]=TBLREFS[id]||[]).push(loc); } });
+      [].concat(q.exp.grp||[]).forEach(function(r){ if(typeof r==='string'&&r.indexOf('grp://')===0){ var id=r.slice(6); (GRPREFS[id]=GRPREFS[id]||[]).push(loc); } });
+      [].concat(q.exp.cpt||[]).forEach(function(r){ if(typeof r==='string'&&r.indexOf('cpt://')===0){ var id=r.slice(6); (CPTREFS[id]=CPTREFS[id]||[]).push(loc); } });
+    }
     const mn=q.mn||(q.exp&&q.exp.mn); if(!mn) return;
     const list=Array.isArray(mn)?mn:[mn];
     const key=examId+'||'+sub.code;
@@ -147,10 +191,12 @@ async function scanAll(){
   for(const k in REFS) delete REFS[k];
   for(const k in SUBMN) delete SUBMN[k];
   DIRECT.length=0;
+  [TBLM,GRPM,CPTM,TBLREFS,GRPREFS,CPTREFS].forEach(function(o){ for(const k in o) delete o[k]; });
   outEl.innerHTML='';
   try{
-    statusEl.textContent='마스터(mnemonics) 불러오는 중…';
+    statusEl.textContent='마스터(암기코드·표·그래프·개념) 불러오는 중…';
     await loadMaster();
+    await loadOther();
     let i=0, tot=REGISTRY.reduce((a,e)=>a+e.subs.length,0);
     for(const ex of REGISTRY){
       for(const su of ex.subs){
@@ -158,7 +204,9 @@ async function scanAll(){
         await scanBank(ex.id, su);
       }
     }
-    statusEl.textContent='완료 — 마스터 '+Object.keys(MASTER).length+'개, 참조 '+Object.keys(REFS).length+'종, 직접입력 '+DIRECT.length+'건';
+    ingestConceptRefs();
+    statusEl.textContent='완료 — 암기코드 '+Object.keys(MASTER).length+' · 표 '+Object.keys(TBLM).length+' · 그래프 '+Object.keys(GRPM).length+' · 개념 '+Object.keys(CPTM).length;
+    document.getElementById('scopeBar').style.display='';
     populateSubSel();
     render();
   }catch(e){ statusEl.textContent='스캔 실패: '+e.message; }
@@ -182,10 +230,109 @@ function populateSubSel(){
   const sel=document.getElementById('mnSubSel'); if(!sel) return;
   const subs=usedSubs();
   sel.innerHTML='<option value="">전체 과목</option>'+subs.map(k=>{ const p=k.split('||'); return '<option value="'+esc(k)+'">'+esc(examName(p[0])+' · '+subName(p[0],p[1]))+'</option>'; }).join('');
-  sel.style.display=subs.length?'':'none';
+  sel.style.display=(SCOPE==='mn'&&subs.length)?'':'none';
+}
+
+function refPill(loc){
+  if(loc.concept) return '<span class="pill" title="개념">📖 '+esc(loc.concept)+'</span>';
+  return '<a class="pill" href="'+SITE+'?card='+encodeURIComponent(loc.qid)+'&cert='+encodeURIComponent(loc.exam)+'" target="_blank" rel="noopener" onclick="return goCard(event,this.href)" style="text-decoration:none" title="'+esc(examName(loc.exam)+' / '+subName(loc.exam,loc.sub))+'">'+esc(loc.qid)+' ↗</a>';
+}
+function secWrap(emoji,title,cnt,cls,desc,body){
+  return '<div class="sec"><h2>'+emoji+' '+title+' <span class="cnt '+cls+'">'+cnt+'</span></h2>'
+    +(desc?'<div class="desc">'+desc+'</div>':'')+(body||'<div class="empty">없음 ✅</div>')+'</div>';
+}
+// ── 표 스캔 ──
+function scanTbl(){
+  var broken=[]; Object.keys(TBLREFS).forEach(function(id){ if(!TBLM[id]) TBLREFS[id].forEach(function(l){ broken.push({id:id,loc:l}); }); });
+  var unused=Object.keys(TBLM).filter(function(id){ return !TBLREFS[id]; }).sort();
+  var mism=[]; Object.keys(TBLM).forEach(function(id){ var t=TBLM[id]; if(Array.isArray(t.headers)&&Array.isArray(t.rows)){ var bad=t.rows.filter(function(r){ return !Array.isArray(r)||r.length!==t.headers.length; }).length; if(bad) mism.push({id:id,name:t.name||'',bad:bad,cols:t.headers.length}); } });
+  return {broken:broken,unused:unused,mism:mism};
+}
+function renderTblScope(){
+  var s=scanTbl(); var h='';
+  h+=secWrap('🔗','깨진 표 참조',s.broken.length, s.broken.length?'err':'ok',
+    '문항·개념이 <b>tbl://id</b>로 참조하는데 마스터에 그 id가 없음 → 앱에서 ⚠️로 렌더.',
+    s.broken.length?s.broken.map(function(b){ return '<div class="row"><span class="k">tbl://'+esc(b.id)+'</span> — 마스터에 없음<div class="meta">'+refPill(b.loc)+'</div></div>'; }).join(''):'');
+  h+=secWrap('🗂','미사용 표',s.unused.length, s.unused.length?'warn':'ok',
+    '마스터에 등록됐지만 아무 문항·개념도 <b>tbl://</b>로 참조하지 않는 표.',
+    s.unused.length?s.unused.map(function(id){ return '<div class="row"><span class="k">'+esc(id)+'</span> '+esc(TBLM[id].name||'')+'</div>'; }).join(''):'');
+  h+=secWrap('📐','칸 수 불일치',s.mism.length, s.mism.length?'warn':'ok',
+    'rows의 칸 수가 headers 수와 다른 표 → 표가 어긋나게 렌더될 수 있음.',
+    s.mism.length?s.mism.map(function(m){ return '<div class="row"><span class="k">'+esc(m.id)+'</span> '+esc(m.name)+' <span class="x">'+m.bad+'개 행 ≠ '+m.cols+'칸</span></div>'; }).join(''):'');
+  return h;
+}
+// ── 그래프 스캔 ──
+function scanGrp(){
+  var broken=[]; Object.keys(GRPREFS).forEach(function(id){ if(!GRPM[id]) GRPREFS[id].forEach(function(l){ broken.push({id:id,loc:l}); }); });
+  var unused=Object.keys(GRPM).filter(function(id){ return !GRPREFS[id]; }).sort();
+  var empty=Object.keys(GRPM).filter(function(id){ var g=GRPM[id]; return !(g.svg&&String(g.svg).indexOf('<svg')>=0)&&!g.type; }).sort();
+  return {broken:broken,unused:unused,empty:empty};
+}
+function renderGrpScope(){
+  var s=scanGrp(); var h='';
+  h+=secWrap('🔗','깨진 그래프 참조',s.broken.length, s.broken.length?'err':'ok',
+    '문항·개념이 <b>grp://id</b>로 참조하는데 마스터에 없음.',
+    s.broken.length?s.broken.map(function(b){ return '<div class="row"><span class="k">grp://'+esc(b.id)+'</span> — 마스터에 없음<div class="meta">'+refPill(b.loc)+'</div></div>'; }).join(''):'');
+  h+=secWrap('🗂','미사용 그래프',s.unused.length, s.unused.length?'warn':'ok',
+    '아무 문항·개념도 <b>grp://</b>로 참조하지 않는 그래프.',
+    s.unused.length?s.unused.map(function(id){ return '<div class="row"><span class="k">'+esc(id)+'</span> '+esc(GRPM[id].name||'')+'</div>'; }).join(''):'');
+  h+=secWrap('🈳','빈 그래프',s.empty.length, s.empty.length?'warn':'ok',
+    'svg도 type도 없는 빈 항목 → 렌더할 게 없음.',
+    s.empty.length?s.empty.map(function(id){ return '<div class="row"><span class="k">'+esc(id)+'</span> '+esc(GRPM[id].name||'')+'</div>'; }).join(''):'');
+  return h;
+}
+// ── 개념 스캔 ──
+function scanCpt(){
+  var brokenRefs=[]; Object.keys(CPTM).forEach(function(cid){ var c=CPTM[cid];
+    (Array.isArray(c.mn)?c.mn:[]).forEach(function(r){ var id=String(r).replace('mn://',''); if(!MASTER[id]) brokenRefs.push({cid:cid,kind:'mn',ref:id}); });
+    (Array.isArray(c.tbl)?c.tbl:[]).forEach(function(r){ var id=String(r).replace('tbl://',''); if(!TBLM[id]) brokenRefs.push({cid:cid,kind:'tbl',ref:id}); });
+    (Array.isArray(c.grp)?c.grp:[]).forEach(function(r){ var id=String(r).replace('grp://',''); if(!GRPM[id]) brokenRefs.push({cid:cid,kind:'grp',ref:id}); });
+  });
+  var unused=Object.keys(CPTM).filter(function(id){ return !CPTREFS[id]; }).sort();
+  var noCards=Object.keys(CPTM).filter(function(id){ var c=CPTM[id]; return !(Array.isArray(c.cards)&&c.cards.length); }).sort();
+  return {brokenRefs:brokenRefs,unused:unused,noCards:noCards};
+}
+function renderCptScope(){
+  var s=scanCpt(); var h='';
+  h+=secWrap('🔗','개념의 깨진 참조',s.brokenRefs.length, s.brokenRefs.length?'err':'ok',
+    '개념이 묶은 <b>mn:// tbl:// grp://</b> 중 마스터에 없는 것.',
+    s.brokenRefs.length?s.brokenRefs.map(function(b){ return '<div class="row"><span class="k">'+esc(b.cid)+'</span> → '+b.kind+'://'+esc(b.ref)+' <span class="x">없음</span></div>'; }).join(''):'');
+  h+=secWrap('🗂','미사용 개념',s.unused.length, 'warn',
+    '⚠️ 현재 <b>cpt:// 앱 미연결</b> 상태라 문항이 개념을 참조하지 않습니다 → 전부 미사용으로 표시됨(연결 후 정상 집계). 지금은 참고만.',
+    s.unused.length?s.unused.map(function(id){ return '<div class="row"><span class="k">'+esc(id)+'</span> '+esc(CPTM[id].name||'')+'</div>'; }).join(''):'');
+  h+=secWrap('🃏','카드 없는 개념',s.noCards.length, s.noCards.length?'warn':'ok',
+    'cards(개념카드)가 비어 있는 개념 → 내용 없이 등록됨.',
+    s.noCards.length?s.noCards.map(function(id){ return '<div class="row"><span class="k">'+esc(id)+'</span> '+esc(CPTM[id].name||'')+'</div>'; }).join(''):'');
+  return h;
+}
+// ── 전체 요약 ──
+function renderAllScope(){
+  var t=scanTbl(), g=scanGrp(), c=scanCpt();
+  var mnBroken=Object.keys(REFS).filter(function(id){ return !MASTER[id]; }).length;
+  var mnUnused=Object.keys(MASTER).filter(function(id){ return !REFS[id]; }).length;
+  function card(emoji,name,total,issues){ var n=issues.reduce(function(a,x){return a+x.n;},0);
+    return '<div class="sumcard"><div class="sumhd">'+emoji+' '+name+' <span class="sumtot">'+total+'</span></div>'
+      +issues.map(function(x){ return '<div class="sumrow '+(x.n?'bad':'')+'"><span>'+x.label+'</span><b>'+x.n+'</b></div>'; }).join('')
+      +'<div class="sumall '+(n?'bad':'ok')+'">'+(n?('문제 '+n+'건'):'이상 없음 ✅')+'</div></div>';
+  }
+  var h='<div class="sumgrid">'
+    + card('🔑','암기코드',Object.keys(MASTER).length,[{label:'깨진 참조',n:mnBroken},{label:'미사용',n:mnUnused},{label:'직접입력',n:DIRECT.length}])
+    + card('📊','표',Object.keys(TBLM).length,[{label:'깨진 참조',n:t.broken.length},{label:'미사용',n:t.unused.length},{label:'칸수 불일치',n:t.mism.length}])
+    + card('📈','그래프',Object.keys(GRPM).length,[{label:'깨진 참조',n:g.broken.length},{label:'미사용',n:g.unused.length},{label:'빈 항목',n:g.empty.length}])
+    + card('📖','개념',Object.keys(CPTM).length,[{label:'깨진 참조',n:c.brokenRefs.length},{label:'카드 없음',n:c.noCards.length}])
+    + '</div>'
+    + '<div class="desc" style="margin-top:12px">각 종류 탭을 누르면 상세 항목과 "이 문항 보기" 링크를 볼 수 있어요. (개념 미사용은 cpt:// 앱 연결 전이라 요약에서 제외)</div>';
+  return h;
 }
 
 function render(){
+  if(SCOPE==='all'){ outEl.innerHTML=renderAllScope(); return; }
+  if(SCOPE==='tbl'){ outEl.innerHTML=renderTblScope(); return; }
+  if(SCOPE==='grp'){ outEl.innerHTML=renderGrpScope(); return; }
+  if(SCOPE==='cpt'){ outEl.innerHTML=renderCptScope(); return; }
+  renderMn();   // SCOPE==='mn'
+}
+function renderMn(){
   // 1) 깨진 참조: mn://id 인데 마스터에 id 없음
   const broken=[];
   Object.keys(REFS).forEach(id=>{ if(!MASTER[id]) REFS[id].forEach(r=>broken.push(Object.assign({id:id},r))); });
