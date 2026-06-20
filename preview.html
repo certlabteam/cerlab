@@ -729,12 +729,33 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   .wrap{max-width:1180px;margin:0 auto;padding:16px}
   h1{font-size:17px;margin:4px 0 2px}
   .sub{font-size:12.5px;color:#64748B;margin-bottom:14px;line-height:1.6}
-  .grid{display:grid;grid-template-columns:0.85fr 1.15fr;gap:16px}
+  .grid{display:block}
   @media(max-width:880px){.grid{grid-template-columns:1fr}}
   .panel{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px}
   #mcqView{max-width:480px;margin:0 auto}
   .panel h2{font-size:13px;margin:0 0 8px;color:#334155}
-  textarea{width:100%;box-sizing:border-box;height:460px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;border:1px solid #CBD5E1;border-radius:8px;padding:10px;resize:vertical}
+  .pv-modebar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .pv-modechip{font-size:12.5px;font-weight:700;border:1.5px solid #BBD6F2;background:#fff;color:#185FA5;border-radius:999px;padding:5px 13px;cursor:pointer}
+  .pv-modechip.on{background:#185FA5;color:#fff;border-color:#185FA5}
+  .pv-card{background:#fff;border:1px solid #E8EDF3;border-radius:12px;padding:12px 14px;margin-bottom:12px}
+  .pv-id{font-family:ui-monospace,monospace;font-size:11.5px;color:#94A3B8;margin-bottom:4px}
+  .pv-kw{display:inline-block;font-size:11px;background:#EEF2F7;color:#475569;border-radius:6px;padding:1px 8px;margin:2px 3px 0 0}
+  .pv-rev{margin-top:8px;font-size:12px;color:#475569}
+  .pv-rev b{color:#185FA5}
+  .asset-ti{font-size:11px;font-weight:800;color:#64748B;margin:12px 0 2px;letter-spacing:.3px}
+  .pv-empty{color:#94A3B8;font-size:13px;padding:16px;text-align:center}
+  .pv-grphd{font-size:12px;font-weight:800;color:#334155;margin-bottom:8px}
+  .pv-cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:760px){.pv-cmp{grid-template-columns:1fr}}
+  .pv-col{border:1px solid #EEF1F5;border-radius:10px;padding:10px 12px;background:#FBFDFF}
+  .pv-coltag{font-size:11px;font-weight:800;margin-bottom:8px}
+  .pv-coltag.l{color:#475569} .pv-coltag.r{color:#0F6E56}
+  .pv-prop+.pv-prop{border-top:1px dashed #D9E2EC;margin-top:10px;padding-top:10px}
+  .pv-badge{font-size:11px;font-weight:800;border-radius:6px;padding:1px 8px;margin-left:6px}
+  .pv-badge.yes{background:#E8F8F1;color:#0F6E56} .pv-badge.no{background:#FDE7C9;color:#9A5B00}
+  .pv-reason{font-size:12px;color:#64748B;margin-top:8px}
+  .pv-decision{font-size:12px;margin-top:10px;padding:8px 10px;border-radius:8px;background:#FFF7E6;border:1px solid #F1D9A8;color:#854F0B}
+  textarea#src{display:none}
   #src.dragover{border:2px dashed #0C447C;background:#F0F6FF}
   #pvDrop{border:2px dashed #CBD5E1;border-radius:10px;padding:22px;text-align:center;color:#64748B;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;transition:border-color .12s,background .12s}
   #pvDrop.dragover{border-color:#0C447C;background:#F0F6FF;color:#0C447C}
@@ -752,7 +773,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   <h1>CertLab 해설 렌더 미리보기 <span style="font-size:12px;color:#94A3B8;font-weight:400">(데이터방용 · 해설 전체)</span></h1>
   <div class="sub">문항 JSON을 붙여넣으면 <b>실제 앱과 동일한 로직·CSS</b>로 해설 전체가 렌더된다 — 보기별 해설(exp.o)·조합형 진술 펼침(ㄱ~ㅎ)·계산형 단계풀이(exp.ex)·암기코드(exp.mn)·개념설명(exp.c: d·cx·exd💡·ex).<br>💡(exd)는 시험 종류가 <b>생체보디빌딩</b>일 때만 표시된다. 라이브 index.html 해설 빌드 함수를 그대로 옮긴 것이라 여기 보이는 모습 = 앱 모습이다.</div>
   <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
-  <div class="grid"><div class="panel"><h2>문항 JSON (붙여넣기·파일 드래그&드롭·수정)</h2><div id="pvDrop">여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<span class="pvd-sub">통합 번들 또는 과목별 파일(.json) 모두 가능</span></div><textarea id="src" spellcheck="false"></textarea></div><div class="panel"><h2>미리보기 (해설)</h2><div id="navBar"></div><div id="typeBadge"></div><div id="errBox"></div><div id="mcqView"></div></div></div>
+  <div id="pvDrop">여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<span class="pvd-sub">문항·개념·암기코드·표·그래프·검토(review) 모두 자동 인식</span></div>
+  <textarea id="src" spellcheck="false"></textarea>
+  <div class="panel"><div id="pvModeBar" class="pv-modebar"></div><div id="navBar"></div><div id="typeBadge"></div><div id="errBox"></div><div id="mcqView"></div></div>
   <div class="note">· 라이브 index.html의 해설 본체 + 의존 헬퍼(조합형 파싱·verdict·oxCompare·renderMath 등)를 라인 단위로 그대로 추출(재구현 아님 → 드리프트 방지).<br>· 이미지(img://·optImg)는 Firestore 자료라 여기선 [이미지: 키] 라벨로만 보인다. '내 O/X vs 정답' 표는 사용자 입력용이라 안 나온다.<br>· 조합형은 q의 진술 마커(ㄱ.ㄴ.ㄷ…) 개수와 exp.o 개수가 같아야 진술별로 펼쳐진다(다르면 보기별/정답보기 폴백).</div>
 </div>
 <script>
@@ -1393,6 +1416,8 @@ function renderExpFull(q, mqCertVal){
       var mnList=Array.isArray(_mn)?_mn:(_mn&&(typeof _mn==='object'||typeof _mn==='string')?[_mn]:[]);
       mnList.forEach(function(mn,idx){
         if(typeof mn==='string' && mn.indexOf('mn://')===0){
+          var _cm=_mnemCache[mn.slice(5)];
+          if(_cm && _cm.code){ body+=pvMnBox(_cm.code,_cm.desc,_cm.kind); return; }   // 번들/마스터에 있으면 실제 치환
           body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+'<div class="mn-code" style="color:#7F77DD;font-family:monospace;font-size:13px">'+mn+' <span style="color:#A89C8E;font-size:11px">(마스터 참조 — 앱에서 코드로 치환)</span></div></div>';
           return;
         }
@@ -1629,28 +1654,146 @@ function grpBlockHTML(q){
   var list=Array.isArray(gr)?gr:[gr];
   return list.map(grpResolve).filter(Boolean).join('');
 }
+
+// ============================================================
+//  통합 미리보기 — 마스터/검토 렌더 (개념·암기코드·표·그래프·review 좌우비교)
+//  데이터 소스: 붙여넣은/연 JSON 한 개. 배치키(mn_new/tbl_new/cpt_new/grp_new/mn_update)도 인식.
+// ============================================================
+var _mnemCache={}, _conceptIndex={};   // _conceptIndex: mnId -> [개념이름…]
+function pvChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
+function pvChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=pvChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
+// 암기코드 박스 (code/desc는 esc 안 함 — k 두문자 빨강 유지)
+function pvMnBox(code, desc, kind){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+pvChantHTML(code,kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+function pvMnResolve(ref){
+  if(ref && typeof ref==='object') return {code:ref.code, desc:ref.desc, kind:ref.kind};
+  if(typeof ref==='string' && ref.indexOf('mn://')===0){ var id=ref.slice(5), m=_mnemCache[id]; if(!m) return {broken:true, ref:id}; return {code:m.code, desc:m.desc, kind:m.kind}; }
+  return {code:String(ref||''), desc:''};
+}
+// 개념 1개 → 카드 + 묶인 암기코드·표·그래프 풀어서
+function pvConceptCard(c){
+  c=c||{};
+  var cards=Array.isArray(c.cards)?c.cards:(Array.isArray(c.c)?c.c:[]);
+  var rows=cards.map(function(it){ it=it||{}; var row='<div class="concept-row"><b>'+tblEsc(it.t||'')+'</b>'+(it.d?' — '+tblEsc(it.d):'')+'</div>'; if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblEsc(String(it.cx).trim())+'</div>'; return row; }).join('');
+  var box='<div class="concept-box"><div class="concept-ti">개념설명</div>'+(rows||'<div class="concept-row" style="color:#94A3B8">(카드 없음)</div>')+'</div>';
+  var mnRefs=Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[]);
+  var tblRefs=Array.isArray(c.tbl)?c.tbl:(c.tbl?[c.tbl]:[]);
+  var grpRefs=Array.isArray(c.grp)?c.grp:(c.grp?[c.grp]:[]);
+  var mnHTML=mnRefs.map(function(ref){ var r=pvMnResolve(ref); if(r.broken) return '<div class="tbl-broken">⚠️ 암기코드 mn://'+tblEsc(r.ref)+' — 이 파일에 없음(번들 필요)</div>'; return pvMnBox(r.code,r.desc,r.kind); }).join('');
+  var tblHTML=tblRefs.map(tblResolve).join('');
+  var grpHTML=grpRefs.map(grpResolve).join('');
+  var assets='';
+  if(mnHTML)  assets+='<div class="asset-ti">묶인 암기코드</div>'+mnHTML;     // 순서: 개념 → 그래프 → 표
+  if(grpHTML) assets+='<div class="asset-ti">묶인 그래프</div>'+grpHTML;
+  if(tblHTML) assets+='<div class="asset-ti">묶인 표</div>'+tblHTML;
+  var kw=(Array.isArray(c.keywords)&&c.keywords.length)?'<div style="margin-top:8px">'+c.keywords.map(function(k){return '<span class="pv-kw">'+tblEsc(k)+'</span>';}).join('')+'</div>':'';
+  var certs=(Array.isArray(c.certs)&&c.certs.length)?'<div style="margin-top:4px">'+c.certs.map(function(x){return '<span class="pv-kw" style="background:#E8F0FB;color:#185FA5">'+tblEsc(x)+'</span>';}).join('')+'</div>':'';
+  return '<div class="pv-card"><div class="pv-id">'+tblEsc(c.id||'')+(c.name?'  <b style="color:#1F2937">'+tblEsc(c.name)+'</b>':'')+'</div>'+box+assets+kw+certs+'</div>';
+}
+function pvRenderConcepts(rows){ return rows.length ? rows.map(pvConceptCard).join('') : '<div class="pv-empty">concepts 비어 있음</div>'; }
+function pvMnemoCard(m){
+  m=m||{};
+  var rev=_conceptIndex[m.id];
+  var revHTML=(rev&&rev.length)?'<div class="pv-rev"><b>이 암기코드가 쓰이는 개념:</b> '+rev.map(function(n){return '<span class="pv-kw" style="background:#EAF2FB;color:#0C447C">'+tblEsc(n)+'</span>';}).join('')+'</div>':'';
+  var certs=(Array.isArray(m.certs)&&m.certs.length)?'<div style="margin-top:4px">'+m.certs.map(function(x){return '<span class="pv-kw" style="background:#E8F0FB;color:#185FA5">'+tblEsc(x)+'</span>';}).join('')+'</div>':'';
+  return '<div class="pv-card"><div class="pv-id">'+tblEsc(m.id||'')+(m.name?'  <b style="color:#1F2937">'+tblEsc(m.name)+'</b>':'')+'</div>'+pvMnBox(m.code,m.desc,m.kind)+certs+revHTML+'</div>';
+}
+function pvRenderMnemonics(rows){ return rows.length ? rows.map(pvMnemoCard).join('') : '<div class="pv-empty">mnemonics 비어 있음</div>'; }
+function pvRenderTables(rows){ return rows.length ? rows.map(function(t){ return '<div class="pv-card"><div class="pv-id">'+tblEsc(t.id||'')+(t.name?'  <b style="color:#1F2937">'+tblEsc(t.name)+'</b>':'')+'</div>'+renderTbl(t)+'</div>'; }).join('') : '<div class="pv-empty">tables 비어 있음</div>'; }
+function pvRenderGraphs(rows){ return rows.length ? rows.map(function(g){ var svg=(g.svg&&String(g.svg).indexOf('<svg')>=0)?('<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>'):'<div class="tbl-broken" style="background:#F4F6FB;border-color:#D6E2F5;color:#64748B">📈 type="'+tblEsc(g.type||'')+'" 렌더러 추후</div>'; return '<div class="pv-card"><div class="pv-id">'+tblEsc(g.id||'')+(g.name?'  <b style="color:#1F2937">'+tblEsc(g.name)+'</b>':'')+'</div>'+svg+'</div>'; }).join('') : '<div class="pv-empty">graphs 비어 있음</div>'; }
+// review 좌우비교 (데이터방 방식: 좌=후보 코드들 / 우=통합안)
+function pvRenderReview(rows){
+  if(!rows.length) return '<div class="pv-empty">review 비어 있음</div>';
+  return rows.map(function(g){
+    g=g||{};
+    var cands=Array.isArray(g.candidates)?g.candidates:[];
+    var left=cands.length?cands.map(function(c){ return pvMnBox(c.code,c.desc,c.kind); }).join(''):'<div class="pv-empty">후보 없음</div>';
+    var props=Array.isArray(g.proposal)?g.proposal:(g.proposal?[g.proposal]:[]);
+    var right=props.length?props.map(function(p){ p=p||{}; var badge=('merge' in p)?('<span class="pv-badge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>'):''; return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvMnBox(p.code,p.desc,p.kind)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>'; }).join(''):'<div class="pv-empty">통합안 없음</div>';
+    var dec=(g.decision&&String(g.decision).trim())?'<div class="pv-decision"><b>메모:</b> '+tblEsc(g.decision)+'</div>':'';
+    return '<div class="pv-card"><div class="pv-grphd">그룹 '+tblEsc(g.group!=null?g.group:'?')+(g.chant?' · <span style="color:#C0322F;font-weight:800">'+tblEsc(g.chant)+'</span>':'')+'</div>'
+      +'<div class="pv-cmp"><div class="pv-col"><div class="pv-coltag l">기존(후보)</div>'+left+'</div><div class="pv-col"><div class="pv-coltag r">의견(통합안)</div>'+right+dec+'</div></div></div>';
+  }).join('');
+}
+// 배치 포맷 정규화
+function pvNormalize(data){
+  if(!data || typeof data!=='object' || Array.isArray(data)) return data;
+  var batch=data.mn_new||data.mn_update||data.tbl_new||data.cpt_new||data.grp_new;
+  if(!batch) return data;
+  var cat=function(){ var o=[]; for(var i=0;i<arguments.length;i++) if(Array.isArray(arguments[i])) o=o.concat(arguments[i]); return o; };
+  return { concepts:cat(data.concepts,data.cpt_new), mnemonics:cat(data.mnemonics,data.mn_new,data.mn_update),
+           tables:cat(data.tables,data.tbl_new), graphs:cat(data.graphs,data.grp_new), review:data.review, questions:data.questions };
+}
+// 캐시·역링크 채움(누적 아님 — 파일 단위)
+function pvBuildCaches(d){
+  _mnemCache={}; _tblCache={}; _grpCache={}; _conceptIndex={};
+  if(Array.isArray(d.mnemonics)) d.mnemonics.forEach(function(m){ if(m&&m.id) _mnemCache[m.id]=m; });
+  if(Array.isArray(d.tables))    d.tables.forEach(function(t){ if(t&&t.id) _tblCache[t.id]=t; });
+  if(Array.isArray(d.graphs))    d.graphs.forEach(function(g){ if(g&&g.id) _grpCache[g.id]=g; });
+  if(Array.isArray(d.concepts))  d.concepts.forEach(function(c){ (Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[])).forEach(function(ref){ if(typeof ref==='string'&&ref.indexOf('mn://')===0){ var id=ref.slice(5),a=(_conceptIndex[id]=_conceptIndex[id]||[]),nm=c.name||c.id||id; if(a.indexOf(nm)<0)a.push(nm); } }); });
+}
+// 마스터/검토 모드 렌더 (questions 외)
+var _pvModes=[], _pvMode=null, _pvData=null;
+function pvRenderMode(){
+  var out=document.getElementById('mcqView');
+  var m=_pvMode, d=_pvData;
+  if(m==='concepts')  out.innerHTML=pvRenderConcepts(d.concepts||[]);
+  else if(m==='mnemonics') out.innerHTML=pvRenderMnemonics(d.mnemonics||[]);
+  else if(m==='tables') out.innerHTML=pvRenderTables(d.tables||[]);
+  else if(m==='graphs') out.innerHTML=pvRenderGraphs(d.graphs||[]);
+  else if(m==='review') out.innerHTML=pvRenderReview(Array.isArray(d.review)?d.review:[]);
+}
+function pvSetMode(m){ _pvMode=m; pvRenderModeBar(); pvRenderMode(); }
+function pvRenderModeBar(){
+  var bar=document.getElementById('pvModeBar'); if(!bar) return;
+  var L={concepts:'📖 개념',mnemonics:'🔑 암기코드',tables:'📊 표',graphs:'📈 그래프',review:'🔀 검토비교'};
+  bar.innerHTML=(_pvModes.length>1)?_pvModes.map(function(x){return '<span class="pv-modechip'+(x===_pvMode?' on':'')+'" onclick="pvSetMode(\''+x+'\')">'+L[x]+'</span>';}).join(''):'';
+}
+
 function render(){
   var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
   var raw=document.getElementById('src').value;
   errBox.innerHTML='';
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
+  var mb=document.getElementById('pvModeBar'); if(mb) mb.innerHTML='';
+  if(!raw.trim()){ out.innerHTML=''; _items=null; return; }
   var data; try{ data=JSON.parse(raw); }catch(e){ errBox.innerHTML='<div class="errx">JSON 오류: '+String(e.message)+'</div>'; out.innerHTML=''; _items=null; return; }
-  // 표 마스터가 동봉돼 있으면 캐시에 채움(tbl:// 실제 렌더용)
-  if(data && !Array.isArray(data)){ var _tbls=data.tables||data.tbl_new; if(Array.isArray(_tbls)){ _tblCache={}; _tbls.forEach(function(t){ if(t&&t.id) _tblCache[t.id]=t; }); } }
-  if(data && !Array.isArray(data)){ var _grps=data.graphs||data.grp_new; if(Array.isArray(_grps)){ _grpCache={}; _grps.forEach(function(g){ if(g&&g.id) _grpCache[g.id]=g; }); } }
-  // 평면 번들 {version,cert,name,subject,questions:[...]}이면 questions 배열을 풀어 쓴다
-  if(data && !Array.isArray(data) && Array.isArray(data.questions)) data=data.questions;
-  // 배열(회차 파일 등)이면 문항 목록으로, 단일 객체면 그 하나만
-  if(Array.isArray(data)){
-    var arr=data.filter(function(x){ return x && typeof x==='object'; });
-    if(!arr.length){ errBox.innerHTML='<div class="errx">빈 배열이다.</div>'; out.innerHTML=''; _items=null; return; }
-    _items=arr; if(_idx>=arr.length) _idx=0;
-    drawNav(); renderOne(_items[_idx]);
-  } else {
-    _items=null;
-    renderOne(data);
+
+  // 배치 포맷 정규화 + 캐시(개념·암기코드·표·그래프) 채움
+  var norm=pvNormalize(data);
+  if(norm && typeof norm==='object' && !Array.isArray(norm)) pvBuildCaches(norm);
+
+  // 문항인가? (배열이거나 questions 배열 보유 또는 단일 문항 객체)
+  var asQuestions=null;
+  if(Array.isArray(data)) asQuestions=data.filter(function(x){return x&&typeof x==='object';});
+  else if(norm && Array.isArray(norm.questions)) asQuestions=norm.questions;
+  else if(data && typeof data==='object' && (data.q!=null||data.opts!=null||data.blanks!=null||(data.exp&&typeof data.exp==='object'))) asQuestions=[data];
+
+  // 마스터/검토 모드 후보
+  _pvData = (norm&&typeof norm==='object'&&!Array.isArray(norm))?norm:{};
+  _pvModes=[];
+  if(_pvData.concepts && _pvData.concepts.length)   _pvModes.push('concepts');
+  if(_pvData.mnemonics && _pvData.mnemonics.length) _pvModes.push('mnemonics');
+  if(_pvData.tables && _pvData.tables.length)       _pvModes.push('tables');
+  if(_pvData.graphs && _pvData.graphs.length)       _pvModes.push('graphs');
+  if(Array.isArray(_pvData.review) && _pvData.review.length) _pvModes.push('review');
+
+  // 우선순위: 문항이 있으면 문항 모드. 없고 마스터/검토만 있으면 그 모드.
+  if(asQuestions && asQuestions.length){
+    if(!asQuestions.length){ errBox.innerHTML='<div class="errx">빈 배열이다.</div>'; out.innerHTML=''; _items=null; return; }
+    _items=(asQuestions.length>1)?asQuestions:null;
+    if(_items){ if(_idx>=_items.length) _idx=0; drawNav(); renderOne(_items[_idx]); }
+    else { renderOne(asQuestions[0]); }
+    return;
   }
+  if(_pvModes.length){
+    _items=null;
+    if(_pvModes.indexOf(_pvMode)<0) _pvMode=_pvModes[0];
+    pvRenderModeBar(); pvRenderMode();
+    return;
+  }
+  // 둘 다 아니면 단일 객체를 문항으로 시도(하위호환)
+  _items=null; renderOne(data);
 }
 document.getElementById('cert').addEventListener('change', render);
 document.getElementById('src').addEventListener('input', function(){ _idx=0; render(); });
