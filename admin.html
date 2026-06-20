@@ -1347,7 +1347,7 @@ async function tblmLoad(){
   var st=document.getElementById('tblmStatus'); if(st){ st.style.color='#7F77DD'; st.textContent='불러오는 중…'; }
   try{
     var snap=await db.collection('tables').get();
-    _tblmAll={}; snap.forEach(function(d){ _tblmAll[d.id]=d.data()||{}; });
+    _tblmAll={}; snap.forEach(function(d){ var t=d.data()||{}; if(typeof t.rows==='string'){ try{ t.rows=JSON.parse(t.rows); }catch(e){ t.rows=[]; } } _tblmAll[d.id]=t; });
     _tblmLoaded=true;
     if(st) st.textContent='등록 '+Object.keys(_tblmAll).length+'개';
     tblmRenderList();
@@ -1422,7 +1422,7 @@ async function tblmSave(){
     headers:t.headers, rows:t.rows, merge:t.merge, caption_chant:t.caption_chant,
     keywords:csv(document.getElementById('tblmKwField').value), certs:csv(document.getElementById('tblmCertsField').value),
     note:document.getElementById('tblmNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-  try{ await db.collection('tables').doc(id).set(rec); _tblmAll[id]=rec; tblmRenderList();
+  try{ await db.collection('tables').doc(id).set(Object.assign({},rec,{rows:JSON.stringify(rec.rows)})); _tblmAll[id]=rec; tblmRenderList();
     var st=document.getElementById('tblmStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_tblmAll).length+'개)'; }
     tblmCancel();
   }catch(e){ alert('저장 실패: '+e.message); }
@@ -1474,7 +1474,7 @@ async function tblmImport(){
       merge:Array.isArray(it.merge)?it.merge:[], caption_chant:it.caption_chant||'',
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
       note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    try{ await db.collection('tables').doc(id).set(rec); _tblmAll[id]=rec; ok++; }catch(e){ fail++; }
+    try{ await db.collection('tables').doc(id).set(Object.assign({},rec,{rows:JSON.stringify(rec.rows)})); _tblmAll[id]=rec; ok++; }catch(e){ fail++; }
   }
   var stt=document.getElementById('tblmImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 올림: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패/형식오류 '+fail+'개'):'')+'.'; }
   tblmRenderList();
