@@ -407,6 +407,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .jtbl th{background:#EEF2F7;font-weight:600}
 .jtbl td.l{text-align:left;white-space:nowrap}
 .jtbl td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.jtbl .tbl-yul{color:#C0392B;font-size:.84em;font-weight:700;margin-left:1px}
+.tbl-cap{font-size:12px;color:#64748B;margin:2px 0 10px;text-align:center}
+.tbl-broken{color:#A32D2D;font-size:12.5px;font-weight:700;background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 11px;margin:8px 0}
+.tbl-ph{color:#7F77DD;font-size:12.5px;background:#F5F4FE;border:1px solid #E0DDF7;border-radius:8px;padding:8px 11px;margin:8px 0;font-family:monospace}
+.grp-box{margin:8px 0;text-align:center}
+.grp-box svg{max-width:100%;height:auto}
 #mcqView .oximg{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px;padding:11px 12px;background:#F8FAFC;border:1px dashed #D7DEE7;border-radius:10px}
 #mcqView .oximg-hd{flex-basis:100%;font-size:11.5px;font-weight:800;color:#64748B;margin-bottom:2px}
 #mcqView .oxg{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #E7ECF1;border-radius:9px;padding:5px 7px}
@@ -1406,6 +1412,8 @@ function renderExpFull(q, mqCertVal){
         return row;
       }).join('')+'</div>';
     }
+    body+=grpBlockHTML(q);   // 개념 뒤 → 그래프
+    body+=tblBlockHTML(q);   // → 표
     expHTML='<div class="exp"><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
   return expHTML;
 }
@@ -1460,7 +1468,7 @@ function renderSaPreview(q, cert){
       return row;
     }).join('')+'</div>';
   }
-  return '<div class="qtext" style="margin-bottom:12px">'+stemHTML(rm(stem,q))+'</div>'+(jaryo?('<div class="jaryo">'+rm(jaryo,q)+'</div>'):'')+'<div class="sa-plist">'+blanksHTML+'</div>'+concept;
+  return '<div class="qtext" style="margin-bottom:12px">'+stemHTML(rm(stem,q))+'</div>'+(jaryo?('<div class="jaryo">'+rm(jaryo,q)+'</div>'):'')+'<div class="sa-plist">'+blanksHTML+'</div>'+concept+grpBlockHTML(q)+tblBlockHTML(q);
 }
 function detectRenderType(q){
   if(!q || typeof q!=='object') return '?';
@@ -1552,6 +1560,75 @@ function drawNav(){
   document.getElementById('navPrev').onclick=function(){ if(_idx>0){_idx--; renderOne(_items[_idx]); drawNav();} };
   document.getElementById('navNext').onclick=function(){ if(_idx<_items.length-1){_idx++; renderOne(_items[_idx]); drawNav();} };
 }
+// ===== 표(tables) — 로컬 캐시(붙여넣은 JSON의 tables/tbl_new에서 채움) =====
+var _tblCache={};
+function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
+function renderTbl(t){
+  if(!t || !Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
+  var rows=t.rows.map(function(r){ return r.slice(); });
+  var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
+  mergeCols.forEach(function(c,ci){
+    var anc=mergeCols.slice(0,ci), r=0;
+    while(r<rows.length){
+      var span=1;
+      while(r+span<rows.length && rows[r+span][c]===rows[r][c] && anc.every(function(a){return rows[r+span][a]===rows[r][a];})) span++;
+      for(var k=1;k<span;k++) skip[(r+k)+','+c]=1;
+      rows[r]['_rs'+c]=span; r+=span;
+    }
+  });
+  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+tblEsc(h)+'</th>';}).join('')+'</tr></thead>';
+  var tbody='<tbody>'+rows.map(function(row,r){
+    var tds='';
+    for(var c=0;c<t.headers.length;c++){
+      if(skip[r+','+c]) continue;
+      var rs=row['_rs'+c], span=(rs&&rs>1)?' rowspan="'+rs+'"':'';
+      tds+='<td'+span+'>'+tblYul(tblEsc(row[c]))+'</td>';
+    }
+    return '<tr>'+tds+'</tr>';
+  }).join('')+'</tbody>';
+  var cap=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':'';
+  return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
+}
+function tblResolve(ref){
+  if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
+  if(typeof ref==='string' && ref.indexOf('tbl://')===0){
+    var id=ref.slice(6), t=_tblCache[id];
+    if(t) return renderTbl(t);
+    return '<div class="tbl-ph">'+tblEsc(ref)+' <span style="font-weight:400">(표 마스터 미동봉 — JSON에 tables 넣으면 실제 표로 렌더 · 앱에선 자동)</span></div>';
+  }
+  return '';
+}
+function tblBlockHTML(q){
+  var tb=q&&q.exp&&q.exp.tbl; if(!tb) return '';
+  var list=Array.isArray(tb)?tb:[tb];
+  return list.map(tblResolve).filter(Boolean).join('');
+}
+// ===== 그래프(graphs) — 로컬 캐시(붙여넣은 JSON의 graphs/grp_new에서 채움). SVG sanitize 렌더 =====
+var _grpCache={};
+function grpSanitizeSvg(svg){
+  var x=String(svg||''); if(x.indexOf('<svg')<0) return '';
+  x=x.replace(/<script[\s\S]*?<\/script>/gi,'');
+  x=x.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,'');
+  x=x.replace(/javascript:/gi,'');
+  x=x.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi,'');
+  return x;
+}
+function grpResolve(ref){
+  if(ref && typeof ref==='object' && ref.svg) return '<div class="grp-box">'+grpSanitizeSvg(ref.svg)+'</div>';
+  if(typeof ref==='string' && ref.indexOf('grp://')===0){
+    var id=ref.slice(6), g=_grpCache[id];
+    if(g && g.svg) return '<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>';
+    if(g) return '';   // 파라미터형 — 렌더러 추후
+    return '<div class="tbl-ph">'+tblEsc(ref)+' <span style="font-weight:400">(그래프 마스터 미동봉 — JSON에 graphs 넣으면 렌더 · 앱에선 자동)</span></div>';
+  }
+  return '';
+}
+function grpBlockHTML(q){
+  var gr=q&&q.exp&&q.exp.grp; if(!gr) return '';
+  var list=Array.isArray(gr)?gr:[gr];
+  return list.map(grpResolve).filter(Boolean).join('');
+}
 function render(){
   var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
   var raw=document.getElementById('src').value;
@@ -1559,6 +1636,9 @@ function render(){
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
   var data; try{ data=JSON.parse(raw); }catch(e){ errBox.innerHTML='<div class="errx">JSON 오류: '+String(e.message)+'</div>'; out.innerHTML=''; _items=null; return; }
+  // 표 마스터가 동봉돼 있으면 캐시에 채움(tbl:// 실제 렌더용)
+  if(data && !Array.isArray(data)){ var _tbls=data.tables||data.tbl_new; if(Array.isArray(_tbls)){ _tblCache={}; _tbls.forEach(function(t){ if(t&&t.id) _tblCache[t.id]=t; }); } }
+  if(data && !Array.isArray(data)){ var _grps=data.graphs||data.grp_new; if(Array.isArray(_grps)){ _grpCache={}; _grps.forEach(function(g){ if(g&&g.id) _grpCache[g.id]=g; }); } }
   // 평면 번들 {version,cert,name,subject,questions:[...]}이면 questions 배열을 풀어 쓴다
   if(data && !Array.isArray(data) && Array.isArray(data.questions)) data=data.questions;
   // 배열(회차 파일 등)이면 문항 목록으로, 단일 객체면 그 하나만
