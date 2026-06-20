@@ -52,7 +52,7 @@ body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .caret{font-size:9px;color:#B4A99C;margin-left:auto;transition:transform .2s}
 .cat.open .caret{transform:rotate(90deg)}
 .cat-items{max-height:0;overflow:hidden;opacity:0;transition:max-height .24s ease,opacity .2s ease;margin-top:0}
-.cat.open .cat-items{max-height:360px;opacity:1;margin-top:5px}
+.cat.open .cat-items{max-height:700px;opacity:1;margin-top:5px}
 .cat-item{padding:8px 12px;font-size:13px;font-weight:600;color:#888780;cursor:pointer;border-radius:8px;border-left:3px solid transparent}
 .cat-item:hover{background:#FAF8F5}
 .cat-item.active{color:#7F77DD;background:#F1EFFB;border-left-color:#7F77DD}
@@ -232,13 +232,12 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="import" onclick="switchTab('import')">데이터 업로드</div>
         <div class="cat-item" data-tab="imgup" onclick="switchTab('imgup')">이미지 업로드</div>
         <div class="cat-item" data-tab="imgcheck" onclick="switchTab('imgcheck')">🖼️ 이미지 확인</div>
-        <div class="cat-item" data-tab="preview" onclick="switchTab('preview')">🔍 문항 미리보기</div>
+        <div class="cat-item" data-tab="preview" onclick="switchTab('preview')">🔍 미리보기</div>
         <div class="cat-item" data-tab="mnem" onclick="switchTab('mnem')">📑 암기코드 마스터</div>
         <div class="cat-item" data-tab="tblmaster" onclick="switchTab('tblmaster')">📊 표 마스터</div>
         <div class="cat-item" data-tab="cptmaster" onclick="switchTab('cptmaster')">📖 개념 마스터</div>
         <div class="cat-item" data-tab="grpmaster" onclick="switchTab('grpmaster')">📈 그래프 마스터</div>
         <div class="cat-item" data-tab="mncheck" onclick="switchTab('mncheck')">🔎 암기코드 점검</div>
-        <div class="cat-item" data-tab="mnreview" onclick="switchTab('mnreview')">🔀 암기코드·개념·그래프·표 검토</div>
       </div>
     </div>
     <div class="cat cat-single" data-tab="community">
@@ -741,8 +740,8 @@ tr:hover td{background:#FAFAFA}
 
     <div class="tab-panel" id="panel-preview">
       <div class="table-wrap">
-        <div class="table-header"><div class="table-title">🔍 문항 미리보기 (JSON → 앱과 동일하게 렌더)</div></div>
-        <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">문항 JSON을 붙여넣고 렌더하면 실제 앱(index.html)과 동일한 로직·CSS로 보입니다 — 보기별 해설·조합형·cx 예시박스·암기코드(mn)·계산형 단계풀이. 라이브 렌더 코드를 그대로 쓰므로 여기 보이는 모습 = 앱 모습입니다.</div>
+        <div class="table-header"><div class="table-title">🔍 미리보기 (문항·개념·암기코드·표·그래프·검토)</div></div>
+        <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">JSON(문항·개념·암기코드·표·그래프·검토review)을 끌어다 놓으면 종류를 자동 인식해 앱과 동일하게 렌더합니다. 개념을 열면 묶인 암기코드·표·그래프가 함께 풀리고, 검토(review)는 좌(기존)·우(의견)로 비교됩니다.</div>
         <iframe id="pvFrame" src="preview.html" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#EAF1FA"></iframe>
       </div>
     </div>
@@ -992,32 +991,6 @@ tr:hover td{background:#FAFAFA}
         <iframe id="mnChkFrame" src="mn_check.html?v=3" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#F6F8FB"></iframe>
       </div>
     </div>
-
-    <div class="tab-panel" id="panel-mnreview">
-      <div class="table-wrap">
-        <div class="table-header"><div class="table-title">🔀 암기코드·개념·그래프·표 검토</div></div>
-        <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">검토 JSON(review) 비교뿐 아니라 개념(concepts)·암기코드(mnemonics)·표(tables) 마스터를 열어 앱 모습으로 봅니다. 개념을 열면 묶인 암기코드·표가 함께 풀립니다. 보기 전용입니다.</div>
-        <iframe id="mnReviewFrame" src="mn_review.html?v=1" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#F6F8FB"></iframe>
-      </div>
-    </div>
-
-    <!-- 💬 커뮤니티 -->
-    <div class="tab-panel" id="panel-community">
-      <!-- 공지 작성 -->
-      <div class="table-wrap" style="margin-bottom:24px;background:#F9F7F5;border-radius:16px;border:1px solid #EDE9E5;padding:20px">
-        <div class="table-title" style="color:#7F77DD;margin-bottom:14px">📢 공지 작성</div>
-        <input id="cmaNoticeTitle" placeholder="공지 제목" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:8px;box-sizing:border-box">
-        <textarea id="cmaNoticeBody" placeholder="공지 내용" rows="4" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;resize:vertical;box-sizing:border-box"></textarea>
-        <div style="display:flex;justify-content:flex-end;margin-top:10px">
-          <button class="btn-sm" onclick="cmaSubmitNotice()" style="background:#7F77DD;color:#fff;border:none;cursor:pointer;font-weight:600">공지 등록</button>
-        </div>
-      </div>
-
-      <!-- 글 신고 처리 -->
-      <div class="table-wrap" style="margin-bottom:24px">
-        <div class="table-header"><div class="table-title">🚨 글 신고 처리</div></div>
-        <div id="cmaReportList"><div class="loading">로딩 중...</div></div>
-      </div>
 
       <!-- 글 관리 -->
       <div class="table-wrap">
