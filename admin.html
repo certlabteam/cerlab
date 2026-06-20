@@ -536,6 +536,16 @@ tr:hover td{background:#FAFAFA}
         </div>
       </div>
 
+      <!-- ===== 6) 발송 이력 ===== -->
+      <div class="table-wrap" style="margin-bottom:16px">
+        <div class="table-header"><div class="table-title">⑥ 발송 이력 <span style="font-size:11px;color:#A89C8E;font-weight:400">(mailLog · 최근 100건)</span></div>
+          <button class="btn-sm" onclick="emLogRefresh()" style="background:#EDE9FB;color:#5B50C0">↻ 새로고침</button>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="emLogList"><div class="empty" style="padding:16px">불러오는 중…</div></div>
+        </div>
+      </div>
+
       <!-- ===== 폴백: 등급별 추출·복사 ===== -->
       <div class="table-wrap">
         <div class="table-header">
@@ -2135,6 +2145,7 @@ async function emInit(){
   emArLoad();
   emExLoad();
   emDdayLoad();
+  emLogLoad();
 }
 async function emLoadTpls(){
   const sel=document.getElementById('emTplSelect'); if(!sel) return;
@@ -2501,6 +2512,34 @@ async function emDdaySave(){
 async function emDdayToggle(id,on){ try{ await db.collection('autoRules').doc(id).set({enabled:on},{merge:true}); await emDdayLoad(); }catch(e){ alert('변경 실패: '+(e&&e.message?e.message:e)); } }
 async function emDdayDel(id){ const r=emDdayRules.find(x=>x.id===id); if(!confirm('D-day 규칙 "'+((r&&r.name)||id)+'" 삭제할까요?')) return;
   try{ await db.collection('autoRules').doc(id).delete(); await emDdayLoad(); }catch(e){ alert('삭제 실패: '+(e&&e.message?e.message:e)); } }
+
+/* ===== ⑥ 발송 이력 (mailLog) ===== */
+function emLogDT(d){ const p=n=>String(n).padStart(2,'0'); return (d.getMonth()+1)+'/'+d.getDate()+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+async function emLogLoad(){
+  const box=document.getElementById('emLogList'); if(!box) return;
+  try{
+    const snap=await db.collection('mailLog').orderBy('at','desc').limit(100).get();
+    if(snap.empty){ box.innerHTML='<div class="empty" style="padding:16px">발송 이력이 없습니다.</div>'; return; }
+    const todayStr=new Date().toDateString();
+    let tSent=0,tFail=0;
+    const trMap={manual:'수동',schedule:'스케줄',event:'이벤트',dday:'D-day'};
+    const rows=snap.docs.map(d=>{ const m=d.data();
+      const at=(m.at&&m.at.toDate)?m.at.toDate():(m.at?new Date(m.at):null);
+      if(at && at.toDateString()===todayStr){ if(m.status==='failed') tFail++; else tSent++; }
+      const sc=m.status==='failed'?'#A32D2D':(m.status==='queued'?'#A8650A':'#15793F');
+      const st=m.status==='failed'?'실패':(m.status==='queued'?'예약':'성공');
+      return '<tr><td style="font-size:12px;white-space:nowrap">'+(at?emLogDT(at):'-')+'</td>'
+        +'<td style="font-size:12px">'+cmaEsc(m.to||'-')+'</td>'
+        +'<td style="font-size:12px">'+cmaEsc(m.subject||m.templateId||'-')+'</td>'
+        +'<td style="font-size:12px;color:#888">'+(trMap[m.trigger]||m.trigger||'-')+'</td>'
+        +'<td><span style="color:'+sc+';font-weight:700;font-size:12px">'+st+'</span>'+(m.error?' <span style="color:#A32D2D;font-size:11px">!</span>':'')+'</td></tr>';
+    }).join('');
+    box.innerHTML='<div style="font-size:12px;color:#5B50C0;margin-bottom:8px">오늘 발송 <b>'+tSent+'</b>건'+(tFail?' · 실패 <b style="color:#A32D2D">'+tFail+'</b>건':'')+' <span style="color:#A89C8E">· 최근 100건</span></div>'
+      +'<table><thead><tr><th>시각</th><th>받는사람</th><th>제목</th><th>경로</th><th>상태</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }catch(e){ var msg=(e&&e.message)?e.message:String(e);
+    box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">발송 이력 로드 실패: '+cmaEsc(msg)+((msg.indexOf('index')>=0)?'<br><span style="font-size:11px">콘솔 에러 링크로 mailLog 인덱스를 생성하세요.</span>':'')+'</div>'; }
+}
+function emLogRefresh(){ emLogLoad(); }
 
 function openMemberDetail(uid){
   const m = allMembers.find(x=>x.id===uid); if(!m) return;
