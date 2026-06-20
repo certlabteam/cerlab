@@ -2241,18 +2241,27 @@ async function emPreviewSeg(){
     box.innerHTML='대상 <b>'+(d.count||0)+'</b>명'+(sample?' · 예: '+cmaEsc(sample)+(d.count>8?' …':''):'');
   }catch(e){ box.style.color='#A32D2D'; box.textContent='대상 조회 실패: '+(e&&e.message?e.message:e); }
 }
+/* 발송 중복 클릭 방지 — 발송 도는 동안 다른 발송 버튼 잠금(겹치면 Resend 429) */
+function emLockSend(on){
+  window._emBusy=on;
+  document.querySelectorAll('button').forEach(b=>{ if(/본발송|재발송|테스트 발송/.test(b.textContent)) b.disabled=on; });
+}
 async function emTest(){
+  if(window._emBusy){ alert('다른 발송이 진행 중이에요. 완료 후 다시 시도하세요.'); return; }
   const t=emCurTpl(); if(!t){ alert('발송할 템플릿을 먼저 선택하세요.'); return; }
   const def=(firebase.auth().currentUser&&firebase.auth().currentUser.email)||'certlab.team@gmail.com';
   const to=prompt('테스트 메일을 받을 주소를 입력하세요.', def); if(!to) return;
   const res=document.getElementById('emSendResult'); res.style.color='#888'; res.textContent='테스트 발송 중…';
+  emLockSend(true);
   try{
     const r=await emFns().httpsCallable('sendBulkEmail')({ test:true, testTo:to, templateId:t.id });
     const d=r.data||{}; res.style.color=d.sent?'#15793F':'#A32D2D';
     res.innerHTML='테스트: 발송 '+(d.sent||0)+' / 실패 '+(d.failed||0)+(d.skipped?' / 제외 '+d.skipped:'')+'. <span style="color:#888">'+cmaEsc(to)+' 메일함을 확인하세요.</span>';
   }catch(e){ res.style.color='#A32D2D'; res.textContent='테스트 실패: '+(e&&e.message?e.message:e); }
+  finally{ emLockSend(false); }
 }
 async function emSend(){
+  if(window._emBusy){ alert('다른 발송이 진행 중이에요. 완료 후 다시 시도하세요.'); return; }
   const t=emCurTpl(); if(!t){ alert('발송할 템플릿을 먼저 선택하세요.'); return; }
   if(t.enabled===false){ alert('비활성 템플릿입니다. 편집에서 활성으로 바꾸세요.'); return; }
   const rule=emRuleFromUI();
@@ -2262,12 +2271,14 @@ async function emSend(){
   if(!cnt){ alert('대상이 0명입니다. 조건을 확인하세요.'); return; }
   if(!confirm('템플릿 "'+(t.name||t.id)+'"('+(t.category==='ad'?'광고성':'거래성')+')\n대상 '+cnt+'명에게 본발송합니다. 계속할까요?')) return;
   res.style.color='#888'; res.textContent='발송 중… ('+cnt+'명, 잠시 걸릴 수 있어요)';
+  emLockSend(true);
   try{
     const cert=(rule.cert&&rule.cert.length===1)?rule.cert[0]:null;
     const r=await emFns().httpsCallable('sendBulkEmail')({ templateId:t.id, rule, targetCert:cert });
     const d=r.data||{}; res.style.color='#15793F';
     res.innerHTML='✅ 본발송 완료 — 발송 <b>'+(d.sent||0)+'</b> / 실패 '+(d.failed||0)+(d.skipped?' / 제외 '+d.skipped:'')+' (대상 '+(d.attempted||0)+'명)';
   }catch(e){ res.style.color='#A32D2D'; res.textContent='발송 실패: '+(e&&e.message?e.message:e); }
+  finally{ emLockSend(false); }
 }
 
 /* ===== ④ 자동 발송 규칙 (autoRules CRUD·ON/OFF) ===== */
@@ -2541,13 +2552,16 @@ async function emLogLoad(){
     box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">발송 이력 로드 실패: '+cmaEsc(msg)+((msg.indexOf('index')>=0)?'<br><span style="font-size:11px">콘솔 에러 링크로 mailLog 인덱스를 생성하세요.</span>':'')+'</div>'; }
 }
 async function emResendFailed(batchId){
+  if(window._emBusy){ alert('다른 발송이 진행 중이에요. 완료 후 다시 시도하세요.'); return; }
   if(!confirm('이 배치의 실패 건을 재발송할까요?\n(성공한 사람은 제외, 실패한 주소에만 다시 보냅니다)')) return;
+  emLockSend(true);
   try{
     const r=await emFns().httpsCallable('resendFailures')({ batchId:batchId });
     const d=r.data||{};
     alert('재발송 완료\n성공 '+(d.sent||0)+' / 실패 '+(d.failed||0)+(d.note?('\n'+d.note):''));
     emLogLoad();
   }catch(e){ alert('재발송 실패: '+(e&&e.message?e.message:e)); }
+  finally{ emLockSend(false); }
 }
 function emLogRefresh(){ emLogLoad(); }
 
