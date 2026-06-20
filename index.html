@@ -461,6 +461,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .jtbl th{background:#EEF2F7;font-weight:600}
 .jtbl td.l{text-align:left;white-space:nowrap}
 .jtbl td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.jtbl .tbl-yul{color:#C0392B;font-size:.84em;font-weight:700;margin-left:1px}
+.tbl-cap{font-size:12px;color:#64748B;margin:2px 0 10px;text-align:center}
+.tbl-broken{color:#A32D2D;font-size:12.5px;font-weight:700;background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 11px;margin:8px 0}
+.grp-box{margin:8px 0;text-align:center}
+.grp-box svg{max-width:100%;height:auto}
 #mcqView .oximg{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px;padding:11px 12px;background:#F8FAFC;border:1px dashed #D7DEE7;border-radius:10px}
 #mcqView .oximg-hd{flex-basis:100%;font-size:11.5px;font-weight:800;color:#64748B;margin-bottom:2px}
 #mcqView .oxg{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #E7ECF1;border-radius:9px;padding:5px 7px}
@@ -2606,6 +2611,100 @@ function loadMnemonics(){
   })();
   return _mnemPromise;
 }
+// ===== 표 마스터(tables) — mn 패턴 복제 =====
+var _tblCache={}, _tblPromise=null, _tblLoaded=false;
+function loadTables(){
+  if(_tblPromise) return _tblPromise;
+  _tblPromise=(async function(){
+    try{ var snap=await db.collection('tables').get(); snap.forEach(function(d){ _tblCache[d.id]=d.data()||{}; }); }catch(e){}
+    _tblLoaded=true;
+  })();
+  return _tblPromise;
+}
+function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
+// 계층 병합 표 렌더(운율 빨강). merge:[열] = 부모 바뀌면 자식 끊기는 rowspan.
+function renderTbl(t){
+  if(!t || !Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
+  var rows=t.rows.map(function(r){ return r.slice(); });
+  var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
+  mergeCols.forEach(function(c,ci){
+    var anc=mergeCols.slice(0,ci), r=0;
+    while(r<rows.length){
+      var span=1;
+      while(r+span<rows.length && rows[r+span][c]===rows[r][c] && anc.every(function(a){return rows[r+span][a]===rows[r][a];})) span++;
+      for(var k=1;k<span;k++) skip[(r+k)+','+c]=1;
+      rows[r]['_rs'+c]=span; r+=span;
+    }
+  });
+  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+tblEsc(h)+'</th>';}).join('')+'</tr></thead>';
+  var tbody='<tbody>'+rows.map(function(row,r){
+    var tds='';
+    for(var c=0;c<t.headers.length;c++){
+      if(skip[r+','+c]) continue;
+      var rs=row['_rs'+c], span=(rs&&rs>1)?' rowspan="'+rs+'"':'';
+      tds+='<td'+span+'>'+tblYul(tblEsc(row[c]))+'</td>';
+    }
+    return '<tr>'+tds+'</tr>';
+  }).join('')+'</tbody>';
+  var cap=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':'';
+  return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
+}
+// "tbl://id" → 표 HTML. 객체(headers 포함)면 인라인 직접입력. 깨진 참조는 로드 완료 후에만 ⚠️.
+function tblResolve(ref){
+  if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
+  if(typeof ref==='string' && ref.indexOf('tbl://')===0){
+    var id=ref.slice(6), t=_tblCache[id];
+    if(!t) return _tblLoaded ? '<div class="tbl-broken">⚠️ 표 참조 오류: tbl://'+tblEsc(id)+' (마스터에 없음)</div>' : '';
+    return renderTbl(t);
+  }
+  return '';
+}
+// 문항 exp.tbl(문자열/배열) → 표 블록. 암기코드 뒤·개념설명 앞에 삽입.
+function tblBlockHTML(q){
+  var tb=q&&q.exp&&q.exp.tbl; if(!tb) return '';
+  var list=Array.isArray(tb)?tb:[tb];
+  return list.map(tblResolve).filter(Boolean).join('');
+}
+// ===== 그래프 마스터(graphs) — SVG 방식. 표 패턴 복제 =====
+var _grpCache={}, _grpPromise=null, _grpLoaded=false;
+function loadGraphs(){
+  if(_grpPromise) return _grpPromise;
+  _grpPromise=(async function(){
+    try{ var snap=await db.collection('graphs').get(); snap.forEach(function(d){ _grpCache[d.id]=d.data()||{}; }); }catch(e){}
+    _grpLoaded=true;
+  })();
+  return _grpPromise;
+}
+// SVG sanitize: <script>·on*=·javascript:·foreignObject 제거 (admin과 동일)
+function grpSanitizeSvg(svg){
+  var s=String(svg||''); if(s.indexOf('<svg')<0) return '';
+  s=s.replace(/<script[\s\S]*?<\/script>/gi,'');
+  s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,'');
+  s=s.replace(/javascript:/gi,'');
+  s=s.replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi,'');
+  return s;
+}
+function grpRenderOne(g){
+  if(g && g.svg && String(g.svg).indexOf('<svg')>=0) return '<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>';
+  return '';   // 파라미터형(type/params)은 렌더러 추후 — 지금은 표시 안 함
+}
+// "grp://id" → 그래프 HTML. 객체(svg 포함)면 인라인. 깨진 참조는 로드 완료 후에만 ⚠️.
+function grpResolve(ref){
+  if(ref && typeof ref==='object' && ref.svg) return grpRenderOne(ref);
+  if(typeof ref==='string' && ref.indexOf('grp://')===0){
+    var id=ref.slice(6), g=_grpCache[id];
+    if(!g) return _grpLoaded ? '<div class="tbl-broken">⚠️ 그래프 참조 오류: grp://'+tblEsc(id)+' (마스터에 없음)</div>' : '';
+    return grpRenderOne(g);
+  }
+  return '';
+}
+// 문항 exp.grp(문자열/배열) → 그래프 블록. 표 뒤·개념 앞.
+function grpBlockHTML(q){
+  var gr=q&&q.exp&&q.exp.grp; if(!gr) return '';
+  var list=Array.isArray(gr)?gr:[gr];
+  return list.map(grpResolve).filter(Boolean).join('');
+}
 // mn 항목 → {code,desc}. "mn://id"면 마스터에서 치환, 객체/문자열은 그대로(하위호환).
 function mnResolve(mn){
   if(typeof mn==='string' && mn.indexOf('mn://')===0){
@@ -4133,6 +4232,8 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
         return row;
       }).join('')+'</div>';
     }
+    body+=grpBlockHTML(q);   // 개념 뒤 → 그래프
+    body+=tblBlockHTML(q);   // → 표 (해설 순서: 암기코드→개념→그래프→표)
     expHTML='<div class="exp"><div class="exp-note-hd">\uD559\uC2B5 \uB178\uD2B8</div><div class="exp-hd"><span class="exp-ti">\uD574\uC124</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' \u00B7 '+g.n+'/'+g.m+' \uC815\uB2F5</span></div>'+body+'</div>';
   }
   root.innerHTML=
@@ -4343,6 +4444,8 @@ function renderMcqExam(root){
         return row;
       }).join('')+'</div>';
     }
+    body+=grpBlockHTML(q);   // 개념 뒤 → 그래프
+    body+=tblBlockHTML(q);   // → 표 (해설 순서: 암기코드→개념→그래프→표)
     expHTML='<div class="exp"><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
   const jr=splitJaryo(q.q);
   const curSubj=(q&&q._subj)?q._subj:'';   // 혼합과목(복습·진단·SR) 현재 문항 과목 → 헤더로
@@ -4710,6 +4813,8 @@ async function loadExam(examId){
   if(loadedExams[examId]) return;
   await loadManifest();
   await loadMnemonics();   // 암기코드 마스터 캐시(렌더 전 완료 보장 → 깨진참조 오판 방지)
+  await loadTables();      // 표 마스터 캐시(tbl:// 렌더용)
+  await loadGraphs();      // 그래프 마스터 캐시(grp:// 렌더용)
   const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
   if(!ex){ loadedExams[examId]=true; return; }
   await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));
