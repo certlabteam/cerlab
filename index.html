@@ -464,7 +464,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .jtbl td.l{text-align:left;white-space:nowrap}
 .jtbl td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .jtbl .tbl-yul{color:#C0392B;font-size:.84em;font-weight:700;margin-left:1px}
-.tbl-cap{font-size:12px;color:#64748B;margin:2px 0 10px;text-align:center}
+.tbl-cap{font-size:13.5px;color:#475569;line-height:1.6;font-weight:500;text-align:left;margin:0 0 9px}
 .tbl-broken{color:#A32D2D;font-size:12.5px;font-weight:700;background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 11px;margin:8px 0}
 .grp-box{margin:8px 0;text-align:center}
 .grp-box svg{max-width:100%;height:auto}
@@ -542,6 +542,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mcq-exam-title{font-size:20px;font-weight:800;color:#0C447C;margin:2px 2px 14px;display:flex;align-items:center;gap:5px}
 #mcqView .exam-home-back{background:none;border:none;color:#0C447C;padding:3px;margin-left:-5px;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0;border-radius:8px}
 #mcqView .exam-home-back:active{background:#EAF0F8}
+.bb-topbar{margin:2px 2px 8px}
+.bb-home-back{background:none;border:none;color:#0C447C;padding:3px;margin-left:-5px;display:inline-flex;align-items:center;cursor:pointer;border-radius:8px}
+.bb-home-back:active{background:#EAF0F8}
 #mcqView .scard{border-radius:16px;border:1.5px solid #E2E8F0;overflow:hidden;background:#fff;margin-bottom:10px}
 #mcqView .scard-hd{display:flex;align-items:center;gap:10px;padding:14px 15px;cursor:pointer;user-select:none}
 #mcqView .sdot{width:6px;height:6px;border-radius:50%;background:#0C447C;flex-shrink:0}
@@ -967,7 +970,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="cert-cards">
     <div class="cert-card" onclick="enterCert('bodybuilding')">
       <div class="cert-ic">💪</div>
-      <div class="cert-meta"><div class="nm">생활체육지도사 보디빌딩 2급</div><div class="ds">구술시험 대비 플래시카드 · 5과목</div><span class="tag">플래시카드</span></div>
+      <div class="cert-meta"><div class="nm">생활체육지도사(보디빌딩) 구술,실기</div><div class="ds">구술시험 대비 플래시카드 · 5과목</div><span class="tag">플래시카드</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" onclick="enterCert('appraiser')">
@@ -987,7 +990,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
     </div>
     <div class="cert-card" onclick="enterCert('koreanhistory')">
       <div class="cert-ic">📜</div>
-      <div class="cert-meta"><div class="nm">한국사능력검정시험 심화</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon" id="certTag-koreanhistory">준비 중</span></div>
+      <div class="cert-meta"><div class="nm">한국사능력검정시험(심화)</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon" id="certTag-koreanhistory">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" onclick="enterCert('housing')">
@@ -1003,6 +1006,7 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   </div>
 </div>
 <div class="cert-view hidden" id="bodybuildingView">
+<div class="bb-topbar"><button class="bb-home-back" onclick="showHome()" aria-label="시험 종류로" title="시험 종류로"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button></div>
 <div id="bbAnalysis"></div>
 <div class="sr-banner" id="srBanner" onclick="srBannerClick()"></div>
 <div class="subjects-wrap">
@@ -1397,7 +1401,7 @@ const TRIAL_LIMIT = 50;
 // ===== 시험별 이용권(entitlements) =====
 const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing','housing2'];
 const CERT_LABELS = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
-const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험 심화', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
+const CERT_FULLNAMES = { bodybuilding:'생체2급', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험(심화)', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
 // ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
 const EVENTS = {
   bodybuilding: {
@@ -1590,7 +1594,8 @@ async function loadUserData() {
       var _m2=mergeGuestProgress();
       srApplyToCards();
       solveCount=totalSolve(); setStatCountUI();
-      if(_m2 && typeof saveUserData==='function') saveUserData();
+      // 게스트 기록은 startup srLoadLocal로 이미 메모리(srProgress)에 올라와 있어 병합이 no-op(added=0)이 되는 경우가 있음 → 메모리에 진행기록이 있으면 병합 성공 여부와 무관하게 신규 계정에 저장
+      if(typeof saveUserData==='function' && (_m2 || Object.keys(srProgress).length>0 || Object.keys(appWrong).length>0)) saveUserData();
       refresh();
       if (activeCert === 'appraiser' && typeof renderMCQ==='function') renderMCQ();
     }
@@ -1834,6 +1839,8 @@ document.addEventListener('click',function(e){ const m=document.getElementById('
 
 // ===== 팝업 =====
 function showLoginPopup(mode='default') {
+  // 게스트가 방금 푼 문제가 4초 디바운스로 아직 localStorage에 안 써졌을 수 있음 → 로그인 직전 즉시 flush(게스트 분기=localStorage 기록)
+  try{ if(typeof currentUser!=='undefined' && !currentUser && typeof srDirtyCount!=='undefined' && srDirtyCount>0 && typeof srFlush==='function') srFlush(); }catch(_){}
   const popup = document.getElementById('loginPopup');
   const title = document.getElementById('loginTitle');
   const sub = document.getElementById('loginSub');
@@ -2628,7 +2635,7 @@ function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yu
 // 계층 병합 표 렌더(운율 빨강). merge:[열] = 부모 바뀌면 자식 끊기는 rowspan.
 function renderTbl(t){
   if(!t) return '';
-  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':''; return '<div class="jtbl-html">'+tblSanitizeHtml(t.html)+'</div>'+cap0; }
+  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':''; return cap0+'<div class="jtbl-html">'+tblSanitizeHtml(t.html)+'</div>'; }
   if(!Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
   var rows=t.rows.map(function(r){ return r.slice(); });
   var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
@@ -2652,7 +2659,7 @@ function renderTbl(t){
     return '<tr>'+tds+'</tr>';
   }).join('')+'</tbody>';
   var cap=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':'';
-  return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
+  return cap+'<table class="jtbl">'+thead+tbody+'</table>';
 }
 // "tbl://id" → 표 HTML. 객체(headers 포함)면 인라인 직접입력. 깨진 참조는 로드 완료 후에만 ⚠️.
 function tblResolve(ref){
@@ -3192,7 +3199,7 @@ const MCQ_EXAMS = {
   appraiser:     { name:'감정평가사',     qb: APP_QB },
   realestate1:   { name:'공인중개사 1차', qb: RE1_QB },
   realestate2:   { name:'공인중개사 2차', qb: RE2_QB },
-  koreanhistory: { name:'한국사능력검정시험 심화', qb: KSH_QB },
+  koreanhistory: { name:'한국사능력검정시험(심화)', qb: KSH_QB },
   housing:       { name:'주택관리사 1차', qb: HM_QB },
   housing2:      { name:'주택관리사 2차', qb: HM2_QB }
 };
