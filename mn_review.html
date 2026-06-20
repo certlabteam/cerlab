@@ -283,7 +283,21 @@ function buildCaches(data){
 
 /* ===== dispatch + 모드 토글 ===== */
 var _data=null, _modes=[], _mode=null;
-function render(data){
+// 데이터방 배치 포맷(mn_new/mn_update/tbl_new/cpt_new) → 뷰어 표준형(concepts/mnemonics/tables)으로 정규화
+function normalize(data){
+  if(!data || typeof data!=='object' || Array.isArray(data)) return data;
+  var isBatch = data.mn_new||data.mn_update||data.tbl_new||data.cpt_new||data.grp_new;
+  if(!isBatch) return data;
+  var cat=function(){ var out=[]; for(var i=0;i<arguments.length;i++){ if(Array.isArray(arguments[i])) out=out.concat(arguments[i]); } return out; };
+  return {
+    concepts:  cat(data.concepts, data.cpt_new),
+    mnemonics: cat(data.mnemonics, data.mn_new, data.mn_update),
+    tables:    cat(data.tables, data.tbl_new),
+    review:    data.review
+  };
+}
+function render(raw){
+  var data=normalize(raw);
   _data=data; buildCaches(data);
   _modes=[];
   if(data && Array.isArray(data.concepts))  _modes.push('concepts');
