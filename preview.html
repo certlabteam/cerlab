@@ -408,7 +408,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .jtbl td.l{text-align:left;white-space:nowrap}
 .jtbl td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .jtbl .tbl-yul{color:#C0392B;font-size:.84em;font-weight:700;margin-left:1px}
-.tbl-cap{font-size:12px;color:#64748B;margin:2px 0 10px;text-align:center}
+.tbl-cap{font-size:13.5px;color:#475569;line-height:1.6;font-weight:500;text-align:left;margin:0 0 9px}
 .tbl-broken{color:#A32D2D;font-size:12.5px;font-weight:700;background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 11px;margin:8px 0}
 .tbl-ph{color:#7F77DD;font-size:12.5px;background:#F5F4FE;border:1px solid #E0DDF7;border-radius:8px;padding:8px 11px;margin:8px 0;font-family:monospace}
 .grp-box{margin:8px 0;text-align:center}
@@ -739,6 +739,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   .pv-modechip.on{background:#185FA5;color:#fff;border-color:#185FA5}
   .pv-card{background:#fff;border:1px solid #E8EDF3;border-radius:12px;padding:12px 14px;margin-bottom:12px}
   .pv-id{font-family:ui-monospace,monospace;font-size:11.5px;color:#94A3B8;margin-bottom:4px}
+  .pv-meta{background:#F6F8FB;border:1px dashed #DCE3EC;border-radius:8px;padding:6px 9px}
+  .pv-meta-tag{display:inline-block;font-size:10px;font-weight:700;color:#9AA6B4;letter-spacing:.3px;margin-bottom:2px}
+  .pv-meta .nm{font-weight:600;color:#8893A2;font-size:13px}
+  .pv-meta .pid{font-family:ui-monospace,monospace;font-size:11px;color:#A7B1BF}
+  .pv-div{border:none;border-top:2px solid #334155;margin:10px 0 7px;opacity:.72}
+  .pv-userlabel{font-size:11px;font-weight:700;color:#15793F;margin-bottom:5px}
   .pv-kw{display:inline-block;font-size:11px;background:#EEF2F7;color:#475569;border-radius:6px;padding:1px 8px;margin:2px 3px 0 0}
   .pv-rev{margin-top:8px;font-size:12px;color:#475569}
   .pv-rev b{color:#185FA5}
@@ -1589,7 +1595,7 @@ function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yu
 function tblSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function renderTbl(t){
   if(!t) return '';
-  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':''; return '<div class="jtbl-html">'+tblSanitizeHtml(t.html)+'</div>'+cap0; }
+  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':''; return cap0+'<div class="jtbl-html">'+tblSanitizeHtml(t.html)+'</div>'; }
   if(!Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
   var rows=t.rows.map(function(r){ return r.slice(); });
   var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
@@ -1613,7 +1619,7 @@ function renderTbl(t){
     return '<tr>'+tds+'</tr>';
   }).join('')+'</tbody>';
   var cap=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':'';
-  return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
+  return cap+'<table class="jtbl">'+thead+tbody+'</table>';
 }
 function tblResolve(ref){
   if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
@@ -1698,8 +1704,8 @@ function pvMnemoCard(m){
   return '<div class="pv-card"><div class="pv-id">'+tblEsc(m.id||'')+(m.name?'  <b style="color:#1F2937">'+tblEsc(m.name)+'</b>':'')+'</div>'+pvMnBox(m.code,m.desc,m.kind)+certs+revHTML+'</div>';
 }
 function pvRenderMnemonics(rows){ return rows.length ? rows.map(pvMnemoCard).join('') : '<div class="pv-empty">mnemonics 비어 있음</div>'; }
-function pvRenderTables(rows){ return rows.length ? rows.map(function(t){ return '<div class="pv-card"><div class="pv-id">'+tblEsc(t.id||'')+(t.name?'  <b style="color:#1F2937">'+tblEsc(t.name)+'</b>':'')+'</div>'+renderTbl(t)+'</div>'; }).join('') : '<div class="pv-empty">tables 비어 있음</div>'; }
-function pvRenderGraphs(rows){ return rows.length ? rows.map(function(g){ var svg=(g.svg&&String(g.svg).indexOf('<svg')>=0)?('<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>'):'<div class="tbl-broken" style="background:#F4F6FB;border-color:#D6E2F5;color:#64748B">📈 type="'+tblEsc(g.type||'')+'" 렌더러 추후</div>'; return '<div class="pv-card"><div class="pv-id">'+tblEsc(g.id||'')+(g.name?'  <b style="color:#1F2937">'+tblEsc(g.name)+'</b>':'')+'</div>'+svg+'</div>'; }).join('') : '<div class="pv-empty">graphs 비어 있음</div>'; }
+function pvRenderTables(rows){ return rows.length ? rows.map(function(t){ return '<div class="pv-card"><div class="pv-meta"><span class="pv-meta-tag">🔒 식별용 · 사용자 비노출</span><div><span class="nm">'+tblEsc(t.name||'(이름없음)')+'</span> <span class="pid">'+tblEsc(t.id||'')+'</span></div></div><hr class="pv-div"><div class="pv-userlabel">👁 사용자에게 보이는 화면</div><div class="pv-render">'+renderTbl(t)+'</div></div>'; }).join('') : '<div class="pv-empty">tables 비어 있음</div>'; }
+function pvRenderGraphs(rows){ return rows.length ? rows.map(function(g){ var svg=(g.svg&&String(g.svg).indexOf('<svg')>=0)?('<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>'):'<div class="tbl-broken" style="background:#F4F6FB;border-color:#D6E2F5;color:#64748B">📈 type="'+tblEsc(g.type||'')+'" 렌더러 추후</div>'; return '<div class="pv-card"><div class="pv-meta"><span class="pv-meta-tag">🔒 식별용 · 사용자 비노출</span><div><span class="nm">'+tblEsc(g.name||'(이름없음)')+'</span> <span class="pid">'+tblEsc(g.id||'')+'</span></div></div><hr class="pv-div"><div class="pv-userlabel">👁 사용자에게 보이는 화면</div><div class="pv-render">'+svg+'</div></div>'; }).join('') : '<div class="pv-empty">graphs 비어 있음</div>'; }
 // review 좌우비교 (데이터방 방식: 좌=후보 코드들 / 우=통합안)
 function pvRenderReview(rows){
   if(!rows.length) return '<div class="pv-empty">review 비어 있음</div>';
