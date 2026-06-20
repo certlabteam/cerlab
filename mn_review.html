@@ -61,11 +61,14 @@
   .jtbl th,.jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
   .jtbl th{background:#EEF2F7;font-weight:600}
   .jtbl .tbl-yul{color:#C0392B;font-size:.84em;font-weight:700;margin-left:1px}
-  .tbl-cap{font-size:12px;color:#64748B;margin:2px 0 10px;text-align:center}
+  .tbl-cap{font-size:13.5px;color:#475569;line-height:1.6;font-weight:500;text-align:left;margin:0 0 9px}
   .tbl-broken{color:#A32D2D;font-size:12.5px;font-weight:700;background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 11px;margin:8px 0}
   .grp-box{margin:8px 0;text-align:center}
   .grp-box svg{max-width:100%;height:auto}
   .asset-ti{font-size:11px;font-weight:800;color:#64748B;margin:14px 0 2px;letter-spacing:.3px}
+  .mr-metatag{display:inline-block;font-size:10px;font-weight:700;color:#9AA6B4;letter-spacing:.3px;margin-bottom:4px}
+  .mr-div{border:none;border-top:2px solid #334155;margin:10px 0 7px;opacity:.72}
+  .mr-userlabel{font-size:11px;font-weight:700;color:#15793F;margin-bottom:5px}
   /* ===== mn→개념 역링크 ===== */
   .rev{margin-top:8px;font-size:12px;color:#475569}
   .rev b{color:#185FA5}
@@ -128,7 +131,7 @@ function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yu
 function tblSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function renderTbl(t){
   if(!t) return '';
-  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+esc(t.caption_chant)+'</div>':''; return '<div class="jtbl-html">'+tblSanitizeHtml(t.html)+'</div>'+cap0; }
+  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+esc(t.caption_chant)+'</div>':''; return cap0+'<div class="jtbl-html">'+tblSanitizeHtml(t.html)+'</div>'; }
   if(!Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
   // 계층 병합: merge에 적힌 열들을 rowspan 병합하되, 자식 열은 \"왼쪽(상위) merge 열\"이 바뀌면 끊김(책처럼)
   var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
@@ -157,7 +160,7 @@ function renderTbl(t){
     return '<tr>'+tds+'</tr>';
   }).join('')+'</tbody>';
   var cap=t.caption_chant?'<div class="tbl-cap">'+esc(t.caption_chant)+'</div>':'';
-  return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
+  return cap+'<table class="jtbl">'+thead+tbody+'</table>';
 }
 function tblResolveLocal(ref){
   if(ref && typeof ref==='object' && (Array.isArray(ref.headers)||ref.html)) return renderTbl(ref);
@@ -223,6 +226,48 @@ function renderConcepts(rows){
   if(!rows.length){ outEl.innerHTML='<div class="empty">concepts 배열이 비어 있습니다.</div>'; statusEl.textContent='0개'; return; }
   statusEl.textContent='개념 미리보기 · '+rows.length+'개'+poolInfo();
   outEl.innerHTML=rows.map(conceptCard).join('');
+}
+
+/* ===== 표 단독 미리보기 ===== */
+function metaKwCerts(o){
+  var kw=(Array.isArray(o.keywords)&&o.keywords.length)?'<div style="margin-top:8px">'+o.keywords.map(function(k){return '<span class="kw">'+esc(k)+'</span>';}).join('')+'</div>':'';
+  var certs=(Array.isArray(o.certs)&&o.certs.length)?'<div style="margin-top:4px">'+o.certs.map(function(x){return '<span class="kw" style="background:#E8F0FB;color:#185FA5">'+esc(x)+'</span>';}).join('')+'</div>':'';
+  return kw+certs;
+}
+function tableCard(t){
+  t=t||{};
+  return '<div class="grp">'
+    +'<div class="mr-metatag">🔒 식별용 · 사용자에게 안 보임</div>'
+    +'<div class="grphd" style="margin-bottom:4px">'+(t.id?'<span class="pid">'+esc(t.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 없음</span>')+'</div>'
+    +(t.name?'<div class="pname" style="margin:0 0 2px;color:#8893A2">'+esc(t.name)+'</div>':'')
+    +metaKwCerts(t)
+    +'<hr class="mr-div"><div class="mr-userlabel">👁 사용자에게 보이는 화면</div>'
+    +renderTbl(t)
+    +'</div>';
+}
+function renderTables(rows){
+  if(!rows.length){ outEl.innerHTML='<div class="empty">tables 배열이 비어 있습니다.</div>'; statusEl.textContent='0개'; return; }
+  statusEl.textContent='표 미리보기 · '+rows.length+'개';
+  outEl.innerHTML=rows.map(tableCard).join('');
+}
+function graphCard(g){
+  g=g||{};
+  var body=(g.svg && String(g.svg).indexOf('<svg')>=0)
+    ? '<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>'
+    : '<div class="tbl-broken" style="background:#F4F6FB;border-color:#D6E2F5;color:#64748B">📈 파라미터형(렌더러 추후) 또는 svg 없음</div>';
+  return '<div class="grp">'
+    +'<div class="mr-metatag">🔒 식별용 · 사용자에게 안 보임</div>'
+    +'<div class="grphd" style="margin-bottom:4px">'+(g.id?'<span class="pid">'+esc(g.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 없음</span>')+'</div>'
+    +(g.name?'<div class="pname" style="margin:0 0 2px;color:#8893A2">'+esc(g.name)+'</div>':'')
+    +metaKwCerts(g)
+    +'<hr class="mr-div"><div class="mr-userlabel">👁 사용자에게 보이는 화면</div>'
+    +body
+    +'</div>';
+}
+function renderGraphs(rows){
+  if(!rows.length){ outEl.innerHTML='<div class="empty">graphs 배열이 비어 있습니다.</div>'; statusEl.textContent='0개'; return; }
+  statusEl.textContent='그래프 미리보기 · '+rows.length+'개';
+  outEl.innerHTML=rows.map(graphCard).join('');
 }
 
 // 통합안 카드 1장 (id+배지 → name → code → desc → keywords → 이유)
@@ -324,16 +369,18 @@ function render(raw){
   _modes=[];
   if(data && Array.isArray(data.concepts))  _modes.push('concepts');
   if(data && Array.isArray(data.mnemonics)) _modes.push('mnemonics');
+  if(data && Array.isArray(data.tables) && data.tables.length)  _modes.push('tables');
+  if(data && Array.isArray(data.graphs) && data.graphs.length)  _modes.push('graphs');
   if((data && Array.isArray(data.review)) || Array.isArray(data)) _modes.push('review');
   if(!_modes.length){
-    outEl.innerHTML='<div class="empty">형식 오류: 최상위에 <b>concepts</b> · <b>mnemonics</b> · <b>review</b> 배열이 필요합니다.</div>';
+    outEl.innerHTML='<div class="empty">형식 오류: 최상위에 <b>concepts</b> · <b>mnemonics</b> · <b>tables</b> · <b>graphs</b> · <b>review</b> 중 하나의 배열이 필요합니다.</div>';
     statusEl.textContent='형식 오류'; document.getElementById('modes').innerHTML=''; return;
   }
   if(_modes.indexOf(_mode)<0) _mode=_modes[0];
   renderModeBar(); renderMode();
 }
 function renderModeBar(){
-  var labels={concepts:'📖 개념',mnemonics:'🔑 암기코드',review:'🔀 이관 비교'};
+  var labels={concepts:'📖 개념',mnemonics:'🔑 암기코드',tables:'📊 표',graphs:'📈 그래프',review:'🔀 이관 비교'};
   document.getElementById('modes').innerHTML = (_modes.length>1)
     ? _modes.map(function(m){return '<span class="modechip'+(m===_mode?' on':'')+'" onclick="setMode(\''+m+'\')">'+labels[m]+'</span>';}).join('')
     : '';
@@ -342,6 +389,8 @@ function setMode(m){ _mode=m; renderModeBar(); renderMode(); }
 function renderMode(){
   if(_mode==='concepts')  return renderConcepts(_data.concepts);
   if(_mode==='mnemonics') return renderMnemonics(_data.mnemonics);
+  if(_mode==='tables')    return renderTables((_data&&_data.tables)||[]);
+  if(_mode==='graphs')    return renderGraphs((_data&&_data.graphs)||[]);
   var rows=(_data&&Array.isArray(_data.review))?_data.review:(Array.isArray(_data)?_data:[]);
   return renderReview(rows);
 }
