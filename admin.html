@@ -156,6 +156,8 @@ tr:hover td{background:#FAFAFA}
 .mnem-app .desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-app .k,.mnem-app k{color:#C0392B;font-weight:800}
 /* 표 마스터 미리보기 (앱 .jtbl 동일, 운율 빨강) */
+.jtbl-html{overflow-x:auto;margin:8px 0}
+.jtbl-html table{max-width:100%}
 .jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
 .jtbl th,.jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
 .jtbl th{background:#EEF2F7;font-weight:600}
@@ -1304,8 +1306,11 @@ var _tblmAll={}, _tblmLoaded=false, _tblmImpData=null, _tblmImpBound=false;
 function tblmEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function tblmYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 // 계층 병합 표 렌더 (앱/뷰어 renderTbl 동일 본체)
+function tblmSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function tblmRenderTable(t){
-  if(!t || !Array.isArray(t.headers) || !Array.isArray(t.rows)) return '<div style="color:#A89C8E;font-size:12px">headers/rows 입력 시 표가 여기 떠요.</div>';
+  if(!t) return '<div style="color:#A89C8E;font-size:12px">표 내용을 입력하세요.</div>';
+  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblmEsc(t.caption_chant)+'</div>':''; return '<div class="jtbl-html">'+tblmSanitizeHtml(t.html)+'</div>'+cap0; }
+  if(!Array.isArray(t.headers) || !Array.isArray(t.rows)) return '<div style="color:#A89C8E;font-size:12px">headers/rows 입력 시 표가 여기 떠요.</div>';
   var rows=t.rows.map(function(r){ return r.slice(); });   // 원본 보호(복사)
   var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
   mergeCols.forEach(function(c, ci){
@@ -1407,7 +1412,7 @@ function tblmPreview(){
   if(err){ box.innerHTML='<div style="color:#A32D2D;font-size:12px">⚠️ '+err+'</div>'; return; }
   // 행 길이 헤더와 다르면 경고만(렌더는 그대로)
   var warn='';
-  if(Array.isArray(t.rows)&&t.headers.length){ var bad=t.rows.filter(function(r){return !Array.isArray(r)||r.length!==t.headers.length;}).length; if(bad) warn='<div style="color:#9A5B00;font-size:11px;margin-bottom:4px">⚠️ '+bad+'개 행의 칸 수가 headers('+t.headers.length+')와 다름</div>'; }
+  if(!t.html && Array.isArray(t.rows)&&Array.isArray(t.headers)&&t.headers.length){ var bad=t.rows.filter(function(r){return !Array.isArray(r)||r.length!==t.headers.length;}).length; if(bad) warn='<div style="color:#9A5B00;font-size:11px;margin-bottom:4px">⚠️ '+bad+'개 행의 칸 수가 headers('+t.headers.length+')와 다름</div>'; }
   box.innerHTML=warn+tblmRenderTable(t);
 }
 async function tblmSave(){
@@ -1454,7 +1459,7 @@ function tblmImpHandle(fileList){
     try{
       var o=JSON.parse(rd.result);
       var arr=Array.isArray(o)?o:(o.tables||o.tbl_new||[]);   // tables / tbl_new(데이터방 배치) 둘 다
-      var valid=arr.filter(function(x){ return x&&x.id&&Array.isArray(x.headers)&&Array.isArray(x.rows); });
+      var valid=arr.filter(function(x){ return x&&x.id&&((Array.isArray(x.headers)&&Array.isArray(x.rows))||(x.html&&String(x.html).indexOf('<')>=0)); });
       if(!valid.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='tables 항목 없음 (id·headers·rows 필요)';} return; }
       _tblmImpData=valid;
       if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: 표 <b>'+valid.length+'</b>개 — 올리는 중…'; }
@@ -1470,11 +1475,14 @@ async function tblmImport(){
   for(var i=0;i<_tblmImpData.length;i++){
     var it=_tblmImpData[i]; var id=String(it.id);
     if(!/^tbl_[a-z0-9_]+$/.test(id)){ fail++; continue; }
-    var rec={ name:it.name||'', headers:it.headers, rows:it.rows,
-      merge:Array.isArray(it.merge)?it.merge:[], caption_chant:it.caption_chant||'',
+    var isHtml=!!(it.html&&String(it.html).indexOf('<')>=0);
+    var rec={ name:it.name||'',
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
-      note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    try{ await db.collection('tables').doc(id).set(Object.assign({},rec,{rows:JSON.stringify(rec.rows)})); _tblmAll[id]=rec; ok++; }catch(e){ fail++; }
+      caption_chant:it.caption_chant||'', note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
+    if(isHtml){ rec.type='html'; rec.html=it.html; }
+    else { rec.headers=it.headers; rec.rows=it.rows; rec.merge=Array.isArray(it.merge)?it.merge:[]; }
+    var payload=Object.assign({},rec); if(!isHtml) payload.rows=JSON.stringify(rec.rows);  // 구조형만 rows 문자열화
+    try{ await db.collection('tables').doc(id).set(payload); _tblmAll[id]=rec; ok++; }catch(e){ fail++; }
   }
   var stt=document.getElementById('tblmImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 올림: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패/형식오류 '+fail+'개'):'')+'.'; }
   tblmRenderList();
