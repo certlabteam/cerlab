@@ -155,6 +155,24 @@ tr:hover td{background:#FAFAFA}
 .mnem-app .code{font-size:13.5px;font-weight:400;color:#5E4A2A;line-height:1.7}
 .mnem-app .desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-app .k,.mnem-app k{color:#C0392B;font-weight:800}
+/* master 카드: admin 식별영역(사용자 비노출=회색) ↔ 실선 구분 ↔ 사용자 화면 */
+.m-meta{background:#F6F6F4;border:1px dashed #DDD9D2;border-radius:8px;padding:7px 10px}
+.m-meta-tag{display:inline-block;font-size:10px;font-weight:700;color:#AEA89C;letter-spacing:.3px;margin-bottom:3px}
+.m-name{font-weight:600;color:#8C8576;font-size:13.5px}
+.m-id{color:#B4AE9F;font-weight:500;font-size:11px;font-family:monospace}
+.m-badge{font-size:11px;color:#A99FC4;font-weight:600}
+.m-meta-sub{font-size:11px;color:#B4AE9F;margin-top:3px}
+.m-meta-sub .ref{font-family:monospace}
+.m-div{border:none;border-top:2px solid #2C2C2A;margin:11px 0 7px;opacity:.8}
+.m-userlabel{font-size:11px;font-weight:700;color:#15793F;margin-bottom:5px}
+.m-render{}
+.m-foot{margin-top:9px;padding-top:8px;border-top:1px solid #EEE;display:flex;gap:6px;align-items:center}
+/* 마스터 시험·과목 필터바 + 과목 그룹헤더 */
+.mf-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px;padding:8px 10px;background:#FAFAF8;border:1px solid #EFEDE8;border-radius:9px}
+.mf-sel{font-size:12.5px;padding:5px 9px;border:1px solid #DDD9D2;border-radius:7px;background:#fff;color:#3A352C;cursor:pointer}
+.mf-count{margin-left:auto;font-size:12px;color:#A89C8E;font-weight:600}
+.mf-grouphd{font-size:13px;font-weight:800;color:#2C2C2A;margin:14px 0 8px;padding-bottom:5px;border-bottom:2px solid #E8E5DE}
+.mf-grouphd:first-child{margin-top:2px}
 /* 표 마스터 미리보기 (앱 .jtbl 동일, 운율 빨강) */
 .jtbl-html{overflow-x:auto;margin:8px 0}
 .jtbl-html table{max-width:100%}
@@ -162,7 +180,7 @@ tr:hover td{background:#FAFAFA}
 .jtbl th,.jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
 .jtbl th{background:#EEF2F7;font-weight:600}
 .jtbl .tbl-yul{color:#C0392B;font-size:.84em;font-weight:700;margin-left:1px}
-.tbl-cap{font-size:12px;color:#64748B;margin:2px 0 8px;text-align:center}
+.tbl-cap{font-size:13.5px;color:#475569;line-height:1.6;font-weight:500;text-align:left;margin:0 0 9px}
 /* 개념 마스터 미리보기 (앱 .concept-box 동일) */
 .concept-box{margin:8px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
 .concept-box .ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
@@ -1190,22 +1208,56 @@ async function mnemLoad(){
     mnemRenderList();
   }catch(e){ if(st){ st.style.color='#A32D2D'; st.textContent='로드 실패: '+e.message; } }
 }
+/* ===== 마스터 시험·과목 필터/그룹 (4개 탭 공용) ===== */
+var _mfState={mnem:{cert:'',subj:''},tblm:{cert:'',subj:''},cptm:{cert:'',subj:''},grpm:{cert:'',subj:''}};
+var _mfRender={};   // ns -> RenderList (아래 함수들 hoist됨)
+var MF_SUBJ={acct:'회계',econ:'경제',law:'법규',real:'부동산',civil:'민법',theory:'이론',tax:'세법',hist:'역사',bb:'보디빌딩'};
+function mfEsc(x){return String(x==null?'':x).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];});}
+function mfSubj(id){ var p=String(id||'').split('_'); return p.length>=2?p[1]:''; }
+function mfSubjLabel(c){ return MF_SUBJ[c]||c||'기타'; }
+function mfSet(ns,which,val){ if(_mfState[ns]){ _mfState[ns][which]=val; if(_mfRender[ns]) _mfRender[ns](); } }
+function masterListHTML(ns, all, emptyMsg, cardFn){
+  var st=_mfState[ns]||{cert:'',subj:''};
+  var allIds=Object.keys(all);
+  if(!allIds.length) return '<div style="color:#A89C8E;padding:12px">'+emptyMsg+'</div>';
+  var certSet={}, subjSet={};
+  allIds.forEach(function(id){ (all[id].certs||[]).forEach(function(c){certSet[c]=1;}); var s=mfSubj(id); if(s) subjSet[s]=1; });
+  var certs=Object.keys(certSet).sort(), subjs=Object.keys(subjSet).sort();
+  function opt(v,label,sel){ return '<option value="'+mfEsc(v)+'"'+(v===sel?' selected':'')+'>'+mfEsc(label)+'</option>'; }
+  var certSel='<select class="mf-sel" onchange="mfSet(\''+ns+'\',\'cert\',this.value)">'+opt('','전체 시험',st.cert)+certs.map(function(c){return opt(c,c,st.cert);}).join('')+'</select>';
+  var subjSel='<select class="mf-sel" onchange="mfSet(\''+ns+'\',\'subj\',this.value)">'+opt('','전체 과목',st.subj)+subjs.map(function(c){return opt(c,mfSubjLabel(c),st.subj);}).join('')+'</select>';
+  var ids=allIds.filter(function(id){
+    var it=all[id]||{};
+    if(st.cert && (it.certs||[]).indexOf(st.cert)<0) return false;
+    if(st.subj && mfSubj(id)!==st.subj) return false;
+    return true;
+  });
+  var groups={}; ids.forEach(function(id){ var g=mfSubj(id)||'기타'; (groups[g]=groups[g]||[]).push(id); });
+  var gkeys=Object.keys(groups).sort();
+  var body=gkeys.map(function(g){
+    return '<div class="mf-grouphd">'+mfEsc(mfSubjLabel(g))+' <span style="color:#B4AE9F;font-weight:500;font-size:11px">'+groups[g].length+'</span></div>'
+      +groups[g].sort().map(cardFn).join('');
+  }).join('');
+  var bar='<div class="mf-bar">'+certSel+subjSel+'<span class="mf-count">'+ids.length+' / '+allIds.length+'개</span></div>';
+  return bar+(body||'<div style="color:#A89C8E;padding:12px">해당 시험·과목 조건의 항목이 없습니다.</div>');
+}
+_mfRender={mnem:mnemRenderList, tblm:tblmRenderList, cptm:cptmRenderList, grpm:grpmRenderList};
+
 function mnemRenderList(){
   var el=document.getElementById('mnemList'); if(!el) return;
-  var ids=Object.keys(_mnemAll).sort();
-  if(!ids.length){ el.innerHTML='<div style="color:#A89C8E;padding:12px">등록된 코드 없음. "+ 새 코드"로 추가하세요.</div>'; return; }
-  el.innerHTML=ids.map(function(id){
+  el.innerHTML=masterListHTML('mnem', _mnemAll, '등록된 코드 없음. "+ 새 코드"로 추가하세요.', function(id){
     var m=_mnemAll[id]||{};
     return '<div style="border:1px solid #EEE;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-      +'<div style="font-weight:700">'+mnemEsc(m.name||'(이름없음)')+' <span style="color:#A89C8E;font-weight:500;font-size:11px;font-family:monospace">'+mnemEsc(id)+'</span></div>'
-      +'<div class="mnem-app">'+mnemChantHTML(m.code)+'<div class="code">'+(m.code||'')+'</div>'+(m.desc?'<div class="desc">'+m.desc+'</div>':'')+'</div>'
-      +((m.certs&&m.certs.length)?'<div style="font-size:11px;color:#A89C8E;margin-top:4px">'+mnemEsc(m.certs.join(', '))+'</div>':'')
-      +'<div style="margin-top:6px;display:flex;gap:6px;align-items:center">'
+      +'<div class="m-meta"><span class="m-meta-tag">🔒 식별용 · 사용자에게 안 보임</span>'
+      +'<div class="m-name">'+mnemEsc(m.name||'(이름없음)')+' <span class="m-id">'+mnemEsc(id)+'</span></div>'
+      +'<div class="m-meta-sub">'+((m.certs&&m.certs.length)?'시험 '+mnemEsc(m.certs.join(', '))+' · ':'')+'<span class="ref">mn://'+mnemEsc(id)+'</span></div></div>'
+      +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
+      +'<div class="m-render"><div class="mnem-app">'+mnemChantHTML(m.code)+'<div class="code">'+(m.code||'')+'</div>'+(m.desc?'<div class="desc">'+m.desc+'</div>':'')+'</div></div>'
+      +'<div class="m-foot">'
       +'<button class="btn-sm" onclick="mnemEdit(\''+id+'\')" style="background:#EEF;color:#4338CA">편집</button>'
-      +'<button class="btn-sm" onclick="mnemDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button>'
-      +'<span style="margin-left:auto;font-size:11px;color:#B8B8B8;font-family:monospace">mn://'+mnemEsc(id)+'</span></div>'
+      +'<button class="btn-sm" onclick="mnemDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
-  }).join('');
+  });
 }
 function mnemFill(m){
   document.getElementById('mnemIdField').value=m.id||'';
@@ -1309,7 +1361,7 @@ function tblmYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-y
 function tblmSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function tblmRenderTable(t){
   if(!t) return '<div style="color:#A89C8E;font-size:12px">표 내용을 입력하세요.</div>';
-  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblmEsc(t.caption_chant)+'</div>':''; return '<div class="jtbl-html">'+tblmSanitizeHtml(t.html)+'</div>'+cap0; }
+  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblmEsc(t.caption_chant)+'</div>':''; return cap0+'<div class="jtbl-html">'+tblmSanitizeHtml(t.html)+'</div>'; }
   if(!Array.isArray(t.headers) || !Array.isArray(t.rows)) return '<div style="color:#A89C8E;font-size:12px">headers/rows 입력 시 표가 여기 떠요.</div>';
   var rows=t.rows.map(function(r){ return r.slice(); });   // 원본 보호(복사)
   var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
@@ -1333,7 +1385,7 @@ function tblmRenderTable(t){
     return '<tr>'+tds+'</tr>';
   }).join('')+'</tbody>';
   var cap=t.caption_chant?'<div class="tbl-cap">'+tblmEsc(t.caption_chant)+'</div>':'';
-  return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
+  return cap+'<table class="jtbl">'+thead+tbody+'</table>';
 }
 function tblmInit(){
   if(!_tblmLoaded) tblmLoad();
@@ -1360,20 +1412,19 @@ async function tblmLoad(){
 }
 function tblmRenderList(){
   var el=document.getElementById('tblmList'); if(!el) return;
-  var ids=Object.keys(_tblmAll).sort();
-  if(!ids.length){ el.innerHTML='<div style="color:#A89C8E;padding:12px">등록된 표 없음. "+ 새 표"로 추가하세요.</div>'; return; }
-  el.innerHTML=ids.map(function(id){
+  el.innerHTML=masterListHTML('tblm', _tblmAll, '등록된 표 없음. "+ 새 표"로 추가하세요.', function(id){
     var t=_tblmAll[id]||{};
     return '<div style="border:1px solid #EEE;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-      +'<div style="font-weight:700">'+tblmEsc(t.name||'(이름없음)')+' <span style="color:#A89C8E;font-weight:500;font-size:11px;font-family:monospace">'+tblmEsc(id)+'</span></div>'
-      +tblmRenderTable(t)
-      +((t.certs&&t.certs.length)?'<div style="font-size:11px;color:#A89C8E;margin-top:4px">'+tblmEsc(t.certs.join(', '))+'</div>':'')
-      +'<div style="margin-top:6px;display:flex;gap:6px;align-items:center">'
+      +'<div class="m-meta"><span class="m-meta-tag">🔒 식별용 · 사용자에게 안 보임</span>'
+      +'<div class="m-name">'+tblmEsc(t.name||'(이름없음)')+' <span class="m-id">'+tblmEsc(id)+'</span></div>'
+      +'<div class="m-meta-sub">'+((t.certs&&t.certs.length)?'시험 '+tblmEsc(t.certs.join(', '))+' · ':'')+'<span class="ref">tbl://'+tblmEsc(id)+'</span></div></div>'
+      +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
+      +'<div class="m-render">'+tblmRenderTable(t)+'</div>'
+      +'<div class="m-foot">'
       +'<button class="btn-sm" onclick="tblmEdit(\''+id+'\')" style="background:#E0F2FE;color:#075985">편집</button>'
-      +'<button class="btn-sm" onclick="tblmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button>'
-      +'<span style="margin-left:auto;font-size:11px;color:#B8B8B8;font-family:monospace">tbl://'+tblmEsc(id)+'</span></div>'
+      +'<button class="btn-sm" onclick="tblmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
-  }).join('');
+  });
 }
 function tblmFill(t){
   document.getElementById('tblmIdField').value=t.id||'';
@@ -1557,22 +1608,20 @@ function cptmRenderConcept(c){
 }
 function cptmRenderList(){
   var el=document.getElementById('cptmList'); if(!el) return;
-  var ids=Object.keys(_cptmAll).sort();
-  if(!ids.length){ el.innerHTML='<div style="color:#A89C8E;padding:12px">등록된 개념 없음. "+ 새 개념"으로 추가하세요.</div>'; return; }
-  el.innerHTML=ids.map(function(id){
+  el.innerHTML=masterListHTML('cptm', _cptmAll, '등록된 개념 없음. "+ 새 개념"으로 추가하세요.', function(id){
     var c=_cptmAll[id]||{};
     var n=(Array.isArray(c.mn)?c.mn.length:0)+(Array.isArray(c.tbl)?c.tbl.length:0)+(Array.isArray(c.grp)?c.grp.length:0);
     return '<div style="border:1px solid #EEE;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-      +'<div style="font-weight:700">'+cptmEsc(c.name||'(이름없음)')+' <span style="color:#A89C8E;font-weight:500;font-size:11px;font-family:monospace">'+cptmEsc(id)+'</span>'
-      +(n?' <span style="font-size:11px;color:#0C447C">· 참조 '+n+'</span>':'')+'</div>'
-      +cptmRenderConcept(c)
-      +((c.certs&&c.certs.length)?'<div style="font-size:11px;color:#A89C8E;margin-top:4px">'+cptmEsc(c.certs.join(', '))+'</div>':'')
-      +'<div style="margin-top:6px;display:flex;gap:6px;align-items:center">'
+      +'<div class="m-meta"><span class="m-meta-tag">🔒 식별용 · 사용자에게 안 보임</span>'
+      +'<div class="m-name">'+cptmEsc(c.name||'(이름없음)')+' <span class="m-id">'+cptmEsc(id)+'</span>'+(n?' <span class="m-badge">· 참조 '+n+'</span>':'')+'</div>'
+      +'<div class="m-meta-sub">'+((c.certs&&c.certs.length)?'시험 '+cptmEsc(c.certs.join(', '))+' · ':'')+'<span class="ref">cpt://'+cptmEsc(id)+'</span></div></div>'
+      +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
+      +'<div class="m-render">'+cptmRenderConcept(c)+'</div>'
+      +'<div class="m-foot">'
       +'<button class="btn-sm" onclick="cptmEdit(\''+id+'\')" style="background:#EAF2FB;color:#0C447C">편집</button>'
-      +'<button class="btn-sm" onclick="cptmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button>'
-      +'<span style="margin-left:auto;font-size:11px;color:#B8B8B8;font-family:monospace">cpt://'+cptmEsc(id)+'</span></div>'
+      +'<button class="btn-sm" onclick="cptmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
-  }).join('');
+  });
 }
 function cptmFill(c){
   document.getElementById('cptmIdField').value=c.id||'';
@@ -1743,21 +1792,20 @@ async function grpmLoad(){
 }
 function grpmRenderList(){
   var el=document.getElementById('grpmList'); if(!el) return;
-  var ids=Object.keys(_grpmAll).sort();
-  if(!ids.length){ el.innerHTML='<div style="color:#A89C8E;padding:12px">등록된 그래프 없음. "+ 새 그래프"로 추가하세요.</div>'; return; }
-  el.innerHTML=ids.map(function(id){
+  el.innerHTML=masterListHTML('grpm', _grpmAll, '등록된 그래프 없음. "+ 새 그래프"로 추가하세요.', function(id){
     var g=_grpmAll[id]||{};
     var kind=(g.svg&&String(g.svg).indexOf('<svg')>=0)?'SVG':(g.type?('type:'+g.type):'(빈)');
     return '<div style="border:1px solid #EEE;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
-      +'<div style="font-weight:700">'+grpmEsc(g.name||'(이름없음)')+' <span style="color:#A89C8E;font-weight:500;font-size:11px;font-family:monospace">'+grpmEsc(id)+'</span> <span style="font-size:11px;color:#7C3AED">'+grpmEsc(kind)+'</span></div>'
-      +'<div style="margin-top:6px">'+grpmRender(g)+'</div>'
-      +((g.certs&&g.certs.length)?'<div style="font-size:11px;color:#A89C8E;margin-top:4px">'+grpmEsc(g.certs.join(', '))+'</div>':'')
-      +'<div style="margin-top:6px;display:flex;gap:6px;align-items:center">'
+      +'<div class="m-meta"><span class="m-meta-tag">🔒 식별용 · 사용자에게 안 보임</span>'
+      +'<div class="m-name">'+grpmEsc(g.name||'(이름없음)')+' <span class="m-id">'+grpmEsc(id)+'</span> <span class="m-badge">'+grpmEsc(kind)+'</span></div>'
+      +'<div class="m-meta-sub">'+((g.certs&&g.certs.length)?'시험 '+grpmEsc(g.certs.join(', '))+' · ':'')+'<span class="ref">grp://'+grpmEsc(id)+'</span></div></div>'
+      +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
+      +'<div class="m-render">'+grpmRender(g)+'</div>'
+      +'<div class="m-foot">'
       +'<button class="btn-sm" onclick="grpmEdit(\''+id+'\')" style="background:#EDE9FE;color:#5B21B6">편집</button>'
-      +'<button class="btn-sm" onclick="grpmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button>'
-      +'<span style="margin-left:auto;font-size:11px;color:#B8B8B8;font-family:monospace">grp://'+grpmEsc(id)+'</span></div>'
+      +'<button class="btn-sm" onclick="grpmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
-  }).join('');
+  });
 }
 function grpmFill(g){
   document.getElementById('grpmIdField').value=g.id||'';
@@ -2706,7 +2754,7 @@ async function exportData(){
 
 
 /* ===== 🌐 SEO 페이지 생성 (마케팅) ===== */
-const SEO_CERT_NAME={appraiser:'감정평가사',realestate1:'공인중개사 1차',realestate2:'공인중개사 2차',housing:'주택관리사보',housing2:'주택관리사 2차',koreanhistory:'한국사능력검정시험',bodybuilding:'보디빌딩'};
+const SEO_CERT_NAME={appraiser:'감정평가사',realestate1:'공인중개사 1차',realestate2:'공인중개사 2차',housing:'주택관리사보',housing2:'주택관리사 2차',koreanhistory:'한국사능력검정시험(심화)',bodybuilding:'보디빌딩'};
 const SEO_SUBJ_OVERRIDE={civil:'민법'};
 const SEO_CERT_ORDER=['appraiser','realestate1','realestate2','housing','housing2','koreanhistory','bodybuilding'];
 const SEO_STOP=new Set('관한 관하여 대한 대하여 설명으로 설명 옳은 옳지 않은 않는 것은 것을 것이 모두 고른 고르면 따름 경우 및 또는 모든 가장 바르게 틀린 맞는 해당하는 아닌 무엇 어느'.split(' '));
@@ -2875,7 +2923,7 @@ function crmCopyEmails(seg){
 /* ===== 이메일 발송 (Phase 1b) — emailTemplates CRUD + previewSegment/sendBulkEmail ===== */
 let emTpls = [], emEditingId = null, emInited = false;
 function emFns(){ return firebase.app().functions('asia-northeast3'); }
-const EM_CERTS = { appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사', bodybuilding:'생활체육지도사(보디빌딩)' };
+const EM_CERTS = { appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사', bodybuilding:'생활체육지도사(보디빌딩) 구술,실기' };
 
 async function emInit(){
   if(!emInited){
@@ -3119,8 +3167,8 @@ const DDAY_CERTS = [
   {c:'realestate2', n:'공인중개사 2차', src:'qnet'},
   {c:'housing', n:'주택관리사보 1차', src:'qnet'},
   {c:'housing2', n:'주택관리사 2차', src:'qnet'},
-  {c:'koreanhistory', n:'한국사능력검정시험', src:'manual'},
-  {c:'bodybuilding', n:'생활체육지도사(보디빌딩)', src:'manual'}
+  {c:'koreanhistory', n:'한국사능력검정시험(심화)', src:'manual'},
+  {c:'bodybuilding', n:'생활체육지도사(보디빌딩) 구술,실기', src:'manual'}
 ];
 let emExData = {}, emExEditing = null, emDdayRules = [], emDdayEditing = null;
 function emExToDate(v){ if(!v) return null; if(v.toDate) return v.toDate(); if(v.seconds) return new Date(v.seconds*1000); return new Date(v); }
