@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CertLab 해설 렌더 미리보기 (데이터방용)</title>
+<title>CertLab 미리보기</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:1000px;margin:0 auto}
@@ -402,7 +402,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .oxc-tbl .oxc-o{color:#0F6E56}
 #mcqView .oxc-tbl .oxc-x{color:#A32D2D}
 #mcqView .oxc-tbl tr.oxc-miss td{background:#FBF6F5}
-#mcqView .jaryo .jtbl, .jtbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:13px;color:#334155}
+#mcqView .jaryo .jtbl, .jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
 .jtbl th, .jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
 .jtbl th{background:#EEF2F7;font-weight:600}
 .jtbl td.l{text-align:left;white-space:nowrap}
@@ -746,7 +746,6 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   .pv-empty{color:#94A3B8;font-size:13px;padding:16px;text-align:center}
   .pv-grphd{font-size:12px;font-weight:800;color:#334155;margin-bottom:8px}
   .pv-cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:760px){.pv-cmp{grid-template-columns:1fr}}
   .pv-col{border:1px solid #EEF1F5;border-radius:10px;padding:10px 12px;background:#FBFDFF}
   .pv-coltag{font-size:11px;font-weight:800;margin-bottom:8px}
   .pv-coltag.l{color:#475569} .pv-coltag.r{color:#0F6E56}
@@ -770,8 +769,6 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 </style></head>
 <body>
 <div class="wrap">
-  <h1>CertLab 해설 렌더 미리보기 <span style="font-size:12px;color:#94A3B8;font-weight:400">(데이터방용 · 해설 전체)</span></h1>
-  <div class="sub">문항 JSON을 붙여넣으면 <b>실제 앱과 동일한 로직·CSS</b>로 해설 전체가 렌더된다 — 보기별 해설(exp.o)·조합형 진술 펼침(ㄱ~ㅎ)·계산형 단계풀이(exp.ex)·암기코드(exp.mn)·개념설명(exp.c: d·cx·exd💡·ex).<br>💡(exd)는 시험 종류가 <b>생체보디빌딩</b>일 때만 표시된다. 라이브 index.html 해설 빌드 함수를 그대로 옮긴 것이라 여기 보이는 모습 = 앱 모습이다.</div>
   <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
   <div id="pvDrop">여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<span class="pvd-sub">문항·개념·암기코드·표·그래프·검토(review) 모두 자동 인식</span></div>
   <textarea id="src" spellcheck="false"></textarea>
@@ -1706,7 +1703,7 @@ function pvRenderReview(rows){
   return rows.map(function(g){
     g=g||{};
     var cands=Array.isArray(g.candidates)?g.candidates:[];
-    var left=cands.length?cands.map(function(c){ return pvMnBox(c.code,c.desc,c.kind); }).join(''):'<div class="pv-empty">후보 없음</div>';
+    var left=cands.length?cands.map(function(c){ return pvMnBox(c.code,c.desc,c.kind); }).join(''):'<div class="pv-empty">비교할 이전 버전이 없습니다</div>';
     var props=Array.isArray(g.proposal)?g.proposal:(g.proposal?[g.proposal]:[]);
     var right=props.length?props.map(function(p){ p=p||{}; var badge=('merge' in p)?('<span class="pv-badge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>'):''; return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvMnBox(p.code,p.desc,p.kind)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>'; }).join(''):'<div class="pv-empty">통합안 없음</div>';
     var dec=(g.decision&&String(g.decision).trim())?'<div class="pv-decision"><b>메모:</b> '+tblEsc(g.decision)+'</div>':'';
