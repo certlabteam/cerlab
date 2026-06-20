@@ -2585,8 +2585,10 @@ function newTypeBadge(card){
   if(Number(card.since) !== new Date().getFullYear()) return '';
   return '<span class="ntag">'+card.since+'년 기출'+(card.newType?' 신유형':'')+'</span>';
 }
-function mnChantHTML(code, cls){
+function mnChantHTML(code, cls, kind){
   // 암기코드 code 안의 두문자(<span class="k">글자</span> 또는 약식 <k>글자</k>)만 뽑아 이어붙인 '모음' 한 줄. 두문자 2개 미만이면 생략.
+  // 문장암기형(kind:"sentence")·운율형(kind:"chant")은 종합본 자동줄 생략(글자가 다 붙어 지저분해짐).
+  if(kind==='sentence'||kind==='chant') return '';
   if(!code) return '';
   var m=String(code).match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g);
   if(!m || m.length<2) return '';
@@ -2608,10 +2610,10 @@ function loadMnemonics(){
 function mnResolve(mn){
   if(typeof mn==='string' && mn.indexOf('mn://')===0){
     var id=mn.slice(5), m=_mnemCache[id];
-    if(m) return {code:m.code||'', desc:m.desc||''};
+    if(m) return {code:m.code||'', desc:m.desc||'', kind:m.kind};
     return {code:'', desc:'', broken:_mnemLoaded, ref:id};   // 로드 완료 후에도 없으면 깨진 참조
   }
-  if(mn && typeof mn==='object') return {code:mn.code||'', desc:mn.desc||''};
+  if(mn && typeof mn==='object') return {code:mn.code||'', desc:mn.desc||'', kind:mn.kind};
   if(typeof mn==='string') return {code:mn, desc:''};
   return {code:'', desc:''};
 }
@@ -2624,7 +2626,7 @@ function buildMnemonic(card){
     const code=_r.code, desc=_r.desc;
     if(!code) return '';
     return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
-      +'<div class="learn-section-body">'+mnChantHTML(code,'mnem-chant')+'<span class="mnem-code">'+code+'</span>'
+      +'<div class="learn-section-body">'+mnChantHTML(code,'mnem-chant',_r.kind)+'<span class="mnem-code">'+code+'</span>'
       +(desc?'<div class="mnem-desc">'+desc+'</div>':'')+'</div></div>';
   }
   if(Array.isArray(m)) return m.map(oneMn).join('');   // 배열이면 박스 여러 개
@@ -3849,7 +3851,7 @@ function mnBoxHTML(mn){
   if(!mn) return '';
   var _r=mnResolve(mn); let code=_r.code, desc=_r.desc;
   if(!code) return '';
-  return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+  return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code,null,_r.kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
 }
 function conceptBoxHTML(c){
   if(!Array.isArray(c) || !c.length) return '';
@@ -4327,7 +4329,7 @@ function renderMcqExam(root){
         if(_r.broken){ body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+'<div class="mn-code" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+_r.ref+' (마스터에 없음)</div></div>'; return; }
         var code=_r.code, desc=_r.desc;
         if(!code) return;   // 미해석 참조 등 빈 코드는 박스 생략
-        body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+''+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+        body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+''+mnChantHTML(code,null,_r.kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
       });
     }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
