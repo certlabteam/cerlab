@@ -91,9 +91,9 @@ const outEl=document.getElementById('out');
 const statusEl=document.getElementById('status');
 function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
-function mnChantHTML(code){ var l=mnChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
+function mnChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=mnChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
 // 앱과 동일하게 — code/desc는 esc 안 함(<span class='k'> 두문자가 빨간 볼드로 살아남)
-function mnBox(code, desc){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+function mnBox(code, desc, kind){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code, kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
 function goCard(e,url){ if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)) return true; if(e) e.preventDefault(); window.open(url,'_blank'); return false; }
 // "exam/sub/qid" → 클릭 가능한 pill (qid로 앱 열기)
 function qidPill(q){
@@ -112,11 +112,11 @@ function qidPill(q){
 var _mnemCache={}, _tblCache={}, _conceptIndex={};   // _conceptIndex: mnId -> [개념이름…]
 
 function mnResolveLocal(ref){
-  if(ref && typeof ref==='object') return {code:ref.code, desc:ref.desc};       // 인라인 직접입력
+  if(ref && typeof ref==='object') return {code:ref.code, desc:ref.desc, kind:ref.kind};       // 인라인 직접입력
   if(typeof ref==='string' && ref.indexOf('mn://')===0){
     var id=ref.slice(5), m=_mnemCache[id];
     if(!m) return {broken:true, ref:id};
-    return {code:m.code, desc:m.desc};
+    return {code:m.code, desc:m.desc, kind:m.kind};
   }
   return {code:String(ref||''), desc:''};
 }
@@ -156,7 +156,7 @@ function tblResolveLocal(ref){
   if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
   if(typeof ref==='string' && ref.indexOf('tbl://')===0){
     var id=ref.slice(6), t=_tblCache[id];
-    if(!t) return '<div class="tbl-broken">⚠️ 표 참조 오류: tbl://'+esc(id)+' (번들에 없음)</div>';
+    if(!t) return '<div class="tbl-broken">⚠️ 표 tbl://'+esc(id)+' — 이 세션에 없음. 이 표가 든 파일도 함께 열거나 개념 파일에 번들하세요.</div>';
     return renderTbl(t);
   }
   return '';
@@ -183,8 +183,8 @@ function conceptCard(c){
   var grpRefs=Array.isArray(c.grp)?c.grp:(c.grp?[c.grp]:[]);
   var mnHTML=mnRefs.map(function(ref){
     var r=mnResolveLocal(ref);
-    if(r.broken) return '<div class="tbl-broken">⚠️ 암기코드 참조 오류: mn://'+esc(r.ref)+' (번들에 없음)</div>';
-    return mnBox(r.code,r.desc);
+    if(r.broken) return '<div class="tbl-broken">⚠️ 암기코드 mn://'+esc(r.ref)+' — 이 세션에 없음. 이 mn이 든 파일(예: 1차배치)도 함께 열거나 개념 파일에 번들하세요.</div>';
+    return mnBox(r.code,r.desc,r.kind);
   }).join('');
   var tblHTML=tblRefs.map(tblResolveLocal).join('');
   var grpHTML=grpRefs.map(grpStub).join('');
@@ -203,7 +203,7 @@ function conceptCard(c){
 }
 function renderConcepts(rows){
   if(!rows.length){ outEl.innerHTML='<div class="empty">concepts 배열이 비어 있습니다.</div>'; statusEl.textContent='0개'; return; }
-  statusEl.textContent='개념 미리보기 · '+rows.length+'개';
+  statusEl.textContent='개념 미리보기 · '+rows.length+'개'+poolInfo();
   outEl.innerHTML=rows.map(conceptCard).join('');
 }
 
@@ -215,7 +215,7 @@ function proposalCard(p){
   return '<div class="pcard">'
     +'<div>'+(p.id?'<span class="pid">'+esc(p.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 미정</span>')+mergeBadge+'</div>'
     +(p.name?'<div class="pname">'+esc(p.name)+'</div>':'')
-    +mnBox(p.code,p.desc)
+    +mnBox(p.code,p.desc,p.kind)
     +kw
     +(p.reason?'<div class="reason">💡 '+esc(p.reason)+'</div>':'')
     +'</div>';
@@ -230,13 +230,13 @@ function mnemoCard(m){
   return '<div class="grp">'
     +'<div class="grphd">'+(m.id?'<span class="pid">'+esc(m.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 없음</span>')+'</div>'
     +(m.name?'<div class="pname" style="margin-top:0">'+esc(m.name)+'</div>':'')
-    +mnBox(m.code,m.desc)
+    +mnBox(m.code,m.desc,m.kind)
     +kw+certs+rev
     +'</div>';
 }
 function renderMnemonics(rows){
   if(!rows.length){ outEl.innerHTML='<div class="empty">mnemonics 배열이 비어 있습니다.</div>'; statusEl.textContent='0개'; return; }
-  statusEl.textContent='마스터 미리보기 · '+rows.length+'개';
+  statusEl.textContent='마스터 미리보기 · '+rows.length+'개'+poolInfo();
   outEl.innerHTML=rows.map(mnemoCard).join('');
 }
 function renderReview(rows){
@@ -249,7 +249,7 @@ function renderReview(rows){
     // 좌: 후보들 (code + desc 같이)
     var left=cands.length ? cands.map(function(c){
       var qids=Array.isArray(c.qids)?c.qids:[];
-      return '<div class="cand">'+mnBox(c.code,c.desc)+'<div class="qids">'+qids.map(qidPill).join('')+'</div></div>';
+      return '<div class="cand">'+mnBox(c.code,c.desc,c.kind)+'<div class="qids">'+qids.map(qidPill).join('')+'</div></div>';
     }).join('') : '<div class="empty" style="padding:8px">후보 없음</div>';
     // 우: 통합안 — proposal이 배열(신 스키마) 또는 객체(구) 둘 다 대응
     var props = Array.isArray(g.proposal) ? g.proposal : (g.proposal ? [g.proposal] : []);
@@ -265,17 +265,19 @@ function renderReview(rows){
   outEl.innerHTML=h;
 }
 
-/* ===== 캐시·역링크 인덱스 빌드 (번들 JSON) ===== */
+function poolInfo(){ var mn=Object.keys(_mnemCache).length, tb=Object.keys(_tblCache).length; return (mn||tb)?(' · 참조풀 mn '+mn+'·표 '+tb):''; }
+/* ===== 캐시·역링크 인덱스 빌드 (누적) =====
+   리셋하지 않고 누적 — 여러 파일을 차례로 열면 참조 풀이 합쳐짐.
+   (mn 파일 먼저, 개념 파일 나중에 열어도 참조가 풀림. 비우려면 '초기화'=새로고침) */
 function buildCaches(data){
-  _mnemCache={}; _tblCache={}; _conceptIndex={};
   if(data && Array.isArray(data.mnemonics)) data.mnemonics.forEach(function(m){ if(m&&m.id) _mnemCache[m.id]=m; });
   if(data && Array.isArray(data.tables))     data.tables.forEach(function(t){ if(t&&t.id) _tblCache[t.id]=t; });
   if(data && Array.isArray(data.concepts))   data.concepts.forEach(function(c){
     var refs=Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[]);
     refs.forEach(function(ref){
       if(typeof ref==='string' && ref.indexOf('mn://')===0){
-        var id=ref.slice(5);
-        (_conceptIndex[id]=_conceptIndex[id]||[]).push(c.name||c.id||id);
+        var id=ref.slice(5), arr=(_conceptIndex[id]=_conceptIndex[id]||[]), nm=c.name||c.id||id;
+        if(arr.indexOf(nm)<0) arr.push(nm);
       }
     });
   });
