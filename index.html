@@ -2616,7 +2616,7 @@ var _tblCache={}, _tblPromise=null, _tblLoaded=false;
 function loadTables(){
   if(_tblPromise) return _tblPromise;
   _tblPromise=(async function(){
-    try{ var snap=await db.collection('tables').get(); snap.forEach(function(d){ _tblCache[d.id]=d.data()||{}; }); }catch(e){}
+    try{ var snap=await db.collection('tables').get(); snap.forEach(function(d){ var t=d.data()||{}; if(typeof t.rows==='string'){ try{ t.rows=JSON.parse(t.rows); }catch(e){ t.rows=[]; } } _tblCache[d.id]=t; }); }catch(e){}
     _tblLoaded=true;
   })();
   return _tblPromise;
