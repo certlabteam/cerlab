@@ -402,9 +402,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .oxc-tbl .oxc-o{color:#0F6E56}
 #mcqView .oxc-tbl .oxc-x{color:#A32D2D}
 #mcqView .oxc-tbl tr.oxc-miss td{background:#FBF6F5}
-#mcqView .jaryo .jtbl, .jtbl-html{overflow-x:auto;margin:8px 0}
-.jtbl-html table{max-width:100%}
-.jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
+#mcqView .jaryo .jtbl, .jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
 .jtbl th, .jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
 .jtbl th{background:#EEF2F7;font-weight:600}
 .jtbl td.l{text-align:left;white-space:nowrap}
@@ -1618,7 +1616,7 @@ function renderTbl(t){
   return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
 }
 function tblResolve(ref){
-  if(ref && typeof ref==='object' && (Array.isArray(ref.headers)||ref.html)) return renderTbl(ref);
+  if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
   if(typeof ref==='string' && ref.indexOf('tbl://')===0){
     var id=ref.slice(6), t=_tblCache[id];
     if(t) return renderTbl(t);
@@ -1719,6 +1717,15 @@ function pvRenderReview(rows){
 // 배치 포맷 정규화
 function pvNormalize(data){
   if(!data || typeof data!=='object' || Array.isArray(data)) return data;
+  // 단일 마스터 객체 1개가 통째로 온 경우(id 접두사로 판별) → 해당 묶음으로
+  if(typeof data.id==='string' && !data.tables && !data.concepts && !data.graphs && !data.mnemonics && !data.questions
+     && !data.tbl_new && !data.cpt_new && !data.grp_new && !data.mn_new && !data.review){
+    var id=data.id;
+    if(id.indexOf('tbl_')===0 && (data.html||Array.isArray(data.headers))) return { tables:[data] };
+    if(id.indexOf('cpt_')===0) return { concepts:[data] };
+    if(id.indexOf('grp_')===0) return { graphs:[data] };
+    if(id.indexOf('mn_')===0 && (data.code||data.kind)) return { mnemonics:[data] };
+  }
   var batch=data.mn_new||data.mn_update||data.tbl_new||data.cpt_new||data.grp_new;
   if(!batch) return data;
   var cat=function(){ var o=[]; for(var i=0;i<arguments.length;i++) if(Array.isArray(arguments[i])) o=o.concat(arguments[i]); return o; };
