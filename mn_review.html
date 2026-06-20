@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- updated: 2026-06-19 (KST) — mnemonics 마스터 미리보기 모드 추가(review 비교 모드와 겸용) -->
+<!-- updated: 2026-06-20 (KST) — 개념(concepts) 검토 모드 추가: 개념카드 렌더 + mn/tbl/grp 참조 풀어 같이 표시 + mn→개념 역링크 + 모드 토글. (review/mnemonics 모드 겸용 유지) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>암기코드 이관 검토 — CertLab</title>
+<title>암기코드·개념 검토 — CertLab</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#F6F8FB;color:#1F2937;padding:18px;line-height:1.5}
@@ -47,18 +47,42 @@
   .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
   .mn-code .k,.mn-desc .k,.mn-code k,.mn-desc k{color:#C0392B;font-weight:800}
   .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
+  /* ===== 개념 카드 (index.html .concept-box 동일) ===== */
+  .concept-box{margin:8px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
+  .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
+  .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7}
+  .concept-row + .concept-row{margin-top:14px;padding-top:11px;border-top:1px dashed #E2E8F0}
+  .concept-row b{color:#0C447C}
+  .cc-ex{font-size:12.5px;color:#475569;margin-top:5px;white-space:pre-wrap}
+  /* ===== 표 (tbl_prototype.html .jtbl 동일, 운율 빨강) ===== */
+  .jtbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:13px;color:#334155}
+  .jtbl th,.jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
+  .jtbl th{background:#EEF2F7;font-weight:600}
+  .jtbl .tbl-yul{color:#C0392B;font-size:.84em;font-weight:700;margin-left:1px}
+  .tbl-cap{font-size:12px;color:#64748B;margin:2px 0 10px;text-align:center}
+  .tbl-broken{color:#A32D2D;font-size:12.5px;font-weight:700;background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 11px;margin:8px 0}
+  .asset-ti{font-size:11px;font-weight:800;color:#64748B;margin:14px 0 2px;letter-spacing:.3px}
+  /* ===== mn→개념 역링크 ===== */
+  .rev{margin-top:8px;font-size:12px;color:#475569}
+  .rev b{color:#185FA5}
+  .revchip{display:inline-block;font-size:11.5px;background:#EAF2FB;color:#0C447C;border:1px solid #BBD6F2;border-radius:999px;padding:1px 9px;margin:2px 3px 0 0}
+  /* ===== 모드 토글 ===== */
+  .modes{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .modechip{font-size:12.5px;font-weight:700;border:1.5px solid #BBD6F2;background:#fff;color:#185FA5;border-radius:999px;padding:5px 13px;cursor:pointer}
+  .modechip.on{background:#185FA5;color:#fff;border-color:#185FA5}
 </style>
 </head>
 <body>
-<h1>🔀 암기코드 이관 검토</h1>
-<div class="sub">검토 JSON(<b>review</b>)을 열면 그룹별 좌측 <b>후보 코드들</b>·우측 <b>통합안</b>을 앱 모습 그대로 비교합니다. 마스터 JSON(<b>mnemonics</b>)을 열면 각 항목을 앱에 뜨는 모습으로 <b>미리보기</b>합니다. 보기 전용입니다.</div>
+<h1>🔀 암기코드·개념 검토</h1>
+<div class="sub"><b>concepts</b>를 열면 개념카드 + 그 개념에 묶인 <b>암기코드·표·그래프</b>를 풀어서 같이 보여줍니다. <b>mnemonics</b>는 항목 미리보기(쓰이는 개념 역링크 포함), <b>review</b>는 이관 비교. 한 파일에 여러 종류가 있으면 위 토글로 전환. 보기 전용입니다.</div>
 <div class="bar">
   <button class="btn" onclick="document.getElementById('file').click()">📁 JSON 파일 열기</button>
   <button class="btn sec" onclick="location.reload()">초기화</button>
   <input id="file" type="file" accept=".json,application/json" style="display:none">
-  <span id="status">검토 JSON을 열어주세요.</span>
+  <span id="status">JSON을 열어주세요. (개념·암기코드·이관 검토 겸용)</span>
 </div>
 <div id="drop">여기로 JSON 파일을 끌어다 놓거나, 위 "JSON 파일 열기"를 누르세요.</div>
+<div class="modes" id="modes"></div>
 <div id="out"></div>
 
 <script>
@@ -80,6 +104,109 @@ function qidPill(q){
   return '<span class="qpill">'+esc(q)+'</span>';
 }
 
+/* ============================================================
+   참조 해석 (로컬 — 번들 JSON 기준)
+   파일 최상위에 mnemonics/tables 가 동봉돼 있으면 캐시에 채워
+   concepts 안의 mn://·tbl:// 를 실제 박스/표로 렌더.
+   ============================================================ */
+var _mnemCache={}, _tblCache={}, _conceptIndex={};   // _conceptIndex: mnId -> [개념이름…]
+
+function mnResolveLocal(ref){
+  if(ref && typeof ref==='object') return {code:ref.code, desc:ref.desc};       // 인라인 직접입력
+  if(typeof ref==='string' && ref.indexOf('mn://')===0){
+    var id=ref.slice(5), m=_mnemCache[id];
+    if(!m) return {broken:true, ref:id};
+    return {code:m.code, desc:m.desc};
+  }
+  return {code:String(ref||''), desc:''};
+}
+function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
+function renderTbl(t){
+  if(!t || !Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
+  // 계층 병합: merge에 적힌 열들을 rowspan 병합하되, 자식 열은 \"왼쪽(상위) merge 열\"이 바뀌면 끊김(책처럼)
+  var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
+  mergeCols.forEach(function(c, ci){
+    var ancestors=mergeCols.slice(0, ci);   // c보다 왼쪽의 병합 열 = 상위 계층
+    var r=0;
+    while(r < t.rows.length){
+      var span=1;
+      while(r+span < t.rows.length
+            && t.rows[r+span][c]===t.rows[r][c]
+            && ancestors.every(function(a){ return t.rows[r+span][a]===t.rows[r][a]; })){
+        span++;
+      }
+      for(var k=1;k<span;k++) skip[(r+k)+','+c]=1;
+      t.rows[r]['_rs'+c]=span; r+=span;
+    }
+  });
+  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead>';
+  var tbody='<tbody>'+t.rows.map(function(row,r){
+    var tds='';
+    for(var c=0;c<t.headers.length;c++){
+      if(skip[r+','+c]) continue;
+      var rs=row['_rs'+c], span=(rs&&rs>1)?' rowspan="'+rs+'"':'';
+      tds+='<td'+span+'>'+tblYul(esc(row[c]))+'</td>';
+    }
+    return '<tr>'+tds+'</tr>';
+  }).join('')+'</tbody>';
+  var cap=t.caption_chant?'<div class="tbl-cap">'+esc(t.caption_chant)+'</div>':'';
+  return '<table class="jtbl">'+thead+tbody+'</table>'+cap;
+}
+function tblResolveLocal(ref){
+  if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
+  if(typeof ref==='string' && ref.indexOf('tbl://')===0){
+    var id=ref.slice(6), t=_tblCache[id];
+    if(!t) return '<div class="tbl-broken">⚠️ 표 참조 오류: tbl://'+esc(id)+' (번들에 없음)</div>';
+    return renderTbl(t);
+  }
+  return '';
+}
+function grpStub(ref){
+  var id=(typeof ref==='string')?ref.replace('grp://',''):'';
+  return '<div class="tbl-broken" style="background:#F4F6FB;border-color:#D6E2F5;color:#64748B">📈 그래프 grp://'+esc(id)+' — 그래프 렌더 미구현(추후)</div>';
+}
+
+/* ===== 개념 카드 ===== */
+function conceptCard(c){
+  c=c||{};
+  var cards=Array.isArray(c.cards)?c.cards:(Array.isArray(c.c)?c.c:[]);
+  var rows=cards.map(function(it){
+    it=it||{};
+    var row='<div class="concept-row"><b>'+esc(it.t||'')+'</b>'+(it.d?' — '+esc(it.d):'')+'</div>';
+    if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+esc(String(it.cx).trim())+'</div>';
+    return row;
+  }).join('');
+  var box='<div class="concept-box"><div class="concept-ti">개념설명</div>'+(rows||'<div class="concept-row" style="color:#94A3B8">(카드 없음)</div>')+'</div>';
+
+  var mnRefs =Array.isArray(c.mn) ?c.mn :(c.mn ?[c.mn] :[]);
+  var tblRefs=Array.isArray(c.tbl)?c.tbl:(c.tbl?[c.tbl]:[]);
+  var grpRefs=Array.isArray(c.grp)?c.grp:(c.grp?[c.grp]:[]);
+  var mnHTML=mnRefs.map(function(ref){
+    var r=mnResolveLocal(ref);
+    if(r.broken) return '<div class="tbl-broken">⚠️ 암기코드 참조 오류: mn://'+esc(r.ref)+' (번들에 없음)</div>';
+    return mnBox(r.code,r.desc);
+  }).join('');
+  var tblHTML=tblRefs.map(tblResolveLocal).join('');
+  var grpHTML=grpRefs.map(grpStub).join('');
+  var assets='';
+  if(mnHTML)  assets+='<div class="asset-ti">묶인 암기코드</div>'+mnHTML;
+  if(tblHTML) assets+='<div class="asset-ti">묶인 표</div>'+tblHTML;
+  if(grpHTML) assets+='<div class="asset-ti">묶인 그래프</div>'+grpHTML;
+
+  var kw=(Array.isArray(c.keywords)&&c.keywords.length)?'<div style="margin-top:8px">'+c.keywords.map(function(k){return '<span class="kw">'+esc(k)+'</span>';}).join('')+'</div>':'';
+  var certs=(Array.isArray(c.certs)&&c.certs.length)?'<div style="margin-top:4px">'+c.certs.map(function(x){return '<span class="kw" style="background:#E8F0FB;color:#185FA5">'+esc(x)+'</span>';}).join('')+'</div>':'';
+  return '<div class="grp">'
+    +'<div class="grphd">'+(c.id?'<span class="pid">'+esc(c.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 없음</span>')+'</div>'
+    +(c.name?'<div class="pname" style="margin-top:0">'+esc(c.name)+'</div>':'')
+    +box+assets+kw+certs
+    +'</div>';
+}
+function renderConcepts(rows){
+  if(!rows.length){ outEl.innerHTML='<div class="empty">concepts 배열이 비어 있습니다.</div>'; statusEl.textContent='0개'; return; }
+  statusEl.textContent='개념 미리보기 · '+rows.length+'개';
+  outEl.innerHTML=rows.map(conceptCard).join('');
+}
+
 // 통합안 카드 1장 (id+배지 → name → code → desc → keywords → 이유)
 function proposalCard(p){
   p=p||{};
@@ -93,16 +220,18 @@ function proposalCard(p){
     +(p.reason?'<div class="reason">💡 '+esc(p.reason)+'</div>':'')
     +'</div>';
 }
-// 마스터 미리보기 카드 1장 (id → name → code → desc → keywords → certs)
+// 마스터 미리보기 카드 1장 (id → name → code → desc → keywords → certs → 역링크)
 function mnemoCard(m){
   m=m||{};
   var kw = (Array.isArray(m.keywords)&&m.keywords.length) ? '<div style="margin-top:6px">'+m.keywords.map(function(k){return '<span class="kw">'+esc(k)+'</span>';}).join('')+'</div>' : '';
   var certs = (Array.isArray(m.certs)&&m.certs.length) ? '<div style="margin-top:4px">'+m.certs.map(function(c){return '<span class="kw" style="background:#E8F0FB;color:#185FA5">'+esc(c)+'</span>';}).join('')+'</div>' : '';
+  var used=_conceptIndex[m.id];
+  var rev = (used&&used.length) ? '<div class="rev"><b>이 암기코드가 쓰이는 개념:</b> '+used.map(function(n){return '<span class="revchip">'+esc(n)+'</span>';}).join('')+'</div>' : '';
   return '<div class="grp">'
     +'<div class="grphd">'+(m.id?'<span class="pid">'+esc(m.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 없음</span>')+'</div>'
     +(m.name?'<div class="pname" style="margin-top:0">'+esc(m.name)+'</div>':'')
     +mnBox(m.code,m.desc)
-    +kw+certs
+    +kw+certs+rev
     +'</div>';
 }
 function renderMnemonics(rows){
@@ -110,18 +239,13 @@ function renderMnemonics(rows){
   statusEl.textContent='마스터 미리보기 · '+rows.length+'개';
   outEl.innerHTML=rows.map(mnemoCard).join('');
 }
-function render(data){
-  // 마스터(mnemonics) 파일이면 미리보기 모드
-  if(data && Array.isArray(data.mnemonics)){ return renderMnemonics(data.mnemonics); }
-  var rows = (data && Array.isArray(data.review)) ? data.review : (Array.isArray(data)?data:null);
-  if(!rows){ outEl.innerHTML='<div class="empty">형식 오류: 최상위에 <b>review</b> 또는 <b>mnemonics</b> 배열이 필요합니다.</div>'; statusEl.textContent='형식 오류'; return; }
+function renderReview(rows){
   if(!rows.length){ outEl.innerHTML='<div class="empty">검토 항목이 없습니다.</div>'; statusEl.textContent='0개'; return; }
   var mergeYes=rows.filter(function(g){return g&&g.proposal&&g.proposal.merge;}).length;
   statusEl.textContent='그룹 '+rows.length+'개 · 통합 추천 '+mergeYes+'개';
   var h=rows.map(function(g){
     g=g||{};
     var cands=Array.isArray(g.candidates)?g.candidates:[];
-    var p=g.proposal||{};
     // 좌: 후보들 (code + desc 같이)
     var left=cands.length ? cands.map(function(c){
       var qids=Array.isArray(c.qids)?c.qids:[];
@@ -139,6 +263,51 @@ function render(data){
       +'</div></div>';
   }).join('');
   outEl.innerHTML=h;
+}
+
+/* ===== 캐시·역링크 인덱스 빌드 (번들 JSON) ===== */
+function buildCaches(data){
+  _mnemCache={}; _tblCache={}; _conceptIndex={};
+  if(data && Array.isArray(data.mnemonics)) data.mnemonics.forEach(function(m){ if(m&&m.id) _mnemCache[m.id]=m; });
+  if(data && Array.isArray(data.tables))     data.tables.forEach(function(t){ if(t&&t.id) _tblCache[t.id]=t; });
+  if(data && Array.isArray(data.concepts))   data.concepts.forEach(function(c){
+    var refs=Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[]);
+    refs.forEach(function(ref){
+      if(typeof ref==='string' && ref.indexOf('mn://')===0){
+        var id=ref.slice(5);
+        (_conceptIndex[id]=_conceptIndex[id]||[]).push(c.name||c.id||id);
+      }
+    });
+  });
+}
+
+/* ===== dispatch + 모드 토글 ===== */
+var _data=null, _modes=[], _mode=null;
+function render(data){
+  _data=data; buildCaches(data);
+  _modes=[];
+  if(data && Array.isArray(data.concepts))  _modes.push('concepts');
+  if(data && Array.isArray(data.mnemonics)) _modes.push('mnemonics');
+  if((data && Array.isArray(data.review)) || Array.isArray(data)) _modes.push('review');
+  if(!_modes.length){
+    outEl.innerHTML='<div class="empty">형식 오류: 최상위에 <b>concepts</b> · <b>mnemonics</b> · <b>review</b> 배열이 필요합니다.</div>';
+    statusEl.textContent='형식 오류'; document.getElementById('modes').innerHTML=''; return;
+  }
+  if(_modes.indexOf(_mode)<0) _mode=_modes[0];
+  renderModeBar(); renderMode();
+}
+function renderModeBar(){
+  var labels={concepts:'📖 개념',mnemonics:'🔑 암기코드',review:'🔀 이관 비교'};
+  document.getElementById('modes').innerHTML = (_modes.length>1)
+    ? _modes.map(function(m){return '<span class="modechip'+(m===_mode?' on':'')+'" onclick="setMode(\''+m+'\')">'+labels[m]+'</span>';}).join('')
+    : '';
+}
+function setMode(m){ _mode=m; renderModeBar(); renderMode(); }
+function renderMode(){
+  if(_mode==='concepts')  return renderConcepts(_data.concepts);
+  if(_mode==='mnemonics') return renderMnemonics(_data.mnemonics);
+  var rows=(_data&&Array.isArray(_data.review))?_data.review:(Array.isArray(_data)?_data:[]);
+  return renderReview(rows);
 }
 
 function handleFile(f){
