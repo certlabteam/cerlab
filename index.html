@@ -456,7 +456,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .oxc-tbl .oxc-o{color:#0F6E56}
 #mcqView .oxc-tbl .oxc-x{color:#A32D2D}
 #mcqView .oxc-tbl tr.oxc-miss td{background:#FBF6F5}
-#mcqView .jaryo .jtbl, .jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
+#mcqView .jaryo .jtbl, .jtbl-html{overflow-x:auto;margin:8px 0}
+.jtbl-html table{max-width:100%}
+.jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
 .jtbl th, .jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
 .jtbl th{background:#EEF2F7;font-weight:600}
 .jtbl td.l{text-align:left;white-space:nowrap}
@@ -2625,7 +2627,9 @@ function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/<
 function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 // 계층 병합 표 렌더(운율 빨강). merge:[열] = 부모 바뀌면 자식 끊기는 rowspan.
 function renderTbl(t){
-  if(!t || !Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
+  if(!t) return '';
+  if(t.html && String(t.html).indexOf('<')>=0){ var cap0=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':''; return '<div class="jtbl-html">'+tblSanitizeHtml(t.html)+'</div>'+cap0; }
+  if(!Array.isArray(t.headers) || !Array.isArray(t.rows)) return '';
   var rows=t.rows.map(function(r){ return r.slice(); });
   var mergeCols=(t.merge||[]).slice().sort(function(a,b){return a-b;}), skip={};
   mergeCols.forEach(function(c,ci){
@@ -2652,7 +2656,7 @@ function renderTbl(t){
 }
 // "tbl://id" → 표 HTML. 객체(headers 포함)면 인라인 직접입력. 깨진 참조는 로드 완료 후에만 ⚠️.
 function tblResolve(ref){
-  if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
+  if(ref && typeof ref==='object' && (Array.isArray(ref.headers)||ref.html)) return renderTbl(ref);
   if(typeof ref==='string' && ref.indexOf('tbl://')===0){
     var id=ref.slice(6), t=_tblCache[id];
     if(!t) return _tblLoaded ? '<div class="tbl-broken">⚠️ 표 참조 오류: tbl://'+tblEsc(id)+' (마스터에 없음)</div>' : '';
@@ -2675,6 +2679,15 @@ function loadGraphs(){
     _grpLoaded=true;
   })();
   return _grpPromise;
+}
+// 표 HTML sanitize: script·이벤트핸들러·javascript:·iframe/object/embed 제거 (인라인 style은 유지)
+function tblSanitizeHtml(html){
+  var s=String(html||'');
+  s=s.replace(/<script[\s\S]*?<\/script>/gi,'');
+  s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,'');
+  s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,'');
+  s=s.replace(/javascript:/gi,'');
+  return s;
 }
 // SVG sanitize: <script>·on*=·javascript:·foreignObject 제거 (admin과 동일)
 function grpSanitizeSvg(svg){
