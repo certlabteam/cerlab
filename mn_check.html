@@ -133,7 +133,7 @@ async function loadMaster(){
   snap.forEach(d=>{ MASTER[d.id]=d.data()||{}; });
 }
 async function loadOther(){
-  try{ (await db.collection('tables').get()).forEach(d=>{ TBLM[d.id]=d.data()||{}; }); }catch(e){}
+  try{ (await db.collection('tables').get()).forEach(d=>{ var t=d.data()||{}; if(typeof t.rows==='string'){ try{ t.rows=JSON.parse(t.rows); }catch(e){ t.rows=[]; } } TBLM[d.id]=t; }); }catch(e){}
   try{ (await db.collection('graphs').get()).forEach(d=>{ GRPM[d.id]=d.data()||{}; }); }catch(e){}
   try{ (await db.collection('concepts').get()).forEach(d=>{ CPTM[d.id]=d.data()||{}; }); }catch(e){}
 }
