@@ -94,6 +94,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnem-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-code .k,.mnem-desc .k{color:#C0392B;font-weight:800}
 .mnem-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
+.mn-num{font-weight:800;color:#0C447C;margin-right:2px}
+.mnem-box-sep{border-top:1px dashed #E5E0D5;margin:11px 0 9px}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
 .btn .lbl{font-size:10px;font-weight:500;opacity:.75}
@@ -1130,12 +1132,13 @@ function buildMnemonic(card){
   const m=card.mn; if(!m) return '';
   // 단일 항목(문자열/객체)을 암기코드 한 박스로 — 배열 지원을 위한 내부 헬퍼
   function oneMn(item){
-    const code = (typeof item==='string') ? item : (item&&item.code||'');
-    const desc = (typeof item==='object' && item && item.desc) ? item.desc : '';
-    if(!code) return '';
+    var o=pvMnResolve(item);
+    if(o.broken) return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div><div class="learn-section-body" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+o.ref+' (이 파일에 없음)</div></div>';
+    var cards=pvMnCards(o);
+    if(!cards.length) return '';
+    var inner=cards.map(function(cd,i){ var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':''; var sep=i>0?'<div class="mnem-box-sep"></div>':''; return sep+num+mnChantHTML(cd.code,'mnem-chant')+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc">'+cd.desc+'</div>':''); }).join('');
     return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
-      +'<div class="learn-section-body">'+mnChantHTML(code,'mnem-chant')+'<span class="mnem-code">'+code+'</span>'
-      +(desc?'<div class="mnem-desc">'+desc+'</div>':'')+'</div></div>';
+      +'<div class="learn-section-body">'+inner+'</div></div>';
   }
   if(Array.isArray(m)) return m.map(oneMn).join('');   // 배열이면 박스 여러 개
   return oneMn(m);                                       // 객체/문자열 단일(하위호환)
@@ -1420,13 +1423,11 @@ function renderExpFull(q, mqCertVal){
       mnList.forEach(function(mn,idx){
         if(typeof mn==='string' && mn.indexOf('mn://')===0){
           var _cm=_mnemCache[mn.slice(5)];
-          if(_cm && _cm.code){ body+=pvMnBox(_cm.code,_cm.desc,_cm.kind); return; }   // 번들/마스터에 있으면 실제 치환
+          if(_cm){ body+=pvMnBoxesHTML(_cm); return; }   // 번들/마스터에 있으면 실제 치환
           body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+'<div class="mn-code" style="color:#7F77DD;font-family:monospace;font-size:13px">'+mn+' <span style="color:#A89C8E;font-size:11px">(마스터 참조 — 앱에서 코드로 치환)</span></div></div>';
           return;
         }
-        var code=(typeof mn==='object')?mn.code:(typeof mn==='string'?mn:'');
-        var desc=(typeof mn==='object')?mn.desc:'';
-        body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+''+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+        body+=pvMnBoxesHTML((typeof mn==='object')?mn:{code:(typeof mn==='string'?mn:''),desc:''});
       });
     }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
@@ -1670,9 +1671,13 @@ function pvChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['
 function pvChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=pvChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
 // 암기코드 박스 (code/desc는 esc 안 함 — k 두문자 빨강 유지)
 function pvMnBox(code, desc, kind){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+pvChantHTML(code,kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+var PV_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+function pvMnNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
+function pvMnCards(o){ var bx=pvMnNorm(o).filter(function(b){return b.code||b.desc;}); var multi=bx.length>1; return bx.map(function(b,i){ return {code:b.code,desc:b.desc,kind:o&&o.kind,num:multi?(PV_CIRCLED[i]||('('+(i+1)+')')):''}; }); }
+function pvMnBoxesHTML(o){ var cards=pvMnCards(o); if(!cards.length) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return cards.map(function(cd,i){ var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+pvChantHTML(cd.code,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc">'+cd.desc+'</div>':'')+'</div>'; }).join(''); }
 function pvMnResolve(ref){
-  if(ref && typeof ref==='object') return {code:ref.code, desc:ref.desc, kind:ref.kind};
-  if(typeof ref==='string' && ref.indexOf('mn://')===0){ var id=ref.slice(5), m=_mnemCache[id]; if(!m) return {broken:true, ref:id}; return {code:m.code, desc:m.desc, kind:m.kind}; }
+  if(ref && typeof ref==='object') return ref;
+  if(typeof ref==='string' && ref.indexOf('mn://')===0){ var id=ref.slice(5), m=_mnemCache[id]; if(!m) return {broken:true, ref:id}; return m; }
   return {code:String(ref||''), desc:''};
 }
 // 개념 1개 → 카드 + 묶인 암기코드·표·그래프 풀어서
@@ -1684,7 +1689,7 @@ function pvConceptCard(c){
   var mnRefs=Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[]);
   var tblRefs=Array.isArray(c.tbl)?c.tbl:(c.tbl?[c.tbl]:[]);
   var grpRefs=Array.isArray(c.grp)?c.grp:(c.grp?[c.grp]:[]);
-  var mnHTML=mnRefs.map(function(ref){ var r=pvMnResolve(ref); if(r.broken) return '<div class="tbl-broken">⚠️ 암기코드 mn://'+tblEsc(r.ref)+' — 이 파일에 없음(번들 필요)</div>'; return pvMnBox(r.code,r.desc,r.kind); }).join('');
+  var mnHTML=mnRefs.map(function(ref){ var r=pvMnResolve(ref); if(r.broken) return '<div class="tbl-broken">⚠️ 암기코드 mn://'+tblEsc(r.ref)+' — 이 파일에 없음(번들 필요)</div>'; return pvMnBoxesHTML(r); }).join('');
   var tblHTML=tblRefs.map(tblResolve).join('');
   var grpHTML=grpRefs.map(grpResolve).join('');
   var assets='';
@@ -1701,7 +1706,7 @@ function pvMnemoCard(m){
   var rev=_conceptIndex[m.id];
   var revHTML=(rev&&rev.length)?'<div class="pv-rev"><b>이 암기코드가 쓰이는 개념:</b> '+rev.map(function(n){return '<span class="pv-kw" style="background:#EAF2FB;color:#0C447C">'+tblEsc(n)+'</span>';}).join('')+'</div>':'';
   var certs=(Array.isArray(m.certs)&&m.certs.length)?'<div style="margin-top:4px">'+m.certs.map(function(x){return '<span class="pv-kw" style="background:#E8F0FB;color:#185FA5">'+tblEsc(x)+'</span>';}).join('')+'</div>':'';
-  return '<div class="pv-card"><div class="pv-id">'+tblEsc(m.id||'')+(m.name?'  <b style="color:#1F2937">'+tblEsc(m.name)+'</b>':'')+'</div>'+pvMnBox(m.code,m.desc,m.kind)+certs+revHTML+'</div>';
+  return '<div class="pv-card"><div class="pv-id">'+tblEsc(m.id||'')+(m.name?'  <b style="color:#1F2937">'+tblEsc(m.name)+'</b>':'')+'</div>'+pvMnBoxesHTML(m)+certs+revHTML+'</div>';
 }
 function pvRenderMnemonics(rows){ return rows.length ? rows.map(pvMnemoCard).join('') : '<div class="pv-empty">mnemonics 비어 있음</div>'; }
 function pvRenderTables(rows){ return rows.length ? rows.map(function(t){ return '<div class="pv-card"><div class="pv-meta"><span class="pv-meta-tag">🔒 식별용 · 사용자 비노출</span><div><span class="nm">'+tblEsc(t.name||'(이름없음)')+'</span> <span class="pid">'+tblEsc(t.id||'')+'</span></div></div><hr class="pv-div"><div class="pv-userlabel">👁 사용자에게 보이는 화면</div><div class="pv-render">'+renderTbl(t)+'</div></div>'; }).join('') : '<div class="pv-empty">tables 비어 있음</div>'; }
@@ -1712,9 +1717,9 @@ function pvRenderReview(rows){
   return rows.map(function(g){
     g=g||{};
     var cands=Array.isArray(g.candidates)?g.candidates:[];
-    var left=cands.length?cands.map(function(c){ return pvMnBox(c.code,c.desc,c.kind); }).join(''):'<div class="pv-empty">비교할 이전 버전이 없습니다</div>';
+    var left=cands.length?cands.map(function(c){ return pvMnBoxesHTML(c); }).join(''):'<div class="pv-empty">비교할 이전 버전이 없습니다</div>';
     var props=Array.isArray(g.proposal)?g.proposal:(g.proposal?[g.proposal]:[]);
-    var right=props.length?props.map(function(p){ p=p||{}; var badge=('merge' in p)?('<span class="pv-badge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>'):''; return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvMnBox(p.code,p.desc,p.kind)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>'; }).join(''):'<div class="pv-empty">통합안 없음</div>';
+    var right=props.length?props.map(function(p){ p=p||{}; var badge=('merge' in p)?('<span class="pv-badge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>'):''; return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvMnBoxesHTML(p)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>'; }).join(''):'<div class="pv-empty">통합안 없음</div>';
     var dec=(g.decision&&String(g.decision).trim())?'<div class="pv-decision"><b>메모:</b> '+tblEsc(g.decision)+'</div>':'';
     return '<div class="pv-card"><div class="pv-grphd">그룹 '+tblEsc(g.group!=null?g.group:'?')+(g.chant?' · <span style="color:#C0322F;font-weight:800">'+tblEsc(g.chant)+'</span>':'')+'</div>'
       +'<div class="pv-cmp"><div class="pv-col"><div class="pv-coltag l">기존(후보)</div>'+left+'</div><div class="pv-col"><div class="pv-coltag r">의견(통합안)</div>'+right+dec+'</div></div></div>';
