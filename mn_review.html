@@ -47,6 +47,7 @@
   .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
   .mn-code .k,.mn-desc .k,.mn-code k,.mn-desc k{color:#C0392B;font-weight:800}
   .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
+  .mn-num{font-weight:800;color:#0C447C;margin-right:2px}
   /* ===== 개념 카드 (index.html .concept-box 동일) ===== */
   .concept-box{margin:8px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
   .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
@@ -101,6 +102,9 @@ function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['
 function mnChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=mnChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
 // 앱과 동일하게 — code/desc는 esc 안 함(<span class='k'> 두문자가 빨간 볼드로 살아남)
 function mnBox(code, desc, kind){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code, kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+var MR_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+function mnNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
+function mnBoxesHTML(o){ var bx=mnNorm(o).filter(function(b){return b.code||b.desc;}); if(!bx.length) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; var multi=bx.length>1; return bx.map(function(b,i){ var num=multi?'<span class="mn-num">'+(MR_CIRCLED[i]||('('+(i+1)+')'))+'</span> ':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+mnChantHTML(b.code,o&&o.kind)+'<div class="mn-code">'+b.code+'</div>'+(b.desc?'<div class="mn-desc">'+b.desc+'</div>':'')+'</div>'; }).join(''); }
 function goCard(e,url){ if(e&&(e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)) return true; if(e) e.preventDefault(); window.open(url,'_blank'); return false; }
 // "exam/sub/qid" → 클릭 가능한 pill (qid로 앱 열기)
 function qidPill(q){
@@ -119,11 +123,11 @@ function qidPill(q){
 var _mnemCache={}, _tblCache={}, _grpCache={}, _conceptIndex={};   // _conceptIndex: mnId -> [개념이름…]
 
 function mnResolveLocal(ref){
-  if(ref && typeof ref==='object') return {code:ref.code, desc:ref.desc, kind:ref.kind};       // 인라인 직접입력
+  if(ref && typeof ref==='object') return ref;       // 인라인 직접입력(객체: boxes/code 그대로)
   if(typeof ref==='string' && ref.indexOf('mn://')===0){
     var id=ref.slice(5), m=_mnemCache[id];
     if(!m) return {broken:true, ref:id};
-    return {code:m.code, desc:m.desc, kind:m.kind};
+    return m;
   }
   return {code:String(ref||''), desc:''};
 }
@@ -205,7 +209,7 @@ function conceptCard(c){
   var mnHTML=mnRefs.map(function(ref){
     var r=mnResolveLocal(ref);
     if(r.broken) return '<div class="tbl-broken">⚠️ 암기코드 mn://'+esc(r.ref)+' — 이 세션에 없음. 이 mn이 든 파일(예: 1차배치)도 함께 열거나 개념 파일에 번들하세요.</div>';
-    return mnBox(r.code,r.desc,r.kind);
+    return mnBoxesHTML(r);
   }).join('');
   var tblHTML=tblRefs.map(tblResolveLocal).join('');
   var grpHTML=grpRefs.map(grpStub).join('');
@@ -278,7 +282,7 @@ function proposalCard(p){
   return '<div class="pcard">'
     +'<div>'+(p.id?'<span class="pid">'+esc(p.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 미정</span>')+mergeBadge+'</div>'
     +(p.name?'<div class="pname">'+esc(p.name)+'</div>':'')
-    +mnBox(p.code,p.desc,p.kind)
+    +mnBoxesHTML(p)
     +kw
     +(p.reason?'<div class="reason">💡 '+esc(p.reason)+'</div>':'')
     +'</div>';
@@ -293,7 +297,7 @@ function mnemoCard(m){
   return '<div class="grp">'
     +'<div class="grphd">'+(m.id?'<span class="pid">'+esc(m.id)+'</span>':'<span style="color:#94A3B8;font-size:12px">id 없음</span>')+'</div>'
     +(m.name?'<div class="pname" style="margin-top:0">'+esc(m.name)+'</div>':'')
-    +mnBox(m.code,m.desc,m.kind)
+    +mnBoxesHTML(m)
     +kw+certs+rev
     +'</div>';
 }
@@ -312,7 +316,7 @@ function renderReview(rows){
     // 좌: 후보들 (code + desc 같이)
     var left=cands.length ? cands.map(function(c){
       var qids=Array.isArray(c.qids)?c.qids:[];
-      return '<div class="cand">'+mnBox(c.code,c.desc,c.kind)+'<div class="qids">'+qids.map(qidPill).join('')+'</div></div>';
+      return '<div class="cand">'+mnBoxesHTML(c)+'<div class="qids">'+qids.map(qidPill).join('')+'</div></div>';
     }).join('') : '<div class="empty" style="padding:8px">후보 없음</div>';
     // 우: 통합안 — proposal이 배열(신 스키마) 또는 객체(구) 둘 다 대응
     var props = Array.isArray(g.proposal) ? g.proposal : (g.proposal ? [g.proposal] : []);
