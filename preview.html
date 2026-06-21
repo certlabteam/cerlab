@@ -414,6 +414,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .jtbl td.l{text-align:left;white-space:nowrap}
 .jtbl td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .jtbl .tbl-yul{color:#C0392B;font-weight:700;margin-left:1px}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;margin:8px 0}
+.tbl-wrap table.jtbl{width:max-content;min-width:100%;margin:0}
+@media (max-width:480px){ .tbl-wrap th,.tbl-wrap td{padding:4px 6px;font-size:13px;white-space:nowrap} }
 .tbl-cap{font-size:13.5px;color:#475569;line-height:1.6;font-weight:500;text-align:left;margin:0 0 9px}
 .tbl-broken{color:#A32D2D;font-size:12.5px;font-weight:700;background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 11px;margin:8px 0}
 .tbl-ph{color:#7F77DD;font-size:12.5px;background:#F5F4FE;border:1px solid #E0DDF7;border-radius:8px;padding:8px 11px;margin:8px 0;font-family:monospace}
@@ -1602,6 +1605,7 @@ function drawNav(){
 // ===== 표(tables) — 로컬 캐시(붙여넣은 JSON의 tables/tbl_new에서 채움) =====
 var _tblCache={};
 function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function tblCell(v, rich){ var s=tblEsc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); if(rich){ s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); } return s; }
 function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 function tblSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function renderTbl(t){
@@ -1619,18 +1623,19 @@ function renderTbl(t){
       rows[r]['_rs'+c]=span; r+=span;
     }
   });
-  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+tblEsc(h)+'</th>';}).join('')+'</tr></thead>';
+  var rich=(t.type==='html');
+  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+tblCell(h, rich)+'</th>';}).join('')+'</tr></thead>';
   var tbody='<tbody>'+rows.map(function(row,r){
     var tds='';
     for(var c=0;c<t.headers.length;c++){
       if(skip[r+','+c]) continue;
       var rs=row['_rs'+c], span=(rs&&rs>1)?' rowspan="'+rs+'"':'';
-      tds+='<td'+span+'>'+tblYul(tblEsc(row[c]))+'</td>';
+      tds+='<td'+span+'>'+(rich?tblCell(row[c],true):tblYul(tblCell(row[c],false)))+'</td>';
     }
     return '<tr>'+tds+'</tr>';
   }).join('')+'</tbody>';
   var cap=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':'';
-  return cap+'<table class="jtbl">'+thead+tbody+'</table>';
+  return cap+'<div class="tbl-wrap"><table class="jtbl">'+thead+tbody+'</table></div>';
 }
 function tblResolve(ref){
   if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
