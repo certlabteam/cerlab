@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CertLab 미리보기</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:1000px;margin:0 auto}
@@ -765,6 +769,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   textarea#src{display:none}
   #src.dragover{border:2px dashed #0C447C;background:#F0F6FF}
   #pvDrop{border:2px dashed #CBD5E1;border-radius:10px;padding:22px;text-align:center;color:#64748B;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;transition:border-color .12s,background .12s}
+  .pv-sticky{position:sticky;top:0;z-index:50;background:#FDF8F5;padding:8px 0 6px;box-shadow:0 6px 10px -8px rgba(0,0,0,.28)}
+  .pv-sticky #pvDrop{padding:12px;margin-bottom:6px}
   #pvDrop.dragover{border-color:#0C447C;background:#F0F6FF;color:#0C447C}
   #pvDrop .pvd-sub{display:block;margin-top:4px;font-size:11px;font-weight:400;color:#94A3B8}
   .ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
@@ -777,8 +783,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 </style></head>
 <body>
 <div class="wrap">
+  <div class="pv-sticky">
   <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
   <div id="pvDrop">여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<span class="pvd-sub">문항·개념·암기코드·표·그래프·검토(review) 모두 자동 인식</span></div>
+  <div id="pvMasterStatus" style="font-size:11.5px;color:#5F5E5A;padding:2px 4px 0">🔗 마스터 준비 중…</div>
+  </div><!-- /pv-sticky -->
   <textarea id="src" spellcheck="false"></textarea>
   <div class="panel"><div id="pvModeBar" class="pv-modebar"></div><div id="navBar"></div><div id="typeBadge"></div><div id="errBox"></div><div id="mcqView"></div></div>
   <div class="note">· 라이브 index.html의 해설 본체 + 의존 헬퍼(조합형 파싱·verdict·oxCompare·renderMath 등)를 라인 단위로 그대로 추출(재구현 아님 → 드리프트 방지).<br>· 이미지(img://·optImg)는 Firestore 자료라 여기선 [이미지: 키] 라벨로만 보인다. '내 O/X vs 정답' 표는 사용자 입력용이라 안 나온다.<br>· 조합형은 q의 진술 마커(ㄱ.ㄴ.ㄷ…) 개수와 exp.o 개수가 같아야 진술별로 펼쳐진다(다르면 보기별/정답보기 폴백).</div>
@@ -1745,13 +1754,45 @@ function pvNormalize(data){
   return { concepts:cat(data.concepts,data.cpt_new), mnemonics:cat(data.mnemonics,data.mn_new,data.mn_update),
            tables:cat(data.tables,data.tbl_new), graphs:cat(data.graphs,data.grp_new), review:data.review, questions:data.questions };
 }
-// 캐시·역링크 채움(누적 아님 — 파일 단위)
+/* ===== Firestore 마스터 로드 (mn:// tbl:// grp:// 참조 해석 + 개념 백링크용) ===== */
+var _mnemMaster={}, _tblMaster={}, _grpMaster={}, _cptMaster={}, _pvMastersLoaded=false, _pvDB=null;
+function pvMasterStatus(t){ var el=document.getElementById('pvMasterStatus'); if(el) el.textContent=t; }
+function pvLoadMasters(){
+  if(!_pvDB) return;
+  pvMasterStatus('🔗 마스터 불러오는 중…');
+  Promise.all([
+    _pvDB.collection('mnemonics').get().then(function(s){ s.forEach(function(d){ _mnemMaster[d.id]=d.data()||{}; }); }).catch(function(e){ console.warn('mnemonics load',e); }),
+    _pvDB.collection('tables').get().then(function(s){ s.forEach(function(d){ var t=d.data()||{}; if(typeof t.rows==='string'){ try{ t.rows=JSON.parse(t.rows); }catch(e){ t.rows=[]; } } _tblMaster[d.id]=t; }); }).catch(function(e){ console.warn('tables load',e); }),
+    _pvDB.collection('graphs').get().then(function(s){ s.forEach(function(d){ _grpMaster[d.id]=d.data()||{}; }); }).catch(function(e){ console.warn('graphs load',e); }),
+    _pvDB.collection('concepts').get().then(function(s){ s.forEach(function(d){ _cptMaster[d.id]=d.data()||{}; }); }).catch(function(e){ console.warn('concepts load',e); })
+  ]).then(function(){
+    _pvMastersLoaded=true;
+    pvMasterStatus('🔗 마스터 ✓ 암기코드 '+Object.keys(_mnemMaster).length+' · 표 '+Object.keys(_tblMaster).length+' · 그래프 '+Object.keys(_grpMaster).length+' · 개념 '+Object.keys(_cptMaster).length);
+    var s=document.getElementById('src'); if(s && s.value.trim()) render();   // 이미 올려둔 JSON이 있으면 재렌더
+  });
+}
+(function pvInitFirebase(){
+  if(typeof firebase==='undefined'){ pvMasterStatus('⚠️ firebase 로드 실패(오프라인) — JSON에 마스터 포함 시에만 참조 해석'); return; }
+  try{
+    firebase.initializeApp({ apiKey:"AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q", authDomain:"certlab-c3bcb.firebaseapp.com", projectId:"certlab-c3bcb", storageBucket:"certlab-c3bcb.firebasestorage.app", messagingSenderId:"698827699707", appId:"1:698827699707:web:b08d492f408ac444fa875e" });
+    try{ firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2'), true); }catch(e){}
+    _pvDB=firebase.firestore();
+    try{ firebase.auth().signInAnonymously().catch(function(){ /* 익명 미허용이어도 공개읽기면 통과 */ }); }catch(e){}
+    pvLoadMasters();
+  }catch(e){ console.warn('preview firebase init 실패', e); pvMasterStatus('⚠️ 마스터 로드 실패 — 콘솔 확인'); }
+})();
+// 캐시·역링크 채움 — Firestore 베이스 마스터 위에 업로드 JSON을 덮어씀(업로드 우선)
 function pvBuildCaches(d){
-  _mnemCache={}; _tblCache={}; _grpCache={}; _conceptIndex={};
+  _mnemCache=Object.assign({}, _mnemMaster);
+  _tblCache=Object.assign({}, _tblMaster);
+  _grpCache=Object.assign({}, _grpMaster);
+  _conceptIndex={};
   if(Array.isArray(d.mnemonics)) d.mnemonics.forEach(function(m){ if(m&&m.id) _mnemCache[m.id]=m; });
   if(Array.isArray(d.tables))    d.tables.forEach(function(t){ if(t&&t.id) _tblCache[t.id]=t; });
   if(Array.isArray(d.graphs))    d.graphs.forEach(function(g){ if(g&&g.id) _grpCache[g.id]=g; });
-  if(Array.isArray(d.concepts))  d.concepts.forEach(function(c){ (Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[])).forEach(function(ref){ if(typeof ref==='string'&&ref.indexOf('mn://')===0){ var id=ref.slice(5),a=(_conceptIndex[id]=_conceptIndex[id]||[]),nm=c.name||c.id||id; if(a.indexOf(nm)<0)a.push(nm); } }); });
+  function idxConcepts(arr){ if(!Array.isArray(arr)) return; arr.forEach(function(c){ if(!c) return; (Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[])).forEach(function(ref){ if(typeof ref==='string'&&ref.indexOf('mn://')===0){ var id=ref.slice(5),a=(_conceptIndex[id]=_conceptIndex[id]||[]),nm=c.name||c.id||id; if(a.indexOf(nm)<0)a.push(nm); } }); }); }
+  idxConcepts(Object.keys(_cptMaster).map(function(k){ var c=_cptMaster[k]; if(c&&!c.id) c=Object.assign({id:k},c); return c; }));
+  if(Array.isArray(d.concepts)) idxConcepts(d.concepts);
 }
 // 마스터/검토 모드 렌더 (questions 외)
 var _pvModes=[], _pvMode=null, _pvData=null;
