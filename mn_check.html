@@ -108,7 +108,8 @@ const outEl=document.getElementById('out');
 function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
 // 앱(index.html)과 동일하게 암기코드 박스 렌더. code/desc는 esc 안 함(=앱처럼 <span class='k'> 두문자가 빨간 볼드로 살아남).
-function mnChantHTML(code){ var letters=mnChantLetters(code); return letters?('<div class="mn-chant">'+letters+'</div>'):''; }
+function _mnPlainStripped(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/[\s·ㆍ・•∙\/,，、~–—()①②③④⑤⑥⑦⑧⑨⑩]/g,''); }
+function mnChantHTML(code){ var letters=mnChantLetters(code); if(!letters) return ''; if(letters===_mnPlainStripped(code)) return ''; return '<div class="mn-chant">'+letters+'</div>'; }
 function mnBox(code, desc){ if(!code) return ''; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
 var MC_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
 function mnNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
