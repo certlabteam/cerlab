@@ -2601,6 +2601,7 @@ function newTypeBadge(card){
   if(Number(card.since) !== new Date().getFullYear()) return '';
   return '<span class="ntag">'+card.since+'년 기출'+(card.newType?' 신유형':'')+'</span>';
 }
+function _mnPlainStripped(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/[\s·ㆍ・•∙\/,，、~–—()①②③④⑤⑥⑦⑧⑨⑩]/g,''); }
 function mnChantHTML(code, cls, kind){
   // 암기코드 code 안의 두문자(<span class="k">글자</span> 또는 약식 <k>글자</k>)만 뽑아 이어붙인 '모음' 한 줄. 두문자 2개 미만이면 생략.
   // 문장암기형(kind:"sentence")·운율형(kind:"chant")은 종합본 자동줄 생략(글자가 다 붙어 지저분해짐).
@@ -2610,6 +2611,7 @@ function mnChantHTML(code, cls, kind){
   if(!m || m.length<2) return '';
   var letters=m.map(function(s){ return s.replace(/<[^>]+>/g,''); }).join('');
   if(!letters) return '';
+  if(letters===_mnPlainStripped(code)) return '';   // 코드가 두문자 나열뿐 → 코드줄=종합본이라 중복, 숨김
   return '<div class="'+(cls||'mn-chant')+'">'+letters+'</div>';
 }
 var _mnemCache={}, _mnemPromise=null, _mnemLoaded=false;
