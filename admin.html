@@ -1185,7 +1185,8 @@ function adminLogout() { if(confirm('로그아웃 하시겠어요?')) auth.signO
 var _mnemAll={}, _mnemLoaded=false, _mnemImpData=null, _mnemImpBound=false;
 function mnemEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mnemChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
-function mnemChantHTML(code){ var l=mnemChantLetters(code); return l?('<div class="chant">'+l+'</div>'):''; }
+function _mnPlainStripped(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/[\s·ㆍ・•∙\/,，、~–—()①②③④⑤⑥⑦⑧⑨⑩]/g,''); }
+function mnemChantHTML(code){ var l=mnemChantLetters(code); if(!l) return ''; if(l===_mnPlainStripped(code)) return ''; return '<div class="chant">'+l+'</div>'; }
 var MNEM_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
 function mnemNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
 function mnemBoxesAppHTML(m){
