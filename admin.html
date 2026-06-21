@@ -153,6 +153,8 @@ tr:hover td{background:#FAFAFA}
 .mnem-app .ti{font-size:12px;font-weight:800;color:#B97A12;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #F5E6C8}
 .mnem-app .chant{margin-top:2px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 .mnem-app .code{font-size:13.5px;font-weight:400;color:#5E4A2A;line-height:1.7}
+.mnem-app .mn-num{font-weight:800;color:#0C447C;margin-right:2px}
+.mnem-app .mnem-box-sep{border-top:1px dashed #E2D9C5;margin:10px 0 8px}
 .mnem-app .desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-app .k,.mnem-app k{color:#C0392B;font-weight:800}
 /* master 카드: admin 식별영역(사용자 비노출=회색) ↔ 실선 구분 ↔ 사용자 화면 */
@@ -807,10 +809,9 @@ tr:hover td{background:#FAFAFA}
               <div id="mnemIdWarn" style="font-size:11px;color:#A32D2D;min-height:14px"></div>
               <label style="font-size:12px;font-weight:700;color:#555">name (한글 개념명)</label>
               <input id="mnemNameField" placeholder="예: 물권의 종류" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 8px;box-sizing:border-box">
-              <label style="font-size:12px;font-weight:700;color:#555">code &nbsp;<span style="font-weight:500;color:#A89C8E">두문자=&lt;span class="k"&gt;글자&lt;/span&gt;</span></label>
-              <textarea id="mnemCodeField" rows="3" oninput="mnemPreview()" placeholder='&lt;span class="k"&gt;점&lt;/span&gt;유 &lt;span class="k"&gt;소&lt;/span&gt;유' style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 8px;box-sizing:border-box;font-family:monospace;resize:vertical"></textarea>
-              <label style="font-size:12px;font-weight:700;color:#555">desc (설명 · 필수)</label>
-              <textarea id="mnemDescField" rows="2" placeholder="코드가 풀어내는 내용" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 8px;box-sizing:border-box;resize:vertical"></textarea>
+              <label style="font-size:12px;font-weight:700;color:#555">boxes &nbsp;<span style="font-weight:500;color:#A89C8E">박스=코드+설명 1쌍=화면 카드 1개 · 두문자=&lt;span class="k"&gt;글자&lt;/span&gt;</span></label>
+              <div id="mnemBoxes" style="margin:3px 0 6px"></div>
+              <button type="button" class="btn-sm" onclick="mnemAddBox()" style="background:#EEF;color:#4338CA;padding:3px 10px;font-size:11px;margin-bottom:10px">+ 박스 추가</button>
               <label style="font-size:12px;font-weight:700;color:#555">keywords (쉼표 구분)</label>
               <input id="mnemKwField" placeholder="물권, 점유권, 소유권" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 8px;box-sizing:border-box">
               <label style="font-size:12px;font-weight:700;color:#555">certs (쉼표 · 렌더 게이트 아님, 비우면 전역)</label>
@@ -1185,6 +1186,18 @@ var _mnemAll={}, _mnemLoaded=false, _mnemImpData=null, _mnemImpBound=false;
 function mnemEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mnemChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
 function mnemChantHTML(code){ var l=mnemChantLetters(code); return l?('<div class="chant">'+l+'</div>'):''; }
+var MNEM_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+function mnemNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
+function mnemBoxesAppHTML(m){
+  var bx=mnemNorm(m).filter(function(b){return b.code||b.desc;});
+  if(!bx.length) return '<div class="code" style="color:#94A3B8">(코드 없음)</div>';
+  var multi=bx.length>1;
+  return bx.map(function(b,i){
+    var num=multi?'<span class="mn-num">'+(MNEM_CIRCLED[i]||('('+(i+1)+')'))+'</span> ':'';
+    var sep=i>0?'<div class="mnem-box-sep"></div>':'';
+    return sep+num+mnemChantHTML(b.code)+'<div class="code">'+(b.code||'')+'</div>'+(b.desc?'<div class="desc">'+b.desc+'</div>':'');
+  }).join('');
+}
 function mnemInit(){
   if(!_mnemLoaded) mnemLoad();
   if(!_mnemImpBound){ _mnemImpBound=true;
@@ -1252,18 +1265,52 @@ function mnemRenderList(){
       +'<div class="m-name">'+mnemEsc(m.name||'(이름없음)')+' <span class="m-id">'+mnemEsc(id)+'</span></div>'
       +'<div class="m-meta-sub">'+((m.certs&&m.certs.length)?'시험 '+mnemEsc(m.certs.join(', '))+' · ':'')+'<span class="ref">mn://'+mnemEsc(id)+'</span></div></div>'
       +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
-      +'<div class="m-render"><div class="mnem-app">'+mnemChantHTML(m.code)+'<div class="code">'+(m.code||'')+'</div>'+(m.desc?'<div class="desc">'+m.desc+'</div>':'')+'</div></div>'
+      +'<div class="m-render"><div class="mnem-app">'+mnemBoxesAppHTML(m)+'</div></div>'
       +'<div class="m-foot">'
       +'<button class="btn-sm" onclick="mnemEdit(\''+id+'\')" style="background:#EEF;color:#4338CA">편집</button>'
       +'<button class="btn-sm" onclick="mnemDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
   });
 }
+function mnemBoxRowHTML(i, code, desc){
+  var ta='width:100%;padding:7px 10px;border-radius:7px;border:1.5px solid #E2E2E2;margin:3px 0;box-sizing:border-box;resize:vertical';
+  return '<div class="mnem-box-row" style="border:1px dashed #DDD9D2;border-radius:9px;padding:8px 9px;margin:0 0 8px;background:#fff">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+    +'<span class="mnem-box-lab" style="font-size:11px;font-weight:700;color:#8C8576">박스 '+(i+1)+'</span>'
+    +'<button type="button" class="btn-sm" onclick="mnemDelBox(this)" style="background:#FDE2E1;color:#A32D2D;padding:1px 9px;font-size:11px">박스 삭제</button></div>'
+    +'<textarea class="mnem-box-code" rows="2" oninput="mnemPreview()" placeholder=\'&lt;span class="k"&gt;점&lt;/span&gt;유 &lt;span class="k"&gt;소&lt;/span&gt;유\' style="'+ta+';font-family:monospace">'+mnemEsc(code||'')+'</textarea>'
+    +'<textarea class="mnem-box-desc" rows="2" oninput="mnemPreview()" placeholder="이 코드가 풀어내는 내용(필수)" style="'+ta+'">'+mnemEsc(desc||'')+'</textarea>'
+    +'</div>';
+}
+function mnemRenderBoxes(boxes){
+  if(!boxes||!boxes.length) boxes=[{code:'',desc:''}];
+  document.getElementById('mnemBoxes').innerHTML=boxes.map(function(b,i){return mnemBoxRowHTML(i,b.code,b.desc);}).join('');
+}
+function mnemAddBox(){
+  var c=document.getElementById('mnemBoxes');
+  var i=c.querySelectorAll('.mnem-box-row').length;
+  c.insertAdjacentHTML('beforeend', mnemBoxRowHTML(i,'',''));
+}
+function mnemDelBox(btn){
+  var c=document.getElementById('mnemBoxes');
+  if(c.querySelectorAll('.mnem-box-row').length<=1){ alert('박스는 최소 1개 필요해요.'); return; }
+  btn.closest('.mnem-box-row').remove();
+  Array.prototype.forEach.call(c.querySelectorAll('.mnem-box-row .mnem-box-lab'), function(el,idx){ el.textContent='박스 '+(idx+1); });
+  mnemPreview();
+}
+function mnemReadBoxes(){
+  var out=[];
+  Array.prototype.forEach.call(document.querySelectorAll('#mnemBoxes .mnem-box-row'), function(row){
+    var code=row.querySelector('.mnem-box-code').value.trim();
+    var desc=row.querySelector('.mnem-box-desc').value.trim();
+    if(code||desc) out.push({code:code,desc:desc});
+  });
+  return out;
+}
 function mnemFill(m){
   document.getElementById('mnemIdField').value=m.id||'';
   document.getElementById('mnemNameField').value=m.name||'';
-  document.getElementById('mnemCodeField').value=m.code||'';
-  document.getElementById('mnemDescField').value=m.desc||'';
+  mnemRenderBoxes(mnemNorm(m));
   document.getElementById('mnemKwField').value=(m.keywords||[]).join(', ');
   document.getElementById('mnemCertsField').value=(m.certs||[]).join(', ');
   document.getElementById('mnemNoteField').value=m.note||'';
@@ -1279,20 +1326,22 @@ function mnemValidateId(){
   if(w){ w.style.color='#15793F'; w.textContent='✓ 형식 OK'; } return true;
 }
 function mnemPreview(){
-  var code=document.getElementById('mnemCodeField').value; var chant=mnemChantLetters(code);
-  var head = chant ? '<div style="color:#C0322F;font-weight:800;letter-spacing:1px;margin-bottom:4px">'+mnemEsc(chant)+'</div>'
-                   : '<div style="color:#A89C8E;font-size:11px;margin-bottom:4px">두문자 &lt;span class="k"&gt; 2개 이상이면 모음줄 표시</div>';
-  document.getElementById('mnemPrev').innerHTML=head+'<div style="font-size:15px;font-weight:800;color:#8A5A00">'+(code||'')+'</div>';
+  var boxes=mnemReadBoxes();
+  var el=document.getElementById('mnemPrev'); if(!el) return;
+  if(!boxes.length){ el.innerHTML='<div style="color:#A89C8E;font-size:11px">코드를 입력하면 미리보기가 표시됩니다.</div>'; return; }
+  el.innerHTML='<div class="mnem-app">'+mnemBoxesAppHTML({boxes:boxes})+'</div>';
 }
 async function mnemSave(){
   var id=document.getElementById('mnemIdField').value.trim();
   if(!mnemValidateId()){ alert('id 형식: mn_ + 영문 소문자/숫자/_ (예: mn_property_types)'); return; }
-  var code=document.getElementById('mnemCodeField').value.trim();
-  var desc=document.getElementById('mnemDescField').value.trim();
-  if(!code){ alert('code는 필수예요.'); return; }
-  if(!desc){ alert('desc(설명)는 필수예요.'); return; }
+  var boxes=mnemReadBoxes();
+  if(!boxes.length){ alert('박스가 최소 1개 필요해요.'); return; }
+  for(var bi=0;bi<boxes.length;bi++){
+    if(!boxes[bi].code){ alert('박스 '+(bi+1)+'의 code는 필수예요.'); return; }
+    if(!boxes[bi].desc){ alert('박스 '+(bi+1)+'의 desc(설명)는 필수예요.'); return; }
+  }
   var csv=function(v){ return v.split(',').map(function(x){return x.trim();}).filter(Boolean); };
-  var rec={ name:document.getElementById('mnemNameField').value.trim(), code:code, desc:desc,
+  var rec={ name:document.getElementById('mnemNameField').value.trim(), boxes:boxes, code:boxes[0].code, desc:boxes[0].desc,
     keywords:csv(document.getElementById('mnemKwField').value), certs:csv(document.getElementById('mnemCertsField').value),
     note:document.getElementById('mnemNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
   try{ await db.collection('mnemonics').doc(id).set(rec); _mnemAll[id]=rec; mnemRenderList();
@@ -1553,7 +1602,7 @@ function cptmLines(v, prefix){
 function cptmMnBox(ref){
   var id=ref.replace('mn://',''); var m=_mnemAll[id];
   if(!m) return '<div class="cpt-broken">⚠️ 암기코드 mn://'+cptmEsc(id)+' — 마스터에 없음</div>';
-  return '<div class="mnem-app">'+mnemChantHTML(m.code)+'<div class="code">'+(m.code||'')+'</div>'+(m.desc?'<div class="desc">'+m.desc+'</div>':'')+'</div>';
+  return '<div class="mnem-app">'+mnemBoxesAppHTML(m)+'</div>';
 }
 // 표 (표 마스터 캐시 _tblmAll 재사용 + tblmRenderTable)
 function cptmTblBox(ref){
