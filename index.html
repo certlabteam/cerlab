@@ -2755,7 +2755,7 @@ function mnBoxCards(_r){
   boxes.forEach(function(bx,bi){
     var code=bx.code||'', desc=bx.desc||'';
     if(!code && !desc) return;
-    cards.push({code:code, desc:desc, kind:_r.kind, num: multi?(MN_CIRCLED[bi]||('('+(bi+1)+')')):''});
+    cards.push({code:code, desc:desc, kind:_r.kind, num:''});
   });
   return cards;
 }
