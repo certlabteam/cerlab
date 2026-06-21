@@ -113,7 +113,7 @@ function mnChantHTML(code){ var letters=mnChantLetters(code); if(!letters) retur
 function mnBox(code, desc){ if(!code) return ''; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
 var MC_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
 function mnNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
-function mnBoxesHTML(o){ var bx=mnNorm(o).filter(function(b){return b.code||b.desc;}); if(!bx.length) return ''; var multi=bx.length>1; return bx.map(function(b,i){ var num=multi?'<span class="mn-num">'+(MC_CIRCLED[i]||('('+(i+1)+')'))+'</span> ':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+ti+num+mnChantHTML(b.code)+'<div class="mn-code">'+b.code+'</div>'+(b.desc?'<div class="mn-desc">'+b.desc+'</div>':'')+'</div>'; }).join(''); }
+function mnBoxesHTML(o){ var bx=mnNorm(o).filter(function(b){return b.code||b.desc;}); if(!bx.length) return ''; var multi=bx.length>1; return bx.map(function(b,i){ var num=''; var ti=i===0?'<div class="mn-ti">암기코드</div>':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+ti+num+mnChantHTML(b.code)+'<div class="mn-code">'+b.code+'</div>'+(b.desc?'<div class="mn-desc">'+b.desc+'</div>':'')+'</div>'; }).join(''); }
 // 중복검사용: 코드 본문에서 태그·공백 제거한 정규화 문자열(본문 동일 판정 기준)
 function normCode(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').trim(); }
 // 통합 풀 항목(마스터 또는 직접입력) 1개를 클릭 가능한 pill로
