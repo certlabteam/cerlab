@@ -1194,7 +1194,7 @@ function mnemBoxesAppHTML(m){
   if(!bx.length) return '<div class="code" style="color:#94A3B8">(코드 없음)</div>';
   var multi=bx.length>1;
   return bx.map(function(b,i){
-    var num=multi?'<span class="mn-num">'+(MNEM_CIRCLED[i]||('('+(i+1)+')'))+'</span> ':'';
+    var num='';
     var sep=i>0?'<div class="mnem-box-sep"></div>':'';
     return sep+num+mnemChantHTML(b.code)+'<div class="code">'+(b.code||'')+'</div>'+(b.desc?'<div class="desc">'+b.desc+'</div>':'');
   }).join('');
