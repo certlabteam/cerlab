@@ -794,6 +794,7 @@ function mnChantHTML(code, cls){
   if(!m || m.length<2) return '';
   var letters=m.map(function(s){ return s.replace(/<[^>]+>/g,''); }).join('');
   if(!letters) return '';
+  if(letters===_mnPlainStripped(code)) return '';
   return '<div class="'+(cls||'mn-chant')+'">'+letters+'</div>';
 }
 
@@ -1668,7 +1669,8 @@ function grpBlockHTML(q){
 // ============================================================
 var _mnemCache={}, _conceptIndex={};   // _conceptIndex: mnId -> [개념이름…]
 function pvChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
-function pvChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=pvChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
+function _mnPlainStripped(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/[\s·ㆍ・•∙\/,，、~–—()①②③④⑤⑥⑦⑧⑨⑩]/g,''); }
+function pvChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=pvChantLetters(code); if(!l) return ''; if(l===_mnPlainStripped(code)) return ''; return '<div class="mn-chant">'+l+'</div>'; }
 // 암기코드 박스 (code/desc는 esc 안 함 — k 두문자 빨강 유지)
 function pvMnBox(code, desc, kind){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+pvChantHTML(code,kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
 var PV_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
