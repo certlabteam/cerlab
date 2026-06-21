@@ -459,6 +459,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .oxc-tbl .oxc-x{color:#A32D2D}
 #mcqView .oxc-tbl tr.oxc-miss td{background:#FBF6F5}
 #mcqView .jaryo .jtbl, .jtbl-html{overflow-x:auto;margin:8px 0}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;margin:8px 0}
+.tbl-wrap table.jtbl{width:max-content;min-width:100%;margin:0}
+@media (max-width:480px){ .tbl-wrap th,.tbl-wrap td{padding:4px 6px;font-size:13px;white-space:nowrap} }
 .jtbl-html table{max-width:100%}
 .jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
 .jtbl th, .jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
@@ -2635,6 +2638,16 @@ function loadTables(){
   return _tblPromise;
 }
 function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// 셀 화이트리스트: 전부 escape 후 안전 태그만 되살림. rich=false면 <br>만, rich(type:"html")면 <br>+<span class="k">+sup/sub.
+function tblCell(v, rich){
+  var s=tblEsc(v);
+  s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>');
+  if(rich){
+    s=s.replace(/&lt;span class=['"]k['"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>');
+    s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>');
+  }
+  return s;
+}
 function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 // 계층 병합 표 렌더(운율 빨강). merge:[열] = 부모 바뀌면 자식 끊기는 rowspan.
 function renderTbl(t){
@@ -2652,18 +2665,19 @@ function renderTbl(t){
       rows[r]['_rs'+c]=span; r+=span;
     }
   });
-  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+tblEsc(h)+'</th>';}).join('')+'</tr></thead>';
+  var rich=(t.type==='html');
+  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+tblCell(h, rich)+'</th>';}).join('')+'</tr></thead>';
   var tbody='<tbody>'+rows.map(function(row,r){
     var tds='';
     for(var c=0;c<t.headers.length;c++){
       if(skip[r+','+c]) continue;
       var rs=row['_rs'+c], span=(rs&&rs>1)?' rowspan="'+rs+'"':'';
-      tds+='<td'+span+'>'+tblYul(tblEsc(row[c]))+'</td>';
+      tds+='<td'+span+'>'+(rich?tblCell(row[c],true):tblYul(tblCell(row[c],false)))+'</td>';
     }
     return '<tr>'+tds+'</tr>';
   }).join('')+'</tbody>';
   var cap=t.caption_chant?'<div class="tbl-cap">'+tblEsc(t.caption_chant)+'</div>':'';
-  return cap+'<table class="jtbl">'+thead+tbody+'</table>';
+  return cap+'<div class="tbl-wrap"><table class="jtbl">'+thead+tbody+'</table></div>';
 }
 // "tbl://id" → 표 HTML. 객체(headers 포함)면 인라인 직접입력. 깨진 참조는 로드 완료 후에만 ⚠️.
 function tblResolve(ref){
