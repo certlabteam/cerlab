@@ -147,6 +147,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnem-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-code .k,.mnem-desc .k,.mnem-code k,.mnem-desc k{color:#C0392B;font-weight:800}
 .mnem-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
+.mn-num{font-weight:800;color:#0C447C;margin-right:2px}
+.mnem-box-sep{border-top:1px dashed #E5E0D5;margin:11px 0 9px}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
 .btn .lbl{font-size:10px;font-weight:500;opacity:.75}
@@ -2727,14 +2729,33 @@ function grpBlockHTML(q){
 }
 // mn 항목 → {code,desc}. "mn://id"면 마스터에서 치환, 객체/문자열은 그대로(하위호환).
 function mnResolve(mn){
+  // 반환: {boxes:[{code,desc}], kind, code, desc(첫 박스=하위호환), broken?, ref?}
+  function norm(o){
+    var bx;
+    if(o && Array.isArray(o.boxes) && o.boxes.length) bx=o.boxes.map(function(b){ return {code:(b&&b.code)||'', desc:(b&&b.desc)||''}; });
+    else bx=[{code:(o&&o.code)||'', desc:(o&&o.desc)||''}];   // 레거시 단일쌍 → 박스 1개로 승격
+    return {boxes:bx, kind:o&&o.kind, code:bx[0].code, desc:bx[0].desc};
+  }
   if(typeof mn==='string' && mn.indexOf('mn://')===0){
     var id=mn.slice(5), m=_mnemCache[id];
-    if(m) return {code:m.code||'', desc:m.desc||'', kind:m.kind};
-    return {code:'', desc:'', broken:_mnemLoaded, ref:id};   // 로드 완료 후에도 없으면 깨진 참조
+    if(m) return norm(m);
+    return {boxes:[], code:'', desc:'', broken:_mnemLoaded, ref:id};   // 로드 완료 후에도 없으면 깨진 참조
   }
-  if(mn && typeof mn==='object') return {code:mn.code||'', desc:mn.desc||'', kind:mn.kind};
-  if(typeof mn==='string') return {code:mn, desc:''};
-  return {code:'', desc:''};
+  if(mn && typeof mn==='object') return norm(mn);
+  if(typeof mn==='string') return {boxes:[{code:mn,desc:''}], code:mn, desc:''};
+  return {boxes:[], code:'', desc:''};
+}
+var MN_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+// 해석된 mn 1건 → 박스별 카드 배열({code,desc,kind,num}). 박스 2개↑면 num=①②…
+function mnBoxCards(_r){
+  if(_r.broken) return [{broken:true, ref:_r.ref}];
+  var boxes=_r.boxes||[]; var multi=boxes.length>1; var cards=[];
+  boxes.forEach(function(bx,bi){
+    var code=bx.code||'', desc=bx.desc||'';
+    if(!code && !desc) return;
+    cards.push({code:code, desc:desc, kind:_r.kind, num: multi?(MN_CIRCLED[bi]||('('+(bi+1)+')')):''});
+  });
+  return cards;
 }
 function buildMnemonic(card){
   const m=card.mn; if(!m) return '';
@@ -2742,11 +2763,15 @@ function buildMnemonic(card){
   function oneMn(item){
     const _r=mnResolve(item);
     if(_r.broken){ return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div><div class="learn-section-body" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+_r.ref+' (마스터에 없음)</div></div>'; }
-    const code=_r.code, desc=_r.desc;
-    if(!code) return '';
+    var cards=mnBoxCards(_r);
+    if(!cards.length) return '';
+    var inner=cards.map(function(cd,i){
+      var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
+      var sep=i>0?'<div class="mnem-box-sep"></div>':'';
+      return sep+num+mnChantHTML(cd.code,'mnem-chant',cd.kind)+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc">'+cd.desc+'</div>':'');
+    }).join('');
     return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
-      +'<div class="learn-section-body">'+mnChantHTML(code,'mnem-chant',_r.kind)+'<span class="mnem-code">'+code+'</span>'
-      +(desc?'<div class="mnem-desc">'+desc+'</div>':'')+'</div></div>';
+      +'<div class="learn-section-body">'+inner+'</div></div>';
   }
   if(Array.isArray(m)) return m.map(oneMn).join('');   // 배열이면 박스 여러 개
   return oneMn(m);                                       // 객체/문자열 단일(하위호환)
@@ -3968,9 +3993,12 @@ function comboStmtList(q){
 }
 function mnBoxHTML(mn){
   if(!mn) return '';
-  var _r=mnResolve(mn); let code=_r.code, desc=_r.desc;
-  if(!code) return '';
-  return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code,null,_r.kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+  var cards=mnBoxCards(mnResolve(mn));
+  if(!cards.length || cards[0].broken) return '';
+  return cards.map(function(cd,i){
+    var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
+    return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc">'+cd.desc+'</div>':'')+'</div>';
+  }).join('');
 }
 function conceptBoxHTML(c){
   if(!Array.isArray(c) || !c.length) return '';
@@ -4445,12 +4473,13 @@ function renderMcqExam(root){
     if(q.mn||(q.exp&&q.exp.mn)){ 
       var _mn=q.mn||q.exp.mn; 
       var mnList=Array.isArray(_mn)?_mn:(_mn&&(typeof _mn==='object'||typeof _mn==='string')?[_mn]:[]);
-      mnList.forEach(function(mn,idx){
-        var _r=mnResolve(mn);
-        if(_r.broken){ body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+'<div class="mn-code" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+_r.ref+' (마스터에 없음)</div></div>'; return; }
-        var code=_r.code, desc=_r.desc;
-        if(!code) return;   // 미해석 참조 등 빈 코드는 박스 생략
-        body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+''+mnChantHTML(code,null,_r.kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>';
+      var _cards=[];
+      mnList.forEach(function(mn){ _cards=_cards.concat(mnBoxCards(mnResolve(mn))); });
+      _cards.forEach(function(cd,i){
+        var extra=i>0?' mn-box-extra':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':'';
+        if(cd.broken){ body+='<div class="mn-box'+extra+'">'+ti+'<div class="mn-code" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+cd.ref+' (마스터에 없음)</div></div>'; return; }
+        var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
+        body+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc">'+cd.desc+'</div>':'')+'</div>';
       });
     }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
