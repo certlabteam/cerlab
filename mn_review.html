@@ -57,6 +57,9 @@
   .cc-ex{font-size:12.5px;color:#475569;margin-top:5px;white-space:pre-wrap}
   /* ===== 표 (tbl_prototype.html .jtbl 동일, 운율 빨강) ===== */
   .jtbl-html{overflow-x:auto;margin:8px 0}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;margin:8px 0}
+  .tbl-wrap table.jtbl{width:max-content;min-width:100%;margin:0}
+  @media (max-width:480px){ .tbl-wrap th,.tbl-wrap td{padding:4px 6px;font-size:13px;white-space:nowrap} }
 .jtbl-html table{max-width:100%}
 .jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
   .jtbl th,.jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
@@ -132,6 +135,7 @@ function mnResolveLocal(ref){
   }
   return {code:String(ref||''), desc:''};
 }
+function tblCell(v, rich){ var s=esc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); if(rich){ s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); } return s; }
 function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 function tblSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function renderTbl(t){
@@ -154,18 +158,19 @@ function renderTbl(t){
       t.rows[r]['_rs'+c]=span; r+=span;
     }
   });
-  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+esc(h)+'</th>';}).join('')+'</tr></thead>';
+  var rich=(t.type==='html');
+  var thead='<thead><tr>'+t.headers.map(function(h){return '<th>'+tblCell(h, rich)+'</th>';}).join('')+'</tr></thead>';
   var tbody='<tbody>'+t.rows.map(function(row,r){
     var tds='';
     for(var c=0;c<t.headers.length;c++){
       if(skip[r+','+c]) continue;
       var rs=row['_rs'+c], span=(rs&&rs>1)?' rowspan="'+rs+'"':'';
-      tds+='<td'+span+'>'+tblYul(esc(row[c]))+'</td>';
+      tds+='<td'+span+'>'+(rich?tblCell(row[c],true):tblYul(tblCell(row[c],false)))+'</td>';
     }
     return '<tr>'+tds+'</tr>';
   }).join('')+'</tbody>';
   var cap=t.caption_chant?'<div class="tbl-cap">'+esc(t.caption_chant)+'</div>':'';
-  return cap+'<table class="jtbl">'+thead+tbody+'</table>';
+  return cap+'<div class="tbl-wrap"><table class="jtbl">'+thead+tbody+'</table></div>';
 }
 function tblResolveLocal(ref){
   if(ref && typeof ref==='object' && (Array.isArray(ref.headers)||ref.html)) return renderTbl(ref);
