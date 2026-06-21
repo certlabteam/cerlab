@@ -53,6 +53,8 @@
   .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
   .mn-code .k,.mn-desc .k,.mn-code k,.mn-desc k{color:#C0392B;font-weight:800}
   .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
+  .mn-num{font-weight:800;color:#0C447C;margin-right:2px}
+  .mn-box-extra{margin-top:6px}
   .mnentry{margin-bottom:10px}
   .enmeta{font-size:11px;color:#94A3B8;margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .enmeta .src{font-family:monospace;background:#F1F5F9;border-radius:5px;padding:1px 6px;color:#475569}
@@ -108,6 +110,9 @@ function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['
 // 앱(index.html)과 동일하게 암기코드 박스 렌더. code/desc는 esc 안 함(=앱처럼 <span class='k'> 두문자가 빨간 볼드로 살아남).
 function mnChantHTML(code){ var letters=mnChantLetters(code); return letters?('<div class="mn-chant">'+letters+'</div>'):''; }
 function mnBox(code, desc){ if(!code) return ''; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
+var MC_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+function mnNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
+function mnBoxesHTML(o){ var bx=mnNorm(o).filter(function(b){return b.code||b.desc;}); if(!bx.length) return ''; var multi=bx.length>1; return bx.map(function(b,i){ var num=multi?'<span class="mn-num">'+(MC_CIRCLED[i]||('('+(i+1)+')'))+'</span> ':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+ti+num+mnChantHTML(b.code)+'<div class="mn-code">'+b.code+'</div>'+(b.desc?'<div class="mn-desc">'+b.desc+'</div>':'')+'</div>'; }).join(''); }
 // 중복검사용: 코드 본문에서 태그·공백 제거한 정규화 문자열(본문 동일 판정 기준)
 function normCode(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').trim(); }
 // 통합 풀 항목(마스터 또는 직접입력) 1개를 클릭 가능한 pill로
@@ -169,20 +174,20 @@ async function scanBank(examId, sub){
     const list=Array.isArray(mn)?mn:[mn];
     const key=examId+'||'+sub.code;
     list.forEach(item=>{
-      let code='', desc='', source='direct', refId='', broken=false;
+      let code='', desc='', source='direct', refId='', broken=false, obj=null;
       if(typeof item==='string' && item.indexOf('mn://')===0){
         source='ref'; refId=item.slice(5);
         const m=MASTER[refId];
-        if(m){ code=m.code||''; desc=m.desc||''; } else { broken=true; }
+        if(m){ code=m.code||''; desc=m.desc||''; obj=m; } else { broken=true; }
         (REFS[refId]=REFS[refId]||[]).push({exam:examId, sub:sub.code, qid:q.id});
       } else if(item && typeof item==='object'){
-        code=item.code||''; desc=item.desc||'';
-        DIRECT.push({exam:examId, sub:sub.code, qid:q.id, code:code, desc:desc});
+        code=item.code||''; desc=item.desc||''; obj=item;
+        DIRECT.push({exam:examId, sub:sub.code, qid:q.id, code:code, desc:desc, boxes:item.boxes});
       } else if(typeof item==='string'){
-        code=item;
+        code=item; obj={code:item, desc:''};
         DIRECT.push({exam:examId, sub:sub.code, qid:q.id, code:code, desc:''});
       }
-      (SUBMN[key]=SUBMN[key]||[]).push({qid:q.id, code:code, desc:desc, source:source, refId:refId, broken:broken});
+      (SUBMN[key]=SUBMN[key]||[]).push({qid:q.id, code:code, desc:desc, obj:obj, source:source, refId:refId, broken:broken});
     });
   });
 }
@@ -374,7 +379,7 @@ function renderMn(){
     else inner+=list.map(e=>{
       const box = e.broken
         ? '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#A32D2D">⚠️ 참조 오류: mn://'+esc(e.refId)+' (마스터에 없음 → 앱에서 빈칸)</div></div>'
-        : (mnBox(e.code, e.desc) || '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 비어있음)</div></div>');
+        : (mnBoxesHTML(e.obj || {code:e.code,desc:e.desc}) || '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 비어있음)</div></div>');
       const src = e.source==='ref' ? ('mn://'+esc(e.refId)) : '직접입력';
       return '<div class="mnentry">'+box+'<div class="enmeta"><span class="src">'+esc(e.qid)+'</span><span class="src">'+src+'</span>'+goLink({exam:ex,sub:su,qid:e.qid})+'</div></div>';
     }).join('');
@@ -418,12 +423,36 @@ function renderMn(){
   else h+=kwClusters.map(c=>'<div class="row"><b>'+esc(c.kw)+'</b><div class="meta">'+c.ids.map(id=>'<span class="pill">'+esc(id)+'</span>').join('')+'</div></div>').join('');
   h+='</div>';
 
+  // 종합본 중복 의심 + 박스 분리 권장 (boxes 마이그레이션 점검)
+  function chantDoubled(L){ if(!L||L.length<4) return false; var n=L.length; if(n%2===0 && L.slice(0,n/2)===L.slice(n/2)) return true; return /(.{2,})\1/.test(L); }
+  function multiGroup(code){ if(!code) return false; if(/[①②③④⑤⑥⑦⑧⑨⑩]/.test(String(code))) return true; return (String(code).match(/<br\s*\/?>/gi)||[]).length>=2; }
+  var dblSuspect=[], boxSuggest=[];
+  function scanBoxes(o, who, hasBoxes){
+    var boxes=(o&&Array.isArray(o.boxes)&&o.boxes.length)?o.boxes:[{code:o&&o.code}];
+    boxes.forEach(function(b){ var L=mnChantLetters(b&&b.code); if(chantDoubled(L)) dblSuspect.push({who:who, chant:L, code:(b&&b.code)||''}); });
+    if(!hasBoxes && multiGroup(o&&o.code)) boxSuggest.push({who:who, code:o.code});
+  }
+  Object.keys(MASTER).forEach(function(id){ var m=MASTER[id]; scanBoxes(m, 'mn://'+id, !!(m.boxes&&m.boxes.length)); });
+  DIRECT.forEach(function(d){ scanBoxes({code:d.code}, '직접입력 '+esc(d.qid), false); });
+
+  h+='<div class="sec"><h2>🔁 종합본 중복 의심 <span class="cnt '+(dblSuspect.length?'warn':'ok')+'">'+dblSuspect.length+'</span></h2>'
+    +'<div class="desc">한 코드의 <b>두문자 모음(종합본)에 같은 글자열이 두 번</b> 나오는 경우 — 보통 약어와 풀이를 둘 다 <code>&lt;span class="k"&gt;</code>로 표시해 종합본이 겹쳐 나오는 데이터입니다. 해당 항목의 <b>code 필드에서 한쪽 k를 빼세요</b>.</div>';
+  if(!dblSuspect.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=dblSuspect.map(function(x){ return '<div class="row"><span class="chant">'+esc(x.chant)+'</span> <span class="x">'+x.who+'</span><div class="meta">'+esc(normCode(x.code))+'</div></div>'; }).join('');
+  h+='</div>';
+
+  h+='<div class="sec"><h2>🧱 박스 분리 권장 <span class="cnt '+(boxSuggest.length?'warn':'ok')+'">'+boxSuggest.length+'</span></h2>'
+    +'<div class="desc">코드 하나에 <b>①②</b>나 <b>줄바꿈 2개 이상</b>으로 여러 묶음이 욱여넣어진 항목 — admin에서 <b>박스(코드+설명 쌍)로 나누면</b> 화면에서 ①②로 분리되고 종합본도 박스별로 정리됩니다.</div>';
+  if(!boxSuggest.length) h+='<div class="empty">없음 ✅</div>';
+  else h+=boxSuggest.map(function(x){ return '<div class="row"><span class="x">'+x.who+'</span><div class="meta">'+esc(normCode(x.code)).slice(0,90)+'</div></div>'; }).join('');
+  h+='</div>';
+
   // 직접입력 (이관 후보)
   h+='<div class="sec"><h2>📥 직접입력 mn (이관 후보) <span class="cnt '+(direct.length?'warn':'ok')+'">'+direct.length+'</span></h2>'
     +'<div class="desc">문항에 직접 입력된 암기코드(참조 아님). 재사용·과목겹침 개념이면 마스터로 옮기고 <b>mn://id</b> 참조로 바꾸는 게 좋습니다. (일회성이면 그대로 OK)</div>';
   if(!direct.length) h+='<div class="empty">없음 ✅</div>';
   else h+=direct.map(d=>{
-    return '<div class="mnentry">'+mnBox(d.code, d.desc)+'<div class="enmeta"><span class="src">'+esc(refLabel(d))+'</span>'+goLink(d)+'</div></div>'; }).join('');
+    return '<div class="mnentry">'+mnBoxesHTML(d)+'<div class="enmeta"><span class="src">'+esc(refLabel(d))+'</span>'+goLink(d)+'</div></div>'; }).join('');
   h+='</div>';
 
   outEl.innerHTML=h;
