@@ -2476,7 +2476,7 @@ let solveCountAfterSR=true; // marker
 function getWrongCount(){
   return cards.filter(c=>{
     const p=srProgress[SR_CERT+'|'+c.id];
-    return p&&(p.rc||0)>0&&p.cor!==1;  // 시도한 것 중 틀린 것만
+    return p&&(p.rc||0)>0&&p.res!==2;  // 시도한 것 중 마지막 결과가 정확(2)이 아닌 것(틀림·애매 = 오답)
   }).length;
 }
 function getFiltered(){
@@ -2585,7 +2585,7 @@ function updateStats(){
   const correctCount=cards.filter(c=>{
     if(!c || !c.id) return false;
     const p=srProgress[SR_CERT+'|'+c.id];
-    return p&&(p.rc||0)>0 && p.cor===1; // SR 정답 판정(getWrongCount와 동일 기준)
+    return p&&(p.rc||0)>0 && p.res===2; // 마지막 결과가 정확(2)인 것만 정답(getWrongCount와 상보)
   }).length;
   const w=getWrongCount();
   
