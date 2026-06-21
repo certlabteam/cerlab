@@ -99,7 +99,8 @@ const outEl=document.getElementById('out');
 const statusEl=document.getElementById('status');
 function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mnChantLetters(code){ var m=String(code||'').match(/<span class=['"]k['"]>[\s\S]*?<\/span>|<k>[\s\S]*?<\/k>/g); if(!m||m.length<2) return ''; return m.map(function(x){return x.replace(/<[^>]+>/g,'');}).join(''); }
-function mnChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=mnChantLetters(code); return l?('<div class="mn-chant">'+l+'</div>'):''; }
+function _mnPlainStripped(code){ return String(code||'').replace(/<[^>]+>/g,'').replace(/[\s·ㆍ・•∙\/,，、~–—()①②③④⑤⑥⑦⑧⑨⑩]/g,''); }
+function mnChantHTML(code, kind){ if(kind==='sentence'||kind==='chant') return ''; var l=mnChantLetters(code); if(!l) return ''; if(l===_mnPlainStripped(code)) return ''; return '<div class="mn-chant">'+l+'</div>'; }
 // 앱과 동일하게 — code/desc는 esc 안 함(<span class='k'> 두문자가 빨간 볼드로 살아남)
 function mnBox(code, desc, kind){ if(!code) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return '<div class="mn-box"><div class="mn-ti">암기코드</div>'+mnChantHTML(code, kind)+'<div class="mn-code">'+code+'</div>'+(desc?'<div class="mn-desc">'+desc+'</div>':'')+'</div>'; }
 var MR_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
