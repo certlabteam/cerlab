@@ -5137,23 +5137,28 @@ async function loadOneSubject(ex, sub){
   if(doc) applyBank(ex,sub,doc);
 }
 // 시험 1개의 과목들을 병렬 로드 (idempotent)
+var loadingExams={};   // 진행 중인 로드 Promise(동시호출 중복 방지)
 async function loadExam(examId){
   if(loadedExams[examId]) return;
-  await loadManifest();
-  await loadMnemonics();   // 암기코드 마스터 캐시(렌더 전 완료 보장 → 깨진참조 오판 방지)
-  await loadTables();      // 표 마스터 캐시(tbl:// 렌더용)
-  await loadGraphs();      // 그래프 마스터 캐시(grp:// 렌더용)
-  const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
-  if(!ex){ loadedExams[examId]=true; return; }
-  await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));
-  loadedExams[examId]=true;
-  rebuildQid();
-  // 적응형 데이터(map/diag/variants/변형풀) — 비차단·실패무시. 미준비 과목은 빈 룩업(Elo훅이 스킵).
-  if(typeof loadAdaptiveSubject==='function'){
-    (ex.subjects||[]).forEach(function(sub){
-      try{ loadAdaptiveSubject(examId, sub.code).catch(function(){}); }catch(e){}
-    });
-  }
+  if(loadingExams[examId]) return loadingExams[examId];   // 이미 로딩 중이면 같은 작업 공유
+  loadingExams[examId]=(async()=>{
+    await loadManifest();
+    await loadMnemonics();   // 암기코드 마스터 캐시(렌더 전 완료 보장 → 깨진참조 오판 방지)
+    await loadTables();      // 표 마스터 캐시(tbl:// 렌더용)
+    await loadGraphs();      // 그래프 마스터 캐시(grp:// 렌더용)
+    const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
+    if(!ex){ loadedExams[examId]=true; return; }
+    await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));
+    loadedExams[examId]=true;
+    rebuildQid();
+    // 적응형 데이터(map/diag/variants/변형풀) — 비차단·실패무시. 미준비 과목은 빈 룩업(Elo훅이 스킵).
+    if(typeof loadAdaptiveSubject==='function'){
+      (ex.subjects||[]).forEach(function(sub){
+        try{ loadAdaptiveSubject(examId, sub.code).catch(function(){}); }catch(e){}
+      });
+    }
+  })();
+  try{ await loadingExams[examId]; } finally { delete loadingExams[examId]; }
 }
 // 전체 로드(폴백·관리용; 진입 시엔 안 씀)
 async function loadAllBanks(){
@@ -5164,7 +5169,8 @@ async function loadAllBanks(){
 function applyBank(ex,sub,doc){
   const qs=doc.questions||[];
   if(ex.type==='flashcard'){
-    qs.forEach(c=>{ const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,img:c.img||null,learn:c.learn||null,mn:c.mn||null,star:c.star||1,since:c.since||null,newType:c.newType||false,w:false,fav:false}); });
+    const _seen=new Set(D.map(c=>c.id));   // 이미 적재된 id — 중복 push 방지
+    qs.forEach(c=>{ if(_seen.has(c.id)) return; _seen.add(c.id); const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,img:c.img||null,learn:c.learn||null,mn:c.mn||null,star:c.star||1,since:c.since||null,newType:c.newType||false,w:false,fav:false}); });
   } else {
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
