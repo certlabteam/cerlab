@@ -346,7 +346,7 @@ function renderMn(){
   const unused=Object.keys(MASTER).filter(id=>!REFS[id]).sort();
   // 3) 중복 검사용 통합 풀 (마스터 코드 + 직접입력 코드 전체)
   const POOL=[];   // {code, src:'master'|'direct', id?, ref?{exam,sub,qid}}
-  Object.keys(MASTER).forEach(id=>{ const c=MASTER[id].code||''; if(c) POOL.push({code:c, src:'master', id:id}); });
+  Object.keys(MASTER).forEach(id=>{ mnNorm(MASTER[id]).forEach(function(b){ if(b.code) POOL.push({code:b.code, src:'master', id:id}); }); });
   DIRECT.forEach(d=>{ if(d.code) POOL.push({code:d.code, src:'direct', ref:{exam:d.exam,sub:d.sub,qid:d.qid}}); });
   // 3a) 본문 동일: 태그·공백 제거 후 똑같은 코드가 2곳 이상 (이관 강력후보)
   const bySame={};
