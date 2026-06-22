@@ -3575,17 +3575,13 @@ function _ltResultHTML(M){
       +'<div style="padding:8px 12px;font-size:12px;color:#A89C8E">레벨은 시작점이에요. 문제를 풀면 단원별로 조정됩니다.</div></div>';
   }catch(e){ return ''; }
 }
-var _ltBypass=false, _ltResume=null;
-function ltGate(cert, resume){
+function ltGate(cert){
   if(!ltGated(cert)) return false;
-  if(_ltBypass){ _ltBypass=false; return false; }   // '그냥 풀기'로 재진입 → 통과
-  _ltResume=(typeof resume==='function')?resume:null;
   _ltShowGateModal(cert);
-  return true;
+  return true;   // 레벨 테스트 필수 — 미완료면 진입 차단
 }
 function _ltCloseGate(){ var e=document.getElementById('ltGatePopup'); if(e) e.classList.add('hidden'); }
-function _ltGateGo(){ _ltCloseGate(); _ltResume=null; if(typeof diagResume==='function') diagResume(); }
-function _ltGateSkip(){ _ltCloseGate(); var r=_ltResume; _ltResume=null; if(r){ _ltBypass=true; r(); } }
+function _ltGateGo(){ _ltCloseGate(); if(typeof diagResume==='function') diagResume(); }
 function _ltShowGateModal(cert){
   var per=(typeof LT_PER_SUBJECT!=='undefined')?LT_PER_SUBJECT:10;
   var p=document.getElementById('ltGatePopup');
@@ -3595,10 +3591,9 @@ function _ltShowGateModal(cert){
     p.innerHTML='<div class="auth-sheet" style="text-align:center;max-width:340px">'
       +'<button class="popup-x" onclick="_ltCloseGate()" aria-label="닫기">✕</button>'
       +'<div style="font-size:36px;line-height:1;margin:6px 0 2px">🎯</div>'
-      +'<div class="auth-sheet-title">레벨 테스트 먼저 해볼까요?</div>'
-      +'<div class="auth-sheet-sub">레벨 테스트를 하면 약점을 측정해서 맞춤으로 풀 수 있어요.<br><span style="color:#8A7D6E;font-size:12px">과목당 '+per+'문항 · 한 번만 (이어풀기 가능)</span></div>'
+      +'<div class="auth-sheet-title">레벨 테스트가 필요해요</div>'
+      +'<div class="auth-sheet-sub">먼저 레벨 테스트로 약점을 측정해야 맞춤 학습이 시작돼요.<br><span style="color:#8A7D6E;font-size:12px">과목당 '+per+'문항 · 한 번만 (이어풀기 가능)</span></div>'
       +'<button class="btn-google-login" onclick="_ltGateGo()" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;width:100%">레벨 테스트 하러가기</button>'
-      +'<button class="auth-sheet-close" style="width:100%;margin-top:8px" onclick="_ltGateSkip()">그냥 풀기</button>'
       +'</div>';
     document.body.appendChild(p);
     p.addEventListener('click', function(e){ if(e.target===p) _ltCloseGate(); });
@@ -3626,7 +3621,7 @@ function luBuildPool(cert,sub){ var pool=[], byId={}; try{
     vp.forEach(function(v){ if(!v||!v.id||byId[v.id]||!v.topic||!v.diff) return; v._subj=sub; pool.push({id:v.id, topic:v.topic, level:v.diff, subtopic:v.subtopic||null, _q:v}); byId[v.id]=true; });
   }catch(e){} return pool; }
 function luTopicScores(cert,sub){ var k=cert+'|'+sub, st=(typeof eloState!=='undefined'&&eloState[k])||{}, out={}; for(var t in st){ if(t.charAt(0)==='_') continue; if(st[t]&&typeof st[t].score==='number') out[t]=st[t].score; } return out; }
-function startLevelUp(){ var cert=mqCert; if(ltGate(cert, function(){ startLevelUp(); })) return; luSubIdx=0; luSeen={}; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLoadRound(true); }
+function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; luSubIdx=0; luSeen={}; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLoadRound(true); }
 function luLoadRound(first){
   var cert=mqCert, order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
   if(!order.length){ luFinish('과목이 없습니다.'); return; }
@@ -3809,7 +3804,7 @@ function startMcqReview(){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function startMcqExam(id,si,mode){
-  if(ltGate(mqCert, function(){ startMcqExam(id,si,mode); })) return;   // B2: 레벨테스트 권유(그냥 풀기 가능)
+  if(ltGate(mqCert)) return;                  // B2: 레벨테스트 필수 — 미완료면 차단
   mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mode=mode||'all';
   mqStopTimer();
@@ -3825,7 +3820,7 @@ function startMcqExam(id,si,mode){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
-  if(ltGate(mqCert, function(){ resumeMcqExam(id,si); })) return;   // B2: 레벨테스트 권유(그냥 풀기 가능)
+  if(ltGate(mqCert)) return;                  // B2: 레벨테스트 필수 — 미완료면 차단
   mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mqStopTimer();
   const saved=mqLoadProgress(id,si);
