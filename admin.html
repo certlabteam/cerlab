@@ -1232,6 +1232,7 @@ var _mfRender={};   // ns -> RenderList (아래 함수들 hoist됨)
 var MF_SUBJ={acct:'회계',econ:'경제',law:'법규',real:'부동산',civil:'민법',theory:'이론',tax:'세법',hist:'역사',bb:'보디빌딩'};
 function mfEsc(x){return String(x==null?'':x).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];});}
 function mfSubj(id){ var p=String(id||'').split('_'); return p.length>=2?p[1]:''; }
+function mfSubjOf(id, item){ return (item&&item.subj)||mfSubj(id); }   // 항목에 subj 있으면 우선(접두사와 분리)
 function mfSubjLabel(c){ return MF_SUBJ[c]||c||'기타'; }
 function mfSet(ns,which,val){ if(_mfState[ns]){ _mfState[ns][which]=val; if(_mfRender[ns]) _mfRender[ns](); } }
 function masterListHTML(ns, all, emptyMsg, cardFn){
@@ -1239,7 +1240,7 @@ function masterListHTML(ns, all, emptyMsg, cardFn){
   var allIds=Object.keys(all);
   if(!allIds.length) return '<div style="color:#A89C8E;padding:12px">'+emptyMsg+'</div>';
   var certSet={}, subjSet={};
-  allIds.forEach(function(id){ (all[id].certs||[]).forEach(function(c){certSet[c]=1;}); var s=mfSubj(id); if(s) subjSet[s]=1; });
+  allIds.forEach(function(id){ (all[id].certs||[]).forEach(function(c){certSet[c]=1;}); var s=mfSubjOf(id, all[id]); if(s) subjSet[s]=1; });
   var certs=Object.keys(certSet).sort(), subjs=Object.keys(subjSet).sort();
   function opt(v,label,sel){ return '<option value="'+mfEsc(v)+'"'+(v===sel?' selected':'')+'>'+mfEsc(label)+'</option>'; }
   var certSel='<select class="mf-sel" onchange="mfSet(\''+ns+'\',\'cert\',this.value)">'+opt('','전체 시험',st.cert)+certs.map(function(c){return opt(c,c,st.cert);}).join('')+'</select>';
@@ -1247,10 +1248,10 @@ function masterListHTML(ns, all, emptyMsg, cardFn){
   var ids=allIds.filter(function(id){
     var it=all[id]||{};
     if(st.cert && (it.certs||[]).indexOf(st.cert)<0) return false;
-    if(st.subj && mfSubj(id)!==st.subj) return false;
+    if(st.subj && mfSubjOf(id, all[id])!==st.subj) return false;
     return true;
   });
-  var groups={}; ids.forEach(function(id){ var g=mfSubj(id)||'기타'; (groups[g]=groups[g]||[]).push(id); });
+  var groups={}; ids.forEach(function(id){ var g=mfSubjOf(id, all[id])||'기타'; (groups[g]=groups[g]||[]).push(id); });
   var gkeys=Object.keys(groups).sort();
   var body=gkeys.map(function(g){
     return '<div class="mf-grouphd">'+mfEsc(mfSubjLabel(g))+' <span style="color:#B4AE9F;font-weight:500;font-size:11px">'+groups[g].length+'</span></div>'
@@ -1349,6 +1350,7 @@ async function mnemSave(){
   var rec={ name:document.getElementById('mnemNameField').value.trim(), boxes:boxes, code:boxes[0].code, desc:boxes[0].desc,
     keywords:csv(document.getElementById('mnemKwField').value), certs:csv(document.getElementById('mnemCertsField').value),
     note:document.getElementById('mnemNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
+  var _ex=_mnemAll[id]; if(_ex&&_ex.subj) rec.subj=_ex.subj;   // 과목분류(subj) 보존 — 편집해도 안 날아감
   try{ await db.collection('mnemonics').doc(id).set(rec); _mnemAll[id]=rec; mnemRenderList();
     var st=document.getElementById('mnemStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_mnemAll).length+'개)'; }
     mnemCancel();
