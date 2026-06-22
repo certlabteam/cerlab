@@ -3493,7 +3493,7 @@ function startDiagnostic(){
   Object.keys(qb).forEach(code=>{                 // 과목별 10문항(과목 묶음 유지)
     picked=picked.concat(_ltSampleSubject(cert, code, code, qb, LT_PER_SUBJECT));
   });
-  if(picked.length<1){ alert('레벨 테스트에 사용할 문제가 아직 없습니다. (정답이 입력된 문제가 필요해요)'); return; }
+  if(picked.length<1){ _luToast('레벨 테스트에 사용할 문제가 아직 없어요. (정답이 입력된 문제가 필요해요)'); return; }
   clearDiagProgress(cert);
   mqStopTimer();
   mqDiag=true; mqLevelTest=true; mqReview=false; mqInReview=false; mqConcept=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
@@ -3554,15 +3554,56 @@ function _ltResultHTML(M){
         +'<span style="font-size:12px;color:#A89C8E;min-width:34px;text-align:right">'+r.correct+'/'+r.n+'</span></div>';
     }).join('');
     if(!rows) return '';
+    var scoreHTML='';
+    try{
+      var ap=(typeof adPredicted==='function')?adPredicted(M.cert):null;
+      if(ap){
+        var v=(typeof adVerdict==='function')?adVerdict(M.cert,ap):null;
+        var col=(v&&v.color)||'#0C447C';
+        var pred=(ap.predicted==null)?'--':ap.predicted;
+        var lbl=(v&&v.label)?v.label:'';
+        scoreHTML='<div style="text-align:center;padding:14px 12px;background:#F4F8FC;border-bottom:1px solid #E3EDF7">'
+          +'<div style="font-size:12.5px;color:#6B7C8F;font-weight:700">예상 점수</div>'
+          +'<div style="font-size:40px;font-weight:800;color:'+col+';line-height:1.1;margin:2px 0">'+pred+'<span style="font-size:16px;font-weight:700">점</span></div>'
+          +(lbl?'<div style="font-size:13px;font-weight:700;color:'+col+'">'+lbl+'</div>':'')
+          +'</div>';
+      }
+    }catch(e){}
     return '<div style="margin:14px 0;border:1px solid #EFE9E1;border-radius:12px;overflow:hidden;background:#FCFAF6">'
-      +'<div style="padding:8px 12px;font-weight:700;color:#6B5E4F;background:#F5F0E8">과목별 레벨</div>'+rows
+      +scoreHTML
+      +'<div style="padding:8px 12px;font-weight:700;color:#6B5E4F;background:#F5F0E8">과목별 시작 레벨</div>'+rows
       +'<div style="padding:8px 12px;font-size:12px;color:#A89C8E">레벨은 시작점이에요. 문제를 풀면 단원별로 조정됩니다.</div></div>';
   }catch(e){ return ''; }
 }
-function ltGate(cert){
+var _ltBypass=false, _ltResume=null;
+function ltGate(cert, resume){
   if(!ltGated(cert)) return false;
-  if(confirm('기출 풀이 전에 레벨 테스트를 먼저 해주세요.\n과목당 '+LT_PER_SUBJECT+'문항, 한 번만 보면 됩니다(이어풀기 가능).\n\n지금 시작할까요?')){ diagResume(); }
+  if(_ltBypass){ _ltBypass=false; return false; }   // '그냥 풀기'로 재진입 → 통과
+  _ltResume=(typeof resume==='function')?resume:null;
+  _ltShowGateModal(cert);
   return true;
+}
+function _ltCloseGate(){ var e=document.getElementById('ltGatePopup'); if(e) e.classList.add('hidden'); }
+function _ltGateGo(){ _ltCloseGate(); _ltResume=null; if(typeof diagResume==='function') diagResume(); }
+function _ltGateSkip(){ _ltCloseGate(); var r=_ltResume; _ltResume=null; if(r){ _ltBypass=true; r(); } }
+function _ltShowGateModal(cert){
+  var per=(typeof LT_PER_SUBJECT!=='undefined')?LT_PER_SUBJECT:10;
+  var p=document.getElementById('ltGatePopup');
+  if(!p){
+    p=document.createElement('div');
+    p.className='auth-popup hidden'; p.id='ltGatePopup';
+    p.innerHTML='<div class="auth-sheet" style="text-align:center;max-width:340px">'
+      +'<button class="popup-x" onclick="_ltCloseGate()" aria-label="닫기">✕</button>'
+      +'<div style="font-size:36px;line-height:1;margin:6px 0 2px">🎯</div>'
+      +'<div class="auth-sheet-title">레벨 테스트 먼저 해볼까요?</div>'
+      +'<div class="auth-sheet-sub">레벨 테스트를 하면 약점을 측정해서 맞춤으로 풀 수 있어요.<br><span style="color:#8A7D6E;font-size:12px">과목당 '+per+'문항 · 한 번만 (이어풀기 가능)</span></div>'
+      +'<button class="btn-google-login" onclick="_ltGateGo()" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;width:100%">레벨 테스트 하러가기</button>'
+      +'<button class="auth-sheet-close" style="width:100%;margin-top:8px" onclick="_ltGateSkip()">그냥 풀기</button>'
+      +'</div>';
+    document.body.appendChild(p);
+    p.addEventListener('click', function(e){ if(e.target===p) _ltCloseGate(); });
+  }
+  p.classList.remove('hidden');
 }
 // ===== 4-b 레벨업 문제풀기 (연속 5문제 라운드 · 약점매칭 · 기출+변형) =====
 var mqLevelUp=false, luSubIdx=0, luSeen={}, luPreScores={}, luCurSub='', LU_ROUND=5, luCardOpen={};
@@ -3585,7 +3626,7 @@ function luBuildPool(cert,sub){ var pool=[], byId={}; try{
     vp.forEach(function(v){ if(!v||!v.id||byId[v.id]||!v.topic||!v.diff) return; v._subj=sub; pool.push({id:v.id, topic:v.topic, level:v.diff, subtopic:v.subtopic||null, _q:v}); byId[v.id]=true; });
   }catch(e){} return pool; }
 function luTopicScores(cert,sub){ var k=cert+'|'+sub, st=(typeof eloState!=='undefined'&&eloState[k])||{}, out={}; for(var t in st){ if(t.charAt(0)==='_') continue; if(st[t]&&typeof st[t].score==='number') out[t]=st[t].score; } return out; }
-function startLevelUp(){ var cert=mqCert; if(ltGated(cert)){ ltGate(cert); return; } luSubIdx=0; luSeen={}; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLoadRound(true); }
+function startLevelUp(){ var cert=mqCert; if(ltGate(cert, function(){ startLevelUp(); })) return; luSubIdx=0; luSeen={}; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLoadRound(true); }
 function luLoadRound(first){
   var cert=mqCert, order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
   if(!order.length){ luFinish('과목이 없습니다.'); return; }
@@ -3617,11 +3658,28 @@ function luEndRound(){
   try{
     var now=(typeof eloState!=='undefined'&&eloState[k])||{};
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, tmap=topicNameMap(cert,sub);
-    for(var t in now){ if(t.charAt(0)==='_') continue; var before=luPreScores[t]; if(before==null) continue; var lb=AE.scoreToLevel(before), la=AE.scoreToLevel(now[t].score); if(la!==lb) changes.push({sub:nm, topic:(tmap[t]&&tmap[t].name)||t, from:lb, to:la, up:la>lb}); }
+    for(var t in now){ if(t.charAt(0)==='_') continue; var before=luPreScores[t]; if(before==null) continue; var lb=AE.scoreToLevel(before), la=AE.scoreToLevel(now[t].score); if(la!==lb) changes.push({sub:nm, subCode:sub, tcode:t, topic:(tmap[t]&&tmap[t].name)||t, from:lb, to:la, up:la>lb}); }
   }catch(e){}
   luSubIdx=(luSubIdx+1);
   if(changes.length) luRenderPopup(changes); else luLoadRound(false);
 }
+// 토픽에 개념학습(exp.learn) 보유 문항이 있으면 그 위치 반환 — [개념 다지기] 가드
+function _luTopicConceptLoc(cert, sub, tcode){
+  try{
+    var qb=qbOf(cert)[sub]; if(!qb||!qb.sets) return null;
+    for(var si=0; si<qb.sets.length; si++){
+      var qs=qb.sets[si].questions||[];
+      for(var i=0;i<qs.length;i++){
+        var q=qs[i]; var L=q.exp&&q.exp.learn;
+        if(!(L&&(L.title||L.sum||(Array.isArray(L.secs)&&L.secs.length)))) continue;
+        var tp=q.topic; if(!tp){ var info=(typeof adLookup==='function')&&adLookup(cert,sub,q.id); tp=info&&info.topic; }
+        if(tp===tcode) return {si:si, idx:i};
+      }
+    }
+  }catch(e){}
+  return null;
+}
+function _luToConcept(sub,si,idx){ mqLevelUp=false; startConceptStudy(sub,si,idx); }
 function luRenderPopup(changes){
   var up=changes.filter(function(c){return c.up;}), main=up.length?up[0]:changes[0];
   var root=document.getElementById('mcqRoot'); if(!root){ luLoadRound(false); return; }
@@ -3629,11 +3687,26 @@ function luRenderPopup(changes){
   var chg='<div style="font-size:15px;font-weight:800;color:'+col+';margin:12px 0 4px">'+mqEsc(main.sub)+' · '+mqEsc(main.topic)+'  Lv'+main.from+' → Lv'+main.to+'</div>';
   var more=changes.length-1, extra=more>0?'<div style="font-size:12px;color:#8A7D6E;margin-top:4px">그 외 '+more+'개 단원도 변동됐어요</div>':'';
   var desc=main.up?'약했던 단원이 한 단계 올라갔어요.':'다지면 다시 올라가요.';
-  var side=main.up?'<button onclick="luFinish(\'\')" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#F1F5F9;color:#475569;cursor:pointer">그만하기</button>':'';
+  // 보조 버튼: 업=결과보기 / 다운=개념 다지기(그 토픽 개념 데이터 있을 때만)
+  var side='';
+  if(main.up){
+    side='<button onclick="luFinish(\'\')" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#F1F5F9;color:#475569;cursor:pointer">결과 보기</button>';
+  } else {
+    var loc=_luTopicConceptLoc(mqCert, main.subCode, main.tcode);
+    if(loc) side='<button onclick="_luToConcept(\''+main.subCode+'\','+loc.si+','+loc.idx+')" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#FFF4E0;color:#92600C;cursor:pointer">📖 개념 다지기</button>';
+  }
   root.innerHTML='<div class="mcq-result" style="text-align:center;padding:30px 20px"><div style="font-size:42px">'+em+'</div><div style="font-size:19px;font-weight:800;margin:8px 0 4px">'+ti+'</div>'+chg+'<div style="font-size:13.5px;color:#5F5E5A">'+desc+'</div>'+extra+'<div style="display:flex;gap:8px;margin-top:20px;max-width:320px;margin-left:auto;margin-right:auto">'+side+'<button onclick="luLoadRound(false)" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#0C447C;color:#fff;cursor:pointer">계속 풀기</button></div></div>';
   window.scrollTo(0,0);
 }
-function luFinish(msg){ mqLevelUp=false; mqStopTimer(); mqStopOverTimer(); if(currentUser && typeof srFlush==='function') srFlush(); mqScreen='home'; mqList=null; renderMCQ(); if(msg) setTimeout(function(){ alert(msg); },50); }
+function _luToast(msg){
+  if(!msg) return;
+  var t=document.createElement('div');
+  t.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;background:#2C2C2A;color:#fff;padding:15px 22px;border-radius:14px;font-size:14px;font-weight:700;max-width:300px;text-align:center;line-height:1.55;box-shadow:0 10px 34px rgba(0,0,0,.3)';
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },420); }, 2300);
+}
+function luFinish(msg){ mqLevelUp=false; mqStopTimer(); mqStopOverTimer(); if(currentUser && typeof srFlush==='function') srFlush(); mqScreen='home'; mqList=null; renderMCQ(); if(msg) setTimeout(function(){ _luToast(msg); },80); }
 // 과목 레벨: 토픽 점수 핵심(exam) 2 : 일반 1 가중평균 → Lv
 // 과목 Elo 점수(핵심 2:1 가중) — 0~100, 데이터 없으면 null
 function adSubjectScoreRaw(cert,sub){ var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), wsum=0, w=0; for(var t in sc){ var weight=(tmap[t]&&tmap[t].mode==='exam')?2:1; wsum+=sc[t]*weight; w+=weight; } return w?(wsum/w):null; }
@@ -3736,7 +3809,7 @@ function startMcqReview(){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function startMcqExam(id,si,mode){
-  if(ltGate(mqCert)) return;                  // B2: 레벨테스트 미완료면 차단
+  if(ltGate(mqCert, function(){ startMcqExam(id,si,mode); })) return;   // B2: 레벨테스트 권유(그냥 풀기 가능)
   mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mode=mode||'all';
   mqStopTimer();
@@ -3752,7 +3825,7 @@ function startMcqExam(id,si,mode){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
-  if(ltGate(mqCert)) return;                  // B2: 레벨테스트 미완료면 차단
+  if(ltGate(mqCert, function(){ resumeMcqExam(id,si); })) return;   // B2: 레벨테스트 권유(그냥 풀기 가능)
   mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mqStopTimer();
   const saved=mqLoadProgress(id,si);
