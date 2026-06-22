@@ -99,6 +99,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnem-code .k,.mnem-desc .k{color:#C0392B;font-weight:800}
 .mnem-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 .mn-num{font-weight:800;color:#0C447C;margin-right:2px}
+.mn-flow{text-align:center}
 .mnem-box-sep{border-top:1px dashed #E5E0D5;margin:11px 0 9px}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -1149,7 +1150,7 @@ function buildMnemonic(card){
     if(o.broken) return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div><div class="learn-section-body" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+o.ref+' (이 파일에 없음)</div></div>';
     var cards=pvMnCards(o);
     if(!cards.length) return '';
-    var inner=cards.map(function(cd,i){ var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':''; var sep=i>0?'<div class="mnem-box-sep"></div>':''; return sep+num+mnChantHTML(cd.code,'mnem-chant')+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc">'+cd.desc+'</div>':''); }).join('');
+    var inner=cards.map(function(cd,i){ var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':''; var sep=i>0?'<div class="mnem-box-sep"></div>':''; return sep+num+mnChantHTML(cd.code,'mnem-chant')+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc'+((cd.desc&&cd.desc.indexOf('↓')>=0)?' mn-flow':'')+'">'+cd.desc+'</div>':''); }).join('');
     return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
       +'<div class="learn-section-body">'+inner+'</div></div>';
   }
@@ -1690,7 +1691,7 @@ function pvMnBox(code, desc, kind){ if(!code) return '<div class="mn-box"><div c
 var PV_CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
 function pvMnNorm(o){ if(o&&Array.isArray(o.boxes)&&o.boxes.length) return o.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}); return [{code:(o&&o.code)||'',desc:(o&&o.desc)||''}]; }
 function pvMnCards(o){ var bx=pvMnNorm(o).filter(function(b){return b.code||b.desc;}); var multi=bx.length>1; return bx.map(function(b,i){ return {code:b.code,desc:b.desc,kind:o&&o.kind,num:''}; }); }
-function pvMnBoxesHTML(o){ var cards=pvMnCards(o); if(!cards.length) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return cards.map(function(cd,i){ var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+pvChantHTML(cd.code,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc">'+cd.desc+'</div>':'')+'</div>'; }).join(''); }
+function pvMnBoxesHTML(o){ var cards=pvMnCards(o); if(!cards.length) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return cards.map(function(cd,i){ var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+pvChantHTML(cd.code,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&cd.desc.indexOf('↓')>=0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>'; }).join(''); }
 function pvMnResolve(ref){
   if(ref && typeof ref==='object') return ref;
   if(typeof ref==='string' && ref.indexOf('mn://')===0){ var id=ref.slice(5), m=_mnemCache[id]; if(!m) return {broken:true, ref:id}; return m; }
@@ -1700,7 +1701,7 @@ function pvMnResolve(ref){
 function pvConceptCard(c){
   c=c||{};
   var cards=Array.isArray(c.cards)?c.cards:(Array.isArray(c.c)?c.c:[]);
-  var rows=cards.map(function(it){ it=it||{}; var row='<div class="concept-row"><b>'+tblEsc(it.t||'')+'</b>'+(it.d?' — '+tblEsc(it.d):'')+'</div>'; if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblEsc(String(it.cx).trim())+'</div>'; return row; }).join('');
+  var rows=cards.map(function(it){ it=it||{}; var row='<div class="concept-row"><b>'+tblEsc(it.t||'')+'</b>'+(it.d?' — '+tblCell(it.d,true):'')+'</div>'; if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblCell(String(it.cx).trim(),true)+'</div>'; return row; }).join('');
   var box='<div class="concept-box"><div class="concept-ti">개념설명</div>'+(rows||'<div class="concept-row" style="color:#94A3B8">(카드 없음)</div>')+'</div>';
   var mnRefs=Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[]);
   var tblRefs=Array.isArray(c.tbl)?c.tbl:(c.tbl?[c.tbl]:[]);
