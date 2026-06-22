@@ -154,6 +154,7 @@ tr:hover td{background:#FAFAFA}
 .mnem-app .chant{margin-top:2px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 .mnem-app .code{font-size:13.5px;font-weight:400;color:#5E4A2A;line-height:1.7}
 .mnem-app .mn-num{font-weight:800;color:#0C447C;margin-right:2px}
+.mnem-app .mn-flow{text-align:center}
 .mnem-app .mnem-box-sep{border-top:1px dashed #E2D9C5;margin:10px 0 8px}
 .mnem-app .desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-app .k,.mnem-app k{color:#C0392B;font-weight:800}
@@ -1199,7 +1200,7 @@ function mnemBoxesAppHTML(m){
   return bx.map(function(b,i){
     var num='';
     var sep=i>0?'<div class="mnem-box-sep"></div>':'';
-    return sep+num+mnemChantHTML(b.code)+'<div class="code">'+(b.code||'')+'</div>'+(b.desc?'<div class="desc">'+b.desc+'</div>':'');
+    return sep+num+mnemChantHTML(b.code)+'<div class="code">'+(b.code||'')+'</div>'+(b.desc?'<div class="desc'+((b.desc&&b.desc.indexOf('↓')>=0)?' mn-flow':'')+'">'+b.desc+'</div>':'');
   }).join('');
 }
 function mnemInit(){
@@ -1649,8 +1650,8 @@ async function cptmLoad(){
 function cptmRenderConcept(c){
   var cards=Array.isArray(c.cards)?c.cards:[];
   var rows=cards.map(function(it){ it=it||{};
-    var row='<div class="concept-row"><b>'+cptmEsc(it.t||'')+'</b>'+(it.d?' — '+cptmEsc(it.d):'')+'</div>';
-    if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+cptmEsc(String(it.cx).trim())+'</div>';
+    var row='<div class="concept-row"><b>'+cptmEsc(it.t||'')+'</b>'+(it.d?' — '+tblmCell(it.d,true):'')+'</div>';
+    if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblmCell(String(it.cx).trim(),true)+'</div>';
     return row;
   }).join('');
   var box='<div class="concept-box"><div class="ti">개념설명</div>'+(rows||'<div class="concept-row" style="color:#A89C8E">(카드 없음)</div>')+'</div>';
