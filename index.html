@@ -148,6 +148,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnem-code .k,.mnem-desc .k,.mnem-code k,.mnem-desc k{color:#C0392B;font-weight:800}
 .mnem-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 .mn-num{font-weight:800;color:#0C447C;margin-right:2px}
+.mn-flow{text-align:center}
 .mnem-box-sep{border-top:1px dashed #E5E0D5;margin:11px 0 9px}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -2784,7 +2785,7 @@ function buildMnemonic(card){
     var inner=cards.map(function(cd,i){
       var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
       var sep=i>0?'<div class="mnem-box-sep"></div>':'';
-      return sep+num+mnChantHTML(cd.code,'mnem-chant',cd.kind)+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc">'+cd.desc+'</div>':'');
+      return sep+num+mnChantHTML(cd.code,'mnem-chant',cd.kind)+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc'+((cd.desc&&cd.desc.indexOf('↓')>=0)?' mn-flow':'')+'">'+cd.desc+'</div>':'');
     }).join('');
     return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
       +'<div class="learn-section-body">'+inner+'</div></div>';
@@ -4013,7 +4014,7 @@ function mnBoxHTML(mn){
   if(!cards.length || cards[0].broken) return '';
   return cards.map(function(cd,i){
     var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
-    return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc">'+cd.desc+'</div>':'')+'</div>';
+    return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&cd.desc.indexOf('↓')>=0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
   }).join('');
 }
 function conceptBoxHTML(c){
@@ -4495,7 +4496,7 @@ function renderMcqExam(root){
         var extra=i>0?' mn-box-extra':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':'';
         if(cd.broken){ body+='<div class="mn-box'+extra+'">'+ti+'<div class="mn-code" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+cd.ref+' (마스터에 없음)</div></div>'; return; }
         var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
-        body+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc">'+cd.desc+'</div>':'')+'</div>';
+        body+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&cd.desc.indexOf('↓')>=0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
       });
     }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
