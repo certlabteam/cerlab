@@ -3339,7 +3339,7 @@ function renderMcqHome(root){
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name)||'';
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
-  if(ltDone(mqCert)) html+='<div class="lvup-btn" onclick="startLevelUp()" style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">레벨업 문제풀기</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">약한 단원 5문제씩 · 자동으로 이어서</div></div><span style="font-size:20px;color:#185FA5">›</span></div>';
+  if(adHasData(mqCert) && ltDone(mqCert)) html+='<div class="lvup-btn" onclick="startLevelUp()" style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">레벨업 문제풀기</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">약한 단원 5문제씩 · 자동으로 이어서</div></div><span style="font-size:20px;color:#185FA5">›</span></div>';
   const due=srDueReviewable(mqCert);
   html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
   mqWeakCache=mqWeakConcepts(mqCert);
@@ -3435,6 +3435,11 @@ function mcqLevel(pred,pass){
   return {label:'🔴 위험권',color:'#E24B4A'};
 }
 function mcqAnalysisCard(cert){
+  if(!adHasData(cert)){
+    return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
+      +'<div class="anal-empty">이 시험은 <b>레벨업 데이터 준비 중</b>이에요. 곧 레벨 테스트로 약점을 측정할 수 있어요.</div>'
+      +'<button class="anal-diag" disabled style="opacity:.5;cursor:not-allowed">🎯 레벨 테스트 준비 중</button></div>';
+  }
   const s=mcqSubjectStats(cert);
   if(!ltDone(cert)){
     return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
@@ -3539,7 +3544,19 @@ function ltFinalize(cert, qs, ans){
 }
 // B2 게이트: 생체 제외 전 시험, 레벨테스트 미완료면 기출 진입 차단
 function ltDone(cert){ return !!(typeof eloState!=='undefined' && eloState._levelTest && eloState._levelTest[cert]); }
-function ltGated(cert){ return cert!=='bodybuilding' && !ltDone(cert); }
+// 그 시험에 레벨업(adaptive) 데이터가 실제 로드됐는지 — 없는 시험(공인중개사 등)은 레벨업 UI·게이트 전부 미적용
+function adHasData(cert){
+  try{
+    if(typeof AD_DATA==='undefined') return false;
+    var subs=(typeof qbOf==='function')?Object.keys(qbOf(cert)||{}):[];
+    for(var i=0;i<subs.length;i++){
+      var b=AD_DATA[cert+'|'+subs[i]];
+      if(b && ((b.map&&b.map.mapping&&b.map.mapping.length) || (b.variantPool&&b.variantPool.length))) return true;
+    }
+  }catch(e){}
+  return false;
+}
+function ltGated(cert){ return cert!=='bodybuilding' && adHasData(cert) && !ltDone(cert); }
 // 레벨테스트 결과: 과목별 레벨 카드
 function _ltResultHTML(M){
   try{
