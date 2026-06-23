@@ -1574,6 +1574,7 @@ async function tblmSave(){
     headers:t.headers, rows:t.rows, merge:t.merge, caption_chant:t.caption_chant,
     keywords:csv(document.getElementById('tblmKwField').value), certs:csv(document.getElementById('tblmCertsField').value),
     note:document.getElementById('tblmNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
+  var _ex=_tblmAll[id]; if(_ex&&_ex.type) rec.type=_ex.type;   // 편집 저장 시 기존 type(html 등) 유지
   try{ await db.collection('tables').doc(id).set(Object.assign({},rec,{rows:JSON.stringify(rec.rows)})); _tblmAll[id]=rec; tblmRenderList();
     var st=document.getElementById('tblmStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_tblmAll).length+'개)'; }
     tblmCancel();
@@ -1626,6 +1627,7 @@ async function tblmImport(){
     var rec={ name:it.name||'',
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
       caption_chant:it.caption_chant||'', note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
+    if(it.type) rec.type=it.type;   // type 보존(html 등) — 구조형 표라도 type:"html"이면 rich 렌더(span/sup/sub)
     if(isHtml){ rec.type='html'; rec.html=it.html; }
     else { rec.headers=it.headers; rec.rows=it.rows; rec.merge=Array.isArray(it.merge)?it.merge:[]; }
     var payload=Object.assign({},rec); if(!isHtml) payload.rows=JSON.stringify(rec.rows);  // 구조형만 rows 문자열화
