@@ -647,6 +647,37 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .sr-banner-l b{font-size:14px}
 .sr-exam{font-size:11px;opacity:.9;text-decoration:underline}
 .sr-banner-go{font-size:12px;font-weight:700;background:#fff;color:#185FA5;padding:7px 12px;border-radius:999px;white-space:nowrap}
+/* OX진술 학습 */
+.oxl-banner{margin:10px 14px 4px;padding:12px 15px;background:linear-gradient(135deg,#B23A48,#8C2A36);border-radius:14px;color:#fff;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.oxl-banner-l{display:flex;align-items:center;gap:11px;text-align:left}
+.oxl-banner-ico{font-size:17px}
+.oxl-banner-l b{font-size:14px;display:block}
+.oxl-banner-sub{font-size:11.5px;opacity:.9;display:block;margin-top:2px}
+.oxl-banner-go{font-size:12px;font-weight:800;background:#fff;color:#B23A48;padding:7px 12px;border-radius:999px;white-space:nowrap}
+.oxl-banner-promo{background:linear-gradient(135deg,#1D9E75,#0F6E56)}
+.oxl-banner-promo .oxl-banner-go{color:#0F6E56}
+.oxl-wrap{padding:8px 14px 40px;text-align:left}
+.oxl-top{display:flex;align-items:center;gap:10px;margin:6px 0 14px}
+.oxl-back{background:#F1F5F9;border:none;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;color:#475569;cursor:pointer}
+.oxl-title{font-size:16px;font-weight:800;color:#0C447C}
+.oxl-cnt{margin-left:auto;font-size:12.5px;font-weight:800;color:#B23A48;background:#FBEEE8;border-radius:8px;padding:3px 10px}
+.oxl-empty{padding:40px 16px;text-align:center;color:#94A3B8;font-size:13.5px;line-height:1.7}
+.oxl-card{background:#fff;border:1px solid #E8EBEF;border-radius:14px;padding:15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.oxl-sub{font-size:11.5px;font-weight:700;color:#94A0AB;margin-bottom:6px}
+.oxl-q{font-size:14px;font-weight:700;color:#0F172A;line-height:1.55;margin-bottom:12px}
+.oxl-stmt{background:#FCF4F4;border:1px solid #F1D6D6;border-left:3px solid #C0322F;border-radius:9px;padding:10px 12px;margin-bottom:10px}
+.oxl-stmt-h{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.oxl-k{font-size:13px;font-weight:800;color:#C0322F}
+.oxl-badge{font-size:11px;font-weight:700;color:#A32D2D;background:#FBE3E3;border-radius:6px;padding:2px 8px}
+.oxl-stmt-t{font-size:13px;line-height:1.6;color:#3C3C3A}
+.oxl-cpt{margin-top:9px;background:#F5F8FF;border:1px solid #D9E5F7;border-radius:8px;padding:9px 11px}
+.oxl-cpt-ti{font-size:11px;font-weight:800;color:#185FA5;margin-bottom:5px}
+.oxl-cpt-row{font-size:12.5px;line-height:1.65;color:#3A4A5E;margin-bottom:7px}
+.oxl-cpt-row:last-child{margin-bottom:0}
+.oxl-cpt-row b{color:#0C447C;display:block;margin-bottom:1px}
+.oxl-cpt-none{color:#A0AEC0;font-size:11.5px;font-style:italic}
+.oxl-done{width:100%;margin-top:4px;padding:11px;border:none;border-radius:10px;background:#0F6E56;color:#fff;font-size:13.5px;font-weight:800;cursor:pointer}
+.oxl-done:active{transform:scale(.98)}
 .weak-card{margin:10px 14px 4px;background:#fff;border:1px solid #E8EBEF;border-radius:14px;padding:0;box-shadow:0 1px 3px rgba(15,23,42,.06);overflow:hidden}
 .weak-hd{display:flex;align-items:center;gap:8px;padding:13px 14px;cursor:pointer;user-select:none}
 .weak-ico{font-size:14px}
@@ -1643,6 +1674,14 @@ function srMergeOX(data){
       }
     }
     if(changed && typeof mqOXSave==='function') mqOXSave();
+    // 학습완료(oxLearned)·최근시각(oxTs)도 합치기: learned는 union, ts는 큰 값 우선
+    try{
+      var fl=data&&data.oxLearned;
+      if(fl&&typeof fl==='object'){ for(var lq in fl){ if(!fl.hasOwnProperty(lq))continue; mqOXLearned[lq]=mqOXLearned[lq]||{}; for(var lk in fl[lq]){ if(!(lk in mqOXLearned[lq])) mqOXLearned[lq][lk]=fl[lq][lk]; } } }
+      var ft=data&&data.oxTs;
+      if(ft&&typeof ft==='object'){ for(var tq in ft){ if(!ft.hasOwnProperty(tq))continue; if(!mqOXTs[tq]||ft[tq]>mqOXTs[tq]) mqOXTs[tq]=ft[tq]; } }
+      if(typeof mqOXSave==='function') mqOXSave();
+    }catch(_){}
     return changed;
   }catch(_){ return false; }
 }
@@ -1733,6 +1772,8 @@ async function saveUserData() {
       cardProgress: srProgress, examDates: srExamOverride, diagnostics: srDiagnostics,
       resumeState: resumeState,
       oxState: (typeof mqOX!=='undefined' && mqOX) ? mqOX : {},
+      oxLearned: (typeof mqOXLearned!=='undefined' && mqOXLearned) ? mqOXLearned : {},
+      oxTs: (typeof mqOXTs!=='undefined' && mqOXTs) ? mqOXTs : {},
       eloState: (typeof eloState!=='undefined' && eloState) ? eloState : {},
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -2709,7 +2750,23 @@ function loadGraphs(){
   })();
   return _grpPromise;
 }
-// 표 HTML sanitize: script·이벤트핸들러·javascript:·iframe/object/embed 제거 (인라인 style은 유지)
+// ===== 개념 마스터(concepts) — mn 패턴 복제. cpt://id 또는 ot 태그가 이걸 참조 =====
+var _cptCache={}, _cptPromise=null, _cptLoaded=false;
+function loadConcepts(){
+  if(_cptPromise) return _cptPromise;
+  _cptPromise=(async function(){
+    try{ var snap=await db.collection('concepts').get(); snap.forEach(function(d){ _cptCache[d.id]=d.data()||{}; }); }catch(e){}
+    _cptLoaded=true;
+  })();
+  return _cptPromise;
+}
+// cpt id(또는 "cpt://id") → 마스터 개념 {id,name,cards,...} | null. 미해석은 null(깨진 참조).
+function cptResolve(ref){
+  if(!ref) return null;
+  var id=(typeof ref==='string' && ref.indexOf('cpt://')===0) ? ref.slice(6) : ref;
+  var c=_cptCache[id];
+  return c ? Object.assign({id:id}, c) : null;
+}
 function tblSanitizeHtml(html){
   var s=String(html||'');
   s=s.replace(/<script[\s\S]*?<\/script>/gi,'');
@@ -3259,6 +3316,7 @@ const MCQ_QID2CS={};
 function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub};}))); }); }
 rebuildQid();
 let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={}, mqOX={}, mqCurId=null;
+let mqOXLearned={}, mqOXTs={};   // OX진술 학습: {qid:{진술키:1}} 완료표시 / {qid:ts} 최근순 정렬용
 let mqTimer=null, mqTimeLeft=0, mqTimeUp=false, mqTimeUpIdx=-1;
 let mqPaused=false;
 const BACK_ARROW='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
@@ -3295,8 +3353,10 @@ function mqSaveProgress(){ if(mqMode!=='all') return; if(mqInReview||mqConcept) 
 function mqLoadProgress(sub,set){ try{ const v=localStorage.getItem(mqPKey(sub,set)); return v?JSON.parse(v):null; }catch(e){ return null; } }
 function mqClearProgress(sub,set){ try{ localStorage.removeItem(mqPKey(sub,set)); }catch(e){} }
 // O/X 자가체크 영속 저장 — 문항별 {qid:{o0|sㄱ ...:'O'|'X'}}. 새로고침·오답노트에서 재사용
-function mqOXSave(){ try{ localStorage.setItem('certlab_mcq_ox', JSON.stringify(mqOX)); }catch(e){} }
-function mqOXLoad(){ try{ var v=localStorage.getItem('certlab_mcq_ox'); if(v){ var o=JSON.parse(v); if(o&&typeof o==='object') mqOX=o; } }catch(e){} }
+function mqOXSave(){ try{ localStorage.setItem('certlab_mcq_ox', JSON.stringify(mqOX)); localStorage.setItem('certlab_mcq_oxlearned', JSON.stringify(mqOXLearned)); localStorage.setItem('certlab_mcq_oxts', JSON.stringify(mqOXTs)); }catch(e){} }
+function mqOXLoad(){ try{ var v=localStorage.getItem('certlab_mcq_ox'); if(v){ var o=JSON.parse(v); if(o&&typeof o==='object') mqOX=o; }
+  var l=localStorage.getItem('certlab_mcq_oxlearned'); if(l){ var ol=JSON.parse(l); if(ol&&typeof ol==='object') mqOXLearned=ol; }
+  var t=localStorage.getItem('certlab_mcq_oxts'); if(t){ var ot=JSON.parse(t); if(ot&&typeof ot==='object') mqOXTs=ot; } }catch(e){} }
 function mqFmt(s){ s=Math.max(0,s|0); const m=Math.floor(s/60), x=s%60; return (m<10?'0':'')+m+':'+(x<10?'0':'')+x; }
 function mqStopTimer(){ if(mqTimer){ clearInterval(mqTimer); mqTimer=null; } }
 function mqRunTimer(){
@@ -3332,6 +3392,7 @@ function renderMCQ(){
     } else { localStorage.removeItem('certlab_mcq_active'); }
   }catch(_){}
   if(mqScreen==='exam') return renderMcqExam(root);
+  if(mqScreen==='oxlearn') return renderOxLearn(root);
   return renderMcqHome(root);
 }
 function renderMcqHome(root){
@@ -3360,6 +3421,13 @@ function renderMcqHome(root){
       html+='</div>';
     }
     html+='</div>';
+  }
+  // OX진술 학습 버튼 — 내가 틀린 OX진술 있을 때만
+  var _oxN=oxLearnCount(mqCert);
+  if(_oxN>0){
+    html+='<div class="oxl-banner" onclick="oxLearnGo()"><div class="oxl-banner-l"><span class="oxl-banner-ico">🔴</span><div><b>OX개념 학습하기</b><span class="oxl-banner-sub">내가 틀린 OX진술 '+_oxN+'개 · 진술별 개념 복습</span></div></div><div class="oxl-banner-go">'+_oxN+'개 →</div></div>';
+  } else {
+    html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico">✅</span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
   }
   html+='<div class="sec-lbl">과목 선택</div>';
   curOrder().forEach(id=>{
@@ -4202,6 +4270,98 @@ function extractInlineComboGroup(qt){
   }
   return null;
 }
+// ===== OX진술 학습: 내가 틀린 OX진술(자가체크 오답) → 문제+진술+개념 카드, 최근순 =====
+// 틀린 진술 0개일 때 띄우는 안내 배너가 연결될 게시글 id. ★크리스: 커뮤니티에 안내글 작성 후 그 글 id를 여기에 넣으세요(예: 'AbC123...'). 비우면 커뮤니티 홈으로 이동.
+var OX_GUIDE_POST='p0dNwHXmeTus8NNPAxOM';
+function oxGuideOpen(){
+  try{
+    if(OX_GUIDE_POST){ location.hash='#post/'+OX_GUIDE_POST; if(typeof clRouteFromHash==='function') clRouteFromHash(); else if(typeof openCommunity==='function') openCommunity(); }
+    else if(typeof openCommunity==='function') openCommunity();
+  }catch(_){}
+}
+// 한 문항의 '틀린 + 미완료' OX진술 항목 추출. oxAllMatch와 같은 판정(splitVerdict/verdictIsO).
+function oxWrongItems(q){
+  var out=[];
+  try{
+    var st=mqOX[q.id]; if(!st) return out;
+    var oArr=(q.exp&&q.exp.o)||[];
+    var stmts=comboStmtList(q);
+    var items = stmts.length
+      ? stmts.map(function(s,i){ return {key:'s'+s.k, idx:i, label:s.k, txt:s.t, oraw:oArr[i]||''}; })
+      : (q.opts||[]).map(function(opt,i){ return {key:'o'+i, idx:i, label:String(i+1), txt:opt, oraw:oArr[i]||''}; });
+    var learned=mqOXLearned[q.id]||{};
+    items.forEach(function(it){
+      var mark=st[it.key]; if(!mark) return;          // 안 누른 진술 제외
+      if(learned[it.key]) return;                      // 학습 완료된 진술 제외
+      var sv=splitVerdict(stripRepeatedOpt(it.oraw, it.txt));
+      var actO=verdictIsO(sv.v); if(actO===null) return;
+      if((mark==='O')!==actO){ it.myO=(mark==='O'); it.actO=actO; out.push(it); }   // 표시 ≠ 정답 = 틀림
+    });
+  }catch(_){}
+  return out;
+}
+// ot 태그 → 관련 개념(마스터) 조회
+function oxConceptsFor(q, idx){
+  var out=[];
+  try{
+    var ot=(q.exp&&q.exp.ot)||[]; var e=ot[idx]; if(!e||e.skip) return out;
+    (e.cpt||[]).forEach(function(c){ var cc=cptResolve(c); if(cc) out.push(cc); });
+  }catch(_){}
+  return out;
+}
+function oxLearnCards(cert){
+  var qb=qbOf(cert), cards=[];
+  Object.keys(qb).forEach(function(sub){ (qb[sub].sets||[]).forEach(function(stt){ (stt.questions||[]).forEach(function(q){
+    var w=oxWrongItems(q); if(w.length){ cards.push({q:q, subName:qb[sub].name||sub, wrong:w, ts:mqOXTs[q.id]||0}); }
+  }); }); });
+  cards.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });   // 최근순
+  return cards;
+}
+function oxLearnCount(cert){ var n=0; oxLearnCards(cert).forEach(function(c){ n+=c.wrong.length; }); return n; }
+function oxLearnGo(){ mqScreen='oxlearn'; renderMCQ(); window.scrollTo(0,0); }
+function oxLearnBack(){ mqScreen='home'; renderMCQ(); window.scrollTo(0,0); }
+function oxLearnComplete(qid){
+  var qb=qbOf(mqCert), q=null;
+  Object.keys(qb).some(function(sub){ return (qb[sub].sets||[]).some(function(stt){ return (stt.questions||[]).some(function(x){ if(x.id===qid){q=x;return true;} return false; }); }); });
+  if(!q) return;
+  mqOXLearned[qid]=mqOXLearned[qid]||{};
+  oxWrongItems(q).forEach(function(it){ mqOXLearned[qid][it.key]=1; });   // 현재 틀린 진술들 완료 처리
+  mqOXSave();
+  renderOxLearn(document.getElementById('mcqRoot'));
+}
+function renderOxLearn(root){
+  var cards=oxLearnCards(mqCert);
+  var html='<div class="oxl-wrap"><div class="oxl-top"><button class="oxl-back" onclick="oxLearnBack()">‹ 홈</button><div class="oxl-title">OX진술 학습</div><div class="oxl-cnt">'+cards.reduce(function(s,c){return s+c.wrong.length;},0)+'개</div></div>';
+  if(!cards.length){
+    html+='<div class="oxl-empty">틀린 OX진술이 없어요.<br>문제 풀 때 보기 옆 O/X 자가체크에서 틀린 진술이 여기 모여요.</div></div>';
+    root.innerHTML=html; return;
+  }
+  cards.forEach(function(cd){
+    var q=cd.q, stem=splitJaryo(q.q).q || q.q;
+    html+='<div class="oxl-card">';
+    html+='<div class="oxl-sub">'+mqEsc(cd.subName)+(q.set?(' · '+mqEsc(q.set)):'')+'</div>';
+    html+='<div class="oxl-q">'+rm(stem,q)+'</div>';
+    cd.wrong.forEach(function(it){
+      html+='<div class="oxl-stmt"><div class="oxl-stmt-h"><span class="oxl-k">'+mqEsc(it.label)+'</span>'+
+        '<span class="oxl-badge">내 답 '+(it.myO?'O':'X')+' · 정답 '+(it.actO?'O':'X')+'</span></div>';
+      html+='<div class="oxl-stmt-t">'+rm(it.txt||it.oraw,q)+'</div>';
+      var cs=oxConceptsFor(q, it.idx);
+      if(cs.length){
+        html+='<div class="oxl-cpt"><div class="oxl-cpt-ti">관련 개념</div>';
+        cs.forEach(function(cc){ (cc.cards||[]).forEach(function(card){
+          html+='<div class="oxl-cpt-row"><b>'+rm(card.t||cc.name||'',q)+'</b>'+(card.d?('<div>'+rm(card.d,q)+'</div>'):'')+'</div>';
+        }); });
+        html+='</div>';
+      } else {
+        html+='<div class="oxl-cpt oxl-cpt-none">관련 개념 태그 준비 중</div>';
+      }
+    });
+    html+='<button class="oxl-done" onclick="oxLearnComplete(\''+q.id+'\')">학습 완료</button>';
+    html+='</div>';
+  });
+  html+='</div>';
+  root.innerHTML=html;
+}
 function splitJaryo(qt){
   if(!qt) return {q:qt||'', jaryo:''};
   const b=qt.indexOf('[');
@@ -4442,6 +4602,8 @@ function joxToggle(btn){
       if(on) delete mqOX[mqCurId][k];                                   // 껐으면 제거
       else mqOX[mqCurId][k]= btn.classList.contains('jox-o')?'O':'X';   // 켰으면 O/X 저장
       if(!Object.keys(mqOX[mqCurId]).length) delete mqOX[mqCurId];
+      mqOXTs[mqCurId]=Date.now();                                 // 최근 상호작용 시각(OX진술 학습 최근순)
+      if(mqOXLearned[mqCurId]) delete mqOXLearned[mqCurId][k];    // 그 진술 다시 건드림 → 완료 해제(다시 틀리면 재등장)
       mqOXSave();
     }
   }catch(_){}
@@ -5158,6 +5320,7 @@ async function loadExam(examId){
     await loadMnemonics();   // 암기코드 마스터 캐시(렌더 전 완료 보장 → 깨진참조 오판 방지)
     await loadTables();      // 표 마스터 캐시(tbl:// 렌더용)
     await loadGraphs();      // 그래프 마스터 캐시(grp:// 렌더용)
+    await loadConcepts();    // 개념 마스터 캐시(cpt://·OX진술 ot 태그 조회용)
     const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
     if(!ex){ loadedExams[examId]=true; return; }
     await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));
