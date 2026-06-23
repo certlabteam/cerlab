@@ -3504,8 +3504,11 @@ function _ltSampleSubject(cert,sub,code,qb,n){
   if(picked.length<n){ _ltShuf(kPlain); for(var p=0;p<kPlain.length&&picked.length<n;p++){ if(!seen[kPlain[p].id]){ seen[kPlain[p].id]=1; picked.push(kPlain[p]); } } }
   return picked.slice(0,n);
 }
-function startDiagnostic(){
+async function startDiagnostic(){
   const cert=mqCert, qb=qbOf(cert); let picked=[];
+  if(typeof loadAdaptiveSubject==='function'){            // 변형 풀 로드 보장(비차단 로드 미완료 대비)
+    try{ await Promise.all(Object.keys(qb).map(function(code){ return loadAdaptiveSubject(cert, code).catch(function(){return null;}); })); }catch(e){}
+  }
   Object.keys(qb).forEach(code=>{                 // 과목별 10문항(과목 묶음 유지)
     picked=picked.concat(_ltSampleSubject(cert, code, code, qb, LT_PER_SUBJECT));
   });
@@ -5164,9 +5167,8 @@ async function loadExam(examId){
     rebuildQid();
     // 적응형 데이터(map/diag/variants/변형풀) — 비차단·실패무시. 미준비 과목은 빈 룩업(Elo훅이 스킵).
     if(typeof loadAdaptiveSubject==='function'){
-      (ex.subjects||[]).forEach(function(sub){
-        try{ loadAdaptiveSubject(examId, sub.code).catch(function(){}); }catch(e){}
-      });
+      Promise.all((ex.subjects||[]).map(function(sub){ try{ return loadAdaptiveSubject(examId, sub.code).catch(function(){return null;}); }catch(e){ return null; } }))
+        .then(function(){ try{ if(typeof renderMCQ==='function' && typeof mqCert!=='undefined' && mqCert===examId && typeof mqScreen!=='undefined' && mqScreen!=='exam') renderMCQ(); }catch(e){} });
     }
   })();
   try{ await loadingExams[examId]; } finally { delete loadingExams[examId]; }
