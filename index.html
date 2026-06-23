@@ -4126,6 +4126,7 @@ function resumeMcqExam(id,si){
 }
 // ===== 개념학습 모드: 개념 카드 → 문제 풀기 → 다음 개념 → ... =====
 function startConceptStudy(id,si,startIdx){
+  if(ltGate(mqCert)) return;                  // 레벨테스트 필수 — 미완료면 차단(기출 풀이와 동일)
   mqReview=false; mqDiag=false; mqInReview=false;
   mqStopTimer(); mqStopOverTimer();
   mqSub=id; mqSet=si; mqMode='all'; mqShow={}; mqGuess={};
