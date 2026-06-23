@@ -533,6 +533,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .gx-ti{font-size:12.5px;font-weight:800;color:#334155;margin-bottom:10px}
 #mcqView .gx-ti span{font-size:11px;font-weight:600;color:#94A3B8;margin-left:4px}
 #mcqView .gx-grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+#mcqView .gx-grid.gx-grid-lu{grid-template-columns:repeat(5,1fr);gap:9px}
+#mcqView .gx-grid.gx-grid-lu .gx{font-size:16px;padding:12px 0}
 #mcqView .gx{font-size:13px;font-weight:800;border-radius:8px;padding:7px 0;border:1.5px solid transparent;cursor:pointer;line-height:1}
 #mcqView .gx.gx-ok{background:#DCFCE7;color:#15803D;border-color:#BBF7D0}
 #mcqView .gx.gx-bad{background:#FEE2E2;color:#B91C1C;border-color:#FECACA}
@@ -1626,6 +1628,11 @@ async function loadUserData() {
       var _resync=srRestoreResume(data);   // 이어풀기 동기화: Firestore가 더 최신이면 로컬에 복원
       try{ srMergeOX(data); }catch(e){}    // 내 O/X 동기화: Firestore↔로컬 합치기(union, 로컬 우선)
       try{ if(data && data.eloState && typeof eloState!=='undefined') eloState=data.eloState; }catch(e){}   // 적응형 Elo 트랙 복원
+      try{ if(data){ luHistEnsure();
+        if(data.luHist){ Object.keys(data.luHist).forEach(function(cert){ var rem=data.luHist[cert]||[], loc=luHistAll[cert]||[], seen={}; loc.forEach(function(r){ seen[(r&&r.ts||0)+'_'+(r&&r.sub||'')]=1; }); rem.forEach(function(r){ var key=(r&&r.ts||0)+'_'+(r&&r.sub||''); if(!seen[key]){ loc.push(r); seen[key]=1; } }); luHistAll[cert]=loc; luHistPrune(cert); }); }
+        if(data.luResume){ Object.keys(data.luResume).forEach(function(cert){ var rem=data.luResume[cert], loc=luResumeAll[cert]; if(rem && (!loc || (rem.ts||0)>(loc.ts||0))) luResumeAll[cert]=rem; }); }
+        luHistSaveLocal();
+      } }catch(e){}   // 레벨업 기록·이어풀기 동기화(로컬과 병합)
       if(_merged && typeof saveUserData==='function') saveUserData();   // 병합분 계정에 저장
       refresh();
       if (activeCert === 'appraiser') renderMCQ();
@@ -1777,6 +1784,8 @@ async function saveUserData() {
       oxLearned: (typeof mqOXLearned!=='undefined' && mqOXLearned) ? mqOXLearned : {},
       oxTs: (typeof mqOXTs!=='undefined' && mqOXTs) ? mqOXTs : {},
       eloState: (typeof eloState!=='undefined' && eloState) ? eloState : {},
+      luHist: (typeof luHistAll!=='undefined' && luHistAll) ? luHistAll : {},
+      luResume: (typeof luResumeAll!=='undefined' && luResumeAll) ? luResumeAll : {},
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { console.error('저장 오류:', e); }
@@ -3395,6 +3404,7 @@ function renderMCQ(){
   }catch(_){}
   if(mqScreen==='exam') return renderMcqExam(root);
   if(mqScreen==='oxlearn') return renderOxLearn(root);
+  if(mqScreen==='luhist') return renderLuHist(root);
   return renderMcqHome(root);
 }
 function renderMcqHome(root){
@@ -3402,7 +3412,7 @@ function renderMcqHome(root){
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name)||'';
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
-  if(adHasData(mqCert) && ltDone(mqCert)) html+='<div class="lvup-btn" onclick="startLevelUp()" style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">레벨업 문제풀기</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">약한 단원 5문제씩 · 자동으로 이어서</div></div><span style="font-size:20px;color:#185FA5">›</span></div>';
+  if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:11px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:11px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:11px;padding:8px 6px;font-size:11px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
   const due=srDueReviewable(mqCert);
   html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
   // ▼ 약점개념카드 보류: exp.c가 문항 단위라 OX(진술 단위)·정답오답으로 집계 시 무관한 개념까지 잡힘.
@@ -3725,7 +3735,7 @@ function luBuildPool(cert,sub){ var pool=[], byId={}; try{
     vp.forEach(function(v){ if(!v||!v.id||byId[v.id]||!v.topic||!v.diff) return; v._subj=sub; pool.push({id:v.id, topic:v.topic, level:v.diff, subtopic:v.subtopic||null, _q:v}); byId[v.id]=true; });
   }catch(e){} return pool; }
 function luTopicScores(cert,sub){ var k=cert+'|'+sub, st=(typeof eloState!=='undefined'&&eloState[k])||{}, out={}; for(var t in st){ if(t.charAt(0)==='_') continue; if(st[t]&&typeof st[t].score==='number') out[t]=st[t].score; } return out; }
-function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; luSubIdx=0; luSeen={}; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLoadRound(true); }
+function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
 function luLoadRound(first){
   var cert=mqCert, order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
   if(!order.length){ luFinish('과목이 없습니다.'); return; }
@@ -3748,19 +3758,32 @@ function luLoadRound(first){
   var list=picked.items.map(function(it){ luSeen[it.id]=true; return it._q; });
   mqSub=picked.sub; mqSet=0; mqMode='levelup'; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
   mqList=list; mqTimeLeft=list.length*60;
-  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+  mqScreen='exam'; luResumeSave(); renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function luEndRound(){
   mqStopTimer(); mqStopOverTimer();
   if(currentUser && typeof srFlush==='function') srFlush();
   var cert=mqCert, sub=luCurSub, k=cert+'|'+sub, changes=[];
+  var qs=(mqList||[]).slice(), correct=0, total=qs.length;
+  qs.forEach(function(q){ if(mqAns[q.id]!==undefined && mqCorrect(q,mqAns[q.id])) correct++; });
   try{
     var now=(typeof eloState!=='undefined'&&eloState[k])||{};
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, tmap=topicNameMap(cert,sub);
     for(var t in now){ if(t.charAt(0)==='_') continue; var before=luPreScores[t]; if(before==null) continue; var lb=AE.scoreToLevel(before), la=AE.scoreToLevel(now[t].score); if(la!==lb) changes.push({sub:nm, subCode:sub, tcode:t, topic:(tmap[t]&&tmap[t].name)||t, from:lb, to:la, up:la>lb}); }
   }catch(e){}
+  // 세션 누적
+  luSessTotal+=total; luSessCorrect+=correct;
+  changes.forEach(function(c){ var prev=luSessChanges[c.tcode]; luSessChanges[c.tcode]={subName:c.sub, topic:c.topic, from:(prev?prev.from:c.from), to:c.to}; });
+  // 기록 1줄
+  var subName=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub;
+  var chgMain=changes.length?(changes.filter(function(c){return c.up;})[0]||changes[0]):null;
+  var topName='';
+  try{ var fq=qs[0]; var tp=fq&&fq.topic; if(!tp){ var info=(typeof adLookup==='function')&&adLookup(cert,sub,fq&&fq.id); tp=info&&info.topic; } var tm2=topicNameMap(cert,sub); topName=(tp&&tm2[tp]&&tm2[tp].name)||''; }catch(e){}
+  luHistAdd(cert, { ts:Date.now(), sub:sub, subName:subName, topic:(chgMain?chgMain.topic:topName), correct:correct, total:total, qids:qs.map(function(q){return q.id;}), ans:Object.assign({},mqAns), chg:(chgMain?{from:chgMain.from,to:chgMain.to,up:chgMain.up}:null) });
   luSubIdx=(luSubIdx+1);
-  if(changes.length) luRenderPopup(changes); else luLoadRound(false);
+  _luRound={correct:correct, total:total, changes:changes, qs:qs, ans:Object.assign({},mqAns), subName:subName};
+  luResumeSave();
+  mqScreen='luround'; renderMCQ(); window.scrollTo(0,0);
 }
 // 토픽에 개념학습(exp.learn) 보유 문항이 있으면 그 위치 반환 — [개념 다지기] 가드
 function _luTopicConceptLoc(cert, sub, tcode){
@@ -3805,7 +3828,150 @@ function _luToast(msg){
   document.body.appendChild(t);
   setTimeout(function(){ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },420); }, 2300);
 }
-function luFinish(msg){ mqLevelUp=false; mqStopTimer(); mqStopOverTimer(); if(currentUser && typeof srFlush==='function') srFlush(); mqScreen='home'; mqList=null; renderMCQ(); if(msg) setTimeout(function(){ _luToast(msg); },80); }
+function luFinish(msg){ mqLevelUp=false; mqStopTimer(); mqStopOverTimer(); if(currentUser && typeof srFlush==='function') srFlush(); luResumeClear(mqCert); _luRound=null; mqScreen='home'; mqList=null; renderMCQ(); if(msg) setTimeout(function(){ _luToast(msg); },80); }
+
+// ===== 레벨업: 라운드 기록 + 정밀 이어풀기 + 세션 =====
+var luHistAll={}, luResumeAll={}, _luHistLoaded=false, LU_HIST_DAYS=30, luHistView='date';
+var luSessTotal=0, luSessCorrect=0, luSessChanges={}, luSessPredStart=null, _luRound=null, _luReviewReturn=null;
+function luHistEnsure(){ if(_luHistLoaded) return; _luHistLoaded=true; try{ luHistAll=JSON.parse(localStorage.getItem('certlab_luhist')||'{}')||{}; }catch(_){ luHistAll={}; } try{ luResumeAll=JSON.parse(localStorage.getItem('certlab_luresume')||'{}')||{}; }catch(_){ luResumeAll={}; } }
+function luHistSaveLocal(){ try{ localStorage.setItem('certlab_luhist', JSON.stringify(luHistAll)); }catch(_){} try{ localStorage.setItem('certlab_luresume', JSON.stringify(luResumeAll)); }catch(_){} }
+function luHistPrune(cert){ var arr=luHistAll[cert]||[]; var cut=Date.now()-LU_HIST_DAYS*864e5; luHistAll[cert]=arr.filter(function(r){ return (r&&r.ts||0)>=cut; }); }
+function luHistList(cert){ luHistEnsure(); var arr=(luHistAll[cert]||[]).slice(); arr.sort(function(a,b){ return (b.ts||0)-(a.ts||0); }); return arr; }
+function luHistAdd(cert, rec){ luHistEnsure(); if(!luHistAll[cert]) luHistAll[cert]=[]; luHistAll[cert].push(rec); luHistPrune(cert); luHistSaveLocal(); if(currentUser && typeof saveUserData==='function') saveUserData(); }
+function luHasResume(cert){ luHistEnsure(); var r=luResumeAll[cert]; return !!(r && r.qids && r.qids.length); }
+function luResumeClear(cert){ luHistEnsure(); if(luResumeAll[cert]){ delete luResumeAll[cert]; luHistSaveLocal(); if(currentUser && typeof saveUserData==='function') saveUserData(); } }
+function _luPredScore(cert){ try{ var ap=adPredicted(cert); return ap?ap.predicted:null; }catch(_){ return null; } }
+function _luFindQ(cert, id){ var qb=qbOf(cert), found=null;
+  Object.keys(qb).some(function(sub){ return (qb[sub].sets||[]).some(function(st){ return (st.questions||[]).some(function(q){ if(q&&q.id===id){ found=q; return true;} return false; }); }); });
+  if(found) return found;
+  Object.keys(qb).some(function(sub){ try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; var vp=(b&&b.variantPool)||[]; return vp.some(function(v){ if(v&&v.id===id){ found=v; return true;} return false; }); }catch(e){ return false; } });
+  return found; }
+function _luQLabel(q){ try{ var s=(q&&q.q)?String(q.q).replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim():''; return s?(s.length>30?s.slice(0,30)+'…':s):(q&&q.id||''); }catch(_){ return (q&&q.id)||''; } }
+function luResumeSave(){ if(!mqLevelUp) return; luHistEnsure();
+  try{ var qids=(mqList||[]).map(function(q){ return q&&q.id; }).filter(Boolean);
+    if(!qids.length) return;
+    luResumeAll[mqCert]={ sub:luCurSub, subName:((qbOf(mqCert)[luCurSub]&&qbOf(mqCert)[luCurSub].name)||luCurSub), qids:qids, ans:Object.assign({},mqAns), guess:Object.assign({},mqGuess), idx:mqIdx, luSubIdx:luSubIdx, luSeen:Object.assign({},luSeen), preScores:Object.assign({},luPreScores), sessTotal:luSessTotal, sessCorrect:luSessCorrect, sessChanges:Object.assign({},luSessChanges), predBefore:luSessPredStart, ts:Date.now() };
+    luHistSaveLocal(); if(currentUser && typeof saveUserData==='function') saveUserData();
+  }catch(_){}
+}
+function luResumeApply(cert){ var r=luResumeAll[cert];
+  if(!r){ luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); return; }
+  var list=(r.qids||[]).map(function(id){ return _luFindQ(cert,id); }).filter(Boolean);
+  luSubIdx=r.luSubIdx||0; luSeen=r.luSeen||{}; luSessTotal=r.sessTotal||0; luSessCorrect=r.sessCorrect||0; luSessChanges=r.sessChanges||{}; luSessPredStart=(r.predBefore!=null?r.predBefore:_luPredScore(cert)); luPreScores=r.preScores||{};
+  if(list.length!==(r.qids||[]).length || !list.length){ luResumeClear(cert); luLoadRound(false); return; }   // 문항 못 찾으면(데이터 변경 등) 새 라운드로
+  luCurSub=r.sub; mqSub=r.sub; mqSet=0; mqMode='levelup';
+  mqList=list; mqAns=r.ans||{}; mqGuess=r.guess||{}; mqShow={}; mqIdx=Math.min(r.idx||0, list.length-1); mqTimeLeft=list.length*60;
+  mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function luSessionEnd(){ mqStopTimer(); mqStopOverTimer(); if(currentUser && typeof srFlush==='function') srFlush(); luResumeClear(mqCert); mqScreen='lusummary'; renderMCQ(); window.scrollTo(0,0); }
+// 라운드 결과 카드
+function renderLuRound(root){ var R=_luRound; if(!R){ luLoadRound(false); return; }
+  var em=R.correct>=R.total?'🎉':(R.correct>=Math.ceil(R.total*0.6)?'💪':'📚');
+  var pct=R.total?Math.round(R.correct/R.total*100):0;
+  var chgHTML='';
+  if(R.changes && R.changes.length){ var up=R.changes.filter(function(c){return c.up;}); var m=up.length?up[0]:R.changes[0]; var col=m.up?'#2E9B5E':'#946200';
+    chgHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:12px 14px;margin:12px 14px 0"><div style="font-size:13.5px;font-weight:800;color:'+col+'">'+(m.up?'🎉 ':'💪 ')+mqEsc(m.topic)+'  Lv'+m.from+' → Lv'+m.to+'</div>'+(R.changes.length>1?'<div style="font-size:12px;color:#8A7D6E;margin-top:3px">그 외 '+(R.changes.length-1)+'개 단원 변동</div>':'')+'<div style="font-size:12px;color:#5F5E5A;margin-top:3px">'+(m.up?'약했던 단원이 한 단계 올라갔어요.':'다지면 다시 올라가요.')+'</div></div>'; }
+  var wrong=R.qs.filter(function(q){ return R.ans[q.id]!==undefined && !mqCorrect(q,R.ans[q.id]); });
+  var wrongHTML;
+  if(wrong.length){ wrongHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:12px 14px;margin:11px 14px 0;text-align:left"><div style="font-size:12.5px;font-weight:800;margin-bottom:6px">틀린 문항 '+wrong.length+'</div>'+wrong.map(function(q){ return '<div style="display:flex;gap:7px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed #EFE7DD"><span style="color:#E24B4A;font-weight:900">✗</span><span>'+mqEsc(_luQLabel(q))+'</span></div>'; }).join('')+'<button onclick="luRoundReview()" style="width:100%;margin-top:9px;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:800;background:#FCEBEA;color:#B5302F;cursor:pointer">틀린 문항 다시보기</button></div>'; }
+  else { wrongHTML='<div style="background:#EAF7EF;border:1px solid #BfE6CD;border-radius:14px;padding:14px;margin:11px 14px 0;text-align:center;color:#1E7A45;font-weight:800;font-size:13.5px">모두 맞혔어요! 🎉</div>'; }
+  root.innerHTML='<div class="mcq-result" style="padding:24px 0 20px"><div style="text-align:center"><div style="font-size:40px;line-height:1">'+em+'</div>'+
+    '<div style="font-size:18px;font-weight:900;margin:6px 0 2px">이번 라운드 '+R.correct+' / '+R.total+'</div>'+
+    '<div style="font-size:13px;color:#888780">'+mqEsc(R.subName||'')+' · 정답률 '+pct+'%</div></div>'+
+    chgHTML+wrongHTML+
+    '<div style="display:flex;flex-direction:column;gap:9px;padding:18px 14px 0"><button onclick="luLoadRound(false)" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#0C447C;color:#fff;cursor:pointer">계속 풀기 (다음 5문제)</button>'+
+    '<button onclick="luSessionEnd()" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#F1F5F9;color:#475569;cursor:pointer">그만하기</button></div></div>';
+  window.scrollTo(0,0);
+}
+function luRoundReview(){ var R=_luRound; if(!R) return; mqResultQs=R.qs.slice(); mqResultAns=Object.assign({},R.ans); _luReviewReturn='luround'; mqOpenReview('wrong',0); }
+// 세션 요약
+function renderLuSummary(root){ var cert=mqCert;
+  var predNow=_luPredScore(cert), predStart=luSessPredStart;
+  var pct=luSessTotal?Math.round(luSessCorrect/luSessTotal*100):0;
+  var rounds=Math.max(1, Math.round(luSessTotal/LU_ROUND));
+  var predHTML='';
+  if(predNow!=null){ var arrow=(predStart!=null&&predNow!==predStart)?(' → <span style="color:'+(predNow>predStart?'#2E9B5E':'#946200')+'">'+predNow+'</span>'):''; predHTML='<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F3EEE7;font-size:14px"><span>예상점수</span><b>'+(predStart!=null?predStart:predNow)+arrow+' 점</b></div>'; }
+  var chgKeys=Object.keys(luSessChanges);
+  var wrongCnt=Math.max(0, luSessTotal-luSessCorrect);
+  var chgHTML='';
+  if(chgKeys.length){ chgHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:12px 14px;margin:11px 14px 0;text-align:left"><div style="font-size:12.5px;font-weight:800;margin-bottom:6px">레벨 변동</div>'+
+    chgKeys.map(function(k){ var c=luSessChanges[k]; var up=c.to>=c.from; return '<div style="display:flex;gap:7px;font-size:13px;padding:5px 0"><span style="color:'+(up?'#2E9B5E':'#946200')+';font-weight:900">'+(up?'▲':'▼')+'</span><span>'+mqEsc(c.subName||'')+' · '+mqEsc(c.topic||'')+' Lv'+c.from+' → <b>Lv'+c.to+'</b></span></div>'; }).join('')+'</div>'; }
+  root.innerHTML='<div class="mcq-result" style="padding:24px 0 20px"><div style="text-align:center"><div style="font-size:40px;line-height:1">🏁</div>'+
+    '<div style="font-size:18px;font-weight:900;margin:6px 0 2px">오늘 레벨업 완료</div>'+
+    '<div style="font-size:13px;color:#888780;margin-bottom:16px">'+luSessTotal+'문제 풀이</div></div>'+
+    '<div class="sc"><div><div class="v ok">'+luSessCorrect+'</div><div class="l">정답</div></div>'+
+    '<div><div class="v bad">'+wrongCnt+'</div><div class="l">오답</div></div>'+
+    '<div><div class="v">'+pct+'%</div><div class="l">정답률</div></div></div>'+
+    '<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:6px 14px;margin:0 14px;text-align:left">'+
+    '<div style="display:flex;justify-content:space-between;padding:9px 0;'+(predHTML?'border-bottom:1px solid #F3EEE7;':'')+'font-size:14px"><span>푼 문제</span><b>'+luSessTotal+'문제 ('+rounds+'라운드)</b></div>'+
+    predHTML+'</div>'+chgHTML+
+    '<div style="display:flex;flex-direction:column;gap:9px;padding:18px 14px 0"><button onclick="luLoadRound(false)" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#0C447C;color:#fff;cursor:pointer">더 풀기</button>'+
+    '<button onclick="luFinish(\'\')" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#F1F5F9;color:#475569;cursor:pointer">홈으로</button></div></div>';
+  window.scrollTo(0,0);
+}
+// 기록 페이지
+// 레벨업 라운드 후처리: 레벨변동 집계 + 기록 1줄 + 이어풀기 정리 (mqResult에서 호출)
+var _luLastSubName='', _luLastChanges=[];
+function _luAfterRound(qs, correct){
+  var cert=mqCert, sub=luCurSub, k=cert+'|'+sub, changes=[];
+  try{
+    var now=(typeof eloState!=='undefined'&&eloState[k])||{};
+    var tmap=topicNameMap(cert,sub), nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub;
+    for(var t in now){ if(t.charAt(0)==='_') continue; var before=luPreScores[t]; if(before==null) continue; var lb=AE.scoreToLevel(before), la=AE.scoreToLevel(now[t].score); if(la!==lb) changes.push({subName:nm, topic:(tmap[t]&&tmap[t].name)||t, from:lb, to:la, up:la>lb}); }
+  }catch(e){}
+  var subName=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub;
+  _luLastSubName=subName; _luLastChanges=changes;
+  var topName=''; try{ var fq=qs[0]; var tp=fq&&fq.topic; if(!tp){ var info=(typeof adLookup==='function')&&adLookup(cert,sub,fq&&fq.id); tp=info&&info.topic; } var tm2=topicNameMap(cert,sub); topName=(tp&&tm2[tp]&&tm2[tp].name)||''; }catch(e){}
+  var chgMain=changes.length?(changes.filter(function(c){return c.up;})[0]||changes[0]):null;
+  luHistAdd(cert, { ts:Date.now(), sub:sub, subName:subName, topic:(chgMain?chgMain.topic:topName), correct:correct, total:qs.length, qids:qs.map(function(q){return q.id;}), ans:Object.assign({},mqAns), chg:(chgMain?{from:chgMain.from,to:chgMain.to,up:chgMain.up}:null) });
+  luSubIdx=(luSubIdx+1);
+  luResumeClear(cert);   // 라운드 완료 → 이어풀기 정리(다음은 계속 풀기)
+  return changes;
+}
+function luContinue(){ mqLevelUp=true; mqInReview=false; mqReview=false; mqDiag=false; luLoadRound(false); }   // 다음 5문제
+function luRetryRound(){   // 방금 5문제 그대로 다시
+  var list=mqResultQs.slice(); if(!list.length) return;
+  mqLevelUp=true; mqInReview=false;
+  list.forEach(function(q){ delete mqOX[q.id]; }); if(typeof mqOXSave==='function') mqOXSave();
+  luPreScores={}; var sc=luTopicScores(mqCert, luCurSub); for(var t in sc) luPreScores[t]=sc[t];
+  mqSub=luCurSub; mqSet=0; mqMode='levelup'; mqList=list; mqAns={}; mqShow={}; mqGuess={}; mqIdx=0; mqTimeLeft=list.length*60;
+  mqScreen='exam'; luResumeSave(); renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
+}
+function luHistGo(){ luHistEnsure(); mqLevelUp=false; mqScreen='luhist'; renderMCQ(); window.scrollTo(0,0); }
+function luHistBack(){ mqScreen='home'; renderMCQ(); window.scrollTo(0,0); }
+function luHistToggle(v){ luHistView=v; renderMCQ(); }
+function _luHistRow(rec, gIdx){
+  var pctClass=(rec.correct>=rec.total)?'#E4F3EA':(rec.correct>=Math.ceil(rec.total*0.6)?'#FBEFCF':'#FBE3E2');
+  var pctCol=(rec.correct>=rec.total)?'#1E7A45':(rec.correct>=Math.ceil(rec.total*0.6)?'#8a6510':'#B5302F');
+  var d=new Date(rec.ts||0); var hh=('0'+d.getHours()).slice(-2), mm=('0'+d.getMinutes()).slice(-2);
+  var chg=rec.chg?('<span style="font-weight:800;color:'+(rec.chg.up?'#2E9B5E':'#946200')+'">'+(rec.chg.up?'▲':'▼')+' Lv'+rec.chg.from+'→'+rec.chg.to+'</span>'):'<span style="color:#888780">변동 없음</span>';
+  return '<div onclick="luHistReview('+gIdx+')" style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:#fff;border:1px solid #EDE6DD;border-radius:13px;margin-bottom:8px;cursor:pointer">'+
+    '<div style="font-size:12px;font-weight:900;width:42px;text-align:center;border-radius:9px;padding:5px 0;background:'+pctClass+';color:'+pctCol+'">'+rec.correct+'/'+rec.total+'</div>'+
+    '<div style="flex:1"><b style="font-size:13.5px">'+mqEsc(rec.subName||'')+(rec.topic?(' · '+mqEsc(rec.topic)):'')+'</b><div style="font-size:11px;color:#888780;margin-top:2px">'+hh+':'+mm+' · '+chg+'</div></div>'+
+    '<span style="color:#c9bdac;font-size:18px">›</span></div>'; }
+function renderLuHist(root){ var cert=mqCert; var list=luHistList(cert);
+  var head='<div class="mcq-exam-title"><button class="exam-home-back" onclick="luHistBack()" aria-label="뒤로">'+BACK_ARROW+'</button>전체 레벨업 결과</div>';
+  var body='';
+  if(!list.length){ body='<div style="text-align:center;color:#A89C8E;font-size:13px;padding:40px 20px">아직 레벨업 기록이 없어요.<br>레벨업 문제를 풀면 라운드별로 쌓여요.</div>'; }
+  else { var groups={}, order=[];
+    list.forEach(function(rec,i){ var d=new Date(rec.ts||0); var key=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); if(!groups[key]){ groups[key]=[]; order.push(key); } groups[key].push({rec:rec,gIdx:i}); });
+    var today=new Date(); var tkey=today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2);
+    body='<div style="padding:8px 14px 0">'+order.map(function(key){ var parts=key.split('-'); var lbl=(key===tkey)?('오늘 · '+parseInt(parts[1],10)+'월 '+parseInt(parts[2],10)+'일'):(parseInt(parts[1],10)+'월 '+parseInt(parts[2],10)+'일');
+      return '<div style="font-size:12px;font-weight:800;color:#8a8175;margin:14px 2px 7px">'+lbl+'</div>'+groups[key].map(function(o){ return _luHistRow(o.rec,o.gIdx); }).join(''); }).join('')+'</div>'; }
+  root.innerHTML=head+body;
+}
+function luHistReview(gIdx){ var list=luHistList(mqCert); var rec=list[gIdx]; if(!rec) return;
+  var qs=(rec.qids||[]).map(function(id){ return _luFindQ(mqCert,id); }).filter(Boolean);
+  if(!qs.length){ alert('이 회차 문항을 찾지 못했어요.'); return; }
+  mqStopTimer(); mqStopOverTimer();
+  mqResultQs=qs; mqResultAns=Object.assign({},rec.ans||{});
+  var correct=qs.filter(function(q){ return mqResultAns[q.id]!==undefined && isCorr(q.ans,mqResultAns[q.id]); }).length;
+  var answered=qs.filter(function(q){ return mqResultAns[q.id]!==undefined; }).length;
+  var total=qs.length, pct=total?Math.round(correct/total*100):0;
+  var chg=rec.chg?[{subName:rec.subName, topic:rec.topic, from:rec.chg.from, to:rec.chg.to, up:rec.chg.up}]:[];
+  mqInReview=false; mqLevelUp=false;
+  mqResultMeta={correct:correct,answered:answered,total:total,pct:pct,diag:false,review:false,mode:'levelup',sub:rec.sub,set:0,otc:0,ots:0,levelTest:false,cert:mqCert, lu:true, luSubName:(rec.subName||'')+(rec.topic?(' · '+rec.topic):''), luChanges:chg, luFromHist:true, ts:rec.ts};
+  mqScreen='result'; renderMqResultScreen(); window.scrollTo(0,0); }
 // 과목 레벨: 토픽 점수 핵심(exam) 2 : 일반 1 가중평균 → Lv
 // 과목 Elo 점수(핵심 2:1 가중) — 0~100, 데이터 없으면 null
 function adSubjectScoreRaw(cert,sub){ var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), wsum=0, w=0; for(var t in sc){ var weight=(tmap[t]&&tmap[t].mode==='exam')?2:1; wsum+=sc[t]*weight; w+=weight; } return w?(wsum/w):null; }
@@ -4027,7 +4193,7 @@ function mqFlushAnsweredToWrong(){
   });
   if(changed && currentUser) saveUserData();
 }
-function mqBackHome(){ const wasReview=mqInReview; mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!mqLevelUp&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); if(currentUser && typeof srFlush==='function') srFlush(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); if(mqLevelUp && currentUser && typeof srFlush==='function') srFlush(); mqReview=false; mqDiag=false; mqGather=false; mqLevelUp=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ _luReviewReturn=null; const wasReview=mqInReview; mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!mqLevelUp&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); if(currentUser && typeof srFlush==='function') srFlush(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); if(mqLevelUp && currentUser && typeof srFlush==='function') srFlush(); mqReview=false; mqDiag=false; mqGather=false; mqLevelUp=false; mqScreen='home'; mqList=null; renderMCQ(); window.scrollTo(0,0); }
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
@@ -5023,6 +5189,7 @@ function mqPick(qid,n){
     if(e.plan==='GUEST'){ guestCounts[mqCert]++; if(typeof bumpGuestSolved==='function') bumpGuestSolved(); }
     if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount(mqCert); } }
   mqSaveProgress(); if(mqDiag) saveDiagProgress();
+  if(mqLevelUp) luResumeSave();
   renderMCQ();
   const qs=mqQuestions();
   if(maybeOfferConcept(qs.find(x=>x.id===qid), n, firstTime)) return;   // 권유 팝업 뜨면 자동넘김 보류(선택에 맡김)
@@ -5062,7 +5229,8 @@ function mqProgStart(e){
   document.addEventListener('pointermove',move); document.addEventListener('pointerup',end); document.addEventListener('pointercancel',end);
 }
 function mqResult(){
-  if(mqLevelUp){ luEndRound(); return; }
+  var _wasLU=mqLevelUp;
+  _luReviewReturn=null;
   mqStopTimer(); mqStopOverTimer(); mqClearProgress(mqSub,mqSet);
   try{ localStorage.removeItem('certlab_mcq_active'); }catch(_){}
   mqInReview=false; mqConcept=false; mqGather=false;
@@ -5082,10 +5250,13 @@ function mqResult(){
   if(mqDiag){ srSaveDiagnostic(mqCert,correct,total); clearDiagProgress(mqCert);
     if(mqLevelTest){ ltFinalize(mqCert, qs, mqAns); } }
   const _wasLevelTest=mqLevelTest; mqLevelTest=false;
+  var _luChanges=[]; if(_wasLU){ _luChanges=_luAfterRound(qs, correct); }   // 레벨업: 레벨변동·기록·이어풀기정리
   // 결과 스냅샷 (오답보기·번호그리드·결과 재표시에 사용)
   mqResultQs=qs.slice(); mqResultAns=Object.assign({},mqAns);
   mqResultMeta={correct,answered,total,pct,diag:mqDiag,review:mqReview,mode:mqMode,sub:mqSub,set:mqSet,
-    otc:mqOvertimeCount,ots:mqOverElapsed(),levelTest:_wasLevelTest,cert:mqCert};
+    otc:mqOvertimeCount,ots:mqOverElapsed(),levelTest:_wasLevelTest,cert:mqCert,
+    lu:_wasLU, luSubName:(_wasLU?_luLastSubName:''), luChanges:_luChanges, luFromHist:false};
+  mqLevelUp=false;   // 채점화면에선 레벨업 풀이 상태 해제(버튼 분기는 meta.lu)
   mqStopTimer(); mqStopOverTimer(); mqScreen='result';   // 결과화면 전용 상태 — 진행 재저장·플러시 방지
   renderMqResultScreen();
 }
@@ -5093,8 +5264,15 @@ function renderMqResultScreen(){
   const M=mqResultMeta; if(!M){ return; }
   const {correct,answered,total,pct,diag}=M;
   const em=pct>=80?'🏆':pct>=60?'💪':'📚';
-  const modeLbl=diag?' · 레벨':M.review?' · 복습':M.mode==='wrong'?' · 오답 다시풀기':'';
-  const titleTxt=diag?'레벨 테스트':M.review?'오늘의 복습':(curQB()[M.sub].name+' · '+curQB()[M.sub].sets[M.set].label);
+  const modeLbl=diag?' · 레벨':M.review?' · 복습':M.lu?'':M.mode==='wrong'?' · 오답 다시풀기':'';
+  const titleTxt=diag?'레벨 테스트':M.review?'오늘의 복습':M.lu?(M.luSubName||'레벨업'):(curQB()[M.sub].name+' · '+curQB()[M.sub].sets[M.set].label);
+  // 레벨업 머리말: ⚡태그 + 레벨변동(+기록열람 시 날짜)
+  var luHead='';
+  if(M.lu){
+    luHead='<div style="margin:2px 0 5px"><span style="display:inline-block;background:#E0ECFA;color:#185FA5;font-size:11px;font-weight:800;border-radius:8px;padding:2px 8px">⚡ 레벨업</span></div>';
+    if(M.luFromHist && M.ts){ var _d=new Date(M.ts); luHead+='<div style="font-size:11px;color:#94A3B8;margin-bottom:3px">'+(_d.getMonth()+1)+'/'+_d.getDate()+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2)+'</div>'; }
+    var _lc=M.luChanges||[]; if(_lc.length){ var _lm=_lc.filter(function(c){return c.up;})[0]||_lc[0]; luHead+='<div style="font-size:12.5px;font-weight:800;color:'+(_lm.up?'#2E9B5E':'#946200')+';margin-bottom:4px">'+(_lm.up?'🎉 ':'💪 ')+mqEsc(_lm.topic)+' Lv'+_lm.from+' → Lv'+_lm.to+(_lc.length>1?(' 외 '+(_lc.length-1)):'')+'</div>'; }
+  }
   // 문항별 번호 그리드 (정답 초록 / 오답 빨강 / 미응답 회색)
   const grid=mqResultQs.map((q,i)=>{
     const a=mqResultAns[q.id]; let cls='gx-none';
@@ -5105,9 +5283,21 @@ function renderMqResultScreen(){
   const unansN=mqResultQs.filter(q=>mqResultAns[q.id]===undefined).length;
   const gridHTML=
     '<div class="gx-wrap"><div class="gx-ti">문항별 결과 <span>번호를 누르면 해설</span></div>'+
-    '<div class="gx-grid">'+grid+'</div>'+
+    '<div class="gx-grid'+(M.lu?' gx-grid-lu':'')+'">'+grid+'</div>'+
     '<div class="gx-leg"><span><i class="gx-d gx-ok"></i>정답</span><span><i class="gx-d gx-bad"></i>오답</span><span><i class="gx-d gx-none"></i>미응답</span></div></div>';
-  const btns=diag
+  let btns;
+  if(M.lu && M.luFromHist){
+    btns=(wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 '+wrongN+'</button>':'')+
+         (unansN>0?'<button onclick="mqOpenReview(\'unans\',0)">⬜ 미응답 '+unansN+'</button>':'')+
+         '<button class="ghost" onclick="luHistGo()">‹ 전체 결과</button>';
+  } else if(M.lu){
+    btns=(answered<total?'<button onclick="mqContinue()">▶ 이어풀기</button>':'')+
+         (wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 '+wrongN+'</button>':'')+
+         (unansN>0?'<button onclick="mqOpenReview(\'unans\',0)">⬜ 미응답 '+unansN+'</button>':'')+
+         '<button onclick="luRetryRound()">🔄 다시풀기</button>'+
+         '<button onclick="luContinue()">계속 풀기</button>'+
+         '<button class="ghost" onclick="luHistGo()">📊 전체 레벨업 결과</button>';
+  } else btns=diag
     ? ((wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 '+wrongN+'</button>':'')+(unansN>0?'<button onclick="mqOpenReview(\'unans\',0)">⬜ 미응답 '+unansN+'</button>':'')+'<button onclick="mqBackHome()">📊 실력 분석</button>')
     : ((answered<total?'<button onclick="mqContinue()">▶ 이어풀기</button>':'')+
        (wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 '+wrongN+'</button>':'')+
@@ -5115,6 +5305,7 @@ function renderMqResultScreen(){
        '<button onclick="mqRetry()">🔄 다시풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
   document.getElementById('mcqRoot').innerHTML=
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
+    luHead+
     '<div class="rt">'+titleTxt+modeLbl+'</div>'+
     '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답'+(diag?' · 레벨 점수 '+pct+'점':'')+'</div>'+
     ((M.otc>0||M.ots>0)?'<div class="rs" style="color:#C2410C">⏱ 시간종료 후 '+M.otc+'문항 · 추가 +'+mqFmt(M.ots)+' <span style="font-size:11px;color:#A89C8E">(예상점수 미반영)</span></div>':'')+
@@ -5141,7 +5332,7 @@ function mqOpenReview(mode,idx){
   mqIdx=Math.min(idx||0, list.length-1);
   mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
 }
-function mqBackToResult(){ mqInReview=false; mqScreen='result'; renderMqResultScreen(); }
+function mqBackToResult(){ if(_luReviewReturn){ var t=_luReviewReturn; _luReviewReturn=null; mqInReview=false; mqScreen=t; renderMCQ(); window.scrollTo(0,0); return; } mqInReview=false; mqScreen='result'; renderMqResultScreen(); }
 function mqContinue(){ mqInReview=false; mqTimeUp=true; mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); }
 function mqRetry(){
   mqInReview=false;
