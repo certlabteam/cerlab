@@ -805,14 +805,14 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .pr-cancel{margin-top:8px;width:100%;border:0;background:transparent;color:#6b7686;font-size:13px;font-weight:600;padding:8px;cursor:pointer}
 .pr-empty{font-size:12.5px;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:9px 11px;margin-top:10px}
 #printArea{display:none}
-@media print{body>*{display:none !important}body>#printArea{display:block !important}@page{margin:12mm}}
+@media print{body>*{display:none !important}body>#printArea{display:block !important}@page{margin:14mm 12mm}html,body{margin:0;padding:0}}
 #printArea .pa-h{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #111;padding-bottom:6px;margin-bottom:12px}
 #printArea .pa-h .t{font-size:14px;font-weight:800}
 #printArea .pa-h .m{font-size:10px;color:#555}
 #printArea .pa-foldnote{font-size:10px;color:#666;margin:0 0 10px;text-align:center}
 #printArea .pa-sub{font-size:12px;font-weight:800;background:#eef1f5;border-left:3px solid #111;padding:3px 8px;margin:14px 0 8px;break-after:avoid}
 #printArea .pa-cols{column-count:2;column-gap:16px}
-#printArea .pa-qa{break-inside:avoid;border:1px solid #cfd6df;border-radius:6px;padding:8px 9px;margin:0 0 8px}
+#printArea .pa-qa{break-inside:avoid;page-break-inside:avoid;border:1px solid #cfd6df;border-radius:6px;padding:8px 9px;margin:0 0 8px}
 #printArea .pa-q{font-size:11px;font-weight:800;line-height:1.45;margin:0 0 4px}
 #printArea .pa-q .no,#printArea .pa-qcell .no{color:#185FA5;margin-right:3px}
 #printArea .pa-a{font-size:10.5px;line-height:1.5;color:#222;margin:0}
@@ -820,7 +820,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #printArea .pa-mn .lab{font-weight:800;color:#b9791d;margin-right:3px}
 #printArea .pa-mn .k,#printArea .pa-mn k{color:#c0392b;font-weight:800}
 #printArea.pa-fold .pa-cols{column-count:1}
-#printArea.pa-fold .pa-qa{display:grid;grid-template-columns:1fr 1fr;column-gap:0;padding:0;overflow:hidden}
+#printArea.pa-fold .pa-qa{display:grid;grid-template-columns:1fr 1fr;column-gap:0;padding:0;align-items:start;break-inside:avoid;page-break-inside:avoid}
 #printArea.pa-fold .pa-qcell{padding:8px 10px;border-right:1px dashed #999;font-size:11px;font-weight:700;line-height:1.45}
 #printArea.pa-fold .pa-acell{padding:8px 10px}
 
@@ -4298,9 +4298,8 @@ function oxWrongItems(q){
       var sv=splitVerdict(stripRepeatedOpt(it.oraw, it.txt));
       var actO=verdictIsO(sv.v); if(actO===null) return;
       if((mark==='O')!==actO){
-        if(oxConceptsFor(q, it.idx).length===0) return;   // 개념 없는 진술은 노출 안 함(Chris 지시)
         it.myO=(mark==='O'); it.actO=actO; out.push(it);
-      }   // 표시 ≠ 정답 = 틀림
+      }   // 표시 ≠ 정답 = 틀림 (개념 유무와 무관하게 노출, 개념은 있으면 표시·없으면 '준비 중')
     });
   }catch(_){}
   return out;
