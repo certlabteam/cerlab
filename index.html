@@ -662,17 +662,19 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .oxl-title{font-size:16px;font-weight:800;color:#0C447C}
 .oxl-cnt{margin-left:auto;font-size:12.5px;font-weight:800;color:#B23A48;background:#FBEEE8;border-radius:8px;padding:3px 10px}
 .oxl-empty{padding:40px 16px;text-align:center;color:#94A3B8;font-size:13.5px;line-height:1.7}
-.oxl-card{background:#fff;border:1px solid #E8EBEF;border-radius:14px;padding:15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.oxl-card{background:#fff;border:1px solid #E8EBEF;border-radius:14px;padding:15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden}
 .oxl-sub{font-size:11.5px;font-weight:700;color:#94A0AB;margin-bottom:6px}
-.oxl-q{font-size:14px;font-weight:700;color:#0F172A;line-height:1.55;margin-bottom:12px}
+.oxl-q{font-size:14px;font-weight:700;color:#0F172A;line-height:1.55;margin-bottom:12px;word-break:keep-all;overflow-wrap:anywhere}
 .oxl-stmt{background:#FCF4F4;border:1px solid #F1D6D6;border-left:3px solid #C0322F;border-radius:9px;padding:10px 12px;margin-bottom:10px}
 .oxl-stmt-h{display:flex;align-items:center;gap:8px;margin-bottom:5px}
 .oxl-k{font-size:13px;font-weight:800;color:#C0322F}
 .oxl-badge{font-size:11px;font-weight:700;color:#A32D2D;background:#FBE3E3;border-radius:6px;padding:2px 8px}
-.oxl-stmt-t{font-size:13px;line-height:1.6;color:#3C3C3A}
+.oxl-stmt-t{font-size:13px;line-height:1.6;color:#3C3C3A;word-break:keep-all;overflow-wrap:anywhere}
+.oxl-exp{margin-top:7px;font-size:12.5px;line-height:1.62;color:#5A4A2E;background:#FFF8EC;border:1px solid #F1E2C2;border-radius:8px;padding:8px 10px;word-break:keep-all;overflow-wrap:anywhere}
+.oxl-exp-ti{font-size:11px;font-weight:800;color:#B5862B;margin-right:5px}
 .oxl-cpt{margin-top:9px;background:#F5F8FF;border:1px solid #D9E5F7;border-radius:8px;padding:9px 11px}
 .oxl-cpt-ti{font-size:11px;font-weight:800;color:#185FA5;margin-bottom:5px}
-.oxl-cpt-row{font-size:12.5px;line-height:1.65;color:#3A4A5E;margin-bottom:7px}
+.oxl-cpt-row{font-size:12.5px;line-height:1.65;color:#3A4A5E;margin-bottom:7px;word-break:keep-all;overflow-wrap:anywhere;overflow:hidden}
 .oxl-cpt-row:last-child{margin-bottom:0}
 .oxl-cpt-row b{color:#0C447C;display:block;margin-bottom:1px}
 .oxl-cpt-none{color:#A0AEC0;font-size:11.5px;font-style:italic}
@@ -4295,7 +4297,10 @@ function oxWrongItems(q){
       if(learned[it.key]) return;                      // 학습 완료된 진술 제외
       var sv=splitVerdict(stripRepeatedOpt(it.oraw, it.txt));
       var actO=verdictIsO(sv.v); if(actO===null) return;
-      if((mark==='O')!==actO){ it.myO=(mark==='O'); it.actO=actO; out.push(it); }   // 표시 ≠ 정답 = 틀림
+      if((mark==='O')!==actO){
+        if(oxConceptsFor(q, it.idx).length===0) return;   // 개념 없는 진술은 노출 안 함(Chris 지시)
+        it.myO=(mark==='O'); it.actO=actO; out.push(it);
+      }   // 표시 ≠ 정답 = 틀림
     });
   }catch(_){}
   return out;
@@ -4308,6 +4313,19 @@ function oxConceptsFor(q, idx){
     (e.cpt||[]).forEach(function(c){ var cc=cptResolve(c); if(cc) out.push(cc); });
   }catch(_){}
   return out;
+}
+// 좁은 OX 카드 안전 렌더: 표/SVG/이미지/figure 등 카드 폭을 깨거나 미닫힘으로 다음 카드를 삼킬 수 있는 마크업이
+// 섞이면 텍스트만 추출(개념 비교표 등은 OX 카드엔 부적합). 그 외엔 기존 rm()(분수·첨자) 유지.
+// 카드 텍스트 안전 렌더: 표·SVG·이미지가 섞이면 좁은 카드에서 세로로 깨지므로 텍스트만 추출
+function oxSafeHTML(t,q){
+  var h=rm(t,q);
+  try{
+    if(/<(table|svg|img|figure|thead|tbody|tr|td|th)\b/i.test(h)){
+      var d=document.createElement('div'); d.innerHTML=h;
+      h=(d.textContent||d.innerText||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\s+/g,' ').trim();
+    }
+  }catch(_){}
+  return h;
 }
 function oxLearnCards(cert){
   var qb=qbOf(cert), cards=[];
@@ -4340,16 +4358,22 @@ function renderOxLearn(root){
     var q=cd.q, stem=splitJaryo(q.q).q || q.q;
     html+='<div class="oxl-card">';
     html+='<div class="oxl-sub">'+mqEsc(cd.subName)+(q.set?(' · '+mqEsc(q.set)):'')+'</div>';
-    html+='<div class="oxl-q">'+rm(stem,q)+'</div>';
+    html+='<div class="oxl-q">'+oxSafeHTML(stem,q)+'</div>';
     cd.wrong.forEach(function(it){
       html+='<div class="oxl-stmt"><div class="oxl-stmt-h"><span class="oxl-k">'+mqEsc(it.label)+'</span>'+
         '<span class="oxl-badge">내 답 '+(it.myO?'O':'X')+' · 정답 '+(it.actO?'O':'X')+'</span></div>';
-      html+='<div class="oxl-stmt-t">'+rm(it.txt||it.oraw,q)+'</div>';
+      var _st=it.txt||'', _ex=it.oraw||'';
+      if(_st){
+        html+='<div class="oxl-stmt-t">'+oxSafeHTML(_st,q)+'</div>';
+        if(_ex && _ex!==_st) html+='<div class="oxl-exp"><span class="oxl-exp-ti">해설</span> '+oxSafeHTML(_ex,q)+'</div>';
+      } else if(_ex){
+        html+='<div class="oxl-stmt-t">'+oxSafeHTML(_ex,q)+'</div>';
+      }
       var cs=oxConceptsFor(q, it.idx);
       if(cs.length){
         html+='<div class="oxl-cpt"><div class="oxl-cpt-ti">관련 개념</div>';
         cs.forEach(function(cc){ (cc.cards||[]).forEach(function(card){
-          html+='<div class="oxl-cpt-row"><b>'+rm(card.t||cc.name||'',q)+'</b>'+(card.d?('<div>'+rm(card.d,q)+'</div>'):'')+'</div>';
+          html+='<div class="oxl-cpt-row"><b>'+oxSafeHTML(card.t||cc.name||'',q)+'</b>'+(card.d?('<div>'+oxSafeHTML(card.d,q)+'</div>'):'')+'</div>';
         }); });
         html+='</div>';
       } else {
