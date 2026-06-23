@@ -1883,16 +1883,18 @@ async function _ottagCollect(cert, subject){
     homes[docId]={data:data, questions:data.questions};
     data.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:docId}; } });
   }
-  if(Array.isArray(data.shards) && data.shards.length){   // 샤드형: 각 샤드 doc 읽기
+  if(Array.isArray(data.shards) && data.shards.length){   // 샤드형: 각 샤드 doc 읽기 (id = 부모__회차)
     for(var i=0;i<data.shards.length;i++){
-      var sid=data.shards[i];
-      try{ var sd=await db.collection('banks').doc(sid).get();
-        if(sd.exists && Array.isArray(sd.data().questions)){
-          var sdata=sd.data();
-          homes[sid]={data:sdata, questions:sdata.questions};
-          sdata.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:sid}; } });
-        }
-      }catch(_){}
+      var raw=String(data.shards[i]);
+      var sid=(raw.indexOf(docId+'__')===0) ? raw : (docId+'__'+raw);   // 회차명만 오면 부모__ 붙임
+      var sd=null;
+      try{ sd=await db.collection('banks').doc(sid).get(); }catch(_){}
+      if((!sd||!sd.exists) && sid!==raw){ try{ sd=await db.collection('banks').doc(raw).get(); if(sd&&sd.exists) sid=raw; }catch(_){} }  // 폴백: raw가 full id인 경우
+      if(sd && sd.exists && Array.isArray(sd.data().questions)){
+        var sdata=sd.data();
+        homes[sid]={data:sdata, questions:sdata.questions};
+        sdata.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:sid}; } });
+      }
     }
   }
   return {byId:byId, homes:homes, err:(Object.keys(byId).length?null:'문항을 못 읽음')};
