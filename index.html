@@ -3481,6 +3481,7 @@ function mcqAnalysisCard(cert){
 // ===== 4-a 레벨 테스트 (진단 세션 위에 얹음. mqDiag 플밍 재사용) =====
 var mqLevelTest=false;                       // 레벨 테스트 세션 여부
 var LT_PER_SUBJECT=10;                        // 과목당 고정 문항수(시험 무관)
+var LT_SAVE_VER=2;                            // 레벨테스트 저장 포맷 버전(변형 기반). 옛 save(버전 없음/불일치)는 폐기 후 새 출제
 function _ltDiff(cert,sub,q){ var info=(typeof adLookup==='function')&&adLookup(cert,sub,q.id); return (info&&info.diff)?info.diff:null; }
 function _ltShuf(a){ for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 // 한 과목에서 난이도 분산으로 n문항 추출(diff 있는 것 우선, 부족분은 일반 랜덤 보충)
@@ -3762,14 +3763,17 @@ function diagKey(cert){ return 'diagprog:'+cert; }function diagHasSave(cert){ tr
 function clearDiagProgress(cert){ try{ localStorage.removeItem(diagKey(cert)); }catch(_){} }
 function saveDiagProgress(){
   if(!mqDiag || !mqList) return;
-  try{ localStorage.setItem(diagKey(mqCert), JSON.stringify({ids:mqList.map(q=>q.id), ans:mqAns, idx:mqIdx, t:mqTimeLeft, at:Date.now()})); }catch(_){}
+  try{ localStorage.setItem(diagKey(mqCert), JSON.stringify({v:LT_SAVE_VER, ids:mqList.map(q=>q.id), ans:mqAns, idx:mqIdx, t:mqTimeLeft, at:Date.now()})); }catch(_){}
 }
-function diagResume(){
+async function diagResume(){
   if(!diagHasSave(mqCert)){ startDiagnostic(); return; }
   let p; try{ p=JSON.parse(localStorage.getItem(diagKey(mqCert))); }catch(_){ p=null; }
-  if(!p || !p.ids || !p.ids.length){ startDiagnostic(); return; }
-  const qb=qbOf(mqCert); const byId={};
+  if(!p || !p.ids || !p.ids.length || p.v!==LT_SAVE_VER){ clearDiagProgress(mqCert); startDiagnostic(); return; }   // 옛/불일치 save 폐기 → 새 출제(변형 50)
+  const qb=qbOf(mqCert);
+  if(typeof loadAdaptiveSubject==='function'){ try{ await Promise.all(Object.keys(qb).map(function(code){ return loadAdaptiveSubject(mqCert, code).catch(function(){return null;}); })); }catch(e){} }
+  const byId={};
   Object.keys(qb).forEach(code=>qb[code].sets.forEach(st=>st.questions.forEach(q=>{ byId[q.id]={q,name:qb[code].name||code}; })));
+  Object.keys(qb).forEach(code=>{ try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[mqCert+'|'+code]; var vp=(b&&b.variantPool)||[]; vp.forEach(function(v){ if(v&&v.id&&!byId[v.id]) byId[v.id]={q:v,name:(qb[code].name||code)}; }); }catch(e){} });   // 변형 풀도 복원 대상
   const list=p.ids.map(id=>{ const e=byId[id]; if(e){ e.q._subj=e.name; return e.q; } return null; }).filter(Boolean);
   if(!list.length){ clearDiagProgress(mqCert); startDiagnostic(); return; }
   mqStopTimer();
