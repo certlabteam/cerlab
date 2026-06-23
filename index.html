@@ -153,6 +153,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 @media (max-width:480px){ .tbl-wrap th,.tbl-wrap td{padding:4px 6px;font-size:13px;white-space:nowrap} }
 .mnem-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-code .k,.mnem-desc .k,.mnem-code k,.mnem-desc k{color:#C0392B;font-weight:800}
+.jtbl .k,.jtbl k,.jtbl-html .k,.jtbl-html k,.tbl-wrap .k,.tbl-wrap k{color:#C0392B;font-weight:800}
 .mnem-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 .btn-row{display:flex;gap:10px;padding:0 20px 12px;width:100%}
 .btn{flex:1;padding:16px 8px;border-radius:var(--radius-sm);border:none;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -2694,14 +2695,12 @@ function loadTables(){
   return _tblPromise;
 }
 function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-// 셀 화이트리스트: 전부 escape 후 안전 태그만 되살림. rich=false면 <br>만, rich(type:"html")면 <br>+<span class="k">+sup/sub.
+// 셀 화이트리스트: 전부 escape 후 안전 태그만 되살림. <br>·<span class="k">(빨강)·sup/sub는 표 종류 무관 항상 허용.
 function tblCell(v, rich){
   var s=tblEsc(v);
   s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>');
-  if(rich){
-    s=s.replace(/&lt;span class=['"]k['"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>');
-    s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>');
-  }
+  s=s.replace(/&lt;span class=['"]k['"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>');
+  s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>');
   return s;
 }
 function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
