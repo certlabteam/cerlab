@@ -2822,7 +2822,7 @@ function buildLearnPanel(data, imgKey){
   if(Array.isArray(data.concepts) && data.concepts.length){
     var rows=data.concepts.map(function(it){
       if(!it||!it.t) return '';
-      var r='<div class="lc-row"><b>'+it.t+'</b>'+(it.d?' — '+it.d:'')+'</div>';
+      var r='<div class="lc-row"><b style="display:block;margin-bottom:2px">'+it.t+'</b>'+(it.d?it.d:'')+'</div>';
       if(activeCert==='bodybuilding' && it.exd && String(it.exd).trim()) r+='<div class="lc-exd">💡 '+String(it.exd).trim()+'</div>';   // 💡(exd)는 생체에서만
       if(it.ex && String(it.ex).trim()) r+='<div class="lc-ex">'+String(it.ex).trim()+'</div>';
       return r;
@@ -3485,12 +3485,23 @@ function _ltDiff(cert,sub,q){ var info=(typeof adLookup==='function')&&adLookup(
 function _ltShuf(a){ for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
 // 한 과목에서 난이도 분산으로 n문항 추출(diff 있는 것 우선, 부족분은 일반 랜덤 보충)
 function _ltSampleSubject(cert,sub,code,qb,n){
-  var withDiff=[], plain=[];
-  qb[code].sets.forEach(function(st){ st.questions.forEach(function(q){ if(mqHasAnswer(q)){ q._subj=qb[code].name||code; var d=_ltDiff(cert,sub,q); if(d){ q._ltDiff=d; withDiff.push(q);} else { q._ltDiff=null; plain.push(q);} } }); });
-  var byD={1:[],2:[],3:[],4:[],5:[]}; withDiff.forEach(function(q){ byD[q._ltDiff].push(q); }); Object.keys(byD).forEach(function(k){ _ltShuf(byD[k]); });
-  var picked=[], order=[3,4,2,5,1], guard=0;   // Lv3 기준셋 중심 라운드로빈
-  while(picked.length<n && guard++<400){ var got=false; for(var oi=0;oi<order.length;oi++){ var b=byD[order[oi]]; if(b.length){ picked.push(b.shift()); got=true; if(picked.length>=n) break; } } if(!got) break; }
-  if(picked.length<n){ _ltShuf(plain); picked=picked.concat(plain.slice(0,n-picked.length)); }
+  var subName=(qb[code]&&qb[code].name)||code;
+  var order=[3,4,2,5,1], picked=[], seen={};
+  // 1) 변형(variantq) 풀 우선 — diff(Lv1~5) 보유, 기출 소진 방지
+  var vp=[]; try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; vp=(b&&b.variantPool)||[]; }catch(e){}
+  var vD={1:[],2:[],3:[],4:[],5:[]};
+  vp.forEach(function(q){ if(!q||!q.id) return; q._subj=subName; var d=q.diff||q._ltDiff||3; q._ltDiff=d; (vD[d]||vD[3]).push(q); });
+  Object.keys(vD).forEach(function(k){ _ltShuf(vD[k]); });
+  var guard=0;
+  while(picked.length<n && guard++<400){ var got=false; for(var oi=0;oi<order.length;oi++){ var bk=vD[order[oi]]; if(bk.length){ var q=bk.shift(); if(!seen[q.id]){ seen[q.id]=1; picked.push(q); got=true; } if(picked.length>=n) break; } } if(!got) break; }
+  if(picked.length>=n) return picked.slice(0,n);
+  // 2) 부족분만 기출 보충(기출 최대한 회피 — 변형이 모자랄 때만)
+  var kWithDiff=[], kPlain=[];
+  qb[code].sets.forEach(function(st){ st.questions.forEach(function(q){ if(seen[q.id]) return; if(mqHasAnswer(q)){ q._subj=subName; var d=_ltDiff(cert,sub,q); if(d){ q._ltDiff=d; kWithDiff.push(q);} else { q._ltDiff=null; kPlain.push(q);} } }); });
+  var kD={1:[],2:[],3:[],4:[],5:[]}; kWithDiff.forEach(function(q){ kD[q._ltDiff].push(q); }); Object.keys(kD).forEach(function(k){ _ltShuf(kD[k]); });
+  guard=0;
+  while(picked.length<n && guard++<400){ var g2=false; for(var oj=0;oj<order.length;oj++){ var b2=kD[order[oj]]; if(b2.length){ var q2=b2.shift(); if(!seen[q2.id]){ seen[q2.id]=1; picked.push(q2); g2=true; } if(picked.length>=n) break; } } if(!g2) break; }
+  if(picked.length<n){ _ltShuf(kPlain); for(var p=0;p<kPlain.length&&picked.length<n;p++){ if(!seen[kPlain[p].id]){ seen[kPlain[p].id]=1; picked.push(kPlain[p]); } } }
   return picked.slice(0,n);
 }
 function startDiagnostic(){
@@ -4276,7 +4287,7 @@ function mnBoxHTML(mn){
 }
 function conceptBoxHTML(c){
   if(!Array.isArray(c) || !c.length) return '';
-  const rows=c.map(it=> (it&&it.t)?('<div class="cc-row"><b>'+it.t+'</b> — '+(it.d||'')+'</div>'):'').join('');
+  const rows=c.map(it=> (it&&it.t)?('<div class="cc-row"><b style="display:block;margin-bottom:2px">'+it.t+'</b>'+(it.d||'')+'</div>'):'').join('');
   if(!rows) return '';
   return '<div class="concept-box"><div class="concept-ti">개념설명</div>'+rows+'</div>';
 }
@@ -4548,7 +4559,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
       body+='<div class="concept-box"><div class="concept-ti">\uAC1C\uB150\uC124\uBA85</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
-        var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' \u2014 '+rm(it.d,q):'')+'</div>';
+        var row='<div class="concept-row"><b style="display:block;margin-bottom:2px">'+rm(it.t,q)+'</b>'+(it.d?rm(it.d,q):'')+'</div>';
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
         return row;
@@ -4566,7 +4577,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+rm(jaryo,q)+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+rm(jaryo,q).replace(/ \/ /g,'<br>')+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
@@ -4759,7 +4770,7 @@ function renderMcqExam(root){
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
-        var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>';
+        var row='<div class="concept-row"><b style="display:block;margin-bottom:2px">'+rm(it.t,q)+'</b>'+(it.d?rm(it.d,q):'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
