@@ -415,12 +415,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .jaryo .jr-l{flex:0 0 auto;display:inline-block}
 #mcqView .jaryo .jr-r{font-variant-numeric:tabular-nums;white-space:nowrap}
 #mcqView .jaryo .jr-line{line-height:1.7}
-#mcqView .jaryo .jr-stmt{display:flow-root;line-height:1.85;margin-bottom:9px}
+#mcqView .jaryo .jr-stmt{display:flex;align-items:flex-start;line-height:1.85;margin-bottom:9px}
 #mcqView .jaryo .jr-stmt:last-child{margin-bottom:0}
-#mcqView .jaryo .jr-stmt-t{min-width:0}
-#mcqView .jaryo .jr-stmt-k{display:inline-block;width:1.7em}
-#mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
-#mcqView .jaryo .jr-stmt{padding-left:1.7em;text-indent:-1.7em}
+#mcqView .jaryo .jr-stmt-t{flex:1 1 auto;min-width:0}
+#mcqView .jaryo .jr-stmt-k{flex:0 0 auto;min-width:1.4em;margin-right:3px}
+#mcqView .jaryo .jr-ox{flex:0 0 auto;display:inline-flex;gap:14px;margin:1px 0 0 10px}
 #mcqView .jox{width:30px;height:30px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:13px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
 #mcqView .jox:active{transform:scale(.92)}
 #mcqView .jox-o.on{background:#E8F8F1;border-color:#1D9E75;color:#0F6E56}
@@ -4384,7 +4383,7 @@ function markComboStmts(scope, addOX){
         '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>') : '';
       var body=inner, labHTML='';
       if(letter){ var _m=inner.match(new RegExp('^\\s*'+letter+'\\s*[.\\s\u00b7)\\]]+\\s*')); if(_m){ labHTML='<span class="jr-stmt-k">'+letter+'.</span>'; body=inner.slice(_m[0].length); } }
-      return '<div class="jr-stmt">'+(labHTML?'<span class="jr-stmt-t">'+labHTML+body+'</span>':'<span class="jr-stmt-t">'+inner+'</span>')+ox+'</div>';
+      return '<div class="jr-stmt">'+(labHTML?labHTML+'<span class="jr-stmt-t">'+body+'</span>':'<span class="jr-stmt-t">'+inner+'</span>')+ox+'</div>';
     }
     var html=el.innerHTML;
     var hasTag=/<(?!br\s*\/?>)[a-zA-Z]/.test(html);   // <br> 외 태그(이미지·표 등) 포함 여부
