@@ -158,6 +158,7 @@ tr:hover td{background:#FAFAFA}
 .mnem-app .mnem-box-sep{border-top:1px dashed #E2D9C5;margin:10px 0 8px}
 .mnem-app .desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-app .k,.mnem-app k{color:#C0392B;font-weight:800}
+.jtbl .k,.jtbl k,.jtbl-html .k,.jtbl-html k,.tbl-wrap .k,.tbl-wrap k{color:#C0392B;font-weight:800}
 /* master 카드: admin 식별영역(사용자 비노출=회색) ↔ 실선 구분 ↔ 사용자 화면 */
 .m-meta{background:#F6F6F4;border:1px dashed #DDD9D2;border-radius:8px;padding:7px 10px}
 .m-meta-tag{display:inline-block;font-size:10px;font-weight:700;color:#AEA89C;letter-spacing:.3px;margin-bottom:3px}
@@ -1450,7 +1451,7 @@ async function mnemImport(){
 var _tblmAll={}, _tblmLoaded=false, _tblmImpData=null, _tblmImpBound=false;
 function tblmEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function tblmYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
-function tblmCell(v, rich){ var s=tblmEsc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); if(rich){ s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); } return s; }
+function tblmCell(v, rich){ var s=tblmEsc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); return s; }
 // 계층 병합 표 렌더 (앱/뷰어 renderTbl 동일 본체)
 function tblmSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function tblmRenderTable(t){
