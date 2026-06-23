@@ -262,9 +262,9 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="mnem" onclick="switchTab('mnem')">📑 암기코드 마스터</div>
         <div class="cat-item" data-tab="tblmaster" onclick="switchTab('tblmaster')">📊 표 마스터</div>
         <div class="cat-item" data-tab="cptmaster" onclick="switchTab('cptmaster')">📖 개념 마스터</div>
+        <div class="cat-item" data-tab="ottag" onclick="switchTab('ottag')">🏷️ OX진술 태그</div>
         <div class="cat-item" data-tab="grpmaster" onclick="switchTab('grpmaster')">📈 그래프 마스터</div>
         <div class="cat-item" data-tab="mncheck" onclick="switchTab('mncheck')">🔎 데이터 스캔</div>
-        <div class="cat-item" data-tab="levelup" onclick="switchTab('levelup')">⚡ 레벨업 업로드</div>
       </div>
     </div>
     <div class="cat cat-single" data-tab="community">
@@ -952,6 +952,24 @@ tr:hover td{background:#FAFAFA}
       </div>
     </div>
 
+    <!-- 🏷️ OX진술 태그 -->
+    <div class="tab-panel" id="panel-ottag">
+      <div class="table-wrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 2px">
+          <h2 style="margin:0;font-size:16px">🏷️ OX진술 태그 업로드</h2>
+        </div>
+        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">진술별 개념 태그(<b>exp.ot</b>)를 문항에 병합합니다. 파일 형식: <b>{cert, subject, set, ot:{문항id:[{cpt:[...]} | {skip:"..."}], ...}}</b>. 검증: ①ot 길이=exp.o 길이 ②참조 cpt가 <b>개념 마스터에 존재</b>(없으면 차단) ③문항 id 존재.</div>
+        <div id="ottagStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px">
+          <span id="ottagImpDrop" style="cursor:pointer;flex:1;min-width:220px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:10px 12px;color:#94A3B8;font-size:12px">📁 여기로 ot 태그 JSON 파일을 끌어다 놓기</span>
+          <input id="ottagImpFile" type="file" accept=".json,application/json" style="display:none">
+          <button class="btn-sm" onclick="document.getElementById('ottagImpFile').click()" style="background:#FAEEDA;color:#854F0B;flex:0 0 auto">⬆ ot 파일 선택</button>
+        </div>
+        <div id="ottagReport" style="padding:6px 20px 20px;font-size:13px;color:#3C3C3A"></div>
+        <div style="padding:0 20px 24px"><button class="btn-sm" id="ottagApplyBtn" onclick="ottagApply()" style="display:none;background:#15793F;color:#fff;padding:9px 18px;font-size:13px;font-weight:700">검증 통과분 문항에 병합 저장</button></div>
+      </div>
+    </div>
+
     <!-- 📈 그래프 마스터 -->
     <div class="tab-panel" id="panel-grpmaster">
       <div class="table-wrap">
@@ -1015,22 +1033,6 @@ tr:hover td{background:#FAFAFA}
         <div class="table-header"><div class="table-title">🔎 데이터 스캔</div></div>
         <div style="padding:0 4px 4px;font-size:12px;color:#A89C8E">전 과목 문항·개념의 참조(mn://·tbl://·grp://)와 마스터(암기코드·표·그래프·개념)를 대조 — 깨진 참조·미사용·중복·형식오류를 잡습니다.</div>
         <iframe id="mnChkFrame" src="mn_check.html?v=4" style="width:100%;height:80vh;border:1px solid #E8E8E8;border-radius:10px;margin-top:8px;background:#F6F8FB"></iframe>
-      </div>
-    </div>
-
-    <!-- ⚡ 레벨업 데이터 업로드 -->
-    <div class="tab-panel" id="panel-levelup">
-      <div class="table-wrap">
-        <div class="table-header"><div class="table-title">⚡ 레벨업 데이터 업로드</div></div>
-        <div style="padding:0 4px 8px;font-size:12px;color:#A89C8E">레벨업(레벨테스트·약점출제) 데이터를 Firestore <b>adaptive</b> 컬렉션에 적재합니다. 한 파일에 <b>mapping</b>(토픽맵)·<b>diagnostic/topics</b>(진단)·<b>variants</b>(계산시드)·<b>questions</b>(완성변형)가 섞여 있어도 종류별로 자동 분리 적재합니다. 과목은 <b>_meta.subject</b> 또는 topic 접두사로 인식. questions는 기존과 <b>병합</b>(같은 id 갱신).</div>
-        <div style="display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;padding:6px 4px 12px">
-          <button class="btn-sm" onclick="document.getElementById('lvupImpFile').click()" style="background:#EAF2FC;color:#185FA5;flex:0 0 auto">⬆ 레벨업 JSON 올리기</button>
-          <span id="lvupImpDrop" style="cursor:pointer;flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 12px;color:#94A3B8;font-size:12px">📁 여기로 레벨업 JSON 파일을 끌어다 놓기</span>
-          <input id="lvupImpFile" type="file" accept=".json,application/json" style="display:none">
-        </div>
-        <div style="padding:2px 4px 10px"><button class="btn-sm" onclick="lvupExport()" style="background:#EAF5EE;color:#15793F">⬇ 레벨업 전체 내보내기 (백업·복원용)</button></div>
-        <div id="lvupImpStatus" style="padding:2px 4px;font-size:12.5px;color:#A89C8E;min-height:18px"></div>
-        <div style="padding:8px 4px;font-size:11.5px;color:#B4A99C">적재 경로: <code>adaptive/{cert}__{subject}__{map | diag | variants | variantq}</code></div>
       </div>
     </div>
 
@@ -1400,8 +1402,8 @@ function mnemImpHandle(fileList){
     try{
       var o=JSON.parse(rd.result);
       var arr=Array.isArray(o)?o:(o.mnemonics||[]);
-      var valid=arr.filter(function(x){ return x&&x.id&&(x.code||(Array.isArray(x.boxes)&&x.boxes.length)); });
-      if(!valid.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='mnemonics 항목 없음 (id·code/boxes 필요)';} return; }
+      var valid=arr.filter(function(x){ return x&&x.id&&x.code; });
+      if(!valid.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='mnemonics 항목 없음 (id·code 필요)';} return; }
       _mnemImpData=valid;
       if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: 코드 <b>'+valid.length+'</b>개 — 올리는 중…'; }
       mnemImport();
@@ -1417,11 +1419,9 @@ async function mnemImport(){
   for(var i=0;i<_mnemImpData.length;i++){
     var it=_mnemImpData[i]; var id=String(it.id);
     if(!/^mn_[a-z0-9_]+$/.test(id)){ fail++; continue; }
-    var bx=(Array.isArray(it.boxes)&&it.boxes.length)?it.boxes:[{code:it.code||'',desc:it.desc||''}];
-    var rec={ name:it.name||'', boxes:bx, code:(bx[0]&&bx[0].code)||'', desc:(bx[0]&&bx[0].desc)||'',
+    var rec={ name:it.name||'', code:it.code||'', desc:it.desc||'',
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
       note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    if(it.kind) rec.kind=it.kind;
     try{ await db.collection('mnemonics').doc(id).set(rec); _mnemAll[id]=rec; ok++; }catch(e){ fail++; }
   }
   var stt=document.getElementById('mnemImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 복구: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패/형식오류 '+fail+'개'):'')+'.'; }
@@ -1671,7 +1671,7 @@ async function cptmLoad(){
 function cptmRenderConcept(c){
   var cards=Array.isArray(c.cards)?c.cards:[];
   var rows=cards.map(function(it){ it=it||{};
-    var row='<div class="concept-row"><b style="display:block;margin-bottom:2px">'+cptmEsc(it.t||'')+'</b>'+(it.d?tblmCell(it.d,true):'')+'</div>';
+    var row='<div class="concept-row"><b>'+cptmEsc(it.t||'')+'</b>'+(it.d?' — '+tblmCell(it.d,true):'')+'</div>';
     if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblmCell(String(it.cx).trim(),true)+'</div>';
     return row;
   }).join('');
@@ -1818,6 +1818,106 @@ async function cptmImport(){
   }
   var stt=document.getElementById('cptmImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 올림: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패/형식오류 '+fail+'개'):'')+'.'; }
   cptmRenderList();
+}
+
+
+// ===== 🏷️ OX진술 태그(ot) 업로드 — exp.o와 1:1, 개념 마스터를 allow-list로 검증 후 exp.ot 병합 =====
+var _ottagData=null, _ottagShard=null, _ottagOk=null, _ottagBound=false;
+function ottagEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ottagBindImp(){
+  if(_ottagBound) return; _ottagBound=true;
+  var file=document.getElementById('ottagImpFile'), drop=document.getElementById('ottagImpDrop');
+  if(file) file.addEventListener('change', function(e){ ottagHandle(e.target.files); });
+  if(drop){
+    ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#0C447C';}); });
+    ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#CBD5E1';}); });
+    drop.addEventListener('drop', function(e){ ottagHandle(e.dataTransfer.files); });
+  }
+}
+function ottagHandle(fileList){
+  var f=[].slice.call(fileList).find(function(x){ return /\.json$/i.test(x.name)||x.type==='application/json'; });
+  var stt=document.getElementById('ottagStatus');
+  if(!f){ if(stt){stt.style.color='#A32D2D';stt.textContent='JSON 파일이 아니에요.';} return; }
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var o=JSON.parse(rd.result);
+      if(!o||!o.cert||!o.subject||!o.set||!o.ot||typeof o.ot!=='object'){ if(stt){stt.style.color='#A32D2D';stt.textContent='형식 오류: cert·subject·set·ot 필요';} return; }
+      _ottagData=o;
+      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: '+ottagEsc(o.cert)+' / '+ottagEsc(o.subject)+' / '+ottagEsc(o.set)+' — 검증 중…'; }
+      ottagValidate();
+    }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
+  };
+  rd.readAsText(f);
+}
+async function ottagValidate(){
+  var o=_ottagData, rep=document.getElementById('ottagReport'), btn=document.getElementById('ottagApplyBtn');
+  _ottagShard=null; _ottagOk=null; if(btn) btn.style.display='none';
+  // 1) 개념 마스터 allow-list 보장
+  if(!_cptmLoaded){ await cptmLoad(); }
+  // 2) 밴크 샤드 읽기
+  var docId=o.cert+'__'+o.subject, shardId=docId+'__'+o.set;
+  var qs=null, where='';
+  try{
+    var sd=await db.collection('banks').doc(shardId).get();
+    if(sd.exists && Array.isArray(sd.data().questions)){ qs=sd.data().questions; where=shardId; }
+  }catch(e){}
+  if(!qs){ // 비샤드: 부모 doc의 questions 중 set 일치
+    try{ var pd=await db.collection('banks').doc(docId).get(); if(pd.exists && Array.isArray(pd.data().questions)){ qs=pd.data().questions.filter(function(q){return q.set===o.set;}); where=docId+' (비샤드)'; } }catch(e){}
+  }
+  if(!qs || !qs.length){ rep.innerHTML='<span style="color:#A32D2D">⚠️ 밴크에서 '+ottagEsc(shardId)+' 문항을 못 찾음. cert/subject/set 확인.</span>'; return; }
+  var byId={}; qs.forEach(function(q){ byId[q.id]=q; });
+  // 3) 검증
+  var rows=[], okMap={}, missCpt={}, errN=0, okN=0;
+  Object.keys(o.ot).forEach(function(qid){
+    var arr=o.ot[qid], q=byId[qid];
+    var errs=[];
+    if(!q){ errs.push('문항 없음'); }
+    else {
+      var oArr=(q.exp&&q.exp.o)||[];
+      if(arr.length!==oArr.length) errs.push('길이 '+arr.length+'≠exp.o '+oArr.length);
+      arr.forEach(function(item,i){
+        if(item&&item.skip) return;             // skip은 통과
+        var cpts=(item&&item.cpt)||[];
+        cpts.forEach(function(c){ if(!_cptmAll[c]){ errs.push('cpt 없음: '+c); missCpt[c]=(missCpt[c]||0)+1; } });
+      });
+    }
+    if(errs.length){ errN++; rows.push('<div style="color:#A32D2D">✗ '+ottagEsc(qid)+' — '+ottagEsc(errs.join(' · '))+'</div>'); }
+    else { okN++; okMap[qid]=arr; rows.push('<div style="color:#15793F">✅ '+ottagEsc(qid)+' — 진술 '+arr.length+'개 태그 OK</div>'); }
+  });
+  var missList=Object.keys(missCpt);
+  var head='<div style="margin-bottom:8px"><b>검증 결과:</b> 통과 '+okN+' · 오류 '+errN+(missList.length?(' · <span style="color:#A32D2D">마스터에 없는 개념 '+missList.length+'종</span>'):'')+'</div>';
+  if(missList.length){
+    head+='<div style="background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px"><b>⚠️ 먼저 개념 마스터에 등록해야 하는 cpt</b><br>'+missList.map(ottagEsc).join('<br>')+'</div>';
+  }
+  rep.innerHTML=head+rows.join('');
+  _ottagShard={where:where, shardId:shardId, docId:docId, qs:qs};
+  _ottagOk=okMap;
+  // 오류(특히 마스터 없는 cpt) 있으면 적용 차단 — 통과분만이라도 올릴지는 버튼 노출하되 경고
+  if(okN>0 && !missList.length){ if(btn){ btn.style.display=''; btn.textContent='검증 통과 '+okN+'문항에 exp.ot 병합 저장'; } }
+  else if(missList.length){ if(btn) btn.style.display='none'; }
+}
+async function ottagApply(){
+  if(!_ottagShard||!_ottagOk){ return; }
+  var ids=Object.keys(_ottagOk); if(!ids.length) return;
+  if(!confirm(ids.length+'개 문항에 exp.ot를 병합 저장합니다. 계속할까요?')) return;
+  var sh=_ottagShard, qs=sh.qs.slice();
+  qs.forEach(function(q){ if(_ottagOk[q.id]){ q.exp=q.exp||{}; q.exp.ot=_ottagOk[q.id]; } });
+  var rep=document.getElementById('ottagReport');
+  try{
+    if(sh.where.indexOf('비샤드')>=0){
+      // 부모 doc 전체 questions 갱신(set 외 문항 보존)
+      var pd=await db.collection('banks').doc(sh.docId).get(); var all=pd.data().questions.slice();
+      var map={}; qs.forEach(function(q){ map[q.id]=q; });
+      all=all.map(function(q){ return map[q.id]||q; });
+      await db.collection('banks').doc(sh.docId).set(Object.assign({}, pd.data(), {questions:all}));
+    } else {
+      var sd=await db.collection('banks').doc(sh.shardId).get();
+      await db.collection('banks').doc(sh.shardId).set(Object.assign({}, sd.data(), {questions:qs}));
+    }
+    rep.innerHTML='<div style="color:#15793F;font-weight:700">✅ '+ids.length+'문항에 exp.ot 병합 저장 완료.</div>';
+    document.getElementById('ottagApplyBtn').style.display='none';
+  }catch(e){ rep.innerHTML='<div style="color:#A32D2D">저장 실패: '+ottagEsc(e.message)+'</div>'; }
 }
 
 
@@ -1987,126 +2087,6 @@ async function grpmImport(){
   grpmRenderList();
 }
 
-var _lvupData=null;
-function lvupInit(){
-  var drop=document.getElementById('lvupImpDrop'), file=document.getElementById('lvupImpFile');
-  if(file) file.onchange=function(){ lvupImpHandle(file.files); };
-  if(drop){
-    drop.onclick=function(){ file&&file.click(); };
-    ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#185FA5';}); });
-    ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#CBD5E1';}); });
-    drop.addEventListener('drop', function(e){ e.preventDefault(); lvupImpHandle(e.dataTransfer.files); });
-  }
-}
-function _lvupDetectSub(p){
-  if(p && p._meta && p._meta.subject) return p._meta.subject;
-  if(p && p.subject) return p.subject;
-  var t=null;
-  if(p.mapping&&p.mapping[0]) t=p.mapping[0].topic;
-  else if(p.questions&&p.questions[0]) t=p.questions[0].topic;
-  else if(p.variants&&p.variants[0]) t=p.variants[0].topic;
-  else if(p.diagnostic&&p.diagnostic[0]) t=p.diagnostic[0].topic;
-  else if(p.topics&&p.topics[0]) t=(p.topics[0].code||p.topics[0].topic);
-  if(!t) return null;
-  var pre=String(t).split('_')[0];
-  return ({fa:'acct',ca:'acct',re:'real',ci:'civil',lr:'law',mi:'econ',ma:'econ',in:'econ'})[pre]||null;
-}
-function _lvupCert(p){ return (p&&p._meta&&p._meta.cert) || (p&&p.cert) || 'appraiser'; }
-function _lvupItemsFor(p, cert, sub){
-  var items=[];
-  if(Array.isArray(p.mapping)) items.push({cert:cert, sub:sub, kind:'map', data:{subject:sub, kind:'map', count:p.mapping.length, mapping:p.mapping}});
-  if(Array.isArray(p.diagnostic)) items.push({cert:cert, sub:sub, kind:'diag', data:{subject:sub, kind:'diag', count:p.diagnostic.length, diagnostic:p.diagnostic, _meta:p._meta||null}});
-  else if(Array.isArray(p.topics)) items.push({cert:cert, sub:sub, kind:'diag', data:{subject:sub, kind:'diag', count:p.topics.length, topics:p.topics, _meta:p._meta||null}});
-  if(Array.isArray(p.variants) && p.variants.length) items.push({cert:cert, sub:sub, kind:'variants', data:{subject:sub, kind:'variants', count:p.variants.length, variants:p.variants}});
-  if(Array.isArray(p.questions) && p.questions.length) items.push({cert:cert, sub:sub, kind:'variantq', merge:true, questions:p.questions});
-  return items;
-}
-function lvupImpHandle(fileList){
-  var f=[].slice.call(fileList).find(function(x){ return /\.json$/i.test(x.name)||x.type==='application/json'; });
-  var stt=document.getElementById('lvupImpStatus');
-  if(!f){ if(stt){stt.style.color='#A32D2D';stt.textContent='JSON 파일이 아니에요.';} return; }
-  var rd=new FileReader();
-  rd.onload=function(){
-    try{
-      var p=JSON.parse(rd.result);
-      var items=[], labels=[];
-      if(Array.isArray(p.subjects)){          // 내보내기(전체) 형식 — 과목별 루프
-        p.subjects.forEach(function(se){
-          var sub=_lvupDetectSub(se), cert=_lvupCert(se)||_lvupCert(p);
-          if(!sub) return;
-          var its=_lvupItemsFor(se, cert, sub);
-          if(its.length){ items=items.concat(its); labels.push(cert+'/'+sub); }
-        });
-        if(!items.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='subjects[]에서 인식할 데이터 없음';} return; }
-      } else {                                 // 단일 과목 파일
-        var sub=_lvupDetectSub(p), cert=_lvupCert(p);
-        if(!sub){ if(stt){stt.style.color='#A32D2D';stt.textContent='과목 인식 실패 (_meta.subject 또는 topic 접두사 필요)';} return; }
-        items=_lvupItemsFor(p, cert, sub);
-        if(!items.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='인식할 데이터 없음 (mapping/diagnostic/topics/variants/questions)';} return; }
-        labels.push(cert+'/'+sub);
-      }
-      _lvupData={items:items};
-      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: <b>'+labels.join(', ')+'</b> · 항목 '+items.length+'개 — 올리는 중…'; }
-      lvupImport();
-    }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
-  };
-  rd.readAsText(f);
-}
-async function lvupImport(){
-  if(!_lvupData) return;
-  var D=_lvupData, stt=document.getElementById('lvupImpStatus');
-  if(!confirm('레벨업 데이터 '+D.items.length+'개 항목을 adaptive 컬렉션에 적재합니다. 계속할까요?')) return;
-  var done=[];
-  for(var i=0;i<D.items.length;i++){
-    var it=D.items[i];
-    var docId=it.cert+'__'+it.sub+'__'+it.kind;
-    try{
-      if(it.kind==='variantq'){
-        var existing=[];
-        try{ var cur=await db.collection('adaptive').doc(docId).get(); if(cur.exists && Array.isArray(cur.data().questions)) existing=cur.data().questions; }catch(_){}
-        var byId={}, order=[], nk=0;
-        var _push=function(q){ var k=(q&&q.id)?('id:'+q.id):('__'+(nk++)); if(!(k in byId)) order.push(k); byId[k]=q; };
-        existing.forEach(_push); it.questions.forEach(_push);   // 신규가 같은 id 덮어씀
-        var merged=order.map(function(k){ return byId[k]; });
-        await db.collection('adaptive').doc(docId).set({ subject:it.sub, kind:'variantq', count:merged.length, questions:merged });
-        done.push(it.sub+'/variantq('+existing.length+'+'+it.questions.length+'\u2192'+merged.length+')');
-      } else {
-        await db.collection('adaptive').doc(docId).set(it.data);
-        done.push(it.sub+'/'+it.kind+'('+it.data.count+')');
-      }
-    }catch(e){ done.push((it.sub||'?')+'/'+it.kind+' 실패:'+e.message); }
-  }
-  if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 적재 완료: '+done.join(' · '); }
-  _lvupData=null;
-}
-async function lvupExport(){
-  var stt=document.getElementById('lvupImpStatus');
-  if(stt){ stt.style.color='#475569'; stt.textContent='내보내는 중… adaptive 읽는 중'; }
-  try{
-    var snap=await db.collection('adaptive').get();
-    var groups={};
-    snap.forEach(function(doc){
-      var id=doc.id, d=doc.data()||{};
-      var parts=id.split('__'); if(parts.length<3) return;
-      var cert=parts[0], sub=parts[1], kind=parts.slice(2).join('__');
-      var key=cert+'||'+sub;
-      var g=groups[key]||(groups[key]={ _meta:{cert:cert, subject:sub} });
-      if(kind==='map' && Array.isArray(d.mapping)) g.mapping=d.mapping;
-      else if(kind==='diag'){ if(Array.isArray(d.diagnostic)) g.diagnostic=d.diagnostic; if(Array.isArray(d.topics)) g.topics=d.topics; }
-      else if(kind==='variants' && Array.isArray(d.variants)) g.variants=d.variants;
-      else if(kind==='variantq' && Array.isArray(d.questions)) g.questions=d.questions;
-    });
-    var subjects=Object.keys(groups).map(function(k){ return groups[k]; });
-    if(!subjects.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='adaptive에 데이터가 없습니다.';} return; }
-    var bundle={ _meta:{ kind:'levelup_export', exportedAt:new Date().toISOString(), subjectCount:subjects.length }, subjects:subjects };
-    var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
-    var url=URL.createObjectURL(blob), a=document.createElement('a');
-    a.href=url; a.download='certlab_levelup_export_'+new Date().toISOString().slice(0,10)+'.json';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    var tot=subjects.reduce(function(n,s){ return n+((s.questions&&s.questions.length)||0); },0);
-    if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 내보내기 완료 — 과목 <b>'+subjects.length+'</b>개 · 변형문항 <b>'+tot+'</b>개. (이 파일을 다시 드롭하면 복원)'; }
-  }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='내보내기 오류: '+e.message;} }
-}
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.cat-item, .cat-single').forEach(b => b.classList.remove('active'));
@@ -2129,8 +2109,8 @@ function switchTab(name) {
   if(name==='mnem') mnemInit();
   if(name==='tblmaster') tblmInit();
   if(name==='cptmaster') cptmInit();
+  if(name==='ottag'){ ottagBindImp(); if(!_cptmLoaded) cptmLoad(); }
   if(name==='grpmaster') grpmInit();
-  if(name==='levelup') lvupInit();
 }
 // 카테고리 헤더 접고/펴기 (여러 그룹 동시 펼침 가능)
 function catToggle(headEl){ const g = headEl.closest('.cat'); if(!g) return; var wasOpen=g.classList.contains('open'); document.querySelectorAll('.cat.open').forEach(function(c){ if(c!==g) c.classList.remove('open'); }); g.classList.toggle('open', !wasOpen); }
