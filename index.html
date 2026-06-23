@@ -4327,10 +4327,18 @@ function oxSafeHTML(t,q){
   return h;
 }
 function oxLearnCards(cert){
-  var qb=qbOf(cert), cards=[];
+  var qb=qbOf(cert), cards=[], seen={};
   Object.keys(qb).forEach(function(sub){ (qb[sub].sets||[]).forEach(function(stt){ (stt.questions||[]).forEach(function(q){
-    var w=oxWrongItems(q); if(w.length){ cards.push({q:q, subName:qb[sub].name||sub, wrong:w, ts:mqOXTs[q.id]||0}); }
+    var w=oxWrongItems(q); if(w.length){ cards.push({q:q, subName:qb[sub].name||sub, wrong:w, ts:mqOXTs[q.id]||0}); seen[q.id]=1; }
   }); }); });
+  Object.keys(qb).forEach(function(sub){   // 변형(레벨업) 풀도 스캔
+    try{
+      var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; var vp=(b&&b.variantPool)||[];
+      vp.forEach(function(v){ if(!v||!v.id||seen[v.id]) return;
+        var w=oxWrongItems(v); if(w.length){ cards.push({q:v, subName:(v._topicName||qb[sub].name||sub), wrong:w, ts:mqOXTs[v.id]||0}); seen[v.id]=1; }
+      });
+    }catch(e){}
+  });
   cards.sort(function(a,b){ return (b.ts||0)-(a.ts||0); });   // 최근순
   return cards;
 }
@@ -4340,6 +4348,7 @@ function oxLearnBack(){ mqScreen='home'; renderMCQ(); window.scrollTo(0,0); }
 function oxLearnComplete(qid){
   var qb=qbOf(mqCert), q=null;
   Object.keys(qb).some(function(sub){ return (qb[sub].sets||[]).some(function(stt){ return (stt.questions||[]).some(function(x){ if(x.id===qid){q=x;return true;} return false; }); }); });
+  if(!q){ Object.keys(qb).some(function(sub){ try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[mqCert+'|'+sub]; var vp=(b&&b.variantPool)||[]; return vp.some(function(v){ if(v&&v.id===qid){q=v;return true;} return false; }); }catch(e){ return false; } }); }   // 변형 풀 폴백
   if(!q) return;
   mqOXLearned[qid]=mqOXLearned[qid]||{};
   oxWrongItems(q).forEach(function(it){ mqOXLearned[qid][it.key]=1; });   // 현재 틀린 진술들 완료 처리
