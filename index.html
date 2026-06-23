@@ -418,6 +418,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .jaryo .jr-stmt{display:flow-root;line-height:1.85;margin-bottom:9px}
 #mcqView .jaryo .jr-stmt:last-child{margin-bottom:0}
 #mcqView .jaryo .jr-stmt-t{min-width:0}
+#mcqView .jaryo .jr-stmt-k{display:inline-block;width:1.7em}
 #mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
 #mcqView .jaryo .jr-stmt{padding-left:1.7em;text-indent:-1.7em}
 #mcqView .jox{width:30px;height:30px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:13px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
@@ -3491,14 +3492,14 @@ function _ltSampleSubject(cert,sub,code,qb,n){
   // 1) 변형(variantq) 풀 우선 — diff(Lv1~5) 보유, 기출 소진 방지
   var vp=[]; try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; vp=(b&&b.variantPool)||[]; }catch(e){}
   var vD={1:[],2:[],3:[],4:[],5:[]};
-  vp.forEach(function(q){ if(!q||!q.id) return; q._subj=subName; var d=q.diff||q._ltDiff||3; q._ltDiff=d; (vD[d]||vD[3]).push(q); });
+  vp.forEach(function(q){ if(!q||!q.id) return; q._subj=subName; q._subjCode=sub; var d=q.diff||q._ltDiff||3; q._ltDiff=d; (vD[d]||vD[3]).push(q); });
   Object.keys(vD).forEach(function(k){ _ltShuf(vD[k]); });
   var guard=0;
   while(picked.length<n && guard++<400){ var got=false; for(var oi=0;oi<order.length;oi++){ var bk=vD[order[oi]]; if(bk.length){ var q=bk.shift(); if(!seen[q.id]){ seen[q.id]=1; picked.push(q); got=true; } if(picked.length>=n) break; } } if(!got) break; }
   if(picked.length>=n) return picked.slice(0,n);
   // 2) 부족분만 기출 보충(기출 최대한 회피 — 변형이 모자랄 때만)
   var kWithDiff=[], kPlain=[];
-  qb[code].sets.forEach(function(st){ st.questions.forEach(function(q){ if(seen[q.id]) return; if(mqHasAnswer(q)){ q._subj=subName; var d=_ltDiff(cert,sub,q); if(d){ q._ltDiff=d; kWithDiff.push(q);} else { q._ltDiff=null; kPlain.push(q);} } }); });
+  qb[code].sets.forEach(function(st){ st.questions.forEach(function(q){ if(seen[q.id]) return; if(mqHasAnswer(q)){ q._subj=subName; q._subjCode=sub; var d=_ltDiff(cert,sub,q); if(d){ q._ltDiff=d; kWithDiff.push(q);} else { q._ltDiff=null; kPlain.push(q);} } }); });
   var kD={1:[],2:[],3:[],4:[],5:[]}; kWithDiff.forEach(function(q){ kD[q._ltDiff].push(q); }); Object.keys(kD).forEach(function(k){ _ltShuf(kD[k]); });
   guard=0;
   while(picked.length<n && guard++<400){ var g2=false; for(var oj=0;oj<order.length;oj++){ var b2=kD[order[oj]]; if(b2.length){ var q2=b2.shift(); if(!seen[q2.id]){ seen[q2.id]=1; picked.push(q2); g2=true; } if(picked.length>=n) break; } } if(!g2) break; }
@@ -3542,7 +3543,7 @@ function ltFinalize(cert, qs, ans){
     if(typeof eloState==='undefined') return;
     if(!eloState._levelTest) eloState._levelTest={};
     var bySub={};
-    qs.forEach(function(q){ var cs=(typeof MCQ_QID2CS!=='undefined')&&MCQ_QID2CS[q.id]; var sub=(cs&&cs.sub)||q._subj; if(!sub) return; (bySub[sub]=bySub[sub]||[]).push(q); });
+    qs.forEach(function(q){ var cs=(typeof MCQ_QID2CS!=='undefined')&&MCQ_QID2CS[q.id]; var sub=(cs&&cs.sub)||q._subjCode||q._subj; if(!sub) return; (bySub[sub]=bySub[sub]||[]).push(q); });
     var summary={};
     Object.keys(bySub).forEach(function(sub){
       var r=_ltSubjectScore(cert, sub, bySub[sub], ans); if(!r) return;
@@ -3772,12 +3773,12 @@ async function diagResume(){
   const qb=qbOf(mqCert);
   if(typeof loadAdaptiveSubject==='function'){ try{ await Promise.all(Object.keys(qb).map(function(code){ return loadAdaptiveSubject(mqCert, code).catch(function(){return null;}); })); }catch(e){} }
   const byId={};
-  Object.keys(qb).forEach(code=>qb[code].sets.forEach(st=>st.questions.forEach(q=>{ byId[q.id]={q,name:qb[code].name||code}; })));
-  Object.keys(qb).forEach(code=>{ try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[mqCert+'|'+code]; var vp=(b&&b.variantPool)||[]; vp.forEach(function(v){ if(v&&v.id&&!byId[v.id]) byId[v.id]={q:v,name:(qb[code].name||code)}; }); }catch(e){} });   // 변형 풀도 복원 대상
-  const list=p.ids.map(id=>{ const e=byId[id]; if(e){ e.q._subj=e.name; return e.q; } return null; }).filter(Boolean);
+  Object.keys(qb).forEach(code=>qb[code].sets.forEach(st=>st.questions.forEach(q=>{ byId[q.id]={q,name:qb[code].name||code,code:code}; })));
+  Object.keys(qb).forEach(code=>{ try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[mqCert+'|'+code]; var vp=(b&&b.variantPool)||[]; vp.forEach(function(v){ if(v&&v.id&&!byId[v.id]) byId[v.id]={q:v,name:(qb[code].name||code),code:code}; }); }catch(e){} });   // 변형 풀도 복원 대상
+  const list=p.ids.map(id=>{ const e=byId[id]; if(e){ e.q._subj=e.name; e.q._subjCode=e.code; return e.q; } return null; }).filter(Boolean);
   if(!list.length){ clearDiagProgress(mqCert); startDiagnostic(); return; }
   mqStopTimer();
-  mqDiag=true; mqReview=false; mqInReview=false; mqConcept=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns=p.ans||{}; mqIdx=Math.min(p.idx||0, list.length-1);
+  mqDiag=true; mqLevelTest=true; mqReview=false; mqInReview=false; mqConcept=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns=p.ans||{}; mqIdx=Math.min(p.idx||0, list.length-1);
   mqList=list; mqTimeLeft=(p.t!=null&&p.t>0?p.t:list.length*60);
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
@@ -4374,7 +4375,9 @@ function markComboStmts(scope, addOX){
     function stmtHTML(inner, letter){
       var ox = addOX ? ('<span class="jr-ox" data-oxk="s'+letter+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button>'+
         '<button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>') : '';
-      return '<div class="jr-stmt"><span class="jr-stmt-t">'+inner+'</span>'+ox+'</div>';
+      var body=inner, labHTML='';
+      if(letter){ var _m=inner.match(new RegExp('^\\s*'+letter+'\\s*[.\\s\u00b7)\\]]+\\s*')); if(_m){ labHTML='<span class="jr-stmt-k">'+letter+'.</span>'; body=inner.slice(_m[0].length); } }
+      return '<div class="jr-stmt">'+(labHTML?'<span class="jr-stmt-t">'+labHTML+body+'</span>':'<span class="jr-stmt-t">'+inner+'</span>')+ox+'</div>';
     }
     var html=el.innerHTML;
     var hasTag=/<(?!br\s*\/?>)[a-zA-Z]/.test(html);   // <br> 외 태그(이미지·표 등) 포함 여부
@@ -4899,6 +4902,7 @@ function mqResult(){
   mqResultQs=qs.slice(); mqResultAns=Object.assign({},mqAns);
   mqResultMeta={correct,answered,total,pct,diag:mqDiag,review:mqReview,mode:mqMode,sub:mqSub,set:mqSet,
     otc:mqOvertimeCount,ots:mqOverElapsed(),levelTest:_wasLevelTest,cert:mqCert};
+  mqStopTimer(); mqStopOverTimer(); mqScreen='result';   // 결과화면 전용 상태 — 진행 재저장·플러시 방지
   renderMqResultScreen();
 }
 function renderMqResultScreen(){
@@ -4953,7 +4957,7 @@ function mqOpenReview(mode,idx){
   mqIdx=Math.min(idx||0, list.length-1);
   mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
 }
-function mqBackToResult(){ mqInReview=false; mqScreen='exam'; renderMqResultScreen(); }
+function mqBackToResult(){ mqInReview=false; mqScreen='result'; renderMqResultScreen(); }
 function mqContinue(){ mqInReview=false; mqTimeUp=true; mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); mqStartOverTimer(); }
 function mqRetry(){
   mqInReview=false;
@@ -5172,7 +5176,7 @@ async function loadExam(examId){
     // 적응형 데이터(map/diag/variants/변형풀) — 비차단·실패무시. 미준비 과목은 빈 룩업(Elo훅이 스킵).
     if(typeof loadAdaptiveSubject==='function'){
       Promise.all((ex.subjects||[]).map(function(sub){ try{ return loadAdaptiveSubject(examId, sub.code).catch(function(){return null;}); }catch(e){ return null; } }))
-        .then(function(){ try{ if(typeof renderMCQ==='function' && typeof mqCert!=='undefined' && mqCert===examId && typeof mqScreen!=='undefined' && mqScreen!=='exam') renderMCQ(); }catch(e){} });
+        .then(function(){ try{ if(typeof renderMCQ==='function' && typeof mqCert!=='undefined' && mqCert===examId && typeof mqScreen!=='undefined' && mqScreen==='home') renderMCQ(); }catch(e){} });
     }
   })();
   try{ await loadingExams[examId]; } finally { delete loadingExams[examId]; }
