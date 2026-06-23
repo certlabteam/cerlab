@@ -97,6 +97,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mnem-code{font-size:13.5px;font-weight:400;color:#5E4A2A}
 .mnem-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 .mnem-code .k,.mnem-desc .k{color:#C0392B;font-weight:800}
+.jtbl .k,.jtbl k,.jtbl-html .k,.jtbl-html k,.tbl-wrap .k,.tbl-wrap k{color:#C0392B;font-weight:800}
 .mnem-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
 .mn-num{font-weight:800;color:#0C447C;margin-right:2px}
 .mn-flow{text-align:center}
@@ -1606,7 +1607,7 @@ function drawNav(){
 // ===== 표(tables) — 로컬 캐시(붙여넣은 JSON의 tables/tbl_new에서 채움) =====
 var _tblCache={};
 function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function tblCell(v, rich){ var s=tblEsc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); if(rich){ s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); } return s; }
+function tblCell(v, rich){ var s=tblEsc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); return s; }
 function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 function tblSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function renderTbl(t){
