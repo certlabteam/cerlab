@@ -959,7 +959,7 @@ tr:hover td{background:#FAFAFA}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 2px">
           <h2 style="margin:0;font-size:16px">🏷️ OX진술 태그 업로드</h2>
         </div>
-        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">진술별 개념 태그(<b>exp.ot</b>)를 문항에 병합합니다. 파일 형식: <b>{cert, subject, set, ot:{문항id:[{cpt:[...]} | {skip:"..."}], ...}}</b>. 검증: ①ot 길이=exp.o 길이 ②참조 cpt가 <b>개념 마스터에 존재</b>(없으면 차단) ③문항 id 존재.</div>
+        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">진술별 개념 태그(<b>exp.ot</b>)를 문항에 병합합니다. <b>과목당 파일 1개</b> — 형식: <b>{cert, subject, ot:{문항id:[{cpt:[...]} | {skip:"..."}], ...}}</b> (회차 다 합쳐서, set 불필요 · 문항 id로 찾음). 검증: ①ot 길이=exp.o 길이 ②참조 cpt가 <b>개념 마스터에 존재</b>(없으면 차단) ③문항 id 존재. 회차별 요약 표시.</div>
         <div id="ottagStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px;align-items:center">
           <span id="ottagImpDrop" style="cursor:pointer;flex:1;min-width:220px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:10px 12px;color:#94A3B8;font-size:12px">📁 여기로 ot 태그 JSON 파일을 끌어다 놓기</span>
@@ -1859,58 +1859,85 @@ function ottagHandle(fileList){
   rd.onload=function(){
     try{
       var o=JSON.parse(rd.result);
-      if(!o||!o.cert||!o.subject||!o.set||!o.ot||typeof o.ot!=='object'){ if(stt){stt.style.color='#A32D2D';stt.textContent='형식 오류: cert·subject·set·ot 필요';} return; }
-      _ottagData=o;
-      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: '+ottagEsc(o.cert)+' / '+ottagEsc(o.subject)+' / '+ottagEsc(o.set)+' — 검증 중…'; }
+      if(!o||!o.cert||!o.subject){ if(stt){stt.style.color='#A32D2D';stt.textContent='형식 오류: cert·subject 필요';} return; }
+      // ot 정규화: 평면 {ot} / sets[]{set,ot} / 단일 {set,ot} 모두 → 하나의 평면 ot 맵으로 합침(키=문항id)
+      var flat={};
+      if(o.ot && typeof o.ot==='object'){ Object.keys(o.ot).forEach(function(k){ flat[k]=o.ot[k]; }); }
+      if(Array.isArray(o.sets)){ o.sets.forEach(function(b){ if(b&&b.ot&&typeof b.ot==='object'){ Object.keys(b.ot).forEach(function(k){ flat[k]=b.ot[k]; }); } }); }
+      var n=Object.keys(flat).length;
+      if(!n){ if(stt){stt.style.color='#A32D2D';stt.textContent='ot 데이터 없음 (ot 맵 또는 sets[].ot 필요)';} return; }
+      _ottagData={cert:o.cert, subject:o.subject, ot:flat};
+      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: '+ottagEsc(o.cert)+' / '+ottagEsc(o.subject)+' · 문항 '+n+'개 — 검증 중…'; }
       ottagValidate();
     }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
   };
   rd.readAsText(f);
 }
+// 과목 전체 문항을 소속 문서(부모 비샤드 / 각 샤드)와 함께 수집 → byId[qid]={q, home}
+async function _ottagCollect(cert, subject){
+  var docId=cert+'__'+subject, byId={}, homes={};
+  var pd=await db.collection('banks').doc(docId).get();
+  if(!pd.exists){ return {byId:byId, homes:homes, err:'밴크 문서 없음: '+docId}; }
+  var data=pd.data()||{};
+  if(Array.isArray(data.questions) && data.questions.length){
+    homes[docId]={data:data, questions:data.questions};
+    data.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:docId}; } });
+  }
+  if(Array.isArray(data.shards) && data.shards.length){   // 샤드형: 각 샤드 doc 읽기
+    for(var i=0;i<data.shards.length;i++){
+      var sid=data.shards[i];
+      try{ var sd=await db.collection('banks').doc(sid).get();
+        if(sd.exists && Array.isArray(sd.data().questions)){
+          var sdata=sd.data();
+          homes[sid]={data:sdata, questions:sdata.questions};
+          sdata.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:sid}; } });
+        }
+      }catch(_){}
+    }
+  }
+  return {byId:byId, homes:homes, err:(Object.keys(byId).length?null:'문항을 못 읽음')};
+}
 async function ottagValidate(){
   var o=_ottagData, rep=document.getElementById('ottagReport'), btn=document.getElementById('ottagApplyBtn');
   _ottagShard=null; _ottagOk=null; if(btn) btn.style.display='none';
-  // 1) 개념 마스터 allow-list 보장
   if(!_cptmLoaded){ await cptmLoad(); }
-  // 2) 밴크 샤드 읽기
-  var docId=o.cert+'__'+o.subject, shardId=docId+'__'+o.set;
-  var qs=null, where='';
-  try{
-    var sd=await db.collection('banks').doc(shardId).get();
-    if(sd.exists && Array.isArray(sd.data().questions)){ qs=sd.data().questions; where=shardId; }
-  }catch(e){}
-  if(!qs){ // 비샤드: 부모 doc의 questions 중 set 일치
-    try{ var pd=await db.collection('banks').doc(docId).get(); if(pd.exists && Array.isArray(pd.data().questions)){ qs=pd.data().questions.filter(function(q){return q.set===o.set;}); where=docId+' (비샤드)'; } }catch(e){}
-  }
-  if(!qs || !qs.length){ rep.innerHTML='<span style="color:#A32D2D">⚠️ 밴크에서 '+ottagEsc(shardId)+' 문항을 못 찾음. cert/subject/set 확인.</span>'; return; }
-  var byId={}; qs.forEach(function(q){ byId[q.id]=q; });
-  // 3) 검증
-  var rows=[], okMap={}, missCpt={}, errN=0, okN=0;
+  // 과목 전체 문항 수집(id 기반 — set 무시)
+  var col=await _ottagCollect(o.cert, o.subject);
+  if(col.err){ rep.innerHTML='<span style="color:#A32D2D">⚠️ '+ottagEsc(col.err)+'. cert/subject 확인.</span>'; return; }
+  var byId=col.byId;
+  // 검증
+  var okMap={}, missCpt={}, errN=0, okN=0, setStat={}, errRows=[];
   Object.keys(o.ot).forEach(function(qid){
-    var arr=o.ot[qid], q=byId[qid];
-    var errs=[];
+    var arr=o.ot[qid], rec=byId[qid], q=rec&&rec.q, errs=[];
     if(!q){ errs.push('문항 없음'); }
     else {
       var oArr=(q.exp&&q.exp.o)||[];
-      if(arr.length!==oArr.length) errs.push('길이 '+arr.length+'≠exp.o '+oArr.length);
-      arr.forEach(function(item,i){
-        if(item&&item.skip) return;             // skip은 통과
-        var cpts=(item&&item.cpt)||[];
-        cpts.forEach(function(c){ if(!_cptmAll[c]){ errs.push('cpt 없음: '+c); missCpt[c]=(missCpt[c]||0)+1; } });
+      if(!Array.isArray(arr)) errs.push('ot 배열 아님');
+      else if(arr.length!==oArr.length) errs.push('길이 '+arr.length+'≠exp.o '+oArr.length);
+      if(Array.isArray(arr)) arr.forEach(function(item){
+        if(item&&item.skip) return;
+        ((item&&item.cpt)||[]).forEach(function(c){ if(!_cptmAll[c]){ errs.push('cpt 없음: '+c); missCpt[c]=(missCpt[c]||0)+1; } });
       });
     }
-    if(errs.length){ errN++; rows.push('<div style="color:#A32D2D">✗ '+ottagEsc(qid)+' — '+ottagEsc(errs.join(' · '))+'</div>'); }
-    else { okN++; okMap[qid]=arr; rows.push('<div style="color:#15793F">✅ '+ottagEsc(qid)+' — 진술 '+arr.length+'개 태그 OK</div>'); }
+    var setKey=(q&&q.set)||'(미상)';
+    var ss=setStat[setKey]||(setStat[setKey]={ok:0,err:0});
+    if(errs.length){ errN++; ss.err++; errRows.push('<div style="color:#A32D2D">✗ '+ottagEsc(qid)+' — '+ottagEsc(errs.join(' · '))+'</div>'); }
+    else { okN++; ss.ok++; okMap[qid]=arr; }
   });
   var missList=Object.keys(missCpt);
   var head='<div style="margin-bottom:8px"><b>검증 결과:</b> 통과 '+okN+' · 오류 '+errN+(missList.length?(' · <span style="color:#A32D2D">마스터에 없는 개념 '+missList.length+'종</span>'):'')+'</div>';
+  // 회차별 요약
+  var setRows=Object.keys(setStat).sort().map(function(k){
+    var s=setStat[k]; var c=s.err?'#A32D2D':'#15793F';
+    return '<div style="color:'+c+'">'+(s.err?'✗':'✅')+' '+ottagEsc(k)+' — '+s.ok+'/'+(s.ok+s.err)+'</div>';
+  });
+  head+='<div style="background:#F6F8FB;border:1px solid #E3E8EF;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12.5px"><b>회차별</b>'+setRows.join('')+'</div>';
   if(missList.length){
     head+='<div style="background:#FBF6F5;border:1px solid #F1D9A8;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px"><b>⚠️ 먼저 개념 마스터에 등록해야 하는 cpt</b><br>'+missList.map(ottagEsc).join('<br>')+'</div>';
   }
-  rep.innerHTML=head+rows.join('');
-  _ottagShard={where:where, shardId:shardId, docId:docId, qs:qs};
+  rep.innerHTML=head+(errRows.length?('<div style="margin-top:4px"><b>오류 상세</b>'+errRows.join('')+'</div>'):'');
+  _ottagShard={homes:col.homes, byId:byId};
   _ottagOk=okMap;
-  // 오류(특히 마스터 없는 cpt) 있으면 적용 차단 — 통과분만이라도 올릴지는 버튼 노출하되 경고
   if(okN>0 && !missList.length){ if(btn){ btn.style.display=''; btn.textContent='검증 통과 '+okN+'문항에 exp.ot 병합 저장'; } }
   else if(missList.length){ if(btn) btn.style.display='none'; }
 }
@@ -1918,21 +1945,24 @@ async function ottagApply(){
   if(!_ottagShard||!_ottagOk){ return; }
   var ids=Object.keys(_ottagOk); if(!ids.length) return;
   if(!confirm(ids.length+'개 문항에 exp.ot를 병합 저장합니다. 계속할까요?')) return;
-  var sh=_ottagShard, qs=sh.qs.slice();
-  qs.forEach(function(q){ if(_ottagOk[q.id]){ q.exp=q.exp||{}; q.exp.ot=_ottagOk[q.id]; } });
-  var rep=document.getElementById('ottagReport');
+  var sh=_ottagShard, rep=document.getElementById('ottagReport');
+  // 통과 문항에 exp.ot 채우고 소속 문서별로 묶기
+  var touched={};   // home docId → true
+  ids.forEach(function(qid){
+    var rec=sh.byId[qid]; if(!rec||!rec.q) return;
+    rec.q.exp=rec.q.exp||{}; rec.q.exp.ot=_ottagOk[qid];
+    touched[rec.home]=true;
+  });
   try{
-    if(sh.where.indexOf('비샤드')>=0){
-      // 부모 doc 전체 questions 갱신(set 외 문항 보존)
-      var pd=await db.collection('banks').doc(sh.docId).get(); var all=pd.data().questions.slice();
-      var map={}; qs.forEach(function(q){ map[q.id]=q; });
-      all=all.map(function(q){ return map[q.id]||q; });
-      await db.collection('banks').doc(sh.docId).set(Object.assign({}, pd.data(), {questions:all}));
-    } else {
-      var sd=await db.collection('banks').doc(sh.shardId).get();
-      await db.collection('banks').doc(sh.shardId).set(Object.assign({}, sd.data(), {questions:qs}));
+    var saved=0, docs=0;
+    var homeIds=Object.keys(touched);
+    for(var i=0;i<homeIds.length;i++){
+      var hid=homeIds[i], h=sh.homes[hid];
+      if(!h) continue;
+      await db.collection('banks').doc(hid).set(Object.assign({}, h.data, {questions:h.questions}));
+      docs++;
     }
-    rep.innerHTML='<div style="color:#15793F;font-weight:700">✅ '+ids.length+'문항에 exp.ot 병합 저장 완료.</div>';
+    rep.innerHTML='<div style="color:#15793F;font-weight:700">✅ '+ids.length+'문항에 exp.ot 병합 저장 완료 ('+docs+'개 문서).</div>';
     document.getElementById('ottagApplyBtn').style.display='none';
   }catch(e){ rep.innerHTML='<div style="color:#A32D2D">저장 실패: '+ottagEsc(e.message)+'</div>'; }
 }
