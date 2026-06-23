@@ -1886,26 +1886,40 @@ function ottagHandle(fileList){
 async function _ottagCollect(cert, subject){
   var docId=cert+'__'+subject, byId={}, homes={};
   var pd=await db.collection('banks').doc(docId).get();
-  if(!pd.exists){ return {byId:byId, homes:homes, err:'밴크 문서 없음: '+docId}; }
-  var data=pd.data()||{};
-  if(Array.isArray(data.questions) && data.questions.length){
-    homes[docId]={data:data, questions:data.questions};
-    data.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:docId}; } });
-  }
-  if(Array.isArray(data.shards) && data.shards.length){   // 샤드형: 각 샤드 doc 읽기 (id = 부모__회차)
-    for(var i=0;i<data.shards.length;i++){
-      var raw=String(data.shards[i]);
-      var sid=(raw.indexOf(docId+'__')===0) ? raw : (docId+'__'+raw);   // 회차명만 오면 부모__ 붙임
-      var sd=null;
-      try{ sd=await db.collection('banks').doc(sid).get(); }catch(_){}
-      if((!sd||!sd.exists) && sid!==raw){ try{ sd=await db.collection('banks').doc(raw).get(); if(sd&&sd.exists) sid=raw; }catch(_){} }  // 폴백: raw가 full id인 경우
-      if(sd && sd.exists && Array.isArray(sd.data().questions)){
-        var sdata=sd.data();
-        homes[sid]={data:sdata, questions:sdata.questions};
-        sdata.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:sid}; } });
+  var data=pd.exists ? (pd.data()||{}) : null;
+  if(data){
+    if(Array.isArray(data.questions) && data.questions.length){
+      homes[docId]={data:data, questions:data.questions, coll:'banks'};
+      data.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:docId}; } });
+    }
+    if(Array.isArray(data.shards) && data.shards.length){   // 샤드형: 각 샤드 doc 읽기 (id = 부모__회차)
+      for(var i=0;i<data.shards.length;i++){
+        var raw=String(data.shards[i]);
+        var sid=(raw.indexOf(docId+'__')===0) ? raw : (docId+'__'+raw);   // 회차명만 오면 부모__ 붙임
+        var sd=null;
+        try{ sd=await db.collection('banks').doc(sid).get(); }catch(_){}
+        if((!sd||!sd.exists) && sid!==raw){ try{ sd=await db.collection('banks').doc(raw).get(); if(sd&&sd.exists) sid=raw; }catch(_){} }  // 폴백: raw가 full id인 경우
+        if(sd && sd.exists && Array.isArray(sd.data().questions)){
+          var sdata=sd.data();
+          homes[sid]={data:sdata, questions:sdata.questions, coll:'banks'};
+          sdata.questions.forEach(function(q){ if(q&&q.id){ byId[q.id]={q:q, home:sid}; } });
+        }
       }
     }
   }
+  // 변형(레벨업) 풀: adaptive/{cert}__{subject}__variantq — banks에 없는 id만 채움(A안 자동 분기)
+  try{
+    var vqId=cert+'__'+subject+'__variantq';
+    var vd=await db.collection('adaptive').doc(vqId).get();
+    if(vd && vd.exists){
+      var vdata=vd.data()||{};
+      if(Array.isArray(vdata.questions) && vdata.questions.length){
+        homes[vqId]={data:vdata, questions:vdata.questions, coll:'variantq'};
+        vdata.questions.forEach(function(q){ if(q&&q.id && !byId[q.id]){ byId[q.id]={q:q, home:vqId}; } });
+      }
+    }
+  }catch(_){}
+  if(!data && !Object.keys(byId).length){ return {byId:byId, homes:homes, err:'밴크/변형 문서 없음: '+docId}; }
   return {byId:byId, homes:homes, err:(Object.keys(byId).length?null:'문항을 못 읽음')};
 }
 async function ottagValidate(){
@@ -1976,6 +1990,22 @@ async function ottagExport(){
         }
       });
     });
+    try{   // 변형(레벨업) 풀의 ot도 백업에 포함 — adaptive/{cert}__{subject}__variantq
+      if(rep){ rep.innerHTML='<span style="color:#475569">내보내는 중… adaptive(변형) 읽는 중</span>'; }
+      var asnap=await db.collection('adaptive').get();
+      asnap.forEach(function(doc){
+        var d=doc.data()||{}; if(d.kind!=='variantq') return;
+        var qs=Array.isArray(d.questions)?d.questions:[]; if(!qs.length) return;
+        var p=doc.id.split('__'); var cert=d.cert||p[0]; var subject=d.subject||p[1];
+        qs.forEach(function(q){
+          if(q&&q.id&&q.exp&&q.exp.ot){
+            var key=cert+'||'+subject;
+            var g=groups[key]||(groups[key]={cert:cert, subject:subject, ot:{}});
+            g.ot[q.id]=q.exp.ot;
+          }
+        });
+      });
+    }catch(_){}
     var subjects=Object.keys(groups).map(function(k){ return groups[k]; });
     if(!subjects.length){ if(rep){rep.innerHTML='<span style="color:#A32D2D">내보낼 ot 태그가 없습니다.</span>';} return; }
     var bundle={ _meta:{ kind:'ottag_export', exportedAt:new Date().toISOString(), subjectCount:subjects.length }, subjects:subjects };
@@ -2005,7 +2035,11 @@ async function ottagApply(){
     for(var i=0;i<homeIds.length;i++){
       var hid=homeIds[i], h=sh.homes[hid];
       if(!h) continue;
-      await db.collection('banks').doc(hid).set(Object.assign({}, h.data, {questions:h.questions}));
+      if(h.coll==='variantq'){   // 변형 풀: adaptive 컬렉션에 variantq 형식으로 저장
+        await db.collection('adaptive').doc(hid).set(Object.assign({}, h.data, {kind:'variantq', count:h.questions.length, questions:h.questions}));
+      } else {
+        await db.collection('banks').doc(hid).set(Object.assign({}, h.data, {questions:h.questions}));
+      }
       docs++;
     }
     rep.innerHTML='<div style="color:#15793F;font-weight:700">✅ '+ids.length+'문항에 exp.ot 병합 저장 완료 ('+docs+'개 문서).</div>';
