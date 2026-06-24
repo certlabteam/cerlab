@@ -1827,6 +1827,15 @@ function render(){
   var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
   var mb=document.getElementById('pvModeBar'); if(mb) mb.innerHTML='';
   if(!raw.trim()){ out.innerHTML=''; _items=null; return; }
+  // 원시 SVG 지원: <svg…> 를 붙여넣거나 .svg 파일을 로드하면 JSON 파싱하지 않고 그래프로 바로 렌더
+  var rawT=raw.trim();
+  if(rawT.slice(0,4).toLowerCase()==='<svg'){
+    _items=null; _pvMode='graphs'; _pvModes=['graphs'];
+    _pvData={graphs:[{id:'',name:'(원시 SVG 미리보기)',type:'svg',svg:rawT}]};
+    var tb2=document.getElementById('typeBadge'); if(tb2) tb2.innerHTML='<span class="pv-meta-tag">📈 원시 SVG</span>';
+    pvRenderModeBar(); out.innerHTML=pvRenderGraphs(_pvData.graphs);
+    return;
+  }
   var data; try{ data=JSON.parse(raw); }catch(e){ errBox.innerHTML='<div class="errx">JSON 오류: '+String(e.message)+'</div>'; out.innerHTML=''; _items=null; return; }
 
   // 배치 포맷 정규화 + 캐시(개념·암기코드·표·그래프) 채움
