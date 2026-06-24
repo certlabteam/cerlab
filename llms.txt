@@ -8,8 +8,8 @@
 - [공인중개사 1차 기출문제](https://certlab.ai.kr/seo/realestate1-34-re1_intro.html)
 - [공인중개사 2차 기출문제](https://certlab.ai.kr/seo/realestate2-34-re2_law.html)
 - [주택관리사보 기출문제](https://certlab.ai.kr/seo/housing-25-hm_acct.html)
-- [주택관리사 2차 기출문제](https://certlab.ai.kr/seo/housing2-27-hm2_law.html)
-- [한국사능력검정시험 기출문제](https://certlab.ai.kr/seo/koreanhistory-74-ksh.html)
+- [주택관리사 2차 기출문제](https://certlab.ai.kr/seo/housing2-25-hm2_law.html)
+- [한국사능력검정시험(심화) 기출문제](https://certlab.ai.kr/seo/koreanhistory-74-ksh.html)
 
 ## 앱
 - [CertLab 앱](https://certlab.ai.kr/)
