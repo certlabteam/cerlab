@@ -2721,7 +2721,7 @@ function tblCell(v, rich){
   s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>');
   return s;
 }
-function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
+function tblYul(s){ return String(s).replace(/\(([^)]*[0-9%][^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 // 계층 병합 표 렌더(운율 빨강). merge:[열] = 부모 바뀌면 자식 끊기는 rowspan.
 function renderTbl(t){
   if(!t) return '';
