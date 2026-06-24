@@ -1106,6 +1106,8 @@ src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
   <div class="footer-tag">도전하는 사람들의 성공을 돕습니다</div>
   <div class="footer-desc">자격증·전문직 시험·학습 콘텐츠를 제공하는 교육 플랫폼입니다.</div>
   <div class="footer-links">
+    <a href="seo/index.html" target="_blank" rel="noopener">기출문제 모음</a>
+    <span class="sep">·</span>
     <a href="about.html" target="_blank" rel="noopener">회사소개</a>
     <span class="sep">·</span>
     <a href="terms.html" target="_blank" rel="noopener">이용약관</a>
@@ -1907,8 +1909,8 @@ function showLoginPopup(mode='default') {
   const title = document.getElementById('loginTitle');
   const sub = document.getElementById('loginSub');
   if (mode === 'guest_limit') {
-    title.textContent = '🎯 무료 체험 완료';
-    sub.textContent = "50문제를 모두 체험하셨습니다. 로그인 후 계속 학습하세요!";
+    title.textContent = '🎁 로그인하면 무료체험 계속!';
+    sub.textContent = '비회원 체험 '+GUEST_LIMIT+'문제를 다 푸셨어요. 구글 로그인하면 '+TRIAL_LIMIT+'문제 무료체험을 이어서 이용할 수 있어요!';
   } else {
     title.textContent = '📚 CertLab';
     sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
@@ -2069,6 +2071,14 @@ function showPlanPopup() {
   if (stats) {
     stats.innerHTML =
       '<div class="plan-hl">📚 '+headTxt+'</div>'
+      + '<div style="margin:10px 0;padding:11px 13px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:10px;text-align:left">'
+        + '<div style="font-size:13px;font-weight:700;color:#0C447C;margin-bottom:7px">서트랩만의 학습법</div>'
+        + '<div style="font-size:12.5px;color:#3A4A5E;line-height:1.85">'
+          + '🎯 <b style="color:#0C447C;font-weight:500">레벨테스트 + 레벨업</b> — 실력 진단 후 5문제씩, 약점만 집중<br>'
+          + '🔁 <b style="color:#0C447C;font-weight:500">변형문제 · OX진술 학습</b> — 같은 유형 반복으로 확실히<br>'
+          + '📈 <b style="color:#0C447C;font-weight:500">예상점수 · 약점 분석</b> — 지금 합격선인지 바로 확인<br>'
+          + '🧠 <b style="color:#0C447C;font-weight:500">망각곡선 자동복습</b> — 푼 건 안 까먹게'
+        + '</div></div>'
       + featureCompareHTML(totalTxt);
   }
   document.getElementById('planPopup').classList.remove('hidden');
@@ -4569,7 +4579,7 @@ function renderOxLearn(root){
       if(cs.length){
         html+='<div class="oxl-cpt"><div class="oxl-cpt-ti">관련 개념</div>';
         cs.forEach(function(cc){ (cc.cards||[]).forEach(function(card){
-          html+='<div class="oxl-cpt-row"><b>'+oxSafeHTML(card.t||cc.name||'',q)+'</b>'+(card.d?('<div>'+oxSafeHTML(card.d,q)+'</div>'):'')+'</div>';
+          html+='<div class="oxl-cpt-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+oxSafeHTML(card.t||cc.name||'',q)+'</div>'+(card.d?('<div>'+oxSafeHTML(card.d,q)+'</div>'):'')+'</div>';
         }); });
         html+='</div>';
       } else {
@@ -4942,7 +4952,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
       body+='<div class="concept-box"><div class="concept-ti">\uAC1C\uB150\uC124\uBA85</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
-        var row='<div class="concept-row"><b style="display:block;margin-bottom:2px">'+rm(it.t,q)+'</b>'+(it.d?rm(it.d,q):'')+'</div>';
+        var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
         return row;
@@ -5153,7 +5163,7 @@ function renderMcqExam(root){
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
-        var row='<div class="concept-row"><b style="display:block;margin-bottom:2px">'+rm(it.t,q)+'</b>'+(it.d?rm(it.d,q):'')+'</div>';
+        var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
