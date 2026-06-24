@@ -1448,7 +1448,7 @@ function renderExpFull(q, mqCertVal){
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
-        var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>';
+        var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
@@ -1506,7 +1506,7 @@ function renderSaPreview(q, cert){
   if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
     concept='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
       if(!it||!it.t) return '';
-      var row='<div class="concept-row"><b>'+rm(it.t,q)+'</b>'+(it.d?' — '+rm(it.d,q):'')+'</div>';
+      var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
       if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
       if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
       return row;
@@ -1702,7 +1702,7 @@ function pvMnResolve(ref){
 function pvConceptCard(c){
   c=c||{};
   var cards=Array.isArray(c.cards)?c.cards:(Array.isArray(c.c)?c.c:[]);
-  var rows=cards.map(function(it){ it=it||{}; var row='<div class="concept-row"><b>'+tblEsc(it.t||'')+'</b>'+(it.d?' — '+tblCell(it.d,true):'')+'</div>'; if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblCell(String(it.cx).trim(),true)+'</div>'; return row; }).join('');
+  var rows=cards.map(function(it){ it=it||{}; var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+tblEsc(it.t||'')+'</div>'+(it.d?'<div>'+tblCell(it.d,true)+'</div>':'')+'</div>'; if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblCell(String(it.cx).trim(),true)+'</div>'; return row; }).join('');
   var box='<div class="concept-box"><div class="concept-ti">개념설명</div>'+(rows||'<div class="concept-row" style="color:#94A3B8">(카드 없음)</div>')+'</div>';
   var mnRefs=Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[]);
   var tblRefs=Array.isArray(c.tbl)?c.tbl:(c.tbl?[c.tbl]:[]);
