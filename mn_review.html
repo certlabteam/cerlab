@@ -204,7 +204,7 @@ function conceptCard(c){
   var cards=Array.isArray(c.cards)?c.cards:(Array.isArray(c.c)?c.c:[]);
   var rows=cards.map(function(it){
     it=it||{};
-    var row='<div class="concept-row"><b>'+esc(it.t||'')+'</b>'+(it.d?' — '+tblCell(it.d,true):'')+'</div>';
+    var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+esc(it.t||'')+'</div>'+(it.d?'<div>'+tblCell(it.d,true)+'</div>':'')+'</div>';
     if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+tblCell(String(it.cx).trim(),true)+'</div>';
     return row;
   }).join('');
