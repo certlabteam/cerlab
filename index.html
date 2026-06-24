@@ -3732,9 +3732,15 @@ function luBuildPool(cert,sub){ var pool=[], byId={}; try{
     if(qb) qb.sets.forEach(function(st){ st.questions.forEach(function(q){ if(!mqHasAnswer(q)) return; var info=(typeof adLookup==='function')&&adLookup(cert,sub,q.id); if(!info||!info.topic||!info.diff) return; q._subj=sub; pool.push({id:q.id, topic:info.topic, level:info.diff, subtopic:info.subtopic||null, _q:q}); byId[q.id]=true; }); });
     var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; var vp=(b&&b.variantPool)||[];
     vp.forEach(function(v){ if(!v||!v.id||byId[v.id]||!v.topic||!v.diff) return; v._subj=sub; pool.push({id:v.id, topic:v.topic, level:v.diff, subtopic:v.subtopic||null, _q:v}); byId[v.id]=true; });
+    var tmpls=(b&&b.calcTemplates)||[];   // 계산형 자동생성: 템플릿×밴드당 fresh seed 인스턴스 편입
+    tmpls.forEach(function(tm){ if(!tm||!tm.id||!tm.topic) return; var bands=Array.isArray(tm.diff)?tm.diff:[tm.diff];
+      bands.forEach(function(bd){ for(var ci=0; ci<CALC_PER_BAND; ci++){ var seed=(Math.floor(Math.random()*4294967296))>>>0;
+        var inst=genCalcValid(Object.assign({}, tm, {_diff:bd}), seed, 40);
+        if(inst && !byId[inst.id]){ inst._subj=sub; pool.push({id:inst.id, topic:inst.topic, level:bd, subtopic:inst.subtopic||null, _q:inst}); byId[inst.id]=true; } } });
+    });
   }catch(e){} return pool; }
 function luTopicScores(cert,sub){ var k=cert+'|'+sub, st=(typeof eloState!=='undefined'&&eloState[k])||{}, out={}; for(var t in st){ if(t.charAt(0)==='_') continue; if(st[t]&&typeof st[t].score==='number') out[t]=st[t].score; } return out; }
-function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
+function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
 function luLoadRound(first){
   var cert=mqCert, order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
   if(!order.length){ luFinish('과목이 없습니다.'); return; }
@@ -3832,7 +3838,7 @@ function luFinish(msg){ mqLevelUp=false; mqStopTimer(); mqStopOverTimer(); if(cu
 
 // ===== 레벨업: 라운드 기록 + 정밀 이어풀기 + 세션 =====
 var luHistAll={}, luResumeAll={}, _luHistLoaded=false, LU_HIST_DAYS=30, luHistView='date';
-var luSessTotal=0, luSessCorrect=0, luSessChanges={}, luSessPredStart=null, _luRound=null, _luReviewReturn=null;
+var luSessTotal=0, luSessCorrect=0, luSessChanges={}, luSessPredStart=null, _luRound=null, _luReviewReturn=null, _luEloSA={};
 function luHistEnsure(){ if(_luHistLoaded) return; _luHistLoaded=true; try{ luHistAll=JSON.parse(localStorage.getItem('certlab_luhist')||'{}')||{}; }catch(_){ luHistAll={}; } try{ luResumeAll=JSON.parse(localStorage.getItem('certlab_luresume')||'{}')||{}; }catch(_){ luResumeAll={}; } }
 function luHistSaveLocal(){ try{ localStorage.setItem('certlab_luhist', JSON.stringify(luHistAll)); }catch(_){} try{ localStorage.setItem('certlab_luresume', JSON.stringify(luResumeAll)); }catch(_){} }
 function luHistPrune(cert){ var arr=luHistAll[cert]||[]; var cut=Date.now()-LU_HIST_DAYS*864e5; luHistAll[cert]=arr.filter(function(r){ return (r&&r.ts||0)>=cut; }); }
@@ -3841,7 +3847,9 @@ function luHistAdd(cert, rec){ luHistEnsure(); if(!luHistAll[cert]) luHistAll[ce
 function luHasResume(cert){ luHistEnsure(); var r=luResumeAll[cert]; return !!(r && r.qids && r.qids.length); }
 function luResumeClear(cert){ luHistEnsure(); if(luResumeAll[cert]){ delete luResumeAll[cert]; luHistSaveLocal(); if(currentUser && typeof saveUserData==='function') saveUserData(); } }
 function _luPredScore(cert){ try{ var ap=adPredicted(cert); return ap?ap.predicted:null; }catch(_){ return null; } }
-function _luFindQ(cert, id){ var qb=qbOf(cert), found=null;
+function _luFindQ(cert, id){
+  if(typeof id==='string' && id.indexOf('calc:')===0){ return _calcFromId(cert, id); }
+  var qb=qbOf(cert), found=null;
   Object.keys(qb).some(function(sub){ return (qb[sub].sets||[]).some(function(st){ return (st.questions||[]).some(function(q){ if(q&&q.id===id){ found=q; return true;} return false; }); }); });
   if(found) return found;
   Object.keys(qb).some(function(sub){ try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; var vp=(b&&b.variantPool)||[]; return vp.some(function(v){ if(v&&v.id===id){ found=v; return true;} return false; }); }catch(e){ return false; } });
@@ -3915,6 +3923,7 @@ var _luLastSubName='', _luLastChanges=[], _luRoundRecRef=null;
 function _luAfterRound(qs, correct){
   var cert=mqCert, sub=luCurSub, k=cert+'|'+sub, changes=[];
   try{
+    (qs||[]).forEach(function(q){ try{ if(q && isSA(q) && !_luEloSA[q.id] && mqAns[q.id]!==undefined && saAnswered(q,mqAns[q.id]) && typeof adEloUpdate==='function'){ adEloUpdate(q, mqCorrect(q,mqAns[q.id])); _luEloSA[q.id]=1; } }catch(e){} });   // SA는 mqPick을 안 거치므로 라운드 종료 시 Elo 일괄 반영(중복방지 _luEloSA)
     var now=(typeof eloState!=='undefined'&&eloState[k])||{};
     var tmap=topicNameMap(cert,sub), nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub;
     for(var t in now){ if(t.charAt(0)==='_') continue; var before=luPreScores[t]; if(before==null) continue; var lb=AE.scoreToLevel(before), la=AE.scoreToLevel(now[t].score); if(la!==lb) changes.push({subName:nm, topic:(tmap[t]&&tmap[t].name)||t, from:lb, to:la, up:la>lb}); }
@@ -6559,6 +6568,70 @@ function _adParse(d){                    // Firestore가 문자열로 저장된 
   if(d && typeof d.payload==='string'){ try{ return JSON.parse(d.payload); }catch(e){} }
   return d;
 }
+/* ===== 계산형 자동생성 코어 (CALC_) — 결정론(같은 template,seed→동일 인스턴스). eval/Function 안 씀 =====
+   문항 id = "calc:<템플릿id>:<밴드>:<seed>" → _luFindQ가 id만으로 동일 인스턴스 재생성(이어풀기·기록 안전). */
+var CALC_PER_BAND=3;   // 풀빌드 시 템플릿×밴드당 생성 인스턴스 수
+function _calcRng(seed){ var s=(seed>>>0)||1; return function(){ s|=0; s=(s+0x6D2B79F5)|0; var t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+function _calcEval(expr, vars){
+  var src=String(expr), i=0;
+  function ws(){ while(i<src.length && /\s/.test(src[i])) i++; }
+  function peek(){ ws(); return src[i]; }
+  function eat(c){ ws(); if(src[i]!==c) throw new Error('expected '+c); i++; }
+  function pExpr(){ var v=pTerm(); for(;;){ var c=peek(); if(c==='+'){i++; v+=pTerm();} else if(c==='-'){i++; v-=pTerm();} else break; } return v; }
+  function pTerm(){ var v=pUn(); for(;;){ var c=peek(); if(c==='*'){i++; v*=pUn();} else if(c==='/'){i++; var d=pUn(); if(d===0) throw new Error('div0'); v/=d;} else break; } return v; }
+  function pUn(){ var c=peek(); if(c==='-'){i++; return -pUn();} if(c==='+'){i++; return pUn();} return pPrim(); }
+  function pPrim(){ var c=peek();
+    if(c==='('){ i++; var v=pExpr(); eat(')'); return v; }
+    if(/[0-9.]/.test(c)){ var st=i; while(i<src.length && /[0-9.]/.test(src[i])) i++; var n=parseFloat(src.slice(st,i)); if(isNaN(n)) throw new Error('num'); return n; }
+    if(/[A-Za-z_]/.test(c)){ var st2=i; while(i<src.length && /[A-Za-z0-9_]/.test(src[i])) i++; var nm=src.slice(st2,i);
+      if(peek()==='('){ i++; var a=[]; if(peek()!==')'){ a.push(pExpr()); while(peek()===','){ i++; a.push(pExpr()); } } eat(')'); return _calcFn(nm,a); }
+      if(!(nm in vars)) throw new Error('var:'+nm); return Number(vars[nm]); }
+    throw new Error('unexpected'); }
+  var out=pExpr(); ws(); if(i!==src.length) throw new Error('trailing'); if(!isFinite(out)) throw new Error('nonfinite'); return out;
+}
+function _calcFn(name,a){ switch(name){
+  case 'round': { var d=a.length>1?a[1]:0, f=Math.pow(10,d); return Math.round(a[0]*f)/f; }
+  case 'abs': return Math.abs(a[0]); case 'floor': return Math.floor(a[0]); case 'ceil': return Math.ceil(a[0]);
+  case 'min': return Math.min.apply(null,a); case 'max': return Math.max.apply(null,a); case 'pow': return Math.pow(a[0],a[1]);
+  default: throw new Error('fn:'+name); } }
+function _calcFmt(n, round, unit){ var d=round||0, f=Math.pow(10,d), v=Math.round(n*f)/f; var s=v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:d}); if(unit==='원') return '₩'+s; return s+(unit?(' '+unit):''); }
+function genCalc(tmpl, seed){
+  try{
+    var rng=_calcRng(seed), vars={};
+    var pk=Object.keys(tmpl.params||{});
+    for(var pi=0; pi<pk.length; pi++){ var p=tmpl.params[pk[pi]], step=p.step||1, span=Math.floor((p.max-p.min)/step); vars[pk[pi]]=p.min+step*Math.floor(rng()*(span+1)); }
+    var dk=Object.keys(tmpl.derive||{});
+    for(var di=0; di<dk.length; di++) vars[dk[di]]=_calcEval(tmpl.derive[dk[di]], vars);
+    var answer=_calcEval(tmpl.answer, vars); vars.answer=answer;
+    var rnd=tmpl.round||0, fpow=Math.pow(10,rnd); function rd(x){ return Math.round(x*fpow)/fpow; }
+    var ansR=rd(answer), distVals=[];
+    (tmpl.distractors||[]).forEach(function(ds){ try{ distVals.push(rd(_calcEval(ds.expr, vars))); }catch(e){} });
+    var ok=true;
+    (tmpl.guard||[]).forEach(function(g){ try{ var m=String(g).match(/^(.*?)(<=|>=|==|!=|<|>)(.*)$/); if(m){ var l=_calcEval(m[1],vars), r=_calcEval(m[3],vars), op=m[2]; var res=op==='>'?l>r:op==='<'?l<r:op==='>='?l>=r:op==='<='?l<=r:op==='=='?l===r:l!==r; if(!res) ok=false; } }catch(e){ ok=false; } });
+    if(!ok) return null;
+    var optVals=[ansR], seen={}; seen[ansR]=1;
+    for(var k=0;k<distVals.length && optVals.length<4;k++){ var dv=distVals[k]; if(dv==null||!isFinite(dv)||seen[dv]) continue; seen[dv]=1; optVals.push(dv); }
+    if(optVals.length<4) return null;
+    var idx=[0,1,2,3];
+    for(var s2=idx.length-1;s2>0;s2--){ var j=Math.floor(rng()*(s2+1)); var t=idx[s2]; idx[s2]=idx[j]; idx[j]=t; }
+    var opts=idx.map(function(oi){ return _calcFmt(optVals[oi], rnd, tmpl.unit); });
+    var ansPos=idx.indexOf(0), ans1=ansPos+1;
+    function numFmt(key){ if(key==='answer') return _calcFmt(ansR, rnd, tmpl.unit); if(!(key in vars)) return '{'+key+'}'; var val=vars[key], isMoney=(tmpl.money||[]).indexOf(key)>=0, d=isMoney?0:(Number.isInteger(val)?0:rnd); return Number(val).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:d}); }
+    function subst(str){ return String(str).replace(/\{(\w+)\}/g, function(_,key){ return numFmt(key); }); }
+    var o=[]; for(var oi2=0;oi2<4;oi2++) o.push(oi2===ansPos ? subst(tmpl.concl||'정답: {answer}') : '');
+    return { id:'calc:'+tmpl.id+':'+(tmpl._diff||(Array.isArray(tmpl.diff)?tmpl.diff[0]:tmpl.diff))+':'+(seed>>>0),
+      q:subst(tmpl.stem), opts:opts, ans:ans1, topic:tmpl.topic, diff:(tmpl._diff||(Array.isArray(tmpl.diff)?tmpl.diff[0]:tmpl.diff)), subtopic:tmpl.subtopic||null,
+      exp:{ o:o, ex:(tmpl.exp_ex||[]).map(subst) }, _gen:true };
+  }catch(e){ return null; }
+}
+function genCalcValid(tmpl, baseSeed, maxTries){ var tries=maxTries||40; for(var t=0;t<tries;t++){ var seed=(baseSeed+t*2654435761)>>>0; var q=genCalc(tmpl, seed); if(q) return q; } return null; }
+function _calcFromId(cert, id){ try{ var p=String(id).split(':'); if(p.length<4) return null; var tmplid=p[1], band=+p[2], seed=(+p[3])>>>0;
+  var qb=qbOf(cert), tmpl=null;
+  Object.keys(qb).some(function(sub){ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; var ts=(b&&b.calcTemplates)||[]; return ts.some(function(tt){ if(tt&&tt.id===tmplid){ tmpl=tt; return true;} return false; }); });
+  if(!tmpl) return null;
+  return genCalc(Object.assign({}, tmpl, {_diff:band}), seed);
+}catch(e){ return null; } }
+
 async function loadAdaptiveSubject(cert, sub){
   var key=cert+'|'+sub;
   if(AD_DATA[key]) return AD_DATA[key];
@@ -6572,11 +6645,11 @@ async function loadAdaptiveSubject(cert, sub){
     try{ localStorage.setItem(ck, JSON.stringify({__ts:Date.now(), d:d})); }catch(e){}
     return d;
   }
-  var res=await Promise.all([fetchDoc('map'), fetchDoc('diag'), fetchDoc('variants'), fetchDoc('variantq')]);
-  return AD_BUILD(key, res[0], res[1], res[2], res[3]);
+  var res=await Promise.all([fetchDoc('map'), fetchDoc('diag'), fetchDoc('variants'), fetchDoc('variantq'), fetchDoc('calctmpl')]);
+  return AD_BUILD(key, res[0], res[1], res[2], res[3], res[4]);
 }
 // 룩업·인덱스 빌드(순수). 로드시뮬·테스트에서 재사용.
-function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc){
+function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc, calcDoc){
   var lookup={}, variantsByTopic={};
   ((mapDoc&&mapDoc.mapping)||[]).forEach(function(x){
     lookup[x.id]={topic:x.topic, diff:x.diff, subtopic:x.subtopic||null};
@@ -6587,7 +6660,8 @@ function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc){
   var variantPool=(varqDoc&&varqDoc.questions)||[];   // 이론형 변형 문제 풀
   // 변형 풀 문항도 룩업에 추가(Elo·출제에서 topic/diff 조회 가능하게)
   variantPool.forEach(function(q){ if(q&&q.id) lookup[q.id]={topic:q.topic, diff:q.diff, subtopic:q.subtopic||null}; });
-  var bundle={ map:mapDoc, diag:diagDoc, variants:varDoc, lookup:lookup, variantsByTopic:variantsByTopic, variantPool:variantPool };
+  var calcTemplates=(calcDoc&&calcDoc.templates)||[];   // 계산형 자동생성 템플릿(앱이 즉석 인스턴스화)
+  var bundle={ map:mapDoc, diag:diagDoc, variants:varDoc, lookup:lookup, variantsByTopic:variantsByTopic, variantPool:variantPool, calcTemplates:calcTemplates };
   AD_DATA[key]=bundle;
   return bundle;
 }
