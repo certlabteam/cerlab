@@ -6622,15 +6622,15 @@ function genCalc(tmpl, seed){
     (tmpl.guard||[]).forEach(function(g){ try{ var m=String(g).match(/^(.*?)(<=|>=|==|!=|<|>)(.*)$/); if(m){ var l=_calcEval(m[1],vars), r=_calcEval(m[3],vars), op=m[2]; var res=op==='>'?l>r:op==='<'?l<r:op==='>='?l>=r:op==='<='?l<=r:op==='=='?l===r:l!==r; if(!res) ok=false; } }catch(e){ ok=false; } });
     if(!ok) return null;
     var optVals=[ansR], seen={}; seen[ansR]=1;
-    for(var k=0;k<distVals.length && optVals.length<4;k++){ var dv=distVals[k]; if(dv==null||!isFinite(dv)||seen[dv]) continue; seen[dv]=1; optVals.push(dv); }
-    if(optVals.length<4) return null;
-    var idx=[0,1,2,3];
+    for(var k=0;k<distVals.length && optVals.length<5;k++){ var dv=distVals[k]; if(dv==null||!isFinite(dv)||seen[dv]) continue; seen[dv]=1; optVals.push(dv); }
+    if(optVals.length<5) return null;
+    var idx=[0,1,2,3,4];
     for(var s2=idx.length-1;s2>0;s2--){ var j=Math.floor(rng()*(s2+1)); var t=idx[s2]; idx[s2]=idx[j]; idx[j]=t; }
     var opts=idx.map(function(oi){ return _calcFmt(optVals[oi], rnd, tmpl.unit); });
     var ansPos=idx.indexOf(0), ans1=ansPos+1;
     function numFmt(key){ if(key==='answer') return _calcFmt(ansR, rnd, tmpl.unit); if(!(key in vars)) return '{'+key+'}'; var val=vars[key], isMoney=(tmpl.money||[]).indexOf(key)>=0, d=isMoney?0:(Number.isInteger(val)?0:rnd); return Number(val).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:d}); }
     function subst(str){ return String(str).replace(/\{(\w+)\}/g, function(_,key){ return numFmt(key); }); }
-    var o=[]; for(var oi2=0;oi2<4;oi2++) o.push(oi2===ansPos ? subst(tmpl.concl||'정답: {answer}') : '');
+    var o=[]; for(var oi2=0;oi2<5;oi2++) o.push(oi2===ansPos ? subst(tmpl.concl||'정답: {answer}') : '');
     return { id:'calc:'+tmpl.id+':'+(tmpl._diff||(Array.isArray(tmpl.diff)?tmpl.diff[0]:tmpl.diff))+':'+(seed>>>0),
       q:subst(tmpl.stem), opts:opts, ans:ans1, topic:tmpl.topic, diff:(tmpl._diff||(Array.isArray(tmpl.diff)?tmpl.diff[0]:tmpl.diff)), subtopic:tmpl.subtopic||null,
       exp:{ o:o, ex:(tmpl.exp_ex||[]).map(subst) }, _gen:true };
