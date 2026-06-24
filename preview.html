@@ -1608,7 +1608,7 @@ function drawNav(){
 var _tblCache={};
 function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function tblCell(v, rich){ var s=tblEsc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); return s; }
-function tblYul(s){ return String(s).replace(/\(([^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
+function tblYul(s){ return String(s).replace(/\(([^)]*[0-9%][^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
 function tblSanitizeHtml(html){ var s=String(html||''); s=s.replace(/<script[\s\S]*?<\/script>/gi,''); s=s.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi,'').replace(/<(iframe|object|embed)[^>]*>/gi,''); s=s.replace(/\son\w+\s*=\s*"[^"]*"/gi,'').replace(/\son\w+\s*=\s*'[^']*'/gi,''); s=s.replace(/javascript:/gi,''); return s; }
 function renderTbl(t){
   if(!t) return '';
