@@ -1737,7 +1737,7 @@ async function cptmLoad(){
 function cptmRenderConcept(c){
   var cards=Array.isArray(c.cards)?c.cards:[];
   var rows=cards.map(function(it){ it=it||{};
-    var row='<div class="concept-row"><b>'+cptmEsc(it.t||'')+'</b>'+(it.d?' — '+tblmCell(it.d,true):'')+'</div>';
+    var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+cptmEsc(it.t||'')+'</div>'+(it.d?'<div>'+tblmCell(it.d,true)+'</div>':'')+'</div>';
     if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblmCell(String(it.cx).trim(),true)+'</div>';
     return row;
   }).join('');
