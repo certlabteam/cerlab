@@ -5338,7 +5338,10 @@ function renderMqResultScreen(){
        (wrongN>0?'<button onclick="mqOpenReview(\'wrong\',0)">❌ 오답 '+wrongN+'</button>':'')+
        (unansN>0?'<button onclick="mqContinueUnans()">⬜ 미응답 '+unansN+'</button>':'')+
        '<button onclick="mqRetry()">🔄 다시풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
+  var _navLbl=M.lu?'레벨업 결과':diag?'레벨 테스트 결과':M.review?'복습 결과':((curQB()&&curQB()[M.sub]&&curQB()[M.sub].name)?(curQB()[M.sub].name+' 결과'):'결과');
+  var _navHead='<div class="mcq-exam-title"><button class="exam-home-back" onclick="clHandleBack()" aria-label="뒤로">'+BACK_ARROW+'</button>'+mqEsc(_navLbl)+'</div>';
   document.getElementById('mcqRoot').innerHTML=
+    _navHead+
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
     luHead+
     '<div class="rt">'+titleTxt+modeLbl+'</div>'+
@@ -5670,6 +5673,9 @@ function clHandleBack(){
   if(typeof activeCert!=='undefined' && activeCert){
     if(typeof isMcqCert==='function' && isMcqCert(activeCert) && typeof mqScreen!=='undefined'){
       if(mqInReview){ if(typeof mqBackToResult==='function') mqBackToResult(); return true; }
+      if(mqScreen==='result'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
+      if(mqScreen==='luhist'){ if(typeof luHistBack==='function'){ luHistBack(); } else if(typeof mqBackHome==='function'){ mqBackHome(); } return true; }
+      if(mqScreen==='lusummary'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
       if(mqScreen==='exam'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
       if(mqScreen==='home'){ showHome(); return true; }
     }
