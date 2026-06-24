@@ -3550,7 +3550,7 @@ function mcqAnalysisCard(cert){
     var lv=luSubjectLevel(cert,sub); if(lv==null) return '';
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, open=!!luCardOpen[sub];
     var pill='<span style="font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
-    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'</span>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
+    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'</span><button onclick="event.stopPropagation();luStartSub(\''+sub+'\')" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
     var body='';
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
@@ -3724,7 +3724,7 @@ function _ltShowGateModal(cert){
   p.classList.remove('hidden');
 }
 // ===== 4-b 레벨업 문제풀기 (연속 5문제 라운드 · 약점매칭 · 기출+변형) =====
-var mqLevelUp=false, luSubIdx=0, luSeen={}, luPreScores={}, luCurSub='', LU_ROUND=5, luCardOpen={};
+var mqLevelUp=false, luSubIdx=0, luSeen={}, luPreScores={}, luCurSub='', luLockSub='', LU_ROUND=5, luCardOpen={};
 function topicNameMap(cert,sub){
   var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub], m={};
   if(!b) return m;
@@ -3750,9 +3750,11 @@ function luBuildPool(cert,sub){ var pool=[], byId={}; try{
     });
   }catch(e){} return pool; }
 function luTopicScores(cert,sub){ var k=cert+'|'+sub, st=(typeof eloState!=='undefined'&&eloState[k])||{}, out={}; for(var t in st){ if(t.charAt(0)==='_') continue; if(st[t]&&typeof st[t].score==='number') out[t]=st[t].score; } return out; }
-function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
+function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=''; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
+function luStartSub(sub){ var cert=mqCert; if(ltGate(cert)) return; if(!sub) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=sub; luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
 function luLoadRound(first){
   var cert=mqCert, order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
+  if(luLockSub){ order=[luLockSub]; }   // 과목 고정 모드: 잠긴 과목만 출제
   if(!order.length){ luFinish('과목이 없습니다.'); return; }
   var picked=null, tries=0, k;
   while(tries<order.length){
@@ -3767,7 +3769,7 @@ function luLoadRound(first){
     }
     luSubIdx=(luSubIdx+1)%order.length; tries++;
   }
-  if(!picked){ luFinish('풀 수 있는 문제를 모두 푸셨어요! 👍'); return; }
+  if(!picked){ luFinish(luLockSub?'이 과목은 풀 수 있는 문제를 모두 푸셨어요! 👍':'풀 수 있는 문제를 모두 푸셨어요! 👍'); return; }
   _luRoundRecRef=null;   // 새 라운드 → 기록은 새로 생성
   luPreScores={}; var sc=luTopicScores(cert, picked.sub); for(var t in sc) luPreScores[t]=sc[t];
   luCurSub=picked.sub;
