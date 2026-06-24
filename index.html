@@ -2119,7 +2119,15 @@ const PLAN_SETS={
              {d:180,p:49900,name:'6개월 이용권',desc:'180일 전체 이용',pop:'⭐ 추천',green:1,sel:1}],
   koreanhistory:[{d:7,p:1900,name:'1주 이용권',desc:'7일 전체 이용'},
                  {d:14,p:2900,name:'2주 이용권',desc:'14일 전체 이용',pop:'⭐ 가장 인기'},
-                 {d:28,p:3900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}]
+                 {d:28,p:3900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  realestate1:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
+               {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
+               {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
+               {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  realestate2:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
+               {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
+               {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
+               {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}]
 };
 function plansFor(cert){ return PLAN_SETS[cert]||PLAN_SETS._default; }
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
