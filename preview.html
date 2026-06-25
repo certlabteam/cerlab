@@ -1790,8 +1790,10 @@ function pvRenderReview(rows){
     var right=props.length?props.map(function(p){ return pvReviewCellR(p, kind); }).join(''):'<div class="pv-empty">통합안 없음</div>';
     var dec=(g.decision&&String(g.decision).trim())?'<div class="pv-decision"><b>메모:</b> '+tblEsc(g.decision)+'</div>':'';
     var kindTag=(kind!=='mn')?(' · <span style="color:#185FA5;font-weight:700">'+(_pvKindLabel[kind]||kind)+'</span>'):'';
+    var tagL=g.leftTag||(kind==='mn'?'기존(후보)':'변경 전');
+    var tagR=g.rightTag||(kind==='mn'?'의견(통합안)':'변경 후');
     return '<div class="pv-card"><div class="pv-grphd">그룹 '+tblEsc(g.group!=null?g.group:'?')+kindTag+(g.chant?' · <span style="color:#C0322F;font-weight:800">'+tblEsc(g.chant)+'</span>':'')+'</div>'
-      +'<div class="pv-cmp"><div class="pv-col"><div class="pv-coltag l">기존(후보)</div>'+left+'</div><div class="pv-col"><div class="pv-coltag r">의견(통합안)</div>'+right+dec+'</div></div></div>';
+      +'<div class="pv-cmp"><div class="pv-col"><div class="pv-coltag l">'+tblEsc(tagL)+'</div>'+left+'</div><div class="pv-col"><div class="pv-coltag r">'+tblEsc(tagR)+'</div>'+right+dec+'</div></div></div>';
   }).join('');
 }
 // 배치 포맷 정규화
