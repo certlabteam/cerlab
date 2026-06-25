@@ -2129,13 +2129,14 @@ const PLAN_SETS={
   _default:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
             {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용',pop:'⭐ 가장 인기'},
             {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
-  appraiser:[{d:30,p:12900,name:'1개월 이용권',desc:'30일 전체 이용'},
-             {d:60,p:22900,name:'2개월 이용권',desc:'60일 전체 이용'},
-             {d:120,p:39900,name:'4개월 이용권',desc:'120일 전체 이용',pop:'⭐ 인기'},
-             {d:180,p:49900,name:'6개월 이용권',desc:'180일 전체 이용',pop:'⭐ 추천',green:1,sel:1}],
-  koreanhistory:[{d:7,p:1900,name:'1주 이용권',desc:'7일 전체 이용'},
-                 {d:14,p:2900,name:'2주 이용권',desc:'14일 전체 이용',pop:'⭐ 가장 인기'},
-                 {d:28,p:3900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  appraiser:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
+             {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
+             {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
+             {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  koreanhistory:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
+                 {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
+                 {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
+                 {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
   realestate1:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
                {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
                {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
@@ -2143,7 +2144,15 @@ const PLAN_SETS={
   realestate2:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
                {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
                {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
-               {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}]
+               {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  housing:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
+           {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
+           {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
+           {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  housing2:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
+            {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
+            {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
+            {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}]
 };
 function plansFor(cert){ return PLAN_SETS[cert]||PLAN_SETS._default; }
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
@@ -5850,8 +5859,10 @@ function cmCardHTML(p){
   if(p.board==='review' && p.cert) badge='<span class="cm-cert">'+cmEsc(CM_CERT_LABEL[p.cert]||p.cert)+'</span>';
   if(p.board==='notice' && p.pinned) badge='<span class="cm-pin">📌 고정</span>';
   var meta='<span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span>';
-  var stat = (p.board==='notice') ? '' :
-    '<span class="sp"><span>\u2764\ufe0f '+(p.likeCount||0)+'</span><span>💬 '+(p.commentCount||0)+'</span></span>';
+  var views='<span>👁️ '+(p.viewCount||0)+'</span>';
+  var stat = (p.board==='notice')
+    ? '<span class="sp">'+views+'</span>'
+    : '<span class="sp"><span>\u2764\ufe0f '+(p.likeCount||0)+'</span><span>💬 '+(p.commentCount||0)+'</span>'+views+'</span>';
   var body = p.body ? '<div class="cm-pe">'+cmEsc(p.body)+'</div>' : '';
   return '<div class="cm-post" onclick="cmOpenDetail(\''+p._id+'\')">'
     +'<div class="cm-pt">'+badge+cmEsc(p.title||'')+'</div>'+body
@@ -5975,6 +5986,8 @@ async function cmOpenDetail(id){
     var doc=await db.collection('posts').doc(id).get();
     if(!doc.exists){ box.innerHTML='<div class="cm-empty">삭제되었거나 없는 글이에요.</div>'; return; }
     var p=doc.data(); p._id=id; cmCurPost=p; cmMyVote=0;
+    p.viewCount=(p.viewCount||0)+1;
+    try{ db.collection('posts').doc(id).update({viewCount:firebase.firestore.FieldValue.increment(1)}).catch(function(){}); }catch(_){}
     if(currentUser){
       try{ var vd=await db.collection('posts').doc(id).collection('votes').doc(currentUser.uid).get(); if(vd.exists) cmMyVote=vd.data().v||0; }catch(_){}
     }
@@ -6048,7 +6061,7 @@ function cmRenderDetail(p){
     '<div id="cmComments"></div>'
     +'<div class="cm-cmt-input"><input id="cmCmtInput" maxlength="1000" placeholder="댓글을 입력하세요"><button onclick="cmAddComment()">등록</button></div>';
   return '<div class="cm-dtitle">'+badge+cmEsc(p.title||'')+'</div>'
-    +'<div class="cm-dmeta"><span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span></div>'
+    +'<div class="cm-dmeta"><span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span><span>\u00b7</span><span>👁️ '+(p.viewCount||0)+'</span></div>'
     +'<div class="cm-dtext">'+cmEsc(p.body||'').replace(/\n/g,'<br>')+'</div>'+imgs+votes+cmt;
 }
 function cmRefreshVoteUI(){
@@ -6321,7 +6334,7 @@ function cmTodayHTML(p){
   return '<div class="cm-today" onclick="cmOpenDetail(\''+p._id+'\')">'
     +'<div class="cm-today-l">🏆 오늘의 글</div>'
     +'<div class="cm-today-t">'+badge+cmEsc(p.title||'')+'</div>'
-    +'<div class="cm-today-m">'+cmEsc(p.authorNick||'익명')+' · 👍 '+(p.upCount||0)+' · 💬 '+(p.commentCount||0)+'</div></div>';
+    +'<div class="cm-today-m">'+cmEsc(p.authorNick||'익명')+' · 👍 '+(p.upCount||0)+' · 💬 '+(p.commentCount||0)+' · 👁️ '+(p.viewCount||0)+'</div></div>';
 }
 
 
