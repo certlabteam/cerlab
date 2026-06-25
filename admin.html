@@ -1267,7 +1267,7 @@ async function mnemLoad(){
   }catch(e){ if(st){ st.style.color='#A32D2D'; st.textContent='로드 실패: '+e.message; } }
 }
 /* ===== 마스터 시험·과목 필터/그룹 (4개 탭 공용) ===== */
-var _mfState={mnem:{cert:'',subj:''},tblm:{cert:'',subj:''},cptm:{cert:'',subj:''},grpm:{cert:'',subj:''}};
+var _mfState={mnem:{cert:'',subj:'',sort:'recent'},tblm:{cert:'',subj:'',sort:'recent'},cptm:{cert:'',subj:'',sort:'recent'},grpm:{cert:'',subj:'',sort:'recent'}};
 var _mfRender={};   // ns -> RenderList (아래 함수들 hoist됨)
 var MF_SUBJ={acct:'회계',econ:'경제',law:'법규',real:'부동산',civil:'민법',theory:'이론',tax:'세법',hist:'역사',bb:'보디빌딩'};
 function mfEsc(x){return String(x==null?'':x).replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];});}
@@ -1321,32 +1321,93 @@ function _impDateGate(label, fileObj, records, idKey, perRecord){
   if(missing.length){ alert('❌ 업로드 차단 — 날짜·시간 누락 ['+label+']\n\n규칙: 모든 파일에 _meta.generatedAt 필수'+(perRecord?', 마스터는 레코드마다 updatedAt 필수':'')+'.\n\n누락 '+missing.length+'건:\n'+missing.slice(0,15).join('\n')+(missing.length>15?('\n…외 '+(missing.length-15)+'건'):'')); return false; }
   return true;
 }
+
+/* ===== 마스터 → 문항 역링크 (레벨업 variantq 스캔) ===== */
+var _mfQCache=null, _mfQLoading=false;
+async function _mfLoadAllQuestions(){
+  if(_mfQCache) return _mfQCache;
+  if(_mfQLoading){ await new Promise(function(r){var t=setInterval(function(){ if(!_mfQLoading){clearInterval(t);r();} },120);}); return _mfQCache||[]; }
+  _mfQLoading=true; var out=[];
+  try{
+    var snap=await db.collection('adaptive').get();
+    snap.forEach(function(doc){
+      if(!/__variantq$/.test(doc.id)) return;
+      var d=doc.data()||{}; var qs=Array.isArray(d.questions)?d.questions:[];
+      var pref=doc.id.replace(/__variantq$/,''); var us=pref.split('__'); var cert=us[0]||'', sub=us[1]||'';
+      qs.forEach(function(q){ if(q&&q.id) out.push({id:q.id, cert:cert, sub:sub, q:q}); });
+    });
+  }catch(e){}
+  _mfQCache=out; _mfQLoading=false; return out;
+}
+// refType: 'mn'|'cpt'|'tbl'|'grp'  → 해당 마스터 id를 참조하는 문항 찾기
+function _mfRefMatch(q, refType, mid){
+  var exp=(q&&q.exp)||{};
+  if(refType==='mn'){ return (exp.mn||[]).some(function(x){ return String(x).replace('mn://','')===mid; }); }
+  if(refType==='cpt'){ return (exp.c||[]).some(function(c){ return c && (c._fromMaster===mid); }); }
+  if(refType==='tbl'){ return (exp.tbl||[]).some(function(x){ return String(x).replace('tbl://','')===mid; })
+        || (exp.c||[]).some(function(c){ return c && Array.isArray(c.tbl) && c.tbl.some(function(x){return String(x).replace('tbl://','')===mid;}); }); }
+  if(refType==='grp'){ return (exp.grp||[]).some(function(x){ return String(x).replace('grp://','')===mid; })
+        || (exp.c||[]).some(function(c){ return c && Array.isArray(c.grp) && c.grp.some(function(x){return String(x).replace('grp://','')===mid;}); }); }
+  return false;
+}
+async function mfShowUsage(refType, mid){
+  var box=document.getElementById('mfUsageModal'); if(!box){ box=document.createElement('div'); box.id='mfUsageModal';
+    box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    box.onclick=function(e){ if(e.target===box) box.remove(); }; document.body.appendChild(box); }
+  box.innerHTML='<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:18px 20px"><div style="font-weight:800;font-size:15px;margin-bottom:4px">이 마스터를 쓰는 문항</div><div style="font-size:12px;color:#94A3B8;margin-bottom:12px">'+mfEsc(refType)+'://'+mfEsc(mid)+' · 스캔 중…</div></div>';
+  var all=await _mfLoadAllQuestions();
+  var hits=all.filter(function(r){ return _mfRefMatch(r.q, refType, mid); });
+  function _qnum(id){ var m=String(id||'').match(/(\d+)\s*$/); return m?parseInt(m[1],10):0; }
+  hits.sort(function(a,b){ if(a.cert!==b.cert) return a.cert<b.cert?-1:1; if(a.sub!==b.sub) return a.sub<b.sub?-1:1; return _qnum(a.id)-_qnum(b.id); });  // 시험·과목·문제번호순
+  var rows = hits.length? hits.map(function(r){
+    var url='https://certlab.ai.kr/?card='+encodeURIComponent(r.id)+'&cert='+encodeURIComponent(r.cert);
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #F1F0EC"><div style="flex:1;font-size:13px;color:#3A352C"><b>'+mfEsc(r.id)+'</b><div style="font-size:11px;color:#A89C8E">'+mfEsc(r.cert)+' · '+mfEsc(r.sub)+'</div></div><a href="'+url+'" target="_blank" rel="noopener" style="flex:0 0 auto;background:#185FA5;color:#fff;text-decoration:none;font-size:12px;font-weight:700;border-radius:8px;padding:6px 10px">문항 열기 →</a></div>';
+  }).join('') : '<div style="color:#A89C8E;font-size:13px;padding:14px 0">이 마스터를 참조하는 문항이 없습니다. (레벨업 변형 기준)</div>';
+  box.innerHTML='<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:18px 20px"><div style="display:flex;align-items:center;margin-bottom:4px"><div style="font-weight:800;font-size:15px;flex:1">이 마스터를 쓰는 문항 <span style="color:#185FA5">'+hits.length+'</span></div><button onclick="document.getElementById(\'mfUsageModal\').remove()" style="background:#F1F5F9;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px">닫기</button></div><div style="font-size:12px;color:#94A3B8;margin-bottom:6px">'+mfEsc(refType)+'://'+mfEsc(mid)+'</div>'+rows+'</div>';
+}
+function mfUsageBtn(refType, mid){
+  return '<button class="btn-sm" onclick="mfShowUsage(\''+refType+'\',\''+mid+'\')" style="background:#E6F1FB;color:#185FA5">이 마스터 쓰는 문항 보기</button>';
+}
+
 function masterListHTML(ns, all, emptyMsg, cardFn){
-  var st=_mfState[ns]||{cert:'',subj:''};
+  var st=_mfState[ns]||{cert:'',subj:'',sort:'recent'};
   var allIds=Object.keys(all);
   if(!allIds.length) return '<div style="color:#A89C8E;padding:12px">'+emptyMsg+'</div>';
-  var certSet={}, subjSet={};
-  allIds.forEach(function(id){ (all[id].certs||[]).forEach(function(c){certSet[c]=1;}); var s=mfSubjOf(id, all[id]); if(s) subjSet[s]=1; });
-  var certs=Object.keys(certSet).sort(), subjs=Object.keys(subjSet).sort();
+  var certSet={};
+  allIds.forEach(function(id){ (all[id].certs||[]).forEach(function(c){certSet[c]=1;}); });
+  var certs=Object.keys(certSet).sort();
+  // 과목 드롭다운: 선택 시험에 속한 항목의 과목만(시험 미선택=전체)
+  var subjSet={};
+  allIds.forEach(function(id){
+    var it=all[id]||{};
+    if(st.cert && (it.certs||[]).indexOf(st.cert)<0) return;   // 선택 시험 항목만
+    var sb=mfSubjOf(id, it); if(sb) subjSet[sb]=1;
+  });
+  var subjs=Object.keys(subjSet).sort();
   function opt(v,label,sel){ return '<option value="'+mfEsc(v)+'"'+(v===sel?' selected':'')+'>'+mfEsc(label)+'</option>'; }
   var certSel='<select class="mf-sel" onchange="mfSet(\''+ns+'\',\'cert\',this.value)">'+opt('','전체 시험',st.cert)+certs.map(function(c){return opt(c,c,st.cert);}).join('')+'</select>';
   var subjSel='<select class="mf-sel" onchange="mfSet(\''+ns+'\',\'subj\',this.value)">'+opt('','전체 과목',st.subj)+subjs.map(function(c){return opt(c,mfSubjLabel(c),st.subj);}).join('')+'</select>';
+  // 정렬: 마스터 목록은 항상 최신순(코드순 의미없음)
+  var sortSel='<span class="mf-count" style="margin-left:auto">↓ 최신순</span>';
   var ids=allIds.filter(function(id){
     var it=all[id]||{};
     if(st.cert && (it.certs||[]).indexOf(st.cert)<0) return false;
     if(st.subj && mfSubjOf(id, all[id])!==st.subj) return false;
     return true;
   });
+  function _ts(id){ var t=_impTs(all[id]&&all[id].updatedAt); return t==null?0:t; }
+  function sortIds(arr){
+    return arr.slice().sort(function(a,b){ var d=_ts(b)-_ts(a); return d!==0?d:(a<b?-1:1); });  // 항상 최신순
+  }
   var groups={}; ids.forEach(function(id){ var g=mfSubjOf(id, all[id])||'기타'; (groups[g]=groups[g]||[]).push(id); });
   var gkeys=Object.keys(groups).sort();
   var body=gkeys.map(function(g){
     return '<div class="mf-grouphd">'+mfEsc(mfSubjLabel(g))+' <span style="color:#B4AE9F;font-weight:500;font-size:11px">'+groups[g].length+'</span></div>'
-      +groups[g].sort().map(cardFn).join('');
+      +sortIds(groups[g]).map(cardFn).join('');
   }).join('');
-  var bar='<div class="mf-bar">'+certSel+subjSel+'<span class="mf-count">'+ids.length+' / '+allIds.length+'개</span></div>';
+  var bar='<div class="mf-bar">'+certSel+subjSel+'<span class="mf-count">'+ids.length+' / '+allIds.length+'개</span>'+sortSel+'</div>';
   return bar+(body||'<div style="color:#A89C8E;padding:12px">해당 시험·과목 조건의 항목이 없습니다.</div>');
-}
-_mfRender={mnem:mnemRenderList, tblm:tblmRenderList, cptm:cptmRenderList, grpm:grpmRenderList};
+}_mfRender={mnem:mnemRenderList, tblm:tblmRenderList, cptm:cptmRenderList, grpm:grpmRenderList};
 
 function mnemRenderList(){
   var el=document.getElementById('mnemList'); if(!el) return;
@@ -1359,6 +1420,7 @@ function mnemRenderList(){
       +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
       +'<div class="m-render"><div class="mnem-app">'+mnemBoxesAppHTML(m)+'</div></div>'
       +'<div class="m-foot">'
+      +mfUsageBtn('mn', id)
       +'<button class="btn-sm" onclick="mnemEdit(\''+id+'\')" style="background:#EEF;color:#4338CA">편집</button>'
       +'<button class="btn-sm" onclick="mnemDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
@@ -1568,6 +1630,7 @@ function tblmRenderList(){
       +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
       +'<div class="m-render">'+tblmRenderTable(t)+'</div>'
       +'<div class="m-foot">'
+      +mfUsageBtn('tbl', id)
       +'<button class="btn-sm" onclick="tblmEdit(\''+id+'\')" style="background:#E0F2FE;color:#075985">편집</button>'
       +'<button class="btn-sm" onclick="tblmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
@@ -1769,6 +1832,7 @@ function cptmRenderList(){
       +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
       +'<div class="m-render">'+cptmRenderConcept(c)+'</div>'
       +'<div class="m-foot">'
+      +mfUsageBtn('cpt', id)
       +'<button class="btn-sm" onclick="cptmEdit(\''+id+'\')" style="background:#EAF2FB;color:#0C447C">편집</button>'
       +'<button class="btn-sm" onclick="cptmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
@@ -2165,6 +2229,7 @@ function grpmRenderList(){
       +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
       +'<div class="m-render">'+grpmRender(g)+'</div>'
       +'<div class="m-foot">'
+      +mfUsageBtn('grp', id)
       +'<button class="btn-sm" onclick="grpmEdit(\''+id+'\')" style="background:#EDE9FE;color:#5B21B6">편집</button>'
       +'<button class="btn-sm" onclick="grpmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
