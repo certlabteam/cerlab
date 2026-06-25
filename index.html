@@ -955,6 +955,13 @@ fbq('track', 'PageView');
 src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
+<!-- CertLab → Meta 전환 이벤트 헬퍼 (fbq 미로드 시 무시) -->
+<script>
+window.clTrack = function(name, params){ try{ if(window.fbq) fbq('track', name, params||{}); }catch(_){ } };
+window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCustom', name, params||{}); }catch(_){ } };
+window._clLeadFired = false;
+window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
+</script>
 </head>
 <body>
 <!-- 인앱 브라우저 안내 팝업 -->
@@ -1842,8 +1849,15 @@ async function signInWithGoogle() {
     return;
   }
   try {
-    await auth.signInWithPopup(googleProvider);
+    const _res = await auth.signInWithPopup(googleProvider);
     hideLoginPopup();
+    try {
+      if (_res && _res.additionalUserInfo && _res.additionalUserInfo.isNewUser) {
+        clTrack('CompleteRegistration', { content_name:'google_signup', status:true });
+      } else {
+        clTrackCustom('Login', { method:'google' });
+      }
+    } catch(_){}
   } catch(e) {
     if (e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message);
   }
@@ -1887,6 +1901,7 @@ function updateAuthBar() {
 function toggleUserMenu(e){ if(e){e.stopPropagation();} const d=document.getElementById('userDropdown'); if(d) d.classList.toggle('hidden'); }
 function copyReferralLinkW(e){
   if(e){e.stopPropagation();}
+  try{ clTrackCustom('InviteLinkCopied', { source:'mypage' }); }catch(_){}
   const inp=document.getElementById('refLinkInputW'); const link=myReferralLink();
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(()=>alert('추천 링크가 복사되었어요!')).catch(()=>{if(inp){inp.select();document.execCommand('copy');}alert('추천 링크가 복사되었어요!');}); }
   else { if(inp){inp.select(); try{document.execCommand('copy');}catch(_){}} alert('추천 링크가 복사되었어요!'); }
@@ -1894,6 +1909,7 @@ function copyReferralLinkW(e){
 function toggleReferralAcc(e){ if(e){e.stopPropagation();} const a=document.getElementById('refAcc'); if(a) a.classList.toggle('hidden'); }
 function copyReferralLink(e){
   if(e){e.stopPropagation();}
+  try{ clTrackCustom('InviteLinkCopied', { source:'dropdown' }); }catch(_){}
   const inp=document.getElementById('refLinkInput'); if(!inp) return;
   const link=myReferralLink();
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(()=>alert('추천 링크가 복사되었어요!')).catch(()=>{inp.select();document.execCommand('copy');alert('추천 링크가 복사되었어요!');}); }
@@ -2228,6 +2244,7 @@ async function submitPayment() {
     if (cert === 'bodybuilding') { upd.plan = 'ACTIVE'; upd.expireAt = firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays = selectedPlanDays; }
     await db.collection('users').doc(currentUser.uid).update(upd);
     userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = selectedPlanDays;
+    try { clTrack('Purchase', { value: price, currency:'KRW', content_name: certName, content_category: cert, content_type:'product', contents:[{id:cert, quantity:1}], num_items:1 }); } catch(_){}
 
     // 추천 결제 보너스: 추천받아 가입했다면 내 referral 기록을 paid=true (추천인 다음 로그인 시 +10,000)
     try { await db.collection('referrals').doc(currentUser.uid).update({ paid:true }); } catch(_){}
@@ -3400,6 +3417,7 @@ function mqRunTimer(){
   },1000);
 }
 function mqStartTimer(){
+  try{ clLeadOnce(typeof mqCert!=='undefined'?mqCert:''); }catch(_){}
   mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqTimeUpIdx=-1; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0; mqPaused=false;
   mqRunTimer();
 }
