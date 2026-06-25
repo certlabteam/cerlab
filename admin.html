@@ -3445,22 +3445,36 @@ async function exportImages(){
       if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
       const exam=(_expExams||[]).find(e=>e.id===pick);
       if(!exam){ st.textContent='해당 자격증을 manifest에서 찾지 못했습니다.'; return; }
-      const subs=(exam.subjects||[]).filter(s=>subPick==='__all'||s.code===subPick);
-      const keySet=new Set();
+      // 과목: 선택값이 이 자격증에 없으면(드롭다운 stale) 무시하고 전체 과목
+      let subs=(exam.subjects||[]);
+      if(subPick!=='__all'){ const _m=subs.find(s=>s.code===subPick); if(_m) subs=[_m]; }
       const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
+      const setNorm=String(setPick||'').trim();
+      const allKeys=new Set();   // 범위(과목) 전체 키
+      const filtKeys=new Set();  // 회차 필터 통과 키
+      const setsSeen=new Set();  // 데이터에 실제 존재하는 회차(진단용)
       for(const sub of subs){
         try{
           const bd=await db.collection('banks').doc(pick+'__'+sub.code).get();
           if(!bd.exists) continue;
           const qs=(bd.data()||{}).questions||[];
           for(const q of qs){
-            if(setPick!=='__all' && ((q&&q.set)||'')!==setPick) continue;  // 회차 필터
-            const qt=JSON.stringify(q); let m; while((m=re.exec(qt))!==null){ keySet.add(m[1]); } re.lastIndex=0;
+            const qset=String((q&&q.set)||'').trim(); if(qset) setsSeen.add(qset);
+            const inSet=(setPick==='__all')||(qset===setNorm);
+            const qt=JSON.stringify(q); let m;
+            while((m=re.exec(qt))!==null){ allKeys.add(m[1]); if(inSet) filtKeys.add(m[1]); }
+            re.lastIndex=0;
           }
         }catch(_){}
       }
-      const keys=[...keySet];
-      if(!keys.length){ st.innerHTML='이 범위 문항에 사용된 이미지가 없습니다. <span style="color:#A89C8E">(img:// 참조 없음 — 과목/회차 선택을 확인하세요)</span>'; return; }
+      let keys; var _setFellBack=false;
+      if(setPick!=='__all' && filtKeys.size){ keys=[...filtKeys]; }
+      else if(setPick!=='__all' && !filtKeys.size && allKeys.size){ keys=[...allKeys]; _setFellBack=true; }  // 회차 매칭 실패 → 범위 전체로 폴백
+      else { keys=[...allKeys]; }
+      if(!keys.length){
+        const sl=[...setsSeen]; const slTxt=sl.length?(' <span style="color:#A89C8E">· 데이터 회차: '+sl.join(', ')+'</span>'):' <span style="color:#A89C8E">· (문항에 set 필드 없음)</span>';
+        st.innerHTML='이 범위 문항에 사용된 이미지가 없습니다.'+slTxt; return;
+      }
       // 2) 키별 이미지 문서 fetch
       st.textContent='이미지 '+keys.length+'개 읽는 중...';
       let miss=0;
@@ -3471,7 +3485,7 @@ async function exportImages(){
         }catch(_){ miss++; }
       }
       if(!images.length){ st.textContent='참조된 이미지 키는 있으나 Firestore images에 저장된 이미지가 없습니다. (업로드 필요)'; return; }
-      var _miss=miss;
+      var _miss=miss; var _setsSeen=[...setsSeen];
     }
     if(!images.length){ st.textContent='해당하는 이미지가 없습니다.'; return; }
     const _setTag=(setPick!=='__all')?String(setPick).replace(/[^0-9A-Za-z가-힣]/g,''):'';
@@ -3483,7 +3497,8 @@ async function exportImages(){
     a.download='certlab_images_'+_fnTail+'_'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     st.innerHTML='✅ 이미지 <b>'+images.length+'</b>개 내보내기 완료 (약 '+(Math.round(bytes/1024/1024*10)/10)+'MB)'
-      + ((typeof _miss!=='undefined'&&_miss>0)?(' <span style="color:#C2410C">· 미저장 키 '+_miss+'개(업로드 안 된 이미지)</span>'):'') + '.';
+      + ((typeof _miss!=='undefined'&&_miss>0)?(' <span style="color:#C2410C">· 미저장 키 '+_miss+'개(업로드 안 된 이미지)</span>'):'')
+      + ((typeof _setFellBack!=='undefined'&&_setFellBack)?(' <span style="color:#C2410C">· ⚠ 선택한 회차 "'+setPick+'"에 매칭되는 문항이 없어 <b>과목 전체</b>로 받았습니다. 실제 회차: '+((typeof _setsSeen!=='undefined'&&_setsSeen.length)?_setsSeen.join(', '):'(set 필드 없음)')+'</span>'):'') + '.';
   }catch(e){ st.textContent='오류: '+e.message; }
 }
 
