@@ -709,10 +709,12 @@ tr:hover td{background:#FAFAFA}
           <!-- 이미지 내보내기 -->
           <div class="table-title" style="margin-bottom:8px">🖼️ 이미지 내보내기 (images → JSON 백업)</div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-            <select id="imgExpCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <select id="imgExpCert" onchange="imgExpFill()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <select id="imgExpSub" onchange="imgExpFillSet()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 과목</option></select>
+            <select id="imgExpSet" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 회차</option></select>
             <button class="btn-sm btn-extend" onclick="exportImages()">⬇ 이미지 JSON 다운로드</button>
           </div>
-          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">자격증을 고르고 다운로드를 누르면 해당 자격증 문제에 쓰인 이미지를 JSON으로 받습니다. <b>전체</b>를 고르면 모든 이미지를 받습니다.</div>
+          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">자격증 → 과목 → 회차 순으로 좁혀서 받을 수 있습니다. 과목·회차를 <b>전체</b>로 두면 그 위 범위 전부를 받습니다. (한국사는 과목이 1개라 <b>회차</b>로 좁히세요)</div>
           <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:8px">
             ⚠️ 이미지가 많으면 파일이 큽니다(수십 MB+). 느리면 자격증별로 나눠 받으세요. 이 파일은 <b>이미지 백업/이전</b>용입니다.
           </div>
@@ -2504,7 +2506,7 @@ function switchTab(name) {
   if(name==='entitlements') renderEntMembers();
   if(name==='export'){ openExportTab(); imgImpInit(); }
   if(name==='import') impInit();
-  if(name==='imgup') iuInit();
+  if(name==='imgup'){ iuInit(); openExportTab(); imgImpInit(); }
   if(name==='community') cmaInit();
   if(name==='mnem') mnemInit();
   if(name==='tblmaster') tblmInit();
@@ -2950,6 +2952,42 @@ async function openExportTab(){
   const isel=document.getElementById('imgExpCert');
   if(isel) isel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
     + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+  imgExpFill();
+}
+// 이미지 내보내기: 자격증 선택 시 과목 채우기
+function imgExpFill(){
+  const cert=document.getElementById('imgExpCert'); const sub=document.getElementById('imgExpSub'); const set=document.getElementById('imgExpSet');
+  if(!cert||!sub) return;
+  const pick=cert.value;
+  if(pick==='__all'){
+    sub.innerHTML='<option value="__all">전체 과목</option>'; sub.disabled=true;
+    if(set){ set.innerHTML='<option value="__all">전체 회차</option>'; set.disabled=true; }
+    return;
+  }
+  sub.disabled=false;
+  const exam=(_expExams||[]).find(e=>e.id===pick);
+  const subs=(exam&&exam.subjects)||[];
+  sub.innerHTML='<option value="__all">전체 과목</option>'
+    + subs.map(s=>'<option value="'+s.code+'">'+(s.name||s.code)+'</option>').join('');
+  imgExpFillSet();
+}
+// 이미지 내보내기: 자격증+과목의 banks에서 회차(set) 목록 채우기
+async function imgExpFillSet(){
+  const cert=document.getElementById('imgExpCert'); const sub=document.getElementById('imgExpSub'); const set=document.getElementById('imgExpSet');
+  if(!cert||!set) return;
+  const pick=cert.value; const subPick=(sub&&sub.value)||'__all';
+  if(pick==='__all'){ set.innerHTML='<option value="__all">전체 회차</option>'; set.disabled=true; return; }
+  set.disabled=true; set.innerHTML='<option value="__all">회차 읽는 중…</option>';
+  const exam=(_expExams||[]).find(e=>e.id===pick);
+  const subs=((exam&&exam.subjects)||[]).filter(s=>subPick==='__all'||s.code===subPick);
+  const setList=[];
+  for(const s of subs){
+    try{ const bd=await db.collection('banks').doc(pick+'__'+s.code).get();
+      if(bd.exists){ const qs=(bd.data()||{}).questions||[]; qs.forEach(q=>{ const v=(q&&q.set)||''; if(v&&setList.indexOf(v)<0) setList.push(v); }); }
+    }catch(_){}
+  }
+  set.innerHTML='<option value="__all">전체 회차</option>'+setList.map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">'+v+'</option>').join('');
+  set.disabled=false;
 }
 // ===== 이미지 업로드 (리사이즈/압축 → images/{키}) =====
 let iuItems=[]; let _iuInited=false;
@@ -3394,6 +3432,8 @@ async function seoGenerate(){const btn=document.getElementById('seoBtn');if(btn)
 async function exportImages(){
   const st=document.getElementById('imgExpStatus');
   const sel=document.getElementById('imgExpCert'); const pick=(sel&&sel.value)||'__all';
+  const subSel=document.getElementById('imgExpSub'); const subPick=(subSel&&subSel.value)||'__all';
+  const setSel=document.getElementById('imgExpSet'); const setPick=(setSel&&setSel.value)||'__all';
   st.textContent='읽는 중... 이미지가 많으면 시간이 걸립니다.';
   try{
     let images=[]; let bytes=0;
@@ -3401,23 +3441,26 @@ async function exportImages(){
       const snap=await db.collection('images').get();
       snap.forEach(doc=>{ const d=doc.data()||{}; images.push({key:doc.id, data:d.data||''}); bytes+=(d.data||'').length; });
     } else {
-      // 1) 선택 자격증의 banks를 읽어 참조된 img:// 키 수집
+      // 1) 자격증→과목→회차 필터로 참조된 img:// 키 수집 (회차는 문항 단위로 걸러야 해서 문항별 스캔)
       if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
       const exam=(_expExams||[]).find(e=>e.id===pick);
       if(!exam){ st.textContent='해당 자격증을 manifest에서 찾지 못했습니다.'; return; }
+      const subs=(exam.subjects||[]).filter(s=>subPick==='__all'||s.code===subPick);
       const keySet=new Set();
-      for(const sub of (exam.subjects||[])){
+      const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
+      for(const sub of subs){
         try{
           const bd=await db.collection('banks').doc(pick+'__'+sub.code).get();
-          if(bd.exists){
-            const txt=JSON.stringify(bd.data()||{});
-            const re=/img:\/\/([A-Za-z0-9_\-]+)/g; let m;
-            while((m=re.exec(txt))!==null){ keySet.add(m[1]); }
+          if(!bd.exists) continue;
+          const qs=(bd.data()||{}).questions||[];
+          for(const q of qs){
+            if(setPick!=='__all' && ((q&&q.set)||'')!==setPick) continue;  // 회차 필터
+            const qt=JSON.stringify(q); let m; while((m=re.exec(qt))!==null){ keySet.add(m[1]); } re.lastIndex=0;
           }
         }catch(_){}
       }
       const keys=[...keySet];
-      if(!keys.length){ st.innerHTML='이 자격증 문제에 사용된 이미지가 없습니다. <span style="color:#A89C8E">(img:// 참조 없음)</span>'; return; }
+      if(!keys.length){ st.innerHTML='이 범위 문항에 사용된 이미지가 없습니다. <span style="color:#A89C8E">(img:// 참조 없음 — 과목/회차 선택을 확인하세요)</span>'; return; }
       // 2) 키별 이미지 문서 fetch
       st.textContent='이미지 '+keys.length+'개 읽는 중...';
       let miss=0;
@@ -3431,11 +3474,13 @@ async function exportImages(){
       var _miss=miss;
     }
     if(!images.length){ st.textContent='해당하는 이미지가 없습니다.'; return; }
-    const bundle={ images, exportedAt:_kstISO(new Date()), cert:(pick==='__all'?null:pick), count:images.length };
+    const _setTag=(setPick!=='__all')?String(setPick).replace(/[^0-9A-Za-z가-힣]/g,''):'';
+    const _fnTail=(pick==='__all'?'all':pick)+(subPick!=='__all'?('_'+subPick):'')+(_setTag?('_'+_setTag):'');
+    const bundle={ images, exportedAt:_kstISO(new Date()), cert:(pick==='__all'?null:pick), subject:(subPick==='__all'?null:subPick), set:(setPick==='__all'?null:setPick), count:images.length };
     const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url;
-    a.download='certlab_images_'+(pick==='__all'?'all':pick)+'_'+new Date().toISOString().slice(0,10)+'.json';
+    a.download='certlab_images_'+_fnTail+'_'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     st.innerHTML='✅ 이미지 <b>'+images.length+'</b>개 내보내기 완료 (약 '+(Math.round(bytes/1024/1024*10)/10)+'MB)'
       + ((typeof _miss!=='undefined'&&_miss>0)?(' <span style="color:#C2410C">· 미저장 키 '+_miss+'개(업로드 안 된 이미지)</span>'):'') + '.';
