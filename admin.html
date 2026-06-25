@@ -633,34 +633,6 @@ tr:hover td{background:#FAFAFA}
             ※ 형식은 업로드와 호환됩니다 (manifest + banks).
           </div>
 
-          <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
-
-          <!-- 이미지 내보내기 -->
-          <div class="table-title" style="margin-bottom:8px">🖼️ 이미지 내보내기 (images → JSON 백업)</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-            <select id="imgExpCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
-            <button class="btn-sm btn-extend" onclick="exportImages()">⬇ 이미지 JSON 다운로드</button>
-          </div>
-          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">자격증을 고르고 다운로드를 누르면 해당 자격증 문제에 쓰인 이미지를 JSON으로 받습니다. <b>전체</b>를 고르면 모든 이미지를 받습니다.</div>
-          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:8px">
-            ⚠️ 이미지가 많으면 파일이 큽니다(수십 MB+). 느리면 자격증별로 나눠 받으세요. 이 파일은 <b>이미지 백업/이전</b>용입니다.
-          </div>
-
-          <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
-
-          <!-- 이미지 가져오기 -->
-          <div class="table-title" style="margin-bottom:8px">📥 이미지 가져오기 (JSON 백업 → images 복구)</div>
-          <div id="imgImpDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:22px;text-align:center;color:#8A7E70;cursor:pointer">
-            여기로 이미지 백업 <b>JSON</b>을 끌어다 놓거나 클릭해서 선택<br>
-            <span style="font-size:11px;color:#A89C8E">위 "이미지 내보내기"로 받은 파일을 그대로 올리면 됩니다</span>
-          </div>
-          <input id="imgImpFile" type="file" accept=".json,application/json" hidden>
-          <div id="imgImpStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
-          <div style="margin-top:10px"><button id="imgImpRun" class="btn-sm btn-extend" disabled onclick="importImages()">⬆ 이미지 복구 실행</button></div>
-          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
-            ⚠️ 같은 키가 이미 있으면 <b>덮어씁니다</b>. (이미지 업로드 탭이 "새 이미지 추가"라면, 여기는 "백업 JSON 일괄 복구"입니다.)
-          </div>
-          <div id="imgImpLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:200px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
         </div>
       </div>
     </div>
@@ -734,6 +706,34 @@ tr:hover td{background:#FAFAFA}
           <div class="table-title">이미지 업로드 (문항·보기 이미지 → Firestore)</div>
         </div>
         <div style="padding:16px 20px">
+          <!-- 이미지 내보내기 -->
+          <div class="table-title" style="margin-bottom:8px">🖼️ 이미지 내보내기 (images → JSON 백업)</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <select id="imgExpCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <button class="btn-sm btn-extend" onclick="exportImages()">⬇ 이미지 JSON 다운로드</button>
+          </div>
+          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">자격증을 고르고 다운로드를 누르면 해당 자격증 문제에 쓰인 이미지를 JSON으로 받습니다. <b>전체</b>를 고르면 모든 이미지를 받습니다.</div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:8px">
+            ⚠️ 이미지가 많으면 파일이 큽니다(수십 MB+). 느리면 자격증별로 나눠 받으세요. 이 파일은 <b>이미지 백업/이전</b>용입니다.
+          </div>
+
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
+
+          <!-- 이미지 가져오기 -->
+          <div class="table-title" style="margin-bottom:8px">📥 이미지 가져오기 (JSON 백업 → images 복구)</div>
+          <div id="imgImpDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:22px;text-align:center;color:#8A7E70;cursor:pointer">
+            여기로 이미지 백업 <b>JSON</b>을 끌어다 놓거나 클릭해서 선택<br>
+            <span style="font-size:11px;color:#A89C8E">위 "이미지 내보내기"로 받은 파일을 그대로 올리면 됩니다</span>
+          </div>
+          <input id="imgImpFile" type="file" accept=".json,application/json" hidden>
+          <div id="imgImpStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
+          <div style="margin-top:10px"><button id="imgImpRun" class="btn-sm btn-extend" disabled onclick="importImages()">⬆ 이미지 복구 실행</button></div>
+          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
+            ⚠️ 같은 키가 이미 있으면 <b>덮어씁니다</b>. (이미지 업로드 탭이 "새 이미지 추가"라면, 여기는 "백업 JSON 일괄 복구"입니다.)
+          </div>
+          <div id="imgImpLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:200px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+          <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
+
           <div id="iuDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
             여기로 이미지(PNG/JPG)를 끌어다 놓거나 클릭해서 선택<br>
             <span style="font-size:11px;color:#A89C8E">파일명이 곧 키입니다 — 예: ksh74_q13_1.png → 키 <b>ksh74_q13_1</b> → 문항에 <b>img://ksh74_q13_1</b></span>
