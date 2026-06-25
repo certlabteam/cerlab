@@ -2988,9 +2988,16 @@ async function imgExpFillSet(){
     const id=pick+'__'+s.code;
     try{ const bd=await db.collection('banks').doc(id).get();
       if(!bd.exists){ dbg.push(id+': bank 없음'); continue; }
-      const data=bd.data()||{}; const qs=data.questions||data.items||[];
-      let withSet=0; qs.forEach(q=>{ const v=(q&&q.set)||''; if(v){ withSet++; if(setList.indexOf(v)<0) setList.push(v); } });
-      dbg.push(id+': 문항'+qs.length+'·set필드'+withSet);
+      const data=bd.data()||{};
+      if(Array.isArray(data.shards)&&data.shards.length){
+        // 샤딩된 bank: shards 배열이 곧 회차 목록
+        data.shards.forEach(v=>{ if(v&&setList.indexOf(v)<0) setList.push(v); });
+        dbg.push(id+': shards '+data.shards.length);
+      } else {
+        const qs=data.questions||data.items||[];
+        let withSet=0; qs.forEach(q=>{ const v=(q&&q.set)||''; if(v){ withSet++; if(setList.indexOf(v)<0) setList.push(v); } });
+        dbg.push(id+': 문항'+qs.length+'·set필드'+withSet);
+      }
     }catch(e){ dbg.push(id+': 오류 '+(e&&e.message||e)); }
   }
   set.innerHTML='<option value="__all">전체 회차</option>'+setList.map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">'+v+'</option>').join('');
@@ -3464,12 +3471,29 @@ async function exportImages(){
       const setsSeen=new Set();  // 데이터에 실제 존재하는 회차(진단용)
       for(const sub of subs){
         try{
-          const bd=await db.collection('banks').doc(pick+'__'+sub.code).get();
+          const docId=pick+'__'+sub.code;
+          const bd=await db.collection('banks').doc(docId).get();
           if(!bd.exists) continue;
-          const qs=(bd.data()||{}).questions||[];
+          const data=bd.data()||{};
+          // 문항 모으기 — 샤딩된 bank는 샤드(=회차) 문서에서 읽음
+          let qs=[];
+          if(Array.isArray(data.shards)&&data.shards.length){
+            data.shards.forEach(v=>{ if(v) setsSeen.add(String(v).trim()); });
+            // 특정 회차면 그 샤드만, 전체면 모든 샤드
+            const wantShards = (setPick!=='__all') ? data.shards.filter(v=>String(v).trim()===setNorm) : data.shards;
+            for(const sh of wantShards){
+              try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists&&Array.isArray(sd.data().questions)) qs=qs.concat(sd.data().questions); }catch(_){}
+            }
+            // 전체 키 집계용으로도 모든 샤드가 필요하면 따로 읽음(폴백 진단용)
+            if(setPick!=='__all'){
+              for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists&&Array.isArray(sd.data().questions)){ const aqt=JSON.stringify(sd.data().questions); let am; while((am=re.exec(aqt))!==null){ allKeys.add(am[1]); } re.lastIndex=0; } }catch(_){} }
+            }
+          } else {
+            qs=data.questions||[];
+          }
           for(const q of qs){
             const qset=String((q&&q.set)||'').trim(); if(qset) setsSeen.add(qset);
-            const inSet=(setPick==='__all')||(qset===setNorm);
+            const inSet=(setPick==='__all')||(qset===setNorm)|| (Array.isArray(data.shards)&&data.shards.length>0); // 샤드로 이미 좁혔으면 통과
             const qt=JSON.stringify(q); let m;
             while((m=re.exec(qt))!==null){ allKeys.add(m[1]); if(inSet) filtKeys.add(m[1]); }
             re.lastIndex=0;
