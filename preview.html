@@ -1765,17 +1765,28 @@ function pvReviewBody(item, kind){
   }
   return pvMnBoxesHTML(item);   // mn
 }
-// 좌(후보) 셀: mn은 헤더 없이 박스만(기존 유지), 그 외는 id/name 가벼운 헤더 + 본문
+// 아이템 1개의 형식 자동판별(좌·우 칸별로 다를 수 있음). 판별 불가 시 그룹 kind로 폴백.
+function _pvItemKind(item, fallback){
+  item=item||{};
+  if(('code' in item)||('desc' in item)||Array.isArray(item.boxes)) return 'mn';
+  if(Array.isArray(item.cards)||Array.isArray(item.c)||('t' in item)||('d' in item)) return 'concept';
+  if(Array.isArray(item.headers)||Array.isArray(item.rows)||('html' in item)) return 'tbl';
+  if(('svg' in item)||('params' in item)) return 'grp';
+  return fallback;
+}
+// 좌(후보) 셀: 아이템별 kind로 렌더(좌=개념/우=mn 혼합 지원). mn은 헤더 없이 박스만, 그 외는 id/name 헤더 + 본문
 function pvReviewCellL(item, kind){
   item=item||{};
-  var hd=(kind!=='mn' && (item.id||item.name))?'<div class="pv-id">'+tblEsc(item.id||'')+(item.name?'  <b style="color:#1F2937">'+tblEsc(item.name)+'</b>':'')+'</div>':'';
-  return hd+pvReviewBody(item, kind);
+  var k=_pvItemKind(item, kind);
+  var hd=(k!=='mn' && (item.id||item.name))?'<div class="pv-id">'+tblEsc(item.id||'')+(item.name?'  <b style="color:#1F2937">'+tblEsc(item.name)+'</b>':'')+'</div>':'';
+  return hd+pvReviewBody(item, k);
 }
-// 우(통합안) 셀: id/name/merge뱃지 + 본문 + 💡reason (4종 공통)
+// 우(통합안) 셀: id/name/merge뱃지 + 본문 + 💡reason. 아이템별 kind로 렌더.
 function pvReviewCellR(p, kind){
   p=p||{};
+  var k=_pvItemKind(p, kind);
   var badge=('merge' in p)?('<span class="pv-badge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>'):'';
-  return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvReviewBody(p, kind)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>';
+  return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvReviewBody(p, k)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>';
 }
 var _pvKindLabel={mn:'암기코드',concept:'개념',tbl:'표',grp:'그래프'};
 // review 좌우비교 — 좌=기존(후보)/우=의견(통합안). kind에 따라 암기코드·개념·표·그래프 렌더.
