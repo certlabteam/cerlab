@@ -120,16 +120,20 @@ async function loadBank(examId, sub){
   const k=examId+'__'+sub.code;
   if(loadedSet[k]) return;
   loadedSet[k]=true;
-  let snap;
-  try{ snap=await db.collection('banks').doc(k).get(); }catch(e){ loadedSet[k]=false; return; }
-  if(!snap.exists) return;
-  const data=snap.data();
+  let snap=null;
+  try{ snap=await db.collection('banks').doc(k).get(); }catch(e){ snap=null; }
+  const data=(snap && snap.exists)?snap.data():{};
   let qs=Array.isArray(data.questions)?data.questions:[];
   if((!qs.length) && Array.isArray(data.shards)){   // 회차 샤딩 저장: 샤드 doc에서 questions 수집
     for(const sh of data.shards){
       try{ const sd=await db.collection('banks').doc(k+'__'+sh).get(); if(sd.exists && Array.isArray(sd.data().questions)) qs=qs.concat(sd.data().questions); }catch(_){}
     }
   }
+  // ★ 레벨업(variant) 문항도 포함: adaptive/{cert}__{sub}__variantq 의 questions 합치기
+  try{
+    const vd=await db.collection('adaptive').doc(k+'__variantq').get();
+    if(vd.exists && Array.isArray(vd.data().questions)) qs=qs.concat(vd.data().questions);
+  }catch(_){}
   const ex=EXAMS.find(e=>e.id===examId);
   qs.forEach(q=>{
     const setLabel=q.set||''; const n=maxNum(setLabel);
