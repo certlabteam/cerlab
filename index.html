@@ -5526,6 +5526,37 @@ async function goToCard(qid, certHint){
     }catch(_){}
     return;   // 시험엔 진입했으나 문항 못 찾음 — 생체로 떨어뜨리지 않음
   }
+  // ★ 레벨업(변형) 문항 딥링크: 변형 풀(variantPool)을 로드해 찾고, 단독 리뷰로 띄움(검수용)
+  if(certHint && typeof isMcqCert==='function' && isMcqCert(certHint)){
+    try{ await enterCert(certHint); }catch(_){}
+    try{
+      var _qb=qbOf(certHint), _subs=_qb?Object.keys(_qb):[];
+      if(_qb && typeof loadAdaptiveSubject==='function'){
+        try{ await Promise.all(_subs.map(function(code){ return loadAdaptiveSubject(certHint, code).catch(function(){return null;}); })); }catch(_){}
+      }
+      // variantPool 전 과목에서 문항 찾기
+      var _found=null, _foundSub=null;
+      if(typeof AD_DATA!=='undefined'){
+        for(var vi=0; vi<_subs.length; vi++){
+          var _b=AD_DATA[certHint+'|'+_subs[vi]];
+          if(_b && Array.isArray(_b.variantPool)){
+            var _hit=_b.variantPool.find(function(q){ return q && q.id===qid; });
+            if(_hit){ _found=_hit; _foundSub=_subs[vi]; break; }
+          }
+        }
+      }
+      if(_found){   // 단독 1문항 리뷰로 띄움 (채점·레벨변동 없이 문항+해설 확인)
+        mqSub=_foundSub; mqSet=0; mqMode='all';
+        mqReview=true; mqDiag=false; mqLevelUp=false; mqGather=false; mqConcept=false; mqInReview=true;
+        mqList=[_found]; mqIdx=0; mqAns={}; mqGuess={}; mqShow={}; mqShow[_found.id]=true;
+        mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); return;
+      }
+      // 혹시 sets(기출)에 있으면 기존 경로로
+      var cs2=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
+      if(cs2){ var qb2=qbOf(cs2.cert), so2=qb2&&qb2[cs2.sub]; if(so2&&so2.sets){ for(var s2=0;s2<so2.sets.length;s2++){ var i2=so2.sets[s2].questions.findIndex(function(q){return q&&q.id===qid;}); if(i2!==-1){ resumeMcqExam(cs2.sub,s2); mqIdx=i2; mqShow={}; renderMCQ(); window.scrollTo(0,0); return; } } } }
+    }catch(_){}
+    return;   // 시험엔 진입했으나 못 찾음 — 메인 유지
+  }
   // cert 힌트가 생체 아닌 다른 시험이면, 생체 폴백 대신 그 시험 화면으로
   if(certHint && certHint!=='bodybuilding'){ try{ await enterCert(certHint); }catch(_){} return; }
   // 생체 플래시카드 (cert 힌트 없거나 생체)
