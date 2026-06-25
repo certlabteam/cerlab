@@ -2976,18 +2976,27 @@ async function imgExpFillSet(){
   const cert=document.getElementById('imgExpCert'); const sub=document.getElementById('imgExpSub'); const set=document.getElementById('imgExpSet');
   if(!cert||!set) return;
   const pick=cert.value; const subPick=(sub&&sub.value)||'__all';
+  const stt=document.getElementById('imgExpStatus');
   if(pick==='__all'){ set.innerHTML='<option value="__all">전체 회차</option>'; set.disabled=true; return; }
   set.disabled=true; set.innerHTML='<option value="__all">회차 읽는 중…</option>';
+  if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
   const exam=(_expExams||[]).find(e=>e.id===pick);
   const subs=((exam&&exam.subjects)||[]).filter(s=>subPick==='__all'||s.code===subPick);
-  const setList=[];
+  const setList=[]; const dbg=[];
+  if(!subs.length) dbg.push('과목 매칭 없음(exam='+(exam?'있음':'없음')+', subPick='+subPick+')');
   for(const s of subs){
-    try{ const bd=await db.collection('banks').doc(pick+'__'+s.code).get();
-      if(bd.exists){ const qs=(bd.data()||{}).questions||[]; qs.forEach(q=>{ const v=(q&&q.set)||''; if(v&&setList.indexOf(v)<0) setList.push(v); }); }
-    }catch(_){}
+    const id=pick+'__'+s.code;
+    try{ const bd=await db.collection('banks').doc(id).get();
+      if(!bd.exists){ dbg.push(id+': bank 없음'); continue; }
+      const data=bd.data()||{}; const qs=data.questions||data.items||[];
+      let withSet=0; qs.forEach(q=>{ const v=(q&&q.set)||''; if(v){ withSet++; if(setList.indexOf(v)<0) setList.push(v); } });
+      dbg.push(id+': 문항'+qs.length+'·set필드'+withSet);
+    }catch(e){ dbg.push(id+': 오류 '+(e&&e.message||e)); }
   }
   set.innerHTML='<option value="__all">전체 회차</option>'+setList.map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">'+v+'</option>').join('');
   set.disabled=false;
+  if(stt) stt.innerHTML=(setList.length?('회차 '+setList.length+'개 로드됨 — '+setList.join(', ')):'<span style="color:#C2410C">⚠ 회차를 못 찾음</span>')
+    +' <span style="color:#A89C8E">[진단: '+dbg.join(' / ')+']</span>';
 }
 // ===== 이미지 업로드 (리사이즈/압축 → images/{키}) =====
 let iuItems=[]; let _iuInited=false;
