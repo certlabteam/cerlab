@@ -1698,11 +1698,16 @@ function pvMnResolve(ref){
   if(typeof ref==='string' && ref.indexOf('mn://')===0){ var id=ref.slice(5), m=_mnemCache[id]; if(!m) return {broken:true, ref:id}; return m; }
   return {code:String(ref||''), desc:''};
 }
+// 개념 카드 배열 → concept-row HTML (개념 렌더 공용; pvConceptCard·review 개념셀이 공유 → 드리프트 방지)
+function pvConceptRowsHTML(cards){
+  cards=Array.isArray(cards)?cards:[];
+  return cards.map(function(it){ it=it||{}; var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+tblEsc(it.t||'')+'</div>'+(it.d?'<div>'+tblCell(it.d,true)+'</div>':'')+'</div>'; if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblCell(String(it.cx).trim(),true)+'</div>'; return row; }).join('');
+}
 // 개념 1개 → 카드 + 묶인 암기코드·표·그래프 풀어서
 function pvConceptCard(c){
   c=c||{};
   var cards=Array.isArray(c.cards)?c.cards:(Array.isArray(c.c)?c.c:[]);
-  var rows=cards.map(function(it){ it=it||{}; var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+tblEsc(it.t||'')+'</div>'+(it.d?'<div>'+tblCell(it.d,true)+'</div>':'')+'</div>'; if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblCell(String(it.cx).trim(),true)+'</div>'; return row; }).join('');
+  var rows=pvConceptRowsHTML(cards);
   var box='<div class="concept-box"><div class="concept-ti">개념설명</div>'+(rows||'<div class="concept-row" style="color:#94A3B8">(카드 없음)</div>')+'</div>';
   var mnRefs=Array.isArray(c.mn)?c.mn:(c.mn?[c.mn]:[]);
   var tblRefs=Array.isArray(c.tbl)?c.tbl:(c.tbl?[c.tbl]:[]);
@@ -1729,17 +1734,62 @@ function pvMnemoCard(m){
 function pvRenderMnemonics(rows){ return rows.length ? rows.map(pvMnemoCard).join('') : '<div class="pv-empty">mnemonics 비어 있음</div>'; }
 function pvRenderTables(rows){ return rows.length ? rows.map(function(t){ return '<div class="pv-card"><div class="pv-meta"><span class="pv-meta-tag">🔒 식별용 · 사용자 비노출</span><div><span class="nm">'+tblEsc(t.name||'(이름없음)')+'</span> <span class="pid">'+tblEsc(t.id||'')+'</span></div></div><hr class="pv-div"><div class="pv-userlabel">👁 사용자에게 보이는 화면</div><div class="pv-render">'+renderTbl(t)+'</div></div>'; }).join('') : '<div class="pv-empty">tables 비어 있음</div>'; }
 function pvRenderGraphs(rows){ return rows.length ? rows.map(function(g){ var svg=(g.svg&&String(g.svg).indexOf('<svg')>=0)?('<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>'):'<div class="tbl-broken" style="background:#F4F6FB;border-color:#D6E2F5;color:#64748B">📈 type="'+tblEsc(g.type||'')+'" 렌더러 추후</div>'; return '<div class="pv-card"><div class="pv-meta"><span class="pv-meta-tag">🔒 식별용 · 사용자 비노출</span><div><span class="nm">'+tblEsc(g.name||'(이름없음)')+'</span> <span class="pid">'+tblEsc(g.id||'')+'</span></div></div><hr class="pv-div"><div class="pv-userlabel">👁 사용자에게 보이는 화면</div><div class="pv-render">'+svg+'</div></div>'; }).join('') : '<div class="pv-empty">graphs 비어 있음</div>'; }
-// review 좌우비교 (데이터방 방식: 좌=후보 코드들 / 우=통합안)
+// review 그룹 타입 판별: g.kind("mn"|"concept"|"tbl"|"grp") 우선, 없으면 자동, 기본 mn(하위호환)
+// 자동: 개념(cards/c/t/d) → 표(headers/rows/html) → 그래프(svg/params) → mn
+function pvReviewKind(g){
+  if(g && (g.kind==='mn'||g.kind==='concept'||g.kind==='tbl'||g.kind==='grp')) return g.kind;
+  var items=[].concat(Array.isArray(g.candidates)?g.candidates:[], Array.isArray(g.proposal)?g.proposal:((g&&g.proposal)?[g.proposal]:[]));
+  for(var i=0;i<items.length;i++){ var it=items[i]||{};
+    if(Array.isArray(it.cards)||Array.isArray(it.c)||('t' in it)||('d' in it)) return 'concept';
+    if(Array.isArray(it.headers)||Array.isArray(it.rows)||('html' in it)) return 'tbl';
+    if(('svg' in it)||('params' in it)) return 'grp';
+  }
+  return 'mn';
+}
+// review 셀 본문(좌·우 공용) — kind별 렌더러. concept=개념카드 / tbl=표 / grp=svg / mn=암기코드
+function pvReviewBody(item, kind){
+  item=item||{};
+  if(kind==='concept'){
+    var cards=Array.isArray(item.cards)?item.cards:(Array.isArray(item.c)?item.c:[]);
+    var rows=pvConceptRowsHTML(cards);
+    return '<div class="concept-box"><div class="concept-ti">개념</div>'+(rows||'<div class="concept-row" style="color:#94A3B8">(카드 없음)</div>')+'</div>';
+  }
+  if(kind==='tbl'){
+    var t=renderTbl(item);
+    return '<div class="pv-render">'+(t||'<div class="pv-empty">표 내용 없음</div>')+'</div>';
+  }
+  if(kind==='grp'){
+    var svg=(item.svg&&String(item.svg).indexOf('<svg')>=0)?('<div class="grp-box">'+grpSanitizeSvg(item.svg)+'</div>'):'<div class="tbl-broken" style="background:#F4F6FB;border-color:#D6E2F5;color:#64748B">📈 type="'+tblEsc(item.type||'')+'" 렌더러 추후</div>';
+    return '<div class="pv-render">'+svg+'</div>';
+  }
+  return pvMnBoxesHTML(item);   // mn
+}
+// 좌(후보) 셀: mn은 헤더 없이 박스만(기존 유지), 그 외는 id/name 가벼운 헤더 + 본문
+function pvReviewCellL(item, kind){
+  item=item||{};
+  var hd=(kind!=='mn' && (item.id||item.name))?'<div class="pv-id">'+tblEsc(item.id||'')+(item.name?'  <b style="color:#1F2937">'+tblEsc(item.name)+'</b>':'')+'</div>':'';
+  return hd+pvReviewBody(item, kind);
+}
+// 우(통합안) 셀: id/name/merge뱃지 + 본문 + 💡reason (4종 공통)
+function pvReviewCellR(p, kind){
+  p=p||{};
+  var badge=('merge' in p)?('<span class="pv-badge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>'):'';
+  return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvReviewBody(p, kind)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>';
+}
+var _pvKindLabel={mn:'암기코드',concept:'개념',tbl:'표',grp:'그래프'};
+// review 좌우비교 — 좌=기존(후보)/우=의견(통합안). kind에 따라 암기코드·개념·표·그래프 렌더.
 function pvRenderReview(rows){
   if(!rows.length) return '<div class="pv-empty">review 비어 있음</div>';
   return rows.map(function(g){
     g=g||{};
+    var kind=pvReviewKind(g);
     var cands=Array.isArray(g.candidates)?g.candidates:[];
-    var left=cands.length?cands.map(function(c){ return pvMnBoxesHTML(c); }).join(''):'<div class="pv-empty">비교할 이전 버전이 없습니다</div>';
+    var left=cands.length?cands.map(function(c){ return pvReviewCellL(c, kind); }).join(''):'<div class="pv-empty">비교할 이전 버전이 없습니다</div>';
     var props=Array.isArray(g.proposal)?g.proposal:(g.proposal?[g.proposal]:[]);
-    var right=props.length?props.map(function(p){ p=p||{}; var badge=('merge' in p)?('<span class="pv-badge '+(p.merge?'yes':'no')+'">'+(p.merge?'통합 추천':'별개 권장')+'</span>'):''; return '<div class="pv-prop"><div class="pv-id">'+tblEsc(p.id||'(id 미정)')+badge+'</div>'+(p.name?'<div style="font-weight:800;margin:4px 0">'+tblEsc(p.name)+'</div>':'')+pvMnBoxesHTML(p)+(p.reason?'<div class="pv-reason">💡 '+tblEsc(p.reason)+'</div>':'')+'</div>'; }).join(''):'<div class="pv-empty">통합안 없음</div>';
+    var right=props.length?props.map(function(p){ return pvReviewCellR(p, kind); }).join(''):'<div class="pv-empty">통합안 없음</div>';
     var dec=(g.decision&&String(g.decision).trim())?'<div class="pv-decision"><b>메모:</b> '+tblEsc(g.decision)+'</div>':'';
-    return '<div class="pv-card"><div class="pv-grphd">그룹 '+tblEsc(g.group!=null?g.group:'?')+(g.chant?' · <span style="color:#C0322F;font-weight:800">'+tblEsc(g.chant)+'</span>':'')+'</div>'
+    var kindTag=(kind!=='mn')?(' · <span style="color:#185FA5;font-weight:700">'+(_pvKindLabel[kind]||kind)+'</span>'):'';
+    return '<div class="pv-card"><div class="pv-grphd">그룹 '+tblEsc(g.group!=null?g.group:'?')+kindTag+(g.chant?' · <span style="color:#C0322F;font-weight:800">'+tblEsc(g.chant)+'</span>':'')+'</div>'
       +'<div class="pv-cmp"><div class="pv-col"><div class="pv-coltag l">기존(후보)</div>'+left+'</div><div class="pv-col"><div class="pv-coltag r">의견(통합안)</div>'+right+dec+'</div></div></div>';
   }).join('');
 }
