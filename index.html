@@ -5645,20 +5645,31 @@ async function loadOneSubject(ex, sub){
 }
 // 시험 1개의 과목들을 병렬 로드 (idempotent)
 var loadingExams={};   // 진행 중인 로드 Promise(동시호출 중복 방지)
+var _mastersPromise=null;
+// 공유 마스터 4종(개념/표/그래프/암기) 단일 로드 promise. 받았으면 즉시 통과(각 로더가 promise 가드).
+function ensureMasters(){
+  if(!_mastersPromise) _mastersPromise=Promise.all([loadMnemonics(),loadTables(),loadGraphs(),loadConcepts()]);
+  return _mastersPromise;
+}
 async function loadExam(examId){
   if(loadedExams[examId]) return;
   if(loadingExams[examId]) return loadingExams[examId];   // 이미 로딩 중이면 같은 작업 공유
   loadingExams[examId]=(async()=>{
     await loadManifest();
-    await loadMnemonics();   // 암기코드 마스터 캐시(렌더 전 완료 보장 → 깨진참조 오판 방지)
-    await loadTables();      // 표 마스터 캐시(tbl:// 렌더용)
-    await loadGraphs();      // 그래프 마스터 캐시(grp:// 렌더용)
-    await loadConcepts();    // 개념 마스터 캐시(cpt://·OX진술 ot 태그 조회용)
+    // 마스터 4종(개념/표/그래프/암기)은 문제 목록 표시엔 불필요 → 백그라운드 로드(해설·개념 렌더 때만 필요)
+    var _mp=ensureMasters();
     const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
     if(!ex){ loadedExams[examId]=true; return; }
-    await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));
+    await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));   // 문제 뱅크 먼저 → 목록 즉시 표시
     loadedExams[examId]=true;
     rebuildQid();
+    // 마스터 로드 완료 시 1회 재렌더(선행학습 버튼·cpt/tbl/grp/mn 링크 채움)
+    _mp.then(function(){ try{
+      if(typeof renderMCQ!=='function' || typeof mqCert==='undefined' || mqCert!==examId || typeof mqScreen==='undefined') return;
+      if(mqScreen==='home'){ renderMCQ(); return; }
+      // 풀이화면: 해설을 이미 펼쳤거나 선행학습 모드일 때만 재렌더(마스터 링크 필요) — 문제만 읽는 중엔 깜빡임 방지. 위치·응답은 상태에서 복원됨
+      if(mqScreen==='exam' && ((typeof mqShow!=='undefined' && Object.keys(mqShow).length>0) || (typeof mqConcept!=='undefined' && mqConcept))){ renderMCQ(); }
+    }catch(e){} }).catch(function(){});
     // 적응형 데이터(map/diag/variants/변형풀) — 비차단·실패무시. 미준비 과목은 빈 룩업(Elo훅이 스킵).
     if(typeof loadAdaptiveSubject==='function'){
       Promise.all((ex.subjects||[]).map(function(sub){ try{ return loadAdaptiveSubject(examId, sub.code).catch(function(){return null;}); }catch(e){ return null; } }))
