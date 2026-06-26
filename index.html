@@ -1382,9 +1382,11 @@ try {
   );
   auth = firebase.auth();
   db = firebase.firestore();
+  try{ db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }catch(e){ console.warn('firestore settings', e); }
   storage = firebase.storage();
   googleProvider = new firebase.auth.GoogleAuthProvider();
   firebaseReady = true;
+  try{ if(/[?&]perf=1/.test(location.search) || localStorage.getItem('certlab_perf')==='1'){ var _ac0=(window.performance&&performance.now)?performance.now():Date.now(); firebase.appCheck().getToken(false).then(function(){ window.__acMs=((window.performance&&performance.now)?performance.now():Date.now())-_ac0; console.log('[PERF] AppCheck 토큰 '+(window.__acMs/1000).toFixed(1)+'초'); }).catch(function(e){ window.__acFail=(e&&e.code)||String(e); console.log('[PERF] AppCheck 실패', e); }); } }catch(e){}
 } catch (e) {
   console.warn('Firebase를 불러오지 못했습니다. 로그인·동기화 없이 학습 기능만 동작합니다.', e);
 }
@@ -5667,7 +5669,7 @@ async function loadExam(examId){
     await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));   // 문제 뱅크 먼저 → 목록 즉시 표시
     loadedExams[examId]=true;
     rebuildQid();
-    if(PERF){ try{ var _t1=(window.performance&&performance.now)?performance.now():Date.now(); var _ms=_t1-_t0; var _subs=(ex.subjects||[]).length; var _bytes=0,_qn=0; var _qb=qbOf(examId)||{}; try{ _bytes=JSON.stringify(_qb).length; }catch(e){} Object.keys(_qb).forEach(function(k){ (_qb[k].sets||[]).forEach(function(st){ _qn+=(st.questions||[]).length; }); }); var _line=certLabel(examId)+': '+(_bytes/1048576).toFixed(2)+'MB / '+(_ms/1000).toFixed(1)+'초 ('+_subs+'과목 '+_qn+'문항)'; console.log('[PERF] '+_line); _perfShow(_line); }catch(e){} }
+    if(PERF){ try{ var _t1=(window.performance&&performance.now)?performance.now():Date.now(); var _ms=_t1-_t0; var _subs=(ex.subjects||[]).length; var _bytes=0,_qn=0; var _qb=qbOf(examId)||{}; try{ _bytes=JSON.stringify(_qb).length; }catch(e){} Object.keys(_qb).forEach(function(k){ (_qb[k].sets||[]).forEach(function(st){ _qn+=(st.questions||[]).length; }); }); var _ac=(typeof window.__acFail!=='undefined')?('AppCheck실패:'+window.__acFail):(typeof window.__acMs!=='undefined')?('AppCheck '+(window.__acMs/1000).toFixed(1)+'초'):'AppCheck ?'; var _line=certLabel(examId)+': '+(_bytes/1048576).toFixed(2)+'MB / '+(_ms/1000).toFixed(1)+'초 ('+_subs+'과목 '+_qn+'문항) · '+_ac; console.log('[PERF] '+_line); _perfShow(_line); }catch(e){} }
     // 마스터 로드 완료 시 1회 재렌더(선행학습 버튼·cpt/tbl/grp/mn 링크 채움)
     _mp.then(function(){ try{
       if(typeof renderMCQ!=='function' || typeof mqCert==='undefined' || mqCert!==examId || typeof mqScreen==='undefined') return;
