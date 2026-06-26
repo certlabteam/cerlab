@@ -5639,14 +5639,14 @@ async function loadOneSubject(ex, sub){
         }));
         if(_mz) _mz.shardMs=_now()-_st0;
         const qs=[];
-        var _exist=0;
-        parts.forEach(function(p){ if(p&&p.exists){ _exist++; const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
-        if(_mz) _mz.shardExist=_exist;
+        var _exist=0, _bytes=0, _imgBytes=0;
+        parts.forEach(function(p){ if(p&&p.exists){ _exist++; var pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); if(_mz){ try{ var s=JSON.stringify(pd); _bytes+=s.length; var mm=s.match(/data:image[^"\\]*/g); if(mm){ mm.forEach(function(x){ _imgBytes+=x.length; }); } }catch(e){} } } });
+        if(_mz){ _mz.shardExist=_exist; _mz.kb=Math.round(_bytes/1024); _mz.imgKb=Math.round(_imgBytes/1024); }
         if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
         else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
       } else {
         doc=meta;   // 기존 단일 문서(하위호환 폴백)
-        if(_mz) _mz.metaQ=(Array.isArray(meta.questions)?meta.questions.length:0);
+        if(_mz){ _mz.metaQ=(Array.isArray(meta.questions)?meta.questions.length:0); try{ var _s=JSON.stringify(meta); _mz.kb=Math.round(_s.length/1024); var _mm=_s.match(/data:image[^"\\]*/g); _mz.imgKb=_mm?Math.round(_mm.reduce(function(a,x){return a+x.length;},0)/1024):0; }catch(e){} }
       }
       if(_mz) _mz.q=(doc.questions||[]).length;
       try{
@@ -5929,8 +5929,9 @@ function diagRender(results){
       if(m.cache){ desc='캐시적중'; }
       else {
         desc=Math.round(m.metaMs)+'ms 메타';
-        if(m.shards){ desc+=' + '+Math.round(m.shardMs)+'ms 샤드 '+(m.shardExist||0)+'/'+m.shards+'존재'; }
-        desc+=' · 단일문서 '+(m.metaQ||0)+'문';
+        if(m.shards){ desc+=' + '+Math.round(m.shardMs)+'ms 샤드 '+(m.shardExist||0)+'/'+m.shards; }
+        desc+=' · '+(m.kb||0)+'KB';
+        if(m.imgKb) desc+='(이미지 '+m.imgKb+'KB)';
       }
       html+='<div style="font-size:12px;color:#334155;padding:2px 0;display:flex;justify-content:space-between;gap:8px"><span>'+m.sub+'</span><span style="text-align:right">'+desc+' · 결과 '+m.q+'문</span></div>';
       txt+='  - '+m.sub+': '+desc+' · 결과 '+m.q+'문\n';
