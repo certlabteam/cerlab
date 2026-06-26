@@ -5632,18 +5632,21 @@ async function loadOneSubject(ex, sub){
       const meta=snap.data();
       if(Array.isArray(meta.shards) && meta.shards.length){
         // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
-        if(_mz) _mz.shards=meta.shards.length;
+        if(_mz){ _mz.shards=meta.shards.length; _mz.metaQ=(Array.isArray(meta.questions)?meta.questions.length:0); }
         var _st0=_mz?_now():0;
         const parts=await Promise.all(meta.shards.map(function(sid){
           return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
         }));
         if(_mz) _mz.shardMs=_now()-_st0;
         const qs=[];
-        parts.forEach(function(p){ if(p&&p.exists){ const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
+        var _exist=0;
+        parts.forEach(function(p){ if(p&&p.exists){ _exist++; const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
+        if(_mz) _mz.shardExist=_exist;
         if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
         else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
       } else {
         doc=meta;   // 기존 단일 문서(하위호환 폴백)
+        if(_mz) _mz.metaQ=(Array.isArray(meta.questions)?meta.questions.length:0);
       }
       if(_mz) _mz.q=(doc.questions||[]).length;
       try{
@@ -5922,9 +5925,15 @@ function diagRender(results){
     html+='<div style="font-weight:800;color:#0C447C;margin-bottom:6px">'+certLabel(r.examId)+' · 총 '+tot+'초</div>';
     txt+='■ '+certLabel(r.examId)+' 총 '+tot+'초\n';
     (r.recs||[]).forEach(function(m){
-      var desc=m.cache?'캐시적중':(Math.round(m.metaMs)+'ms 메타'+(m.shards?(' + '+Math.round(m.shardMs)+'ms 샤드×'+m.shards):''));
-      html+='<div style="font-size:12px;color:#334155;padding:2px 0;display:flex;justify-content:space-between;gap:8px"><span>'+m.sub+'</span><span style="text-align:right">'+desc+' · '+m.q+'문</span></div>';
-      txt+='  - '+m.sub+': '+desc+' · '+m.q+'문\n';
+      var desc;
+      if(m.cache){ desc='캐시적중'; }
+      else {
+        desc=Math.round(m.metaMs)+'ms 메타';
+        if(m.shards){ desc+=' + '+Math.round(m.shardMs)+'ms 샤드 '+(m.shardExist||0)+'/'+m.shards+'존재'; }
+        desc+=' · 단일문서 '+(m.metaQ||0)+'문';
+      }
+      html+='<div style="font-size:12px;color:#334155;padding:2px 0;display:flex;justify-content:space-between;gap:8px"><span>'+m.sub+'</span><span style="text-align:right">'+desc+' · 결과 '+m.q+'문</span></div>';
+      txt+='  - '+m.sub+': '+desc+' · 결과 '+m.q+'문\n';
     });
     html+='</div>';
     txt+='\n';
