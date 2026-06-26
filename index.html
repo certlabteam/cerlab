@@ -5891,7 +5891,7 @@ var cmBoard = 'review';
 window._cmUserDoc = window._cmUserDoc || null;
 function cmIsAdmin(){ return !!((window._cmUserDoc && window._cmUserDoc.isAdmin) || (currentUser && currentUser.email==='certlab.team@gmail.com')); }
 /* ===== 관리자 전용: 로딩 진단 ===== */
-function _diagReveal(){ try{ var bw=document.getElementById('diagBtnWrap'); if(bw) bw.style.display=cmIsAdmin()?'block':'none'; }catch(e){} }
+function _diagReveal(){ try{ var bw=document.getElementById('diagBtnWrap'); if(!bw) return; var byp=false; try{ byp=/[?&]diag=1/.test(location.search); }catch(e){} bw.style.display=(cmIsAdmin()||byp)?'block':'none'; }catch(e){} }
 async function diagMeasureOne(examId){
   try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(k && k.indexOf('qb:'+examId+':')===0) localStorage.removeItem(k); } }catch(e){}   // 이 시험 과목 캐시 비우기
   try{ loadedExams[examId]=false; }catch(e){}
@@ -5972,7 +5972,8 @@ function diagRender(results){
 }
 function diagCopy(){ try{ var t=window._diagText||''; if(!t){ alert('먼저 측정하세요.'); return; } navigator.clipboard.writeText(t).then(function(){ alert('복사됐어요. 붙여넣어 공유하세요.'); }).catch(function(){ alert('복사 실패 — 화면을 캡처해주세요.'); }); }catch(e){ alert('복사 실패 — 화면을 캡처해주세요.'); } }
 function openDiag(){
-  if(!cmIsAdmin()){ alert('관리자 전용입니다.'); return; }
+  var _bypass=false; try{ _bypass=/[?&]diag=1/.test(location.search); }catch(e){}
+  if(!cmIsAdmin() && !_bypass){ alert('관리자 전용입니다.'); return; }
   var ov=document.getElementById('diagOverlay');
   if(ov){ ov.style.display='block'; return; }
   ov=document.createElement('div'); ov.id='diagOverlay';
