@@ -5903,14 +5903,47 @@ async function diagMeasureOne(examId){
   window._DIAGon=false;
   return { examId:examId, ms:ms, recs:(window._SUBMZ||[]).slice() };
 }
+function diagPool(taskFns, limit){
+  return new Promise(function(resolve){
+    var i=0, active=0, done=0, n=taskFns.length;
+    if(!n) return resolve();
+    function next(){
+      while(active<limit && i<n){
+        var fn=taskFns[i++]; active++;
+        Promise.resolve().then(fn).catch(function(){}).then(function(){ active--; done++; if(done>=n) resolve(); else next(); });
+      }
+    }
+    next();
+  });
+}
+async function diagMeasureLimited(examId, limit){
+  try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(k && k.indexOf('qb:'+examId+':')===0) localStorage.removeItem(k); } }catch(e){}
+  var ex=MANIFEST&&(MANIFEST.exams||[]).find(function(e){return e.id===examId;});
+  var _now=function(){ return (window.performance&&performance.now)?performance.now():Date.now(); };
+  if(!ex) return { examId:examId, ms:0, recs:[] };
+  var subs=(ex.subjects||[]); var recs={};
+  var t0=_now();
+  // 메타 단계(제한 동시)
+  await diagPool(subs.map(function(sub){ return function(){ var s0=_now(); return db.collection('banks').doc(examId+'__'+sub.code).get().then(function(snap){ recs[sub.code]={sub:sub.code, metaMs:_now()-s0, shards:0, shardExist:0, q:0, _meta:snap.exists?snap.data():null}; }); }; }), limit);
+  // 샤드 단계: 전 과목 샤드 평탄화 후 제한 동시
+  var shardTasks=[];
+  subs.forEach(function(sub){ var r=recs[sub.code]; var meta=r&&r._meta; if(meta && Array.isArray(meta.shards) && meta.shards.length){ r.shards=meta.shards.length; meta.shards.forEach(function(sid){ shardTasks.push(function(){ return db.collection('banks').doc(examId+'__'+sub.code+'__'+sid).get().then(function(p){ if(p&&p.exists){ r.shardExist++; var pd=p.data(); if(Array.isArray(pd.questions)) r.q+=pd.questions.length; } }); }); }); } else if(meta){ r.q=(Array.isArray(meta.questions)?meta.questions.length:0); } });
+  await diagPool(shardTasks, limit);
+  var ms=_now()-t0;
+  var recList=subs.map(function(sub){ var r=recs[sub.code]||{}; return {sub:sub.code, metaMs:r.metaMs||0, shards:r.shards||0, shardExist:r.shardExist||0, q:r.q||0}; });
+  return { examId:examId, ms:ms, recs:recList };
+}
 async function diagRunAll(){
   var btn=document.getElementById('diagRunBtn'); var status=document.getElementById('diagStatus');
   if(btn){ btn.disabled=true; btn.textContent='측정 중…'; }
   var exams=Object.keys((typeof MCQ_EXAMS!=='undefined'&&MCQ_EXAMS)||{}).filter(function(id){ return MANIFEST&&(MANIFEST.exams||[]).some(function(e){return e.id===id;}); });
   var results=[];
   for(var i=0;i<exams.length;i++){
-    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+' 측정 중…';
-    var r=await diagMeasureOne(exams[i]); results.push(r); diagRender(results);
+    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+' — 전체동시…';
+    var full=await diagMeasureOne(exams[i]);
+    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+' — 동시3제한…';
+    var lim=await diagMeasureLimited(exams[i],3);
+    results.push({ examId:exams[i], full:full, lim:lim }); diagRender(results);
   }
   if(status) status.textContent='완료 ✓ (캡처하거나 텍스트 복사)';
   if(btn){ btn.disabled=false; btn.textContent='다시 측정'; }
@@ -5920,21 +5953,17 @@ function diagRender(results){
   var box=document.getElementById('diagBody'); if(!box) return;
   var html='', txt='';
   results.forEach(function(r){
-    var tot=(r.ms/1000).toFixed(1);
+    var f=(r.full.ms/1000).toFixed(1), l=(r.lim.ms/1000).toFixed(1);
+    var win=(r.lim.ms < r.full.ms*0.7);   // 제한이 30%+ 빠르면 강조
     html+='<div style="border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff">';
-    html+='<div style="font-weight:800;color:#0C447C;margin-bottom:6px">'+certLabel(r.examId)+' · 총 '+tot+'초</div>';
-    txt+='■ '+certLabel(r.examId)+' 총 '+tot+'초\n';
-    (r.recs||[]).forEach(function(m){
-      var desc;
-      if(m.cache){ desc='캐시적중'; }
-      else {
-        desc=Math.round(m.metaMs)+'ms 메타';
-        if(m.shards){ desc+=' + '+Math.round(m.shardMs)+'ms 샤드 '+(m.shardExist||0)+'/'+m.shards; }
-        desc+=' · '+(m.kb||0)+'KB';
-        if(m.imgKb) desc+='(이미지 '+m.imgKb+'KB)';
-      }
-      html+='<div style="font-size:12px;color:#334155;padding:2px 0;display:flex;justify-content:space-between;gap:8px"><span>'+m.sub+'</span><span style="text-align:right">'+desc+' · 결과 '+m.q+'문</span></div>';
-      txt+='  - '+m.sub+': '+desc+' · 결과 '+m.q+'문\n';
+    html+='<div style="font-weight:800;color:#0C447C;margin-bottom:4px">'+certLabel(r.examId)+'</div>';
+    html+='<div style="font-size:13px;margin-bottom:6px">전체동시 <b>'+f+'초</b> &nbsp;→&nbsp; 동시3제한 <b style="color:'+(win?'#16a34a':'#185FA5')+'">'+l+'초</b>'+(win?' ✓개선':'')+'</div>';
+    txt+='■ '+certLabel(r.examId)+': 전체동시 '+f+'초 → 동시3제한 '+l+'초'+(win?' (개선)':'')+'\n';
+    (r.full.recs||[]).forEach(function(m){
+      var desc=m.cache?'캐시':(Math.round(m.metaMs)+'ms메타'+(m.shards?(' +'+Math.round(m.shardMs)+'ms샤드'+(m.shardExist||0)+'/'+m.shards):''));
+      if(m.kb) desc+=' '+m.kb+'KB';
+      html+='<div style="font-size:11px;color:#64748B;padding:1px 0">'+m.sub+': '+desc+'</div>';
+      txt+='  - '+m.sub+': '+desc+'\n';
     });
     html+='</div>';
     txt+='\n';
