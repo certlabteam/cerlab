@@ -221,6 +221,8 @@ tr:hover td{background:#FAFAFA}
   <div class="admin-header">
     <div class="admin-logo">CertLab Admin</div>
     <div class="admin-user">
+      <span id="adminRefreshTime" style="font-size:11px;color:#A89C8E;margin-right:4px"></span>
+      <button id="adminRefreshBtn" class="btn-logout" onclick="pollRefresh(false)" style="border-color:#1D9E75;color:#1D9E75">🔄 새로고침</button>
       <span id="adminEmail"></span>
       <button class="btn-logout" onclick="adminLogout()">로그아웃</button>
     </div>
@@ -1151,10 +1153,22 @@ tr:hover td{background:#FAFAFA}
     <div class="modal-title">🎟️ 이용권 부여 / 연장</div>
     <div class="modal-row"><span class="modal-label">회원</span><span class="modal-value" id="grantEmail"></span></div>
     <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">시험 선택</div>
-    <select id="grantCert" onchange="grantPreview()" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></select>
-    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">기간</div>
-    <div id="grantPeriods" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-    <div style="margin-top:8px"><input id="grantDaysCustom" type="number" min="1" placeholder="직접 입력(일)" oninput="grantPickCustom()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></div>
+    <select id="grantCert" onchange="grantCertChanged()" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></select>
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">처리 방식</div>
+    <div style="display:flex;gap:6px">
+      <button id="gmExtend" class="btn-sm" onclick="setGrantMode('extend')" style="flex:1;border:1.5px solid #E8E8E8;background:#fff">➕ 기간 연장</button>
+      <button id="gmSet" class="btn-sm" onclick="setGrantMode('set')" style="flex:1;border:1.5px solid #E8E8E8;background:#fff">📅 만료일 지정</button>
+    </div>
+    <div id="grantExtendBox">
+      <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">기간</div>
+      <div id="grantPeriods" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div style="margin-top:8px"><input id="grantDaysCustom" type="number" min="1" placeholder="직접 입력(일)" oninput="grantPickCustom()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></div>
+    </div>
+    <div id="grantSetBox" style="display:none">
+      <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">만료일 지정</div>
+      <input id="grantSetDate" type="date" onchange="grantPreview()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none">
+      <div style="font-size:11px;color:#A89C8E;margin-top:5px;line-height:1.5">선택한 날짜로 만료일을 <b>덮어씁니다</b>(연장 아님). 과거 날짜 선택 시 즉시 만료돼요.</div>
+    </div>
     <div class="modal-note" id="grantPreviewBox" style="margin-top:14px">시험과 기간을 선택하세요.</div>
     <div class="modal-btns">
       <button class="btn-modal-cancel" onclick="closeGrantModal()">취소</button>
@@ -2590,6 +2604,26 @@ function catToggle(headEl){ const g = headEl.closest('.cat'); if(!g) return; var
 document.addEventListener('click', function(e){ if(!e.target.closest('.cat')) document.querySelectorAll('.cat.open').forEach(function(c){ c.classList.remove('open'); }); });
 
 // ===== 데이터 로드 =====
+// ===== 자동 새로고침(폴링): 5분 주기, 화면 보일 때만 =====
+let _pollTimer=null, _pollBusy=false;
+const POLL_MS=5*60*1000;
+async function pollRefresh(silent){
+  if(_pollBusy) return; _pollBusy=true;
+  const btn=document.getElementById('adminRefreshBtn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ 불러오는 중…'; }
+  try{ await loadAll(); }catch(_){}
+  if(btn){ btn.disabled=false; btn.textContent='🔄 새로고침'; const t=document.getElementById('adminRefreshTime'); if(t) t.textContent='업데이트 '+new Date().toLocaleTimeString('ko-KR'); }
+  _pollBusy=false;
+}
+function startPolling(){
+  stopPolling();
+  if(document.visibilityState==='visible') _pollTimer=setInterval(()=>{ if(document.visibilityState==='visible') pollRefresh(true); }, POLL_MS);
+}
+function stopPolling(){ if(_pollTimer){ clearInterval(_pollTimer); _pollTimer=null; } }
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible'){ pollRefresh(true); startPolling(); }
+  else stopPolling();
+});
 async function loadAll() {
   await Promise.all([loadPayments(), loadMembers(), loadReports(), loadCodes(), loadMileage()]);
   renderMembers(allMembers);   // 결제·쿠폰 로드 후 출처 배지 반영해 재렌더
@@ -4551,8 +4585,28 @@ async function markReportDone(reportId) {
 
 // ===== 회원권 관리 (시험별 이용권) =====
 const ENT_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory'];
-const ENT_PERIODS = [{d:14,l:'14일'},{d:30,l:'30일'},{d:90,l:'90일'},{d:365,l:'365일'}];
-let grantUid=null, grantEmailVal=null, grantDays=30;
+const ENT_PERIODS = [{d:7,l:'1주'},{d:14,l:'2주'},{d:28,l:'4주'},{d:56,l:'8주'},{d:90,l:'90일'},{d:365,l:'365일'}];
+let grantUid=null, grantEmailVal=null, grantDays=56;
+let grantMode='extend';
+function toDateInputVal(d){ const x=new Date(d); const y=x.getFullYear(), m=String(x.getMonth()+1).padStart(2,'0'), dd=String(x.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
+function setGrantMode(mode){
+  grantMode=mode;
+  document.getElementById('grantExtendBox').style.display = (mode==='extend')?'':'none';
+  document.getElementById('grantSetBox').style.display = (mode==='set')?'':'none';
+  const ex=document.getElementById('gmExtend'), st=document.getElementById('gmSet');
+  ex.style.background=(mode==='extend')?'#1D9E75':'#fff'; ex.style.color=(mode==='extend')?'#fff':'#5F5E5A'; ex.style.borderColor=(mode==='extend')?'#1D9E75':'#E8E8E8';
+  st.style.background=(mode==='set')?'#1D9E75':'#fff'; st.style.color=(mode==='set')?'#fff':'#5F5E5A'; st.style.borderColor=(mode==='set')?'#1D9E75':'#E8E8E8';
+  if(mode==='set'){
+    const inp=document.getElementById('grantSetDate');
+    if(!inp.value){
+      const cert=document.getElementById('grantCert').value;
+      const m=allMembers.find(x=>x.id===grantUid); let base=new Date();
+      if(m){ const cur=entStatusOf(m,cert); if(cur.plan==='ACTIVE'&&cur.exp) base=new Date(cur.exp); }
+      inp.value=toDateInputVal(base);
+    }
+  }
+  grantPreview();
+}
 
 function entStatusOf(m, cert){
   const e = (m.entitlements && m.entitlements[cert]) || null;
@@ -4593,14 +4647,16 @@ function renderEntMembers(){
 }
 
 function openGrant(uid, email){
-  grantUid=uid; grantEmailVal=email; grantDays=30;
+  grantUid=uid; grantEmailVal=email; grantDays=56;
   document.getElementById('grantEmail').textContent=email;
   const sel=document.getElementById('grantCert');
   sel.innerHTML=ENT_CERTS.map(c=>'<option value="'+c+'">'+CERT_NAMES[c]+'</option>').join('');
   document.getElementById('grantPeriods').innerHTML=ENT_PERIODS.map(p=>
     '<button class="btn-sm" data-d="'+p.d+'" onclick="grantPickPeriod('+p.d+')" style="border:1.5px solid #E8E8E8;background:#fff">'+p.l+'</button>').join('');
   document.getElementById('grantDaysCustom').value='';
-  grantPickPeriod(30);
+  document.getElementById('grantSetDate').value='';
+  grantPickPeriod(56);
+  setGrantMode('extend');
   document.getElementById('grantModal').classList.remove('hidden');
 }
 function closeGrantModal(){ document.getElementById('grantModal').classList.add('hidden'); grantUid=null; }
@@ -4618,37 +4674,63 @@ function grantPickCustom(){
   if(v>0){ grantDays=v; document.querySelectorAll('#grantPeriods button').forEach(b=>{ b.style.background='#fff'; b.style.color='#5F5E5A'; b.style.borderColor='#E8E8E8'; }); }
   grantPreview();
 }
+function grantCertChanged(){
+  if(grantMode==='set'){ document.getElementById('grantSetDate').value=''; setGrantMode('set'); }
+  else grantPreview();
+}
 function grantPreview(){
   const cert=document.getElementById('grantCert').value;
   const m=allMembers.find(x=>x.id===grantUid);
-  let base=new Date();
-  let cur=null;
-  if(m){ cur=entStatusOf(m,cert); if(cur.plan==='ACTIVE'&&cur.exp&&cur.exp>base) base=new Date(cur.exp); }
-  const newExp=new Date(base); newExp.setDate(newExp.getDate()+grantDays);
+  let cur=null; const today=new Date();
+  if(m){ cur=entStatusOf(m,cert); }
   const curTxt=(cur&&cur.plan==='ACTIVE'&&cur.exp)?('현재 만료 '+fmtDateShort(cur.exp)+' → '):'신규 부여 → ';
+  if(grantMode==='set'){
+    const v=document.getElementById('grantSetDate').value;
+    if(!v){ document.getElementById('grantPreviewBox').innerHTML='만료일을 선택하세요.'; return; }
+    const chosen=new Date(v+'T23:59:59');
+    const past = chosen < today;
+    document.getElementById('grantPreviewBox').innerHTML=
+      '<b>'+CERT_NAMES[cert]+'</b> · 만료일 지정<br>'+curTxt+
+      '<b style="color:'+(past?'#C0392B':'#1D9E75')+'">'+(past?'즉시 만료 ':'만료일 ')+chosen.toLocaleDateString('ko-KR')+'</b>'+
+      (past?'<br><span style="color:#C0392B;font-size:12px">⚠️ 과거 날짜 — 이용권이 즉시 종료됩니다</span>':'');
+    return;
+  }
+  let base=new Date();
+  if(cur&&cur.plan==='ACTIVE'&&cur.exp&&cur.exp>base) base=new Date(cur.exp);
+  const newExp=new Date(base); newExp.setDate(newExp.getDate()+grantDays);
   document.getElementById('grantPreviewBox').innerHTML=
     '<b>'+CERT_NAMES[cert]+'</b> · '+grantDays+'일<br>'+curTxt+'<b style="color:#1D9E75">새 만료일 '+newExp.toLocaleDateString('ko-KR')+'</b>';
 }
 async function confirmGrant(){
   if(!grantUid) return;
   const cert=document.getElementById('grantCert').value;
-  if(!grantDays||grantDays<=0){ alert('기간을 선택하세요.'); return; }
   try{
     const doc=await db.collection('users').doc(grantUid).get();
     const data=doc.data()||{};
     const e=(data.entitlements&&data.entitlements[cert])||null;
-    let base=new Date();
-    if(e&&e.plan==='ACTIVE'&&e.expireAt){ const c=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); if(c>base) base=c; }
-    base.setDate(base.getDate()+Number(grantDays));
+    let base, msg;
+    if(grantMode==='set'){
+      const v=document.getElementById('grantSetDate').value;
+      if(!v){ alert('만료일을 선택하세요.'); return; }
+      base=new Date(v+'T23:59:59');
+      msg='['+CERT_NAMES[cert]+'] 만료일 지정 → '+base.toLocaleDateString('ko-KR');
+      if(base<new Date() && !confirm('과거 날짜예요. 이 이용권을 즉시 만료시킬까요?')) return;
+    } else {
+      if(!grantDays||grantDays<=0){ alert('기간을 선택하세요.'); return; }
+      base=new Date();
+      if(e&&e.plan==='ACTIVE'&&e.expireAt){ const c=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); if(c>base) base=c; }
+      base.setDate(base.getDate()+Number(grantDays));
+      msg='['+CERT_NAMES[cert]+'] '+grantDays+'일 부여 → 새 만료일 '+base.toLocaleDateString('ko-KR');
+    }
     const ts=firebase.firestore.Timestamp.fromDate(base);
     const upd={};
     upd['entitlements.'+cert+'.plan']='ACTIVE';
     upd['entitlements.'+cert+'.expireAt']=ts;
-    upd['entitlements.'+cert+'.planDays']=Number(grantDays);
-    if(cert==='bodybuilding'){ upd.plan='ACTIVE'; upd.expireAt=ts; upd.planDays=Number(grantDays); }
+    if(grantMode==='extend'){ upd['entitlements.'+cert+'.planDays']=Number(grantDays); }
+    if(cert==='bodybuilding'){ upd.plan='ACTIVE'; upd.expireAt=ts; if(grantMode==='extend') upd.planDays=Number(grantDays); }
     await db.collection('users').doc(grantUid).update(upd);
     closeGrantModal();
-    alert('✅ '+grantEmailVal+'\n['+CERT_NAMES[cert]+'] '+grantDays+'일 부여 완료\n새 만료일: '+base.toLocaleDateString('ko-KR'));
+    alert('✅ '+grantEmailVal+'\n'+msg);
     await loadAll();
     renderEntMembers();
   }catch(e){ alert('오류: '+e.message); }
@@ -4722,12 +4804,14 @@ if (firebaseReady && auth) {
       const em = document.getElementById('adminEmail');
       if (em) em.textContent = user.email;
       loadAll();
+      startPolling();
     } else if (user) {
       alert('관리자 권한이 없는 계정입니다: ' + user.email);
       auth.signOut();
     } else {
       if(loginEl) loginEl.style.display = 'flex';
       if(wrapEl)  wrapEl.style.display  = 'none';
+      stopPolling();
     }
   });
 }
