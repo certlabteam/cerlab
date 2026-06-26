@@ -5666,7 +5666,7 @@ async function loadExam(examId){
     const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
     if(!ex){ loadedExams[examId]=true; return; }
     var _t0=PERF?((window.performance&&performance.now)?performance.now():Date.now()):0;
-    for(var _si=0;_si<(ex.subjects||[]).length;_si++){ await loadOneSubject(ex, ex.subjects[_si]); }   // 문제 뱅크 순차 로드(병렬 경합 제거)
+    await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));   // 문제 뱅크 먼저 → 목록 즉시 표시
     loadedExams[examId]=true;
     rebuildQid();
     if(PERF){ try{ var _t1=(window.performance&&performance.now)?performance.now():Date.now(); var _ms=_t1-_t0; var _subs=(ex.subjects||[]).length; var _bytes=0,_qn=0; var _qb=qbOf(examId)||{}; try{ _bytes=JSON.stringify(_qb).length; }catch(e){} Object.keys(_qb).forEach(function(k){ (_qb[k].sets||[]).forEach(function(st){ _qn+=(st.questions||[]).length; }); }); var _ac=(typeof window.__acFail!=='undefined')?('AppCheck실패:'+window.__acFail):(typeof window.__acMs!=='undefined')?('AppCheck '+(window.__acMs/1000).toFixed(1)+'초'):'AppCheck ?'; var _line=certLabel(examId)+': '+(_bytes/1048576).toFixed(2)+'MB / '+(_ms/1000).toFixed(1)+'초 ('+_subs+'과목 '+_qn+'문항) · '+_ac; console.log('[PERF] '+_line); _perfShow(_line); }catch(e){} }
