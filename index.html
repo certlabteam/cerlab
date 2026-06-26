@@ -5548,11 +5548,11 @@ async function goToCard(qid, certHint){
           }
         }
       } else { _poolInfo.push('AD_DATA 자체가 undefined'); }
-      if(!_found){ alert('[진단] 레벨업 문항 못찾음\nqid='+qid+'\ncert='+certHint+'\nsubs='+JSON.stringify(_subs)+'\npools='+_poolInfo.join(' / ')); }
+      if(!_found){ try{ console.warn('[레벨업 딥링크] 문항 못찾음 qid='+qid+' cert='+certHint+' subs='+JSON.stringify(_subs)+' pools='+_poolInfo.join(' / ')); }catch(_){} }
       if(_found){   // 단독 1문항 리뷰로 띄움 (채점·레벨변동 없이 문항+해설 확인)
         mqSub=_foundSub; mqSet=0; mqMode='all';
         mqReview=true; mqDiag=false; mqLevelUp=false; mqGather=false; mqConcept=false; mqInReview=true;
-        mqList=[_found]; mqIdx=0; mqAns={}; mqGuess={}; mqShow={}; mqShow[_found.id]=true;
+        mqList=[_found]; mqReviewList=[_found]; mqReviewMode='all'; mqIdx=0; mqAns={}; mqGuess={}; mqShow={}; mqShow[_found.id]=true;
         mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); return;
       }
       // 혹시 sets(기출)에 있으면 기존 경로로
