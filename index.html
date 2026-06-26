@@ -5493,9 +5493,13 @@ async function enterCert(id){
   // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
   if(!loadedExams[id]){
     var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
-    if(_tgt) _tgt.innerHTML='<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
+    if(_tgt) _tgt.innerHTML='<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…<div id="mqLoadHint" style="margin-top:10px;font-size:12px;color:#64748B;font-weight:500;min-height:16px"></div></div>';
+    // Safari 간헐 지연 대비: 6초/15초 경과 시 안내 문구로 멈춘 느낌 완화
+    var _lh1=setTimeout(function(){ var h=document.getElementById('mqLoadHint'); if(h) h.textContent='잠시만요, 문제를 준비하고 있어요…'; },6000);
+    var _lh2=setTimeout(function(){ var h=document.getElementById('mqLoadHint'); if(h) h.textContent='네트워크가 느린 환경이에요. 곧 표시됩니다 🙏'; },15000);
     try{ await loadExam(id); }
-    catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
+    catch(e){ clearTimeout(_lh1); clearTimeout(_lh2); if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
+    clearTimeout(_lh1); clearTimeout(_lh2);
     if(id==='bodybuilding'){ cards=[...D]; filtered=[...cards]; current=0; }
   }
   // 렌더
@@ -5615,6 +5619,27 @@ async function loadManifest(){
 }
 // QB 캐시 신선도: 같은 버전 재업로드도 이 시간 안에 자동 반영(버전 미범프 안전망). 0이면 TTL 무시(영구 캐시).
 const QB_TTL_MS=6*60*60*1000;   // 6시간
+// === Safari 간헐 30초 hang 완화: 6초 타임아웃+재시도로 문서 get ===
+// Safari/WebKit이 firestore 개별 요청을 무작위로 hang시키는 문제 우회.
+// 6초 초과 시 요청을 끊고 새로 get(연결 재생성 유도). 마지막 시도는 타임아웃 없이(SDK 폴백) → 데이터는 반드시 받도록.
+const RESILIENT_TIMEOUT_MS=6000;
+const RESILIENT_MAX_TRY=4;
+function getDocResilient(docPath){
+  var tries=0;
+  function attempt(){
+    tries++;
+    var last=(tries>=RESILIENT_MAX_TRY);
+    var getP=db.collection('banks').doc(docPath).get();
+    if(last) return getP;   // 마지막 시도는 타임아웃 없이 끝까지 기다림(폴백)
+    return new Promise(function(resolve,reject){
+      var done=false;
+      var timer=setTimeout(function(){ if(!done){ done=true; reject(new Error('timeout')); } }, RESILIENT_TIMEOUT_MS);
+      getP.then(function(snap){ if(!done){ done=true; clearTimeout(timer); resolve(snap); } })
+          .catch(function(e){ if(!done){ done=true; clearTimeout(timer); reject(e); } });
+    }).catch(function(){ return attempt(); });   // 타임아웃/실패 → 새 get 재시도
+  }
+  return attempt();
+}
 // 과목 1개 로드(캐시→Firestore→샤드합치기) 후 applyBank
 async function loadOneSubject(ex, sub){
   const ver=(ex.versions&&ex.versions[sub.code])||1;
@@ -5635,7 +5660,9 @@ async function loadOneSubject(ex, sub){
   if(_mz && doc){ _mz.cache=true; _mz.q=(doc.questions||[]).length; }
   if(!doc){
     var _mt0=_mz?_now():0;
-    const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+    var _useResilient=false; try{ _useResilient=/[?&]loader=safe/.test(location.search); }catch(e){}
+    const snap=_useResilient ? await getDocResilient(ex.id+'__'+sub.code)
+                             : await db.collection('banks').doc(ex.id+'__'+sub.code).get();
     if(_mz) _mz.metaMs=_now()-_mt0;
     if(snap.exists){
       const meta=snap.data();
@@ -5644,7 +5671,8 @@ async function loadOneSubject(ex, sub){
         if(_mz){ _mz.shards=meta.shards.length; _mz.metaQ=(Array.isArray(meta.questions)?meta.questions.length:0); }
         var _st0=_mz?_now():0;
         const parts=await Promise.all(meta.shards.map(function(sid){
-          return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
+          return _useResilient ? getDocResilient(ex.id+'__'+sub.code+'__'+sid)
+                               : db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
         }));
         if(_mz) _mz.shardMs=_now()-_st0;
         const qs=[];
@@ -7085,26 +7113,4 @@ function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc, calcDoc){
   return bundle;
 }
 // 문항 id → {topic,diff,subtopic} (Elo 훅·출제에서 사용)
-function adLookup(cert, sub, qid){ var b=AD_DATA[cert+'|'+sub]; return (b&&b.lookup[qid])||null; }
-// ===== 적응형 Elo 트랙 (2-c) — 기존 srProgress/mcqVerdict와 분리 =====
-var eloState = {};   // "cert|sub" -> { topic: {score, attempts} }
-function adEloUpdate(q, correct){
-  try{
-    if(!q || !q.id || typeof AE==='undefined') return null;
-    var cs = (typeof MCQ_QID2CS!=='undefined') && MCQ_QID2CS[q.id];
-    var cert = (typeof mqCert!=='undefined' && mqCert) || (cs && cs.cert);
-    var sub  = (cs && cs.sub) || q._subj || q.subject;
-    var topic = q.topic, diff = q.diff;
-    if((!topic || !diff) && cert && sub){ var info=adLookup(cert, sub, q.id); if(info){ topic=topic||info.topic; diff=diff||info.diff; } }
-    if(!cert || !sub || !topic || !diff) return null;   // 식별 불가(맵에 없는 회차기출 등) → 스킵·무시
-    var k=cert+'|'+sub;
-    if(!eloState[k]) eloState[k]={};
-    var cur=eloState[k][topic] || {score:AE.CFG.DEFAULT_SCORE, attempts:0};
-    var up=AE.updateScore(cur.score, diff, !!correct, cur.attempts);
-    eloState[k][topic]={score:up.score, attempts:cur.attempts+1};
-    return {cert:cert, sub:sub, topic:topic, diff:diff, delta:up.delta, score:up.score};
-  }catch(e){ return null; }
-}
-</script>
-</body>
-</html>
+function adLookup(cert, sub, qid){ var b=AD_DATA[cert+'|'+su
