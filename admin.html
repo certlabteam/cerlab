@@ -116,6 +116,19 @@ tr:hover td{background:#FAFAFA}
 .btn-reject:hover{background:#E24B4A;color:#fff}
 .btn-extend{background:#E6F1FB;color:#185FA5}
 .btn-extend:hover{background:#185FA5;color:#fff}
+/* ===== 공통 업로드/내보내기 양식 (upbar) ===== */
+.upbar{position:sticky;top:0;z-index:8;background:#fff;padding:14px 20px;border-bottom:1px solid #F0F0F0;display:flex;flex-direction:column;gap:10px}
+.upbar-drop{border:2px dashed #D9CFC4;border-radius:10px;padding:18px;text-align:center;color:#8A7E70;cursor:pointer;font-size:13px;transition:all .15s}
+.upbar-drop:hover{border-color:#B9A98F;background:#FCFAF7}
+.upbar-drop .sub{font-size:11px;color:#A89C8E;display:block;margin-top:4px}
+.upbar-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.upbar-run{background:#E6F1FB;color:#185FA5;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:700;border:none;cursor:pointer;transition:all .15s}
+.upbar-run:hover:not(:disabled){background:#185FA5;color:#fff}
+.upbar-run:disabled{opacity:.5;cursor:default}
+.upbar-export{background:#E6F4EA;color:#15793F;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:700;border:none;cursor:pointer;transition:all .15s}
+.upbar-export:hover{background:#15793F;color:#fff}
+.upbar-summary{font-size:12.5px;color:#6E6256;min-height:16px}
+.upbar-log{background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:200px;overflow:auto;white-space:pre-wrap;font-size:12px;font-family:monospace}
 .btn-expire{background:#FFF9F0;color:#BA7517}
 .btn-expire:hover{background:#BA7517;color:#fff}
 .btn-primary{background:linear-gradient(135deg,#D4537E,#7F77DD);color:#fff;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none}
@@ -221,8 +234,6 @@ tr:hover td{background:#FAFAFA}
   <div class="admin-header">
     <div class="admin-logo">CertLab Admin</div>
     <div class="admin-user">
-      <span id="adminRefreshTime" style="font-size:11px;color:#A89C8E;margin-right:4px"></span>
-      <button id="adminRefreshBtn" class="btn-logout" onclick="pollRefresh(false)" style="border-color:#1D9E75;color:#1D9E75">🔄 새로고침</button>
       <span id="adminEmail"></span>
       <button class="btn-logout" onclick="adminLogout()">로그아웃</button>
     </div>
@@ -723,20 +734,6 @@ tr:hover td{background:#FAFAFA}
 
           <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
 
-          <!-- 이미지 가져오기 -->
-          <div class="table-title" style="margin-bottom:8px">📥 이미지 가져오기 (JSON 백업 → images 복구)</div>
-          <div id="imgImpDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:22px;text-align:center;color:#8A7E70;cursor:pointer">
-            여기로 이미지 백업 <b>JSON</b>을 끌어다 놓거나 클릭해서 선택<br>
-            <span style="font-size:11px;color:#A89C8E">위 "이미지 내보내기"로 받은 파일을 그대로 올리면 됩니다</span>
-          </div>
-          <input id="imgImpFile" type="file" accept=".json,application/json" hidden>
-          <div id="imgImpStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
-          <div style="margin-top:10px"><button id="imgImpRun" class="btn-sm btn-extend" disabled onclick="importImages()">⬆ 이미지 복구 실행</button></div>
-          <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
-            ⚠️ 같은 키가 이미 있으면 <b>덮어씁니다</b>. (이미지 업로드 탭이 "새 이미지 추가"라면, 여기는 "백업 JSON 일괄 복구"입니다.)
-          </div>
-          <div id="imgImpLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:200px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
-          <hr style="border:none;border-top:1px solid #EFE9E2;margin:18px 0">
 
           <div id="iuDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
             여기로 이미지(PNG/JPG)를 끌어다 놓거나 클릭해서 선택<br>
@@ -798,16 +795,13 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">재사용·과목겹침 개념만 등록(일회성은 문항에 직접입력). 문항에선 <b>mn://id</b>로 참조 → 한 곳 수정=전 과목 반영. 두문자는 <b>&lt;span class="k"&gt;글자&lt;/span&gt;</b>로 표기.</div>
         <div id="mnemStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
-        <div style="padding:6px 20px 12px;border-bottom:1px solid #F0F0F0;margin-bottom:6px;display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="mnemExport()" style="background:#E6F4EA;color:#15793F;flex:0 0 auto">⬇ 암기코드 내보내기</button>
-            <span style="font-size:12px;color:#A89C8E">등록된 코드 전부를 JSON 파일로 다운로드(백업)</span>
-          </div>
-          <div style="display:flex;align-items:stretch;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="document.getElementById('mnemImpFile').click()" style="background:#FAEEDA;color:#854F0B;flex:0 0 auto">⬆ 암기코드 올리기</button>
-            <span id="mnemImpDrop" style="cursor:pointer;flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 12px;color:#94A3B8;font-size:12px">📁 여기로 JSON 파일을 끌어다 놓기</span>
-            <input id="mnemImpFile" type="file" accept=".json,application/json" style="display:none">
-            <span id="mnemImpStatus" style="font-size:11.5px;color:#A89C8E;align-self:center"></span>
+        <div class="upbar">
+          <div class="upbar-drop" id="mnemImpDrop">📁 암기코드 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">재사용·과목겹침 개념만 등록 (문항에선 mn://id 참조)</span></div>
+          <input id="mnemImpFile" type="file" accept=".json,application/json" style="display:none">
+          <div class="upbar-summary" id="mnemImpStatus"></div>
+          <div class="upbar-actions">
+            <button class="upbar-run" onclick="document.getElementById('mnemImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="mnemExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
@@ -851,16 +845,13 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">재사용·과목겹침 표만 등록. 문항/개념에선 <b>tbl://id</b>로 참조 → 한 곳 수정=전부 반영. 칸 안 <b>값(운율)</b> 괄호는 빨강 표시, <b>merge:[열]</b>로 계층 rowspan.</div>
         <div id="tblmStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
-        <div style="padding:6px 20px 12px;border-bottom:1px solid #F0F0F0;margin-bottom:6px;display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="tblmExport()" style="background:#E6F4EA;color:#15793F;flex:0 0 auto">⬇ 표 내보내기</button>
-            <span style="font-size:12px;color:#A89C8E">등록된 표 전부를 JSON 파일로 다운로드(백업)</span>
-          </div>
-          <div style="display:flex;align-items:stretch;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="document.getElementById('tblmImpFile').click()" style="background:#FAEEDA;color:#854F0B;flex:0 0 auto">⬆ 표 올리기</button>
-            <span id="tblmImpDrop" style="cursor:pointer;flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 12px;color:#94A3B8;font-size:12px">📁 여기로 JSON 파일을 끌어다 놓기 (tables / tbl_new)</span>
-            <input id="tblmImpFile" type="file" accept=".json,application/json" style="display:none">
-            <span id="tblmImpStatus" style="font-size:11.5px;color:#A89C8E;align-self:center"></span>
+        <div class="upbar">
+          <div class="upbar-drop" id="tblmImpDrop">📁 표 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">tables / tbl_new 형식</span></div>
+          <input id="tblmImpFile" type="file" accept=".json,application/json" style="display:none">
+          <div class="upbar-summary" id="tblmImpStatus"></div>
+          <div class="upbar-actions">
+            <button class="upbar-run" onclick="document.getElementById('tblmImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="tblmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
@@ -909,16 +900,13 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">개념은 카드(t·d·cx) + <b>mn://·tbl://·grp://</b> 참조를 묶습니다. 문항에선 <b>cpt://id</b>로 참조. 미리보기에서 묶인 암기코드·표가 실제로 풀려 보입니다.</div>
         <div id="cptmStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
-        <div style="padding:6px 20px 12px;border-bottom:1px solid #F0F0F0;margin-bottom:6px;display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="cptmExport()" style="background:#E6F4EA;color:#15793F;flex:0 0 auto">⬇ 개념 내보내기</button>
-            <span style="font-size:12px;color:#A89C8E">등록된 개념 전부를 JSON 파일로 다운로드(백업)</span>
-          </div>
-          <div style="display:flex;align-items:stretch;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="document.getElementById('cptmImpFile').click()" style="background:#FAEEDA;color:#854F0B;flex:0 0 auto">⬆ 개념 올리기</button>
-            <span id="cptmImpDrop" style="cursor:pointer;flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 12px;color:#94A3B8;font-size:12px">📁 여기로 JSON 파일을 끌어다 놓기 (concepts / cpt_new)</span>
-            <input id="cptmImpFile" type="file" accept=".json,application/json" style="display:none">
-            <span id="cptmImpStatus" style="font-size:11.5px;color:#A89C8E;align-self:center"></span>
+        <div class="upbar">
+          <div class="upbar-drop" id="cptmImpDrop">📁 개념 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">concepts / cpt_new 형식</span></div>
+          <input id="cptmImpFile" type="file" accept=".json,application/json" style="display:none">
+          <div class="upbar-summary" id="cptmImpStatus"></div>
+          <div class="upbar-actions">
+            <button class="upbar-run" onclick="document.getElementById('cptmImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="cptmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
@@ -987,16 +975,13 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">흐름도·다이어그램은 <b>svg</b> 통째로 등록(바로 표시). 수요공급 등 곡선은 <b>type+params</b>(렌더러 추후). 문항/개념에선 <b>grp://id</b>로 참조.</div>
         <div id="grpmStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
-        <div style="padding:6px 20px 12px;border-bottom:1px solid #F0F0F0;margin-bottom:6px;display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="grpmExport()" style="background:#E6F4EA;color:#15793F;flex:0 0 auto">⬇ 그래프 내보내기</button>
-            <span style="font-size:12px;color:#A89C8E">등록된 그래프 전부를 JSON 파일로 다운로드(백업)</span>
-          </div>
-          <div style="display:flex;align-items:stretch;gap:12px;flex-wrap:wrap">
-            <button class="btn-sm" onclick="document.getElementById('grpmImpFile').click()" style="background:#FAEEDA;color:#854F0B;flex:0 0 auto">⬆ 그래프 올리기</button>
-            <span id="grpmImpDrop" style="cursor:pointer;flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 12px;color:#94A3B8;font-size:12px">📁 여기로 JSON 파일을 끌어다 놓기 (graphs / grp_new)</span>
-            <input id="grpmImpFile" type="file" accept=".json,application/json" style="display:none">
-            <span id="grpmImpStatus" style="font-size:11.5px;color:#A89C8E;align-self:center"></span>
+        <div class="upbar">
+          <div class="upbar-drop" id="grpmImpDrop">📁 그래프 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">graphs / grp_new 형식</span></div>
+          <input id="grpmImpFile" type="file" accept=".json,application/json" style="display:none">
+          <div class="upbar-summary" id="grpmImpStatus"></div>
+          <div class="upbar-actions">
+            <button class="upbar-run" onclick="document.getElementById('grpmImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="grpmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
@@ -1048,13 +1033,15 @@ tr:hover td{background:#FAFAFA}
       <div class="table-wrap">
         <div class="table-header"><div class="table-title">⚡ 레벨업 데이터 업로드</div></div>
         <div style="padding:0 4px 8px;font-size:12px;color:#A89C8E">레벨업(레벨테스트·약점출제) 데이터를 Firestore <b>adaptive</b> 컬렉션에 적재합니다. 한 파일에 <b>mapping</b>(토픽맵)·<b>diagnostic/topics</b>(진단)·<b>variants</b>(계산시드)·<b>questions</b>(완성변형)·<b>templates</b>(계산형 자동생성 템플릿)가 섞여 있어도 종류별로 자동 분리 적재합니다. 과목은 <b>_meta.subject</b> 또는 topic 접두사로 인식. questions·templates는 기존과 <b>병합</b>(같은 id 갱신). 계산형 템플릿은 업로드 전 <b>실제 생성 검증</b>(식·guard·보기중복)을 거쳐 유효 인스턴스 0개면 적재 중단.</div>
-        <div style="display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;padding:6px 4px 12px">
-          <button class="btn-sm" onclick="document.getElementById('lvupImpFile').click()" style="background:#EAF2FC;color:#185FA5;flex:0 0 auto">⬆ 레벨업 JSON 올리기</button>
-          <span id="lvupImpDrop" style="cursor:pointer;flex:1;min-width:180px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:8px 12px;color:#94A3B8;font-size:12px">📁 여기로 레벨업 JSON 파일을 끌어다 놓기</span>
+        <div class="upbar">
+          <div class="upbar-drop" id="lvupImpDrop">📁 레벨업 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">mapping·diagnostic·variants·questions·templates 자동 분리 적재</span></div>
           <input id="lvupImpFile" type="file" accept=".json,application/json" style="display:none">
+          <div class="upbar-summary" id="lvupImpStatus"></div>
+          <div class="upbar-actions">
+            <button class="upbar-run" onclick="document.getElementById('lvupImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="lvupExport()">⬇ 내보내기 (백업·복원용)</button>
+          </div>
         </div>
-        <div style="padding:2px 4px 10px"><button class="btn-sm" onclick="lvupExport()" style="background:#EAF5EE;color:#15793F">⬇ 레벨업 전체 내보내기 (백업·복원용)</button></div>
-        <div id="lvupImpStatus" style="padding:2px 4px;font-size:12.5px;color:#A89C8E;min-height:18px"></div>
         <div style="padding:8px 4px;font-size:11.5px;color:#B4A99C">적재 경로: <code>adaptive/{cert}__{subject}__{map | diag | variants | variantq | calctmpl}</code></div>
       </div>
     </div>
@@ -1153,22 +1140,10 @@ tr:hover td{background:#FAFAFA}
     <div class="modal-title">🎟️ 이용권 부여 / 연장</div>
     <div class="modal-row"><span class="modal-label">회원</span><span class="modal-value" id="grantEmail"></span></div>
     <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">시험 선택</div>
-    <select id="grantCert" onchange="grantCertChanged()" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></select>
-    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">처리 방식</div>
-    <div style="display:flex;gap:6px">
-      <button id="gmExtend" class="btn-sm" onclick="setGrantMode('extend')" style="flex:1;border:1.5px solid #E8E8E8;background:#fff">➕ 기간 연장</button>
-      <button id="gmSet" class="btn-sm" onclick="setGrantMode('set')" style="flex:1;border:1.5px solid #E8E8E8;background:#fff">📅 만료일 지정</button>
-    </div>
-    <div id="grantExtendBox">
-      <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">기간</div>
-      <div id="grantPeriods" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-      <div style="margin-top:8px"><input id="grantDaysCustom" type="number" min="1" placeholder="직접 입력(일)" oninput="grantPickCustom()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></div>
-    </div>
-    <div id="grantSetBox" style="display:none">
-      <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">만료일 지정</div>
-      <input id="grantSetDate" type="date" onchange="grantPreview()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none">
-      <div style="font-size:11px;color:#A89C8E;margin-top:5px;line-height:1.5">선택한 날짜로 만료일을 <b>덮어씁니다</b>(연장 아님). 과거 날짜 선택 시 즉시 만료돼요.</div>
-    </div>
+    <select id="grantCert" onchange="grantPreview()" style="width:100%;padding:10px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></select>
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:700;color:#5F5E5A">기간</div>
+    <div id="grantPeriods" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div style="margin-top:8px"><input id="grantDaysCustom" type="number" min="1" placeholder="직접 입력(일)" oninput="grantPickCustom()" style="width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none"></div>
     <div class="modal-note" id="grantPreviewBox" style="margin-top:14px">시험과 기간을 선택하세요.</div>
     <div class="modal-btns">
       <button class="btn-modal-cancel" onclick="closeGrantModal()">취소</button>
@@ -1414,7 +1389,8 @@ function masterListHTML(ns, all, emptyMsg, cardFn){
     return arr.slice().sort(function(a,b){ var d=_ts(b)-_ts(a); return d!==0?d:(a<b?-1:1); });  // 항상 최신순
   }
   var groups={}; ids.forEach(function(id){ var g=mfSubjOf(id, all[id])||'기타'; (groups[g]=groups[g]||[]).push(id); });
-  var gkeys=Object.keys(groups).sort();
+  function _gmax(g){ var mx=0; groups[g].forEach(function(id){ var t=_ts(id); if(t>mx) mx=t; }); return mx; }
+  var gkeys=Object.keys(groups).sort(function(a,b){ var d=_gmax(b)-_gmax(a); return d!==0?d:(a<b?-1:1); });   // 그룹(과목)도 최신순 — 최근 만진 과목이 위로
   var body=gkeys.map(function(g){
     return '<div class="mf-grouphd">'+mfEsc(mfSubjLabel(g))+' <span style="color:#B4AE9F;font-weight:500;font-size:11px">'+groups[g].length+'</span></div>'
       +sortIds(groups[g]).map(cardFn).join('');
@@ -2604,26 +2580,6 @@ function catToggle(headEl){ const g = headEl.closest('.cat'); if(!g) return; var
 document.addEventListener('click', function(e){ if(!e.target.closest('.cat')) document.querySelectorAll('.cat.open').forEach(function(c){ c.classList.remove('open'); }); });
 
 // ===== 데이터 로드 =====
-// ===== 자동 새로고침(폴링): 5분 주기, 화면 보일 때만 =====
-let _pollTimer=null, _pollBusy=false;
-const POLL_MS=5*60*1000;
-async function pollRefresh(silent){
-  if(_pollBusy) return; _pollBusy=true;
-  const btn=document.getElementById('adminRefreshBtn');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ 불러오는 중…'; }
-  try{ await loadAll(); }catch(_){}
-  if(btn){ btn.disabled=false; btn.textContent='🔄 새로고침'; const t=document.getElementById('adminRefreshTime'); if(t) t.textContent='업데이트 '+new Date().toLocaleTimeString('ko-KR'); }
-  _pollBusy=false;
-}
-function startPolling(){
-  stopPolling();
-  if(document.visibilityState==='visible') _pollTimer=setInterval(()=>{ if(document.visibilityState==='visible') pollRefresh(true); }, POLL_MS);
-}
-function stopPolling(){ if(_pollTimer){ clearInterval(_pollTimer); _pollTimer=null; } }
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible'){ pollRefresh(true); startPolling(); }
-  else stopPolling();
-});
 async function loadAll() {
   await Promise.all([loadPayments(), loadMembers(), loadReports(), loadCodes(), loadMileage()]);
   renderMembers(allMembers);   // 결제·쿠폰 로드 후 출처 배지 반영해 재렌더
@@ -4585,28 +4541,8 @@ async function markReportDone(reportId) {
 
 // ===== 회원권 관리 (시험별 이용권) =====
 const ENT_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory'];
-const ENT_PERIODS = [{d:7,l:'1주'},{d:14,l:'2주'},{d:28,l:'4주'},{d:56,l:'8주'},{d:90,l:'90일'},{d:365,l:'365일'}];
-let grantUid=null, grantEmailVal=null, grantDays=56;
-let grantMode='extend';
-function toDateInputVal(d){ const x=new Date(d); const y=x.getFullYear(), m=String(x.getMonth()+1).padStart(2,'0'), dd=String(x.getDate()).padStart(2,'0'); return y+'-'+m+'-'+dd; }
-function setGrantMode(mode){
-  grantMode=mode;
-  document.getElementById('grantExtendBox').style.display = (mode==='extend')?'':'none';
-  document.getElementById('grantSetBox').style.display = (mode==='set')?'':'none';
-  const ex=document.getElementById('gmExtend'), st=document.getElementById('gmSet');
-  ex.style.background=(mode==='extend')?'#1D9E75':'#fff'; ex.style.color=(mode==='extend')?'#fff':'#5F5E5A'; ex.style.borderColor=(mode==='extend')?'#1D9E75':'#E8E8E8';
-  st.style.background=(mode==='set')?'#1D9E75':'#fff'; st.style.color=(mode==='set')?'#fff':'#5F5E5A'; st.style.borderColor=(mode==='set')?'#1D9E75':'#E8E8E8';
-  if(mode==='set'){
-    const inp=document.getElementById('grantSetDate');
-    if(!inp.value){
-      const cert=document.getElementById('grantCert').value;
-      const m=allMembers.find(x=>x.id===grantUid); let base=new Date();
-      if(m){ const cur=entStatusOf(m,cert); if(cur.plan==='ACTIVE'&&cur.exp) base=new Date(cur.exp); }
-      inp.value=toDateInputVal(base);
-    }
-  }
-  grantPreview();
-}
+const ENT_PERIODS = [{d:14,l:'14일'},{d:30,l:'30일'},{d:90,l:'90일'},{d:365,l:'365일'}];
+let grantUid=null, grantEmailVal=null, grantDays=30;
 
 function entStatusOf(m, cert){
   const e = (m.entitlements && m.entitlements[cert]) || null;
@@ -4647,16 +4583,14 @@ function renderEntMembers(){
 }
 
 function openGrant(uid, email){
-  grantUid=uid; grantEmailVal=email; grantDays=56;
+  grantUid=uid; grantEmailVal=email; grantDays=30;
   document.getElementById('grantEmail').textContent=email;
   const sel=document.getElementById('grantCert');
   sel.innerHTML=ENT_CERTS.map(c=>'<option value="'+c+'">'+CERT_NAMES[c]+'</option>').join('');
   document.getElementById('grantPeriods').innerHTML=ENT_PERIODS.map(p=>
     '<button class="btn-sm" data-d="'+p.d+'" onclick="grantPickPeriod('+p.d+')" style="border:1.5px solid #E8E8E8;background:#fff">'+p.l+'</button>').join('');
   document.getElementById('grantDaysCustom').value='';
-  document.getElementById('grantSetDate').value='';
-  grantPickPeriod(56);
-  setGrantMode('extend');
+  grantPickPeriod(30);
   document.getElementById('grantModal').classList.remove('hidden');
 }
 function closeGrantModal(){ document.getElementById('grantModal').classList.add('hidden'); grantUid=null; }
@@ -4674,63 +4608,37 @@ function grantPickCustom(){
   if(v>0){ grantDays=v; document.querySelectorAll('#grantPeriods button').forEach(b=>{ b.style.background='#fff'; b.style.color='#5F5E5A'; b.style.borderColor='#E8E8E8'; }); }
   grantPreview();
 }
-function grantCertChanged(){
-  if(grantMode==='set'){ document.getElementById('grantSetDate').value=''; setGrantMode('set'); }
-  else grantPreview();
-}
 function grantPreview(){
   const cert=document.getElementById('grantCert').value;
   const m=allMembers.find(x=>x.id===grantUid);
-  let cur=null; const today=new Date();
-  if(m){ cur=entStatusOf(m,cert); }
-  const curTxt=(cur&&cur.plan==='ACTIVE'&&cur.exp)?('현재 만료 '+fmtDateShort(cur.exp)+' → '):'신규 부여 → ';
-  if(grantMode==='set'){
-    const v=document.getElementById('grantSetDate').value;
-    if(!v){ document.getElementById('grantPreviewBox').innerHTML='만료일을 선택하세요.'; return; }
-    const chosen=new Date(v+'T23:59:59');
-    const past = chosen < today;
-    document.getElementById('grantPreviewBox').innerHTML=
-      '<b>'+CERT_NAMES[cert]+'</b> · 만료일 지정<br>'+curTxt+
-      '<b style="color:'+(past?'#C0392B':'#1D9E75')+'">'+(past?'즉시 만료 ':'만료일 ')+chosen.toLocaleDateString('ko-KR')+'</b>'+
-      (past?'<br><span style="color:#C0392B;font-size:12px">⚠️ 과거 날짜 — 이용권이 즉시 종료됩니다</span>':'');
-    return;
-  }
   let base=new Date();
-  if(cur&&cur.plan==='ACTIVE'&&cur.exp&&cur.exp>base) base=new Date(cur.exp);
+  let cur=null;
+  if(m){ cur=entStatusOf(m,cert); if(cur.plan==='ACTIVE'&&cur.exp&&cur.exp>base) base=new Date(cur.exp); }
   const newExp=new Date(base); newExp.setDate(newExp.getDate()+grantDays);
+  const curTxt=(cur&&cur.plan==='ACTIVE'&&cur.exp)?('현재 만료 '+fmtDateShort(cur.exp)+' → '):'신규 부여 → ';
   document.getElementById('grantPreviewBox').innerHTML=
     '<b>'+CERT_NAMES[cert]+'</b> · '+grantDays+'일<br>'+curTxt+'<b style="color:#1D9E75">새 만료일 '+newExp.toLocaleDateString('ko-KR')+'</b>';
 }
 async function confirmGrant(){
   if(!grantUid) return;
   const cert=document.getElementById('grantCert').value;
+  if(!grantDays||grantDays<=0){ alert('기간을 선택하세요.'); return; }
   try{
     const doc=await db.collection('users').doc(grantUid).get();
     const data=doc.data()||{};
     const e=(data.entitlements&&data.entitlements[cert])||null;
-    let base, msg;
-    if(grantMode==='set'){
-      const v=document.getElementById('grantSetDate').value;
-      if(!v){ alert('만료일을 선택하세요.'); return; }
-      base=new Date(v+'T23:59:59');
-      msg='['+CERT_NAMES[cert]+'] 만료일 지정 → '+base.toLocaleDateString('ko-KR');
-      if(base<new Date() && !confirm('과거 날짜예요. 이 이용권을 즉시 만료시킬까요?')) return;
-    } else {
-      if(!grantDays||grantDays<=0){ alert('기간을 선택하세요.'); return; }
-      base=new Date();
-      if(e&&e.plan==='ACTIVE'&&e.expireAt){ const c=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); if(c>base) base=c; }
-      base.setDate(base.getDate()+Number(grantDays));
-      msg='['+CERT_NAMES[cert]+'] '+grantDays+'일 부여 → 새 만료일 '+base.toLocaleDateString('ko-KR');
-    }
+    let base=new Date();
+    if(e&&e.plan==='ACTIVE'&&e.expireAt){ const c=e.expireAt.toDate?e.expireAt.toDate():new Date(e.expireAt); if(c>base) base=c; }
+    base.setDate(base.getDate()+Number(grantDays));
     const ts=firebase.firestore.Timestamp.fromDate(base);
     const upd={};
     upd['entitlements.'+cert+'.plan']='ACTIVE';
     upd['entitlements.'+cert+'.expireAt']=ts;
-    if(grantMode==='extend'){ upd['entitlements.'+cert+'.planDays']=Number(grantDays); }
-    if(cert==='bodybuilding'){ upd.plan='ACTIVE'; upd.expireAt=ts; if(grantMode==='extend') upd.planDays=Number(grantDays); }
+    upd['entitlements.'+cert+'.planDays']=Number(grantDays);
+    if(cert==='bodybuilding'){ upd.plan='ACTIVE'; upd.expireAt=ts; upd.planDays=Number(grantDays); }
     await db.collection('users').doc(grantUid).update(upd);
     closeGrantModal();
-    alert('✅ '+grantEmailVal+'\n'+msg);
+    alert('✅ '+grantEmailVal+'\n['+CERT_NAMES[cert]+'] '+grantDays+'일 부여 완료\n새 만료일: '+base.toLocaleDateString('ko-KR'));
     await loadAll();
     renderEntMembers();
   }catch(e){ alert('오류: '+e.message); }
@@ -4804,14 +4712,12 @@ if (firebaseReady && auth) {
       const em = document.getElementById('adminEmail');
       if (em) em.textContent = user.email;
       loadAll();
-      startPolling();
     } else if (user) {
       alert('관리자 권한이 없는 계정입니다: ' + user.email);
       auth.signOut();
     } else {
       if(loginEl) loginEl.style.display = 'flex';
       if(wrapEl)  wrapEl.style.display  = 'none';
-      stopPolling();
     }
   });
 }
