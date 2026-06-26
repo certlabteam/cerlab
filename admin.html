@@ -1532,8 +1532,8 @@ function mnemImpHandle(fileList){
     try{
       var o=JSON.parse(rd.result);
       var arr=Array.isArray(o)?o:(o.mnemonics||[]);
-      var valid=arr.filter(function(x){ return x&&x.id&&x.code; });
-      if(!valid.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='mnemonics 항목 없음 (id·code 필요)';} return; }
+      var valid=arr.filter(function(x){ return x&&x.id&&(x.code||(Array.isArray(x.boxes)&&x.boxes.length)); });
+      if(!valid.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='mnemonics 항목 없음 (id·code 또는 boxes 필요)';} return; }
       if(!_impDateGate('암기코드', o, valid, 'id', true)) return;
       _mnemImpData=valid;
       if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: 코드 <b>'+valid.length+'</b>개 — 올리는 중…'; }
@@ -1550,10 +1550,14 @@ async function mnemImport(){
   for(var i=0;i<_mnemImpData.length;i++){
     var it=_mnemImpData[i]; var id=String(it.id);
     if(!/^mn_[a-z0-9_]+$/.test(id)){ fail++; continue; }
-    var rec={ name:it.name||'', code:it.code||'', desc:it.desc||'',
+    var _bx=(Array.isArray(it.boxes)&&it.boxes.length)?it.boxes.map(function(b){return {code:(b&&b.code)||'',desc:(b&&b.desc)||''};}):null;
+    var rec={ name:it.name||'', code:_bx?(_bx[0].code||''):(it.code||''), desc:_bx?(_bx[0].desc||''):(it.desc||''),
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
       note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    _impPreserve(rec, it, _mnemAll[id], ['name','note','certs','keywords','code','desc']);
+    if(_bx) rec.boxes=_bx;            // 박스형(멀티그룹) 보존
+    if(it.kind) rec.kind=it.kind;     // 문장형 등 kind 보존 (kind:"sentence")
+    // 박스형이면 code/desc는 boxes[0] 미러라 기존값 복원 금지(옛 flat code 되살아남 방지)
+    _impPreserve(rec, it, _mnemAll[id], _bx?['name','note','certs','keywords']:['name','note','certs','keywords','code','desc']);
     try{ await db.collection('mnemonics').doc(id).set(rec); _mnemAll[id]=_cacheRec(rec); ok++; }catch(e){ fail++; }
   }
   var stt=document.getElementById('mnemImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 복구: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패/형식오류 '+fail+'개'):'')+'.'; }
