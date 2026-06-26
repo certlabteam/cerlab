@@ -7113,4 +7113,26 @@ function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc, calcDoc){
   return bundle;
 }
 // 문항 id → {topic,diff,subtopic} (Elo 훅·출제에서 사용)
-function adLookup(cert, sub, qid){ var b=AD_DATA[cert+'|'+su
+function adLookup(cert, sub, qid){ var b=AD_DATA[cert+'|'+sub]; return (b&&b.lookup[qid])||null; }
+// ===== 적응형 Elo 트랙 (2-c) — 기존 srProgress/mcqVerdict와 분리 =====
+var eloState = {};   // "cert|sub" -> { topic: {score, attempts} }
+function adEloUpdate(q, correct){
+  try{
+    if(!q || !q.id || typeof AE==='undefined') return null;
+    var cs = (typeof MCQ_QID2CS!=='undefined') && MCQ_QID2CS[q.id];
+    var cert = (typeof mqCert!=='undefined' && mqCert) || (cs && cs.cert);
+    var sub  = (cs && cs.sub) || q._subj || q.subject;
+    var topic = q.topic, diff = q.diff;
+    if((!topic || !diff) && cert && sub){ var info=adLookup(cert, sub, q.id); if(info){ topic=topic||info.topic; diff=diff||info.diff; } }
+    if(!cert || !sub || !topic || !diff) return null;   // 식별 불가(맵에 없는 회차기출 등) → 스킵·무시
+    var k=cert+'|'+sub;
+    if(!eloState[k]) eloState[k]={};
+    var cur=eloState[k][topic] || {score:AE.CFG.DEFAULT_SCORE, attempts:0};
+    var up=AE.updateScore(cur.score, diff, !!correct, cur.attempts);
+    eloState[k][topic]={score:up.score, attempts:cur.attempts+1};
+    return {cert:cert, sub:sub, topic:topic, diff:diff, delta:up.delta, score:up.score};
+  }catch(e){ return null; }
+}
+</script>
+</body>
+</html>
