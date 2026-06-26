@@ -5535,16 +5535,20 @@ async function goToCard(qid, certHint){
         try{ await Promise.all(_subs.map(function(code){ return loadAdaptiveSubject(certHint, code).catch(function(){return null;}); })); }catch(_){}
       }
       // variantPool 전 과목에서 문항 찾기
-      var _found=null, _foundSub=null;
+      var _found=null, _foundSub=null, _poolInfo=[];
       if(typeof AD_DATA!=='undefined'){
         for(var vi=0; vi<_subs.length; vi++){
           var _b=AD_DATA[certHint+'|'+_subs[vi]];
+          var _plen=(_b&&Array.isArray(_b.variantPool))?_b.variantPool.length:'(pool없음)';
+          var _ids=(_b&&Array.isArray(_b.variantPool))?_b.variantPool.slice(0,3).map(function(q){return q&&q.id;}).join(','):'';
+          _poolInfo.push(_subs[vi]+':'+_plen+(_ids?('['+_ids+'…]'):''));
           if(_b && Array.isArray(_b.variantPool)){
             var _hit=_b.variantPool.find(function(q){ return q && q.id===qid; });
             if(_hit){ _found=_hit; _foundSub=_subs[vi]; break; }
           }
         }
-      }
+      } else { _poolInfo.push('AD_DATA 자체가 undefined'); }
+      if(!_found){ alert('[진단] 레벨업 문항 못찾음\nqid='+qid+'\ncert='+certHint+'\nsubs='+JSON.stringify(_subs)+'\npools='+_poolInfo.join(' / ')); }
       if(_found){   // 단독 1문항 리뷰로 띄움 (채점·레벨변동 없이 문항+해설 확인)
         mqSub=_foundSub; mqSet=0; mqMode='all';
         mqReview=true; mqDiag=false; mqLevelUp=false; mqGather=false; mqConcept=false; mqInReview=true;
