@@ -5732,19 +5732,20 @@ async function diagMeasureRetry(examId){
   var ex=MANIFEST&&(MANIFEST.exams||[]).find(function(e){return e.id===examId;});
   var _now=function(){ return (window.performance&&performance.now)?performance.now():Date.now(); };
   if(!ex) return { examId:examId, ms:0, recs:[] };
+  var _to=8000; try{ var mm=location.search.match(/[?&]to=(\d+)/); if(mm) _to=parseInt(mm[1],10)||8000; }catch(e){}
   var subs=(ex.subjects||[]); var recList=[];
   var t0=_now();
   for(var si=0; si<subs.length; si++){
     var sub=subs[si]; var rec={sub:sub.code, metaMs:0, shardMs:0, shards:0, shardExist:0, q:0, tries:0};
     try{
       var m0=_now();
-      var snap=await diagGetWithRetry(examId+'__'+sub.code, 8000, 3);
+      var snap=await diagGetWithRetry(examId+'__'+sub.code, _to, 4);
       rec.metaMs=_now()-m0;
       var meta=snap.exists?snap.data():null;
       if(meta && Array.isArray(meta.shards) && meta.shards.length){
         rec.shards=meta.shards.length;
         var s0=_now();
-        var parts=await Promise.all(meta.shards.map(function(sid){ return diagGetWithRetry(examId+'__'+sub.code+'__'+sid, 8000, 3).catch(function(){return null;}); }));
+        var parts=await Promise.all(meta.shards.map(function(sid){ return diagGetWithRetry(examId+'__'+sub.code+'__'+sid, _to, 4).catch(function(){return null;}); }));
         rec.shardMs=_now()-s0;
         parts.forEach(function(p){ if(p&&p.exists){ rec.shardExist++; var pd=p.data(); if(Array.isArray(pd.questions)) rec.q+=pd.questions.length; } });
       } else if(meta){ rec.q=(Array.isArray(meta.questions)?meta.questions.length:0); }
@@ -6052,9 +6053,10 @@ function diagRender(results){
   var html='', txt='';
   results.forEach(function(r){
     var rest=!!r.restMode, retry=!!r.retryMode;
+    var _toS=(((location.search.match(/[?&]to=(\d+)/)||[])[1]||'8000')/1000);
     var f=(r.full.ms/1000).toFixed(1), l=(r.lim.ms/1000).toFixed(1);
     var win=(r.lim.ms < r.full.ms*0.7);
-    var lblA=(rest||retry)?'SDK':'전체동시', lblB=retry?'8초재시도':(rest?'REST':'동시3제한');
+    var lblA=(rest||retry)?'SDK':'전체동시', lblB=retry?('재시도'+_toS+'초'):(rest?'REST':'동시3제한');
     html+='<div style="border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff">';
     html+='<div style="font-weight:800;color:#0C447C;margin-bottom:4px">'+certLabel(r.examId)+'</div>';
     html+='<div style="font-size:13px;margin-bottom:6px">'+lblA+' <b>'+f+'초</b> &nbsp;→&nbsp; '+lblB+' <b style="color:'+(win?'#16a34a':'#185FA5')+'">'+l+'초</b>'+(win?' ✓개선':'')+'</div>';
@@ -6090,7 +6092,7 @@ function openDiag(){
   ov.innerHTML='<div style="max-width:560px;margin:0 auto">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:18px;font-weight:800;color:#0C447C">⏱ 로딩 진단</div><button onclick="document.getElementById(\'diagOverlay\').remove()" style="border:none;background:#E2E8F0;border-radius:8px;padding:8px 12px;font-weight:700">닫기</button></div>'
     +'<div style="font-size:12px;color:#64748B;line-height:1.5;margin-bottom:8px">각 시험의 캐시를 비우고 실제 로딩 시간을 측정합니다(첫 진입 상태 재현). 느린 환경인 <b>사파리</b>에서 실행하세요.</div>'
-    +'<div id="diagLpBadge" style="display:inline-block;font-size:12px;font-weight:800;border-radius:8px;padding:5px 10px;margin-bottom:12px;'+( (/[?&]lp=off/.test(location.search)) ? 'background:#DCFCE7;color:#166534">롱폴링: 자동(강제 OFF)' : 'background:#FEF3C7;color:#92400E">롱폴링: 강제 ON')+( (/[?&]fs=off/.test(location.search)) ? ' · fetchStreams OFF' : '')+( (/[?&]rest=1/.test(location.search)) ? ' · SDK vs REST 비교' : '')+( (/[?&]retry=1/.test(location.search)) ? ' · SDK vs 8초재시도' : '')+'</div>'
+    +'<div id="diagLpBadge" style="display:inline-block;font-size:12px;font-weight:800;border-radius:8px;padding:5px 10px;margin-bottom:12px;'+( (/[?&]lp=off/.test(location.search)) ? 'background:#DCFCE7;color:#166534">롱폴링: 자동(강제 OFF)' : 'background:#FEF3C7;color:#92400E">롱폴링: 강제 ON')+( (/[?&]fs=off/.test(location.search)) ? ' · fetchStreams OFF' : '')+( (/[?&]rest=1/.test(location.search)) ? ' · SDK vs REST 비교' : '')+( (/[?&]retry=1/.test(location.search)) ? (' · SDK vs 재시도('+((location.search.match(/[?&]to=(\d+)/)||[])[1]||'8000')/1000+'초)') : '')+'</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:8px"><button id="diagRunBtn" onclick="diagRunAll()" style="flex:1;border:none;background:#0C447C;color:#fff;border-radius:10px;padding:12px;font-weight:800;font-size:14px">전체 자동 측정</button><button onclick="diagCopy()" style="border:none;background:#185FA5;color:#fff;border-radius:10px;padding:12px;font-weight:800;font-size:14px">텍스트 복사</button></div>'
     +'<div id="diagStatus" style="font-size:12px;color:#185FA5;font-weight:700;margin-bottom:10px;min-height:16px"></div>'
     +'<div id="diagBody"></div>'
