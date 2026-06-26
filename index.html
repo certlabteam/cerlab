@@ -44,11 +44,11 @@ gtag('config', 'G-RPZRZQ779J');
 {"@type":"EducationalOrganization","name":"CertLab","url":"https://certlab.ai.kr/","description":"생활스포츠지도사 보디빌딩 구술, 감정평가사 등 자격증 기출문제 자동복습·예상점수 학습 플랫폼"}
 ]}
 </script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
@@ -746,6 +746,20 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .cmp-head span{padding:11px 8px;text-align:center}
 .cmp-head span:first-child{text-align:left}
 .cmp-head .paid{background:#E8F6EE;color:#15793F}
+/* 무료/유료 2장 비교 카드 */
+.cmp2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.cmp2-card{border:1px solid #ECE6DD;border-radius:12px;padding:12px;background:#fff;position:relative}
+.cmp2-h{font-size:13px;font-weight:700;text-align:center;padding-bottom:8px;margin-bottom:9px;border-bottom:1px solid #F2ECE3}
+.cmp2-li{font-size:11px;line-height:1.5;word-break:keep-all;margin-bottom:7px}
+.cmp2-li:last-child{margin-bottom:0}
+.cmp2-free .cmp2-h{color:#6E6256}
+.cmp2-free .cmp2-li{color:#A89C8E}
+.cmp2-free .cmp-warn{color:#C98A3A;font-weight:700}
+.cmp2-free .cmp-no{color:#C0392B;font-weight:700}
+.cmp2-paid{border:1.5px solid #15793F;background:#F7FCF9}
+.cmp2-paid .cmp2-h{color:#15793F;border-bottom-color:#DCEFE3}
+.cmp2-paid .cmp2-li{color:#15793F;font-weight:700}
+.cmp2-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#15793F;color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:10px;white-space:nowrap}
 .anal-card{margin:12px 14px 4px;padding:16px 16px 14px;background:#fff;border:1px solid #E2D6CC;border-radius:16px;box-shadow:0 2px 12px rgba(80,50,20,.05)}
 .anal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .anal-top b{font-size:14px;color:#2C2C2A}
@@ -2058,16 +2072,28 @@ function examCount(){
   return c;
 }
 function featureCompareHTML(totalTxt){
-  const rows=[
-    ['풀 수 있는 문제','50문제 체험','전체 '+totalTxt],
-    ['전 과목·회차 기출 + 상세해설','체험분만','✓ 전체'],
-    ['예상점수 · 약점 분석','체험분만','✓ 전체 기준'],
-    ['망각곡선 자동복습','제한','✓ 무제한'],
-    ['음성 듣기 · 암기코드','✓','✓'],
-    ['학습 기록 이어가기','✕ 체험 종료','✓ 계속']
+  // 무료/유료 2장 카드. 같은 순서의 줄끼리 같은 기능(아이콘으로 매칭).
+  const free=[
+    '📄 50문제 체험',
+    '📚 기출·해설 <b class="cmp-warn">△ 체험분</b>',
+    '📈 예상점수 <b class="cmp-warn">△ 체험분</b>',
+    '🧠 복습 <b class="cmp-warn">△ 제한</b>',
+    '🔊 음성·암기 <b class="cmp-warn">△ 체험분</b>',
+    '💾 학습기록 <b class="cmp-no">✕ 종료</b>'
   ];
-  return '<div class="cmp"><div class="cmp-row cmp-head"><span>기능</span><span>무료</span><span class="paid">유료</span></div>'
-    + rows.map(r=>'<div class="cmp-row"><span>'+r[0]+'</span><span class="free">'+r[1]+'</span><span class="paid">'+r[2]+'</span></div>').join('')
+  const paid=[
+    '📄 전체 '+totalTxt+' <b>✓</b>',
+    '📚 전 과목 기출·해설 <b>✓</b>',
+    '📈 예상점수 전체 <b>✓</b>',
+    '🧠 무제한 복습 <b>✓</b>',
+    '🔊 음성·암기 <b>✓</b>',
+    '💾 학습기록 계속 <b>✓</b>'
+  ];
+  return '<div class="cmp2">'
+    + '<div class="cmp2-card cmp2-free"><div class="cmp2-h">무료 체험</div>'
+      + free.map(t=>'<div class="cmp2-li">'+t+'</div>').join('') + '</div>'
+    + '<div class="cmp2-card cmp2-paid"><div class="cmp2-badge">추천</div><div class="cmp2-h">유료 이용권</div>'
+      + paid.map(t=>'<div class="cmp2-li">'+t+'</div>').join('') + '</div>'
     + '</div>';
 }
 function showPlanPopup() {
@@ -2125,8 +2151,13 @@ function showWelcomePopup() {
 // ===== 이용권 선택 & 신청 =====
 const PLAN_SETS={
   _default:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
-            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용',pop:'⭐ 가장 인기'},
-            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
+            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
+            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+  bodybuilding:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
+            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
+            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
+            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
   appraiser:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
              {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
              {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
