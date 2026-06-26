@@ -1383,7 +1383,11 @@ try {
   );
   auth = firebase.auth();
   db = firebase.firestore();
-  try{ db.settings({ experimentalForceLongPolling: true, merge: true }); }catch(e){ console.warn('firestore settings', e); }
+  try{
+    var _lpOff=false; try{ _lpOff=/[?&]lp=off/.test(location.search); }catch(e){}
+    if(_lpOff){ db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); console.log('[LP] 자동감지(강제 OFF)'); }
+    else { db.settings({ experimentalForceLongPolling: true, merge: true }); }
+  }catch(e){ console.warn('firestore settings', e); }
   storage = firebase.storage();
   googleProvider = new firebase.auth.GoogleAuthProvider();
   firebaseReady = true;
