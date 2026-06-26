@@ -1438,7 +1438,8 @@ function renderExpFull(q, mqCertVal){
       var mnList=Array.isArray(_mn)?_mn:(_mn&&(typeof _mn==='object'||typeof _mn==='string')?[_mn]:[]);
       mnList.forEach(function(mn,idx){
         if(typeof mn==='string' && mn.indexOf('mn://')===0){
-          var _cm=_mnemCache[mn.slice(5)];
+          var _mid=mn.slice(5);
+          var _cm=_mnemCache[_mid]||_mnemMaster[_mid];
           if(_cm){ body+=pvMnBoxesHTML(_cm); return; }   // 번들/마스터에 있으면 실제 치환
           body+='<div class="mn-box'+(idx>0?' mn-box-extra':'')+'">'+(idx===0?'<div class="mn-ti">암기코드</div>':'')+'<div class="mn-code" style="color:#7F77DD;font-family:monospace;font-size:13px">'+mn+' <span style="color:#A89C8E;font-size:11px">(마스터 참조 — 앱에서 코드로 치환)</span></div></div>';
           return;
@@ -1643,7 +1644,7 @@ function renderTbl(t){
 function tblResolve(ref){
   if(ref && typeof ref==='object' && Array.isArray(ref.headers)) return renderTbl(ref);
   if(typeof ref==='string' && ref.indexOf('tbl://')===0){
-    var id=ref.slice(6), t=_tblCache[id];
+    var id=ref.slice(6), t=_tblCache[id]||_tblMaster[id];
     if(t) return renderTbl(t);
     return '<div class="tbl-ph">'+tblEsc(ref)+' <span style="font-weight:400">(표 마스터 미동봉 — JSON에 tables 넣으면 실제 표로 렌더 · 앱에선 자동)</span></div>';
   }
@@ -1667,7 +1668,7 @@ function grpSanitizeSvg(svg){
 function grpResolve(ref){
   if(ref && typeof ref==='object' && ref.svg) return '<div class="grp-box">'+grpSanitizeSvg(ref.svg)+'</div>';
   if(typeof ref==='string' && ref.indexOf('grp://')===0){
-    var id=ref.slice(6), g=_grpCache[id];
+    var id=ref.slice(6), g=_grpCache[id]||_grpMaster[id];
     if(g && g.svg) return '<div class="grp-box">'+grpSanitizeSvg(g.svg)+'</div>';
     if(g) return '';   // 파라미터형 — 렌더러 추후
     return '<div class="tbl-ph">'+tblEsc(ref)+' <span style="font-weight:400">(그래프 마스터 미동봉 — JSON에 graphs 넣으면 렌더 · 앱에선 자동)</span></div>';
@@ -1696,7 +1697,7 @@ function pvMnCards(o){ var bx=pvMnNorm(o).filter(function(b){return b.code||b.de
 function pvMnBoxesHTML(o){ var cards=pvMnCards(o); if(!cards.length) return '<div class="mn-box"><div class="mn-ti">암기코드</div><div class="mn-code" style="color:#94A3B8">(코드 없음)</div></div>'; return cards.map(function(cd,i){ var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':''; return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+pvChantHTML(cd.code,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>'; }).join(''); }
 function pvMnResolve(ref){
   if(ref && typeof ref==='object') return ref;
-  if(typeof ref==='string' && ref.indexOf('mn://')===0){ var id=ref.slice(5), m=_mnemCache[id]; if(!m) return {broken:true, ref:id}; return m; }
+  if(typeof ref==='string' && ref.indexOf('mn://')===0){ var id=ref.slice(5), m=_mnemCache[id]||_mnemMaster[id]; if(!m) return {broken:true, ref:id}; return m; }
   return {code:String(ref||''), desc:''};
 }
 // 개념 카드 배열 → concept-row HTML (개념 렌더 공용; pvConceptCard·review 개념셀이 공유 → 드리프트 방지)
