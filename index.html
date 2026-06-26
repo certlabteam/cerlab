@@ -5651,6 +5651,9 @@ function ensureMasters(){
   if(!_mastersPromise) _mastersPromise=Promise.all([loadMnemonics(),loadTables(),loadGraphs(),loadConcepts()]);
   return _mastersPromise;
 }
+/* ===== [임시] 로딩 성능 측정: ?perf=1 접속 시에만 동작 (측정 후 제거) ===== */
+var PERF=false; try{ if(/[?&]perf=1/.test(location.search)){ PERF=true; localStorage.setItem('certlab_perf','1'); } else if(localStorage.getItem('certlab_perf')==='1'){ PERF=true; } }catch(e){}
+function _perfShow(msg){ try{ var b=document.getElementById('_perfBox'); if(!b){ b=document.createElement('div'); b.id='_perfBox'; b.style.cssText='position:fixed;left:8px;right:8px;bottom:70px;z-index:100001;background:#0C447C;color:#fff;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:pre-wrap'; b.onclick=function(){ b.remove(); }; document.body.appendChild(b); b._lines=[]; } b._lines.unshift('⏱ '+msg); if(b._lines.length>8) b._lines.length=8; b.textContent=b._lines.join('\n')+'\n(탭하면 닫힘)'; }catch(e){} }
 async function loadExam(examId){
   if(loadedExams[examId]) return;
   if(loadingExams[examId]) return loadingExams[examId];   // 이미 로딩 중이면 같은 작업 공유
@@ -5660,9 +5663,11 @@ async function loadExam(examId){
     var _mp=ensureMasters();
     const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
     if(!ex){ loadedExams[examId]=true; return; }
+    var _t0=PERF?((window.performance&&performance.now)?performance.now():Date.now()):0;
     await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));   // 문제 뱅크 먼저 → 목록 즉시 표시
     loadedExams[examId]=true;
     rebuildQid();
+    if(PERF){ try{ var _t1=(window.performance&&performance.now)?performance.now():Date.now(); var _ms=_t1-_t0; var _subs=(ex.subjects||[]).length; var _bytes=0,_qn=0; var _qb=qbOf(examId)||{}; try{ _bytes=JSON.stringify(_qb).length; }catch(e){} Object.keys(_qb).forEach(function(k){ (_qb[k].sets||[]).forEach(function(st){ _qn+=(st.questions||[]).length; }); }); var _line=certLabel(examId)+': '+(_bytes/1048576).toFixed(2)+'MB / '+(_ms/1000).toFixed(1)+'초 ('+_subs+'과목 '+_qn+'문항)'; console.log('[PERF] '+_line); _perfShow(_line); }catch(e){} }
     // 마스터 로드 완료 시 1회 재렌더(선행학습 버튼·cpt/tbl/grp/mn 링크 채움)
     _mp.then(function(){ try{
       if(typeof renderMCQ!=='function' || typeof mqCert==='undefined' || mqCert!==examId || typeof mqScreen==='undefined') return;
