@@ -1546,6 +1546,8 @@ async function loadUserPlan(user) {
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      // 신규 가입 확정 시점(로그인 경로 무관) → Meta CompleteRegistration
+      try { clTrack('CompleteRegistration', { content_name:'signup', content_category:(typeof activeCert!=='undefined'?(activeCert||''):''), status:true }); } catch(_){}
       myReferralCode = refCode; myMileageLots = lots;
       // 추천 기록(추천인 정산용) — 추천코드로 들어온 경우만
       if (referredBy) {
@@ -1849,15 +1851,9 @@ async function signInWithGoogle() {
     return;
   }
   try {
-    const _res = await auth.signInWithPopup(googleProvider);
+    await auth.signInWithPopup(googleProvider);
     hideLoginPopup();
-    try {
-      if (_res && _res.additionalUserInfo && _res.additionalUserInfo.isNewUser) {
-        clTrack('CompleteRegistration', { content_name:'google_signup', status:true });
-      } else {
-        clTrackCustom('Login', { method:'google' });
-      }
-    } catch(_){}
+    // CompleteRegistration은 loadUserPlan 신규회원 분기에서 발사(로그인 경로 무관 보장)
   } catch(e) {
     if (e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message);
   }
