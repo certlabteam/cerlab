@@ -5493,13 +5493,9 @@ async function enterCert(id){
   // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
   if(!loadedExams[id]){
     var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
-    if(_tgt) _tgt.innerHTML='<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…<div id="mqLoadHint" style="margin-top:10px;font-size:12px;color:#64748B;font-weight:500;min-height:16px"></div></div>';
-    // Safari 간헐 지연 대비: 6초/15초 경과 시 안내 문구로 멈춘 느낌 완화
-    var _lh1=setTimeout(function(){ var h=document.getElementById('mqLoadHint'); if(h) h.textContent='잠시만요, 문제를 준비하고 있어요…'; },6000);
-    var _lh2=setTimeout(function(){ var h=document.getElementById('mqLoadHint'); if(h) h.textContent='네트워크가 느린 환경이에요. 곧 표시됩니다 🙏'; },15000);
+    if(_tgt) _tgt.innerHTML='<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
     try{ await loadExam(id); }
-    catch(e){ clearTimeout(_lh1); clearTimeout(_lh2); if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
-    clearTimeout(_lh1); clearTimeout(_lh2);
+    catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
     if(id==='bodybuilding'){ cards=[...D]; filtered=[...cards]; current=0; }
   }
   // 렌더
@@ -5619,27 +5615,6 @@ async function loadManifest(){
 }
 // QB 캐시 신선도: 같은 버전 재업로드도 이 시간 안에 자동 반영(버전 미범프 안전망). 0이면 TTL 무시(영구 캐시).
 const QB_TTL_MS=6*60*60*1000;   // 6시간
-// === Safari 간헐 30초 hang 완화: 6초 타임아웃+재시도로 문서 get ===
-// Safari/WebKit이 firestore 개별 요청을 무작위로 hang시키는 문제 우회.
-// 6초 초과 시 요청을 끊고 새로 get(연결 재생성 유도). 마지막 시도는 타임아웃 없이(SDK 폴백) → 데이터는 반드시 받도록.
-const RESILIENT_TIMEOUT_MS=6000;
-const RESILIENT_MAX_TRY=4;
-function getDocResilient(docPath){
-  var tries=0;
-  function attempt(){
-    tries++;
-    var last=(tries>=RESILIENT_MAX_TRY);
-    var getP=db.collection('banks').doc(docPath).get();
-    if(last) return getP;   // 마지막 시도는 타임아웃 없이 끝까지 기다림(폴백)
-    return new Promise(function(resolve,reject){
-      var done=false;
-      var timer=setTimeout(function(){ if(!done){ done=true; reject(new Error('timeout')); } }, RESILIENT_TIMEOUT_MS);
-      getP.then(function(snap){ if(!done){ done=true; clearTimeout(timer); resolve(snap); } })
-          .catch(function(e){ if(!done){ done=true; clearTimeout(timer); reject(e); } });
-    }).catch(function(){ return attempt(); });   // 타임아웃/실패 → 새 get 재시도
-  }
-  return attempt();
-}
 // 과목 1개 로드(캐시→Firestore→샤드합치기) 후 applyBank
 async function loadOneSubject(ex, sub){
   const ver=(ex.versions&&ex.versions[sub.code])||1;
@@ -5660,9 +5635,7 @@ async function loadOneSubject(ex, sub){
   if(_mz && doc){ _mz.cache=true; _mz.q=(doc.questions||[]).length; }
   if(!doc){
     var _mt0=_mz?_now():0;
-    var _useResilient=false; try{ _useResilient=/[?&]loader=safe/.test(location.search); }catch(e){}
-    const snap=_useResilient ? await getDocResilient(ex.id+'__'+sub.code)
-                             : await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+    const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
     if(_mz) _mz.metaMs=_now()-_mt0;
     if(snap.exists){
       const meta=snap.data();
@@ -5671,8 +5644,7 @@ async function loadOneSubject(ex, sub){
         if(_mz){ _mz.shards=meta.shards.length; _mz.metaQ=(Array.isArray(meta.questions)?meta.questions.length:0); }
         var _st0=_mz?_now():0;
         const parts=await Promise.all(meta.shards.map(function(sid){
-          return _useResilient ? getDocResilient(ex.id+'__'+sub.code+'__'+sid)
-                               : db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
+          return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
         }));
         if(_mz) _mz.shardMs=_now()-_st0;
         const qs=[];
