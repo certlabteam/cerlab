@@ -302,14 +302,14 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .plan-stat{flex:1;background:#E9F2FB;border-radius:12px;padding:12px;text-align:center}
 .plan-stat .v{font-size:20px;font-weight:700;color:#0C447C}
 .plan-stat .l{font-size:10px;color:#888780;margin-top:2px}
-.plan-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
-.plan-card{border:1.5px solid #E8E8E8;border-radius:16px;padding:14px 16px;cursor:pointer;transition:all .15s;position:relative}
+.plan-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.plan-card{border:1.5px solid #E8E8E8;border-radius:16px;padding:14px 14px;cursor:pointer;transition:all .15s;position:relative}
 .plan-card:active{transform:scale(.98)}
 .plan-card.selected{border-color:#0C447C;background:#F4F9FE}
-.plan-card-top{display:flex;justify-content:space-between;align-items:center}
-.plan-card-name{font-size:15px;font-weight:700;color:#2C2C2A}
-.plan-card-price{font-size:16px;font-weight:700;color:#185FA5}
-.plan-card-desc{font-size:12px;color:#888780;margin-top:3px}
+.plan-card-top{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.plan-card-name{font-size:14px;font-weight:700;color:#2C2C2A}
+.plan-card-price{font-size:16px;font-weight:800;color:#185FA5}
+.plan-card-desc{font-size:11px;color:#888780;margin-top:4px}
 .plan-badge-pop{position:absolute;top:-8px;right:12px;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px}
 .bank-info{background:#FFF9F0;border:1.5px solid #FAC775;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#4B2000;line-height:1.8}
 .bank-info strong{font-weight:700}
@@ -719,7 +719,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .mq-mst.sr-weak{background:#E24B4A}
 .mq-mst.sr-learning{background:#E0A52E}
 .mq-mst.sr-master{background:#2E9B5E}
-.popup-x{position:sticky;top:0;float:right;width:34px;height:34px;margin:0 -4px -28px 0;background:#F0EDE8;border:1px solid #E2D6CC;border-radius:50%;font-size:18px;color:#6E6256;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:5;padding:0}
+.popup-x{position:sticky;top:10px;float:right;width:38px;height:38px;margin:2px -2px -34px 0;background:#F0EDE8;border:1px solid #E2D6CC;border-radius:50%;font-size:18px;color:#6E6256;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:5;padding:0}
 .popup-x:hover{background:#E2D6CC}
 .report-box{position:relative}
 .home-seo{font-size:12px;color:#A89C8E;line-height:1.6;margin-top:10px;max-width:440px;word-break:keep-all;overflow-wrap:break-word}
@@ -736,9 +736,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #planPopup .auth-sheet{max-width:560px;width:100%;min-height:100dvh;border-radius:0;display:flex;flex-direction:column}
 .plan-hl{margin:6px 0 14px;padding:13px;border-radius:14px;background:linear-gradient(135deg,#E6F1FB,#EAF7F1);color:#15507F;font-weight:800;font-size:16px;text-align:center}
 .cmp{border:1px solid #ECE6DD;border-radius:14px;overflow:hidden;margin-bottom:16px}
-.cmp-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;align-items:center;font-size:13px;border-top:1px solid #F2ECE3}
+.cmp-row{display:grid;grid-template-columns:1.7fr .9fr .9fr;align-items:center;font-size:12px;border-top:1px solid #F2ECE3}
 .cmp-row:first-child{border-top:none}
-.cmp-row span{padding:10px 8px}
+.cmp-row span{padding:9px 6px;line-height:1.35}
 .cmp-row span:first-child{text-align:left;color:#4A4036;font-weight:600}
 .cmp-row .free{color:#A89C8E;text-align:center}
 .cmp-row .paid{color:#15793F;font-weight:800;text-align:center;background:#F1FAF4}
@@ -2078,7 +2078,7 @@ function showPlanPopup() {
   const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
   const allN = totalQuestionCountAll();
   const exams = examCount();
-  const headTxt = (exams>0 && allN>0) ? exams+'개 시험 · 총 '+allN.toLocaleString()+'문제 수록' : '전체 기출문제 + 상세해설 수록';
+  const headTxt = (n>0) ? certLabel(cert)+' · '+n.toLocaleString()+'문제 수록' : certLabel(cert)+' · 전체 기출 + 상세해설';
   const stats = document.getElementById('planStats');
   if (stats) {
     stats.innerHTML =
