@@ -1016,6 +1016,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <h1>어떤 시험을 준비하세요?</h1>
     <p class="home-seo">CertLab(서트랩)은 생활스포츠지도사 보디빌딩 구술·감정평가사 기출을 망각곡선 자동복습과 예상점수로 준비하는 학습 플랫폼입니다.</p>
   </div>
+  <div id="diagBtnWrap" style="display:none;margin-bottom:12px"><button onclick="openDiag()" style="width:100%;border:1px dashed #185FA5;background:#EEF4FC;color:#185FA5;border-radius:12px;padding:10px;font-weight:800;font-size:13px">⏱ 로딩 진단 (관리자)</button></div>
   <div class="home-label">시험 선택</div>
   <div class="cert-cards">
     <div class="cert-card" onclick="enterCert('bodybuilding')">
@@ -1514,6 +1515,7 @@ if (firebaseReady) {
     }
     refresh();
     routeAfterAuth();
+    try{ if(typeof _diagReveal==='function') _diagReveal(); }catch(e){}
     setTimeout(function(){ if(typeof maybeShowRefundPopup==='function') maybeShowRefundPopup(); }, 1200);
   });
 } else {
@@ -5609,6 +5611,8 @@ async function loadOneSubject(ex, sub){
   const ver=(ex.versions&&ex.versions[sub.code])||1;
   const ck='qb:'+ex.id+':'+sub.code+':v'+ver;
   let doc=null;
+  var _mz=(typeof window!=='undefined'&&window._DIAGon)?{sub:sub.code,cache:false,metaMs:0,shardMs:0,shards:0,q:0}:null;
+  var _now=function(){ return (window.performance&&performance.now)?performance.now():Date.now(); };
   try{
     const c=localStorage.getItem(ck);
     if(c){
@@ -5619,15 +5623,21 @@ async function loadOneSubject(ex, sub){
       // 구형(타임스탬프 없는 raw)·TTL초과 → doc=null 유지 → 아래서 1회 갱신·신형 재기록
     }
   }catch(e){}
+  if(_mz && doc){ _mz.cache=true; _mz.q=(doc.questions||[]).length; }
   if(!doc){
+    var _mt0=_mz?_now():0;
     const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+    if(_mz) _mz.metaMs=_now()-_mt0;
     if(snap.exists){
       const meta=snap.data();
       if(Array.isArray(meta.shards) && meta.shards.length){
         // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
+        if(_mz) _mz.shards=meta.shards.length;
+        var _st0=_mz?_now():0;
         const parts=await Promise.all(meta.shards.map(function(sid){
           return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
         }));
+        if(_mz) _mz.shardMs=_now()-_st0;
         const qs=[];
         parts.forEach(function(p){ if(p&&p.exists){ const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
         if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
@@ -5635,6 +5645,7 @@ async function loadOneSubject(ex, sub){
       } else {
         doc=meta;   // 기존 단일 문서(하위호환 폴백)
       }
+      if(_mz) _mz.q=(doc.questions||[]).length;
       try{
         // 같은 과목의 옛 버전 캐시 키 청소(잔재 누적·용량초과 방지)
         const pfx='qb:'+ex.id+':'+sub.code+':v';
@@ -5643,6 +5654,7 @@ async function loadOneSubject(ex, sub){
       }catch(e){}
     }
   }
+  if(_mz){ try{ (window._SUBMZ||(window._SUBMZ=[])).push(_mz); }catch(e){} }
   if(doc) applyBank(ex,sub,doc);
 }
 // 시험 1개의 과목들을 병렬 로드 (idempotent)
@@ -5791,6 +5803,7 @@ function refreshCertCards(){
     if(has){ tag.textContent='모의고사'; tag.classList.remove('soon'); }
     else { tag.textContent='준비 중'; tag.classList.add('soon'); }
   });
+  try{ _diagReveal(); }catch(e){}
 }
 loadManifest().then(async ()=>{
   if(typeof refreshCertCards==='function') refreshCertCards();   // manifest 기반 — 로드 전이라도 정상 표시
@@ -5874,6 +5887,66 @@ var CM_CERT_LABEL = {bodybuilding:'생체', appraiser:'감평사', realestate1:'
 var cmBoard = 'review';
 window._cmUserDoc = window._cmUserDoc || null;
 function cmIsAdmin(){ return !!((window._cmUserDoc && window._cmUserDoc.isAdmin) || (currentUser && currentUser.email==='certlab.team@gmail.com')); }
+/* ===== 관리자 전용: 로딩 진단 ===== */
+function _diagReveal(){ try{ var bw=document.getElementById('diagBtnWrap'); if(bw) bw.style.display=cmIsAdmin()?'block':'none'; }catch(e){} }
+async function diagMeasureOne(examId){
+  try{ for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(k && k.indexOf('qb:'+examId+':')===0) localStorage.removeItem(k); } }catch(e){}   // 이 시험 과목 캐시 비우기
+  try{ loadedExams[examId]=false; }catch(e){}
+  try{ delete loadingExams[examId]; }catch(e){}
+  window._SUBMZ=[]; window._DIAGon=true;
+  var _t0=(window.performance&&performance.now)?performance.now():Date.now();
+  try{ await loadExam(examId); }catch(e){}
+  var ms=((window.performance&&performance.now)?performance.now():Date.now())-_t0;
+  window._DIAGon=false;
+  return { examId:examId, ms:ms, recs:(window._SUBMZ||[]).slice() };
+}
+async function diagRunAll(){
+  var btn=document.getElementById('diagRunBtn'); var status=document.getElementById('diagStatus');
+  if(btn){ btn.disabled=true; btn.textContent='측정 중…'; }
+  var exams=Object.keys((typeof MCQ_EXAMS!=='undefined'&&MCQ_EXAMS)||{}).filter(function(id){ return MANIFEST&&(MANIFEST.exams||[]).some(function(e){return e.id===id;}); });
+  var results=[];
+  for(var i=0;i<exams.length;i++){
+    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+' 측정 중…';
+    var r=await diagMeasureOne(exams[i]); results.push(r); diagRender(results);
+  }
+  if(status) status.textContent='완료 ✓ (캡처하거나 텍스트 복사)';
+  if(btn){ btn.disabled=false; btn.textContent='다시 측정'; }
+  window._diagResults=results;
+}
+function diagRender(results){
+  var box=document.getElementById('diagBody'); if(!box) return;
+  var html='', txt='';
+  results.forEach(function(r){
+    var tot=(r.ms/1000).toFixed(1);
+    html+='<div style="border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff">';
+    html+='<div style="font-weight:800;color:#0C447C;margin-bottom:6px">'+certLabel(r.examId)+' · 총 '+tot+'초</div>';
+    txt+='■ '+certLabel(r.examId)+' 총 '+tot+'초\n';
+    (r.recs||[]).forEach(function(m){
+      var desc=m.cache?'캐시적중':(Math.round(m.metaMs)+'ms 메타'+(m.shards?(' + '+Math.round(m.shardMs)+'ms 샤드×'+m.shards):''));
+      html+='<div style="font-size:12px;color:#334155;padding:2px 0;display:flex;justify-content:space-between;gap:8px"><span>'+m.sub+'</span><span style="text-align:right">'+desc+' · '+m.q+'문</span></div>';
+      txt+='  - '+m.sub+': '+desc+' · '+m.q+'문\n';
+    });
+    html+='</div>';
+    txt+='\n';
+  });
+  box.innerHTML=html; window._diagText=txt;
+}
+function diagCopy(){ try{ var t=window._diagText||''; if(!t){ alert('먼저 측정하세요.'); return; } navigator.clipboard.writeText(t).then(function(){ alert('복사됐어요. 붙여넣어 공유하세요.'); }).catch(function(){ alert('복사 실패 — 화면을 캡처해주세요.'); }); }catch(e){ alert('복사 실패 — 화면을 캡처해주세요.'); } }
+function openDiag(){
+  if(!cmIsAdmin()){ alert('관리자 전용입니다.'); return; }
+  var ov=document.getElementById('diagOverlay');
+  if(ov){ ov.style.display='block'; return; }
+  ov=document.createElement('div'); ov.id='diagOverlay';
+  ov.style.cssText='position:fixed;inset:0;z-index:100050;background:#F8FAFC;overflow:auto;padding:16px';
+  ov.innerHTML='<div style="max-width:560px;margin:0 auto">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:18px;font-weight:800;color:#0C447C">⏱ 로딩 진단</div><button onclick="document.getElementById(\'diagOverlay\').remove()" style="border:none;background:#E2E8F0;border-radius:8px;padding:8px 12px;font-weight:700">닫기</button></div>'
+    +'<div style="font-size:12px;color:#64748B;line-height:1.5;margin-bottom:12px">각 시험의 캐시를 비우고 실제 로딩 시간을 측정합니다(첫 진입 상태 재현). 느린 환경인 <b>사파리</b>에서 실행하세요.</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px"><button id="diagRunBtn" onclick="diagRunAll()" style="flex:1;border:none;background:#0C447C;color:#fff;border-radius:10px;padding:12px;font-weight:800;font-size:14px">전체 자동 측정</button><button onclick="diagCopy()" style="border:none;background:#185FA5;color:#fff;border-radius:10px;padding:12px;font-weight:800;font-size:14px">텍스트 복사</button></div>'
+    +'<div id="diagStatus" style="font-size:12px;color:#185FA5;font-weight:700;margin-bottom:10px;min-height:16px"></div>'
+    +'<div id="diagBody"></div>'
+    +'</div>';
+  document.body.appendChild(ov);
+}
 async function openCommunity(){
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
