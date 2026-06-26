@@ -5669,6 +5669,47 @@ async function loadOneSubject(ex, sub){
   if(_mz){ try{ (window._SUBMZ||(window._SUBMZ=[])).push(_mz); }catch(e){} }
   if(doc) applyBank(ex,sub,doc);
 }
+// === 진단 전용: REST(일반 HTTP)로 문서 받아 시간 측정 (사파리 SDK연결 우회 검증) ===
+var DIAG_REST_BASE='https://firestore.googleapis.com/v1/projects/certlab-c3bcb/databases/(default)/documents/banks/';
+async function diagRestGet(docId, token){
+  var url=DIAG_REST_BASE+encodeURIComponent(docId);
+  var headers={};
+  if(token) headers['X-Firebase-AppCheck']=token;
+  var r=await fetch(url, { headers: headers });
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return await r.json();
+}
+async function diagMeasureRest(examId){
+  var ex=MANIFEST&&(MANIFEST.exams||[]).find(function(e){return e.id===examId;});
+  var _now=function(){ return (window.performance&&performance.now)?performance.now():Date.now(); };
+  if(!ex) return { examId:examId, ms:0, recs:[] };
+  // App Check 토큰 1회 확보(REST는 SDK가 자동으로 안 붙임)
+  var _tok=null;
+  try{ var _r=await firebase.appCheck().getToken(false); _tok=_r&&_r.token; }catch(e){}
+  var subs=(ex.subjects||[]); var recList=[];
+  var t0=_now();
+  for(var si=0; si<subs.length; si++){
+    var sub=subs[si]; var rec={sub:sub.code, metaMs:0, shardMs:0, shards:0, shardExist:0, q:0};
+    try{
+      var m0=_now();
+      var meta=await diagRestGet(examId+'__'+sub.code, _tok);
+      rec.metaMs=_now()-m0;
+      // REST 응답에서 shards 배열 추출: fields.shards.arrayValue.values[].stringValue
+      var shardIds=[];
+      try{ var sv=meta&&meta.fields&&meta.fields.shards&&meta.fields.shards.arrayValue&&meta.fields.shards.arrayValue.values; if(Array.isArray(sv)) shardIds=sv.map(function(x){return x.stringValue;}).filter(Boolean); }catch(e){}
+      rec.shards=shardIds.length;
+      if(shardIds.length){
+        var s0=_now();
+        var parts=await Promise.all(shardIds.map(function(sid){ return diagRestGet(examId+'__'+sub.code+'__'+sid, _tok).then(function(j){return j;}).catch(function(){return null;}); }));
+        rec.shardMs=_now()-s0;
+        parts.forEach(function(p){ if(p && p.fields){ rec.shardExist++; try{ var qv=p.fields.questions&&p.fields.questions.arrayValue&&p.fields.questions.arrayValue.values; if(Array.isArray(qv)) rec.q+=qv.length; }catch(e){} } });
+      }
+    }catch(e){ rec.err=String(e&&e.message||e); }
+    recList.push(rec);
+  }
+  var ms=_now()-t0;
+  return { examId:examId, ms:ms, recs:recList };
+}
 // 시험 1개의 과목들을 병렬 로드 (idempotent)
 var loadingExams={};   // 진행 중인 로드 Promise(동시호출 중복 방지)
 var _mastersPromise=null;
@@ -5945,14 +5986,15 @@ async function diagMeasureLimited(examId, limit){
 async function diagRunAll(){
   var btn=document.getElementById('diagRunBtn'); var status=document.getElementById('diagStatus');
   if(btn){ btn.disabled=true; btn.textContent='측정 중…'; }
+  var restMode=false; try{ restMode=/[?&]rest=1/.test(location.search); }catch(e){}
   var exams=Object.keys((typeof MCQ_EXAMS!=='undefined'&&MCQ_EXAMS)||{}).filter(function(id){ return MANIFEST&&(MANIFEST.exams||[]).some(function(e){return e.id===id;}); });
   var results=[];
   for(var i=0;i<exams.length;i++){
-    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+' — 전체동시…';
+    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+(restMode?' — SDK…':' — 전체동시…');
     var full=await diagMeasureOne(exams[i]);
-    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+' — 동시3제한…';
-    var lim=await diagMeasureLimited(exams[i],3);
-    results.push({ examId:exams[i], full:full, lim:lim }); diagRender(results);
+    if(status) status.textContent='('+(i+1)+'/'+exams.length+') '+certLabel(exams[i])+(restMode?' — REST…':' — 동시3제한…');
+    var lim = restMode ? await diagMeasureRest(exams[i]) : await diagMeasureLimited(exams[i],3);
+    results.push({ examId:exams[i], full:full, lim:lim, restMode:restMode }); diagRender(results);
   }
   if(status) status.textContent='완료 ✓ (캡처하거나 텍스트 복사)';
   if(btn){ btn.disabled=false; btn.textContent='다시 측정'; }
@@ -5962,18 +6004,28 @@ function diagRender(results){
   var box=document.getElementById('diagBody'); if(!box) return;
   var html='', txt='';
   results.forEach(function(r){
+    var rest=!!r.restMode;
     var f=(r.full.ms/1000).toFixed(1), l=(r.lim.ms/1000).toFixed(1);
-    var win=(r.lim.ms < r.full.ms*0.7);   // 제한이 30%+ 빠르면 강조
+    var win=(r.lim.ms < r.full.ms*0.7);
+    var lblA=rest?'SDK':'전체동시', lblB=rest?'REST':'동시3제한';
     html+='<div style="border:1px solid #E2E8F0;border-radius:10px;padding:10px;margin-bottom:10px;background:#fff">';
     html+='<div style="font-weight:800;color:#0C447C;margin-bottom:4px">'+certLabel(r.examId)+'</div>';
-    html+='<div style="font-size:13px;margin-bottom:6px">전체동시 <b>'+f+'초</b> &nbsp;→&nbsp; 동시3제한 <b style="color:'+(win?'#16a34a':'#185FA5')+'">'+l+'초</b>'+(win?' ✓개선':'')+'</div>';
-    txt+='■ '+certLabel(r.examId)+': 전체동시 '+f+'초 → 동시3제한 '+l+'초'+(win?' (개선)':'')+'\n';
-    (r.full.recs||[]).forEach(function(m){
-      var desc=m.cache?'캐시':(Math.round(m.metaMs)+'ms메타'+(m.shards?(' +'+Math.round(m.shardMs)+'ms샤드'+(m.shardExist||0)+'/'+m.shards):''));
-      if(m.kb) desc+=' '+m.kb+'KB';
-      html+='<div style="font-size:11px;color:#64748B;padding:1px 0">'+m.sub+': '+desc+'</div>';
-      txt+='  - '+m.sub+': '+desc+'\n';
-    });
+    html+='<div style="font-size:13px;margin-bottom:6px">'+lblA+' <b>'+f+'초</b> &nbsp;→&nbsp; '+lblB+' <b style="color:'+(win?'#16a34a':'#185FA5')+'">'+l+'초</b>'+(win?' ✓개선':'')+'</div>';
+    txt+='■ '+certLabel(r.examId)+': '+lblA+' '+f+'초 → '+lblB+' '+l+'초'+(win?' (개선)':'')+'\n';
+    if(rest){
+      (r.lim.recs||[]).forEach(function(m){
+        var desc=Math.round(m.metaMs)+'ms메타'+(m.shards?(' +'+Math.round(m.shardMs)+'ms샤드'+(m.shardExist||0)+'/'+m.shards):'')+(m.err?(' ⚠'+m.err):'');
+        html+='<div style="font-size:11px;color:#64748B;padding:1px 0">'+m.sub+'(REST): '+desc+'</div>';
+        txt+='  - '+m.sub+'(REST): '+desc+'\n';
+      });
+    } else {
+      (r.full.recs||[]).forEach(function(m){
+        var desc=m.cache?'캐시':(Math.round(m.metaMs)+'ms메타'+(m.shards?(' +'+Math.round(m.shardMs)+'ms샤드'+(m.shardExist||0)+'/'+m.shards):''));
+        if(m.kb) desc+=' '+m.kb+'KB';
+        html+='<div style="font-size:11px;color:#64748B;padding:1px 0">'+m.sub+': '+desc+'</div>';
+        txt+='  - '+m.sub+': '+desc+'\n';
+      });
+    }
     html+='</div>';
     txt+='\n';
   });
@@ -5990,7 +6042,7 @@ function openDiag(){
   ov.innerHTML='<div style="max-width:560px;margin:0 auto">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:18px;font-weight:800;color:#0C447C">⏱ 로딩 진단</div><button onclick="document.getElementById(\'diagOverlay\').remove()" style="border:none;background:#E2E8F0;border-radius:8px;padding:8px 12px;font-weight:700">닫기</button></div>'
     +'<div style="font-size:12px;color:#64748B;line-height:1.5;margin-bottom:8px">각 시험의 캐시를 비우고 실제 로딩 시간을 측정합니다(첫 진입 상태 재현). 느린 환경인 <b>사파리</b>에서 실행하세요.</div>'
-    +'<div id="diagLpBadge" style="display:inline-block;font-size:12px;font-weight:800;border-radius:8px;padding:5px 10px;margin-bottom:12px;'+( (/[?&]lp=off/.test(location.search)) ? 'background:#DCFCE7;color:#166534">롱폴링: 자동(강제 OFF)' : 'background:#FEF3C7;color:#92400E">롱폴링: 강제 ON')+( (/[?&]fs=off/.test(location.search)) ? ' · fetchStreams OFF' : '')+'</div>'
+    +'<div id="diagLpBadge" style="display:inline-block;font-size:12px;font-weight:800;border-radius:8px;padding:5px 10px;margin-bottom:12px;'+( (/[?&]lp=off/.test(location.search)) ? 'background:#DCFCE7;color:#166534">롱폴링: 자동(강제 OFF)' : 'background:#FEF3C7;color:#92400E">롱폴링: 강제 ON')+( (/[?&]fs=off/.test(location.search)) ? ' · fetchStreams OFF' : '')+( (/[?&]rest=1/.test(location.search)) ? ' · SDK vs REST 비교' : '')+'</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:8px"><button id="diagRunBtn" onclick="diagRunAll()" style="flex:1;border:none;background:#0C447C;color:#fff;border-radius:10px;padding:12px;font-weight:800;font-size:14px">전체 자동 측정</button><button onclick="diagCopy()" style="border:none;background:#185FA5;color:#fff;border-radius:10px;padding:12px;font-weight:800;font-size:14px">텍스트 복사</button></div>'
     +'<div id="diagStatus" style="font-size:12px;color:#185FA5;font-weight:700;margin-bottom:10px;min-height:16px"></div>'
     +'<div id="diagBody"></div>'
