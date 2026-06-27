@@ -2735,7 +2735,7 @@ function filterMile(){
 async function loadPayments() {
   try {
     const snap = await db.collection('payments').orderBy('createdAt','desc').get();
-    allPayments = snap.docs.map(d => ({id:d.id, ...d.data()})).filter(p => !isExcludedPay(p));
+    allPayments = snap.docs.map(d => ({id:d.id, ...d.data()}));
     renderPayments(allPayments);
     renderRecentPayments();
     updatePendingBadge();
@@ -2748,7 +2748,7 @@ async function loadMembers() {
       db.collection('users').orderBy('createdAt','desc').get(),
       db.collection('discountCodes').get().catch(()=>null)
     ]);
-    allMembers = usnap.docs.map(d => ({id:d.id, ...d.data()})).filter(m => !isExcludedMember(m));
+    allMembers = usnap.docs.map(d => ({id:d.id, ...d.data()}));
     codeByUid = {};
     if (csnap) csnap.docs.forEach(d => {
       const c = d.data();
@@ -2813,15 +2813,16 @@ function memberStatus(m) {
 
 function loadDashboard() {
   const now = new Date();
-  const total = allMembers.length;
+  const realMembers = allMembers.filter(m => !isExcludedMember(m)); // 테스트/관리자 계정 제외
+  const total = realMembers.length;
   let free=0, active=0, expired=0;
-  allMembers.forEach(m => {
+  realMembers.forEach(m => {
     const s = memberStatus(m);
     if (s === 'ACTIVE') active++;
     else if (s === 'EXPIRED') expired++;
     else if (s === 'FREE_TRIAL') free++;
   });
-  const pending = allPayments.filter(p => p.status === 'pending').length;
+  const pending = allPayments.filter(p => p.status === 'pending' && !isExcludedPay(p)).length;
 
   // 이번 달 매출 — 자동승인/승인 건 모두 집계 (철회/거절 제외)
   const thisMonth = now.getMonth();
@@ -2850,11 +2851,11 @@ function loadDashboard() {
   // 전환율 = 유료 / 전체
   const conv = total>0 ? Math.round(active/total*100) : 0;
   // 최근 7일 가입
-  const new7 = allMembers.filter(m=>{ const d=dOf(m.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
+  const new7 = realMembers.filter(m=>{ const d=dOf(m.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
   // 최근 7일 결제(결제 건 기준, 철회/거절 제외)
   const pay7 = allPayments.filter(p=>{ if(!isPaid(p.status)) return false; if(isExcludedPay(p)) return false; const d=dOf(p.approvedAt||p.createdAt); return d && (nowMs-d.getTime())<=WEEK; }).length;
   // 학습 20회 이상 무료회원
-  const hot = allMembers.filter(m=> memberStatus(m)==='FREE_TRIAL' && (m._solve||0)>=20 ).length;
+  const hot = realMembers.filter(m=> memberStatus(m)==='FREE_TRIAL' && (m._solve||0)>=20 ).length;
 
   const setT=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
   setT('statConv', conv+'%');
@@ -2864,7 +2865,7 @@ function loadDashboard() {
 }
 
 function updatePendingBadge() {
-  const pending = allPayments.filter(p => p.status === 'pending').length;
+  const pending = allPayments.filter(p => p.status === 'pending' && !isExcludedPay(p)).length;
   ['pendingBadge','grpBadgePayments'].forEach(id => {
     const badge = document.getElementById(id); if(!badge) return;
     if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline-block'; }
@@ -2938,7 +2939,7 @@ function renderPayments(list) {
       <thead><tr><th>이메일</th><th>입금자</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
       <tbody>${list.map(p => `
         <tr>
-          <td>${p.email||'-'}</td>
+          <td>${p.email||'-'}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
           <td><strong>${p.depositorName||'-'}</strong></td>
           <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${planNames[p.planDays]||p.planDays+'일'}</td>
@@ -2973,7 +2974,7 @@ function renderMembers(list) {
              </div>${(()=>{ const ch=perCertChips(m._perCert,2); return ch?('<div style="margin-top:3px">'+ch+'</div>'):''; })()}`;
         return `
         <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
-          <td>${m.email||'-'}</td>
+          <td>${m.email||'-'}${isExcludedMember(m)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
           <td><span class="grade ${g.cls}">${g.label}</span></td>
           <td>${memberBadges(m)}</td>
           <td>${signupCertHTML(m)}</td>
@@ -3670,6 +3671,7 @@ async function importImages(){
 }
 function crmSegment(seg){
   return allMembers.filter(m=>{
+    if(isExcludedMember(m)) return false; // 테스트/관리자 제외
     const s=memberStatus(m);
     if(seg==='all') return true;
     if(seg==='free') return s==='FREE_TRIAL';
@@ -4312,6 +4314,7 @@ function renderStats(){
   const totals={}, active={}, top={}, signup={}; let signupNone=0;
   const now=Date.now(), D7=7*86400000, D30=30*86400000;
   allMembers.forEach(m=>{
+    if(isExcludedMember(m)) return; // 테스트/관리자 계정 통계 제외
     const per=m._perCert||{};
     Object.keys(per).forEach(c=>{
       const v=per[c];
