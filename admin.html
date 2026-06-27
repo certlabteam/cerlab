@@ -1033,7 +1033,13 @@ tr:hover td{background:#FAFAFA}
     <!-- ⚡ 레벨업 데이터 업로드 -->
     <div class="tab-panel" id="panel-levelup">
       <div class="table-wrap">
-        <div class="table-header"><div class="table-title">⚡ 레벨업 데이터 업로드</div></div>
+        <div class="table-header">
+          <div class="table-title">⚡ 레벨업 데이터 업로드</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="lvupExpSel" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 과목)</option></select>
+            <button class="btn-sm btn-extend" onclick="lvupExportSel()">⬇ JSON 다운로드</button>
+          </div>
+        </div>
         <div style="padding:0 4px 8px;font-size:12px;color:#A89C8E">레벨업(레벨테스트·약점출제) 데이터를 Firestore <b>adaptive</b> 컬렉션에 적재합니다. 한 파일에 <b>mapping</b>(토픽맵)·<b>diagnostic/topics</b>(진단)·<b>variants</b>(계산시드)·<b>questions</b>(완성변형)·<b>templates</b>(계산형 자동생성 템플릿)가 섞여 있어도 종류별로 자동 분리 적재합니다. 과목은 <b>_meta.subject</b> 또는 topic 접두사로 인식. questions·templates는 기존과 <b>병합</b>(같은 id 갱신). 계산형 템플릿은 업로드 전 <b>실제 생성 검증</b>(식·guard·보기중복)을 거쳐 유효 인스턴스 0개면 적재 중단.</div>
         <div class="upbar">
           <div class="upbar-drop" id="lvupImpDrop">📁 레벨업 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">mapping·diagnostic·variants·questions·templates 자동 분리 적재</span></div>
@@ -1041,7 +1047,6 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="lvupImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('lvupImpFile').click()">⬆ 업로드</button>
-            <button class="upbar-export" onclick="lvupExport()">⬇ 내보내기 (백업·복원용)</button>
           </div>
         </div>
         <div style="padding:8px 4px;font-size:11.5px;color:#B4A99C">적재 경로: <code>adaptive/{cert}__{subject}__{map | diag | variants | variantq | calctmpl}</code></div>
@@ -2359,6 +2364,7 @@ function lvupInit(){
     ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#CBD5E1';}); });
     drop.addEventListener('drop', function(e){ e.preventDefault(); lvupImpHandle(e.dataTransfer.files); });
   }
+  lvupPopulateExp();
 }
 function _lvupDetectSub(p){
   if(p && p._meta && p._meta.subject) return p._meta.subject;
@@ -2533,34 +2539,60 @@ async function lvupImport(){
   if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 적재 완료: '+done.join(' · '); }
   _lvupData=null;
 }
-async function lvupExport(){
-  var stt=document.getElementById('lvupImpStatus');
-  if(stt){ stt.style.color='#475569'; stt.textContent='내보내는 중… adaptive 읽는 중'; }
+var _lvupExpCache=null;
+async function lvupReadGroups(){
+  var snap=await db.collection('adaptive').get();
+  var groups={};
+  snap.forEach(function(doc){
+    var id=doc.id, d=doc.data()||{};
+    var parts=id.split('__'); if(parts.length<3) return;
+    var cert=parts[0], sub=parts[1], kind=parts.slice(2).join('__');
+    var key=cert+'||'+sub;
+    var g=groups[key]||(groups[key]={ _meta:{cert:cert, subject:sub} });
+    if(kind==='map' && Array.isArray(d.mapping)) g.mapping=d.mapping;
+    else if(kind==='diag'){ if(Array.isArray(d.diagnostic)) g.diagnostic=d.diagnostic; if(Array.isArray(d.topics)) g.topics=d.topics; }
+    else if(kind==='variants' && Array.isArray(d.variants)) g.variants=d.variants;
+    else if(kind==='variantq' && Array.isArray(d.questions)) g.questions=d.questions;
+    else if(kind==='calctmpl' && Array.isArray(d.templates)) g.templates=d.templates;
+  });
+  return groups;
+}
+function _lvupExpLabel(g){ var c=(g._meta&&g._meta.cert)||'', s=(g._meta&&g._meta.subject)||''; return (typeof certLabel==='function'?certLabel(c):c)+' \u00B7 '+s; }
+async function lvupPopulateExp(){
+  var sel=document.getElementById('lvupExpSel'); if(!sel) return;
   try{
-    var snap=await db.collection('adaptive').get();
-    var groups={};
-    snap.forEach(function(doc){
-      var id=doc.id, d=doc.data()||{};
-      var parts=id.split('__'); if(parts.length<3) return;
-      var cert=parts[0], sub=parts[1], kind=parts.slice(2).join('__');
-      var key=cert+'||'+sub;
-      var g=groups[key]||(groups[key]={ _meta:{cert:cert, subject:sub} });
-      if(kind==='map' && Array.isArray(d.mapping)) g.mapping=d.mapping;
-      else if(kind==='diag'){ if(Array.isArray(d.diagnostic)) g.diagnostic=d.diagnostic; if(Array.isArray(d.topics)) g.topics=d.topics; }
-      else if(kind==='variants' && Array.isArray(d.variants)) g.variants=d.variants;
-      else if(kind==='variantq' && Array.isArray(d.questions)) g.questions=d.questions;
-      else if(kind==='calctmpl' && Array.isArray(d.templates)) g.templates=d.templates;
-    });
-    var subjects=Object.keys(groups).map(function(k){ return groups[k]; });
-    if(!subjects.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='adaptive에 데이터가 없습니다.';} return; }
-    var bundle={ _meta:{ kind:'levelup_export', exportedAt:_kstISO(new Date()), subjectCount:subjects.length }, subjects:subjects };
-    var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
-    var url=URL.createObjectURL(blob), a=document.createElement('a');
-    a.href=url; a.download='certlab_levelup_export_'+new Date().toISOString().slice(0,10)+'.json';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    var tot=subjects.reduce(function(n,s){ return n+((s.questions&&s.questions.length)||0); },0);
-    if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 내보내기 완료 — 과목 <b>'+subjects.length+'</b>개 · 변형문항 <b>'+tot+'</b>개. (이 파일을 다시 드롭하면 복원)'; }
-  }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='내보내기 오류: '+e.message;} }
+    var groups=await lvupReadGroups(); _lvupExpCache=groups;
+    var keys=Object.keys(groups).sort();
+    sel.innerHTML='<option value="__all">\uC804\uCCB4 (\uBAA8\uB4E0 \uACFC\uBAA9)</option>'
+      + keys.map(function(k){ var g=groups[k]; var cnt=(g.questions&&g.questions.length)||0; return '<option value="'+k+'">'+_lvupExpLabel(g)+' ('+cnt+')</option>'; }).join('');
+  }catch(e){}
+}
+function _lvupDownload(subjects, fnameSuffix){
+  var bundle={ _meta:{ kind:'levelup_export', exportedAt:_kstISO(new Date()), subjectCount:subjects.length }, subjects:subjects };
+  var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='certlab_levelup_'+fnameSuffix+'_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+async function lvupExportSel(){
+  var sel=document.getElementById('lvupExpSel'), stt=document.getElementById('lvupImpStatus');
+  var key=sel?sel.value:'__all';
+  if(stt){ stt.style.color='#475569'; stt.textContent='\uB0B4\uBCF4\uB0B4\uB294 \uC911\u2026 adaptive \uC77D\uB294 \uC911'; }
+  try{
+    var groups=_lvupExpCache; if(!groups){ groups=await lvupReadGroups(); _lvupExpCache=groups; }
+    if(key==='__all'){
+      var subjects=Object.keys(groups).map(function(k){ return groups[k]; });
+      if(!subjects.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='adaptive\uC5D0 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
+      _lvupDownload(subjects, 'all');
+      var tot=subjects.reduce(function(n,s){ return n+((s.questions&&s.questions.length)||0); },0);
+      if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 \uC804\uCCB4 \uB0B4\uBCF4\uB0B4\uAE30 \u2014 \uACFC\uBAA9 <b>'+subjects.length+'</b>\uAC1C \u00B7 \uBCC0\uD615\uBB38\uD56D <b>'+tot+'</b>\uAC1C. (\uC774 \uD30C\uC77C\uC744 \uB2E4\uC2DC \uB4DC\uB86D\uD558\uBA74 \uBCF5\uC6D0)'; }
+    } else {
+      var g=groups[key]; if(!g){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uC120\uD0DD\uD55C \uACFC\uBAA9 \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
+      _lvupDownload([g], (g._meta.cert||'')+'__'+(g._meta.subject||''));
+      var cnt=(g.questions&&g.questions.length)||0;
+      if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 '+_lvupExpLabel(g)+' \u2014 \uBCC0\uD615\uBB38\uD56D <b>'+cnt+'</b>\uAC1C. (\uC774 \uD30C\uC77C\uC744 \uB2E4\uC2DC \uB4DC\uB86D\uD558\uBA74 \uBCF5\uC6D0)'; }
+    }
+  }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uB0B4\uBCF4\uB0B4\uAE30 \uC624\uB958: '+e.message;} }
 }
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));

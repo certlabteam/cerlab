@@ -925,15 +925,19 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 @keyframes luCpop{0%{transform:scale(1)}40%{transform:scale(1.42)}100%{transform:scale(1)}}
 .lu-combo-recap{display:inline-block;margin-left:7px;background:#FFF1E6;color:#C2620C;font-size:11px;font-weight:800;border-radius:8px;padding:2px 9px}
 
-/* 합격선 게이지 */
+/* 합격선 게이지 (막대 채움 + 합격/과락 마커 라벨 바 아래 + 격차 배지) */
 .lu-gauge-wrap{margin:14px 14px 4px}
-.lu-g-cap{text-align:center;font-size:13px;font-weight:800;margin-bottom:14px}
-.lu-gauge{position:relative;height:16px;border-radius:999px;background:#EEF2F7;margin:0 4px}
+.lu-g-cap{text-align:center;margin-bottom:11px}
+.lu-g-pill{display:inline-block;font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px}
+.lu-gauge{position:relative;height:10px;border-radius:999px;background:#EEF2F7}
 .lu-g-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;transition:width .9s cubic-bezier(.22,1,.36,1)}
-.lu-g-mk{position:absolute;top:-6px;bottom:-6px;width:0;border-left:2px dashed #94A3B8}
-.lu-g-lab{position:absolute;top:-22px;transform:translateX(-50%);font-size:10px;font-weight:700;white-space:nowrap}
-.lu-g-knob{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid #2563EB;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(15,23,42,.22);transition:left .9s cubic-bezier(.22,1,.36,1)}
-.lu-g-foot{display:flex;justify-content:space-between;font-size:10px;color:#A89C8E;margin:3px 4px 0}
+.lu-g-pass{position:absolute;top:-4px;bottom:-4px;width:2px;background:#2E9B5E;border-radius:2px;z-index:2}
+.lu-g-pass::after{content:attr(data-l);position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);font-size:10px;font-weight:800;color:#1E7A45;white-space:nowrap}
+.lu-g-floor{position:absolute;top:-3px;bottom:-3px;width:2px;background:#CBD5E1;z-index:2}
+.lu-g-floor::after{content:attr(data-l);position:absolute;left:50%;bottom:-17px;transform:translateX(-50%);font-size:10px;font-weight:700;color:#94A3B8;white-space:nowrap}
+.lu-g-grade{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:2px;z-index:2}
+.lu-g-glab{position:absolute;bottom:-17px;transform:translateX(-50%);font-size:9.5px;font-weight:800;white-space:nowrap}
+.lu-g-foot2{height:20px}
 
 /* 레벨업 순간 연출 스테이지 */
 .lu-stage{position:relative;overflow:hidden;background:linear-gradient(160deg,#0A3D6E,#042C53);border-radius:16px;padding:18px 16px 16px;margin:8px 0 6px;text-align:center;color:#fff}
@@ -962,5 +966,5 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   .lu-combo.pop{animation:none}
   .lu-cfti{display:none}
   .lu-lvb-to.show{transition:none}
-  .lu-xp>i,.lu-g-fill,.lu-g-knob{transition:none}
+  .lu-xp>i,.lu-g-fill{transition:none}
 }

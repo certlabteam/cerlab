@@ -2790,6 +2790,13 @@ function mcqSubjectStats(cert){
 }
 const PASS_RULE = {
   appraiser:    {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
+  realestate1:  {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
+  realestate2:  {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
+  housing:      {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
+  housing2:     {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
+  koreanhistory:{pass:60, floor:0,  grade:true,
+                 grades:[{g:'3급',min:60,color:'#D97706'},{g:'2급',min:70,color:'#2563EB'},{g:'1급',min:80,color:'#15803D'}],
+                 label:'급수 인증 · 3급 60 / 2급 70 / 1급 80'},
   bodybuilding: {pass:70, floor:0,  label:'평균 70점'},
   _default:     {pass:60, floor:0,  label:'평균 60점'}
 };
@@ -3321,6 +3328,13 @@ function adPredicted(cert){
 function adVerdict(cert, ap){
   var rule=passRule(cert);
   if(ap.predicted==null || ap.notMeasured.length>0) return {status:'insufficient', color:'#B4A99C', label:'측정 중', notMeasured:ap.notMeasured, rule:rule};
+  if(rule.grade){   // 한국사 등급제: 과락 없이 점수→급
+    var p=ap.predicted, gname=null, gcol='#94A3B8', medal='', nextName='3급', nextGap=60-p;
+    if(p>=80){ gname='1급'; gcol='#15803D'; medal='🥇'; nextName=null; nextGap=null; }
+    else if(p>=70){ gname='2급'; gcol='#2563EB'; medal='🥈'; nextName='1급'; nextGap=80-p; }
+    else if(p>=60){ gname='3급'; gcol='#D97706'; medal='🥉'; nextName='2급'; nextGap=70-p; }
+    return {status:'grade', grade:true, color:gcol, label:(gname?(medal+' '+gname+'권'):'미달'), gradeName:gname, gradeColor:gcol, medal:medal, nextName:nextName, nextGap:nextGap, rule:rule};
+  }
   var floorFail = rule.floor>0 ? ap.valid.filter(function(p){return p.score<rule.floor;}) : [];
   if(floorFail.length) return {status:'fail', color:'#E24B4A', label:'🔴 위험권 (과락)', failFloor:floorFail, rule:rule};
   var safe=Math.max(80, rule.pass+10);
@@ -3329,25 +3343,48 @@ function adVerdict(cert, ap){
   return {status:'fail', color:'#E24B4A', label:'🔴 위험권', rule:rule};
 }
 function luToggleCardSub(sub){ luCardOpen[sub]=!luCardOpen[sub]; renderMCQ(); }
+// 한국사 등급 게이지: 과락선 없이 등급선 3개(3급60·2급70·1급80), 채움·배지 동→은→금
+function _luGradeGaugeHTML(cert, ap, v){
+  var p=Math.max(0,Math.min(100,ap.predicted));
+  var gradeGrad={'1급':'linear-gradient(90deg,#34A865,#15803D)','2급':'linear-gradient(90deg,#5B8DEF,#2563EB)','3급':'linear-gradient(90deg,#F0A93E,#D97706)'};
+  var fillGrad=(v.gradeName&&gradeGrad[v.gradeName])||'linear-gradient(90deg,#B7BFC9,#94A3B8)';
+  var pillBg, pillCol, pillTxt;
+  if(v.gradeName){
+    pillBg=(v.gradeName==='1급')?'#E7F6EC':(v.gradeName==='2급')?'#E8F0FE':'#FEF3E2';
+    pillCol=v.gradeColor; pillTxt=v.medal+' '+v.gradeName+'권'+(v.nextName?(' \u00B7 '+v.nextName+'까지 '+v.nextGap+'점'):'');
+  } else { pillBg='#F1F5F9'; pillCol='#64748B'; pillTxt=(v.nextName||'3급')+'까지 '+(v.nextGap!=null?v.nextGap:'')+'점'; }
+  var marks=((passRule(cert).grades)||[]).map(function(gr){
+    return '<span class="lu-g-grade" style="left:'+gr.min+'%;background:'+gr.color+'"></span><span class="lu-g-glab" style="left:'+gr.min+'%;color:'+gr.color+'">'+gr.g+' '+gr.min+'</span>';
+  }).join('');
+  return '<div class="lu-gauge-wrap">'
+    +'<div class="lu-g-cap"><span class="lu-g-pill" style="background:'+pillBg+';color:'+pillCol+'">'+pillTxt+'</span></div>'
+    +'<div class="lu-gauge">'
+      +'<span class="lu-g-fill" style="width:'+p+'%;background:'+fillGrad+'"></span>'
+      +marks
+    +'</div>'
+    +'<div class="lu-g-foot2"></div>'
+  +'</div>';
+}
 // 게이미피케이션: 예상점수 → 합격선 게이지(0~100, 과락·합격 마커)
 function _luGaugeHTML(cert, ap, v){
   if(!ap || ap.predicted==null || !v) return '';
+  if(v.grade){ return _luGradeGaugeHTML(cert, ap, v); }   // 한국사 등급제
   var rule=passRule(cert), pass=rule.pass||60, floor=rule.floor||0, p=Math.max(0,Math.min(100,ap.predicted));
-  var col = (v.status==='safe')?'#2E9B5E' : (v.status==='pass')?'#E0A52E' : '#E24B4A';
-  var gap = ap.predicted - pass, capCol, capTxt;
-  if(v.status==='fail' && v.failFloor && v.failFloor.length){ capCol='#C0392B'; capTxt='\u26A0\uFE0F '+v.failFloor.map(function(x){return mqEsc(x.name);}).join(', ')+' \uACFC\uB77D \uC704\uD5D8'; }
-  else if(gap>=0){ capCol='#2E9B5E'; capTxt='\uD569\uACA9\uC120 +'+gap+'\uC810'; }
-  else { capCol='#E0813A'; capTxt='\uD569\uACA9\uAE4C\uC9C0 '+Math.abs(gap)+'\uC810'; }
-  var floorMk = floor>0 ? '<span class="lu-g-mk" style="left:'+floor+'%;border-color:#E24B4A"></span><span class="lu-g-lab" style="left:'+floor+'%;color:#C0392B">\uACFC\uB77D '+floor+'</span>' : '';
+  var fillGrad, pillBg, pillCol, pillTxt;
+  var isFloorFail = (v.status==='fail' && v.failFloor && v.failFloor.length);
+  var gap = ap.predicted - pass;
+  if(isFloorFail){ fillGrad='linear-gradient(90deg,#E8635F,#E24B4A)'; pillBg='#FDECEC'; pillCol='#C0392B'; pillTxt='\u26A0\uFE0F '+v.failFloor.map(function(x){return mqEsc(x.name);}).join(', ')+' \uACFC\uB77D \uC704\uD5D8'; }
+  else if(gap>=0){ fillGrad=(v.status==='safe')?'linear-gradient(90deg,#3FB873,#2E9B5E)':'linear-gradient(90deg,#F0B43E,#E0A52E)'; pillBg=(v.status==='safe')?'#E9F7EF':'#FFF6E6'; pillCol=(v.status==='safe')?'#1E7A45':'#946200'; pillTxt='\uD569\uACA9\uC120 +'+gap+'\uC810'; }
+  else { fillGrad='linear-gradient(90deg,#E8635F,#E24B4A)'; pillBg='#FFF1E0'; pillCol='#C2620C'; pillTxt='\uD569\uACA9\uAE4C\uC9C0 '+Math.abs(gap)+'\uC810'; }
+  var floorMk = floor>0 ? '<span class="lu-g-floor" data-l="\uACFC\uB77D '+floor+'" style="left:'+floor+'%"></span>' : '';
   return '<div class="lu-gauge-wrap">'
-    +'<div class="lu-g-cap" style="color:'+capCol+'">'+capTxt+'</div>'
+    +'<div class="lu-g-cap"><span class="lu-g-pill" style="background:'+pillBg+';color:'+pillCol+'">'+pillTxt+'</span></div>'
     +'<div class="lu-gauge">'
+      +'<span class="lu-g-fill" style="width:'+p+'%;background:'+fillGrad+'"></span>'
       +floorMk
-      +'<span class="lu-g-mk" style="left:'+pass+'%;border-color:#2E9B5E"></span><span class="lu-g-lab" style="left:'+pass+'%;color:#1E7A45">\uD569\uACA9 '+pass+'</span>'
-      +'<span class="lu-g-fill" style="width:'+p+'%;background:'+col+'"></span>'
-      +'<span class="lu-g-knob" style="left:'+p+'%;border-color:'+col+'"></span>'
+      +'<span class="lu-g-pass" data-l="\uD569\uACA9 '+pass+'" style="left:'+pass+'%"></span>'
     +'</div>'
-    +'<div class="lu-g-foot"><span>0</span><span>100</span></div>'
+    +'<div class="lu-g-foot2"></div>'
   +'</div>';
 }
 function diagKey(cert){ return 'diagprog:'+cert; }function diagHasSave(cert){ try{ return !!localStorage.getItem(diagKey(cert)); }catch(_){ return false; } }
