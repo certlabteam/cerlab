@@ -23,7 +23,7 @@ function cmAwardToast(prevBal, mode, certLabel){
   };
   setTimeout(poll,1500);
 }
-var CM_CERT_LABEL = {bodybuilding:'생체', appraiser:'감평사', realestate1:'공인1', realestate2:'공인2', koreanhistory:'한국사', housing:'주택관리사', housing2:'주관2'};
+var CM_CERT_LABEL = {bodybuilding:'생체2급 구술', appraiser:'감평사', realestate1:'공인1', realestate2:'공인2', koreanhistory:'한국사', housing:'주택관리사', housing2:'주관2'};
 var cmBoard = 'review';
 async function openCommunity(){
   if(typeof mqStopTimer==='function') mqStopTimer();
@@ -87,9 +87,11 @@ async function cmLoadList(board){
     body.innerHTML=head+'<div class="cm-empty">'+msg+'</div>';
   }
 }
-var CM_CERTS=[['bodybuilding','생체 (생활체육지도사)'],['appraiser','감정평가사'],['realestate1','공인중개사 1차'],['realestate2','공인중개사 2차'],['koreanhistory','한국사'],['housing','주택관리사'],['housing2','주택관리사 2차']];
+var CM_CERTS=[['bodybuilding','생체2급(보디빌딩) 구술'],['appraiser','감정평가사'],['realestate1','공인중개사 1차'],['realestate2','공인중개사 2차'],['koreanhistory','한국사'],['housing','주택관리사'],['housing2','주택관리사 2차']];
 function cmOpenWrite(){
   if(!currentUser){ alert('글을 쓰려면 로그인이 필요해요.'); if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  cmEditId=null;
+  var _sb=document.getElementById('cmwSubmit'); if(_sb) _sb.textContent='등록하기';
   document.getElementById('cmListWrap').classList.add('hidden');
   document.getElementById('cmDetail').classList.add('hidden');
   document.getElementById('cmWrite').classList.remove('hidden');
@@ -115,6 +117,30 @@ function cmwToggleCert(){
   var b=document.getElementById('cmwBoard').value;
   document.getElementById('cmwCertField').style.display=(b==='review')?'block':'none';
 }
+var cmEditId=null;   // 수정 중인 글 id (null이면 새 글)
+function cmEditPost(){
+  if(!cmCurPost || !cmCurPost._id){ return; }
+  var p=cmCurPost;
+  cmEditId=p._id;
+  // 작성 폼 열기 (cmOpenWrite 재활용 후 값 채움)
+  document.getElementById('cmListWrap').classList.add('hidden');
+  document.getElementById('cmDetail').classList.add('hidden');
+  document.getElementById('cmWrite').classList.remove('hidden');
+  var bsel=document.getElementById('cmwBoard');
+  var opts='<option value="review">🔥 합격 후기</option><option value="sugg">🙋 건의사항</option>';
+  if(cmIsAdmin()) opts+='<option value="notice">📢 공지사항</option>';
+  bsel.innerHTML=opts; bsel.value=p.board||'review';
+  var csel=document.getElementById('cmwCert');
+  csel.innerHTML=CM_CERTS.map(function(c){return '<option value="'+c[0]+'">'+c[1]+'</option>';}).join('');
+  if(p.cert) csel.value=p.cert;
+  var _nkEl=document.getElementById('cmwNick');
+  _nkEl.value=p.authorNick||cmGetNick(); _nkEl.readOnly=true; _nkEl.style.background='#F1EFEC';
+  document.getElementById('cmwTitle').value=p.title||'';
+  document.getElementById('cmwBody').value=p.body||'';
+  cmFiles=[]; cmRenderImgRow();   // 수정 시 이미지 재첨부는 v1 미지원(기존 이미지 유지)
+  cmwToggleCert();
+  var sb=document.getElementById('cmwSubmit'); if(sb) sb.textContent='수정 완료';
+}
 async function cmSubmitPost(){
   if(!currentUser){ alert('로그인이 필요해요.'); return; }
   var board=document.getElementById('cmwBoard').value;
@@ -129,6 +155,25 @@ async function cmSubmitPost(){
   if(!title){ alert('제목을 입력해 주세요.'); return; }
   if(!body){ alert('내용을 입력해 주세요.'); return; }
   var btn=document.getElementById('cmwSubmit'); btn.disabled=true; btn.textContent='등록 중\u2026';
+  // ===== 수정 모드: 기존 글 update (ID 유지, 포인트 재지급 없음) =====
+  if(cmEditId){
+    btn.textContent='수정 중\u2026';
+    try{
+      await db.collection('posts').doc(cmEditId).update({
+        board:board, cert:cert, title:title, body:body,
+        updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      var _eid=cmEditId; cmEditId=null;
+      btn.disabled=false; btn.textContent='등록하기';
+      cmBoard=board; cmCloseWrite();
+      if(typeof cmOpenDetail==='function') cmOpenDetail(_eid);
+      if(typeof clToast==='function') clToast('수정되었어요');
+    }catch(e){
+      console.warn('cmEditPost',e); btn.disabled=false; btn.textContent='수정 완료';
+      alert('수정 중 오류가 났어요.'+((/permission/i.test(e.message||''))?'\n(권한이 없어요)':''));
+    }
+    return;
+  }
   try{
     if(currentUser && (!window._cmUserDoc || !window._cmUserDoc.boardNick)){
       try{ await db.collection('users').doc(currentUser.uid).set({boardNick:nick},{merge:true}); window._cmUserDoc=window._cmUserDoc||{}; window._cmUserDoc.boardNick=nick; }catch(_){}
@@ -175,6 +220,8 @@ async function cmOpenDetail(id){
     var delBtn=document.getElementById('cmDelBtn');
     var canDel=currentUser && (p.authorUid===currentUser.uid || cmIsAdmin());
     if(delBtn) delBtn.classList.toggle('hidden', !canDel);
+    var editBtn=document.getElementById('cmEditBtn');
+    if(editBtn) editBtn.classList.toggle('hidden', !canDel);
     var repBtn=document.getElementById('cmRepBtn');
     var canRep=currentUser && p.authorUid!==currentUser.uid;
     if(repBtn) repBtn.classList.toggle('hidden', !canRep);
