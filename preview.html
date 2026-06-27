@@ -1026,7 +1026,11 @@ function extractInlineComboGroup(qt){
   return null;
 }
 
-function splitJaryo(qt){
+function splitJaryo(qt, explicitJaryo){
+  // 데이터에 jaryo 필드가 명시돼 있으면 추측 파싱 없이 그대로 사용(발문 q는 안 자름). index.html과 동일.
+  if(explicitJaryo!=null && String(explicitJaryo).trim()!==''){
+    return {q:String(qt||'').trim(), jaryo:String(explicitJaryo).trim()};
+  }
   if(!qt) return {q:qt||'', jaryo:''};
   const b=qt.indexOf('[');
   if(b>0) return {q:qt.slice(0,b).trim(), jaryo:qt.slice(b).trim()};
@@ -1034,11 +1038,15 @@ function splitJaryo(qt){
   if(nl>0) return {q:qt.slice(0,nl).trim(), jaryo:qt.slice(nl+1).trim()};
   const inl=extractInlineComboGroup(qt);                   // 인라인 조합형 폴백
   if(inl) return inl;
-  // 괄호 라벨 빈칸 ( ㄱ )( ㄴ ): 첫 라벨 빈칸부터 자료로 (질문 끝 (단,…) 조건 grab보다 우선)
+  // 괄호 라벨 빈칸 ( ㄱ )( ㄴ ): 첫 라벨 빈칸부터 자료로. 단, 답 자리표시 (ㄱ)(ㄴ)(물음표 앞 인라인 라벨)는 자료로 안 뗀다.
   var _bk=qt.match(/\(\s*[\u3131-\u314E]\s*\)/);
   if(_bk){
-    var _h=qt.slice(0,_bk.index).trim(), _r=qt.slice(_bk.index).trim();
-    if(_h && _r.length>=6) return {q:_h, jaryo:_r};
+    var _qm=qt.indexOf('?');
+    var _inlineLabel=(_qm>=0 && _bk.index<_qm);   // 물음표 앞 (ㄱ) = 답 자리표시 → 자료 아님
+    if(!_inlineLabel){
+      var _h=qt.slice(0,_bk.index).trim(), _r=qt.slice(_bk.index).trim();
+      if(_h && _r.length>=6) return {q:_h, jaryo:_r};
+    }
   }
   const qm=qt.indexOf('?');
   if(qm>0 && qm<qt.length-1){
@@ -1089,9 +1097,9 @@ function countStemHTML(rawStem, q, withOX){
   }).join('');
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
-function parseJaryoStmts(qt){
+function parseJaryoStmts(qt, explicitJaryo){
   // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문 추출(줄·인라인 모두) → [{k,t}, ...]
-  var jaryo=(splitJaryo(qt).jaryo)||qt||'';
+  var jaryo=(splitJaryo(qt, explicitJaryo).jaryo)||qt||'';
   return splitStmtMarkers(jaryo).stmts;
 }
 
@@ -1135,7 +1143,7 @@ function comboLettersFromOpts(opts){
 // 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1
 
 function comboStmtList(q){
-  var st=parseJaryoStmts(q.q);
+  var st=parseJaryoStmts(q.q, q.jaryo);
   if(st.length) return st;
   if(isComboQuestion(q.opts)) return comboLettersFromOpts(q.opts).map(function(k){ return {k:k, t:''}; });
   return [];
@@ -1251,7 +1259,7 @@ function conceptCardHTML(q){
 // 문제+보기 블록 — 라이브 renderMcqExam의 qstem·qcard 구조 verbatim 이식(검토모드: mqPick onclick·O/X버튼·타이머 제거)
 function renderQuestionBlock(q){
   if(!q || !q.q) return '';
-  var jr=splitJaryo(q.q);
+  var jr=splitJaryo(q.q, q.jaryo);
   var ansN=Array.isArray(q.ans)?q.ans:[q.ans];
   var optHTML=(q.opts||[]).map(function(op,i){
     var n=i+1;
@@ -1312,7 +1320,7 @@ function renderExpFull(q, mqCertVal){
     const oFilled=oArr.filter(Boolean).length;
     if(q.exp && q.exp.s) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
     var isCombo=isComboQuestion(q.opts);
-    var stmts = isCombo ? parseJaryoStmts(q.q) : [];
+    var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
@@ -1524,7 +1532,7 @@ function detectRenderType(q){
   var oFilled=oArr.filter(Boolean).length;
   if(isCountType(q)) return '개수형(COUNT · ○진술 '+splitCountStmts(q.q||'').stmts.length+'개)';
   var isCombo=isComboQuestion(q.opts||[]);
-  var stmts=isCombo ? parseJaryoStmts(q.q||'') : [];
+  var stmts=isCombo ? parseJaryoStmts(q.q||'', q.jaryo) : [];
   if(isCombo && stmts.length>0 && stmts.length===oFilled) return '조합형(진술 펼침)';
   if(isCombo && stmts.length>0 && stmts.length!==oFilled) return '일반형(보기별) ※조합 인식 실패';
   if(typeof isComboVariant==='function' && isComboVariant(q)) return '조합 변형형';
