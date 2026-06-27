@@ -1252,6 +1252,7 @@ const ADMIN_EMAIL = 'certlab.team@gmail.com';
 const EXCLUDED_EMAILS = ['certlab.team@gmail.com','f45dodam@gmail.com','makeshiness@gmail.com'];
 function isExcludedMember(m){ return EXCLUDED_EMAILS.includes((m && m.email || '').toLowerCase()); }
 function isExcludedPay(p){ return EXCLUDED_EMAILS.includes((p && p.email || '').toLowerCase()); }
+function _testBadge(email){ return EXCLUDED_EMAILS.includes((email||'').toLowerCase()) ? ' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>' : ''; }
 const firebaseConfig = {
   apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
   authDomain: "certlab-c3bcb.firebaseapp.com",
@@ -2873,7 +2874,7 @@ function renderMileage(list){
   refers.forEach((r,i)=>{
     // 추천인 헤더 줄
     html+='<tr style="background:#F4F6FA'+(r.suspect?';background:#FFF6F6':'')+';font-weight:700">'
-      +'<td>👤 '+(r.m.email||'-')+' <span style="color:#8A7E70;font-weight:500">('+r.refs.length+'명 추천)</span></td>'
+      +'<td>👤 '+(r.m.email||'-')+_testBadge(r.m.email)+' <span style="color:#8A7E70;font-weight:500">('+r.refs.length+'명 추천)</span></td>'
       +'<td>'+r.paidRefs+'결제</td>'
       +'<td style="color:#15793F">+'+r.earned.toLocaleString()+'원</td>'
       +'<td style="color:#A32D2D">-'+r.used.toLocaleString()+'원</td>'
@@ -3089,7 +3090,7 @@ function renderRecentPayments() {
       <thead><tr><th>이메일</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th></tr></thead>
       <tbody>${recent.map(p => `
         <tr>
-          <td>${p.email||'-'}</td>
+          <td>${p.email||'-'}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
           <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${planNames[p.planDays]||p.planDays+'일'}</td>
           <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
@@ -3864,7 +3865,7 @@ function renderCrm(){
     +'<table><thead><tr><th>이메일</th><th>등급</th><th>학습량</th><th>가입(경과)</th><th>최근 학습</th></tr></thead><tbody>'
     + list.map(m=>{ const g=memberGrade(m); return `
       <tr style="cursor:pointer" onclick="openMemberDetail('${m.id}')">
-        <td>${m.email||'-'}</td>
+        <td>${m.email||'-'}${_testBadge(m.email)}</td>
         <td><span class="grade ${g.cls}">${g.label}</span></td>
         <td>${(m._solve||0).toLocaleString()}회</td>
         <td>${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일)'}</td>
@@ -4353,7 +4354,7 @@ function openMemberDetail(uid){
 
   const row=(label,val)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F3F0EC"><span style="color:#8A7E70;font-size:13px">${label}</span><span style="font-weight:600;font-size:13px;text-align:right">${val}</span></div>`;
   document.getElementById('mdBody').innerHTML =
-    row('이메일', m.email||'-')
+    row('이메일', (m.email||'-')+_testBadge(m.email))
     + row('등급 / 상태', `<span class="grade ${g.cls}">${g.label}</span> ${memberBadges(m)}`)
     + row('가입일', `${fmtDateShort(m.createdAt)} (${daysSince(m.createdAt)==null?'-':daysSince(m.createdAt)+'일 경과'})`)
     + row('최근 로그인', m.lastLoginAt?`${fmtDateShort(m.lastLoginAt)} (${agoTxt(m.lastLoginAt)})`:'<span style="color:#B4A99C">기록 없음</span>')
@@ -4530,7 +4531,7 @@ function renderStatsTop(){
   const list=STATS.top[cert].slice(0,5);
   box.innerHTML='<table><thead><tr><th>#</th><th>이메일</th><th>등급</th><th>상태</th><th>푼 횟수(이 시험)</th><th>최근 학습</th></tr></thead><tbody>'
     + list.map((x,i)=>{ const g=memberGrade(x.m); return '<tr style="cursor:pointer" onclick="openMemberDetail(\''+x.m.id+'\')">'
-        +'<td>'+(i+1)+'</td><td>'+(x.free?'⭐ ':'')+x.email+'</td>'
+        +'<td>'+(i+1)+'</td><td>'+(x.free?'⭐ ':'')+x.email+_testBadge(x.email)+'</td>'
         +'<td><span class="grade '+g.cls+'">'+g.label+'</span></td><td>'+memberBadges(x.m)+'</td>'
         +'<td style="font-weight:700">'+x.solve.toLocaleString()+'</td>'
         +'<td>'+(x.lr?fmtWithAgo(x.lr):'<span style="color:#C9BFB2">-</span>')+'</td></tr>'; }).join('')
@@ -4557,7 +4558,7 @@ function openApprove(paymentId) {
   pendingPaymentData = p;
   const expireDate = new Date();
   expireDate.setDate(expireDate.getDate() + (p.planDays || 14));
-  document.getElementById('modalEmail').textContent = p.email;
+  document.getElementById('modalEmail').textContent = p.email + (EXCLUDED_EMAILS.includes((p.email||'').toLowerCase())?' (TEST)':'');
   document.getElementById('modalDepositor').textContent = p.depositorName || '-';
   document.getElementById('modalPlan').textContent = planNames[p.planDays] || p.planDays+'일';
   document.getElementById('modalPrice').textContent = p.mileageUsed>0
@@ -4572,7 +4573,7 @@ function openReject(paymentId) {
   if (!p) return;
   pendingPaymentId = paymentId;
   pendingPaymentData = p;
-  document.getElementById('rejectEmail').textContent = p.email;
+  document.getElementById('rejectEmail').textContent = p.email + (EXCLUDED_EMAILS.includes((p.email||'').toLowerCase())?' (TEST)':'');
   document.getElementById('rejectPlan').textContent = planNames[p.planDays] || p.planDays+'일';
   document.getElementById('rejectModal').classList.remove('hidden');
 }
@@ -4583,7 +4584,7 @@ function openRevoke(paymentId) {
   if (!p) return;
   pendingPaymentId = paymentId;
   pendingPaymentData = p;
-  document.getElementById('revokeEmail').textContent = p.email;
+  document.getElementById('revokeEmail').textContent = p.email + (EXCLUDED_EMAILS.includes((p.email||'').toLowerCase())?' (TEST)':'');
   document.getElementById('revokeCert').textContent = certNameOf(p);
   document.getElementById('revokePlan').textContent = planNames[p.planDays] || p.planDays+'일';
   document.getElementById('revokeModal').classList.remove('hidden');
@@ -4804,7 +4805,7 @@ function renderEntMembers(){
           return '<td style="text-align:center"><span class="badge '+s.cls+'">'+s.label+'</span>'+expTxt+'</td>';
         }).join('');
         const em=(m.email||'').replace(/'/g,"\\'");
-        return '<tr><td>'+(m.email||'-')+'</td>'+cells
+        return '<tr><td>'+(m.email||'-')+_testBadge(m.email)+'</td>'+cells
           +'<td style="white-space:nowrap"><button class="btn-sm btn-extend" onclick="openGrant(\''+m.id+'\',\''+em+'\')">부여/연장</button>'
           +'<button class="btn-sm btn-expire" onclick="expireMemberCert(\''+m.id+'\',\''+em+'\')" style="margin-left:4px">만료</button></td></tr>';
       }).join('')
