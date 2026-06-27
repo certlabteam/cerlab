@@ -2417,6 +2417,24 @@ async function applyDiscount() {
     }
     await db.collection('users').doc(currentUser.uid).update(upd);
     userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = data.days || 7;
+    // 결제 기록 남기기(회원권 관리·마이페이지 결제내역 표시용) — 쿠폰은 0원
+    try {
+      await db.collection('payments').add({
+        uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
+        depositorName: '(할인코드)',
+        certType: cert, certName: certFull(cert),
+        planDays: data.days || 7,
+        price: 0,
+        mileageUsed: 0,
+        depositAmount: 0,
+        discountCode: code,
+        paidByCoupon: true,
+        status: 'auto_approved', autoApproved: true,
+        paidByMileageOnly: false,
+        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(_) {}
     syncPlanMirror();
     updateAuthBar();
     hidePlanPopup();
@@ -6407,10 +6425,12 @@ async function mpShowPayments(){
     var h=top+accBox;
     if(!rows.length){ h+='<div class="cm-empty">결제 내역이 없어요.</div>'; box.innerHTML=h; return; }
     rows.forEach(function(p){
+      var isCoupon=(p.paidByCoupon||p.discountCode);
       var cName=p.certName||certFull(p.certType||'')||'-';
       var plan=mpPlanName(p);
-      var amt=(p.depositAmount!=null?p.depositAmount:(p.price||0)).toLocaleString()+'원';
-      var mil=(p.mileageUsed>0)?(' <span style="font-size:11px;color:#C2611B">(+P '+p.mileageUsed.toLocaleString()+')</span>'):'';
+      var amt=isCoupon ? '0원 <span style="font-size:11px;color:#0F6E56">🎟 '+cmEsc(p.discountCode||'할인코드')+'</span>'
+                       : (p.depositAmount!=null?p.depositAmount:(p.price||0)).toLocaleString()+'원';
+      var mil=(!isCoupon&&p.mileageUsed>0)?(' <span style="font-size:11px;color:#C2611B">(+P '+p.mileageUsed.toLocaleString()+')</span>'):'';
       var st=mpPayStatus(p);
       var exp=mpExpiryText(p);
       var dt=(p.createdAt&&p.createdAt.toDate)?mpFmtDate(p.createdAt.toDate()):'';
