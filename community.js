@@ -1,5 +1,6 @@
-function cmAwardToast(prevBal){
+function cmAwardToast(prevBal, mode, certLabel){
   if(!currentUser || !db) return;
+  mode = mode || 'earn';
   var ref=db.collection('users').doc(currentUser.uid), tries=0;
   var poll=function(){
     tries++;
@@ -8,13 +9,16 @@ function cmAwardToast(prevBal){
       var lots=Array.isArray(d.mileageLots)?d.mileageLots:[];
       var bal=(typeof mileageBalance==='function')?mileageBalance(lots):0;
       var delta=bal-prevBal;
-      if(delta>0){
+      var changed = (mode==='earn') ? (delta>0) : (delta<0);
+      if(changed){
         myMileageLots=lots; window._cmUserDoc=d;
         if(typeof updateAuthBar==='function'){ try{ updateAuthBar(); }catch(_){} }
-        if(typeof clToast==='function') clToast('\uD83D\uDCB0 \uD3EC\uC778\uD2B8 +'+delta.toLocaleString()+'P \uC801\uB9BD!');
+        var amt=Math.abs(delta);
+        if(typeof showPtModal==='function') showPtModal(mode, amt, certLabel);
+        else if(typeof clToast==='function') clToast('\uD83D\uDCB0 \uD3EC\uC778\uD2B8 '+(mode==='earn'?'+':'-')+amt.toLocaleString()+'P');
         return;
       }
-      if(tries<4) setTimeout(poll,1500);
+      if(tries<8) setTimeout(poll,2000);
     }).catch(function(){});
   };
   setTimeout(poll,1500);
@@ -142,8 +146,8 @@ async function cmSubmitPost(){
     });
     btn.disabled=false; btn.textContent='등록하기';
     cmBoard=board; cmCloseWrite(); cmSwitchTab(board);
-    alert('등록됐어요!');
-    cmAwardToast(_prevBal);
+    var _certLbl=(board==='review'&&cert)?(CM_CERT_LABEL[cert]||cert):null;
+    cmAwardToast(_prevBal, 'earn', _certLbl);
   }catch(e){
     console.warn('cmSubmitPost',e); btn.disabled=false; btn.textContent='등록하기';
     alert('등록 중 오류가 났어요.'+((/permission/i.test(e.message||''))?'\n(공지는 관리자만 작성할 수 있어요)':''));
@@ -301,9 +305,11 @@ async function cmDeleteComment(cid){
 async function cmDeletePost(){
   if(!cmCurPost) return;
   if(!confirm('이 글을 삭제할까요? 삭제하면 되돌릴 수 없어요.')) return;
+  var _prevBal=(typeof mileageBalance==='function')?mileageBalance(myMileageLots):0;
   try{
     await db.collection('posts').doc(cmCurPost._id).delete();
     cmCloseDetail();
+    cmAwardToast(_prevBal, 'deduct');
   }catch(e){ console.warn('cmDeletePost',e); alert('삭제 중 오류가 났어요.'); }
 }
 var cmFiles=[];

@@ -313,6 +313,16 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <button class="psucc-ok" onclick="closePaySuccess()">확인했어요</button>
   </div>
 </div>
+<!-- 포인트 적립/차감 안내 모달 -->
+<div class="psucc-ov hidden" id="ptModalOv">
+  <div class="psucc-box" style="max-width:320px">
+    <button class="psucc-x" onclick="closePtModal()" aria-label="닫기">✕</button>
+    <div class="psucc-ic" id="ptModalIc">💰</div>
+    <div class="psucc-ti" id="ptModalTi">100포인트 적립되었어요</div>
+    <div class="psucc-sub" id="ptModalSub" style="margin-bottom:18px"></div>
+    <button class="psucc-ok" onclick="closePtModal()">확인</button>
+  </div>
+</div>
 <div class="overlay hidden" id="completeOv">
   <div class="ov-icon" id="ovIcon">🎯</div>
   <div class="ov-title" id="ovTitle">완료!</div>
@@ -536,6 +546,7 @@ async function settleReferralMileage(ref, data){
   let lots = Array.isArray(data.mileageLots) ? data.mileageLots.slice() : [];
   let hist = Array.isArray(data.mileageHistory) ? data.mileageHistory.slice() : [];
   let changed = false;
+  let earned = 0;
   const now = Date.now();
   try {
     const snap = await db.collection('referrals').where('referrerCode','==',myReferralCode).get();
@@ -546,22 +557,19 @@ async function settleReferralMileage(ref, data){
       if (!r.signupSettled) {
         lots.push({a:1000, t:'ref_signup', at:now, exp:now+365*MILE_DAY});
         hist.push({t:'ref_signup', a:1000, at:now, who:r.refereeEmail||null});
-        changed = true;
+        changed = true; earned += 1000;
         try { await d.ref.update({ signupSettled:true }); } catch(_){}
       }
-      // 결제 보상 10,000 (1년)
-      if (r.paid && !r.paidSettled) {
-        lots.push({a:10000, t:'ref_paid', at:now, exp:now+365*MILE_DAY});
-        hist.push({t:'ref_paid', a:10000, at:now, who:r.refereeEmail||null});
-        changed = true;
-        try { await d.ref.update({ paidSettled:true }); } catch(_){}
-      }
+      // 결제 보상은 결제 시점에서 실입금 50%로 직접 적립함(여기서 처리 안 함)
     }
   } catch(_){}
   if (changed) {
     myMileageLots = lots;
     try { await ref.update({ mileageLots: lots, mileageHistory: hist }); } catch(_){}
     updateAuthBar();
+    if (earned > 0 && typeof showPtModal === 'function') {
+      setTimeout(function(){ showPtModal('referral', earned); }, 800);
+    }
   }
 }
 
@@ -670,7 +678,13 @@ async function loadUserPlan(user) {
       const refCode = genReferralCode(user.uid);
       let referredBy = null;
       try { const pr = localStorage.getItem('pendingRef'); if (pr && pr !== refCode) referredBy = pr; } catch(_){}
-      const lots = [ {a:1000, t:'signup', at:now, exp:now+3*MILE_DAY} ];   // 가입 보너스 1,000원(3일)
+      // 가입 보너스 1,000P(1년). 추천코드로 들어왔으면 추천 가입 보너스 1,000P 추가(=합 2,000P)
+      const lots = [ {a:1000, t:'signup', at:now, exp:now+365*MILE_DAY} ];
+      const mhist = [ {t:'signup', a:1000, at:now} ];
+      if (referredBy) {
+        lots.push({a:1000, t:'ref_join', at:now, exp:now+365*MILE_DAY});
+        mhist.push({t:'ref_join', a:1000, at:now});
+      }
       await ref.set({
         email: user.email, displayName: user.displayName, photoURL: user.photoURL,
         plan: 'FREE_TRIAL', trialCount: 0,        // 레거시 미러(관리자 호환)
@@ -679,13 +693,15 @@ async function loadUserPlan(user) {
         referralCode: refCode,
         referredBy: referredBy || null,
         mileageLots: lots,
-        mileageHistory: [{t:'signup', a:1000, at:now}],
+        mileageHistory: mhist,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       // 신규 가입 확정 시점(로그인 경로 무관) → Meta CompleteRegistration
       try { clTrack('CompleteRegistration', { content_name:'signup', content_category:(typeof activeCert!=='undefined'?(activeCert||''):''), status:true }); } catch(_){}
       myReferralCode = refCode; myMileageLots = lots;
+      // 추천받아 가입했으면 환영 모달로 보너스 안내
+      if (referredBy && typeof showPtModal==='function') { setTimeout(function(){ showPtModal('referral', 1000); }, 1200); }
       // 추천 기록(추천인 정산용) — 추천코드로 들어온 경우만
       if (referredBy) {
         try {
@@ -1405,8 +1421,27 @@ async function submitPayment() {
     userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = selectedPlanDays;
     try { clTrack('Purchase', { value: price, currency:'KRW', content_name: certName, content_category: cert, content_type:'product', contents:[{id:cert, quantity:1}], num_items:1 }); } catch(_){}
 
-    // 추천 결제 보너스: 추천받아 가입했다면 내 referral 기록을 paid=true (추천인 다음 로그인 시 +10,000)
-    try { await db.collection('referrals').doc(currentUser.uid).update({ paid:true }); } catch(_){}
+    // 추천 결제 보너스: 추천받아 가입했다면, 이번 실입금액의 50%를 추천인에게 적립(결제할 때마다)
+    try {
+      var _refReward = Math.floor((payable||0) * 0.5);
+      await db.collection('referrals').doc(currentUser.uid).update({ paid:true });
+      if (_refReward > 0) {
+        var _myRefDoc = await db.collection('referrals').doc(currentUser.uid).get();
+        var _refrCode = _myRefDoc.exists ? (_myRefDoc.data().referrerCode||null) : null;
+        if (_refrCode) {
+          var _refrSnap = await db.collection('users').where('referralCode','==',_refrCode).limit(1).get();
+          if (!_refrSnap.empty) {
+            var _refrRef = _refrSnap.docs[0].ref, _refrData = _refrSnap.docs[0].data();
+            var _rlots = Array.isArray(_refrData.mileageLots) ? _refrData.mileageLots.slice() : [];
+            var _rhist = Array.isArray(_refrData.mileageHistory) ? _refrData.mileageHistory.slice() : [];
+            var _rnow = Date.now();
+            _rlots.push({a:_refReward, t:'ref_paid', at:_rnow, exp:_rnow+365*MILE_DAY});
+            _rhist.push({t:'ref_paid', a:_refReward, at:_rnow, who:(currentUser.email||null)});
+            await _refrRef.update({ mileageLots:_rlots, mileageHistory:_rhist.slice(-300) });
+          }
+        }
+      }
+    } catch(_){}
 
     syncPlanMirror(); updateAuthBar(); hidePlanPopup();
     showPaySuccess({ certName: certName, planLabel: planLabelOf(selectedPlanDays), expireAt: expireAt, payable: payable, depositorName: depositorName });
@@ -1432,6 +1467,27 @@ function showPaySuccess(info){
   ov.classList.remove('hidden');
 }
 function closePaySuccess(){ var ov=document.getElementById('paySuccessOv'); if(ov) ov.classList.add('hidden'); }
+// 포인트 적립/차감 안내 모달
+function showPtModal(kind, points, certLabel){
+  var ov=document.getElementById('ptModalOv'); if(!ov) return;
+  var ic=document.getElementById('ptModalIc'), ti=document.getElementById('ptModalTi'), sub=document.getElementById('ptModalSub');
+  if(kind==='referral'){
+    ic.textContent='🎁'; ti.textContent='추천 보상 '+points.toLocaleString()+'포인트!';
+    sub.textContent='내 추천으로 친구가 가입·결제했어요. 이용권에 사용할 수 있어요. (유효기간 1년)';
+  } else if(kind==='earn'){
+    ic.textContent='💰'; ti.textContent=points.toLocaleString()+'포인트 적립되었어요';
+    if(certLabel && points>1000){
+      sub.textContent='합격 후기 보상! '+certLabel+' 결제금액 '+points.toLocaleString()+'원 전액 환급이에요. (유효기간 1년)';
+    } else {
+      sub.textContent='이용권 결제에 사용할 수 있어요. (1P = 1원 · 유효기간 1년)';
+    }
+  } else {
+    ic.textContent='↩️'; ti.textContent=points.toLocaleString()+'포인트가 차감되었어요';
+    sub.textContent='글을 삭제해서 적립됐던 포인트가 회수됐어요.';
+  }
+  ov.classList.remove('hidden');
+}
+function closePtModal(){ var ov=document.getElementById('ptModalOv'); if(ov) ov.classList.add('hidden'); }
 function copyDepositAcc(){
   var txt='1000-2406-0293';
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){alert('계좌번호가 복사되었어요!');}).catch(function(){alert('계좌번호: '+txt);}); }
@@ -5087,9 +5143,9 @@ function clRouteFromHash(){
 /* 마이페이지 (6단계) */
 function cmHistDate(at){ if(!at) return ''; var d=new Date(at); return (d.getMonth()+1)+'/'+d.getDate(); }
 function mpHistLabel(t){
-  var m={signup:'가입 축하', ref_signup:'추천 가입 보상', ref_paid:'추천 결제 보상',
+  var m={signup:'가입 축하', ref_signup:'추천 가입 보상', ref_paid:'추천 결제 보상', ref_join:'추천 가입 보너스',
     board_post:'글 작성', board_comment:'댓글 작성', board_post_cancel:'글 삭제 회수',
-    board_comment_cancel:'댓글 삭제 회수', purchase:'이용권 결제 사용', use:'이용권 결제 사용', event:'이벤트 보너스'};
+    board_comment_cancel:'댓글 삭제 회수', purchase:'이용권 결제 사용', use:'이용권 결제 사용', event:'이벤트 보너스', event_refund:'합격 후기 환급'};
   return m[t]||t||'포인트 변동';
 }
 async function openMyPage(){
