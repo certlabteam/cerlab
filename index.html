@@ -3920,7 +3920,7 @@ function renderOxLearn(root){
     root.innerHTML=html; return;
   }
   cards.forEach(function(cd){
-    var q=cd.q, stem=splitJaryo(q.q).q || q.q;
+    var q=cd.q, stem=splitJaryo(q.q, q.jaryo).q || q.q;
     html+='<div class="oxl-card">';
     html+='<div class="oxl-sub">'+mqEsc(cd.subName)+(q.set?(' · '+mqEsc(q.set)):'')+'</div>';
     html+='<div class="oxl-q">'+oxSafeHTML(stem,q)+'</div>';
@@ -3952,7 +3952,12 @@ function renderOxLearn(root){
   html+='</div>';
   root.innerHTML=html;
 }
-function splitJaryo(qt){
+function splitJaryo(qt, explicitJaryo){
+  // 데이터에 jaryo 필드가 명시돼 있으면 추측 파싱을 하지 않고 그대로 쓴다(발문 q는 안 자름).
+  // (ㄱ)·○·[ 등을 발문 안에서 추측해 자르던 로직의 오인을 근본 차단. SA가 쓰던 q.jaryo 컨벤션을 MCQ로 확장.
+  if(explicitJaryo!=null && String(explicitJaryo).trim()!==''){
+    return {q:String(qt||'').trim(), jaryo:String(explicitJaryo).trim()};
+  }
   if(!qt) return {q:qt||'', jaryo:''};
   const b=qt.indexOf('[');
   if(b>0) return {q:qt.slice(0,b).trim(), jaryo:qt.slice(b).trim()};
@@ -3961,10 +3966,17 @@ function splitJaryo(qt){
   const inl=extractInlineComboGroup(qt);                   // 인라인 조합형 폴백
   if(inl) return inl;
   // 괄호 라벨 빈칸 ( ㄱ )( ㄴ ): 첫 라벨 빈칸부터 자료로 (질문 끝 (단,…) 조건 grab보다 우선)
+  // 단, 답 자리표시 (ㄱ)(ㄴ)는 발문 안(물음표 앞)에 오는 인라인 라벨이므로 자료로 떼지 않는다.
+  // 예) "균형가격(ㄱ)과 균형거래량(ㄴ)의 변화는? ○ 수요함수…" → (ㄱ)에서 자르면 발문이 잘리고 ○자료가 망가짐.
+  // 진짜 빈칸 자료는 물음표 뒤에 온다(예 "…옳은 것은? ( ㄱ ): …"). 물음표 앞 라벨이면 건너뛰고 아래 ? 분리로 처리.
   var _bk=qt.match(/\(\s*[\u3131-\u314E]\s*\)/);
   if(_bk){
-    var _h=qt.slice(0,_bk.index).trim(), _r=qt.slice(_bk.index).trim();
-    if(_h && _r.length>=6) return {q:_h, jaryo:_r};
+    var _qm=qt.indexOf('?');
+    var _inlineLabel=(_qm>=0 && _bk.index<_qm);   // 물음표 앞 (ㄱ) = 답 자리표시 → 자료 아님
+    if(!_inlineLabel){
+      var _h=qt.slice(0,_bk.index).trim(), _r=qt.slice(_bk.index).trim();
+      if(_h && _r.length>=6) return {q:_h, jaryo:_r};
+    }
   }
   const qm=qt.indexOf('?');
   if(qm>0 && qm<qt.length-1){
@@ -3990,9 +4002,9 @@ function splitStmtMarkers(text){
   }
   return {intro:intro, stmts:stmts};
 }
-function parseJaryoStmts(qt){
+function parseJaryoStmts(qt, explicitJaryo){
   // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문 추출(줄·인라인 모두) → [{k,t}, ...]
-  var jaryo=(splitJaryo(qt).jaryo)||qt||'';
+  var jaryo=(splitJaryo(qt, explicitJaryo).jaryo)||qt||'';
   return splitStmtMarkers(jaryo).stmts;
 }
 
@@ -4035,7 +4047,7 @@ function comboLettersFromOpts(opts){
 }
 // 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1
 function comboStmtList(q){
-  var st=parseJaryoStmts(q.q);
+  var st=parseJaryoStmts(q.q, q.jaryo);
   if(st.length) return st;
   if(isComboQuestion(q.opts)) return comboLettersFromOpts(q.opts).map(function(k){ return {k:k, t:''}; });
   return [];
@@ -4533,7 +4545,7 @@ function renderMcqExam(root){
     body+=grpBlockHTML(q);   // 개념 뒤 → 그래프
     body+=tblBlockHTML(q);   // → 표 (해설 순서: 암기코드→개념→그래프→표)
     expHTML='<div class="exp"><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
-  const jr=splitJaryo(q.q);
+  const jr=splitJaryo(q.q, q.jaryo);
   const curSubj=(q&&q._subj)?q._subj:'';   // 혼합과목(복습·진단·SR) 현재 문항 과목 → 헤더로
   const subjTag='';                         // 카드 안 과목 배지는 제거(헤더로 옮김)
   const tags=subjTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q);
