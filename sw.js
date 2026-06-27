@@ -14,3 +14,32 @@ self.addEventListener('activate', function(e){
 });
 // fetch 핸들러는 존재하지만 respondWith를 호출하지 않음 → 브라우저 기본 동작(네트워크)으로 처리, 캐시 개입 0
 self.addEventListener('fetch', function(e){ /* 캐시 안 함: 네트워크 직행 */ });
+
+// ── 웹 푸시 (복습 알림) — 기존 install/activate/fetch 정책 무변경, 핸들러만 추가 ──
+self.addEventListener('push', function(e){
+  var d={}; try{ d = e.data ? e.data.json() : {}; }catch(_){ d={}; }
+  var title = d.title || 'CertLab';
+  var body  = d.body  || '';
+  var url   = d.url   || '/';
+  e.waitUntil(self.registration.showNotification(title, {
+    body: body,
+    icon: '/apple-touch-icon.png',
+    badge: '/favicon-32.png',
+    tag: 'certlab-review',
+    renotify: false,
+    data: { url: url }
+  }));
+});
+self.addEventListener('notificationclick', function(e){
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(
+    clients.matchAll({ type:'window', includeUncontrolled:true }).then(function(cl){
+      for(var i=0;i<cl.length;i++){
+        var c=cl[i];
+        if('focus' in c){ try{ c.navigate(url); }catch(_){} return c.focus(); }
+      }
+      if(clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});

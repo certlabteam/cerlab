@@ -49,6 +49,7 @@ gtag('config', 'G-RPZRZQ779J');
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
 <link rel="stylesheet" href="style.css">
 <!-- Meta Pixel Code -->
 <script>
@@ -953,6 +954,7 @@ async function saveUserData() {
       eloState: (typeof eloState!=='undefined' && eloState) ? eloState : {},
       luHist: (typeof luHistAll!=='undefined' && luHistAll) ? luHistAll : {},
       luResume: (typeof luResumeAll!=='undefined' && luResumeAll) ? luResumeAll : {},
+      lastStudyAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   } catch(e) { console.error('저장 오류:', e); }
@@ -2295,6 +2297,7 @@ function countUp(cert){
   solveCount=totalSolve();
   setStatCountUI();
   checkMilestone(totalSolve());
+  if(typeof _pushTick==='function') _pushTick();
   srSaveDebounced();
 }
 
@@ -5235,13 +5238,95 @@ loadManifest().then(async ()=>{
 (function(){
   // 캐시 안 하는 최소 SW 등록 → PWA 설치(beforeinstallprompt) 활성화. fetch를 네트워크로 직행시켜 옛 파일 캐시 사고 없음.
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    navigator.serviceWorker.register('/sw.js').then(function(reg){ window._swReg=reg; }).catch(()=>{});
   }
 })();
 // 설치 신호 캡처 (있으면 원터치 설치에 사용)
 let pwaPrompt=null;
 window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); pwaPrompt=e; });
 window.addEventListener('appinstalled', ()=>{ pwaPrompt=null; });
+// ===== 복습 푸시: 권한 배너 + FCM 토큰 (크롬·안드로이드 / iOS 제외) =====
+var _PUSH_VAPID='BK9KllMfvIRa1XUAtvPfl9hYIz7wmcYphIp4_zlvZfbvbPMltpN8jciCwHbho5uxHQUEmX77jDFZDs6LUB_d4zk';
+var _pushBannerShown=false, _pushSynced=false;
+function _pushIsIOS(){ var ua=navigator.userAgent; var isAnd=/android/i.test(ua); return !isAnd && (/iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)); }
+function _pushSnoozed(){ try{ return Date.now() < (+localStorage.getItem('certlab_push_snooze')||0); }catch(_){ return false; } }
+function _pushSnooze(){ try{ localStorage.setItem('certlab_push_snooze', String(Date.now()+7*86400000)); }catch(_){} }
+function _pushTick(){
+  try{
+    if(!_pushSynced && typeof currentUser!=='undefined' && currentUser){ _pushSynced=true; _pushSyncIfGranted(); }
+    _pushMaybePrompt();
+  }catch(_){}
+}
+function _pushMaybePrompt(){
+  try{
+    if(_pushBannerShown) return;
+    if(typeof currentUser==='undefined' || !currentUser) return;          // 토큰 대상 uid 필요
+    if(typeof totalSolve==='function' && totalSolve()<30) return;          // 누적 30문제(전 시험 통합)
+    if(!('Notification' in window) || Notification.permission!=='default') return;
+    if(_pushIsIOS() || _pushSnoozed()) return;
+    var busy=['loginPopup','planPopup','inappPopup','guestFeatPopup','refundPopup','conceptOfferPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
+    if(busy) return;
+    _pushShowBanner();
+  }catch(_){}
+}
+function _pushShowBanner(){
+  if(document.getElementById('pushBannerWrap')) return;
+  _pushBannerShown=true;
+  if(!document.getElementById('pushBannerCss')){
+    var st=document.createElement('style'); st.id='pushBannerCss';
+    st.textContent='#pushBannerWrap{position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;justify-content:center;padding:0 12px calc(14px + env(safe-area-inset-bottom,0px));pointer-events:none}'
+      +'#pushBanner{pointer-events:auto;width:100%;max-width:440px;background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(31,41,55,.18);padding:16px 16px 14px;animation:pbUp .42s cubic-bezier(.22,1,.36,1)}'
+      +'@keyframes pbUp{from{transform:translateY(130%);opacity:.3}to{transform:translateY(0);opacity:1}}'
+      +'#pushBanner .pb-top{display:flex;gap:12px;align-items:flex-start}'
+      +'#pushBanner .pb-ic{flex:0 0 44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#EEF0FF,#E0E4FF);display:flex;align-items:center;justify-content:center;font-size:22px}'
+      +'#pushBanner .pb-title{font-size:15px;font-weight:800;color:#1F2937;margin:1px 0 3px}'
+      +'#pushBanner .pb-desc{font-size:12.5px;color:#6B7280;line-height:1.5}'
+      +'#pushBanner .pb-x{flex:0 0 auto;border:none;background:none;color:#C3C9D4;font-size:20px;cursor:pointer;line-height:1;padding:0 2px}'
+      +'#pushBanner .pb-btns{display:flex;gap:8px;margin-top:12px}'
+      +'#pushBanner .pb-btns button{flex:1;border:none;border-radius:11px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer}'
+      +'#pushBanner .pb-later{background:#F1F3F7;color:#8A93A3}'
+      +'#pushBanner .pb-allow{background:linear-gradient(135deg,#5B6CF0,#4453D6);color:#fff}';
+    document.head.appendChild(st);
+  }
+  var wrap=document.createElement('div'); wrap.id='pushBannerWrap';
+  wrap.innerHTML='<div id="pushBanner"><div class="pb-top"><div class="pb-ic">🔁</div>'
+    +'<div style="flex:1;min-width:0"><div class="pb-title">복습 알림 받을까요?</div>'
+    +'<div class="pb-desc">복습할 문제가 쌓이면 알려드려요. 까먹기 전에 콕 짚어 챙겨드릴게요.</div></div>'
+    +'<button class="pb-x" onclick="_pushDismiss()">×</button></div>'
+    +'<div class="pb-btns"><button class="pb-later" onclick="_pushDismiss()">나중에</button>'
+    +'<button class="pb-allow" onclick="_pushEnable()">알림 받기</button></div></div>';
+  document.body.appendChild(wrap);
+}
+function _pushHideBanner(){
+  var w=document.getElementById('pushBannerWrap'); if(!w) return;
+  var b=document.getElementById('pushBanner');
+  if(b){ b.style.transition='transform .3s ease,opacity .3s ease'; b.style.transform='translateY(140%)'; b.style.opacity='0'; }
+  setTimeout(function(){ if(w&&w.parentNode) w.parentNode.removeChild(w); },320);
+}
+function _pushDismiss(){ _pushSnooze(); _pushHideBanner(); }
+async function _pushEnable(){
+  _pushHideBanner();
+  try{
+    var perm=await Notification.requestPermission();
+    if(perm==='granted') await _pushRegisterToken();
+  }catch(e){ console.error('push enable', e); }
+}
+async function _pushRegisterToken(){
+  try{
+    if(!firebase || !firebase.messaging) return;
+    if(firebase.messaging.isSupported && !firebase.messaging.isSupported()) return;
+    var reg = window._swReg || await navigator.serviceWorker.ready;
+    var token = await firebase.messaging().getToken({ vapidKey:_PUSH_VAPID, serviceWorkerRegistration:reg });
+    if(token && typeof currentUser!=='undefined' && currentUser && db){
+      await db.collection('userData').doc(currentUser.uid).set({
+        fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+        pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge:true});
+    }
+  }catch(e){ console.error('fcm token', e); }
+}
+function _pushSyncIfGranted(){ try{ if(!_pushIsIOS() && ('Notification' in window) && Notification.permission==='granted') _pushRegisterToken(); }catch(_){} }
+
 function pwaStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
 // 프로필 메뉴: 홈 화면에 추가
 async function addToHome(e){
