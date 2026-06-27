@@ -1551,7 +1551,7 @@ function syncPlanMirror(){
 }
 // 공용 중요도 별표(압축): 0=숨김, 1→★, 2+→★n
 function impLabel(n){ n=n||0; if(!n) return ''; return n===1 ? '★' : '★'+n; }
-let selectedPlanDays = 14;
+let selectedPlanDays = 56;
 let selectedPlanPrice = 5900;
 
 // ===== Auth 상태 감지 =====
@@ -2194,35 +2194,35 @@ const PLAN_SETS={
   _default:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
             {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
             {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
   bodybuilding:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
             {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
             {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
   appraiser:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
              {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
              {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
-             {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+             {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
   koreanhistory:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
                  {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
                  {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-                 {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+                 {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
   realestate1:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
                {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
                {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-               {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+               {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
   realestate2:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
                {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
                {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
-               {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+               {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
   housing:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-           {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}],
+           {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
   housing2:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
             {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
             {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
-            {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1}]
+            {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}]
 };
 function plansFor(cert){ return PLAN_SETS[cert]||PLAN_SETS._default; }
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
@@ -6408,19 +6408,32 @@ async function mpShowPayments(){
     if(!rows.length){ h+='<div class="cm-empty">결제 내역이 없어요.</div>'; box.innerHTML=h; return; }
     rows.forEach(function(p){
       var cName=p.certName||certFull(p.certType||'')||'-';
-      var plan=(p.planDays!=null)?(p.planDays+'일'):'-';
+      var plan=mpPlanName(p);
       var amt=(p.depositAmount!=null?p.depositAmount:(p.price||0)).toLocaleString()+'원';
       var mil=(p.mileageUsed>0)?(' <span style="font-size:11px;color:#C2611B">(+P '+p.mileageUsed.toLocaleString()+')</span>'):'';
       var st=mpPayStatus(p);
+      var exp=mpExpiryText(p);
       var dt=(p.createdAt&&p.createdAt.toDate)?mpFmtDate(p.createdAt.toDate()):'';
       h+='<div class="hist" style="align-items:flex-start">'
         +'<div class="ht">'+cmEsc(cName)+' · '+plan
-        +'<div class="hd">신청일 '+dt+'</div></div>'
+        +'<div class="hd">신청일 '+dt+(exp?(' · 만료 '+exp):'')+'</div></div>'
         +'<div style="text-align:right"><div style="font-weight:700;color:#2C2C2A">'+amt+mil+'</div>'
         +'<div style="margin-top:3px">'+st+'</div></div></div>';
     });
     box.innerHTML=h;
   }catch(e){ console.warn('mpShowPayments',e); box.innerHTML=top+accBox+'<div class="cm-empty">불러오지 못했어요.</div>'; }
+}
+function mpPlanName(p){
+  // PLAN_SETS에서 일수→이름(8주 이용권 등), 없으면 N일
+  try{ var set=(typeof PLAN_SETS!=='undefined')?(PLAN_SETS[p.certType]||PLAN_SETS._default):null; if(set){ var f=set.find(function(x){return x.d===p.planDays;}); if(f) return f.name; } }catch(_){}
+  return (p.planDays!=null)?(p.planDays+'일'):'-';
+}
+function mpExpiryText(p){
+  // 해당 시험 이용권의 현재 만료일
+  var ent=(window._cmUserDoc&&window._cmUserDoc.entitlements&&window._cmUserDoc.entitlements[p.certType])||null;
+  if(!ent||!ent.expireAt) return '';
+  var d=ent.expireAt.toDate?ent.expireAt.toDate():new Date(ent.expireAt);
+  return mpFmtDate(d);
 }
 function mpPayStatus(p){
   // 이용권 활성/만료를 결제건 기준으로 표기
