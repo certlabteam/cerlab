@@ -917,3 +917,50 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 
 /* 게시글 신고 (8a) */
 .cm-rep-btn{margin-left:auto;font-size:12px;color:#C77A00;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;padding:5px 11px;cursor:pointer;font-weight:600}
+/* ===== 레벨업 게이미피케이션 (콤보·합격선게이지·레벨업연출) ===== */
+/* 진행바 우측 콤보 핀 */
+.mq-prog .row .mq-prog-r{display:flex;justify-content:flex-end;align-items:center}
+.lu-combo{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(90deg,#FB923C,#F97316);color:#fff;font-weight:800;font-size:12px;padding:2px 10px;border-radius:999px;box-shadow:0 2px 6px rgba(249,115,22,.35);line-height:1.5}
+.lu-combo.pop{animation:luCpop .45s}
+@keyframes luCpop{0%{transform:scale(1)}40%{transform:scale(1.42)}100%{transform:scale(1)}}
+.lu-combo-recap{display:inline-block;margin-left:7px;background:#FFF1E6;color:#C2620C;font-size:11px;font-weight:800;border-radius:8px;padding:2px 9px}
+
+/* 합격선 게이지 */
+.lu-gauge-wrap{margin:14px 14px 4px}
+.lu-g-cap{text-align:center;font-size:13px;font-weight:800;margin-bottom:14px}
+.lu-gauge{position:relative;height:16px;border-radius:999px;background:#EEF2F7;margin:0 4px}
+.lu-g-fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;transition:width .9s cubic-bezier(.22,1,.36,1)}
+.lu-g-mk{position:absolute;top:-6px;bottom:-6px;width:0;border-left:2px dashed #94A3B8}
+.lu-g-lab{position:absolute;top:-22px;transform:translateX(-50%);font-size:10px;font-weight:700;white-space:nowrap}
+.lu-g-knob{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid #2563EB;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(15,23,42,.22);transition:left .9s cubic-bezier(.22,1,.36,1)}
+.lu-g-foot{display:flex;justify-content:space-between;font-size:10px;color:#A89C8E;margin:3px 4px 0}
+
+/* 레벨업 순간 연출 스테이지 */
+.lu-stage{position:relative;overflow:hidden;background:linear-gradient(160deg,#0A3D6E,#042C53);border-radius:16px;padding:18px 16px 16px;margin:8px 0 6px;text-align:center;color:#fff}
+.lu-stage.down{background:linear-gradient(160deg,#3A4658,#283142)}
+.lu-stage-ti{font-size:17px;font-weight:800;margin:2px 0 2px}
+.lu-stage-sub{font-size:12px;opacity:.85;margin-bottom:12px}
+.lu-lvline{display:flex;align-items:center;justify-content:center;gap:13px;margin:4px 0 6px}
+.lu-lvb{width:56px;height:56px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 5px 14px rgba(0,0,0,.28)}
+.lu-lvb small{font-size:9px;font-weight:600;opacity:.85}
+.lu-lvb b{font-size:21px;line-height:1}
+.lu-lvb-from{background:#1E4E79;color:#9FC3E8}
+.lu-lvb-to{background:linear-gradient(140deg,#FBBF24,#F59E0B);color:#3A2A00;opacity:0;transform:scale(.5)}
+.lu-lvb-to.down{background:#475569;color:#CBD5E1}
+.lu-lvb-to.show{opacity:1;transform:scale(1);transition:.5s cubic-bezier(.34,1.56,.64,1)}
+.lu-arrow{font-size:20px;color:#7FB2E0}
+.lu-xpwrap{margin:2px 6px 12px}
+.lu-xp{height:11px;border-radius:999px;background:rgba(255,255,255,.18);overflow:hidden}
+.lu-xp>i{display:block;height:100%;width:28%;border-radius:999px;background:linear-gradient(90deg,#FCD34D,#FBBF24);transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.lu-stage-desc{font-size:12.5px;opacity:.9}
+.lu-cfti{position:absolute;top:-18px;width:8px;height:13px;border-radius:1px;opacity:0;pointer-events:none}
+.lu-cfti.go{animation:luFall 1.4s ease-in forwards}
+@keyframes luFall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(240px) rotate(540deg)}}
+
+/* 모션 최소화 기기: 게이미피케이션 애니 비활성(즉시표시) */
+@media (prefers-reduced-motion: reduce){
+  .lu-combo.pop{animation:none}
+  .lu-cfti{display:none}
+  .lu-lvb-to.show{transition:none}
+  .lu-xp>i,.lu-g-fill,.lu-g-knob{transition:none}
+}

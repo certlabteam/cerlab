@@ -2842,7 +2842,7 @@ function mcqAnalysisCard(cert){
     var lv=luSubjectLevel(cert,sub); if(lv==null) return '';
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, open=!!luCardOpen[sub];
     var pill='<span style="font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
-    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'</span><button onclick="event.stopPropagation();luStartSub(\''+sub+'\')" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
+    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:11px;font-weight:600;color:#B4A99C;margin-left:5px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();luStartSub(\''+sub+'\')" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
     var body='';
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
@@ -2859,6 +2859,7 @@ function mcqAnalysisCard(cert){
   noteHTML+='<div class="anal-note">예상점수 · 합격 기준 '+passRule(cert).label+' · 레벨은 문제 풀면서 자동 조정</div>';
   return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
     +'<div class="anal-score">'+predHTML+'</div>'
+    +((v && ap.predicted!=null)?_luGaugeHTML(cert,ap,v):'')
     +subsHTML+noteHTML+'</div>';
 }
 // ===== 4-a 레벨 테스트 (진단 세션 위에 얹음. mqDiag 플밍 재사용) =====
@@ -2981,6 +2982,7 @@ function _ltResultHTML(M){
           +'<div style="font-size:12.5px;color:#6B7C8F;font-weight:700">예상 점수</div>'
           +'<div style="font-size:40px;font-weight:800;color:'+col+';line-height:1.1;margin:2px 0">'+pred+'<span style="font-size:16px;font-weight:700">점</span></div>'
           +(lbl?'<div style="font-size:13px;font-weight:700;color:'+col+'">'+lbl+'</div>':'')
+          +((typeof _luGaugeHTML==='function'&&v&&ap.predicted!=null)?_luGaugeHTML(M.cert,ap,v):'')
           +'</div>';
       }
     }catch(e){}
@@ -3045,6 +3047,8 @@ function luTopicScores(cert,sub){ var k=cert+'|'+sub, st=(typeof eloState!=='und
 function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=''; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
 function luStartSub(sub){ var cert=mqCert; if(ltGate(cert)) return; if(!sub) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=sub; luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
 function luLoadRound(first){
+  if(first){ luCombo=0; luComboJustUp=false; }   // 레벨업 세션 시작 시 콤보 리셋(라운드 넘어가도 연속은 이어짐)
+  luRoundMaxCombo=luCombo;                        // 이번 라운드 최고 콤보(이월된 콤보부터)
   var cert=mqCert, order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
   if(luLockSub){ order=[luLockSub]; }   // 과목 고정 모드: 잠긴 과목만 출제
   if(!order.length){ luFinish('과목이 없습니다.'); return; }
@@ -3143,6 +3147,9 @@ function luFinish(msg){ mqLevelUp=false; mqStopTimer(); mqStopOverTimer(); if(cu
 // ===== 레벨업: 라운드 기록 + 정밀 이어풀기 + 세션 =====
 var luHistAll={}, luResumeAll={}, _luHistLoaded=false, LU_HIST_DAYS=30, luHistView='date';
 var luSessTotal=0, luSessCorrect=0, luSessChanges={}, luSessPredStart=null, _luRound=null, _luReviewReturn=null, _luEloSA={};
+var luCombo=0, luRoundMaxCombo=0, luComboJustUp=false;   // 게이미피케이션: 연속정답 콤보(세션 누적)·라운드 최고콤보
+function _luComboPin(){ if(!(typeof mqLevelUp!=='undefined' && mqLevelUp) || luCombo<3) return ''; var p='<span class="lu-combo'+(luComboJustUp?' pop':'')+'">\uD83D\uDD25 '+luCombo+'\uC5F0\uC18D</span>'; luComboJustUp=false; return p; }
+function _luTierName(lv){ return ['','\uC785\uBB38','\uCD08\uAE09','\uC911\uAE09','\uC219\uB828','\uACE0\uC218'][lv]||''; }
 function luHistEnsure(){ if(_luHistLoaded) return; _luHistLoaded=true; try{ luHistAll=JSON.parse(localStorage.getItem('certlab_luhist')||'{}')||{}; }catch(_){ luHistAll={}; } try{ luResumeAll=JSON.parse(localStorage.getItem('certlab_luresume')||'{}')||{}; }catch(_){ luResumeAll={}; } }
 function luHistSaveLocal(){ try{ localStorage.setItem('certlab_luhist', JSON.stringify(luHistAll)); }catch(_){} try{ localStorage.setItem('certlab_luresume', JSON.stringify(luResumeAll)); }catch(_){} }
 function luHistPrune(cert){ var arr=luHistAll[cert]||[]; var cut=Date.now()-LU_HIST_DAYS*864e5; luHistAll[cert]=arr.filter(function(r){ return (r&&r.ts||0)>=cut; }); }
@@ -3322,6 +3329,27 @@ function adVerdict(cert, ap){
   return {status:'fail', color:'#E24B4A', label:'🔴 위험권', rule:rule};
 }
 function luToggleCardSub(sub){ luCardOpen[sub]=!luCardOpen[sub]; renderMCQ(); }
+// 게이미피케이션: 예상점수 → 합격선 게이지(0~100, 과락·합격 마커)
+function _luGaugeHTML(cert, ap, v){
+  if(!ap || ap.predicted==null || !v) return '';
+  var rule=passRule(cert), pass=rule.pass||60, floor=rule.floor||0, p=Math.max(0,Math.min(100,ap.predicted));
+  var col = (v.status==='safe')?'#2E9B5E' : (v.status==='pass')?'#E0A52E' : '#E24B4A';
+  var gap = ap.predicted - pass, capCol, capTxt;
+  if(v.status==='fail' && v.failFloor && v.failFloor.length){ capCol='#C0392B'; capTxt='\u26A0\uFE0F '+v.failFloor.map(function(x){return mqEsc(x.name);}).join(', ')+' \uACFC\uB77D \uC704\uD5D8'; }
+  else if(gap>=0){ capCol='#2E9B5E'; capTxt='\uD569\uACA9\uC120 +'+gap+'\uC810'; }
+  else { capCol='#E0813A'; capTxt='\uD569\uACA9\uAE4C\uC9C0 '+Math.abs(gap)+'\uC810'; }
+  var floorMk = floor>0 ? '<span class="lu-g-mk" style="left:'+floor+'%;border-color:#E24B4A"></span><span class="lu-g-lab" style="left:'+floor+'%;color:#C0392B">\uACFC\uB77D '+floor+'</span>' : '';
+  return '<div class="lu-gauge-wrap">'
+    +'<div class="lu-g-cap" style="color:'+capCol+'">'+capTxt+'</div>'
+    +'<div class="lu-gauge">'
+      +floorMk
+      +'<span class="lu-g-mk" style="left:'+pass+'%;border-color:#2E9B5E"></span><span class="lu-g-lab" style="left:'+pass+'%;color:#1E7A45">\uD569\uACA9 '+pass+'</span>'
+      +'<span class="lu-g-fill" style="width:'+p+'%;background:'+col+'"></span>'
+      +'<span class="lu-g-knob" style="left:'+p+'%;border-color:'+col+'"></span>'
+    +'</div>'
+    +'<div class="lu-g-foot"><span>0</span><span>100</span></div>'
+  +'</div>';
+}
 function diagKey(cert){ return 'diagprog:'+cert; }function diagHasSave(cert){ try{ return !!localStorage.getItem(diagKey(cert)); }catch(_){ return false; } }
 function clearDiagProgress(cert){ try{ localStorage.removeItem(diagKey(cert)); }catch(_){} }
 function saveDiagProgress(){
@@ -4484,7 +4512,7 @@ function renderMcqExam(root){
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="뒤로">'+BACK_ARROW+'</button>'+
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+(curSubj?' · '+curSubj:'')+'</div></div>'+
       (mqInReview?'':('<button class="etim-pause'+(mqPaused?' on':'')+'" onclick="mqTogglePause()" title="'+(mqPaused?'계속하기':'일시정지')+'">'+(mqPaused?'▶':'⏸')+'</button><span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+(mqPaused?' paused':'')+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
-    '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):stemHTML(rm(jr.q,q)))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
     '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>'):'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
@@ -4506,6 +4534,11 @@ function mqPick(qid,n){
       if(mqGuess[qid]){ srRateK(mqCert, q.id, isCorr(q.ans,n)?1:0, mqTimeUp, changed); }   // 찍음: 맞아도 애매(1), 틀리면 틀림(0)
       else { srRateK(mqCert, q.id, isCorr(q.ans,n) ? 2 : 0, mqTimeUp, changed); }   // 평소: 정답=정확(2)/오답=틀림(0). OX 자가체크는 복습에 미반영(복습=오답+찍음만)
       if(!mqLevelTest && typeof adEloUpdate==='function') adEloUpdate(q, isCorr(q.ans,n));   // 적응형 Elo 별도 트랙(레벨테스트 중엔 억제→끝에 일괄 init)
+      if(mqLevelUp && firstTime){   // 게이미피케이션 콤보: 레벨업 풀이중·첫 응답만(기출/복습/찍음 제외)
+        if(mqGuess[qid]){ /* 🎲 찍음: 콤보 끊지 않고 보류 */ }
+        else if(isCorr(q.ans,n)){ luCombo++; if(luCombo>luRoundMaxCombo) luRoundMaxCombo=luCombo; luComboJustUp=true; if(luCombo===5||luCombo===10){ try{ navigator.vibrate&&navigator.vibrate(35); }catch(_){} } }
+        else { luCombo=0; luComboJustUp=false; }
+      }
       srSaveDebounced();
     }
   }
@@ -4582,7 +4615,7 @@ function mqResult(){
   mqResultQs=qs.slice(); mqResultAns=Object.assign({},mqAns);
   mqResultMeta={correct,answered,total,pct,diag:mqDiag,review:mqReview,mode:mqMode,sub:mqSub,set:mqSet,
     otc:mqOvertimeCount,ots:mqOverElapsed(),levelTest:_wasLevelTest,cert:mqCert,
-    lu:_wasLU, luSubName:(_wasLU?_luLastSubName:''), luChanges:_luChanges, luFromHist:false};
+    lu:_wasLU, luSubName:(_wasLU?_luLastSubName:''), luChanges:_luChanges, luFromHist:false, luCombo:(_wasLU?luRoundMaxCombo:0)};
   mqLevelUp=false;   // 채점화면에선 레벨업 풀이 상태 해제(버튼 분기는 meta.lu)
   mqStopTimer(); mqStopOverTimer(); mqScreen='result';   // 결과화면 전용 상태 — 진행 재저장·플러시 방지
   renderMqResultScreen();
@@ -4596,9 +4629,24 @@ function renderMqResultScreen(){
   // 레벨업 머리말: ⚡태그 + 레벨변동(+기록열람 시 날짜)
   var luHead='';
   if(M.lu){
-    luHead='<div style="margin:2px 0 5px"><span style="display:inline-block;background:#E0ECFA;color:#185FA5;font-size:11px;font-weight:800;border-radius:8px;padding:2px 8px">⚡ 레벨업</span></div>';
+    luHead='<div style="margin:2px 0 5px"><span style="display:inline-block;background:#E0ECFA;color:#185FA5;font-size:11px;font-weight:800;border-radius:8px;padding:2px 8px">⚡ 레벨업</span>'
+      +((!M.luFromHist && M.luCombo>=2)?'<span class="lu-combo-recap">🔥 최고 콤보 '+M.luCombo+'</span>':'')+'</div>';
     if(M.luFromHist && M.ts){ var _d=new Date(M.ts); luHead+='<div style="font-size:11px;color:#94A3B8;margin-bottom:3px">'+(_d.getMonth()+1)+'/'+_d.getDate()+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2)+'</div>'; }
-    var _lc=M.luChanges||[]; if(_lc.length){ var _lm=_lc.filter(function(c){return c.up;})[0]||_lc[0]; luHead+='<div style="font-size:12.5px;font-weight:800;color:'+(_lm.up?'#2E9B5E':'#946200')+';margin-bottom:4px">'+(_lm.up?'🎉 ':'💪 ')+mqEsc(_lm.topic)+' Lv'+_lm.from+' → Lv'+_lm.to+(_lc.length>1?(' 외 '+(_lc.length-1)):'')+'</div>'; }
+    var _lc=M.luChanges||[]; if(_lc.length){ var _lm=_lc.filter(function(c){return c.up;})[0]||_lc[0];
+      if(!M.luFromHist){
+        // 게이미피케이션: 레벨 변동 연출 스테이지(XP 바 + Lv 배지 + 컨페티)
+        var _scol=_lm.up?'#1E7A45':'#94A3B8', _stitle=_lm.up?'레벨 업! 🎉':'레벨 조정 💪', _sdesc=_lm.up?'약했던 단원이 한 단계 올라갔어요.':'다지면 다시 올라가요.';
+        luHead+='<div class="lu-stage'+(_lm.up?'':' down')+'" id="luStage">'
+          +'<div class="lu-stage-ti">'+_stitle+'</div>'
+          +'<div class="lu-stage-sub">'+mqEsc(_lm.subName||M.luSubName||'')+' · '+mqEsc(_lm.topic)+(_lc.length>1?(' 외 '+(_lc.length-1)):'')+'</div>'
+          +'<div class="lu-lvline"><span class="lu-lvb lu-lvb-from"><small>Lv</small><b>'+_lm.from+'</b></span><span class="lu-arrow">→</span><span class="lu-lvb lu-lvb-to'+(_lm.up?'':' down')+'" id="luLvTo"><small>Lv</small><b>'+_lm.to+'</b></span></div>'
+          +'<div class="lu-xpwrap"><div class="lu-xp"><i id="luXp"></i></div></div>'
+          +'<div class="lu-stage-desc">'+_sdesc+'</div>'
+        +'</div>';
+      } else {
+        luHead+='<div style="font-size:12.5px;font-weight:800;color:'+(_lm.up?'#2E9B5E':'#946200')+';margin-bottom:4px">'+(_lm.up?'🎉 ':'💪 ')+mqEsc(_lm.topic)+' Lv'+_lm.from+' → Lv'+_lm.to+(_lc.length>1?(' 외 '+(_lc.length-1)):'')+'</div>';
+      }
+    }
   }
   // 문항별 번호 그리드 (정답 초록 / 오답 빨강 / 미응답 회색)
   const grid=mqResultQs.map((q,i)=>{
@@ -4646,7 +4694,38 @@ function renderMqResultScreen(){
     gridHTML+
     (M.levelTest?_ltResultHTML(M):'')+
     '<div class="rbtns">'+btns+'</div></div>';
+  if(M.lu && !M.luFromHist){ _luResultFx(M); }
   window.scrollTo(0,0);
+}
+// 게이미피케이션: 결과화면 레벨업 연출(XP 바 채움 → Lv 배지 팝 → 컨페티). Safari/저사양 배려: reduced-motion 즉시표시
+function _luReduceMotion(){ try{ return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
+function _luResultFx(M){
+  try{
+    var _lc=(M.luChanges||[]); if(!_lc.length) return;
+    var up=(_lc.filter(function(c){return c.up;})[0]||_lc[0]).up;
+    var xp=document.getElementById('luXp'), lvTo=document.getElementById('luLvTo'), stage=document.getElementById('luStage');
+    if(_luReduceMotion()){   // 모션 최소화: 애니 없이 최종 상태만(컨페티·진동 생략)
+      if(xp){ xp.style.transition='none'; xp.style.width=up?'100%':'14%'; }
+      if(lvTo){ lvTo.style.transition='none'; lvTo.classList.add('show'); }
+      return;
+    }
+    if(xp){ xp.style.width='28%'; setTimeout(function(){ xp.style.width=up?'100%':'14%'; },140); }
+    setTimeout(function(){ if(lvTo) lvTo.classList.add('show'); if(up && stage){ _luConfetti(stage); try{ navigator.vibrate&&navigator.vibrate([20,40,20]); }catch(_){} } else { try{ navigator.vibrate&&navigator.vibrate(15); }catch(_){} } }, 1150);
+  }catch(e){}
+}
+function _luConfetti(host){
+  try{
+    if(_luReduceMotion()) return;
+    var n=(typeof window!=='undefined' && window.innerWidth && window.innerWidth<=480)?12:16;   // 모바일 축소(Safari/저사양 배려)
+    var cols=['#FBBF24','#34D399','#60A5FA','#F472B6','#FB923C'];
+    for(var i=0;i<n;i++){ (function(k){
+      var c=document.createElement('span'); c.className='lu-cfti';
+      c.style.left=(Math.random()*100)+'%'; c.style.background=cols[k%cols.length]; c.style.animationDelay=(Math.random()*0.3)+'s';
+      host.appendChild(c);
+      requestAnimationFrame(function(){ c.classList.add('go'); });
+      setTimeout(function(){ if(c.parentNode) c.parentNode.removeChild(c); }, 1700);
+    })(i); }
+  }catch(e){}
 }
 // 결과 검토(전체/오답만) — 단일 문항 카드 재활용, 별도 리뷰 리스트 사용
 function mqOpenReview(mode,idx){
