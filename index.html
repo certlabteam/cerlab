@@ -313,6 +313,21 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .plan-badge-pop{position:absolute;top:-8px;right:12px;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px}
 .bank-info{background:#FFF9F0;border:1.5px solid #FAC775;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13px;color:#4B2000;line-height:1.8}
 .bank-info strong{font-weight:700}
+/* 결제 완료 안내 모달 */
+.psucc-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.psucc-ov.hidden{display:none}
+.psucc-box{background:#fff;border-radius:18px;max-width:380px;width:100%;padding:24px 22px;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
+.psucc-x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:20px;color:#999;cursor:pointer;line-height:1}
+.psucc-ic{text-align:center;font-size:38px;margin-bottom:6px}
+.psucc-ti{text-align:center;font-size:18px;font-weight:800;color:#0C447C;margin-bottom:4px}
+.psucc-sub{text-align:center;font-size:13px;color:#6E6256;margin-bottom:16px;line-height:1.5}
+.psucc-plan{background:#F4F8FD;border-radius:10px;padding:12px 14px;font-size:13px;color:#2C2C2A;line-height:1.7;margin-bottom:14px;text-align:center}
+.psucc-acc{background:#FFF9F0;border:1.5px solid #FAC775;border-radius:12px;padding:14px 16px;font-size:14px;color:#4B2000;line-height:1.9;margin-bottom:14px}
+.psucc-acc .accrow{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.psucc-acc .accnum{font-weight:800;font-size:16px;letter-spacing:.3px}
+.psucc-copy{border:1.5px solid #E0A93D;background:#fff;color:#A8650A;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.psucc-warn{background:#FFF1F1;border-radius:10px;padding:10px 14px;font-size:12px;color:#A32D2D;line-height:1.5;margin-bottom:16px}
+.psucc-ok{width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 .btn-payment{width:100%;padding:16px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px}
 .btn-payment:active{transform:scale(.98)}
 .payment-note{font-size:11px;color:#B4B2A9;text-align:center;line-height:1.6}
@@ -1196,6 +1211,27 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <span class="cm-title">마이페이지</span>
   </div>
   <div class="mp-body" id="mpBody"></div>
+</div>
+<!-- 결제 완료 + 입금 안내 모달 -->
+<div class="psucc-ov hidden" id="paySuccessOv">
+  <div class="psucc-box">
+    <button class="psucc-x" onclick="closePaySuccess()" aria-label="닫기">✕</button>
+    <div class="psucc-ic">✅</div>
+    <div class="psucc-ti">신청 완료!</div>
+    <div class="psucc-sub" id="psuccSub">이용권이 즉시 활성화되었습니다.</div>
+    <div class="psucc-plan" id="psuccPlan"></div>
+    <div id="psuccDepositWrap">
+      <div style="font-size:13px;font-weight:700;color:#2C2C2A;margin-bottom:7px">💳 아래 계좌로 입금해 주세요</div>
+      <div class="psucc-acc">
+        <div class="accrow"><span class="accnum">토스뱅크 1000-2406-0293</span><button class="psucc-copy" onclick="copyDepositAcc()">복사</button></div>
+        <div>예금주: 박성환</div>
+        <div id="psuccAmt"></div>
+        <div id="psuccName"></div>
+      </div>
+      <div class="psucc-warn">⚠️ 입금자명을 신청자명과 동일하게 보내주세요.<br>입금이 확인되지 않으면 이용권이 취소될 수 있어요.</div>
+    </div>
+    <button class="psucc-ok" onclick="closePaySuccess()">확인했어요</button>
+  </div>
 </div>
 <div class="overlay hidden" id="completeOv">
   <div class="ov-icon" id="ovIcon">🎯</div>
@@ -2293,11 +2329,33 @@ async function submitPayment() {
     try { await db.collection('referrals').doc(currentUser.uid).update({ paid:true }); } catch(_){}
 
     syncPlanMirror(); updateAuthBar(); hidePlanPopup();
-    alert((payable<=0?'✅ 포인트로 결제 완료! 즉시 활성화되었습니다.':'✅ 이용권이 즉시 활성화되었습니다!')+'\n만료일: '+expireAt.toLocaleDateString('ko-KR')+(payable>0?'\n(입금 확인 후 유지됩니다.)':''));
+    showPaySuccess({ certName: certName, planLabel: planLabelOf(selectedPlanDays), expireAt: expireAt, payable: payable, depositorName: depositorName });
     refresh();
   } catch(e) {
     alert('오류가 발생했습니다: ' + e.message);
   }
+}
+
+// ===== 결제 완료 + 입금 안내 모달 =====
+function showPaySuccess(info){
+  var ov=document.getElementById('paySuccessOv'); if(!ov) return;
+  var pointOnly = !(info.payable>0);
+  document.getElementById('psuccSub').textContent = pointOnly ? '포인트로 결제 완료! 즉시 활성화되었습니다.' : '이용권이 즉시 활성화되었습니다.';
+  document.getElementById('psuccPlan').innerHTML = '<b>['+cmEsc(info.certName)+'] '+cmEsc(info.planLabel)+'</b><br>만료일: '+info.expireAt.toLocaleDateString('ko-KR');
+  var wrap=document.getElementById('psuccDepositWrap');
+  if(pointOnly){ wrap.style.display='none'; }
+  else {
+    wrap.style.display='';
+    document.getElementById('psuccAmt').innerHTML = '입금액: <b>'+(info.payable||0).toLocaleString()+'원</b>';
+    document.getElementById('psuccName').innerHTML = info.depositorName ? ('입금자명: <b>'+cmEsc(info.depositorName)+'</b>') : '';
+  }
+  ov.classList.remove('hidden');
+}
+function closePaySuccess(){ var ov=document.getElementById('paySuccessOv'); if(ov) ov.classList.add('hidden'); }
+function copyDepositAcc(){
+  var txt='1000-2406-0293';
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(function(){alert('계좌번호가 복사되었어요!');}).catch(function(){alert('계좌번호: '+txt);}); }
+  else { alert('계좌번호: '+txt); }
 }
 
 // ===== FREE_TRIAL 카운트 저장 =====
@@ -6315,6 +6373,7 @@ function mpRenderHome(){
     +'<div class="pt-card"><div class="pt-top"><span class="l">💰 보유 포인트</span><span class="pt-detail" onclick="mpShowHistory()">상세내역 \u203a</span></div>'
     +'<div class="pt-v">'+bal.toLocaleString()+' P</div><div class="pt-sub">이용권 결제에 사용 (1P = 1원)</div></div>'
     +'<div class="mp-sec">활동</div>'
+    +'<div class="mp-link" onclick="mpShowPayments()"><span class="e">💳</span>결제 내역</div>'
     +'<div class="mp-link" onclick="mpShowMyPosts()"><span class="e">📝</span>내가 쓴 글</div>'
     +'<div class="mp-link" onclick="mpShowMyComments()"><span class="e">💬</span>내가 쓴 댓글</div>'
     +'<div class="mp-sec">회원정보</div>'
@@ -6333,6 +6392,45 @@ function mpShowHistory(){
   });
   box.innerHTML=h;
 }
+async function mpShowPayments(){
+  var box=document.getElementById('mpBody'); if(!box) return;
+  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>결제 내역</span></div>';
+  var accBox='<div class="psucc-acc" style="margin:0 16px 14px">'
+    +'<div class="accrow"><span class="accnum">토스뱅크 1000-2406-0293</span><button class="psucc-copy" onclick="copyDepositAcc()">복사</button></div>'
+    +'<div>예금주: 박성환</div>'
+    +'<div style="font-size:12px;color:#8A6A2A;margin-top:4px">입금자명을 신청자명과 동일하게 보내주세요. 입금 확인은 영업일 기준 처리됩니다.</div></div>';
+  box.innerHTML=top+'<div class="cm-loading">불러오는 중\u2026</div>';
+  try{
+    var snap=await db.collection('payments').where('uid','==',currentUser.uid).get();
+    var rows=[]; snap.forEach(function(d){ rows.push(d.data()); });
+    rows.sort(function(a,b){ var da=(a.createdAt&&a.createdAt.toDate?a.createdAt.toDate().getTime():0), db2=(b.createdAt&&b.createdAt.toDate?b.createdAt.toDate().getTime():0); return db2-da; });
+    var h=top+accBox;
+    if(!rows.length){ h+='<div class="cm-empty">결제 내역이 없어요.</div>'; box.innerHTML=h; return; }
+    rows.forEach(function(p){
+      var cName=p.certName||certFull(p.certType||'')||'-';
+      var plan=(p.planDays!=null)?(p.planDays+'일'):'-';
+      var amt=(p.depositAmount!=null?p.depositAmount:(p.price||0)).toLocaleString()+'원';
+      var mil=(p.mileageUsed>0)?(' <span style="font-size:11px;color:#C2611B">(+P '+p.mileageUsed.toLocaleString()+')</span>'):'';
+      var st=mpPayStatus(p);
+      var dt=(p.createdAt&&p.createdAt.toDate)?mpFmtDate(p.createdAt.toDate()):'';
+      h+='<div class="hist" style="align-items:flex-start">'
+        +'<div class="ht">'+cmEsc(cName)+' · '+plan
+        +'<div class="hd">신청일 '+dt+'</div></div>'
+        +'<div style="text-align:right"><div style="font-weight:700;color:#2C2C2A">'+amt+mil+'</div>'
+        +'<div style="margin-top:3px">'+st+'</div></div></div>';
+    });
+    box.innerHTML=h;
+  }catch(e){ console.warn('mpShowPayments',e); box.innerHTML=top+accBox+'<div class="cm-empty">불러오지 못했어요.</div>'; }
+}
+function mpPayStatus(p){
+  // 이용권 활성/만료를 결제건 기준으로 표기
+  var ent=(window._cmUserDoc&&window._cmUserDoc.entitlements&&window._cmUserDoc.entitlements[p.certType])||null;
+  var now=Date.now();
+  var exp=ent&&ent.expireAt?(ent.expireAt.toDate?ent.expireAt.toDate().getTime():new Date(ent.expireAt).getTime()):0;
+  if(ent&&ent.plan==='ACTIVE'&&exp>now) return '<span style="font-size:11px;font-weight:700;color:#15793F;background:#E7F6EC;padding:2px 8px;border-radius:10px">활성</span>';
+  return '<span style="font-size:11px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:10px">만료</span>';
+}
+function mpFmtDate(d){ return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }
 async function mpShowMyPosts(){
   var box=document.getElementById('mpBody'); if(!box) return;
   var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>내가 쓴 글</span></div>';
