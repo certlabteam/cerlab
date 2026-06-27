@@ -4987,7 +4987,56 @@ async function loadManifest(){
   const mSnap=await db.collection('manifest').doc('exams').get();
   if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
   MANIFEST=mSnap.data();
+  try{ buildCertRegistry(MANIFEST); }catch(e){ console.error('buildCertRegistry 실패', e); }   // 매니페스트 기반 새 시험 동적 등록(기존 7개는 무변경·확장만)
   return MANIFEST;
+}
+// ===== 매니페스트 주도 시험 등록 (1단계: 확장 전용) =====
+// 기존 하드코딩 7개(MCQ_EXAMS 등)는 그대로 두고, 매니페스트에만 있는 새 시험을 런타임 생성.
+// 호출 멱등 — 같은 cert는 한 번만 등록. additive(기존 이용권·설정 안 건드림).
+var _certRegBuilt={};
+function buildCertRegistry(man){
+  var exams=(man&&man.exams)||[];
+  exams.forEach(function(ex){
+    var id=ex&&ex.id; if(!id || _certRegBuilt[id]) return;
+    var isNew = !MCQ_EXAMS[id] && ALL_CERTS.indexOf(id)<0;   // 기존 7개면 isNew=false → 손 안 댐
+    if(!isNew){ _certRegBuilt[id]=1; return; }
+    var type=ex.type||'mcq';
+    if(typeof CERT_LABELS!=='undefined' && !CERT_LABELS[id]) CERT_LABELS[id]=ex.label||ex.name||id;
+    if(typeof PASS_RULE!=='undefined' && ex.pass && !PASS_RULE[id]) PASS_RULE[id]=ex.pass;       // 없으면 _default
+    if(typeof PLAN_SETS!=='undefined' && ex.plan && !PLAN_SETS[id]) PLAN_SETS[id]=ex.plan;        // 없으면 _default
+    if(type!=='flashcard'){
+      if(!MCQ_EXAMS[id]){
+        var qb={}; (ex.subjects||[]).forEach(function(s){ if(s&&s.code) qb[s.code]={name:s.name||s.code, sets:[]}; });
+        MCQ_EXAMS[id]={name:ex.name||id, qb:qb};
+        if(typeof MCQ_CERTS!=='undefined' && MCQ_CERTS.indexOf(id)<0) MCQ_CERTS.push(id);   // isMcqCert 갱신
+      }
+    }
+    if(ALL_CERTS.indexOf(id)<0) ALL_CERTS.push(id);
+    try{ if(typeof userEnt!=='undefined' && userEnt && !userEnt[id]) userEnt[id]={plan:'GUEST',trialCount:0,expireAt:null,planDays:null}; }catch(_){}
+    try{ if(typeof guestCounts!=='undefined' && guestCounts && guestCounts[id]==null) guestCounts[id]=0; }catch(_){}
+    _addCertCard(ex, type);
+    _certRegBuilt[id]=1;
+  });
+}
+function _addCertCard(ex, type){
+  try{
+    var wrap=document.querySelector('.cert-cards'); if(!wrap) return;
+    var id=ex.id; if(document.getElementById('certCard-'+id)) return;
+    var subN=(ex.subjects||[]).length;
+    var hasData=subN>0;
+    var icon=ex.icon||(type==='flashcard'?'🃏':'📘');
+    var desc=ex.desc||((type==='flashcard'?'플래시카드':'객관식 모의고사')+(subN?(' · '+subN+'과목'):''));
+    var tagTxt=hasData?(type==='flashcard'?'플래시카드':'모의고사'):'준비 중';
+    var tagCls=hasData?'tag':'tag soon';
+    var card=document.createElement('div');
+    card.className='cert-card'; card.id='certCard-'+id;
+    card.setAttribute('onclick', "enterCert('"+id+"')");
+    card.innerHTML='<div class="cert-ic">'+icon+'</div>'
+      +'<div class="cert-meta"><div class="nm">'+mqEsc(ex.name||id)+'</div><div class="ds">'+mqEsc(desc)+'</div>'
+      +'<span class="'+tagCls+'" id="certTag-'+id+'">'+tagTxt+'</span></div>'
+      +'<div class="cert-go">›</div>';
+    wrap.appendChild(card);
+  }catch(e){}
 }
 // QB 캐시 신선도: 같은 버전 재업로드도 이 시간 안에 자동 반영(버전 미범프 안전망). 0이면 TTL 무시(영구 캐시).
 const QB_TTL_MS=6*60*60*1000;   // 6시간

@@ -37,6 +37,8 @@ body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .admin-tabs{background:#fff;border-bottom:1px solid #E8E8E8;padding:0 24px;display:flex;gap:0}
 .tab-btn{padding:14px 20px;font-size:14px;font-weight:600;color:#888780;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
 .tab-btn.active{color:#7F77DD;border-bottom-color:#7F77DD}
+.ea-seg{border:none;background:#fff;padding:8px 16px;font-size:13px;font-weight:700;color:#8A7D6E;cursor:pointer}
+.ea-seg.ea-on{background:#185FA5;color:#fff}
 .tab-btn .badge{display:inline-block;background:#E24B4A;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px;vertical-align:middle}
 
 /* 콘텐츠 */
@@ -281,6 +283,7 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="grpmaster" onclick="switchTab('grpmaster')">📈 그래프 마스터</div>
         <div class="cat-item" data-tab="ottag" onclick="switchTab('ottag')">🏷️ OX진술 태그</div>
         <div class="cat-item" data-tab="imgup" onclick="switchTab('imgup')">이미지 업로드</div>
+        <div class="cat-item" data-tab="examadd" onclick="switchTab('examadd')">➕ 시험 추가</div>
         <div class="cat-item" data-tab="mncheck" onclick="switchTab('mncheck')" style="display:none">🔎 데이터 스캔</div>
       </div>
     </div>
@@ -1050,6 +1053,78 @@ tr:hover td{background:#FAFAFA}
           </div>
         </div>
         <div style="padding:8px 4px;font-size:11.5px;color:#B4A99C">적재 경로: <code>adaptive/{cert}__{subject}__{map | diag | variants | variantq | calctmpl}</code></div>
+      </div>
+    </div>
+
+    <!-- ➕ 시험 추가 -->
+    <div class="tab-panel" id="panel-examadd">
+      <div class="table-card" style="max-width:640px">
+        <div class="table-title">➕ 새 시험 추가</div>
+        <div style="font-size:11.5px;color:#A89C8E;margin-bottom:14px;line-height:1.55">한글만 입력하면 됩니다. 과목 코드는 자동(s1·s2…). <b>시험 ID·아이콘</b>은 Claude가 정해준 값을 붙여넣으세요. 저장하면 <code>manifest/exams</code>에 등록됩니다. (기출 문항은 저장 후 "기출 업로드"로 따로 올림)</div>
+
+        <div style="display:flex;gap:10px;margin-bottom:5px">
+          <div style="flex:1">
+            <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">시험 ID <span style="font-weight:500;color:#A89C8E;font-size:11px">· Claude가 알려준 영문값 (예: taxacct1)</span></div>
+            <input type="text" id="eaId" placeholder="taxacct1" oninput="eaRender()" style="width:100%;padding:9px 11px;border:1.5px solid #E8E8E8;border-radius:9px;font-size:13.5px;outline:none;font-family:monospace">
+          </div>
+          <div style="flex:0 0 86px">
+            <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">아이콘</div>
+            <input type="text" id="eaIcon" placeholder="📘" oninput="eaRender()" style="width:100%;padding:9px 11px;border:1.5px solid #E8E8E8;border-radius:9px;font-size:18px;outline:none;text-align:center" title="Claude가 ID와 함께 알려준 이모지 붙여넣기">
+          </div>
+        </div>
+        <div style="font-size:11px;color:#A89C8E;margin:0 0 13px;line-height:1.5">시험 ID·아이콘은 Claude가 ID 정할 때 같이 알려줍니다 — 그 값을 붙여넣으세요. (아이콘 비우면 📘)</div>
+        <div style="margin-bottom:13px">
+          <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">시험 이름 <span style="font-weight:500;color:#A89C8E;font-size:11px">· 홈 카드에 표시</span></div>
+          <input type="text" id="eaName" placeholder="예: 세무사 1차" oninput="eaRender()" style="width:100%;padding:9px 11px;border:1.5px solid #E8E8E8;border-radius:9px;font-size:13.5px;outline:none">
+        </div>
+        <div style="margin-bottom:13px">
+          <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">짧은 이름 <span style="font-weight:500;color:#A89C8E;font-size:11px">· 비우면 시험 이름</span></div>
+          <input type="text" id="eaLabel" placeholder="예: 세무사" oninput="eaRender()" style="width:100%;padding:9px 11px;border:1.5px solid #E8E8E8;border-radius:9px;font-size:13.5px;outline:none">
+        </div>
+        <div style="margin-bottom:13px">
+          <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">유형</div>
+          <span style="display:inline-flex;border:1.5px solid #E8E8E8;border-radius:9px;overflow:hidden">
+            <button type="button" id="eaTMcq" class="ea-seg ea-on" onclick="eaSetType('mcq')">객관식</button><button type="button" id="eaTFc" class="ea-seg" onclick="eaSetType('flashcard')">플래시카드</button>
+          </span>
+          <div style="font-size:11px;color:#A89C8E;margin-top:6px;line-height:1.5">객관식엔 단답형(SA)·개수형이 섞여 있어도 데이터가 알아서 처리돼요. 유형에 SA 따로 없음.</div>
+        </div>
+        <div style="margin-bottom:13px">
+          <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">과목 <span style="font-weight:500;color:#A89C8E;font-size:11px">· 한글 이름만 — 코드 자동</span></div>
+          <div id="eaSubList"></div>
+          <button type="button" onclick="eaAddSub()" style="background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:800;cursor:pointer;margin-top:2px">+ 과목 추가</button>
+          <div style="font-size:11px;color:#A89C8E;margin-top:6px;line-height:1.5">⚠️ 레벨업 쓸 시험이면 과목 코드를 토픽코드 체계에 맞춰야 해요 — 그땐 Claude가 코드를 지정합니다.</div>
+        </div>
+        <div style="margin-bottom:13px">
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#6B5E4F;cursor:pointer"><input type="checkbox" id="eaGrade" onchange="eaToggleGrade()"> 등급제 시험 (한국사식 — 과락 없이 점수→급)</label>
+          <div id="eaPassBox" style="display:flex;gap:10px;margin-top:8px">
+            <div style="flex:1"><div style="font-size:12px;color:#8A7D6E;margin-bottom:4px">합격 평균</div><input type="number" id="eaPass" value="60" oninput="eaRender()" style="width:100%;padding:9px 11px;border:1.5px solid #E8E8E8;border-radius:9px;font-size:13.5px;outline:none"></div>
+            <div style="flex:1"><div style="font-size:12px;color:#8A7D6E;margin-bottom:4px">과락 (없으면 0)</div><input type="number" id="eaFloor" value="40" oninput="eaRender()" style="width:100%;padding:9px 11px;border:1.5px solid #E8E8E8;border-radius:9px;font-size:13.5px;outline:none"></div>
+          </div>
+          <div id="eaGradeBox" style="display:none;background:#F4F8FC;border:1px solid #E3EDF7;border-radius:9px;padding:10px 12px;margin-top:8px">
+            <div style="font-size:12px;color:#8A7D6E;margin-bottom:5px">등급 기준 (점수 이상 → 급)</div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;margin-bottom:3px">3급</div><input type="number" id="eaG3" placeholder="60" oninput="eaRender()" style="width:100%;padding:7px 9px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none"></div>
+              <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;margin-bottom:3px">2급</div><input type="number" id="eaG2" placeholder="70" oninput="eaRender()" style="width:100%;padding:7px 9px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none"></div>
+              <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;margin-bottom:3px">1급</div><input type="number" id="eaG1" placeholder="80" oninput="eaRender()" style="width:100%;padding:7px 9px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none"></div>
+            </div>
+            <div style="font-size:11px;color:#A89C8E;margin-top:6px">안 쓰는 급은 비워두면 제외됩니다 (예: 1·2급만 있는 시험 → 3급 비움)</div>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">가격 (원)</div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;text-align:center;margin-bottom:3px;font-weight:700">1주</div><input type="number" id="eaP1" value="3900" oninput="eaRender()" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;text-align:center"></div>
+            <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;text-align:center;margin-bottom:3px;font-weight:700">2주</div><input type="number" id="eaP2" value="5900" oninput="eaRender()" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;text-align:center"></div>
+            <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;text-align:center;margin-bottom:3px;font-weight:700">4주</div><input type="number" id="eaP4" value="8900" oninput="eaRender()" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;text-align:center"></div>
+            <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;text-align:center;margin-bottom:3px;font-weight:700">8주</div><input type="number" id="eaP8" value="13900" oninput="eaRender()" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;text-align:center"></div>
+          </div>
+        </div>
+        <button type="button" onclick="eaSave()" style="width:100%;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;border-radius:11px;padding:13px;font-size:14px;font-weight:800;cursor:pointer">💾 매니페스트에 등록</button>
+        <div id="eaStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
+        <div style="margin-top:12px;background:#FBFAF7;border:1px dashed #DDD3C6;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:#8A7D6E;font-weight:700;margin-bottom:4px">저장될 매니페스트 블록 (자동 생성)</div>
+          <pre id="eaJson" style="margin:0;white-space:pre-wrap;word-break:break-all;font-size:10.5px;color:#7A6E5E;background:#fff;border-radius:6px;padding:8px;border:1px solid #EFE9E1">{ }</pre>
+        </div>
       </div>
     </div>
 
@@ -2594,6 +2669,66 @@ async function lvupExportSel(){
     }
   }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uB0B4\uBCF4\uB0B4\uAE30 \uC624\uB958: '+e.message;} }
 }
+// ===== ➕ 시험 추가 (매니페스트 등록) =====
+var eaType='mcq', eaSubs=[{n:''}], _eaInit=false;
+function eaInit(){ if(_eaInit) return; _eaInit=true; eaRenderSubs(); eaRender(); }
+function eaSetType(t){ eaType=t; var a=document.getElementById('eaTMcq'), b=document.getElementById('eaTFc'); if(a)a.classList.toggle('ea-on',t==='mcq'); if(b)b.classList.toggle('ea-on',t==='flashcard'); eaRender(); }
+function eaAddSub(){ eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
+function eaDelSub(i){ eaSubs.splice(i,1); if(!eaSubs.length) eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
+function eaRenderSubs(){
+  var el=document.getElementById('eaSubList'); if(!el) return; el.innerHTML='';
+  eaSubs.forEach(function(s,i){
+    var row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    row.innerHTML='<span style="flex:0 0 60px;background:#F1ECE4;border-radius:8px;padding:8px;text-align:center;font-size:12px;font-weight:800;color:#6B5E4F;font-family:monospace">s'+(i+1)+'</span>'
+      +'<input type="text" placeholder="과목 이름 (예: 세법)" style="flex:1;padding:8px 10px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none">'
+      +'<button type="button" style="flex:0 0 auto;border:none;background:#FCEBEA;color:#B5302F;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer">×</button>';
+    var inp=row.querySelector('input'); inp.value=s.n||''; inp.oninput=function(e){ eaSubs[i].n=e.target.value; eaRender(); };
+    row.querySelector('button').onclick=function(){ eaDelSub(i); };
+    el.appendChild(row);
+  });
+}
+function eaToggleGrade(){ var on=document.getElementById('eaGrade').checked; document.getElementById('eaGradeBox').style.display=on?'block':'none'; document.getElementById('eaPassBox').style.display=on?'none':'flex'; eaRender(); }
+function _eaVal(id){ var el=document.getElementById(id); return el?el.value:''; }
+function eaBuildBlock(){
+  var id=(_eaVal('eaId')||'').trim().toLowerCase();
+  var name=(_eaVal('eaName')||'').trim();
+  var label=(_eaVal('eaLabel')||'').trim()||name;
+  var icon=(_eaVal('eaIcon')||'📘').trim()||'📘';
+  var grade=document.getElementById('eaGrade') && document.getElementById('eaGrade').checked;
+  var subjects=eaSubs.filter(function(s){return s.n&&s.n.trim();}).map(function(s,i){ return {code:'s'+(i+1), name:s.n.trim()}; });
+  var versions={}; subjects.forEach(function(s){ versions[s.code]=1; });
+  var block={ id:id, name:name, label:label, icon:icon, type:eaType, subjects:subjects, versions:versions };
+  if(grade){
+    var _gr=[];
+    [['eaG3','3급','#D97706'],['eaG2','2급','#2563EB'],['eaG1','1급','#15803D']].forEach(function(g){ var raw=_eaVal(g[0]); if(raw!=='' && raw!=null && !isNaN(+raw)) _gr.push({g:g[1], min:+raw, color:g[2]}); });
+    _gr.sort(function(a,b){return a.min-b.min;});
+    block.pass={grade:true, grades:_gr, label:'급수 인증'};
+  }
+  else { block.pass={pass:+_eaVal('eaPass')||60, floor:+_eaVal('eaFloor')||0, label:'평균 '+(+_eaVal('eaPass')||60)+'점'+((+_eaVal('eaFloor')>0)?(' · 과목별 '+(+_eaVal('eaFloor'))+'점'):'')}; }
+  block.plan=[{d:7,p:+_eaVal('eaP1')||0,name:'1주 이용권',desc:'7일 전체 이용'},{d:14,p:+_eaVal('eaP2')||0,name:'2주 이용권',desc:'14일 전체 이용'},{d:28,p:+_eaVal('eaP4')||0,name:'4주 이용권',desc:'28일 전체 이용'},{d:56,p:+_eaVal('eaP8')||0,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}];
+  return block;
+}
+function eaRender(){ var pre=document.getElementById('eaJson'); if(pre) pre.textContent=JSON.stringify(eaBuildBlock(),null,2); }
+async function eaSave(){
+  var st=document.getElementById('eaStatus');
+  var b=eaBuildBlock();
+  if(!/^[a-z][a-z0-9_]*$/.test(b.id)){ st.style.color='#A32D2D'; st.textContent='시험 ID는 영문 소문자/숫자/밑줄만 (예: taxacct1). Claude가 준 값을 붙여넣으세요.'; return; }
+  if(!b.name){ st.style.color='#A32D2D'; st.textContent='시험 이름을 입력하세요.'; return; }
+  if(!b.subjects.length){ st.style.color='#A32D2D'; st.textContent='과목을 최소 1개 입력하세요.'; return; }
+  st.style.color='#6E6256'; st.textContent='저장 중...';
+  try{
+    var mSnap=await db.collection('manifest').doc('exams').get();
+    if(!mSnap.exists){ st.style.color='#A32D2D'; st.textContent='manifest/exams 문서가 없습니다.'; return; }
+    var manifest=mSnap.data(); var exams=manifest.exams||[];
+    var idx=exams.findIndex(function(e){return e.id===b.id;});
+    if(idx>=0){ if(!confirm('이미 있는 시험 ID "'+b.id+'" ('+(exams[idx].name||'')+')\n\n이 블록을 새 내용으로 덮어쓸까요? (기존 과목·버전이 바뀔 수 있음)')){ st.textContent='취소됨.'; return; } exams[idx]=b; }
+    else { exams.push(b); }
+    await db.collection('manifest').doc('exams').update({ exams: exams });
+    st.style.color='#15793F';
+    st.innerHTML='✅ 등록 완료 — '+(idx>=0?'갱신':'신규 추가')+': <b>'+b.name+'</b> ('+b.id+') · 과목 '+b.subjects.length+'개<br><span style="font-size:11.5px;color:#A89C8E">다음 단계: ① "기출 업로드"로 이 시험의 문항 올리기 ('+b.id+'__s1 …) → ② 업로드 후 "🔄 manifest 버전 동기화" 클릭 → ③ 앱 새로고침하면 홈에 카드가 나타납니다.</span>';
+    if(idx<0){ eaSubs=[{n:''}]; ['eaId','eaName','eaLabel'].forEach(function(x){var e=document.getElementById(x);if(e)e.value='';}); eaRenderSubs(); eaRender(); }
+  }catch(e){ st.style.color='#A32D2D'; st.textContent='오류: '+e.message; }
+}
 function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.cat-item, .cat-single').forEach(b => b.classList.remove('active'));
@@ -2619,6 +2754,7 @@ function switchTab(name) {
   if(name==='ottag'){ ottagBindImp(); if(!_cptmLoaded) cptmLoad(); }
   if(name==='levelup') lvupInit();
   if(name==='grpmaster') grpmInit();
+  if(name==='examadd') eaInit();
 }
 // 카테고리 헤더 접고/펴기 (여러 그룹 동시 펼침 가능)
 function catToggle(headEl){ const g = headEl.closest('.cat'); if(!g) return; var wasOpen=g.classList.contains('open'); document.querySelectorAll('.cat.open').forEach(function(c){ if(c!==g) c.classList.remove('open'); }); g.classList.toggle('open', !wasOpen); }
