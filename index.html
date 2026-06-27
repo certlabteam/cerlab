@@ -6429,6 +6429,7 @@ function mpPlanName(p){
   return (p.planDays!=null)?(p.planDays+'일'):'-';
 }
 function mpExpiryText(p){
+  if(p.status==='revoked'||p.status==='rejected'||p.status==='pending') return '';
   // 해당 시험 이용권의 현재 만료일
   var ent=(window._cmUserDoc&&window._cmUserDoc.entitlements&&window._cmUserDoc.entitlements[p.certType])||null;
   if(!ent||!ent.expireAt) return '';
@@ -6436,11 +6437,14 @@ function mpExpiryText(p){
   return mpFmtDate(d);
 }
 function mpPayStatus(p){
-  // 이용권 활성/만료를 결제건 기준으로 표기
+  var s=p.status;
+  if(s==='revoked') return '<span style="font-size:11px;font-weight:700;color:#A32D2D;background:#FCEBEB;padding:2px 8px;border-radius:10px">철회</span>';
+  if(s==='rejected') return '<span style="font-size:11px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:10px">거절</span>';
+  if(s==='pending') return '<span style="font-size:11px;font-weight:700;color:#A8650A;background:#FFF4E0;padding:2px 8px;border-radius:10px">승인대기</span>';
   var ent=(window._cmUserDoc&&window._cmUserDoc.entitlements&&window._cmUserDoc.entitlements[p.certType])||null;
   var now=Date.now();
   var exp=ent&&ent.expireAt?(ent.expireAt.toDate?ent.expireAt.toDate().getTime():new Date(ent.expireAt).getTime()):0;
-  if(ent&&ent.plan==='ACTIVE'&&exp>now) return '<span style="font-size:11px;font-weight:700;color:#15793F;background:#E7F6EC;padding:2px 8px;border-radius:10px">활성</span>';
+  if(ent&&ent.plan==='ACTIVE'&&exp>now) return '<span style="font-size:11px;font-weight:700;color:#15793F;background:#E7F6EC;padding:2px 8px;border-radius:10px">이용중</span>';
   return '<span style="font-size:11px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:10px">만료</span>';
 }
 function mpFmtDate(d){ return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }
