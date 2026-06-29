@@ -2937,8 +2937,11 @@ var _ltPending=null;   // {cert,qs,ans} — 로그인 후 재계산용
 function _ltTotalCount(cert){ try{ return Object.keys(qbOf(cert)||{}).length * LT_PER_SUBJECT; }catch(_){ return LT_PER_SUBJECT; } }
 function _ltRenderResultGate(M){
   var cert=M.cert||mqCert;
-  _ltPending={cert:cert, qs:mqResultQs.slice(), ans:Object.assign({},mqResultAns)};
-  try{ localStorage.setItem('certlab_lt_pending', JSON.stringify({cert:cert, ids:mqResultQs.map(function(q){return q.id;}), ans:mqResultAns, at:Date.now()})); }catch(_){}
+  if(mqResultQs && mqResultQs.length){
+    _ltPending={cert:cert, qs:mqResultQs.slice(), ans:Object.assign({},mqResultAns)};
+    try{ localStorage.setItem('certlab_lt_pending', JSON.stringify({cert:cert, ids:mqResultQs.map(function(q){return q.id;}), ans:mqResultAns, at:Date.now()})); }catch(_){}
+  }
+  var _totN=(mqResultQs&&mqResultQs.length)?mqResultQs.length:(M.total||_ltTotalCount(cert));
   var isGrade=(typeof passRule==='function' && passRule(cert) && passRule(cert).grade);
   var metric=isGrade?'예상 급수':'예상 점수';
   var subs=[]; try{ var qb=qbOf(cert); subs=Object.keys(qb).map(function(c){ return (qb[c].name||c); }); }catch(_){}
@@ -2950,7 +2953,7 @@ function _ltRenderResultGate(M){
   var box=document.getElementById('mcqRoot');
   var html='<div class="ltg-wrap">'
     +'<div class="ltg-top"><div class="ltg-done">레벨테스트 완료 🎉</div><div class="ltg-h">결과가 준비됐어요</div>'
-      +'<div class="ltg-sc">'+M.total+'문제 · '+subs.length+'과목 채점 완료</div></div>'
+      +'<div class="ltg-sc">'+_totN+'문제 · '+subs.length+'과목 채점 완료</div></div>'
     +'<div class="ltg-blurwrap"><div class="ltg-blur">'+blurCards+'</div>'
       +'<div class="ltg-gate"><div class="ltg-lock">🔒</div>'
         +'<div class="ltg-gt">로그인하면 결과 공개</div>'
@@ -2981,10 +2984,33 @@ function _ltRenderResultGate(M){
   window.scrollTo(0,0);
 }
 function _ltGateLogin(){ if(typeof signInWithGoogle==='function') signInWithGoogle(); }
-// ===== 레벨테스트 후킹 랜딩 (?lt= 광고/SEO 유입 첫 화면) =====
+// 비로그인 시험 진입: 레벨테스트 안 했으면 후킹, 했으면(같은 브라우저) 결과 게이트
+function _ltGuestHasDone(cert){ try{ var raw=localStorage.getItem('certlab_lt_pending'); if(!raw) return false; var j=JSON.parse(raw); return !!(j && j.cert===cert && j.ids && j.ids.length); }catch(_){ return false; } }
+function _ltGuestGate(cert){
+  try{ mqCert=cert; }catch(_){}
+  mqScreen='lthook';
+  if(_ltGuestHasDone(cert)){
+    var t=0; try{ t=(JSON.parse(localStorage.getItem('certlab_lt_pending')).ids||[]).length; }catch(_){}
+    _ltRenderResultGate({cert:cert, total:t});
+  } else {
+    _ltHookingScreen(cert);
+  }
+}
+// 저장된 문항 id → 문항 객체 복원(로그인 후 재계산용)
+async function _ltReconstructQs(cert, ids){
+  try{
+    if(!ids || !ids.length) return [];
+    var qb=qbOf(cert); if(!qb) return [];
+    if(typeof loadAdaptiveSubject==='function'){ try{ await Promise.all(Object.keys(qb).map(function(code){ return loadAdaptiveSubject(cert, code).catch(function(){return null;}); })); }catch(e){} }
+    var byId={};
+    Object.keys(qb).forEach(function(code){ qb[code].sets.forEach(function(st){ st.questions.forEach(function(q){ byId[q.id]={q:q,name:qb[code].name||code,code:code}; }); }); });
+    Object.keys(qb).forEach(function(code){ try{ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+code]; var vp=(b&&b.variantPool)||[]; vp.forEach(function(v){ if(v&&v.id&&!byId[v.id]) byId[v.id]={q:v,name:(qb[code].name||code),code:code}; }); }catch(e){} });
+    return ids.map(function(id){ var e=byId[id]; if(e){ e.q._subj=e.name; e.q._subjCode=e.code; return e.q; } return null; }).filter(Boolean);
+  }catch(e){ return []; }
+}
+// ?lt= 광고/SEO 유입: enterCert가 비로그인 후킹/게이트를 처리(로그인 사용자는 일반 진입)
 async function _ltEnterHooking(cert){
   try{ if(typeof enterCert==='function') await enterCert(cert); }catch(_){}
-  setTimeout(function(){ _ltHookingScreen(cert); }, 60);
 }
 function _ltHookingScreen(cert){
   var root=document.getElementById('mcqRoot');
@@ -3017,16 +3043,26 @@ function _ltHookingScreen(cert){
   window.scrollTo(0,0);
 }
 function _ltHookStart(){ if(typeof diagResume==='function') diagResume(); else if(typeof startDiagnostic==='function') startDiagnostic(); }
-function _ltResumeAfterLogin(){
+async function _ltResumeAfterLogin(){
   try{
     if(!currentUser) return;
     var p=_ltPending;
-    if(!p){ try{ var raw=localStorage.getItem('certlab_lt_pending'); if(raw){ var j=JSON.parse(raw); if(j && j.cert && (Date.now()-(j.at||0)<3600000) && mqResultQs && mqResultQs.length){ p={cert:j.cert, qs:mqResultQs.slice(), ans:j.ans||mqResultAns}; } } }catch(_){} }
+    if(!p || !p.qs || !p.qs.length){
+      var raw=null; try{ raw=localStorage.getItem('certlab_lt_pending'); }catch(_){}
+      if(raw){ var j=JSON.parse(raw);
+        if(j && j.cert && (Date.now()-(j.at||0) < 7*86400000)){
+          var qs=(mqResultQs && mqResultQs.length)? mqResultQs.slice() : await _ltReconstructQs(j.cert, j.ids||[]);
+          if(qs && qs.length) p={cert:j.cert, qs:qs, ans:j.ans||{}};
+        }
+      }
+    }
     if(!p || !p.qs || !p.qs.length) return;
     if(typeof ltFinalize==='function') ltFinalize(p.cert, p.qs, p.ans);
     if(typeof saveUserData==='function') saveUserData();
     _ltPending=null; try{ localStorage.removeItem('certlab_lt_pending'); }catch(_){}
-    if(mqResultMeta && mqResultMeta.levelTest){ mqScreen='result'; renderMqResultScreen(); window.scrollTo(0,0); }
+    if(mqResultMeta && mqResultMeta.levelTest){ mqScreen='result'; renderMqResultScreen(); }   // 방금 푼 직후 → 결과 화면
+    else if(typeof enterCert==='function'){ enterCert(p.cert); }                                // 재방문 로그인 → 시험 대시보드(예상점수)
+    window.scrollTo(0,0);
   }catch(e){ console.error('lt resume', e); }
 }
 // 레벨 테스트 완료 처리: 과목별 채점 → 점수 → 그 과목 전 토픽 균일 시드 + 완료 플래그
@@ -4984,6 +5020,7 @@ async function enterCert(id){
     refresh();
   } else if(isMcqCert(id)){
     mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
+    if(!currentUser && id!=='bodybuilding' && typeof _ltGuestGate==='function'){ _ltGuestGate(id); }   // 비로그인: 후킹 랜딩 or 결과 게이트
   }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
