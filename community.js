@@ -33,8 +33,8 @@ async function openCommunity(){
   document.getElementById('communityView').classList.remove('hidden');
   var _ft=document.querySelector('.footer'); if(_ft) _ft.classList.add('hidden');
   var cs=document.getElementById('certSwitch'); if(cs) cs.classList.remove('hidden');
-  await cmLoadUserDoc();
-  cmSwitchTab(cmBoard);
+  cmSwitchTab(cmBoard);                                    // 목록 먼저 즉시 로드
+  if(typeof cmLoadUserDoc==='function') cmLoadUserDoc();   // 닉네임용 — 백그라운드(목록과 무관)
 }
 function cmSwitchTab(board){
   cmBoard = board;
@@ -57,34 +57,51 @@ function cmCardHTML(p){
     +'<div class="cm-pt">'+badge+cmEsc(p.title||'')+'</div>'+body
     +'<div class="cm-pm">'+meta+stat+'</div></div>';
 }
+var _cmCache={};                 // board -> {posts, at} 메모리 캐시(재진입 즉시 표시)
+var _CM_CACHE_TTL=60000;        // 60초 내 재진입은 네트워크 생략
+function cmInvalidateCache(board){ if(board) delete _cmCache[board]; else _cmCache={}; }
+function cmHeadHTML(board){
+  if(board==='notice'){
+    var h='<div class="cm-admin-note">📢 공지는 관리자만 작성할 수 있어요.</div>';
+    if(cmIsAdmin()) h+='<button class="cm-write" onclick="cmOpenWrite()">\u270F\ufe0f 공지 작성</button>';
+    return h;
+  }
+  return '<button class="cm-write" onclick="cmOpenWrite()">\u270F\ufe0f 글 작성하기</button>';
+}
+function cmListHTML(board, head, posts){
+  if(!posts || !posts.length) return head+'<div class="cm-empty">아직 글이 없어요.<br>첫 글을 남겨보세요!</div>';
+  var todayHtml='';
+  if(board==='review'){
+    var now=Date.now();
+    var cand=posts.filter(function(p){ var t=(p.createdAt&&p.createdAt.toDate)?p.createdAt.toDate().getTime():0; return (p.upCount||0)>0 && (now-t)<172800000; });
+    cand.sort(function(a,b){ return (b.upCount||0)-(a.upCount||0); });
+    if(cand.length) todayHtml=cmTodayHTML(cand[0]);
+  }
+  var listHtml=''; posts.forEach(function(p){ listHtml+=cmCardHTML(p); });
+  return head+todayHtml+listHtml;
+}
 async function cmLoadList(board){
   var body=document.getElementById('cmBody'); if(!body) return;
   if(!firebaseReady || !db){ body.innerHTML='<div class="cm-empty">서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.</div>'; return; }
-  body.innerHTML='<div class="cm-loading">불러오는 중\u2026</div>';
-  var head='';
-  if(board==='notice'){
-    head='<div class="cm-admin-note">📢 공지는 관리자만 작성할 수 있어요.</div>';
-    if(cmIsAdmin()) head+='<button class="cm-write" onclick="cmOpenWrite()">\u270F\ufe0f 공지 작성</button>';
-  } else {
-    head='<button class="cm-write" onclick="cmOpenWrite()">\u270F\ufe0f 글 작성하기</button>';
-  }
+  var head=cmHeadHTML(board);
+  // 1) 캐시 있으면 즉시 표시(오래됐어도 일단 보여주고 뒤에서 갱신) → 재진입 체감 즉시
+  var c=_cmCache[board];
+  if(c){ body.innerHTML=cmListHTML(board, head, c.posts); }
+  else { body.innerHTML='<div class="cm-loading">불러오는 중\u2026</div>'; }
+  // 2) 신선하면(60초 내) 네트워크 생략
+  if(c && (Date.now()-c.at < _CM_CACHE_TTL)) return;
+  // 3) 네트워크 갱신
   try{
     var snap=await db.collection('posts').where('board','==',board).orderBy('createdAt','desc').limit(30).get();
-    if(snap.empty){ body.innerHTML=head+'<div class="cm-empty">아직 글이 없어요.<br>첫 글을 남겨보세요!</div>'; return; }
     var posts=[]; snap.forEach(function(doc){ var p=doc.data(); p._id=doc.id; posts.push(p); });
-    var todayHtml='';
-    if(board==='review'){
-      var now=Date.now();
-      var cand=posts.filter(function(p){ var t=(p.createdAt&&p.createdAt.toDate)?p.createdAt.toDate().getTime():0; return (p.upCount||0)>0 && (now-t)<172800000; });
-      cand.sort(function(a,b){ return (b.upCount||0)-(a.upCount||0); });
-      if(cand.length) todayHtml=cmTodayHTML(cand[0]);
-    }
-    var listHtml=''; posts.forEach(function(p){ listHtml+=cmCardHTML(p); });
-    body.innerHTML=head+todayHtml+listHtml;
+    _cmCache[board]={posts:posts, at:Date.now()};
+    if(cmBoard===board) body.innerHTML=cmListHTML(board, head, posts);   // 그새 탭 바꿨으면 덮어쓰지 않음
   }catch(e){
     console.warn('cmLoadList', e);
-    var msg = (e && /index/i.test(e.message||'')) ? '목록 정렬 인덱스가 필요해요. (콘솔에서 생성)' : '목록을 불러오지 못했어요.';
-    body.innerHTML=head+'<div class="cm-empty">'+msg+'</div>';
+    if(!c){   // 캐시로 이미 뭔가 보여줬으면 에러로 덮지 않음
+      var msg = (e && /index/i.test(e.message||'')) ? '목록 정렬 인덱스가 필요해요. (콘솔에서 생성)' : '목록을 불러오지 못했어요.';
+      body.innerHTML=head+'<div class="cm-empty">'+msg+'</div>';
+    }
   }
 }
 var CM_CERTS=[['bodybuilding','생체2급(보디빌딩) 구술'],['appraiser','감정평가사'],['realestate1','공인중개사 1차'],['realestate2','공인중개사 2차'],['koreanhistory','한국사'],['housing','주택관리사'],['housing2','주택관리사 2차']];
@@ -165,7 +182,7 @@ async function cmSubmitPost(){
       });
       var _eid=cmEditId; cmEditId=null;
       btn.disabled=false; btn.textContent='등록하기';
-      cmBoard=board; cmCloseWrite();
+      cmInvalidateCache(board); cmBoard=board; cmCloseWrite();
       if(typeof cmOpenDetail==='function') cmOpenDetail(_eid);
       if(typeof clToast==='function') clToast('수정되었어요');
     }catch(e){
@@ -190,7 +207,7 @@ async function cmSubmitPost(){
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     btn.disabled=false; btn.textContent='등록하기';
-    cmBoard=board; cmCloseWrite(); cmSwitchTab(board);
+    cmInvalidateCache(board); cmBoard=board; cmCloseWrite(); cmSwitchTab(board);
     var _certLbl=(board==='review'&&cert)?(CM_CERT_LABEL[cert]||cert):null;
     cmAwardToast(_prevBal, 'earn', _certLbl);
   }catch(e){
@@ -354,7 +371,7 @@ async function cmDeletePost(){
   if(!confirm('이 글을 삭제할까요? 삭제하면 되돌릴 수 없어요.')) return;
   var _prevBal=(typeof mileageBalance==='function')?mileageBalance(myMileageLots):0;
   try{
-    await db.collection('posts').doc(cmCurPost._id).delete();
+    await db.collection('posts').doc(cmCurPost._id).delete(); cmInvalidateCache();
     cmCloseDetail();
     cmAwardToast(_prevBal, 'deduct');
   }catch(e){ console.warn('cmDeletePost',e); alert('삭제 중 오류가 났어요.'); }
