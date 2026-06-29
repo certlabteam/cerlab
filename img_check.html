@@ -104,11 +104,23 @@ const REGISTRY=[
   {id:'realestate2', name:'공인중개사 2차', subs:[{code:'re2_law',name:'공인중개사법령 및 중개실무'},{code:'re2_public',name:'부동산공법'},{code:'re2_tax',name:'부동산공시법령 및 세법'}]},
   {id:'koreanhistory', name:'한국사능력검정시험 심화', subs:[{code:'ksh',name:'한국사 심화'}]},
   {id:'housing', name:'주택관리사 1차', subs:[{code:'hm_acct',name:'회계원리'},{code:'hm_fac',name:'공동주택시설개론'},{code:'hm_civil',name:'민법'}]},
-  {id:'housing2', name:'주택관리사 2차', subs:[{code:'hm2_law',name:'주택관리관계법규'},{code:'hm2_mgmt',name:'공동주택관리실무'}]}
+  {id:'housing2', name:'주택관리사 2차', subs:[{code:'hm2_law',name:'주택관리관계법규'},{code:'hm2_mgmt',name:'공동주택관리실무'}]},
+  {id:'sport2', name:'스포츠지도사 2급 필기', subs:[{code:'s1',name:'스포츠교육학'},{code:'s2',name:'스포츠사회학'},{code:'s3',name:'스포츠심리학'},{code:'s4',name:'운동생리학'},{code:'s5',name:'운동역학'},{code:'s6',name:'한국체육사'},{code:'s7',name:'스포츠윤리'}]}
 ];
 async function initSelects(){
-  // manifest 비의존: 엔진 레지스트리 그대로 사용 → 새 시험(housing2 등)이 등록 절차 없이 즉시 노출.
+  // 1) 하드코딩 레지스트리(기존 시험) — 항상 노출(회귀 방지)
   EXAMS=REGISTRY.map(e=>({ id:e.id, name:e.name, subs:e.subs.map(su=>({code:su.code, name:su.name})) }));
+  // 2) manifest/exams 추가 로드 → REGISTRY에 없는 시험만 병합(새 시험 자동연동)
+  try{
+    const m=await db.collection('manifest').doc('exams').get();
+    const mex=(m.exists && m.data().exams)||[];
+    mex.forEach(e=>{
+      if(!e || !e.id) return;
+      if(EXAMS.some(x=>x.id===e.id)) return;            // 하드코딩 우선(중복 시 건너뜀)
+      const subs=(e.subjects||e.subs||[]).map(s=>({code:s.code, name:s.name||s.code}));
+      EXAMS.push({ id:e.id, name:e.name||e.id, subs:subs });
+    });
+  }catch(_){}
   buildExamSel();
   buildSubSel();
   summaryEl.textContent='시험·과목·회차를 모두 선택하세요(회차에 레벨업 포함).';
