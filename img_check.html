@@ -201,10 +201,10 @@ function render(){
   // 시험·과목·회차를 모두 선택해야 표시(이미지가 많아 전체 로딩이 느리므로 범위를 좁힘)
   if(!exF){ grid.innerHTML='<div class="empty">시험을 선택하세요.</div>'; summaryEl.textContent=''; return; }
   if(!subF){ grid.innerHTML='<div class="empty">과목을 선택하세요.</div>'; summaryEl.textContent=''; return; }
-  if(!setF){ grid.innerHTML='<div class="empty">회차를 선택하세요. (회차/레벨업을 골라야 이미지를 불러옵니다)</div>'; summaryEl.textContent=''; return; }
-  let items=ITEMS.filter(it=>it.exam===exF && it.sub===subF && it.setLabel===setF);
+  // 회차 미선택(전체 회차)=그 과목의 모든 회차+레벨업을 함께 표시
+  let items=ITEMS.filter(it=>it.exam===exF && it.sub===subF && (!setF || it.setLabel===setF));
   if(!items.length){
-    grid.innerHTML='<div class="empty">이 회차엔 이미지 문항이 없어요.</div>'; summaryEl.textContent='전체 0'; return;
+    grid.innerHTML='<div class="empty">'+(setF?'이 회차엔':'이 과목엔')+' 이미지 문항이 없어요.</div>'; summaryEl.textContent='전체 0'; return;
   }
 
   // 카드 1장 HTML (공통)
