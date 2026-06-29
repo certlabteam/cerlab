@@ -5190,8 +5190,8 @@ function _addCertCard(ex, type){
 }
 // ===== 시험 D-day 자동정렬 (examSchedules = 이메일 D-day 데이터 재사용) =====
 var _examDateMs = null;   // {cert: ms} 다음 시험일(미래 회차 우선)
-async function loadExamSchedules(){
-  if(!firebaseReady || !db) return;
+async function loadExamSchedules(_retry){
+  if(!firebaseReady || !db){ if((_retry||0)<5){ setTimeout(function(){ loadExamSchedules((_retry||0)+1); }, 500); } return; }
   try{
     var snap = await db.collection('examSchedules').get();
     var map = {}, now = Date.now();
@@ -5202,9 +5202,10 @@ async function loadExamSchedules(){
       if(best==null){ var nm=toMs(sx.nextExamDate); if(nm!=null) best=nm; }
       if(best!=null) map[d.id]=best;
     });
-    _examDateMs = map;
-    if(typeof reorderCertCards==='function') reorderCertCards();
-  }catch(e){ /* 규칙상 읽기 불가 등 → 기본 순서 유지 */ }
+    _examDateMs = map; window._exErr=null;
+    // 즉시 + 지연 재정렬(모바일: 카드 동적추가/늦은 렌더와의 경합 방지)
+    if(typeof reorderCertCards==='function'){ reorderCertCards(); setTimeout(reorderCertCards,400); setTimeout(reorderCertCards,1200); }
+  }catch(e){ window._exErr=(e&&e.message)||String(e); if((_retry||0)<2){ setTimeout(function(){ loadExamSchedules((_retry||0)+1); }, 800); } }
 }
 function reorderCertCards(){
   try{
@@ -5413,6 +5414,7 @@ loadManifest().then(async ()=>{
   // ?cert=appraiser 단독 딥링크 → 해당 과목으로 직행 (card 없을 때, D-day 메일 버튼 등)
   else if(typeof pendingCardCert!=='undefined' && pendingCardCert && typeof enterCert==='function'){ var _cc2=pendingCardCert; pendingCardCert=null; setTimeout(function(){ try{ enterCert(_cc2); window.scrollTo(0,0); }catch(_){} }, 200); }
   if(typeof cmLoadNoticeBar==='function') cmLoadNoticeBar();   // 공지 롤링바 — db·community.js 준비된 시점에 로드(첫 goHome이 db 전이라 비는 것 보강)
+  if(typeof loadExamSchedules==='function') loadExamSchedules();   // 모든 렌더 후 시험일 정렬 재확인(모바일 경합 보강)
 }).catch(showDataError);
 
 /* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
