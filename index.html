@@ -3052,8 +3052,9 @@ function _ltHookingScreen(cert){
 }
 async function _ltHookStart(){
   var cert=mqCert;
-  if(typeof loadedExams!=='undefined' && cert && !loadedExams[cert]){   // 백그라운드 로드 안 끝났으면 이때만 잠깐 로딩
-    var root=document.getElementById('mcqRoot'); if(root) root.innerHTML='<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 준비 중…</div>';
+  // 누르는 즉시 로딩 화면 전환(갇힘 방지) — 로드 완료 여부와 무관하게 항상 표시
+  var root=document.getElementById('mcqRoot'); if(root) root.innerHTML='<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 준비 중…</div>';
+  if(typeof loadedExams!=='undefined' && cert && !loadedExams[cert]){
     try{ await loadExam(cert); }catch(_){}
   }
   if(typeof diagResume==='function') diagResume(); else if(typeof startDiagnostic==='function') startDiagnostic();
