@@ -1058,7 +1058,15 @@ tr:hover td{background:#FAFAFA}
 
     <!-- ➕ 시험 추가 -->
     <div class="tab-panel" id="panel-examadd">
-      <div class="table-card" style="max-width:640px">
+      <div class="table-card" style="max-width:640px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div class="table-title" style="margin:0">📋 등록된 시험</div>
+          <button type="button" onclick="eaToggleAdd()" style="margin-left:auto;background:#E6F1FB;color:#185FA5;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer">+ 새 시험</button>
+          <button type="button" onclick="eaLoadList()" style="background:#EEF1F5;color:#475569;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">🔄 새로고침</button>
+        </div>
+        <div id="eaList" style="font-size:12.5px;color:#6E6256">불러오는 중…</div>
+      </div>
+      <div class="table-card" id="eaAddCard" style="max-width:640px;display:none">
         <div class="table-title">➕ 새 시험 추가</div>
         <div style="font-size:11.5px;color:#A89C8E;margin-bottom:14px;line-height:1.55">한글만 입력하면 됩니다. 과목 코드는 자동(s1·s2…). <b>시험 ID·아이콘</b>은 Claude가 정해준 값을 붙여넣으세요. 저장하면 <code>manifest/exams</code>에 등록됩니다. (기출 문항은 저장 후 "기출 업로드"로 따로 올림)</div>
 
@@ -1118,6 +1126,22 @@ tr:hover td{background:#FAFAFA}
             <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;text-align:center;margin-bottom:3px;font-weight:700">4주</div><input type="number" id="eaP4" value="8900" oninput="eaRender()" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;text-align:center"></div>
             <div style="flex:1"><div style="font-size:11px;color:#8A7D6E;text-align:center;margin-bottom:3px;font-weight:700">8주</div><input type="number" id="eaP8" value="13900" oninput="eaRender()" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;text-align:center"></div>
           </div>
+        </div>
+        <div style="margin-bottom:14px;background:#F4F8FC;border:1px solid #E3EDF7;border-radius:9px;padding:11px 12px">
+          <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">📅 시험일 자동수집 (큐넷) <span style="font-weight:500;color:#A89C8E;font-size:11px">· 선택 — 비우면 수동</span></div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1">
+              <div style="font-size:11px;color:#8A7D6E;margin-bottom:3px">큐넷 종목코드(gId)</div>
+              <input type="text" id="eaGid" placeholder="예: 05" style="width:100%;padding:8px 10px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;font-family:monospace">
+            </div>
+            <div style="flex:0 0 110px">
+              <div style="font-size:11px;color:#8A7D6E;margin-bottom:3px">차수</div>
+              <select id="eaQtab" style="width:100%;padding:8px 10px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;background:#fff">
+                <option value="0">1차</option><option value="1">2차</option><option value="2">3차</option>
+              </select>
+            </div>
+          </div>
+          <div style="font-size:11px;color:#A89C8E;margin-top:6px;line-height:1.5">큐넷 시험 페이지 주소의 <code>gId=숫자</code> 값(예: 공인노무사 05, 소방시설관리사 34). 입력하면 매주 시험일을 자동수집해 홈·이메일 D-day에 반영돼요. 큐넷에 없는 시험(한국사 등)은 비워두세요.</div>
         </div>
         <button type="button" onclick="eaSave()" style="width:100%;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;border-radius:11px;padding:13px;font-size:14px;font-weight:800;cursor:pointer">💾 매니페스트에 등록</button>
         <div id="eaStatus" style="font-size:13px;color:#6E6256;margin-top:10px"></div>
@@ -2672,7 +2696,99 @@ async function lvupExportSel(){
 }
 // ===== ➕ 시험 추가 (매니페스트 등록) =====
 var eaType='mcq', eaSubs=[{n:''}], _eaInit=false;
-function eaInit(){ if(_eaInit) return; _eaInit=true; eaRenderSubs(); eaRender(); }
+function eaInit(){ if(_eaInit) return; _eaInit=true; eaRenderSubs(); eaRender(); eaLoadList(); }
+var _eaExams=[], _eaSched={};
+function eaToggleAdd(){ var c=document.getElementById('eaAddCard'); if(c) c.style.display=(c.style.display==='none'?'block':'none'); if(c&&c.style.display==='block') c.scrollIntoView({behavior:'smooth',block:'start'}); }
+function _eaSchedFmt(s){
+  if(!s) return '<span style="color:#B0A89C">시험일 미수집</span>';
+  var ms=null; if(s.nextExamDate){ if(s.nextExamDate.toDate) ms=s.nextExamDate.toDate().getTime(); else if(s.nextExamDate.seconds) ms=s.nextExamDate.seconds*1000; }
+  var dstr = ms? new Date(ms).toISOString().slice(0,10) : '';
+  if(s.source==='qnet'){ return '<span style="color:#185FA5">큐넷 gId '+(s.gId||'?')+(s.qnetTab!=null?(' \u00B7'+(s.qnetTab+1)+'차'):'')+'</span>'+(dstr?(' \u00B7 '+dstr):' \u00B7 <span style="color:#B0A89C">수집대기</span>'); }
+  return '<span style="color:#8A7D6E">수동</span>'+(dstr?(' \u00B7 '+dstr):'');
+}
+function eaEditToggle(id){ var p=document.getElementById('eaE_'+id); if(p) p.style.display=(p.style.display==='none'?'block':'none'); }
+function _inp(id,val,ph,extra){ return '<input id="'+id+'" value="'+(val==null?'':String(val).replace(/"/g,'&quot;'))+'" placeholder="'+(ph||'')+'" style="width:100%;padding:8px 10px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;'+(extra||'')+'">'; }
+function _lbl(t){ return '<div style="font-size:11px;color:#8A7D6E;margin-bottom:3px">'+t+'</div>'; }
+function eaEditForm(e,s){
+  var pid='eaE_'+e.id, pass=e.pass||{}, isGrade=!!pass.grade, plan=e.plan||[];
+  var pget=function(d){ var p=plan.filter(function(x){return x.d===d;})[0]; return p?(p.p||0):0; };
+  var gid=(s&&s.gId)||'', qtab=(s&&s.qnetTab!=null)?s.qnetTab:0;
+  var passHtml;
+  if(isGrade){
+    var gv=function(g){ var x=(pass.grades||[]).filter(function(y){return y.g===g;})[0]; return x?x.min:''; };
+    passHtml='<div style="font-size:11px;color:#8A7D6E;margin-bottom:4px">등급 기준(점수 이상→급)</div><div style="display:flex;gap:8px">'
+      +'<div style="flex:1">'+_lbl('3급')+_inp(pid+'_g3',gv('3급'),'60')+'</div>'
+      +'<div style="flex:1">'+_lbl('2급')+_inp(pid+'_g2',gv('2급'),'70')+'</div>'
+      +'<div style="flex:1">'+_lbl('1급')+_inp(pid+'_g1',gv('1급'),'80')+'</div></div>';
+  } else {
+    passHtml='<div style="display:flex;gap:8px"><div style="flex:1">'+_lbl('합격 평균')+_inp(pid+'_pass',(pass.pass!=null?pass.pass:60))+'</div>'
+      +'<div style="flex:1">'+_lbl('과락(없으면 0)')+_inp(pid+'_floor',(pass.floor!=null?pass.floor:0))+'</div></div>';
+  }
+  return '<div style="background:#FBFAF7;border:1px solid #EFE9E1;border-radius:10px;padding:12px">'
+    +'<div style="font-size:11px;color:#A89C8E;margin-bottom:8px">ID <code>'+e.id+'</code> · 과목 '+((e.subjects||[]).map(function(x){return x.name;}).join(', '))+' (ID·과목은 수정 불가)</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px"><div style="flex:1">'+_lbl('시험 이름')+_inp(pid+'_name',e.name)+'</div><div style="flex:0 0 70px">'+_lbl('아이콘')+_inp(pid+'_icon',e.icon||'\uD83D\uDCD8','',"text-align:center;font-size:16px")+'</div></div>'
+    +'<div style="margin-bottom:8px">'+_lbl('짧은 이름')+_inp(pid+'_label',e.label||'')+'</div>'
+    +'<div style="margin-bottom:8px">'+_lbl('가격(원) — 1주 / 2주 / 4주 / 8주')+'<div style="display:flex;gap:6px">'
+      +_inp(pid+'_p1',pget(7),'','text-align:center')+_inp(pid+'_p2',pget(14),'','text-align:center')+_inp(pid+'_p4',pget(28),'','text-align:center')+_inp(pid+'_p8',pget(56),'','text-align:center')+'</div></div>'
+    +'<div style="margin-bottom:8px">'+passHtml+'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:10px"><div style="flex:1">'+_lbl('큐넷 gId(비우면 자동수집 안 함)')+_inp(pid+'_gid',gid,'예: 05','font-family:monospace')+'</div>'
+      +'<div style="flex:0 0 100px">'+_lbl('차수')+'<select id="'+pid+'_qtab" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;background:#fff">'
+      +['1차','2차','3차'].map(function(t,i){return '<option value="'+i+'"'+(i===qtab?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'
+    +'<button type="button" onclick="eaEditSave(\''+e.id+'\')" style="width:100%;background:#185FA5;color:#fff;border:none;border-radius:9px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer">💾 수정 저장</button>'
+    +'<div id="'+pid+'_st" style="font-size:12px;margin-top:8px"></div></div>';
+}
+async function eaLoadList(){
+  var el=document.getElementById('eaList'); if(!el) return;
+  el.textContent='불러오는 중…';
+  try{
+    var mSnap=await db.collection('manifest').doc('exams').get();
+    _eaExams=(mSnap.exists && mSnap.data().exams)||[];
+    _eaSched={};
+    try{ var esnap=await db.collection('examSchedules').get(); esnap.forEach(function(d){ _eaSched[d.id]=d.data()||{}; }); }catch(_){}
+    if(!_eaExams.length){ el.textContent='등록된 시험이 없습니다.'; return; }
+    el.innerHTML=_eaExams.map(function(e){
+      var s=_eaSched[e.id];
+      return '<div style="border-bottom:1px solid #F0EBE3">'
+        +'<div onclick="eaEditToggle(\''+e.id+'\')" style="display:flex;gap:8px;align-items:baseline;padding:9px 0;cursor:pointer">'
+        +'<span style="font-size:15px">'+(e.icon||'\uD83D\uDCD8')+'</span>'
+        +'<div style="flex:1"><b>'+(e.name||e.id)+'</b> <span style="font-family:monospace;font-size:11px;color:#A89C8E">'+e.id+'</span>'
+        +'<div style="font-size:11px;color:#8A7D6E;margin-top:2px">'+((e.subjects||[]).length)+'과목 \u00B7 '+(e.type||'mcq')+' \u00B7 '+_eaSchedFmt(s)+'</div></div>'
+        +'<span style="color:#B0A89C;font-size:12px">수정 \u25BE</span></div>'
+        +'<div id="eaE_'+e.id+'" style="display:none;padding:4px 2px 14px">'+eaEditForm(e,s)+'</div></div>';
+    }).join('');
+  }catch(e){ el.textContent='불러오기 실패: '+e.message; }
+}
+async function eaEditSave(id){
+  var pid='eaE_'+id, st=document.getElementById(pid+'_st'); if(!st) return;
+  var e=_eaExams.filter(function(x){return x.id===id;})[0];
+  if(!e){ st.style.color='#A32D2D'; st.textContent='시험을 찾을 수 없습니다. 새로고침 해주세요.'; return; }
+  var g=function(k){ var el=document.getElementById(pid+'_'+k); return el?el.value:''; };
+  var name=(g('name')||'').trim(); if(!name){ st.style.color='#A32D2D'; st.textContent='시험 이름을 입력하세요.'; return; }
+  st.style.color='#6E6256'; st.textContent='저장 중...';
+  try{
+    e.name=name; e.label=(g('label')||'').trim()||name; e.icon=(g('icon')||'\uD83D\uDCD8').trim()||'\uD83D\uDCD8';
+    var p1=+g('p1')||0,p2=+g('p2')||0,p4=+g('p4')||0,p8=+g('p8')||0;
+    e.plan=[{d:7,p:p1,name:'1주 이용권',desc:'7일 전체 이용'},{d:14,p:p2,name:'2주 이용권',desc:'14일 전체 이용'},{d:28,p:p4,name:'4주 이용권',desc:'28일 전체 이용'},{d:56,p:p8,name:'8주 이용권',desc:'56일 전체 이용',pop:'\u2B50 가장 경제적',green:1,sel:1}];
+    if(e.pass && e.pass.grade){
+      var gr=[]; [['g3','3급','#D97706'],['g2','2급','#2563EB'],['g1','1급','#15803D']].forEach(function(x){ var raw=g(x[0]); if(raw!=='' && raw!=null && !isNaN(+raw)) gr.push({g:x[1],min:+raw,color:x[2]}); });
+      gr.sort(function(a,b){return a.min-b.min;}); e.pass={grade:true,grades:gr,label:'급수 인증'};
+    } else {
+      var ps=+g('pass')||60, fl=+g('floor')||0;
+      e.pass={pass:ps,floor:fl,label:'평균 '+ps+'점'+(fl>0?(' \u00B7 과목별 '+fl+'점'):'')};
+    }
+    var idx=_eaExams.findIndex(function(x){return x.id===id;});
+    _eaExams[idx]=e;
+    await db.collection('manifest').doc('exams').update({ exams: _eaExams });
+    var gid=(g('gid')||'').trim(), qmsg='';
+    if(gid){
+      var qtab=parseInt(g('qtab')||'0',10)||0;
+      await db.collection('examSchedules').doc(id).set({ cert:id, source:'qnet', gId:gid, qnetTab:qtab, certName:name, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+      qmsg=' · 큐넷 gId '+gid+' ('+(qtab+1)+'차) 등록';
+    }
+    st.style.color='#15793F'; st.textContent='✅ 저장됨'+qmsg+'. 잠시 후 목록 갱신…';
+    setTimeout(eaLoadList, 700);
+  }catch(err){ st.style.color='#A32D2D'; st.textContent='오류: '+err.message; }
+}
 function eaSetType(t){ eaType=t; var a=document.getElementById('eaTMcq'), b=document.getElementById('eaTFc'); if(a)a.classList.toggle('ea-on',t==='mcq'); if(b)b.classList.toggle('ea-on',t==='flashcard'); eaRender(); }
 function eaAddSub(){ eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
 function eaDelSub(i){ eaSubs.splice(i,1); if(!eaSubs.length) eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
@@ -2725,9 +2841,22 @@ async function eaSave(){
     if(idx>=0){ if(!confirm('이미 있는 시험 ID "'+b.id+'" ('+(exams[idx].name||'')+')\n\n이 블록을 새 내용으로 덮어쓸까요? (기존 과목·버전이 바뀔 수 있음)')){ st.textContent='취소됨.'; return; } exams[idx]=b; }
     else { exams.push(b); }
     await db.collection('manifest').doc('exams').update({ exams: exams });
+    // 큐넷 자동수집 등록: gId 있으면 examSchedules에 source:'qnet' 시드 → 크롤러가 매주 시험일 자동수집
+    var _gid=(_eaVal('eaGid')||'').trim(); var _qnetMsg='';
+    if(_gid){
+      try{
+        var _qtab=parseInt(_eaVal('eaQtab')||'0',10)||0;
+        await db.collection('examSchedules').doc(b.id).set({
+          cert:b.id, source:'qnet', gId:_gid, qnetTab:_qtab, certName:b.name,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+        _qnetMsg='<br><span style="font-size:11.5px;color:#185FA5">📅 큐넷 자동수집 등록됨 (gId '+_gid+', '+(_qtab+1)+'차) — 다음 크롤(매주 월 03:00) 때 시험일이 채워집니다.</span>';
+      }catch(e){ _qnetMsg='<br><span style="font-size:11.5px;color:#A32D2D">⚠️ 자동수집 등록 실패: '+e.message+'</span>'; }
+    }
     st.style.color='#15793F';
-    st.innerHTML='✅ 등록 완료 — '+(idx>=0?'갱신':'신규 추가')+': <b>'+b.name+'</b> ('+b.id+') · 과목 '+b.subjects.length+'개<br><span style="font-size:11.5px;color:#A89C8E">다음 단계: ① "기출 업로드"로 이 시험의 문항 올리기 ('+b.id+'__s1 …) → ② 업로드 후 "🔄 manifest 버전 동기화" 클릭 → ③ 앱 새로고침하면 홈에 카드가 나타납니다.</span>';
-    if(idx<0){ eaSubs=[{n:''}]; ['eaId','eaName','eaLabel'].forEach(function(x){var e=document.getElementById(x);if(e)e.value='';}); eaRenderSubs(); eaRender(); }
+    st.innerHTML='✅ 등록 완료 — '+(idx>=0?'갱신':'신규 추가')+': <b>'+b.name+'</b> ('+b.id+') · 과목 '+b.subjects.length+'개<br><span style="font-size:11.5px;color:#A89C8E">다음 단계: ① "기출 업로드"로 이 시험의 문항 올리기 ('+b.id+'__s1 …) → ② 업로드 후 "🔄 manifest 버전 동기화" 클릭 → ③ 앱 새로고침하면 홈에 카드가 나타납니다.</span>'+_qnetMsg;
+    if(idx<0){ eaSubs=[{n:''}]; ['eaId','eaName','eaLabel','eaGid'].forEach(function(x){var e=document.getElementById(x);if(e)e.value='';}); var _qt=document.getElementById('eaQtab'); if(_qt)_qt.value='0'; eaRenderSubs(); eaRender(); }
+    if(typeof eaLoadList==='function') eaLoadList();
   }catch(e){ st.style.color='#A32D2D'; st.textContent='오류: '+e.message; }
 }
 function switchTab(name) {
