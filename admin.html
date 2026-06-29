@@ -4129,7 +4129,7 @@ const DDAY_CERTS = [
   {c:'koreanhistory', n:'한국사능력검정시험(심화)', src:'manual'},
   {c:'bodybuilding', n:'생활체육지도사(보디빌딩) 구술,실기', src:'manual'}
 ];
-let emExData = {}, emExEditing = null, emDdayRules = [], emDdayEditing = null;
+let emExData = {}, emExExams = [], emExEditing = null, emDdayRules = [], emDdayEditing = null;
 function emExToDate(v){ if(!v) return null; if(v.toDate) return v.toDate(); if(v.seconds) return new Date(v.seconds*1000); return new Date(v); }
 function emExFmt(d){ return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function emExFmtInput(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -4144,30 +4144,35 @@ function emExNext(s){   // upcoming 있으면 가장 가까운 미래 회차로 
 }
 function emExDday(date){ if(!date) return null; const t=new Date(); t.setHours(0,0,0,0); return Math.ceil((date.getTime()-t.getTime())/86400000); }
 
+function emExName(cert){ const x=(emExExams||[]).find(e=>e.id===cert); if(x) return x.name; const d=DDAY_CERTS.find(y=>y.c===cert); return d?d.n:cert; }
 async function emExLoad(){
   const box=document.getElementById('emExList'); if(!box) return;
   try{
+    // 기존 7개 + 매니페스트 전 시험 병합(중복 id 제거) → 앞으로 추가하는 시험도 자동 등장
+    let mexams=[];
+    try{ const m=await db.collection('manifest').doc('exams').get(); mexams=(m.exists&&m.data().exams)||[]; }catch(_){}
+    let list = DDAY_CERTS.map(d=>({id:d.c, name:d.n}));
+    mexams.forEach(ex=>{ if(ex&&ex.id&&!list.some(x=>x.id===ex.id)) list.push({id:ex.id, name:ex.name||ex.label||ex.id}); });
+    emExExams = list;
     const snap=await db.collection('examSchedules').get();
     emExData={}; snap.docs.forEach(d=>{ emExData[d.id]=d.data(); });
     box.innerHTML='<table><thead><tr><th>자격증</th><th>다음 시험</th><th>시험일</th><th>D-day</th><th>출처</th><th></th></tr></thead><tbody>'
-      + DDAY_CERTS.map(ci=>{
-          const s=emExData[ci.c];
-          const editBtn = ci.src==='manual' ? `<button class="btn-sm" onclick="emExEdit('${ci.c}')" style="background:#EDE9FB;color:#5B50C0">${s?'수정':'입력'}</button>` : '';
-          if(!s){ const wait = ci.src==='qnet'?'<span style="color:#A89C8E">자동(대기)</span>':'<span style="color:#A8650A">수동</span>';
-            return `<tr><td>${ci.n}</td><td colspan="3" style="color:#C9BFB2">미설정</td><td style="font-size:12px">${wait}</td><td>${editBtn}</td></tr>`; }
+      + list.map(ci=>{
+          const s=emExData[ci.id];
+          const editBtn = `<button class="btn-sm" onclick="emExEdit('${ci.id}')" style="background:#EDE9FB;color:#5B50C0">${s?'수정':'입력'}</button>`;   // 모든 시험 수동입력 가능
+          if(!s){ return `<tr><td>${cmaEsc(ci.name)}</td><td colspan="3" style="color:#C9BFB2">미설정</td><td style="font-size:12px"><span style="color:#A8650A">수동</span></td><td>${editBtn}</td></tr>`; }
           const nx=emExNext(s); const dd=emExDday(nx.date);
           const ddTxt = dd==null?'-':(dd<0?'<span style="color:#C9BFB2">지남</span>':'<b style="color:#5B50C0">D-'+dd+'</b>');
           const srcTxt = s.source==='qnet'?'<span style="color:#15793F">자동</span>':'<span style="color:#A8650A">수동</span>';
-          return `<tr><td>${ci.n}</td><td style="font-size:12px">${cmaEsc(nx.name||'-')}</td><td style="font-size:12px">${nx.date?emExFmt(nx.date):'-'}</td><td>${ddTxt}</td><td style="font-size:12px">${srcTxt}</td><td>${editBtn}</td></tr>`;
+          return `<tr><td>${cmaEsc(ci.name)}</td><td style="font-size:12px">${cmaEsc(nx.name||'-')}</td><td style="font-size:12px">${nx.date?emExFmt(nx.date):'-'}</td><td>${ddTxt}</td><td style="font-size:12px">${srcTxt}</td><td>${editBtn}</td></tr>`;
         }).join('')
       + '</tbody></table>';
-  }catch(e){ box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">시험일정 로드 실패: '+(e&&e.message?e.message:e)+'<br><span style="font-size:11px">Firestore 규칙에 examSchedules 관리자 권한이 필요할 수 있어요.</span></div>'; }
+  }catch(e){ box.innerHTML='<div class="empty" style="padding:16px;color:#A32D2D">시험일정 로드 실패: '+(e&&e.message?e.message:e)+'<br><span style="font-size:11px">Firestore 규칙에 examSchedules·manifest 읽기 권한이 필요할 수 있어요.</span></div>'; }
 }
 function emExRefresh(){ emExLoad(); }
 function emExEdit(cert){
   emExEditing=cert;
-  const ci=DDAY_CERTS.find(x=>x.c===cert);
-  document.getElementById('emExFormTit').textContent=ci.n+' 시험일 입력';
+  document.getElementById('emExFormTit').textContent=emExName(cert)+' 시험일 입력';
   const s=emExData[cert]||{};
   let rows=(Array.isArray(s.upcoming)&&s.upcoming.length)?s.upcoming.map(u=>({name:u.name||'',date:emExToDate(u.date)})):[];
   if(!rows.length && s.nextExamDate) rows=[{name:s.nextExamName||'',date:emExToDate(s.nextExamDate)}];
@@ -4193,13 +4198,13 @@ async function emExSave(){
     date:(r.querySelector('.emExD').value||'').trim()
   })).filter(r=>r.date);
   if(!rows.length){ alert('시험일을 1개 이상 입력하세요.'); return; }
-  const ci=DDAY_CERTS.find(x=>x.c===emExEditing);
-  const upcoming=rows.map(r=>({name:r.name||ci.n, date:firebase.firestore.Timestamp.fromDate(new Date(r.date+'T00:00:00'))}));
+  const _exNm=emExName(emExEditing);
+  const upcoming=rows.map(r=>({name:r.name||_exNm, date:firebase.firestore.Timestamp.fromDate(new Date(r.date+'T00:00:00'))}));
   const sorted=[...rows].sort((a,b)=>a.date<b.date?-1:1);
   const now=new Date(); now.setHours(0,0,0,0);
   const pick=sorted.find(r=>new Date(r.date+'T00:00:00')>=now)||sorted[0];
   const data={ cert:emExEditing, source:'manual',
-    nextExamName:pick.name||ci.n, nextExamDate:firebase.firestore.Timestamp.fromDate(new Date(pick.date+'T00:00:00')),
+    nextExamName:pick.name||_exNm, nextExamDate:firebase.firestore.Timestamp.fromDate(new Date(pick.date+'T00:00:00')),
     upcoming, updatedAt:firebase.firestore.FieldValue.serverTimestamp(), updatedBy:'admin' };
   const msg=document.getElementById('emExMsg'); msg.style.color='#888'; msg.textContent='저장 중…';
   try{ await db.collection('examSchedules').doc(emExEditing).set(data,{merge:true});
@@ -4223,7 +4228,7 @@ async function emDdayLoad(){
     const tName=id=>{ const t=emTpls.find(x=>x.id===id); return t?cmaEsc(t.name||id):'<span style="color:#A32D2D">삭제된 템플릿</span>'; };
     box.innerHTML='<table><thead><tr><th>상태</th><th>이름</th><th>마일스톤</th><th>템플릿</th><th>대상</th><th>마지막</th><th></th></tr></thead><tbody>'
       + emDdayRules.map(r=>{ const on=r.enabled!==false;
-          const certs=(r.cert&&r.cert.length)?r.cert.map(c=>{const ci=DDAY_CERTS.find(x=>x.c===c);return ci?ci.n:c;}).join(', '):'전체';
+          const certs=(r.cert&&r.cert.length)?r.cert.map(c=>emExName(c)).join(', '):'전체';
           const last=r.lastRunAt?(fmtDateShort(r.lastRunAt)+' ('+(r.lastCount!=null?r.lastCount+'건':'-')+')'):'<span style="color:#C9BFB2">없음</span>';
           return '<tr>'
             +'<td><button class="btn-sm" onclick="emDdayToggle(\''+r.id+'\','+(!on)+')" style="background:'+(on?'#E6F4EA':'#F0ECE6')+';color:'+(on?'#15793F':'#9B9082')+';font-weight:700;cursor:pointer">'+(on?'ON':'OFF')+'</button></td>'
