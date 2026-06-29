@@ -391,6 +391,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-verdict{font-size:12px;font-weight:700;margin-left:6px;white-space:nowrap}
 #mcqView .exp-opts .eo-verdict.eo-red{color:#A32D2D}
 #mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
+/* OX태그(ot) 개념 칩 */
+.ot-row{margin-top:5px;display:flex;flex-wrap:wrap;gap:4px}
+.ot-chip{display:inline-block;font-size:10px;line-height:1.55;padding:1px 8px;background:#ECFDF5;color:#0F6E56;border:1px solid #A7F3D0;border-radius:999px;font-weight:600}
+.ot-chip-empty{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
 #mcqView .exp-opts .eo-ex{margin-top:7px;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
@@ -790,7 +794,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 <body>
 <div class="wrap">
   <div class="pv-sticky">
-  <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
+  <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span><label for="otFile" id="otBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0F6E56;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">🏷️ OX태그 파일</label><input type="file" id="otFile" accept=".json,application/json,text/plain" style="display:none"><span id="otName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
   <div id="pvDrop">여기로 JSON 파일을 끌어다 놓거나 클릭해서 선택<span class="pvd-sub">문항·개념·암기코드·표·그래프·검토(review) 모두 자동 인식</span></div>
   <div id="pvMasterStatus" style="font-size:11.5px;color:#5F5E5A;padding:2px 4px 0">🔗 마스터 준비 중…</div>
   <div id="navBar"></div>
@@ -1263,6 +1267,7 @@ function renderQuestionBlock(q){
   if(!q || !q.q) return '';
   var jr=splitJaryo(q.q, q.jaryo);
   var ansN=Array.isArray(q.ans)?q.ans:[q.ans];
+  var _isCombo=isComboQuestion(q.opts||[]);
   var optHTML=(q.opts||[]).map(function(op,i){
     var n=i+1;
     var isAns=ansN.indexOf(n)>=0;
@@ -1270,7 +1275,8 @@ function renderQuestionBlock(q){
     var hasT=op && String(op).trim();
     var otxt=hasT?'<div class="otxt">'+rm(String(op),q)+'</div>':'';
     var oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
-    return '<div class="'+cls+(oimg?' opt-img':'')+'"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
+    var chip=_isCombo?'':otChips(q.id,i);
+    return '<div class="'+cls+(oimg?' opt-img':'')+'"><div class="onum">'+n+'</div>'+otxt+oimg+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>';
   }).join('');
   // 앱 헤더 정적 재현(미리보기용·동작 없음): 진행바 + 번호 + ★중요도 + ⌛시간 + 신고 + 찍었어요
   var pvIdx=(_items&&_items.length)?_idx:0, pvTot=(_items&&_items.length)?_items.length:1;
@@ -1287,7 +1293,7 @@ function renderQuestionBlock(q){
     if(jp.stmts && jp.stmts.length>=2){
       jaryoHTML='<div class="jaryo">'
         + (jp.intro?'<div style="margin-bottom:6px">'+rm(jp.intro,q)+'</div>':'')
-        + jp.stmts.map(function(st){ var ox=isComboQuestion(q.opts||[])?'<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>':''; return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span>'+ox+'</div>'; }).join('')
+        + jp.stmts.map(function(st,idx){ var ox=isComboQuestion(q.opts||[])?'<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>':''; var chip=isComboQuestion(q.opts||[])?otChips(q.id,idx):''; return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span>'+ox+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>'; }).join('')
         + '</div>';
     } else if((jr.jaryo.match(/\u25CB/g)||[]).length>=2){
       // ○로 구분된 자료: 항목마다 줄내림(hanging). 첫 ○ 앞은 intro.
@@ -1584,6 +1590,18 @@ function showTypeBadge(q){
 }
 
 var _items=null, _idx=0;   // 배열 입력 시 문항 목록·현재 인덱스
+var _otMap={};   // OX태그(ottag): qid -> [{cpt:[id,...]}, ...] (진술/보기별)
+// 진술 i의 개념 칩 HTML — 개념 마스터(_cptMaster) 로드 시 이름, 아니면 id 표시
+function otChips(qid, i){
+  if(!qid) return '';
+  var arr=_otMap[qid]; if(!arr || !arr[i]) return '';
+  var ids=(arr[i].cpt)||[];
+  if(!ids.length) return '<span class="ot-chip ot-chip-empty">\uD83C\uDFF7 (\ud0dc\uadf8 \uc5c6\uc74c)</span>';
+  return ids.map(function(id){
+    var nm=(_cptMaster[id] && _cptMaster[id].name) ? _cptMaster[id].name : id;
+    return '<span class="ot-chip" title="'+id+'">\uD83C\uDFF7 '+nm+'</span>';
+  }).join('');
+}
 function renderOne(q){
   var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
   var cert=document.getElementById('cert').value;
@@ -1972,6 +1990,25 @@ document.getElementById('jsonFile').addEventListener('change', function(){
   pvLoadFile(this.files && this.files[0]);
   this.value='';   // 같은 파일 다시 선택 가능하게 초기화
 });
+// OX태그(ot) 파일 로더 — _otMap 채우고 재렌더(문항 뱅크는 src에 그대로 유지)
+function pvLoadOt(f){
+  if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var txt=String(rd.result||''); if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
+    var d; try{ d=JSON.parse(txt); }catch(e){ var eb=document.getElementById('errBox'); if(eb) eb.innerHTML='<div class="errx">OX태그 JSON 오류: '+String(e.message)+'</div>'; return; }
+    var n=0;
+    function addOt(o){ if(!o) return; Object.keys(o).forEach(function(k){ _otMap[k]=o[k]; n++; }); }
+    if(Array.isArray(d.subjects)) d.subjects.forEach(function(s){ addOt(s.ot); });
+    else if(d.ot) addOt(d.ot);
+    else addOt(d);   // {qid:[...]} 직접 형태도 허용
+    var el=document.getElementById('otName'); if(el) el.textContent=f.name+' \u00b7 '+n+'\ubb38\ud56d';
+    render();   // 현재 src의 문항 뱅크에 칩 입혀 다시 그림
+  };
+  rd.onerror=function(){ var eb=document.getElementById('errBox'); if(eb) eb.innerHTML='<div class="errx">OX태그 파일 읽기 실패</div>'; };
+  rd.readAsText(f,'utf-8');
+}
+document.getElementById('otFile').addEventListener('change', function(){ pvLoadOt(this.files && this.files[0]); this.value=''; });
 // 드래그&드롭 — 드롭존(#pvDrop) 또는 textarea(#src)에 JSON 파일 떨구면 로드. 드롭존 클릭=파일 선택. 화면 밖 드롭은 무시(브라우저 페이지 이동 방지)
 (function(){
   ['dragover','drop'].forEach(function(ev){ document.addEventListener(ev, function(e){ e.preventDefault(); }); });
