@@ -4810,7 +4810,13 @@ function _oxWarnPick(){ _oxWarnHide(); }
 function _oxWarnSkip(){ _oxWarnHide(); _oxWarnBypass=true; if(typeof mqNav==='function') mqNav(1); }
 function _oxWarnSnooze(){ try{ localStorage.setItem('certlab_ox_warn_snooze', String(Date.now()+7*86400000)); }catch(_){} _oxWarnHide(); _oxWarnBypass=true; if(typeof mqNav==='function') mqNav(1); }
 function mqNav(d){ const qs=mqQuestions();
-  if(d===1 && (mqLevelTest||mqDiag) && !mqInReview && !_oxWarnBypass){ var _cq=qs[mqIdx]; if(_cq && _cq.id && mqAns[_cq.id]===undefined && _oxClickedOnly(_cq.id) && !_oxWarnSnoozed()){ _oxWarnShow(); return; } }
+  if(d===1 && (mqLevelTest||mqDiag) && !mqInReview && !_oxWarnBypass){
+    var _cq=qs[mqIdx];
+    var _oxSel=false; try{ _oxSel=!!document.querySelector('.jox.on'); }catch(_){}   // 현재 문항에 OX 선택돼 있나(브라우저 무관·DOM 직접)
+    var _oxClk=_oxSel || _oxClickedOnly(_cq&&_cq.id);
+    try{ if(/[?&]dbg=1/.test(location.search) && typeof clToast==='function') clToast('OX:'+(_oxClk?'Y':'N')+' / \uC815\uB2F5:'+((_cq&&mqAns[_cq.id]!==undefined)?'Y':'N')); }catch(_){}
+    if(_cq && _cq.id && mqAns[_cq.id]===undefined && _oxClk && !_oxWarnSnoozed()){ _oxWarnShow(); return; }
+  }
   _oxWarnBypass=false;
   if(d===1 && mqReview && !mqInReview){ const cq=qs[mqIdx]; if(cq && cq.id && mqAns[cq.id]===undefined && typeof srDueK==='function' && srDueK(mqCert,cq.id)){ srRateK(mqCert,cq.id,1,false,false); if(typeof srSaveDebounced==='function') srSaveDebounced(); } }   // 가: 복습에서 '다음'으로 넘기면 안 푼 문항도 '봤음=애매(3일)'로 1회 차감
   if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; if(mqConcept) mqConceptPhase='learn'; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
@@ -5072,7 +5078,12 @@ async function enterCert(id){
     refresh();
   } else if(isMcqCert(id)){
     mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
-    if(!currentUser && id!=='bodybuilding' && (typeof adHasData==='function'&&adHasData(id)) && typeof _ltGuestGate==='function'){ _ltGuestGate(id); }   // 비로그인: 후킹 랜딩 or 결과 게이트
+    if(!currentUser && id!=='bodybuilding' && typeof _ltGuestGate==='function'){   // 비로그인: 후킹 랜딩 or 결과 게이트
+      (async function(){                                       // 적응형 로드는 비차단이라 진입 직후 adHasData가 false일 수 있음 → 로드 보장 후 판정
+        try{ if(typeof loadAdaptiveSubject==='function' && typeof qbOf==='function'){ var _qb=qbOf(id)||{}; await Promise.all(Object.keys(_qb).map(function(code){ return loadAdaptiveSubject(id, code).catch(function(){return null;}); })); } }catch(_){}
+        if(!currentUser && typeof adHasData==='function' && adHasData(id) && mqCert===id) _ltGuestGate(id);
+      })();
+    }
   }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
