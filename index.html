@@ -1125,6 +1125,7 @@ function updateEventBanner(){
 }
 function maybeShowRefundPopup(){
   try{
+    if(!currentUser) return;   // 로그인 후에만 노출(비로그인 차단)
     var ev=EVENTS[activeCert]; if(!ev) return;   // 이벤트가 설정된 시험에서만 노출
     var raw=localStorage.getItem('refundPopupHide');
     if(raw){ var until=parseInt(raw,10); if(until && Date.now()<until) return; }  // 숨김 기간 중
