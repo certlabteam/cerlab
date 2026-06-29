@@ -1990,20 +1990,54 @@ document.getElementById('jsonFile').addEventListener('change', function(){
   pvLoadFile(this.files && this.files[0]);
   this.value='';   // 같은 파일 다시 선택 가능하게 초기화
 });
-// OX태그(ot) 파일 로더 — _otMap 채우고 재렌더(문항 뱅크는 src에 그대로 유지)
+// OX태그(ot) 파일 로더 — 파일만 열어도 Firestore 기출 뱅크를 끌어와 ot 키 문항만 칩과 함께 렌더
+function otStatus(msg){ var el=document.getElementById('otName'); if(el) el.textContent=msg; }
+function otIdNum(id){ var m=String(id).match(/(\d+)\s*$/); return m?parseInt(m[1],10):0; }
+// banks 문서(=cert__subject) 조회 — 컬렉션명 후보를 순서대로 시도
+function pvFetchBank(docId){
+  var COLS=['banks','exams','questionBanks']; var i=0;
+  function tryCol(){
+    if(i>=COLS.length || !_pvDB) return Promise.resolve(null);
+    var c=COLS[i++];
+    return _pvDB.collection(c).doc(docId).get().then(function(snap){
+      if(snap && snap.exists){ var dd=snap.data()||{}; if(dd && dd.questions) return dd; }
+      return tryCol();
+    }).catch(function(){ return tryCol(); });
+  }
+  return tryCol();
+}
 function pvLoadOt(f){
   if(!f) return;
   var rd=new FileReader();
   rd.onload=function(){
     var txt=String(rd.result||''); if(txt.charCodeAt(0)===0xFEFF) txt=txt.slice(1);
     var d; try{ d=JSON.parse(txt); }catch(e){ var eb=document.getElementById('errBox'); if(eb) eb.innerHTML='<div class="errx">OX태그 JSON 오류: '+String(e.message)+'</div>'; return; }
-    var n=0;
+    // 1) _otMap 채우기 + 과목(cert/subject) 수집
+    var subs=[], n=0;
     function addOt(o){ if(!o) return; Object.keys(o).forEach(function(k){ _otMap[k]=o[k]; n++; }); }
-    if(Array.isArray(d.subjects)) d.subjects.forEach(function(s){ addOt(s.ot); });
-    else if(d.ot) addOt(d.ot);
+    if(Array.isArray(d.subjects)) d.subjects.forEach(function(s){ addOt(s.ot); if(s.cert&&s.subject) subs.push({cert:s.cert,subject:s.subject}); });
+    else if(d.ot){ addOt(d.ot); if(d.cert&&d.subject) subs.push({cert:d.cert,subject:d.subject}); }
     else addOt(d);   // {qid:[...]} 직접 형태도 허용
-    var el=document.getElementById('otName'); if(el) el.textContent=f.name+' \u00b7 '+n+'\ubb38\ud56d';
-    render();   // 현재 src의 문항 뱅크에 칩 입혀 다시 그림
+    // 2) Firestore에서 해당 뱅크 문항 끌어와 ot 키 문항만 렌더
+    if(_pvDB && subs.length){
+      otStatus(f.name+' \u00b7 \u23f3 \uae30\ucd9c \ubd51\ud06c \ubd88\ub7ec\uc624\ub294 \uc911\u2026');
+      var got=[];
+      Promise.all(subs.map(function(s){
+        return pvFetchBank(s.cert+'__'+s.subject).then(function(data){
+          if(!data) return;
+          var qs=data.questions; if(typeof qs==='string'){ try{ qs=JSON.parse(qs); }catch(e){ qs=[]; } }
+          (qs||[]).forEach(function(q){ if(q && q.id && _otMap[q.id]) got.push(q); });
+        });
+      })).then(function(){
+        if(!got.length){ otStatus(f.name+' \u00b7 \u26a0\ufe0f \ubd51\ud06c \ubabb \ucc3e\uc74c \u2014 \ubb38\ud56d JSON\uc744 \uc9c1\uc811 \uc5f4\uc5b4\uc8fc\uc138\uc694'); render(); return; }
+        got.sort(function(a,b){ return otIdNum(a.id)-otIdNum(b.id); });
+        _items=got; _idx=0; drawNav(); renderOne(_items[0]);
+        otStatus(f.name+' \u00b7 \ud83c\udff7\ufe0f '+n+'\ubb38\ud56d \ub85c\ub4dc');
+      }).catch(function(e){ console.warn('bank fetch',e); otStatus(f.name+' \u00b7 \u26a0\ufe0f \ubd51\ud06c \uc870\ud68c \uc2e4\ud328'); render(); });
+    } else {
+      otStatus(f.name+' \u00b7 \ud83c\udff7\ufe0f '+n+'\ubb38\ud56d (src \ubb38\ud56d\uc5d0 \uc587\uc74c)');
+      render();   // Firestore 미연결 시: 현재 src 문항에 얹기
+    }
   };
   rd.onerror=function(){ var eb=document.getElementById('errBox'); if(eb) eb.innerHTML='<div class="errx">OX태그 파일 읽기 실패</div>'; };
   rd.readAsText(f,'utf-8');
