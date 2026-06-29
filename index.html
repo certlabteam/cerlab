@@ -530,7 +530,7 @@ try {
   );
   auth = firebase.auth();
   db = firebase.firestore();
-  try{ db.settings({ experimentalForceLongPolling: true, merge: true }); }catch(e){ console.warn('firestore settings', e); }
+  try{ db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }catch(e){ console.warn('firestore settings', e); }
   storage = firebase.storage();
   googleProvider = new firebase.auth.GoogleAuthProvider();
   firebaseReady = true;
@@ -5298,7 +5298,41 @@ function reorderCertCards(){
 }
 // QB 캐시 신선도: 같은 버전 재업로드도 이 시간 안에 자동 반영(버전 미범프 안전망). 0이면 TTL 무시(영구 캐시).
 const QB_TTL_MS=6*60*60*1000;   // 6시간
-// 과목 1개 로드(캐시→Firestore→샤드합치기) 후 applyBank
+// ===== 큰 문제은행 전용 로더: SDK(WebChannel) 대신 일반 fetch로 Firestore REST 호출 =====
+// 이유: Safari 26.4에서 Firestore SDK의 큰 문서 읽기가 비정상적으로 느림(복불복). 일반 fetch는 영향 없음.
+function _decodeFsValue(v){
+  if(v==null) return null;
+  if('stringValue' in v) return v.stringValue;
+  if('integerValue' in v) return parseInt(v.integerValue,10);
+  if('doubleValue' in v) return (typeof v.doubleValue==='number')?v.doubleValue:parseFloat(v.doubleValue);
+  if('booleanValue' in v) return v.booleanValue;
+  if('nullValue' in v) return null;
+  if('timestampValue' in v) return v.timestampValue;
+  if('mapValue' in v) return _decodeFsFields((v.mapValue&&v.mapValue.fields)||{});
+  if('arrayValue' in v){ var arr=(v.arrayValue&&v.arrayValue.values)||[]; return arr.map(_decodeFsValue); }
+  return null;
+}
+function _decodeFsFields(fields){ var o={}; for(var k in fields){ o[k]=_decodeFsValue(fields[k]); } return o; }
+async function _bankGet(docId){               // REST 우선, 실패 시 SDK 폴백(안전망)
+  var _dbg=/[?&]dbg=1/.test(location.search), _t0=Date.now();
+  var d=await _bankRestGet(docId);
+  if(d){ if(_dbg && typeof clToast==='function') clToast('REST OK '+((Date.now()-_t0)/1000).toFixed(1)+'s'); return d; }
+  if(_dbg && typeof clToast==='function') clToast('REST 실패\u2192SDK 폴백');
+  try{ var sn=await db.collection('banks').doc(docId).get(); return sn.exists? sn.data() : null; }catch(_){ return null; }
+}
+async function _bankRestGet(docId){
+  try{
+    var url='https://firestore.googleapis.com/v1/projects/'+firebaseConfig.projectId+'/databases/(default)/documents/banks/'+encodeURIComponent(docId)+'?key='+firebaseConfig.apiKey;
+    var headers={};
+    try{ if(firebase && firebase.appCheck){ var t=await firebase.appCheck().getToken(); if(t && t.token) headers['X-Firebase-AppCheck']=t.token; } }catch(_){}
+    var res=await fetch(url,{headers:headers});
+    if(!res.ok) return null;                 // 404=문서없음 등
+    var j=await res.json();
+    if(!j || !j.fields) return null;
+    return _decodeFsFields(j.fields);
+  }catch(e){ return null; }
+}
+// 과목 1개 로드(캐시→Firestore REST→샤드합치기) 후 applyBank
 async function loadOneSubject(ex, sub){
   const ver=(ex.versions&&ex.versions[sub.code])||1;
   const ck='qb:'+ex.id+':'+sub.code+':v'+ver;
@@ -5314,16 +5348,15 @@ async function loadOneSubject(ex, sub){
     }
   }catch(e){}
   if(!doc){
-    const snap=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
-    if(snap.exists){
-      const meta=snap.data();
+    const meta=await _bankGet(ex.id+'__'+sub.code);   // 일반 fetch 우선, 실패 시 SDK 폴백
+    if(meta){
       if(Array.isArray(meta.shards) && meta.shards.length){
         // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
         const parts=await Promise.all(meta.shards.map(function(sid){
-          return db.collection('banks').doc(ex.id+'__'+sub.code+'__'+sid).get();
+          return _bankGet(ex.id+'__'+sub.code+'__'+sid);
         }));
         const qs=[];
-        parts.forEach(function(p){ if(p&&p.exists){ const pd=p.data(); if(Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); } });
+        parts.forEach(function(pd){ if(pd && Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); });
         if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
         else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
       } else {
