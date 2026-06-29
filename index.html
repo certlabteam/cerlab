@@ -5025,6 +5025,9 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   document.getElementById('modePill').style.display = 'none';
   mqScreen='home';
   if(typeof cmLoadNoticeBar==='function') cmLoadNoticeBar();
+  if(typeof reorderCertCards==='function') reorderCertCards();                              // 홈 볼 때마다 현재 시험일로 재정렬
+  if(typeof _examDateMs!=='undefined' && _examDateMs==null && typeof loadExamSchedules==='function') loadExamSchedules();   // 아직 못 읽었으면 로드
+  setTimeout(function(){ if(typeof reorderCertCards==='function') reorderCertCards(); }, 2500);   // 모바일 느린 렌더 대비 늦은 재정렬
   syncPlanMirror(); updateAuthBar();
 }
 async function enterCert(id){
@@ -5245,8 +5248,9 @@ async function loadExamSchedules(_retry){
     });
     _examDateMs = map; window._exErr=null;
     // 즉시 + 지연 재정렬(모바일: 카드 동적추가/늦은 렌더와의 경합 방지)
-    if(typeof reorderCertCards==='function'){ reorderCertCards(); setTimeout(reorderCertCards,400); setTimeout(reorderCertCards,1200); }
-  }catch(e){ window._exErr=(e&&e.message)||String(e); if((_retry||0)<2){ setTimeout(function(){ loadExamSchedules((_retry||0)+1); }, 800); } }
+    if(typeof reorderCertCards==='function'){ reorderCertCards(); setTimeout(reorderCertCards,400); setTimeout(reorderCertCards,1200); setTimeout(reorderCertCards,2500); }
+    try{ if(/[?&]dbg=1/.test(location.search) && typeof clToast==='function') clToast('\uC2DC\uD5D8\uC77C '+Object.keys(map).length+'\uAC1C \uB85C\uB4DC\u00B7\uC815\uB82C'); }catch(_){}
+  }catch(e){ window._exErr=(e&&e.message)||String(e); try{ if(/[?&]dbg=1/.test(location.search) && typeof clToast==='function') clToast('\uC2DC\uD5D8\uC77C \uC77D\uAE30 \uC2E4\uD328: '+window._exErr); }catch(_){} if((_retry||0)<2){ setTimeout(function(){ loadExamSchedules((_retry||0)+1); }, 800); } }
 }
 function reorderCertCards(){
   try{
