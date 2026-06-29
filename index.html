@@ -126,8 +126,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <span class="cm-nb-arr">›</span>
   </div>
   <div class="home-hero">
-    <h1>어떤 시험을 준비하세요?</h1>
-    <p class="home-seo">CertLab(서트랩)은 생활스포츠지도사 보디빌딩 구술·감정평가사 기출을 망각곡선 자동복습과 예상점수로 준비하는 학습 플랫폼입니다.</p>
+    <h1>내 합격 점수, AI가 미리 알려드려요</h1>
+    <p class="home-seo">무료 레벨테스트 3분이면 예상 점수·약점 끝.<br>틀린 문제는 망각곡선으로 까먹기 전에 자동 복습.</p>
   </div>
   <div class="home-label">시험 선택</div>
   <div class="cert-cards">
@@ -5134,7 +5134,8 @@ async function loadManifest(){
   if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
   MANIFEST=mSnap.data();
   try{ buildCertRegistry(MANIFEST); }catch(e){ console.error('buildCertRegistry 실패', e); }   // 매니페스트 기반 새 시험 동적 등록(기존 7개는 무변경·확장만)
-  try{ var _sp=document.getElementById('certCard-sport2'); var _bb=document.getElementById('certCard-bodybuilding'); if(_sp&&_bb&&_sp.parentNode){ _sp.parentNode.insertBefore(_bb, _sp.nextSibling); } }catch(_){}   // 구술 카드를 스포츠지도자 2급 필기(sport2) 밑으로
+  try{ if(typeof reorderCertCards==='function') reorderCertCards(); }catch(_){}
+  if(typeof loadExamSchedules==='function') loadExamSchedules();   // 시험일 읽어 D-day 정렬(가까운 순, 없음/지남=맨밑)
   return MANIFEST;
 }
 // ===== 매니페스트 주도 시험 등록 (1단계: 확장 전용) =====
@@ -5183,6 +5184,38 @@ function _addCertCard(ex, type){
       +'<span class="'+tagCls+'" id="certTag-'+id+'">'+tagTxt+'</span></div>'
       +'<div class="cert-go">›</div>';
     wrap.appendChild(card);
+  }catch(e){}
+}
+// ===== 시험 D-day 자동정렬 (examSchedules = 이메일 D-day 데이터 재사용) =====
+var _examDateMs = null;   // {cert: ms} 다음 시험일(미래 회차 우선)
+async function loadExamSchedules(){
+  if(!firebaseReady || !db) return;
+  try{
+    var snap = await db.collection('examSchedules').get();
+    var map = {}, now = Date.now();
+    var toMs = function(v){ if(!v) return null; if(v.toDate) return v.toDate().getTime(); if(v.seconds) return v.seconds*1000; var t=new Date(v).getTime(); return isNaN(t)?null:t; };
+    snap.forEach(function(d){
+      var sx = d.data() || {}, best = null;
+      if(Array.isArray(sx.upcoming)) sx.upcoming.forEach(function(u){ var m=toMs(u&&u.date); if(m!=null && m>=now && (best==null||m<best)) best=m; });
+      if(best==null){ var nm=toMs(sx.nextExamDate); if(nm!=null) best=nm; }
+      if(best!=null) map[d.id]=best;
+    });
+    _examDateMs = map;
+    if(typeof reorderCertCards==='function') reorderCertCards();
+  }catch(e){ /* 규칙상 읽기 불가 등 → 기본 순서 유지 */ }
+}
+function reorderCertCards(){
+  try{
+    var wrap=document.querySelector('.cert-cards'); if(!wrap) return;
+    var cards=[].slice.call(wrap.querySelectorAll('.cert-card')); if(!cards.length) return;
+    var now=Date.now(), dm=_examDateMs||{};
+    function certOf(card){ var id=(card.id||'').replace('certCard-',''); if(id) return id; var m=(card.getAttribute('onclick')||'').match(/enterCert\('([^']+)'\)/); return m?m[1]:''; }
+    function key(card){ var ms=dm[certOf(card)]; return (ms!=null && ms>=now) ? ms : Infinity; }   // 미래=가까운순, 없음/지남=맨밑
+    cards.map(function(card,i){ return {card:card, k:key(card), i:i}; })
+         .sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; })   // 안정 정렬(동순위 기존순서)
+         .forEach(function(o){ wrap.appendChild(o.card); });
+    var _sp=document.getElementById('certCard-sport2'), _bb=document.getElementById('certCard-bodybuilding');
+    if(_sp&&_bb&&_sp.parentNode){ _sp.parentNode.insertBefore(_bb, _sp.nextSibling); }   // 구술을 필기(sport2) 바로 밑으로
   }catch(e){}
 }
 // QB 캐시 신선도: 같은 버전 재업로드도 이 시간 안에 자동 반영(버전 미범프 안전망). 0이면 TTL 무시(영구 캐시).
