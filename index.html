@@ -131,9 +131,9 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   </div>
   <div class="home-label">시험 선택</div>
   <div class="cert-cards">
-    <div class="cert-card" onclick="enterCert('bodybuilding')">
+    <div class="cert-card" id="certCard-bodybuilding" onclick="enterCert('bodybuilding')">
       <div class="cert-ic">💪</div>
-      <div class="cert-meta"><div class="nm">생활체육지도자2급(보디빌딩) 구술실기</div><div class="ds">구술시험 대비 플래시카드 · 5과목</div><span class="tag">플래시카드</span></div>
+      <div class="cert-meta"><div class="nm">스포츠지도자 2급 구술</div><div class="ds">구술시험 대비 플래시카드 · 5과목</div><span class="tag">플래시카드</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" onclick="enterCert('appraiser')">
@@ -600,8 +600,8 @@ const GUEST_LIMIT = 10;
 const TRIAL_LIMIT = 50;
 // ===== 시험별 이용권(entitlements) =====
 const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing','housing2'];
-const CERT_LABELS = { bodybuilding:'생체2급 구술', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
-const CERT_FULLNAMES = { bodybuilding:'생체2급(보디빌딩) 구술', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험(심화)', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
+const CERT_LABELS = { bodybuilding:'스포츠지도자 2급 구술', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
+const CERT_FULLNAMES = { bodybuilding:'스포츠지도자 2급 구술', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험(심화)', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
 // ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
 // 환급 이벤트 — 시험 구분 없이 단일 공통 문구(급수 시험은 최고 급수 달성 시)
 const REFUND = {
@@ -1118,12 +1118,12 @@ function maybeShowRefundPopup(){
     try{
       var rs=document.getElementById('refundStats');
       if(rs){
-        var cert=(typeof activeCertId==='function')?activeCertId():'bodybuilding';
-        var cn=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
-        var nm=(typeof CERT_FULLNAMES!=='undefined'&&CERT_FULLNAMES[cert])?CERT_FULLNAMES[cert]:'';
+        var cert=(typeof activeCert!=='undefined' && activeCert) ? activeCert : '';
+        var cn=cert?((typeof certQuestionCount==='function')?certQuestionCount(cert):0):0;
+        var nm=cert?((typeof CERT_FULLNAMES!=='undefined'&&CERT_FULLNAMES[cert])?CERT_FULLNAMES[cert]:''):'';
         var allN=(typeof totalQuestionCountAll==='function')?totalQuestionCountAll():0;
         var ex=(typeof examCount==='function')?examCount():0;
-        var line1 = cn>0 ? '📘 지금 보는 '+(nm||'시험')+' <b>'+cn.toLocaleString()+'문제</b>' : '';
+        var line1 = (cert && cn>0) ? '📘 지금 보는 '+(nm||'시험')+' <b>'+cn.toLocaleString()+'문제</b>' : '';
         var line2 = (ex>0&&allN>0) ? '🎓 CertLab 전체 '+ex+'개 시험 · 총 <b>'+allN.toLocaleString()+'문제</b>' : '';
         rs.innerHTML = [line1,line2].filter(Boolean).join('<br>');
         rs.style.display = rs.innerHTML ? '' : 'none';
@@ -1541,7 +1541,7 @@ async function applyDiscount() {
     const cert = activeCertId();
     // 코드에 certType이 지정돼 있으면 해당 시험에서만 사용 가능 (없으면 현재 시험에 적용)
     if (data.certType && data.certType !== cert) {
-      const need = data.certType === 'appraiser' ? '감정평가사' : '생체2급 구술';
+      const need = data.certType === 'appraiser' ? '감정평가사' : '스포츠지도자 2급 구술';
       msgEl.className = 'discount-msg error';
       msgEl.textContent = `이 코드는 ${need} 전용입니다. 해당 시험에서 사용해주세요.`;
       msgEl.style.display = 'block';
@@ -5003,7 +5003,7 @@ async function enterCert(id){
   if(id === 'bodybuilding'){
     document.getElementById('bodybuildingView').classList.remove('hidden');
     document.getElementById('mcqView').classList.add('hidden');
-    document.getElementById('certSwitchName').textContent = '생체2급 구술';
+    document.getElementById('certSwitchName').textContent = '스포츠지도자 2급 구술';
     document.getElementById('modePill').style.display = '';
   } else if(isMcqCert(id)){
     document.getElementById('mcqView').classList.remove('hidden');
@@ -5134,6 +5134,7 @@ async function loadManifest(){
   if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
   MANIFEST=mSnap.data();
   try{ buildCertRegistry(MANIFEST); }catch(e){ console.error('buildCertRegistry 실패', e); }   // 매니페스트 기반 새 시험 동적 등록(기존 7개는 무변경·확장만)
+  try{ var _sp=document.getElementById('certCard-sport2'); var _bb=document.getElementById('certCard-bodybuilding'); if(_sp&&_bb&&_sp.parentNode){ _sp.parentNode.insertBefore(_bb, _sp.nextSibling); } }catch(_){}   // 구술 카드를 스포츠지도자 2급 필기(sport2) 밑으로
   return MANIFEST;
 }
 // ===== 매니페스트 주도 시험 등록 (1단계: 확장 전용) =====
@@ -5510,7 +5511,7 @@ function prSetScope(s){prScope=s;renderPrintSheet();}
 function prToggleSub(s){let p=prSubjectsPresent();if(prSubsSel===null){prSubsSel={};p.forEach(x=>{prSubsSel[x]=true;});}prSubsSel[s]=!prSubsSel[s];renderPrintSheet();}
 function prToggleOpt(w){if(w==='mn')prMnemonic=!prMnemonic;else if(w==='fold')prFold=!prFold;renderPrintSheet();}
 function renderPrintSheet(){let present=prSubjectsPresent();let allCnt=prCardsFor('all').length,wrongCnt=prCardsFor('wrong').length;let subs=prSelectedSubs();let sel=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);let chips=present.map(s=>{let on=(prSubsSel===null)||prSubsSel[s];return '<span class="pr-chip'+(on?' on':'')+'" onclick="prToggleSub(\''+prJsStr(s)+'\')">' +s+'</span>';}).join('');let html='<h3>🖨️ 시험장용 인쇄</h3><p class="pr-desc">폰 반납 대비, 종이로 들고 갈 자료를 만듭니다.</p>'+'<div class="pr-lbl">범위</div><div class="pr-seg">'+'<button class="'+(prScope==='all'?'on':'')+'" onclick="prSetScope(\'all\')">전체 과목<span class="pr-cnt">'+allCnt+'문항</span></button>'+'<button class="'+(prScope==='wrong'?'on':'')+'" onclick="prSetScope(\'wrong\')">오답 복습<span class="pr-cnt">'+wrongCnt+'문항</span></button></div>'+'<div class="pr-lbl">과목 (탭하여 켜고 끄기)</div><div class="pr-chips">'+chips+'</div>'+'<div class="pr-lbl">옵션</div><div class="pr-opts">'+'<label class="pr-opt"><input type="checkbox" '+(prMnemonic?'checked':'')+' onchange="prToggleOpt(\'mn\')"> 암기코드 포함</label>'+'<label class="pr-opt"><input type="checkbox" '+(prFold?'checked':'')+' onchange="prToggleOpt(\'fold\')"> 접지형(질문↔답, 접어서 셀프테스트)</label></div>';if(sel.length===0){html+='<div class="pr-empty">'+(prScope==='wrong'?'오답(미숙·학습중) 카드가 아직 없습니다. 카드를 풀어 복습 이력이 쌓이면 채워집니다.':'선택한 과목에 카드가 없습니다.')+'</div>'+'<button class="pr-go" disabled style="opacity:.5">인쇄할 카드 없음</button>';}else{html+='<button class="pr-go" onclick="doPrint()">인쇄 / PDF로 저장 ('+sel.length+'문항)</button>';}html+='<button class="pr-cancel" onclick="closePrintSheet()">취소</button>';document.getElementById('printSheetBody').innerHTML=html;}
-function doPrint(){let subs=prSelectedSubs();let list=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);if(!list.length)return;let groups={};subs.forEach(s=>{groups[s]=[];});list.forEach(c=>{if(!groups[c.s])groups[c.s]=[];groups[c.s].push(c);});let scopeLbl=prScope==='wrong'?'오답 복습':'전체 과목';let n=new Date();let ds=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');let body='<div class="pa-h"><span class="t">생활체육지도자2급(보디빌딩) 구술실기 · '+scopeLbl+'</span><span class="m">CertLab · '+ds+'</span></div>';if(prFold)body+='<div class="pa-foldnote">✂ 가운데 점선을 따라 접으면 오른쪽 답이 가려집니다 — 질문을 보고 답해 본 뒤 펴서 확인하세요.</div>';subs.forEach(s=>{let g=groups[s];if(!g||!g.length)return;body+='<div class="pa-sub">'+s+' ('+g.length+')</div><div class="pa-cols">';g.forEach((c,i)=>{let mn=prMnemonic?prMnHTML(c):'';if(prFold){body+='<div class="pa-qa"><div class="pa-qcell"><span class="no">'+(i+1)+'.</span> '+(c.q||'')+'</div>'+'<div class="pa-acell"><div class="pa-a">'+(c.a||'')+'</div>'+mn+'</div></div>';}else{body+='<div class="pa-qa"><p class="pa-q"><span class="no">'+(i+1)+'.</span>'+(c.q||'')+'</p><p class="pa-a">'+(c.a||'')+'</p>'+mn+'</div>';}});body+='</div>';});let pa=document.getElementById('printArea');if(!pa){pa=document.createElement('div');pa.id='printArea';document.body.appendChild(pa);}pa.className=prFold?'pa-fold':'';pa.innerHTML=body;closePrintSheet();setTimeout(()=>{window.print();},60);}
+function doPrint(){let subs=prSelectedSubs();let list=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);if(!list.length)return;let groups={};subs.forEach(s=>{groups[s]=[];});list.forEach(c=>{if(!groups[c.s])groups[c.s]=[];groups[c.s].push(c);});let scopeLbl=prScope==='wrong'?'오답 복습':'전체 과목';let n=new Date();let ds=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');let body='<div class="pa-h"><span class="t">스포츠지도자 2급 구술 · '+scopeLbl+'</span><span class="m">CertLab · '+ds+'</span></div>';if(prFold)body+='<div class="pa-foldnote">✂ 가운데 점선을 따라 접으면 오른쪽 답이 가려집니다 — 질문을 보고 답해 본 뒤 펴서 확인하세요.</div>';subs.forEach(s=>{let g=groups[s];if(!g||!g.length)return;body+='<div class="pa-sub">'+s+' ('+g.length+')</div><div class="pa-cols">';g.forEach((c,i)=>{let mn=prMnemonic?prMnHTML(c):'';if(prFold){body+='<div class="pa-qa"><div class="pa-qcell"><span class="no">'+(i+1)+'.</span> '+(c.q||'')+'</div>'+'<div class="pa-acell"><div class="pa-a">'+(c.a||'')+'</div>'+mn+'</div></div>';}else{body+='<div class="pa-qa"><p class="pa-q"><span class="no">'+(i+1)+'.</span>'+(c.q||'')+'</p><p class="pa-a">'+(c.a||'')+'</p>'+mn+'</div>';}});body+='</div>';});let pa=document.getElementById('printArea');if(!pa){pa=document.createElement('div');pa.id='printArea';document.body.appendChild(pa);}pa.className=prFold?'pa-fold':'';pa.innerHTML=body;closePrintSheet();setTimeout(()=>{window.print();},60);}
 
 
 /* ===== 커뮤니티 게시판 (2단계: 목록) ===== */
