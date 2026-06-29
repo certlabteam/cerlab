@@ -4653,7 +4653,7 @@ function renderMcqExam(root){
         }
       } else {
         // 결론 한 줄(ㄱㄴㄷ형 등)
-        body+='<div class="exp-opts"><div class="eo"><div class="eo-a '+verdictColor(concl)+'">'+rm(concl,q)+'</div></div></div>';
+        body+='<div class="exp-opts"><div class="eo"><div class="eo-a">'+rm(concl,q)+'</div></div></div>';   // 결론 한 줄: 해설 전체 정오색 제거(일반 해설처럼 검정) — 배지(splitVerdict vc)는 유지
       }
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
