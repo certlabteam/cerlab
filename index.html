@@ -4770,7 +4770,48 @@ function mqToggleGuess(qid){
   }
   renderMCQ();
 }
+// ===== OX만 누르고 넘어가는 착각 방지 (레벨테스트 한정 · 매번 막고 7일 끄기) =====
+var _oxWarnBypass=false;
+function _oxClickedOnly(qid){ try{ return !!(typeof mqOX!=='undefined' && mqOX && mqOX[qid] && Object.keys(mqOX[qid]).length); }catch(_){ return false; } }
+function _oxWarnSnoozed(){ try{ var v=parseInt(localStorage.getItem('certlab_ox_warn_snooze')||'0',10); return v>Date.now(); }catch(_){ return false; } }
+function _oxWarnShow(){
+  var el=document.getElementById('oxWarnPop');
+  if(!el){
+    el=document.createElement('div'); el.id='oxWarnPop';
+    el.innerHTML='<div class="oxw-back" onclick="_oxWarnPick()"></div>'
+      +'<div class="oxw-card"><div class="oxw-ic">\uD83D\uDE42</div>'
+      +'<div class="oxw-t">\uC815\uB2F5\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694</div>'
+      +'<div class="oxw-s">\uBCF4\uAE30 \uC911 \uC815\uB2F5\uC744 \uACE8\uB77C\uC57C \uCC44\uC810\u00B7\uCE21\uC815\uB3FC\uC694.</div>'
+      +'<div class="oxw-note"><b>OX \uCCB4\uD06C</b>\uB294 \uBCF4\uAE30 \uBB38\uC7A5\uC774 \uB9DE\uB294\uC9C0(O)\u00B7\uD2C0\uB9B0\uC9C0(X)\uB97C \uC9C1\uC811 \uD310\uB2E8\uD574, \uD2C0\uB9B0 \uC9C4\uC220\uC758 \uAC1C\uB150\uB9CC \uB530\uB85C \uBCF5\uC2B5\uD558\uB294 \uAE30\uB2A5\uC774\uC5D0\uC694. \uC815\uB2F5 \uC120\uD0DD\uACFC\uB294 \uBCC4\uAC1C\uC608\uC694.</div>'
+      +'<button class="oxw-b1" onclick="_oxWarnPick()">\uC815\uB2F5 \uC120\uD0DD\uD558\uAE30</button>'
+      +'<button class="oxw-b2" onclick="_oxWarnSkip()">\uBAA8\uB974\uACA0\uC5B4\uC694 \u00B7 \uADF8\uB0E5 \uB118\uAE30\uAE30</button>'
+      +'<button class="oxw-b3" onclick="_oxWarnSnooze()">7\uC77C\uAC04 \uBCF4\uC9C0 \uC54A\uAE30</button></div>';
+    document.body.appendChild(el);
+    if(!document.getElementById('oxWarnCss')){
+      var st=document.createElement('style'); st.id='oxWarnCss';
+      st.textContent='#oxWarnPop{position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;padding:24px}'
+        +'#oxWarnPop .oxw-back{position:absolute;inset:0;background:rgba(20,24,31,.5)}'
+        +'#oxWarnPop .oxw-card{position:relative;background:#fff;border-radius:18px;padding:24px 22px 18px;max-width:340px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)}'
+        +'#oxWarnPop .oxw-ic{font-size:32px;margin-bottom:8px}'
+        +'#oxWarnPop .oxw-t{font-size:18px;font-weight:900;color:#1F2937;margin-bottom:8px}'
+        +'#oxWarnPop .oxw-s{font-size:13.5px;color:#6B7280;line-height:1.6;margin-bottom:10px}'
+        +'#oxWarnPop .oxw-note{font-size:12px;color:#94A3B8;line-height:1.55;background:#F7F9FC;border-radius:10px;padding:10px 12px;margin-bottom:16px;text-align:left}'
+        +'#oxWarnPop .oxw-note b{color:#475569}'
+        +'#oxWarnPop .oxw-b1{width:100%;background:#0C447C;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:800;cursor:pointer;margin-bottom:8px}'
+        +'#oxWarnPop .oxw-b2{width:100%;background:#F1F4F8;color:#475569;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:6px}'
+        +'#oxWarnPop .oxw-b3{width:100%;background:none;color:#9AA1AD;border:none;padding:6px;font-size:12px;font-weight:600;cursor:pointer}';
+      document.head.appendChild(st);
+    }
+  }
+  el.style.display='flex';
+}
+function _oxWarnHide(){ var el=document.getElementById('oxWarnPop'); if(el) el.style.display='none'; }
+function _oxWarnPick(){ _oxWarnHide(); }
+function _oxWarnSkip(){ _oxWarnHide(); _oxWarnBypass=true; if(typeof mqNav==='function') mqNav(1); }
+function _oxWarnSnooze(){ try{ localStorage.setItem('certlab_ox_warn_snooze', String(Date.now()+7*86400000)); }catch(_){} _oxWarnHide(); _oxWarnBypass=true; if(typeof mqNav==='function') mqNav(1); }
 function mqNav(d){ const qs=mqQuestions();
+  if(d===1 && (mqLevelTest||mqDiag) && !mqInReview && !_oxWarnBypass){ var _cq=qs[mqIdx]; if(_cq && _cq.id && mqAns[_cq.id]===undefined && _oxClickedOnly(_cq.id) && !_oxWarnSnoozed()){ _oxWarnShow(); return; } }
+  _oxWarnBypass=false;
   if(d===1 && mqReview && !mqInReview){ const cq=qs[mqIdx]; if(cq && cq.id && mqAns[cq.id]===undefined && typeof srDueK==='function' && srDueK(mqCert,cq.id)){ srRateK(mqCert,cq.id,1,false,false); if(typeof srSaveDebounced==='function') srSaveDebounced(); } }   // 가: 복습에서 '다음'으로 넘기면 안 푼 문항도 '봤음=애매(3일)'로 1회 차감
   if(d===1&&mqIdx>=qs.length-1){ if(mqInReview){ mqBackToResult(); return; } mqResult(); return; } const ni=mqIdx+d; if(ni<0||ni>=qs.length)return; mqIdx=ni; if(mqConcept) mqConceptPhase='learn'; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
 function mqProgStart(e){
