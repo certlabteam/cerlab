@@ -428,15 +428,15 @@ async function cmLoadNoticeBar(){
   var bar=document.getElementById('cmNoticeBar'); if(!bar) return;
   if(!firebaseReady||!db){ bar.classList.add('hidden'); return; }
   try{
-    // 공지·건의·후기에서 각 1개씩(최신). 나중엔 upCount 정렬로 교체.
-    var boards=[{b:'notice',ic:'\uD83D\uDCE2',nm:'\uACF5\uC9C0'},{b:'sugg',ic:'\uD83D\uDE4B',nm:'\uAC74\uC758'},{b:'review',ic:'\uD83D\uDD25',nm:'\uD6C4\uAE30'}];
+    // 공지글 최신 5개를 3초마다 회전(공지 외 글 없음)
     _cmNbItems=[];
-    for(var i=0;i<boards.length;i++){
-      try{
-        var qs=await db.collection('posts').where('board','==',boards[i].b).orderBy('createdAt','desc').limit(1).get();
-        qs.forEach(function(d){ var p=d.data(); _cmNbItems.push({id:d.id, board:boards[i].b, title:(boards[i].ic+' '+boards[i].nm+'  '+(p.title||''))}); });
-      }catch(_){}
-    }
+    try{
+      // orderBy 빼서 색인 의존 제거 → 가져온 뒤 createdAt JS 정렬
+      var qs=await db.collection('posts').where('board','==','notice').limit(20).get();
+      var arr=[]; qs.forEach(function(d){ var p=d.data(); arr.push({id:d.id, t:(p.title||''), at:(p.createdAt&&p.createdAt.seconds)||0}); });
+      arr.sort(function(a,b){ return b.at-a.at; });
+      arr.slice(0,5).forEach(function(p){ _cmNbItems.push({id:p.id, board:'notice', title:('\uD83D\uDCE2 '+p.t)}); });
+    }catch(_){}
     if(!_cmNbItems.length){ bar.classList.add('hidden'); if(_cmNbTimer){clearInterval(_cmNbTimer);_cmNbTimer=null;} return; }
     bar.classList.remove('hidden');
     var roll=document.getElementById('cmNbRoll');
