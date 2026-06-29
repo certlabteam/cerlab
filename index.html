@@ -534,6 +534,8 @@ try {
   storage = firebase.storage();
   googleProvider = new firebase.auth.GoogleAuthProvider();
   firebaseReady = true;
+  // 첫 로드 때 goHome이 db 준비 전에 돌아 공지바가 빈 채 끝나는 경우 보강 — 준비되면 홈에서 한 번 더 로드
+  try{ if(mqScreen==='home' && typeof cmLoadNoticeBar==='function') cmLoadNoticeBar(); }catch(_){}
   try{ if(/[?&]perf=1/.test(location.search) || localStorage.getItem('certlab_perf')==='1'){ var _ac0=(window.performance&&performance.now)?performance.now():Date.now(); firebase.appCheck().getToken(false).then(function(){ window.__acMs=((window.performance&&performance.now)?performance.now():Date.now())-_ac0; console.log('[PERF] AppCheck 토큰 '+(window.__acMs/1000).toFixed(1)+'초'); }).catch(function(e){ window.__acFail=(e&&e.code)||String(e); console.log('[PERF] AppCheck 실패', e); }); } }catch(e){}
 } catch (e) {
   console.warn('Firebase를 불러오지 못했습니다. 로그인·동기화 없이 학습 기능만 동작합니다.', e);
@@ -5410,6 +5412,7 @@ loadManifest().then(async ()=>{
   else if(typeof pendingCard!=='undefined' && pendingCard && typeof goToCard==='function'){ var _pc=pendingCard, _cc=(typeof pendingCardCert!=='undefined')?pendingCardCert:null; pendingCard=null; setTimeout(function(){ goToCard(_pc,_cc); }, 200); }
   // ?cert=appraiser 단독 딥링크 → 해당 과목으로 직행 (card 없을 때, D-day 메일 버튼 등)
   else if(typeof pendingCardCert!=='undefined' && pendingCardCert && typeof enterCert==='function'){ var _cc2=pendingCardCert; pendingCardCert=null; setTimeout(function(){ try{ enterCert(_cc2); window.scrollTo(0,0); }catch(_){} }, 200); }
+  if(typeof cmLoadNoticeBar==='function') cmLoadNoticeBar();   // 공지 롤링바 — db·community.js 준비된 시점에 로드(첫 goHome이 db 전이라 비는 것 보강)
 }).catch(showDataError);
 
 /* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
