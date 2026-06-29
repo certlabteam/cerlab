@@ -603,31 +603,14 @@ const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','korea
 const CERT_LABELS = { bodybuilding:'생체2급 구술', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
 const CERT_FULLNAMES = { bodybuilding:'생체2급(보디빌딩) 구술', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험(심화)', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
 // ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
-const EVENTS = {
-  bodybuilding: {
-    page:'#post/LOk5j9wje78LqxRt34SW', badge:'합격 이벤트',
-    bannerLine:'🎉 합격하면 결제금액 전액 환급',
-    bannerSub:'CertLab로 공부하고 합격하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
-    popTitle:'100% 환급 이벤트에 당첨되었습니다!',
-    popSub:'CertLab로 공부하고 합격하면, 인증 + 후기 작성 시 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b>',
-    popSteps:'① 큐넷에서 환불 조건에 맞는 합격·점수 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
-  },
-  koreanhistory: {
-    page:'#post/LOk5j9wje78LqxRt34SW', badge:'1급 환급',
-    bannerLine:'🎉 한국사 1급 달성하면 전액 환급',
-    bannerSub:'CertLab로 공부하고 심화 1급(최고 등급)을 달성하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
-    popTitle:'한국사 1급 환급 이벤트!',
-    popSub:'한국사 심화 <b>1급(최고 등급)</b>을 달성하고 후기를 작성하면 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b>',
-    popSteps:'① 한능검·정부24에서 1급 인증 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
-  },
-  appraiser: {
-    page:'#post/LOk5j9wje78LqxRt34SW', badge:'합격 환급',
-    bannerLine:'🎉 감정평가사 합격하면 전액 환급',
-    bannerSub:'CertLab로 공부하고 감정평가사에 합격하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.',
-    popTitle:'감정평가사 합격 환급 이벤트!',
-    popSub:'CertLab로 공부하고 <b>감정평가사에 합격</b>하면, 인증 + 후기 작성 시 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b>',
-    popSteps:'① 큐넷에서 환불 조건에 맞는 합격·점수 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
-  }
+// 환급 이벤트 — 시험 구분 없이 단일 공통 문구(급수 시험은 최고 급수 달성 시)
+const REFUND = {
+  page:'#post/LOk5j9wje78LqxRt34SW', badge:'합격 환급',
+  bannerLine:'🎉 합격하면 결제금액 전액 환급',
+  bannerSub:'CertLab로 공부하고 합격하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요. (급수가 있는 시험은 가장 높은 급수 달성 시)',
+  popTitle:'100% 환급 이벤트에 당첨되었습니다!',
+  popSub:'CertLab로 공부하고 <b>합격하면 100% 환급</b>해 드려요. (급수가 있는 시험은 가장 높은 급수 달성 시) <b>선착순 30명!</b>',
+  popSteps:'① 큐넷·한능검 등에서 환불 조건에 맞는 합격·점수(급수) 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
 };
 function certLabel(c){ return CERT_LABELS[c]||c; }
 function certFull(c){ return CERT_FULLNAMES[c]||c; }
@@ -660,7 +643,7 @@ if (firebaseReady) {
     }
     refresh();
     routeAfterAuth();
-    setTimeout(function(){ if(typeof maybeShowRefundPopup==='function') maybeShowRefundPopup(); }, 1200);
+    setTimeout(function(){ if(typeof maybeShowRefundPopup==='function') maybeShowRefundPopup(); }, 30000);
   });
 } else {
   // Firebase 미연결(미리보기/오프라인): 게스트 모드로 콘텐츠만 동작
@@ -1110,14 +1093,12 @@ function updateEventBadge(){
   var b=document.getElementById('eventBadge'); if(!b) return;
   var l2=b.querySelector('.eb-l2');
   if(activeCert===null){ b.style.display=''; b.setAttribute('href','#post/LOk5j9wje78LqxRt34SW'); if(l2) l2.textContent='이벤트'; }
-  else if(EVENTS[activeCert] && EVENTS[activeCert].page){ b.style.display=''; b.setAttribute('href',EVENTS[activeCert].page); if(l2) l2.textContent=EVENTS[activeCert].badge; }
-  else { b.style.display='none'; }
+  else { b.style.display=''; b.setAttribute('href',REFUND.page); if(l2) l2.textContent=REFUND.badge; }
 }
 // 로그인/환영 팝업 안의 환급 배너: 이벤트 있는 시험만, 시험별 문구로
 function updateEventBanner(){
   var b=document.getElementById('loginRefundBanner'); if(!b) return;
-  var ev=EVENTS[(typeof activeCertId==='function')?activeCertId():'bodybuilding'];
-  if(!ev){ b.style.display='none'; return; }
+  var ev=REFUND;
   b.style.display='';
   var ti=document.getElementById('loginRbTi'); if(ti) ti.innerHTML=ev.bannerLine+'<span class="rb-tag">선착순 30명</span>';
   var sb=document.getElementById('loginRbSub'); if(sb) sb.innerHTML=ev.bannerSub;
@@ -1126,7 +1107,7 @@ function updateEventBanner(){
 function maybeShowRefundPopup(){
   try{
     if(!currentUser) return;   // 로그인 후에만 노출(비로그인 차단)
-    var ev=EVENTS[activeCert]; if(!ev) return;   // 이벤트가 설정된 시험에서만 노출
+    var ev=REFUND;   // 시험 구분 없이 단일 공통 문구
     var raw=localStorage.getItem('refundPopupHide');
     if(raw){ var until=parseInt(raw,10); if(until && Date.now()<until) return; }  // 숨김 기간 중
     var p=document.getElementById('refundPopup'); if(!p) return;
@@ -5050,7 +5031,6 @@ async function enterCert(id){
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
   if(currentUser && userEnt[id] && userEnt[id].plan === 'EXPIRED'){ setTimeout(()=>showPlanPopup(), 600); }
-  if(EVENTS[id]){ setTimeout(function(){ if(typeof maybeShowRefundPopup==='function') maybeShowRefundPopup(); }, 700); }
   window.scrollTo(0,0);
 }
 function goHome(){ if(typeof _cmReturn!=='undefined') _cmReturn=null; showHome(); }
