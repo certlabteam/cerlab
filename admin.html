@@ -1494,7 +1494,7 @@ function _mfRefMatch(q, refType, mid){
   return false;
 }
 async function mfShowUsage(refType, mid){
-  _mfQCache=null; /* 팝업 열 때마다 최신 문항 재스캔(업로드 직후 0 표시 방지) */
+  _mfQCache=null; /* 팝업 열 때마다 최신 재스캔 */
   var box=document.getElementById('mfUsageModal'); if(!box){ box=document.createElement('div'); box.id='mfUsageModal';
     box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
     box.onclick=function(e){ if(e.target===box) box.remove(); }; document.body.appendChild(box); }
@@ -2529,8 +2529,7 @@ function itvEnsureCSS(){
   var s=document.createElement('style'); s.id='itv-css';
   s.textContent=[
     /* 공통 */
-    '.itv-box{border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin:10px 0;font-size:13px;line-height:1.6;color:#0F172A;max-width:100%;min-width:0}
-.itv-tl-list{max-height:60vh;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}',
+    '.itv-box{border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin:10px 0;font-size:13px;line-height:1.6;color:#0F172A;max-width:100%;min-width:0}',
     '.itv-ti{font-weight:800;font-size:14px;margin-bottom:8px}',
     '.itv-def{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:11px;font-size:12.5px;color:#334155;margin:0 0 10px}',
     '.itv-def b{color:#0F172A}.itv-def .term{display:block;margin:3px 0}',
@@ -2594,7 +2593,7 @@ function itvEnsureCSS(){
     '.itv-tl-nav{flex:none;width:34px;height:30px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;font-size:12px;cursor:pointer;color:#334155}',
     '.itv-tl-top{position:sticky;top:0;z-index:5;background:#fff;padding:6px 0 5px;border-bottom:1px solid #EEF2F7}',
     '.itv-tl-cur{font-size:11px;color:#C0392B;font-weight:700;margin-top:4px;text-align:center}',
-    '.itv-tl-list{margin-top:10px}',
+    '.itv-tl-list{margin-top:10px;max-height:60vh;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}',
     '.itv-ev{border:1px solid #E2E8F0;border-left:3px solid #E2E8F0;border-radius:10px;padding:11px 12px;margin:8px 0;background:#fff;scroll-margin-top:100px;transition:border-color .2s,background .2s}',
     '.itv-ev.on{border-left-color:#C0392B;background:#FFF7F5}',
     '.itv-ev .evy{font-size:12px;color:#64748B}.itv-ev .evy b{color:#C0392B;font-size:15px}',
