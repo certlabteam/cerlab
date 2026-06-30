@@ -281,6 +281,7 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="tblmaster" onclick="switchTab('tblmaster')">📊 표 마스터</div>
         <div class="cat-item" data-tab="mnem" onclick="switchTab('mnem')">📑 암기코드 마스터</div>
         <div class="cat-item" data-tab="grpmaster" onclick="switchTab('grpmaster')">📈 그래프 마스터</div>
+        <div class="cat-item" data-tab="itvmaster" onclick="switchTab('itvmaster')">🎛 인터랙티브 마스터</div>
         <div class="cat-item" data-tab="ottag" onclick="switchTab('ottag')">🏷️ OX진술 태그</div>
         <div class="cat-item" data-tab="imgup" onclick="switchTab('imgup')">이미지 업로드</div>
         <div class="cat-item" data-tab="examadd" onclick="switchTab('examadd')">➕ 시험 추가</div>
@@ -967,6 +968,29 @@ tr:hover td{background:#FAFAFA}
           <button class="btn-sm" id="ottagApplyBtn" onclick="ottagApply()" style="display:none;background:#15793F;color:#fff;padding:9px 18px;font-size:13px;font-weight:700;flex:0 0 auto">✅ 검증 통과분 병합 저장</button>
         </div>
         <div id="ottagReport" style="padding:6px 20px 24px;font-size:13px;color:#3C3C3A"></div>
+      </div>
+    </div>
+
+    <!-- 🎛 인터랙티브 마스터 -->
+    <div class="tab-panel" id="panel-itvmaster">
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">🎛 인터랙티브 마스터</div>
+          <div style="margin-left:auto;display:flex;gap:8px">
+            <button class="btn-sm" onclick="itvmLoad()" style="background:#F1F5F9;color:#475569">새로고침</button>
+          </div>
+        </div>
+        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">슬라이더·연표 등 인터랙티브는 <b>데이터방이 JSON으로 작성</b>해 업로드. 문항에선 <b>itv://id</b>(또는 exp.itv)로 참조. 화이트리스트 템플릿(T1 곡선·T2 연표·T5 재고)만 렌더하며 임의 코드 실행은 없습니다. id 규칙: <b>itv_영문snake</b>.</div>
+        <div id="itvmStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
+        <div class="upbar">
+          <div class="upbar-drop" id="itvmImpDrop">📁 인터랙티브 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">interactives 형식</span></div>
+          <input id="itvmImpFile" type="file" accept=".json,application/json" style="display:none">
+          <div class="upbar-summary" id="itvmImpStatus"></div>
+          <div class="upbar-actions">
+            <button class="upbar-run" onclick="document.getElementById('itvmImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="itvmExport()">⬇ 내보내기 (백업)</button>
+          </div>
+        </div>
+        <div style="padding:8px 20px 20px"><div id="itvmList"></div></div>
       </div>
     </div>
 
@@ -2454,6 +2478,101 @@ async function grpmImport(){
   grpmRenderList();
 }
 
+
+// ===== 🎛 인터랙티브 마스터 (interactives) — grp 패턴 복제, JSON 업로드/목록/삭제/백업 =====
+var _itvmAll={}, _itvmLoaded=false, _itvmImpBound=false, _itvmImpData=null;
+function itvmInit(){
+  if(!_itvmLoaded) itvmLoad();
+  if(!_itvmImpBound){ _itvmImpBound=true;
+    var drop=document.getElementById('itvmImpDrop'), file=document.getElementById('itvmImpFile');
+    if(drop) drop.onclick=function(){ file&&file.click(); };
+    if(file) file.addEventListener('change', function(e){ itvmImpHandle(e.target.files); });
+    if(drop){
+      ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#7C3AED';}); });
+      ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#CBD5E1';}); });
+      drop.addEventListener('drop', function(e){ itvmImpHandle(e.dataTransfer.files); });
+    }
+  }
+}
+async function itvmLoad(){
+  var st=document.getElementById('itvmStatus'); if(st){ st.style.color='#7F77DD'; st.textContent='불러오는 중…'; }
+  try{
+    var snap=await db.collection('interactives').get();
+    _itvmAll={}; snap.forEach(function(d){ _itvmAll[d.id]=d.data()||{}; });
+    _itvmLoaded=true;
+    if(st) st.textContent='등록 '+Object.keys(_itvmAll).length+'개';
+    itvmRenderList();
+  }catch(e){ if(st){ st.style.color='#A32D2D'; st.textContent='로드 실패: '+e.message; } }
+}
+function _itvmCount(p){ p=p||{}; if(Array.isArray(p.nodes)) return p.nodes.length+' 노드'; if(Array.isArray(p.series)) return p.series.length+' 계열'; if(Array.isArray(p.layers)) return p.layers.length+' 층'; return ''; }
+function itvmRenderList(){
+  var el=document.getElementById('itvmList'); if(!el) return;
+  el.innerHTML=masterListHTML('itvm', _itvmAll, '등록된 인터랙티브 없음. 데이터방 JSON을 업로드하세요.', function(id){
+    var it=_itvmAll[id]||{}; var cnt=_itvmCount(it.params);
+    return '<div style="border:1px solid #EEE;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fff">'
+      +'<div class="m-meta"><span class="m-meta-tag">🔒 식별용 · 사용자에게 안 보임</span>'
+      +'<div class="m-name">'+grpmEsc(it.name||'(이름없음)')+' <span class="m-id">'+grpmEsc(id)+'</span> <span class="m-badge">'+grpmEsc(it.template||'(템플릿없음)')+'</span></div>'
+      +'<div class="m-meta-sub">'+((it.certs&&it.certs.length)?'시험 '+grpmEsc(it.certs.join(', '))+' · ':'')+'<span class="ref">itv://'+grpmEsc(id)+'</span>'+(cnt?(' · '+cnt):'')+'</div></div>'
+      +'<div class="m-foot"><button class="btn-sm" onclick="itvmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
+      +'</div>';
+  });
+}
+async function itvmDelete(id){
+  if(!confirm(id+' 인터랙티브를 삭제할까요?')) return;
+  try{ await db.collection('interactives').doc(id).delete(); delete _itvmAll[id]; itvmRenderList();
+    var st=document.getElementById('itvmStatus'); if(st){ st.style.color='#A32D2D'; st.textContent='삭제됨: '+id+' (총 '+Object.keys(_itvmAll).length+'개)'; }
+  }catch(e){ alert('삭제 실패: '+e.message); }
+}
+async function itvmExport(){
+  if(!Object.keys(_itvmAll).length){ await itvmLoad(); }
+  var ids=Object.keys(_itvmAll);
+  if(!ids.length){ alert('등록된 인터랙티브가 없어요.'); return; }
+  var _xnow=_kstISO(new Date());
+  var arr=ids.map(function(id){ var r=Object.assign({id:id}, _itvmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
+  var bundle={ _meta:{ generatedAt:_xnow }, interactives:arr, exportedAt:_xnow, count:arr.length };
+  var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
+  var url=URL.createObjectURL(blob); var a=document.createElement('a');
+  a.href=url; a.download='certlab_interactives_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  var st=document.getElementById('itvmStatus'); if(st){ st.style.color='#15793F'; st.textContent='✅ 백업 '+arr.length+'개 다운로드'; }
+}
+function itvmImpHandle(fileList){
+  var f=[].slice.call(fileList).find(function(x){ return /\.json$/i.test(x.name)||x.type==='application/json'; });
+  var stt=document.getElementById('itvmImpStatus');
+  if(!f){ if(stt){stt.style.color='#A32D2D';stt.textContent='JSON 파일이 아니에요.';} return; }
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var o=JSON.parse(rd.result);
+      var arr=Array.isArray(o)?o:(o.interactives||[]);
+      var valid=arr.filter(function(x){ return x&&x.id&&x.template; });
+      if(!valid.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='interactives 항목 없음 (id + template 필요)';} return; }
+      if(!_impDateGate('인터랙티브', o, valid, 'id', true)) return;
+      _itvmImpData=valid;
+      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: 인터랙티브 <b>'+valid.length+'</b>개 — 올리는 중…'; }
+      itvmImport();
+    }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
+  };
+  rd.readAsText(f);
+}
+async function itvmImport(){
+  if(!_itvmImpData||!_itvmImpData.length) return;
+  if(!_impPreviewConfirm('인터랙티브 '+_itvmImpData.length+'개 적재', _itvmAll, _itvmImpData, 'id', ['template','certs','keywords'], /^itv_[a-z0-9_]+$/)) return;
+  var ok=0, fail=0;
+  for(var i=0;i<_itvmImpData.length;i++){
+    var it=_itvmImpData[i]; var id=String(it.id);
+    if(!/^itv_[a-z0-9_]+$/.test(id)){ fail++; continue; }
+    var rec={ name:it.name||'', template:it.template||'', params:(it.params&&typeof it.params==='object')?it.params:null,
+      concepts:Array.isArray(it.concepts)?it.concepts:[],
+      keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
+      note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
+    _impPreserve(rec, it, _itvmAll[id], ['name','note','certs','keywords','template','params','concepts']);
+    try{ await db.collection('interactives').doc(id).set(rec); _itvmAll[id]=_cacheRec(rec); ok++; }catch(e){ fail++; }
+  }
+  var stt=document.getElementById('itvmImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 올림: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패/형식오류 '+fail+'개'):'')+'.'; }
+  itvmRenderList();
+}
+
 var _lvupData=null;
 function lvupInit(){
   var drop=document.getElementById('lvupImpDrop'), file=document.getElementById('lvupImpFile');
@@ -2884,6 +3003,7 @@ function switchTab(name) {
   if(name==='ottag'){ ottagBindImp(); if(!_cptmLoaded) cptmLoad(); }
   if(name==='levelup') lvupInit();
   if(name==='grpmaster') grpmInit();
+  if(name==='itvmaster') itvmInit();
   if(name==='examadd') eaInit();
 }
 // 카테고리 헤더 접고/펴기 (여러 그룹 동시 펼침 가능)
