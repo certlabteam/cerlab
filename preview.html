@@ -2360,16 +2360,18 @@ function setActiveT2(instId, P, i, doScroll){
   var n=P.nodes[i], cur=d.querySelector('#'+instId+'_cur'); if(cur) cur.textContent=n.year+' \u00B7 '+(n.title||'');
   var sc=d.querySelector('#'+instId+'_scroll'), cd=d.querySelector('#'+instId+'_d'+i);
   if(sc&&cd){ var x=parseFloat(cd.style.left)||0; sc.scrollLeft=Math.max(0, x - sc.clientWidth/2); }
-  if(doScroll){ var t=d.querySelector('#'+instId+'_ev'+i); if(t&&t.scrollIntoView) t.scrollIntoView({behavior:'smooth',block:'start'}); }
+  if(doScroll){ var t=d.querySelector('#'+instId+'_ev'+i), lst=d.querySelector('.itv-tl-list'); if(t&&lst){ var dl=t.getBoundingClientRect().top-lst.getBoundingClientRect().top; lst.scrollTo({top:lst.scrollTop+dl-6,behavior:'smooth'}); } else if(t&&t.scrollIntoView){ t.scrollIntoView({behavior:'smooth',block:'nearest'}); } }
 }
 function itvTlWire(instId){
   var P=window._itvReg[instId]; if(!P||P.wired) return; P.wired=true;
+  var box0=document.getElementById(instId); var tgt=(box0&&box0.querySelector('.itv-tl-list'))||window;
   var fn=function(){ if(P._raf) return; P._raf=requestAnimationFrame(function(){ P._raf=0;
-    var d=document.getElementById(instId); if(!d){ window.removeEventListener('scroll',fn); return; }
-    var act=0; for(var j=0;j<P.nodes.length;j++){ var c=d.querySelector('#'+instId+'_ev'+j); if(c && c.getBoundingClientRect().top<=140) act=j; }
+    var d=document.getElementById(instId); if(!d){ tgt.removeEventListener('scroll',fn); return; }
+    var lst=d.querySelector('.itv-tl-list'); var base=lst?lst.getBoundingClientRect().top+14:140;
+    var act=0; for(var j=0;j<P.nodes.length;j++){ var c=d.querySelector('#'+instId+'_ev'+j); if(c && c.getBoundingClientRect().top<=base) act=j; }
     setActiveT2(instId,P,act,false);
   }); };
-  window.addEventListener('scroll',fn,{passive:true});  // 세로(페이지) 스크롤만 — 가로 타임라인 스크롤은 안 건드림
+  tgt.addEventListener('scroll',fn,{passive:true});
 }
 _itvTemplates.T2_timeline=function(it, instId){
   var p=it.params||{}, phases=(p.phases||[]).slice(), era=p.era||{};
