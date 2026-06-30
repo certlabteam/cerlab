@@ -740,14 +740,6 @@ tr:hover td{background:#FAFAFA}
           <hr style="border:none;border-top:1px solid #EFE9E2;margin:20px 0">
 
 
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-            <span style="font-size:12px;color:#8A7E70;font-weight:700">키 자동 조립(선택):</span>
-            <select id="iuCert" onchange="iuFillSub()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">자격증…</option></select>
-            <input id="iuSet" oninput="iuPrefixPrev()" placeholder="회차 예: 2025" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;width:130px">
-            <select id="iuSub" onchange="iuPrefixPrev()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">선택하세요</option></select>
-            <span style="font-size:12px;color:#5B50C0">접두사: <b id="iuPrefixView">—</b></span>
-          </div>
-          <div style="font-size:11px;color:#A89C8E;margin-bottom:8px">회차·과목을 고르면 파일명 앞에 <b>접두사_</b>가 자동으로 붙습니다 (예: 파일 <b>src7.png</b> → 키 <b>spsy2025_src7</b>). 셋 다 비워두면 파일명이 그대로 키. 파일명이 이미 접두사로 시작하면 그대로 둡니다.</div>
           <div id="iuDrop" style="border:2px dashed #D9CFC4;border-radius:10px;padding:26px;text-align:center;color:#8A7E70;cursor:pointer">
             여기로 이미지(PNG/JPG)를 끌어다 놓거나 클릭해서 선택<br>
             <span style="font-size:11px;color:#A89C8E">파일명이 곧 키입니다 — 예: ksh74_q13_1.png → 키 <b>ksh74_q13_1</b> → 문항에 <b>img://ksh74_q13_1</b></span>
@@ -3416,42 +3408,6 @@ function iuInit(){
   ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.style.borderColor='#D9CFC4';}));
   drop.addEventListener('drop',e=>iuHandle(e.dataTransfer.files));
   file.addEventListener('change',e=>iuHandle(e.target.files));
-  iuFillCertOptions();
-}
-// 키 자동 조립: 자격증 → (회차) → 과목(접두사 자동추출)
-async function iuFillCertOptions(){
-  const sel=document.getElementById('iuCert'); if(!sel) return;
-  if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
-  sel.innerHTML='<option value="">자격증…</option>'+(_expExams||[]).map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
-}
-async function iuFillSub(){
-  const cert=document.getElementById('iuCert').value; const sub=document.getElementById('iuSub');
-  sub.innerHTML='<option value="">선택하세요</option>';
-  if(cert){
-    sub.innerHTML+='<option value="__all">전체 (파일명 그대로)</option>';
-    const exam=(_expExams||[]).find(e=>e.id===cert); const subs=(exam&&exam.subjects)||[];
-    for(const s of subs){
-      let pref='';
-      try{ const bd=await db.collection('banks').doc(cert+'__'+s.code).get();
-        const data=(bd.exists&&bd.data())||{}; const qs=data.questions||data.items||[];
-        const m=qs[0]&&qs[0].id&&String(qs[0].id).match(/^[a-z]+/i); pref=m?m[0]:'';
-      }catch(_){}
-      sub.innerHTML+='<option value="'+pref+'">'+(s.name||s.code)+(pref?(' ('+pref+')'):'')+'</option>';
-    }
-  }
-  iuPrefixPrev();
-}
-function iuPrefixPrev(){
-  let pref=(document.getElementById('iuSub')&&document.getElementById('iuSub').value)||'';
-  if(pref==='__all') pref='';   // 전체 → 접두사 없이 파일명 그대로
-  const set=((document.getElementById('iuSet')&&document.getElementById('iuSet').value)||'').trim();
-  window._iuKeyPrefix=(pref&&set)?(pref+set):'';
-  const v=document.getElementById('iuPrefixView'); if(v) v.textContent=window._iuKeyPrefix||'—';
-  if(iuItems.length){ iuItems.forEach(it=>{ it.key=iuMakeKey(it._stem); }); iuRender(); const r=document.getElementById('iuRun'); if(r) r.disabled=!iuItems.some(it=>it.status==='ready'); }
-}
-function iuMakeKey(stem){
-  const p=window._iuKeyPrefix||'';
-  return (p && !stem.startsWith(p)) ? (p+'_'+stem) : stem;
 }
 function iuResize(file, maxW){
   return new Promise((res,rej)=>{
@@ -3475,15 +3431,14 @@ async function iuHandle(fileList){
   const files=[...fileList].filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name));
   if(!files.length){ iuLog('이미지 파일이 없습니다.','#f85149'); return; }
   for(const f of files){
-    const stem=f.name.replace(/\.[^.]+$/,'').trim();
-    if(!stem){ iuLog(f.name+': 키 추출 실패','#f85149'); continue; }
-    const key=iuMakeKey(stem);
+    const key=f.name.replace(/\.[^.]+$/,'').trim();
+    if(!key){ iuLog(f.name+': 키 추출 실패','#f85149'); continue; }
     let data='', status='ready', err='';
     try{ data=await iuResize(f,1000); }catch(e){ status='bad'; err=e.message; }
     const bytes=data?Math.round(data.length*0.75):0;
     if(data && bytes>900000){ status='bad'; err='압축 후에도 0.9MB 초과 (이미지를 더 작게 잘라주세요)'; }
     iuItems=iuItems.filter(it=>it.key!==key);
-    iuItems.push({name:f.name, _stem:stem, key, data, bytes, status, err});
+    iuItems.push({name:f.name, key, data, bytes, status, err});
     if(err) iuLog(f.name+': '+err,'#f85149');
   }
   iuRender(); document.getElementById('iuRun').disabled=!iuItems.some(it=>it.status==='ready');
