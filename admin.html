@@ -733,7 +733,7 @@ tr:hover td{background:#FAFAFA}
             <select id="imgExpSet" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 회차</option></select>
             <button class="btn-sm btn-extend" onclick="exportImages()">⬇ 이미지 JSON 다운로드</button>
           </div>
-          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">자격증 → 과목 → 회차 순으로 좁혀서 받을 수 있습니다. 과목·회차를 <b>전체</b>로 두면 그 위 범위 전부를 받습니다. (한국사는 과목이 1개라 <b>회차</b>로 좁히세요)</div>
+          <div id="imgExpStatus" style="font-size:13px;color:#6E6256">자격증 → 과목 → 회차 순으로 좁혀서 받을 수 있습니다. 과목·회차를 <b>전체</b>로 두면 그 위 범위 전부를 받습니다. (한국사는 과목이 1개라 <b>회차</b>로 좁히세요) 회차에서 <b>⚡ 레벨업</b>을 고르면 그 자격증·과목의 <b>변형(레벨업) 문항 이미지만</b> 받습니다.</div>
           <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:8px">
             ⚠️ 이미지가 많으면 파일이 큽니다(수십 MB+). 느리면 자격증별로 나눠 받으세요. 이 파일은 <b>이미지 백업/이전</b>용입니다.
           </div>
@@ -3911,7 +3911,7 @@ async function imgExpFillSet(){
       }
     }catch(e){ dbg.push(id+': 오류 '+(e&&e.message||e)); }
   }
-  set.innerHTML='<option value="__all">전체 회차</option>'+setList.map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">'+v+'</option>').join('');
+  set.innerHTML='<option value="__all">전체 회차</option><option value="__levelup">⚡ 레벨업(변형 문항 이미지)</option>'+setList.map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">'+v+'</option>').join('');
   set.disabled=false;
   if(stt) stt.innerHTML=(setList.length?('회차 '+setList.length+'개 로드됨 — '+setList.join(', ')):'<span style="color:#C2410C">⚠ 회차를 못 찾음</span>')
     +' <span style="color:#A89C8E">[진단: '+dbg.join(' / ')+']</span>';
@@ -4367,6 +4367,37 @@ async function exportImages(){
     if(pick==='__all'){
       const snap=await db.collection('images').get();
       snap.forEach(doc=>{ const d=doc.data()||{}; images.push({key:doc.id, data:d.data||''}); bytes+=(d.data||'').length; });
+    } else if(setPick==='__levelup'){
+      // ⚡ 레벨업: adaptive/{cert}__{sub}__variantq(변형 문항)의 img:// (+optImg) 참조만 수집 (기출 banks 안 봄)
+      st.textContent='레벨업 변형 문항 읽는 중...';
+      const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
+      const keys=new Set(); let scanned=0;
+      try{
+        const asnap=await db.collection('adaptive').get();
+        asnap.forEach(doc=>{
+          if(!/__variantq$/.test(doc.id)) return;
+          const us=doc.id.replace(/__variantq$/,'').split('__'); const c=us[0]||'', sb=us[1]||'';
+          if(c!==pick) return;
+          if(subPick!=='__all' && sb!==subPick) return;
+          const qs=(doc.data()||{}).questions||[];
+          scanned+=qs.length;
+          for(const q of qs){
+            const qt=JSON.stringify(q); let m;
+            while((m=re.exec(qt))!==null){ keys.add(m[1]); } re.lastIndex=0;
+            if(Array.isArray(q&&q.optImg)) q.optImg.forEach(v=>{ if(v) keys.add(String(v).replace(/^img:\/\//,'')); });
+          }
+        });
+      }catch(e){ st.textContent='오류: '+e.message; return; }
+      if(!keys.size){ st.innerHTML='이 자격증'+(subPick!=='__all'?'·과목':'')+'의 레벨업 변형 문항에 사용된 이미지가 없습니다. <span style="color:#A89C8E">(변형 문항 '+scanned+'개 스캔)</span>'; return; }
+      st.textContent='레벨업 이미지 '+keys.size+'개 읽는 중...';
+      let _lvmiss=0;
+      for(const k of keys){
+        try{ const idoc=await db.collection('images').doc(k).get();
+          if(idoc.exists){ const d=idoc.data()||{}; images.push({key:k, data:d.data||''}); bytes+=(d.data||'').length; }
+          else _lvmiss++;
+        }catch(_){ _lvmiss++; }
+      }
+      var _miss=_lvmiss;
     } else {
       // 1) 자격증→과목→회차 필터로 참조된 img:// 키 수집 (회차는 문항 단위로 걸러야 해서 문항별 스캔)
       if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
