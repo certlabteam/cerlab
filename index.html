@@ -3248,6 +3248,7 @@ function mcqAnalysisCard(cert){
 // ===== 4-a 레벨 테스트 (진단 세션 위에 얹음. mqDiag 플밍 재사용) =====
 var mqLevelTest=false;                       // 레벨 테스트 세션 여부
 var LT_PER_SUBJECT=7;                         // 과목당 고정 문항수(시험 무관)
+function _ltPerSubject(cert){ return cert==='koreanhistory' ? 14 : LT_PER_SUBJECT; }   // 한국사는 단일과목이라 예외로 14문항
 var LT_SAVE_VER=2;                            // 레벨테스트 저장 포맷 버전(변형 기반). 옛 save(버전 없음/불일치)는 폐기 후 새 출제
 function _ltDiff(cert,sub,q){ var info=(typeof adLookup==='function')&&adLookup(cert,sub,q.id); return (info&&info.diff)?info.diff:null; }
 function _ltShuf(a){ for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
@@ -3278,7 +3279,7 @@ async function startDiagnostic(){
     try{ await Promise.all(Object.keys(qb).map(function(code){ return loadAdaptiveSubject(cert, code).catch(function(){return null;}); })); }catch(e){}
   }
   Object.keys(qb).forEach(code=>{                 // 과목별 10문항(과목 묶음 유지)
-    picked=picked.concat(_ltSampleSubject(cert, code, code, qb, LT_PER_SUBJECT));
+    picked=picked.concat(_ltSampleSubject(cert, code, code, qb, _ltPerSubject(cert)));
   });
   if(picked.length<1){ _luToast('레벨 테스트에 사용할 문제가 아직 없어요. (정답이 입력된 문제가 필요해요)'); return; }
   clearDiagProgress(cert);
@@ -3305,7 +3306,7 @@ function _ltSubjectScore(cert, sub, qlist, ans){
 }
 // ===== 레벨테스트 결과 로그인 게이트 (게스트가 다 풀면 결과는 로그인해야 공개) =====
 var _ltPending=null;   // {cert,qs,ans} — 로그인 후 재계산용
-function _ltTotalCount(cert){ try{ return Object.keys(qbOf(cert)||{}).length * LT_PER_SUBJECT; }catch(_){ return LT_PER_SUBJECT; } }
+function _ltTotalCount(cert){ try{ return Object.keys(qbOf(cert)||{}).length * _ltPerSubject(cert); }catch(_){ return _ltPerSubject(cert); } }
 function _ltRenderResultGate(M){
   var cert=M.cert||mqCert;
   if(mqResultQs && mqResultQs.length){
@@ -3528,7 +3529,7 @@ function ltGate(cert){
 function _ltCloseGate(){ var e=document.getElementById('ltGatePopup'); if(e) e.classList.add('hidden'); }
 function _ltGateGo(){ _ltCloseGate(); if(typeof diagResume==='function') diagResume(); }
 function _ltShowGateModal(cert){
-  var per=(typeof LT_PER_SUBJECT!=='undefined')?LT_PER_SUBJECT:10;
+  var per=(typeof _ltPerSubject!=='undefined')?_ltPerSubject(cert):10;
   var p=document.getElementById('ltGatePopup');
   if(!p){
     p=document.createElement('div');
