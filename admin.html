@@ -184,7 +184,7 @@ tr:hover td{background:#FAFAFA}
 .m-meta-sub .ref{font-family:monospace}
 .m-div{border:none;border-top:2px solid #2C2C2A;margin:11px 0 7px;opacity:.8}
 .m-userlabel{font-size:11px;font-weight:700;color:#15793F;margin-bottom:5px}
-.m-render{}
+.m-render{max-height:420px;overflow-y:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
 .m-foot{margin-top:9px;padding-top:8px;border-top:1px solid #EEE;display:flex;gap:6px;align-items:center}
 /* 마스터 시험·과목 필터바 + 과목 그룹헤더 */
 .mf-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px;padding:8px 10px;background:#FAFAF8;border:1px solid #EFEDE8;border-radius:9px}
@@ -1469,6 +1469,15 @@ async function _mfLoadAllQuestions(){
       qs.forEach(function(q){ if(q&&q.id) out.push({id:q.id, cert:cert, sub:sub, q:q}); });
     });
   }catch(e){}
+  try{
+    var bsnap=await db.collection('banks').get();
+    bsnap.forEach(function(doc){
+      var d=doc.data()||{}; var qs=Array.isArray(d.questions)?d.questions:[];
+      if(!qs.length) return;
+      var us=String(doc.id).split('__'); var cert=us[0]||'', sub=us[1]||'';
+      qs.forEach(function(q){ if(q&&q.id) out.push({id:q.id, cert:cert, sub:sub, q:q}); });
+    });
+  }catch(e){}
   _mfQCache=out; _mfQLoading=false; return out;
 }
 // refType: 'mn'|'cpt'|'tbl'|'grp'  → 해당 마스터 id를 참조하는 문항 찾기
@@ -1480,6 +1489,8 @@ function _mfRefMatch(q, refType, mid){
         || (exp.c||[]).some(function(c){ return c && Array.isArray(c.tbl) && c.tbl.some(function(x){return String(x).replace('tbl://','')===mid;}); }); }
   if(refType==='grp'){ return (exp.grp||[]).some(function(x){ return String(x).replace('grp://','')===mid; })
         || (exp.c||[]).some(function(c){ return c && Array.isArray(c.grp) && c.grp.some(function(x){return String(x).replace('grp://','')===mid;}); }); }
+  if(refType==='itv'){ var iv=exp.itv; if(!iv) return false; var L=Array.isArray(iv)?iv:[iv];
+        return L.some(function(x){ if(typeof x==='string') return x.replace('itv://','')===mid; if(x&&typeof x==='object') return x.id===mid; return false; }); }
   return false;
 }
 async function mfShowUsage(refType, mid){
@@ -1966,14 +1977,19 @@ function cptmRenderList(){
       +'<div class="m-meta"><span class="m-meta-tag">🔒 식별용 · 사용자에게 안 보임</span>'
       +'<div class="m-name">'+cptmEsc(c.name||'(이름없음)')+' <span class="m-id">'+cptmEsc(id)+'</span>'+(n?' <span class="m-badge">· 참조 '+n+'</span>':'')+'</div>'
       +'<div class="m-meta-sub">'+((c.certs&&c.certs.length)?'시험 '+cptmEsc(c.certs.join(', '))+' · ':'')+'<span class="ref">cpt://'+cptmEsc(id)+'</span></div></div>'
-      +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
-      +'<div class="m-render">'+cptmRenderConcept(c)+'</div>'
+      +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면 <button class="btn-sm" onclick="cptmTogglePrev(this,\''+id+'\')" style="background:#EEF2F7;color:#475569;padding:1px 8px;font-size:11px">펼치기</button></div>'
+      +'<div class="m-render" id="cptmprev_'+id+'"></div>'
       +'<div class="m-foot">'
       +mfUsageBtn('cpt', id)
       +'<button class="btn-sm" onclick="cptmEdit(\''+id+'\')" style="background:#EAF2FB;color:#0C447C">편집</button>'
       +'<button class="btn-sm" onclick="cptmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
   });
+}
+function cptmTogglePrev(btn, id){
+  var box=document.getElementById('cptmprev_'+id); if(!box) return;
+  if(box.getAttribute('data-open')==='1'){ box.innerHTML=''; box.removeAttribute('data-open'); btn.textContent='펼치기'; }
+  else { box.innerHTML=cptmRenderConcept(_cptmAll[id]||{}); box.setAttribute('data-open','1'); btn.textContent='접기'; }
 }
 function cptmFill(c){
   document.getElementById('cptmIdField').value=c.id||'';
@@ -2885,7 +2901,7 @@ function itvmRenderList(){
       +'<div class="m-meta-sub">'+((it.certs&&it.certs.length)?'시험 '+grpmEsc(it.certs.join(', '))+' · ':'')+'<span class="ref">itv://'+grpmEsc(id)+'</span>'+(cnt?(' · '+cnt):'')+'</div></div>'
       +'<hr class="m-div"><div class="m-userlabel">👁 사용자에게 보이는 화면</div>'
       +'<div class="m-render">'+render+'</div>'
-      +'<div class="m-foot"><button class="btn-sm" onclick="itvmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
+      +'<div class="m-foot">'+mfUsageBtn('itv', id)+'<button class="btn-sm" onclick="itvmDelete(\''+id+'\')" style="background:#FDE2E1;color:#A32D2D">삭제</button></div>'
       +'</div>';
   });
   setTimeout(function(){ if(typeof itvInitPending==='function') itvInitPending(); }, 30);
