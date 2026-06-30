@@ -2171,6 +2171,7 @@ function itvEnsureCSS(){
     '.itv-tl-top{position:sticky;top:0;z-index:5;background:#fff;padding:6px 0 5px;border-bottom:1px solid #EEF2F7}',
     '.itv-tl-cur{font-size:11px;color:#C0392B;font-weight:700;margin-top:4px;text-align:center}',
     '.itv-tl-list{margin-top:10px;max-height:60vh;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}',
+    '.itv-tl-tip{display:none}',
     '.itv-ev{border:1px solid #E2E8F0;border-left:3px solid #E2E8F0;border-radius:10px;padding:11px 12px;margin:8px 0;background:#fff;scroll-margin-top:100px;transition:border-color .2s,background .2s}',
     '.itv-ev.on{border-left-color:#C0392B;background:#FFF7F5}',
     '.itv-ev .evy{font-size:12px;color:#64748B}.itv-ev .evy b{color:#C0392B;font-size:15px}',
@@ -2365,6 +2366,12 @@ function setActiveT2(instId, P, i, doScroll){
 function itvTlWire(instId){
   var P=window._itvReg[instId]; if(!P||P.wired) return; P.wired=true;
   var box0=document.getElementById(instId); var tgt=(box0&&box0.querySelector('.itv-tl-list'))||window;
+  (function(){ var scr=box0&&box0.querySelector('#'+instId+'_scroll'), cur=box0&&box0.querySelector('#'+instId+'_cur'); if(!scr||!cur)return;
+    function _lab(k){ var n=P.nodes[k]; return n?(n.year+' \u00B7 '+(n.title||'')):''; }
+    function _act(){ for(var j=0;j<P.nodes.length;j++){ var dt=box0.querySelector('#'+instId+'_d'+j); if(dt&&dt.classList.contains('on'))return j; } return 0; }
+    scr.addEventListener('mouseover',function(e){ var d=e.target.closest?e.target.closest('.itv-tl-dot'):null; if(!d)return; var m=d.id.lastIndexOf('_d'); if(m<0)return; cur.textContent=_lab(parseInt(d.id.slice(m+2),10)); });
+    scr.addEventListener('mouseout',function(e){ var d=e.target.closest?e.target.closest('.itv-tl-dot'):null; if(!d)return; cur.textContent=_lab(_act()); });
+  })();
   var fn=function(){ if(P._raf) return; P._raf=requestAnimationFrame(function(){ P._raf=0;
     var d=document.getElementById(instId); if(!d){ tgt.removeEventListener('scroll',fn); return; }
     var lst=d.querySelector('.itv-tl-list'); var base=lst?lst.getBoundingClientRect().top+14:140;
@@ -2389,7 +2396,7 @@ _itvTemplates.T2_timeline=function(it, instId){
     bands+='<div class="itv-tl-band'+(pi%2?' alt':'')+'" style="left:'+(pi*bandPx)+'px;width:'+bandPx+'px"></div>';
     bands+='<div class="itv-tl-plab" style="left:'+((pi+0.5)*bandPx)+'px">'+_itvEsc(ph)+'</div>';
   });
-  var dots=''; nodes.forEach(function(n,i){ var lab=_itvEsc(n.year+' \u00B7 '+(n.title||'')); dots+='<div class="itv-tl-dot" id="'+instId+'_d'+i+'" style="left:'+n._x+'px" title="'+lab+'" onclick="itvUpdate(\''+instId+'\','+i+')">'+'<span class="itv-tl-tip">'+lab+'</span></div>'; });
+  var dots=''; nodes.forEach(function(n,i){ var lab=_itvEsc(n.year+' \u00B7 '+(n.title||'')); dots+='<div class="itv-tl-dot" id="'+instId+'_d'+i+'" style="left:'+n._x+'px" title="'+lab+'" onclick="itvUpdate(\''+instId+'\','+i+')">'+'</div>'; });
   var track='<div class="itv-tl-scroll" id="'+instId+'_scroll"><div class="itv-tl-track" style="width:'+totalW+'px;height:48px"><div class="itv-tl-line"></div>'+bands+dots+'</div></div>';
   var top='<div class="itv-tl-top">'+eraLab+track+'<div class="itv-tl-cur" id="'+instId+'_cur">'+_itvEsc(nodes.length?(nodes[0].year+' \u00B7 '+(nodes[0].title||'')):'')+'</div></div>';
   var hint='<p class="itv-hint" style="text-align:center">위 점을 누르면 아래 그 사건으로 이동합니다.</p>';
