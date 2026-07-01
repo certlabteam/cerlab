@@ -2112,7 +2112,7 @@ function ottagHandle(fileList){
       if(!subjects.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='형식 오류: cert·subject·ot 필요 (또는 subjects[] 묶음)';} return; }
       _ottagData={subjects:subjects};
       var tot=subjects.reduce(function(n,s){ return n+Object.keys(s.ot).length; },0);
-      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: '+subjects.map(function(s){return ottagEsc(s.cert+'/'+s.subject);}).join(', ')+' · 문항 '+tot+'개 — 검증 중…'; }
+      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: '+subjects.map(function(s){return ottagEsc(csKo(s.cert,s.subject));}).join(', ')+' · 문항 '+tot+'개 — 검증 중…'; }
       ottagValidate();
     }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
   };
@@ -2167,7 +2167,7 @@ async function ottagValidate(){
   for(var si=0; si<subjects.length; si++){
     var o=subjects[si];
     var col=await _ottagCollect(o.cert, o.subject);
-    if(col.err){ failSubs.push(o.cert+'/'+o.subject+': '+col.err); continue; }
+    if(col.err){ failSubs.push(csKo(o.cert,o.subject)+': '+col.err); continue; }
     Object.keys(col.homes).forEach(function(h){ allHomes[h]=col.homes[h]; });
     Object.keys(col.byId).forEach(function(id){ allById[id]=col.byId[id]; });
     var byId=col.byId, subLabel=o.subject;
@@ -2576,7 +2576,7 @@ function lvupImpHandle(fileList){
           var sub=_lvupDetectSub(se), cert=_lvupCert(se)||_lvupCert(p);
           if(!sub) return;
           var its=_lvupItemsFor(se, cert, sub);
-          if(its.length){ items=items.concat(its); labels.push(cert+'/'+sub); }
+          if(its.length){ items=items.concat(its); labels.push(csKo(cert,sub)); }
         });
         if(!items.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='subjects[]에서 인식할 데이터 없음';} return; }
       } else {                                 // 단일 과목 파일
@@ -2584,7 +2584,7 @@ function lvupImpHandle(fileList){
         if(!sub){ if(stt){stt.style.color='#A32D2D';stt.textContent='과목 인식 실패 (_meta.subject 또는 topic 접두사 필요)';} return; }
         items=_lvupItemsFor(p, cert, sub);
         if(!items.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='인식할 데이터 없음 (mapping/diagnostic/topics/variants/questions)';} return; }
-        labels.push(cert+'/'+sub);
+        labels.push(csKo(cert,sub));
       }
       var _ctItems=items.filter(function(x){return x.kind==='calctmpl';});
       if(_ctItems.length){
@@ -2657,16 +2657,19 @@ async function lvupReadGroups(){
   });
   return groups;
 }
-var _subjNameMap=null;
-async function _loadSubjNames(){                 // manifest에서 cert|과목코드 → 한글이름 맵(1회 캐시)
+var _subjNameMap=null, _certNameMap=null;
+async function _loadSubjNames(){                 // manifest에서 cert→한글명, cert|과목코드→한글명 맵(1회 캐시)
   if(_subjNameMap) return _subjNameMap;
-  var m={};
+  var m={}, cm={};
   try{ var snap=await db.collection('manifest').doc('exams').get(); var exams=(snap.exists&&snap.data().exams)||[];
-    exams.forEach(function(e){ (e.subjects||[]).forEach(function(s){ if(s&&s.code) m[e.id+'|'+s.code]=s.name||s.code; }); }); }catch(_){}
-  _subjNameMap=m; return m;
+    exams.forEach(function(e){ if(e&&e.id) cm[e.id]=e.name||e.id; (e.subjects||[]).forEach(function(s){ if(s&&s.code) m[e.id+'|'+s.code]=s.name||s.code; }); }); }catch(_){}
+  _subjNameMap=m; _certNameMap=cm; return m;
 }
 function subjNameOf(cert, code){ return (_subjNameMap && _subjNameMap[cert+'|'+code]) || code || ''; }
-function _lvupExpLabel(g){ var c=(g._meta&&g._meta.cert)||'', s=(g._meta&&g._meta.subject)||''; var nm=subjNameOf(c,s); return (typeof certLabel==='function'?certLabel(c):c)+' \u00B7 '+nm+(nm!==s&&s?(' ('+s+')'):''); }
+function certKo(cert){ return (_certNameMap && _certNameMap[cert]) || (typeof CERT_NAMES!=='undefined'&&CERT_NAMES[cert]) || cert || ''; }
+function certWithId(cert){ var nm=certKo(cert); return nm+(nm!==cert&&cert?(' ('+cert+')'):''); }          // 한글시험명 (영어ID)
+function csKo(cert, sub){ var sn=subjNameOf(cert,sub); return certWithId(cert)+' / '+sn+(sn!==sub&&sub?(' ('+sub+')'):''); }
+function _lvupExpLabel(g){ var c=(g._meta&&g._meta.cert)||'', s=(g._meta&&g._meta.subject)||''; return csKo(c,s); }
 async function lvupPopulateExp(){
   var sel=document.getElementById('lvupExpSel'); if(!sel) return;
   try{
@@ -2674,7 +2677,7 @@ async function lvupPopulateExp(){
     await _loadSubjNames();
     var keys=Object.keys(groups).sort();
     sel.innerHTML='<option value="__all">전체 (모든 시험)</option>'
-      + (function(){ var certs={}; Object.keys(groups).forEach(function(k){ var g=groups[k]; var c=(g._meta&&g._meta.cert)||''; (certs[c]=certs[c]||[]).push(g); }); return Object.keys(certs).sort().map(function(c){ var subs=certs[c]; var qtot=subs.reduce(function(n,x){return n+((x.questions&&x.questions.length)||0);},0); var nm=(typeof certLabel==='function'?certLabel(c):c); return '<option value="cert:'+c+'">'+nm+' ('+subs.length+'과목 · '+qtot+'문항)</option>'; }).join(''); })();
+      + (function(){ var certs={}; Object.keys(groups).forEach(function(k){ var g=groups[k]; var c=(g._meta&&g._meta.cert)||''; (certs[c]=certs[c]||[]).push(g); }); return Object.keys(certs).sort().map(function(c){ var subs=certs[c]; var qtot=subs.reduce(function(n,x){return n+((x.questions&&x.questions.length)||0);},0); var nm=certWithId(c); return '<option value="cert:'+c+'">'+nm+' ('+subs.length+'과목 · '+qtot+'문항)</option>'; }).join(''); })();
   }catch(e){}
 }
 function _lvupDownload(subjects, fnameSuffix){
@@ -2702,7 +2705,7 @@ async function lvupExportSel(){
       if(!_subs.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='선택한 시험 데이터를 찾을 수 없습니다.';} return; }
       _lvupDownload(_subs, _cert);
       var _tot=_subs.reduce(function(n,x){ return n+((x.questions&&x.questions.length)||0); },0);
-      var _nm=(typeof certLabel==='function'?certLabel(_cert):_cert);
+      var _nm=certWithId(_cert);
       if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ '+_nm+' — 과목 <b>'+_subs.length+'</b>개 · 변형문항 <b>'+_tot+'</b>개. (이 파일을 다시 드롭하면 복원)'; }
     } else {
       var g=groups[key]; if(!g){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uC120\uD0DD\uD55C \uACFC\uBAA9 \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
@@ -2950,7 +2953,7 @@ async function loadCodes() {
     document.getElementById('codeList').innerHTML = '<div class="empty">불러오기 실패: '+(e&&e.code?e.code:(e&&e.message?e.message:e))+'</div>';
   }
 }
-function certNameShort(c){ return c==='appraiser'?'감정평가사':c==='bodybuilding'?'생체2급':c||'전체'; }
+function certNameShort(c){ return c? certWithId(c) : '전체'; }
 function renderCodes(list) {
   if (!list.length) { document.getElementById('codeList').innerHTML = '<div class="empty">할인코드가 없습니다.</div>'; return; }
   const usedN = list.filter(c=>c.used).length;
@@ -3582,7 +3585,7 @@ function impRender(){
     const col=it.status==='bad'?'#f85149':it.status==='done'?'#15793F':'#185FA5';
     return '<tr style="border-bottom:1px solid #EFE9E2">'
       +'<td style="padding:7px 10px">'+(it.docId||'-')+'</td>'
-      +'<td style="padding:7px 10px">'+(it.cert||'-')+' / '+(subjNameOf(it.cert,it.subject)||'-')+((it.subject&&subjNameOf(it.cert,it.subject)!==it.subject)?(' ('+it.subject+')'):'')+'</td>'
+      +'<td style="padding:7px 10px">'+(it.cert?csKo(it.cert,it.subject):'-')+'</td>'
       +'<td style="padding:7px 10px;text-align:right;color:#8A7E70">'+it.curVer+'</td>'
       +'<td style="padding:7px 10px;text-align:right;color:#15793F;font-weight:600">'+impNewVer(it)+'</td>'
       +'<td style="padding:7px 10px;text-align:right">'+(it.count>=0?it.count:'-')+'</td>'
@@ -5106,7 +5109,7 @@ async function lookupUserDetail(){
     for(let k in srProgress){if(srProgress[k].rc>0){let cert=k.split("|")[0];if(!stats[cert])stats[cert]={att:0,wrong:0};stats[cert].att++;}}
     for(let k in appWrong){let cert=k.split("|")[0];if(stats[cert]){let qa=appWrong[k];if(qa&&Array.isArray(qa.q))stats[cert].wrong+=qa.q.length;else if(qa)stats[cert].wrong++;}}
     let html='<div style="background:#fff;border-radius:12px;padding:16px;border:1px solid #E8E8E8"><div style="font-size:12px;color:#888780;margin-bottom:12px"><b>UID:</b> '+uid+'</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px"><div style="background:#F5F5F5;padding:12px;border-radius:8px"><div style="font-size:11px;color:#888780">전체 오답</div><div style="font-size:20px;font-weight:700;color:#E24B4A">'+wrongCount+'개</div></div><div style="background:#F5F5F5;padding:12px;border-radius:8px"><div style="font-size:11px;color:#888780">srProgress 항목</div><div style="font-size:20px;font-weight:700;color:#7F77DD">'+Object.keys(srProgress).length+'개</div></div></div><table style="width:100%;border-collapse:collapse;font-size:12px"><tr style="border-bottom:1px solid #E8E8E8"><th style="text-align:left;padding:8px;font-weight:600">시험</th><th style="text-align:right;padding:8px;font-weight:600">시도</th><th style="text-align:right;padding:8px;font-weight:600">오답</th><th style="text-align:right;padding:8px;font-weight:600">정답률</th></tr>';
-    for(let cert in stats){let s=stats[cert];let pct=s.att>0?Math.round((s.att-s.wrong)/s.att*100)+'%':'—';html+='<tr style="border-bottom:1px solid #F0F0F0"><td style="padding:8px">'+cert+'</td><td style="text-align:right;padding:8px">'+s.att+'</td><td style="text-align:right;padding:8px;color:#E24B4A;font-weight:600">'+s.wrong+'</td><td style="text-align:right;padding:8px;font-weight:600">'+pct+'</td></tr>';}
+    for(let cert in stats){let s=stats[cert];let pct=s.att>0?Math.round((s.att-s.wrong)/s.att*100)+'%':'—';html+='<tr style="border-bottom:1px solid #F0F0F0"><td style="padding:8px">'+certWithId(cert)+'</td><td style="text-align:right;padding:8px">'+s.att+'</td><td style="text-align:right;padding:8px;color:#E24B4A;font-weight:600">'+s.wrong+'</td><td style="text-align:right;padding:8px;font-weight:600">'+pct+'</td></tr>';}
     html+='</table></div>';
     result.innerHTML=html;
   }catch(e){result.innerHTML='<div style="color:#E24B4A">오류: '+e.message+'</div>';console.error(e);}
@@ -5123,6 +5126,7 @@ if (firebaseReady && auth) {
       const em = document.getElementById('adminEmail');
       if (em) em.textContent = user.email;
       loadAll();
+      _loadSubjNames();
       startPolling();
     } else if (user) {
       alert('관리자 권한이 없는 계정입니다: ' + user.email);
