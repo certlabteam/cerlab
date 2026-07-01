@@ -1335,6 +1335,38 @@ function renderQuestionBlock(q){
   return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,true):stemHTML(rm(_stemQ,q)))+'</div></div>'+
     '<div class="qcard">'+jaryoHTML+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
 }
+// ===== 배정형(참거짓 ㄱㄴㄷㄹ / 매칭 ㉠㉡㉢㉣): 정답 선지·정답칸을 마커별로 =====
+function _assignPairs(q){
+  var opts=q.opts||[]; var ans=Array.isArray(q.ans)?q.ans[0]:q.ans; if(!ans) return null;
+  var opt=opts[ans-1]; if(!opt) return null;
+  if(isComboQuestion(opts)) return null;              // 순수 조합형은 기존 처리
+  var parts=String(opt).split('/'); if(parts.length<2) return null;
+  var out=[];
+  for(var i=0;i<parts.length;i++){
+    var m=parts[i].trim().match(/^([\u3131-\u314E\u3260-\u326D])\s*(.+)$/);
+    if(!m) return null;                               // 모든 조각이 마커로 시작해야 배정형
+    out.push({k:m[1], v:m[2].trim()});
+  }
+  return out;
+}
+function _splitExpByMarker(text, order){               // 정답칸 해설을 마커 순서대로 분리
+  var s=String(text||''); if(!s||!order||order.length<2) return null;
+  var starts=[], from=0;
+  for(var i=0;i<order.length;i++){
+    var re=new RegExp('(^|[\\s,(\\uFF08])('+order[i]+')(?=[\\s(\\uFF08])','g'); re.lastIndex=from;
+    var m=re.exec(s);
+    if(m){ var at=m.index+m[1].length; starts.push(at); from=at+1; } else starts.push(-1);
+  }
+  if(starts.filter(function(x){return x>=0;}).length<2) return null;
+  var segs=[];
+  for(var j=0;j<order.length;j++){
+    if(starts[j]<0) continue;
+    var nx=s.length;
+    for(var k=j+1;k<order.length;k++){ if(starts[k]>=0){ nx=starts[k]; break; } }
+    segs.push({k:order[j], t:s.slice(starts[j], nx).trim().replace(/[,\uFF0C\s]+$/,'')});
+  }
+  return segs;
+}
 function renderExpFull(q, mqCertVal){
   mqCert = mqCertVal;
   var sel = Array.isArray(q.ans)?q.ans[0]:q.ans;
@@ -1356,6 +1388,8 @@ function renderExpFull(q, mqCertVal){
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
     var blankStmts=(!comboOK && !isCV)?parseBlankStmts(q.q):[];   // 괄호빈칸 짝맞추기
+    var _apairs=(!comboOK && !isCV && !isCountType(q) && !(blankStmts.length>=2 && oFilled===blankStmts.length)) ? _assignPairs(q) : null;
+    var _asegs=_apairs ? _splitExpByMarker(oArr[(ansArr(q.ans)[0]||1)-1]||'', _apairs.map(function(p){return p.k;})) : null;
     if(isCountType(q)){
       var cStmts=splitCountStmts(q.q).stmts;
       body+='<div class="exp-opts">'+cStmts.map(function(t,i){
@@ -1429,6 +1463,14 @@ function renderExpFull(q, mqCertVal){
       }).join('')+'</div>';
       var bCirc=['\u2460','\u2461','\u2462','\u2463','\u2464'];
       body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">\uC815\uB2F5 \uBCF4\uAE30 '+(bCirc[ansN[0]-1]||('('+ansN[0]+')'))+'. '+rm((q.opts&&q.opts[ansN[0]-1])||'',q)+' <span class="eo-badge">\u2705 \uC815\uB2F5</span></div></div></div>';
+    } else if(_apairs && _asegs && _asegs.length>=2){
+      // 배정형(참거짓/매칭): 정답칸을 마커별로 분리 + 정답 하나. 오답칸 숨김.
+      body+='<div class="exp-opts">'+_asegs.map(function(seg){
+        var sv=splitVerdict(seg.t);
+        var vTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
+        return '<div class="eo"><div class="eo-q">'+rm(sv.rest||seg.t,q)+vTag+'</div></div>';
+      }).join('')+'</div>';
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">\u2705 \uC815\uB2F5 '+(ansArr(q.ans)[0])+'\uBC88</div></div></div>';
     } else if(oFilled>=2){
       // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
       var fbCombo = isCombo && !comboOK;
