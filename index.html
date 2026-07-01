@@ -4331,6 +4331,8 @@ function rm(text, q){ return renderMath(text, isEconQ(q)); }
 function stemHTML(html){
   // 순수 산문 스템만 문장(…다.) 단위로 단락 분리. ○/ㄱㄴㄷ 조합·자료형, 1문장은 기존 그대로.
   if(!html) return html;
+  // [ADD] 발문 진술형 원문자 마커(㉠~㉭ + 따옴표) 앞 줄바꿈 — 질문머리(㉠~㉣이)·괄호빈칸(( ㉠ ))은 제외
+  html=String(html).replace(/\s*([\u3260-\u326D])(\s*["\u201C\u201F\u300C])/g, '<br>$1$2');
   if(html.indexOf('\u25CB')>=0 || /(^|\n)\s*[ㄱ-ㅎ]\s*[.\u00B7)\]]/.test(html)) return bulletStem(html);
   var marked=String(html).replace(/(다[.])\s+/g,'$1\u0001');
   var parts=marked.split('\u0001').filter(function(s){return s.trim();});
