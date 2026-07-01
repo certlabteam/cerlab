@@ -767,15 +767,20 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="padding:14px 20px">
           <div style="background:#EEF6FF;border:1px solid #BBD8F5;border-radius:8px;padding:10px 12px;color:#215787;font-size:12px;margin-bottom:12px">
-            문항에 연결하지 않은 이미지도 <b>images 컬렉션에 그대로 보관</b>됩니다(키로 저장). 여기서 미리 올려둔 틀·완성 이미지를 보고 <b>다운로드</b>해 다음 작업에 재사용하거나, 같은 키로 <b>img://키</b>로 문항에 연결하세요.
+            불러오면 업로드된 이미지를 문항 참조와 대조해 <b>미사용(어느 문항에도 안 쓰인) 이미지</b>를 추려 보여줍니다. 필요한 걸 <b>내보내기(JSON 번들)</b>로 저장했다가, 나중에 <b>이미지 업로드</b>로 다시 복원해 재사용할 수 있습니다.
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
             <button class="btn-sm btn-extend" onclick="imgLibLoad()">🔄 불러오기 / 새로고침</button>
-            <input id="imgLibSearch" oninput="imgLibRender()" placeholder="키 검색 (예: ksh_lv_goryeo)" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:220px">
-            <button class="btn-sm" style="background:#F1EFFB;color:#7F77DD;border:none;border-radius:20px;padding:7px 14px;font-size:12px;cursor:pointer" onclick="imgLibScanUsage()">🔗 사용처 스캔 (연동/미연동 표시)</button>
+            <select id="imgLibMode" onchange="imgLibRender()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="unused">미사용 이미지만</option>
+              <option value="all">전체</option>
+              <option value="used">사용 중만</option>
+            </select>
+            <input id="imgLibSearch" oninput="imgLibRender()" placeholder="키 검색" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:180px">
+            <button class="btn-sm" style="background:#E8F3EC;color:#1E7A45;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibExport()">⬇ 내보내기 (JSON 번들)</button>
             <span id="imgLibCount" style="font-size:12.5px;color:#6E6256"></span>
           </div>
-          <div id="imgLibStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 눌러 저장된 이미지를 표시합니다.</div>
+          <div id="imgLibStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 업로드 이미지와 사용처를 스캔해 미사용 이미지를 표시합니다.</div>
           <div id="imgLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
         </div>
       </div>
@@ -4033,29 +4038,61 @@ let _imgLib=null, _imgLibInited=false, _imgLibUsage=null;
 function imgLibInit(){ if(_imgLibInited) return; _imgLibInited=true; imgLibLoad(); }
 async function imgLibLoad(){
   const st=document.getElementById('imgLibStatus'); const grid=document.getElementById('imgLibGrid');
-  st.textContent='읽는 중… 이미지가 많으면 시간이 걸립니다.'; grid.innerHTML='';
+  st.textContent='이미지 읽는 중…'; grid.innerHTML='';
   try{
     const snap=await db.collection('images').get();
     _imgLib=[]; let bytes=0;
     snap.forEach(doc=>{ const d=doc.data()||{}; const data=d.data||''; _imgLib.push({key:doc.id, data:data, size:data.length}); bytes+=data.length; });
     _imgLib.sort((a,b)=>a.key<b.key?-1:1);
-    _imgLibUsage=null;   // 사용처 스캔은 다시 눌러야 갱신
-    st.innerHTML='총 <b>'+_imgLib.length+'</b>개 · 약 '+(Math.round(bytes/1024/1024*10)/10)+'MB';
+    st.textContent='사용처 스캔 중… (문항에서 img:// 참조 수집)';
+    await _imgLibScan();
+    const unused=_imgLib.filter(im=>!_imgLibUsage.has(im.key)).length;
+    st.innerHTML='총 <b>'+_imgLib.length+'</b>개 · 사용 중 '+_imgLibUsage.size+' · <b style="color:#B4531E">미사용 '+unused+'</b> · 약 '+(Math.round(bytes/1024/1024*10)/10)+'MB';
     imgLibRender();
   }catch(e){ st.textContent='오류: '+e.message; }
+}
+// 사용처 스캔: banks(+shards)·adaptive variantq에서 img:// 참조 키 수집
+async function _imgLibScan(){
+  _imgLibUsage=new Set();
+  if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
+  const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
+  const collect=(txt)=>{ let m; while((m=re.exec(txt))!==null) _imgLibUsage.add(m[1]); re.lastIndex=0; };
+  for(const exam of (_expExams||[])){
+    for(const sub of (exam.subjects||[])){
+      const docId=exam.id+'__'+sub.code;
+      try{ const bd=await db.collection('banks').doc(docId).get();
+        if(bd.exists){ const data=bd.data()||{};
+          if(Array.isArray(data.shards)&&data.shards.length){
+            for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists) collect(JSON.stringify(sd.data().questions||[])); }catch(_){} }
+          } else collect(JSON.stringify(data.questions||[]));
+        }
+      }catch(_){}
+      try{ const vd=await db.collection('adaptive').doc(docId+'__variantq').get(); if(vd.exists) collect(JSON.stringify((vd.data()||{}).questions||[])); }catch(_){}
+    }
+  }
+}
+function _imgLibFiltered(){
+  if(!_imgLib) return [];
+  const mode=((document.getElementById('imgLibMode')||{}).value)||'unused';
+  const q=((document.getElementById('imgLibSearch')||{}).value||'').trim().toLowerCase();
+  return _imgLib.filter(im=>{
+    if(q && im.key.toLowerCase().indexOf(q)<0) return false;
+    const used=_imgLibUsage?_imgLibUsage.has(im.key):false;
+    if(mode==='unused') return !used;
+    if(mode==='used') return used;
+    return true;
+  });
 }
 function _imgLibExt(dataURL){ const m=/^data:image\/(png|jpeg|jpg|webp|gif);/i.exec(dataURL||''); return m?(m[1]==='jpeg'?'jpg':m[1]):'png'; }
 function imgLibRender(){
   const grid=document.getElementById('imgLibGrid'); if(!grid||!_imgLib) return;
-  const q=(document.getElementById('imgLibSearch').value||'').trim().toLowerCase();
-  const list=_imgLib.filter(im=>!q||im.key.toLowerCase().indexOf(q)>=0);
-  document.getElementById('imgLibCount').textContent = q?('필터 '+list.length+' / '+_imgLib.length):'';
+  const list=_imgLibFiltered();
+  const cnt=document.getElementById('imgLibCount'); if(cnt) cnt.textContent='표시 '+list.length+' / 전체 '+_imgLib.length;
   if(!list.length){ grid.innerHTML='<div style="color:#A89C8E;font-size:13px;padding:10px">표시할 이미지가 없습니다.</div>'; return; }
   grid.innerHTML=list.map(im=>{
     const kb=Math.round(im.size/1024);
-    let usageChip='';
-    if(_imgLibUsage){ const used=_imgLibUsage.has(im.key);
-      usageChip='<span style="font-size:10.5px;padding:1px 7px;border-radius:10px;'+(used?'background:#E7F5EC;color:#1E7A45':'background:#FCEDE6;color:#B4531E')+'">'+(used?'연동됨':'미연동')+'</span>'; }
+    const used=_imgLibUsage?_imgLibUsage.has(im.key):false;
+    const chip='<span style="font-size:10.5px;padding:1px 7px;border-radius:10px;'+(used?'background:#E7F5EC;color:#1E7A45':'background:#FCEDE6;color:#B4531E')+'">'+(used?'사용 중':'미사용')+'</span>';
     return '<div style="border:1px solid #EDE7DF;border-radius:10px;overflow:hidden;background:#fff">'
       + '<div style="background:#F7F4EF;height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden">'
       + (im.data?('<img src="'+im.data+'" style="max-width:100%;max-height:120px;object-fit:contain">'):'<span style="color:#C4B8AA;font-size:11px">데이터 없음</span>')
@@ -4063,7 +4100,7 @@ function imgLibRender(){
       + '<div style="padding:8px 10px">'
       + '<div style="font-family:monospace;font-size:11px;color:#3B342C;word-break:break-all;line-height:1.4;cursor:pointer" title="클릭하면 키 복사" onclick="imgLibCopyKey(this,\''+im.key.replace(/'/g,"\\'")+'\')">'+im.key+'</div>'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:6px">'
-      + '<span style="font-size:10.5px;color:#A89C8E">'+kb+'KB '+usageChip+'</span>'
+      + '<span style="font-size:10.5px;color:#A89C8E">'+kb+'KB '+chip+'</span>'
       + '<button onclick="imgLibDownload(\''+im.key.replace(/'/g,"\\'")+'\')" style="background:#7F77DD;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer">⬇ 다운</button>'
       + '</div></div></div>';
   }).join('');
@@ -4078,32 +4115,19 @@ function imgLibDownload(key){
   const a=document.createElement('a'); a.href=im.data; a.download=key+'.'+_imgLibExt(im.data);
   document.body.appendChild(a); a.click(); a.remove();
 }
-// 사용처 스캔: banks(+shards)·adaptive variantq에서 img:// 참조 키 수집 → 연동/미연동 표시
-async function imgLibScanUsage(){
-  const st=document.getElementById('imgLibStatus');
-  st.textContent='사용처 스캔 중… (뱅크·레벨업 문항에서 img:// 참조 수집)';
-  try{
-    if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
-    const used=new Set(); const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
-    function collect(txt){ let m; while((m=re.exec(txt))!==null) used.add(m[1]); re.lastIndex=0; }
-    for(const exam of (_expExams||[])){
-      for(const sub of (exam.subjects||[])){
-        const docId=exam.id+'__'+sub.code;
-        try{ const bd=await db.collection('banks').doc(docId).get();
-          if(bd.exists){ const data=bd.data()||{};
-            if(Array.isArray(data.shards)&&data.shards.length){
-              for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists) collect(JSON.stringify(sd.data().questions||[])); }catch(_){} }
-            } else collect(JSON.stringify(data.questions||[]));
-          }
-        }catch(_){}
-        try{ const vd=await db.collection('adaptive').doc(docId+'__variantq').get(); if(vd.exists) collect(JSON.stringify((vd.data()||{}).questions||[])); }catch(_){}
-      }
-    }
-    _imgLibUsage=used;
-    const total=(_imgLib||[]).length; let unused=0; (_imgLib||[]).forEach(im=>{ if(!used.has(im.key)) unused++; });
-    st.innerHTML='사용처 스캔 완료 · 참조 키 <b>'+used.size+'</b>개 · 라이브러리 '+total+'개 중 <b style="color:#B4531E">미연동 '+unused+'</b>개';
-    imgLibRender();
-  }catch(e){ st.textContent='스캔 오류: '+e.message; }
+// 현재 표시 중(기본=미사용) 이미지들을 이미지 내보내기와 동일한 JSON 번들로 저장 → 이미지 업로드로 복원 가능
+function imgLibExport(){
+  const list=_imgLibFiltered();
+  if(!list.length){ alert('내보낼 이미지가 없습니다.'); return; }
+  const mode=((document.getElementById('imgLibMode')||{}).value)||'unused';
+  const images=list.map(im=>({key:im.key, data:im.data}));
+  let bytes=0; images.forEach(im=>bytes+=(im.data||'').length);
+  const bundle={ images, exportedAt:(typeof _kstISO==='function'?_kstISO(new Date()):new Date().toISOString()), source:'imglib_'+mode, count:images.length };
+  const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='certlab_images_'+mode+'_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const st=document.getElementById('imgLibStatus'); if(st) st.innerHTML='✅ '+images.length+'개 이미지 내보내기 완료 (약 '+(Math.round(bytes/1024/1024*10)/10)+'MB) — 이미지 업로드로 복원 가능';
 }
 // ===== 이미지 가져오기 (JSON → images 복구) =====
 let imgImpData=null; let _imgImpInited=false;
