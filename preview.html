@@ -1327,7 +1327,7 @@ function renderQuestionBlock(q){
     if(jp.stmts && jp.stmts.length>=2){
       jaryoHTML='<div class="jaryo">'
         + (jp.intro?'<div style="margin-bottom:6px">'+rm(jp.intro,q)+'</div>':'')
-        + jp.stmts.map(function(st,idx){ var ox=isComboQuestion(q.opts||[])?'<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>':''; var chip=isComboQuestion(q.opts||[])?otChips(q.id,idx):''; return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span>'+ox+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>'; }).join('')
+        + jp.stmts.map(function(st,idx){ var ox=(isComboQuestion(q.opts||[])||_tfAssign(q))?'<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>':''; var chip=isComboQuestion(q.opts||[])?otChips(q.id,idx):''; return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span>'+ox+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>'; }).join('')
         + '</div>';
     } else if((jr.jaryo.match(/\u25CB/g)||[]).length>=2){
       // ○로 구분된 자료: 항목마다 줄내림(hanging). 첫 ○ 앞은 intro.
