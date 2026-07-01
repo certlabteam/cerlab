@@ -767,6 +767,7 @@ async function loadUserData() {
       srProgress = (data.cardProgress && typeof data.cardProgress==='object') ? data.cardProgress : {};
       srExamOverride = (data.examDates && typeof data.examDates==='object') ? data.examDates : {};
       srDiagnostics = Array.isArray(data.diagnostics) ? data.diagnostics : [];
+      try{ if(Array.isArray(data.sport2subs)&&data.sport2subs.length===5) _sp2SubsMem=data.sport2subs; }catch(_){}
       srMigrateIfNeeded();
       var _merged=mergeGuestProgress();   // 비회원 때 기록을 계정에 병합(계정에 없는 것만)
       srApplyToCards();
@@ -941,6 +942,7 @@ async function saveUserData() {
       eloState: (typeof eloState!=='undefined' && eloState) ? eloState : {},
       luHist: (typeof luHistAll!=='undefined' && luHistAll) ? luHistAll : {},
       luResume: (typeof luResumeAll!=='undefined' && luResumeAll) ? luResumeAll : {},
+      sport2subs: (_sp2SubsMem && _sp2SubsMem.length===5) ? _sp2SubsMem : null,
       lastStudyAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -2997,7 +2999,32 @@ function isMcqCert(c){ return MCQ_CERTS.indexOf(c)!==-1; }
 let mqCert='appraiser';                 // 현재 보고 있는 객관식 시험
 function qbOf(cert){ return MCQ_EXAMS[cert].qb; }
 function curQB(){ return qbOf(mqCert); }
-function curOrder(){ return Object.keys(curQB()); }
+var _sp2SubsMem=null;
+function _sp2Get(){ if(_sp2SubsMem && _sp2SubsMem.length===5) return _sp2SubsMem; try{ var raw=localStorage.getItem('certlab_sport2subs'); if(raw){ var a=JSON.parse(raw); if(Array.isArray(a)&&a.length===5){ _sp2SubsMem=a; return a; } } }catch(_){} return null; }
+function _sp2Set(arr){ _sp2SubsMem=(arr||[]).slice(); try{ localStorage.setItem('certlab_sport2subs', JSON.stringify(_sp2SubsMem)); }catch(_){} try{ if(currentUser && typeof saveUserData==='function') saveUserData(); }catch(_){} }
+function _sp2FilterOrder(cert, ks){ if(cert!=='sport2') return ks; var sel=_sp2Get(); if(!sel) return ks; return ks.filter(function(k){ return sel.indexOf(k)>=0; }); }
+function curOrder(){ return _sp2FilterOrder(mqCert, Object.keys(curQB())); }
+function _sp2BtnHTML(){ var sel=_sp2Get(); return '<div style="padding:8px 4px 2px"><button onclick="_sp2OpenPicker(function(){renderMCQ();})" style="font-size:12px;font-weight:800;color:#185FA5;background:#EAF2FC;border:1.5px solid #B5D4F4;border-radius:999px;padding:6px 14px;cursor:pointer">\u2699 \uACFC\uBAA9 \uC120\uD0DD'+(sel?' (5\uACFC\uBAA9)':'')+'</button></div>'; }
+function _sp2OpenPicker(cb){
+  var qb=qbOf('sport2')||{}; var codes=Object.keys(qb); var cur=_sp2Get()||[]; var sel={}; cur.forEach(function(c){ sel[c]=true; });
+  var ov=document.getElementById('sp2Pick'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='sp2Pick'; ov.className='auth-popup';
+  function cnt(){ return Object.keys(sel).filter(function(k){return sel[k];}).length; }
+  function render(){
+    var n=cnt();
+    ov.innerHTML='<div class="auth-sheet" style="max-width:360px;text-align:left">'
+      +'<div style="font-size:17px;font-weight:900;color:#0C447C;margin-bottom:3px">\uC2DC\uD5D8 \uBCFC 5\uACFC\uBAA9 \uC120\uD0DD</div>'
+      +'<div style="font-size:12.5px;color:#8A7D6E;margin-bottom:14px">7\uACFC\uBAA9 \uC911 <b>5\uACFC\uBAA9</b>\uC744 \uACE8\uB77C \uC751\uC2DC\uD574\uC694. \uB808\uBCA8\uD14C\uC2A4\uD2B8\u00B7\uB808\uBCA8\uC5C5\uC774 \uC120\uD0DD\uD55C 5\uACFC\uBAA9\uC73C\uB85C \uC9C4\uD589\uB3FC\uC694.</div>'
+      +'<div>'+codes.map(function(c){ var nm=(qb[c]&&qb[c].name)||c; var on=!!sel[c];
+          return '<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid '+(on?'#185FA5':'#E8E8E8')+';border-radius:12px;margin-bottom:8px;cursor:pointer;background:'+(on?'#EAF2FC':'#fff')+'"><input type="checkbox" data-c="'+c+'" '+(on?'checked':'')+' style="width:18px;height:18px;accent-color:#185FA5"><span style="font-size:14px;font-weight:700;color:#2C2C2A">'+mqEsc(nm)+'</span></label>';
+        }).join('')+'</div>'
+      +'<div style="text-align:center;font-size:13px;font-weight:800;color:'+(n===5?'#15793F':'#A32D2D')+';margin:4px 0 12px">'+n+' / 5 \uC120\uD0DD\uB428</div>'
+      +'<button id="sp2Go" '+(n===5?'':'disabled')+' style="width:100%;background:'+(n===5?'linear-gradient(135deg,#185FA5,#0C447C)':'#C9C2B8')+';color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:'+(n===5?'pointer':'not-allowed')+'">'+(n===5?'\uC120\uD0DD \uC644\uB8CC':'5\uACFC\uBAA9\uC744 \uC120\uD0DD\uD558\uC138\uC694')+'</button>';
+    ov.querySelectorAll('input[type=checkbox]').forEach(function(chk){ chk.onchange=function(){ var c=chk.getAttribute('data-c'); if(chk.checked){ if(cnt()>=5){ chk.checked=false; return; } sel[c]=true; } else { delete sel[c]; } render(); }; });
+    var go=document.getElementById('sp2Go'); if(go) go.onclick=function(){ var arr=Object.keys(sel).filter(function(k){return sel[k];}); if(arr.length!==5) return; _sp2Set(arr); ov.remove(); if(typeof cb==='function') cb(); };
+  }
+  document.body.appendChild(ov); render();
+}
 // qid → {cert, sub} 전역 인덱스 (네임스페이스 저장용). qid는 시험 간 고유하게 구성.
 const MCQ_QID2CS={};
 function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub};}))); }); }
@@ -3222,7 +3249,7 @@ function mcqAnalysisCard(cert){
   const LVBG={1:'#FCEBEB',2:'#FCEBEB',3:'#FBF0D8',4:'#E6F4EC',5:'#E6F4EC'};
   const LVTX={1:'#A32D2D',2:'#A32D2D',3:'#946200',4:'#1E6B41',5:'#1E6B41'};
   const order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
-  const subsHTML=order.map(function(sub){
+  const subsHTML=(cert==='sport2'?_sp2BtnHTML():'')+order.map(function(sub){
     var lv=luSubjectLevel(cert,sub); if(lv==null) return '';
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, open=!!luCardOpen[sub];
     var pill='<span style="font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
@@ -3276,10 +3303,11 @@ function _ltSampleSubject(cert,sub,code,qb,n){
 }
 async function startDiagnostic(){
   const cert=mqCert, qb=qbOf(cert); let picked=[];
+  if(cert==='sport2' && !_sp2Get()){ _sp2OpenPicker(function(){ startDiagnostic(); }); return; }
   if(typeof loadAdaptiveSubject==='function'){            // 변형 풀 로드 보장(비차단 로드 미완료 대비)
     try{ await Promise.all(Object.keys(qb).map(function(code){ return loadAdaptiveSubject(cert, code).catch(function(){return null;}); })); }catch(e){}
   }
-  Object.keys(qb).forEach(code=>{                 // 과목별 10문항(과목 묶음 유지)
+  _sp2FilterOrder(cert, Object.keys(qb)).forEach(code=>{        // sport2는 선택 5과목만
     picked=picked.concat(_ltSampleSubject(cert, code, code, qb, _ltPerSubject(cert)));
   });
   if(picked.length<1){ _luToast('레벨 테스트에 사용할 문제가 아직 없어요. (정답이 입력된 문제가 필요해요)'); return; }
@@ -3307,7 +3335,7 @@ function _ltSubjectScore(cert, sub, qlist, ans){
 }
 // ===== 레벨테스트 결과 로그인 게이트 (게스트가 다 풀면 결과는 로그인해야 공개) =====
 var _ltPending=null;   // {cert,qs,ans} — 로그인 후 재계산용
-function _ltTotalCount(cert){ try{ return Object.keys(qbOf(cert)||{}).length * _ltPerSubject(cert); }catch(_){ return _ltPerSubject(cert); } }
+function _ltTotalCount(cert){ try{ return _sp2FilterOrder(cert, Object.keys(qbOf(cert)||{})).length * _ltPerSubject(cert); }catch(_){ return _ltPerSubject(cert); } }
 function _ltRenderResultGate(M){
   var cert=M.cert||mqCert;
   if(mqResultQs && mqResultQs.length){
@@ -3574,8 +3602,8 @@ function luBuildPool(cert,sub){ var pool=[], byId={}; try{
     });
   }catch(e){} return pool; }
 function luTopicScores(cert,sub){ var k=cert+'|'+sub, st=(typeof eloState!=='undefined'&&eloState[k])||{}, out={}; for(var t in st){ if(t.charAt(0)==='_') continue; if(st[t]&&typeof st[t].score==='number') out[t]=st[t].score; } return out; }
-function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=''; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
-function luStartSub(sub){ var cert=mqCert; if(ltGate(cert)) return; if(!sub) return; mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=sub; luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
+function startLevelUp(){ var cert=mqCert; if(ltGate(cert)) return; if(cert==='sport2' && !_sp2Get()){ _sp2OpenPicker(function(){ startLevelUp(); }); return; } mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=''; if(luHasResume(cert)){ luResumeApply(cert); return; } luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
+function luStartSub(sub){ var cert=mqCert; if(ltGate(cert)) return; if(!sub) return; if(cert==='sport2' && !_sp2Get()){ _sp2OpenPicker(function(){ luStartSub(sub); }); return; } mqStopTimer(); mqStopOverTimer(); mqLevelUp=true; mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false; mqGather=false; mqLevelTest=false; luLockSub=sub; luSubIdx=0; luSeen={}; luSessTotal=0; luSessCorrect=0; luSessChanges={}; _luEloSA={}; luSessPredStart=_luPredScore(cert); luLoadRound(true); }
 function luLoadRound(first){
   if(first){ luCombo=0; luComboJustUp=false; }   // 레벨업 세션 시작 시 콤보 리셋(라운드 넘어가도 연속은 이어짐)
   luRoundMaxCombo=luCombo;                        // 이번 라운드 최고 콤보(이월된 콤보부터)
@@ -4530,7 +4558,14 @@ function splitStmtMarkers(text){
 function parseJaryoStmts(qt, explicitJaryo){
   // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문 추출(줄·인라인 모두) → [{k,t}, ...]
   var jaryo=(splitJaryo(qt, explicitJaryo).jaryo)||qt||'';
-  return splitStmtMarkers(jaryo).stmts;
+  var st=splitStmtMarkers(jaryo).stmts;
+  // [FIX] 조합형이 표(explicit jaryo)를 함께 가지면 splitJaryo가 표를 자료로 잡아
+  //       표 안에서 ㄱㄴㄷ 진술을 못 찾는다(진술은 발문 qt에 있음).
+  //       → 자료에 진술 마커가 없고 explicit jaryo가 있을 때만 발문 qt에서 재탐색.
+  if(!st.length && explicitJaryo!=null && String(explicitJaryo).trim()!==''){
+    st=splitStmtMarkers(String(qt||'')).stmts;
+  }
+  return st;
 }
 
 // 괄호빈칸 짝맞추기형: 질문의 ( ㄱ )( ㄴ ) 빈칸과 그 설명 추출 → [{k,t}]
