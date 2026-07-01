@@ -3410,7 +3410,7 @@ async function imgExpFillSet(){
       }
     }catch(e){ dbg.push(id+': 오류 '+(e&&e.message||e)); }
   }
-  set.innerHTML='<option value="__all">전체 회차</option>'+setList.map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">'+v+'</option>').join('');
+  set.innerHTML='<option value="__all">전체 회차</option>'+setList.map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">'+v+'</option>').join('')+'<option value="__levelup">⚡ 레벨업(변형문항)</option>';
   set.disabled=false;
   if(stt) stt.innerHTML=(setList.length?('회차 '+setList.length+'개 로드됨 — '+setList.join(', ')):'<span style="color:#C2410C">⚠ 회차를 못 찾음</span>')
     +' <span style="color:#A89C8E">[진단: '+dbg.join(' / ')+']</span>';
@@ -3880,6 +3880,15 @@ async function exportImages(){
       const allKeys=new Set();   // 범위(과목) 전체 키
       const filtKeys=new Set();  // 회차 필터 통과 키
       const setsSeen=new Set();  // 데이터에 실제 존재하는 회차(진단용)
+      if(setPick==='__levelup'){
+        // 레벨업(변형문항) 이미지: adaptive {cert}__{sub}__variantq 스캔
+        const re2=/img:\/\/([A-Za-z0-9_\-]+)/g;
+        for(const sub of subs){
+          try{ const vd=await db.collection('adaptive').doc(pick+'__'+sub.code+'__variantq').get();
+            if(vd.exists){ const t=JSON.stringify((vd.data()||{}).questions||[]); let mm; while((mm=re2.exec(t))!==null){ allKeys.add(mm[1]); filtKeys.add(mm[1]); } }
+          }catch(_){}
+        }
+      } else
       for(const sub of subs){
         try{
           const docId=pick+'__'+sub.code;
