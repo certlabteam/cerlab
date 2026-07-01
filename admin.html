@@ -778,6 +778,7 @@ tr:hover td{background:#FAFAFA}
             </select>
             <input id="imgLibSearch" oninput="imgLibRender()" placeholder="키 검색" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:180px">
             <button class="btn-sm" style="background:#E8F3EC;color:#1E7A45;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibExport()">⬇ 내보내기 (JSON 번들)</button>
+            <button class="btn-sm" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibDeleteShown()">🗑 표시된 미사용 삭제</button>
             <span id="imgLibCount" style="font-size:12.5px;color:#6E6256"></span>
           </div>
           <div id="imgLibStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 업로드 이미지와 사용처를 스캔해 미사용 이미지를 표시합니다.</div>
@@ -3400,14 +3401,15 @@ function closeMemberDetail(){ const el=document.getElementById('memberDetailModa
 // ===== 데이터 내보내기 =====
 let _expExams = null;
 async function openExportTab(){
-  if(_expExams) return;
-  try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists && m.data().exams)||[]; }catch(e){ _expExams=[]; }
-  // 표시 보정: 구술(bodybuilding) 이름 통일 + sport2(필기) 바로 밑으로 정렬
+  if(!_expExams){
+    try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists && m.data().exams)||[]; }catch(e){ _expExams=[]; }
+  }
+  // 표시 보정(멱등): 구술(bodybuilding) 이름 통일 + sport2(필기) 바로 밑으로 정렬
   try{
     _expExams=(_expExams||[]).map(function(e){ return (e&&e.id==='bodybuilding')?Object.assign({},e,{name:'스포츠지도사 2급 실기·구술'}):e; });
     var _bbi=_expExams.findIndex(function(e){return e&&e.id==='bodybuilding';});
     var _spi=_expExams.findIndex(function(e){return e&&e.id==='sport2';});
-    if(_bbi>-1 && _spi>-1){ var _bb=_expExams.splice(_bbi,1)[0]; var _at=_expExams.findIndex(function(e){return e&&e.id==='sport2';}); _expExams.splice(_at+1,0,_bb); }
+    if(_bbi>-1 && _spi>-1 && _bbi!==_spi+1){ var _bb=_expExams.splice(_bbi,1)[0]; var _at=_expExams.findIndex(function(e){return e&&e.id==='sport2';}); _expExams.splice(_at+1,0,_bb); }
   }catch(_){}
   const sel=document.getElementById('expCert'); if(!sel) return;
   sel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
@@ -4101,7 +4103,10 @@ function imgLibRender(){
       + '<div style="font-family:monospace;font-size:11px;color:#3B342C;word-break:break-all;line-height:1.4;cursor:pointer" title="클릭하면 키 복사" onclick="imgLibCopyKey(this,\''+im.key.replace(/'/g,"\\'")+'\')">'+im.key+'</div>'
       + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:6px">'
       + '<span style="font-size:10.5px;color:#A89C8E">'+kb+'KB '+chip+'</span>'
-      + '<button onclick="imgLibDownload(\''+im.key.replace(/'/g,"\\'")+'\')" style="background:#7F77DD;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer">⬇ 다운</button>'
+      + '<span style="display:flex;gap:5px">'
+      + '<button onclick="imgLibDownload(\''+im.key.replace(/'/g,"\\'")+'\')" style="background:#7F77DD;color:#fff;border:none;border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer">⬇</button>'
+      + '<button onclick="imgLibDelete(\''+im.key.replace(/'/g,"\\'")+'\')" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer">🗑</button>'
+      + '</span>'
       + '</div></div></div>';
   }).join('');
 }
@@ -4128,6 +4133,34 @@ function imgLibExport(){
   const a=document.createElement('a'); a.href=url; a.download='certlab_images_'+mode+'_'+new Date().toISOString().slice(0,10)+'.json';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   const st=document.getElementById('imgLibStatus'); if(st) st.innerHTML='✅ '+images.length+'개 이미지 내보내기 완료 (약 '+(Math.round(bytes/1024/1024*10)/10)+'MB) — 이미지 업로드로 복원 가능';
+}
+// 개별 삭제 (되돌릴 수 없음)
+async function imgLibDelete(key){
+  if(!confirm('이미지 "'+key+'" 를 삭제합니다.\n되돌릴 수 없습니다. 계속할까요?')) return;
+  if(_imgLibUsage && _imgLibUsage.has(key) && !confirm('⚠ 이 이미지는 문항에서 사용 중입니다.\n삭제하면 그 문항의 그림이 깨집니다. 그래도 삭제할까요?')) return;
+  try{
+    await db.collection('images').doc(key).delete();
+    _imgLib=(_imgLib||[]).filter(im=>im.key!==key);
+    if(_imgLibUsage) _imgLibUsage.delete(key);
+    imgLibRender();
+    const st=document.getElementById('imgLibStatus'); if(st) st.innerHTML='🗑 삭제됨: '+key;
+  }catch(e){ alert('삭제 실패: '+(e.message||e)+'\n\n(권한 오류면 Firestore 규칙에서 images 삭제 허용 필요)'); }
+}
+// 표시된 목록 중 '미사용'만 일괄 삭제 (사용 중은 자동 제외, 되돌릴 수 없음)
+async function imgLibDeleteShown(){
+  const list=_imgLibFiltered();
+  const del=list.filter(im=>!(_imgLibUsage&&_imgLibUsage.has(im.key)));
+  const usedSkip=list.length-del.length;
+  if(!del.length){ alert('삭제할 미사용 이미지가 없습니다.'+(usedSkip?(' (사용 중 '+usedSkip+'개는 제외)'):'')); return; }
+  if(!confirm('미사용 이미지 '+del.length+'개를 삭제합니다.'+(usedSkip?('\n(사용 중 '+usedSkip+'개는 안전을 위해 제외)'):'')+'\n\n되돌릴 수 없습니다. 계속할까요?')) return;
+  const st=document.getElementById('imgLibStatus'); let ok=0, fail=0;
+  for(const im of del){
+    try{ await db.collection('images').doc(im.key).delete(); _imgLib=(_imgLib||[]).filter(x=>x.key!==im.key); ok++; }
+    catch(e){ fail++; }
+    if(st) st.textContent='삭제 중… '+ok+'/'+del.length;
+  }
+  imgLibRender();
+  if(st) st.innerHTML='🗑 삭제 완료 <b>'+ok+'</b>개'+(fail?(' · <span style="color:#C0392B">실패 '+fail+'</span> (권한 오류면 Firestore 규칙 확인)'):'')+(usedSkip?(' · 사용 중 '+usedSkip+' 제외'):'');
 }
 // ===== 이미지 가져오기 (JSON → images 복구) =====
 let imgImpData=null; let _imgImpInited=false;
