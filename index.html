@@ -5108,6 +5108,16 @@ function renderMcqExam(root){
     body+=tblBlockHTML(q);   // → 표 (해설 순서: 암기코드→개념→그래프→표)
     expHTML='<div class="exp"><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:'+statusCol+'">'+statusTxt+' · 정답 '+ansLabel(q.ans)+'번'+multiTxt+'</span></div>'+body+'</div>'; }
   const jr=splitJaryo(q.q, q.jaryo);
+  // [FIX②] 표(explicit jaryo)+조합형: 진술이 발문(jr.q)에 남아 있으면 스템에서 떼어
+  //        별도 .jaryo 블록으로 렌더 → markComboStmts가 O/X를 붙인다.
+  var _stemQ=jr.q, _comboJaryoHTML='';
+  if(isComboQuestion(q.opts) && jr.jaryo){
+    var _cs=splitStmtMarkers(jr.q);
+    if(_cs.stmts.length>=2){
+      _stemQ=_cs.intro;
+      _comboJaryoHTML='<div class="jaryo">'+_cs.stmts.map(function(s){return s.k+'. '+s.t;}).join('\n')+'</div>';
+    }
+  }
   const curSubj=(q&&q._subj)?q._subj:'';   // 혼합과목(복습·진단·SR) 현재 문항 과목 → 헤더로
   const subjTag='';                         // 카드 안 과목 배지는 제거(헤더로 옮김)
   const tags=subjTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q);
@@ -5124,9 +5134,9 @@ function renderMcqExam(root){
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+(curSubj?' · '+curSubj:'')+'</div></div>'+
       (mqInReview?'':('<button class="etim-pause'+(mqPaused?' on':'')+'" onclick="mqTogglePause()" title="'+(mqPaused?'계속하기':'일시정지')+'">'+(mqPaused?'▶':'⏸')+'</button><span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+(mqPaused?' paused':'')+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
-    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):stemHTML(rm(jr.q,q)))+'</div>'+guessHint+'</div>'+
+    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):stemHTML(rm(_stemQ,q)))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>'):'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>'):'')+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
