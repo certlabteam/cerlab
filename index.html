@@ -4110,6 +4110,7 @@ function mqBackHome(){ _luReviewReturn=null; const wasReview=mqInReview; var _wa
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
+var IMG_TTL_MS = 6*60*60*1000;   // 6h — 이미지 갱신 반영(무기한 캐시 방지). 구 포맷(raw base64)은 파싱 실패로 자동 재요청(1회 마이그레이션)
 function imgInner(v){
   if(!v) return '';
   if(v.indexOf('img://')===0) return '<img data-imgkey="'+v.slice(6)+'" alt="" src="'+IMG_PH+'">';
@@ -4126,8 +4127,8 @@ async function resolveImages(scope){
     el.removeAttribute('data-imgkey');
     try{
       let b64=imgCache[k];
-      if(!b64){ try{ b64=localStorage.getItem('img:'+k)||null; }catch(_){} }
-      if(!b64){ const d=await db.collection('images').doc(k).get(); if(d.exists && d.data().data){ b64=d.data().data; try{ localStorage.setItem('img:'+k,b64); }catch(_){} } }
+      if(!b64){ try{ var _raw=localStorage.getItem('img:'+k); if(_raw){ var _w=JSON.parse(_raw); if(_w && _w.d && (!IMG_TTL_MS || (Date.now()-(_w.__ts||0))<=IMG_TTL_MS)) b64=_w.d; } }catch(_){} }   // 구 포맷(raw)·TTL초과·파싱실패 → miss로 처리하여 최신본 재요청
+      if(!b64){ const d=await db.collection('images').doc(k).get(); if(d.exists && d.data().data){ b64=d.data().data; try{ localStorage.setItem('img:'+k, JSON.stringify({__ts:Date.now(), d:b64})); }catch(_){} } }
       if(b64){ imgCache[k]=b64; el.src=b64; }
     }catch(_){}
   }
