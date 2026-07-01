@@ -1273,6 +1273,20 @@ function conceptCardHTML(q){
 function renderQuestionBlock(q){
   if(!q || !q.q) return '';
   var jr=splitJaryo(q.q, q.jaryo);
+  // [FIX②] 표(explicit jaryo)+조합형: 진술이 발문(jr.q)에 남아 있으면 스템에서 떼어
+  //        별도 .jaryo 블록으로 렌더하고 진술별 O/X 버튼을 붙인다.
+  var _stemQ=jr.q, _comboJaryoHTML='';
+  if(isComboQuestion(q.opts||[]) && jr.jaryo){
+    var _cs=splitStmtMarkers(jr.q);
+    if(_cs.stmts.length>=2){
+      _stemQ=_cs.intro;
+      _comboJaryoHTML='<div class="jaryo">'+_cs.stmts.map(function(st,idx){
+        var ox='<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>';
+        var chip=otChips(q.id,idx);
+        return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span>'+ox+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>';
+      }).join('')+'</div>';
+    }
+  }
   var ansN=Array.isArray(q.ans)?q.ans:[q.ans];
   var _isCombo=isComboQuestion(q.opts||[]);
   var optHTML=(q.opts||[]).map(function(op,i){
@@ -1316,8 +1330,8 @@ function renderQuestionBlock(q){
       jaryoHTML='<div class="jaryo">'+rm(jr.jaryo,q)+'</div>';
     }
   }
-  return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,true):stemHTML(rm(jr.q,q)))+'</div></div>'+
-    '<div class="qcard">'+jaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
+  return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,true):stemHTML(rm(_stemQ,q)))+'</div></div>'+
+    '<div class="qcard">'+jaryoHTML+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
 }
 function renderExpFull(q, mqCertVal){
   mqCert = mqCertVal;
