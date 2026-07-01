@@ -283,7 +283,8 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="grpmaster" onclick="switchTab('grpmaster')">📈 그래프 마스터</div>
         <div class="cat-item" data-tab="ottag" onclick="switchTab('ottag')">🏷️ OX진술 태그</div>
         <div class="cat-item" data-tab="imgup" onclick="switchTab('imgup')">이미지 업로드</div>
-        <div class="cat-item" data-tab="examadd" onclick="switchTab('examadd')">➕ 시험 추가</div>
+        <div class="cat-item" data-tab="imglib" onclick="switchTab('imglib')">🖼️ 이미지 라이브러리</div>
+        <div class="cat-item" data-tab="examadd" onclick="switchTab('examadd')">🗂 시험 관리</div>
         <div class="cat-item" data-tab="mncheck" onclick="switchTab('mncheck')" style="display:none">🔎 데이터 스캔</div>
       </div>
     </div>
@@ -478,7 +479,7 @@ tr:hover td{background:#FAFAFA}
               <div style="font-size:12px;color:#888;margin-bottom:6px">자격증</div>
               <select id="emCert" style="width:100%;padding:8px 10px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">전체</option></select>
               <select id="emScope" style="width:100%;margin-top:6px;padding:8px 10px;border-radius:9px;border:1.5px solid #E8E8E8;font-size:12px;outline:none">
-                <option value="any">가입시험 또는 이용권</option><option value="signup">가입시험 기준</option><option value="entitlement">이용권 기준</option><option value="solved">풀이 기준 (마지막 푼 시험·기록없으면 생체)</option><option value="solved">풀이 기준 (마지막 푼 시험·기록없으면 생체)</option>
+                <option value="any">가입시험 또는 이용권</option><option value="signup">가입시험 기준</option><option value="entitlement">이용권 기준</option><option value="solved">풀이 기준 (마지막 푼 시험·기록없으면 실기·구술)</option><option value="solved">풀이 기준 (마지막 푼 시험·기록없으면 실기·구술)</option>
               </select>
             </div>
             <div>
@@ -744,7 +745,7 @@ tr:hover td{background:#FAFAFA}
             여기로 이미지(PNG/JPG)를 끌어다 놓거나 클릭해서 선택<br>
             <span style="font-size:11px;color:#A89C8E">파일명이 곧 키입니다 — 예: ksh74_q13_1.png → 키 <b>ksh74_q13_1</b> → 문항에 <b>img://ksh74_q13_1</b></span>
           </div>
-          <input id="iuFile" type="file" accept="image/*" multiple hidden>
+          <input id="iuFile" type="file" accept="*/*" multiple hidden>
           <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:10px 12px;color:#9A6A12;font-size:12px;margin:12px 0">
             업로드 시 가로 최대 1000px로 자동 리사이즈·압축해 <b>images/{키}</b> 문서에 저장합니다. 같은 키면 덮어씁니다.
           </div>
@@ -754,6 +755,34 @@ tr:hover td{background:#FAFAFA}
           </table>
           <div style="margin-top:12px"><button id="iuRun" class="btn-sm btn-extend" disabled onclick="iuUpload()">⬆ 이미지 업로드 실행</button></div>
           <div id="iuLog" style="background:#0b0f14;color:#cdd9e5;border-radius:6px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap;font-size:12px;margin-top:10px;font-family:monospace">대기 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🖼️ 이미지 라이브러리 -->
+    <div class="tab-panel" id="panel-imglib">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">🖼️ 이미지 라이브러리 (업로드된 모든 이미지 보기·다운로드·재사용)</div>
+        </div>
+        <div style="padding:14px 20px">
+          <div style="background:#EEF6FF;border:1px solid #BBD8F5;border-radius:8px;padding:10px 12px;color:#215787;font-size:12px;margin-bottom:12px">
+            불러오면 업로드된 이미지를 문항 참조와 대조해 <b>미사용(어느 문항에도 안 쓰인) 이미지</b>를 추려 보여줍니다. 필요한 걸 <b>내보내기(JSON 번들)</b>로 저장했다가, 나중에 <b>이미지 업로드</b>로 다시 복원해 재사용할 수 있습니다.
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn-sm btn-extend" onclick="imgLibLoad()">🔄 불러오기 / 새로고침</button>
+            <select id="imgLibMode" onchange="imgLibRender()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="unused">미사용 이미지만</option>
+              <option value="all">전체</option>
+              <option value="used">사용 중만</option>
+            </select>
+            <input id="imgLibSearch" oninput="imgLibRender()" placeholder="키 검색" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:180px">
+            <button class="btn-sm" style="background:#E8F3EC;color:#1E7A45;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibExport()">⬇ 내보내기 (JSON 번들)</button>
+            <button class="btn-sm" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibDeleteShown()">🗑 표시된 미사용 삭제</button>
+            <span id="imgLibCount" style="font-size:12.5px;color:#6E6256"></span>
+          </div>
+          <div id="imgLibStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 업로드 이미지와 사용처를 스캔해 미사용 이미지를 표시합니다.</div>
+          <div id="imgLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
         </div>
       </div>
     </div>
@@ -1302,14 +1331,14 @@ try {
 
 
 // 결제 상태 헬퍼 — 앱은 즉시구매를 'auto_approved'로 저장한다
-const CERT_NAMES = { bodybuilding:'생체2급', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사', housing:'주택관리사' };
+const CERT_NAMES = { bodybuilding:'스포츠지도사 2급 실기·구술', appraiser:'감평사', realestate1:'중개사1차', realestate2:'중개사2차', koreanhistory:'한국사', housing:'주택관리사' };
 const isPaid = s => s === 'approved' || s === 'auto_approved';
 const statusBadge = s => isPaid(s) ? 'badge-approved' : (s === 'pending' ? 'badge-pending' : 'badge-revoked');
 const statusLabel = s => s === 'auto_approved' ? '자동승인' : s === 'approved' ? '승인' : s === 'pending' ? '승인대기' : s === 'revoked' ? '철회' : '거절';
-const certNameOf = p => p.certName || CERT_NAMES[p.certType] || p.certType || '생체2급';
+const certNameOf = p => p.certName || (typeof _certNameMap!=='undefined'&&_certNameMap&&_certNameMap[p.certType]) || CERT_NAMES[p.certType] || p.certType || '스포츠지도사 2급 실기·구술';
 
 // ===== 가입 시험 + 시험별 풀이 =====
-const CERT_SHORT = { bodybuilding:'생체', appraiser:'감평사', realestate1:'중개1', realestate2:'중개2', koreanhistory:'한국사', housing:'주택관리사' };
+const CERT_SHORT = { bodybuilding:'실기·구술', appraiser:'감평사', realestate1:'중개1', realestate2:'중개2', koreanhistory:'한국사', housing:'주택관리사' };
 const CERT_CHIP = { appraiser:'background:#E6F1FB;color:#185FA5', koreanhistory:'background:#FFF1E0;color:#A8650A', bodybuilding:'background:#E9F7EF;color:#1D7A4D', realestate1:'background:#F4EEF9;color:#5B50C0', realestate2:'background:#FBEAF1;color:#B23A76', housing:'background:#EAF3EC;color:#2E7D46', _etc:'background:#F0ECE6;color:#9B9082' };
 function certLabel(c){ return CERT_NAMES[c]||c||'기타'; }
 function certShort(c){ return CERT_SHORT[c]||CERT_NAMES[c]||c||'기타'; }
@@ -2663,7 +2692,14 @@ async function _loadSubjNames(){                 // manifest에서 cert→한글
   var m={}, cm={};
   try{ var snap=await db.collection('manifest').doc('exams').get(); var exams=(snap.exists&&snap.data().exams)||[];
     exams.forEach(function(e){ if(e&&e.id) cm[e.id]=e.name||e.id; (e.subjects||[]).forEach(function(s){ if(s&&s.code) m[e.id+'|'+s.code]=s.name||s.code; }); }); }catch(_){}
-  _subjNameMap=m; _certNameMap=cm; return m;
+  _subjNameMap=m; _certNameMap=cm;
+  // manifest 이름을 이메일·D-day 표시에도 반영(짧은 칩 CERT_SHORT은 별도 유지). 시험 관리에서 이름 바꾸면 여기도 따라옴.
+  try{ Object.keys(cm).forEach(function(c){ var nm=cm[c]; if(!nm) return;
+    if(typeof EM_CERTS!=='undefined' && EM_CERTS[c]) EM_CERTS[c]=nm;
+    if(typeof CERT_NAMES!=='undefined' && CERT_NAMES[c]) CERT_NAMES[c]=nm;
+    if(typeof DDAY_CERTS!=='undefined'){ var d=DDAY_CERTS.find(function(x){return x.c===c;}); if(d) d.n=nm; }
+  }); }catch(_){}
+  return m;
 }
 function subjNameOf(cert, code){ return (_subjNameMap && _subjNameMap[cert+'|'+code]) || code || ''; }
 function certKo(cert){ return (_certNameMap && _certNameMap[cert]) || (typeof CERT_NAMES!=='undefined'&&CERT_NAMES[cert]) || cert || ''; }
@@ -2730,9 +2766,16 @@ function _eaSchedFmt(s){
 function eaEditToggle(id){ var p=document.getElementById('eaE_'+id); if(p) p.style.display=(p.style.display==='none'?'block':'none'); }
 function _inp(id,val,ph,extra){ return '<input id="'+id+'" value="'+(val==null?'':String(val).replace(/"/g,'&quot;'))+'" placeholder="'+(ph||'')+'" style="width:100%;padding:8px 10px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;outline:none;'+(extra||'')+'">'; }
 function _lbl(t){ return '<div style="font-size:11px;color:#8A7D6E;margin-bottom:3px">'+t+'</div>'; }
+// 앱(index.html PLAN_SETS)과 동일한 기본가 — manifest에 가격 없을 때 폼에 표시용(0원 대신 실제가)
+const DEFAULT_PLAN = {
+  _default:{7:3900,14:5900,28:8900,56:13900},
+  appraiser:{7:4900,14:7900,28:11900,56:17900},
+  realestate2:{7:4900,14:7900,28:11900,56:17900},
+  housing2:{7:4900,14:7900,28:11900,56:17900}
+};
 function eaEditForm(e,s){
   var pid='eaE_'+e.id, pass=e.pass||{}, isGrade=!!pass.grade, plan=e.plan||[];
-  var pget=function(d){ var p=plan.filter(function(x){return x.d===d;})[0]; return p?(p.p||0):0; };
+  var pget=function(d){ var p=plan.filter(function(x){return x.d===d;})[0]; if(p&&p.p) return p.p; var dm=(typeof DEFAULT_PLAN!=='undefined')?(DEFAULT_PLAN[e.id]||DEFAULT_PLAN._default):null; return (dm&&dm[d])||0; };
   var gid=(s&&s.gId)||'', qtab=(s&&s.qnetTab!=null)?s.qnetTab:0;
   var passHtml;
   if(isGrade){
@@ -2898,6 +2941,7 @@ function switchTab(name) {
   if(name==='export'){ openExportTab(); imgImpInit(); }
   if(name==='import') impInit();
   if(name==='imgup'){ iuInit(); openExportTab(); imgImpInit(); }
+  if(name==='imglib'){ imgLibInit(); }
   if(name==='community') cmaInit();
   if(name==='mnem') mnemInit();
   if(name==='tblmaster') tblmInit();
@@ -3357,8 +3401,16 @@ function closeMemberDetail(){ const el=document.getElementById('memberDetailModa
 // ===== 데이터 내보내기 =====
 let _expExams = null;
 async function openExportTab(){
-  if(_expExams) return;
-  try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists && m.data().exams)||[]; }catch(e){ _expExams=[]; }
+  if(!_expExams){
+    try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists && m.data().exams)||[]; }catch(e){ _expExams=[]; }
+  }
+  // 표시 보정(멱등): 구술(bodybuilding) 이름 통일 + sport2(필기) 바로 밑으로 정렬
+  try{
+    _expExams=(_expExams||[]).map(function(e){ return (e&&e.id==='bodybuilding')?Object.assign({},e,{name:'스포츠지도사 2급 실기·구술'}):e; });
+    var _bbi=_expExams.findIndex(function(e){return e&&e.id==='bodybuilding';});
+    var _spi=_expExams.findIndex(function(e){return e&&e.id==='sport2';});
+    if(_bbi>-1 && _spi>-1 && _bbi!==_spi+1){ var _bb=_expExams.splice(_bbi,1)[0]; var _at=_expExams.findIndex(function(e){return e&&e.id==='sport2';}); _expExams.splice(_at+1,0,_bb); }
+  }catch(_){}
   const sel=document.getElementById('expCert'); if(!sel) return;
   sel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
     + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
@@ -3449,21 +3501,45 @@ function iuResize(file, maxW){
   });
 }
 async function iuHandle(fileList){
-  const files=[...fileList].filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name));
-  if(!files.length){ iuLog('이미지 파일이 없습니다.','#f85149'); return; }
+  const files=[...fileList];
+  if(!files.length){ iuLog('파일이 없습니다.','#f85149'); return; }
   for(const f of files){
+    const isJson=/\.json$/i.test(f.name)||/json/i.test(f.type||'');
+    if(isJson){
+      // 이미지 내보내기 번들 { images:[{key,data}] } → 안의 이미지를 개별 복원
+      let parsed=null; try{ parsed=JSON.parse(await f.text()); }catch(_){ parsed=null; }
+      const arr = parsed && (Array.isArray(parsed.images)?parsed.images : (Array.isArray(parsed)&&parsed[0]&&parsed[0].key?parsed:null));
+      if(arr && arr.length){
+        let n=0;
+        for(const im of arr){ if(!im||!im.key||!im.data) continue;
+          const bytes=Math.round(String(im.data).length*0.75); let status='ready', err='';
+          if(bytes>900000){ status='bad'; err='0.9MB 초과'; }
+          iuItems=iuItems.filter(it=>it.key!==im.key);
+          iuItems.push({name:f.name+' → '+im.key, key:im.key, data:im.data, bytes, status, err, isImg:/^data:image\//.test(im.data||'')});
+          n++;
+        }
+        iuLog(f.name+': 이미지 번들 인식 — '+n+'개 이미지 복원 대기','#15793F');
+        continue;   // 번들 처리 끝 — 원본 저장 안 함
+      }
+      iuLog(f.name+': 이미지 번들 형식이 아니라 원본 파일로 저장합니다.','#B4531E');   // images 배열 없음 → 아래에서 원본 그대로 저장
+    }
     const key=f.name.replace(/\.[^.]+$/,'').trim();
     if(!key){ iuLog(f.name+': 키 추출 실패','#f85149'); continue; }
+    const isImg=/^image\//.test(f.type)||/\.(png|jpe?g|gif|webp)$/i.test(f.name);
     let data='', status='ready', err='';
-    try{ data=await iuResize(f,1000); }catch(e){ status='bad'; err=e.message; }
+    try{
+      if(isImg){ data=await iuResize(f,1000); }        // 이미지: 1000px JPEG로 리사이즈
+      else { data=await iuReadRaw(f); }                // 그 외: 원본 그대로
+    }catch(e){ status='bad'; err=e.message; }
     const bytes=data?Math.round(data.length*0.75):0;
-    if(data && bytes>900000){ status='bad'; err='압축 후에도 0.9MB 초과 (이미지를 더 작게 잘라주세요)'; }
+    if(data && bytes>900000){ status='bad'; err='0.9MB 초과 (파일을 더 작게 나눠주세요)'; }
     iuItems=iuItems.filter(it=>it.key!==key);
-    iuItems.push({name:f.name, key, data, bytes, status, err});
+    iuItems.push({name:f.name, key, data, bytes, status, err, isImg:isImg});
     if(err) iuLog(f.name+': '+err,'#f85149');
   }
   iuRender(); document.getElementById('iuRun').disabled=!iuItems.some(it=>it.status==='ready');
 }
+function iuReadRaw(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(new Error('파일 읽기 실패')); r.readAsDataURL(file); }); }
 function iuRender(){
   const tbl=document.getElementById('iuTbl'); const tb=tbl.querySelector('tbody');
   tbl.style.display=iuItems.length?'table':'none';
@@ -3471,11 +3547,12 @@ function iuRender(){
     const st=it.status==='bad'?('오류: '+it.err):it.status==='done'?'완료':'준비됨';
     const col=it.status==='bad'?'#f85149':it.status==='done'?'#15793F':'#185FA5';
     const kb=it.bytes?(Math.round(it.bytes/1024)+'KB'):'-';
-    const prev=it.data?'<img src="'+it.data+'" style="width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid #E5E7EB">':'-';
+    const prev=it.data?(it.isImg?('<img src="'+it.data+'" style="width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid #E5E7EB">'):('<span style="display:inline-flex;width:54px;height:54px;align-items:center;justify-content:center;background:#F1EFFB;color:#7F77DD;border-radius:6px;font-size:10px;font-weight:700">'+((it.name.split('.').pop()||'FILE').toUpperCase().slice(0,5))+'</span>')):'-';
+    const refLbl=it.isImg?('img://'+it.key):('키 '+it.key);
     return '<tr style="border-bottom:1px solid #EFE9E2">'
       +'<td style="padding:7px 10px">'+prev+'</td>'
       +'<td style="padding:7px 10px"><b>'+it.key+'</b></td>'
-      +'<td style="padding:7px 10px;color:#5B50C0">img://'+it.key+'</td>'
+      +'<td style="padding:7px 10px;color:#5B50C0">'+refLbl+'</td>'
       +'<td style="padding:7px 10px;text-align:right">'+kb+'</td>'
       +'<td style="padding:7px 10px;color:'+col+'">'+st+'</td></tr>';
   }).join('');
@@ -3958,6 +4035,133 @@ async function exportImages(){
   }catch(e){ st.textContent='오류: '+e.message; }
 }
 
+// ===== 🖼️ 이미지 라이브러리 (전체 이미지 보기·다운로드·재사용) =====
+let _imgLib=null, _imgLibInited=false, _imgLibUsage=null;
+function imgLibInit(){ if(_imgLibInited) return; _imgLibInited=true; imgLibLoad(); }
+async function imgLibLoad(){
+  const st=document.getElementById('imgLibStatus'); const grid=document.getElementById('imgLibGrid');
+  st.textContent='이미지 읽는 중…'; grid.innerHTML='';
+  try{
+    const snap=await db.collection('images').get();
+    _imgLib=[]; let bytes=0;
+    snap.forEach(doc=>{ const d=doc.data()||{}; const data=d.data||''; _imgLib.push({key:doc.id, data:data, size:data.length}); bytes+=data.length; });
+    _imgLib.sort((a,b)=>a.key<b.key?-1:1);
+    st.textContent='사용처 스캔 중… (문항에서 img:// 참조 수집)';
+    await _imgLibScan();
+    const unused=_imgLib.filter(im=>!_imgLibUsage.has(im.key)).length;
+    st.innerHTML='총 <b>'+_imgLib.length+'</b>개 · 사용 중 '+_imgLibUsage.size+' · <b style="color:#B4531E">미사용 '+unused+'</b> · 약 '+(Math.round(bytes/1024/1024*10)/10)+'MB';
+    imgLibRender();
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+// 사용처 스캔: banks(+shards)·adaptive variantq에서 img:// 참조 키 수집
+async function _imgLibScan(){
+  _imgLibUsage=new Set();
+  if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
+  const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
+  const collect=(txt)=>{ let m; while((m=re.exec(txt))!==null) _imgLibUsage.add(m[1]); re.lastIndex=0; };
+  for(const exam of (_expExams||[])){
+    for(const sub of (exam.subjects||[])){
+      const docId=exam.id+'__'+sub.code;
+      try{ const bd=await db.collection('banks').doc(docId).get();
+        if(bd.exists){ const data=bd.data()||{};
+          if(Array.isArray(data.shards)&&data.shards.length){
+            for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists) collect(JSON.stringify(sd.data().questions||[])); }catch(_){} }
+          } else collect(JSON.stringify(data.questions||[]));
+        }
+      }catch(_){}
+      try{ const vd=await db.collection('adaptive').doc(docId+'__variantq').get(); if(vd.exists) collect(JSON.stringify((vd.data()||{}).questions||[])); }catch(_){}
+    }
+  }
+}
+function _imgLibFiltered(){
+  if(!_imgLib) return [];
+  const mode=((document.getElementById('imgLibMode')||{}).value)||'unused';
+  const q=((document.getElementById('imgLibSearch')||{}).value||'').trim().toLowerCase();
+  return _imgLib.filter(im=>{
+    if(q && im.key.toLowerCase().indexOf(q)<0) return false;
+    const used=_imgLibUsage?_imgLibUsage.has(im.key):false;
+    if(mode==='unused') return !used;
+    if(mode==='used') return used;
+    return true;
+  });
+}
+function _imgLibExt(dataURL){ const m=/^data:image\/(png|jpeg|jpg|webp|gif);/i.exec(dataURL||''); return m?(m[1]==='jpeg'?'jpg':m[1]):'png'; }
+function imgLibRender(){
+  const grid=document.getElementById('imgLibGrid'); if(!grid||!_imgLib) return;
+  const list=_imgLibFiltered();
+  const cnt=document.getElementById('imgLibCount'); if(cnt) cnt.textContent='표시 '+list.length+' / 전체 '+_imgLib.length;
+  if(!list.length){ grid.innerHTML='<div style="color:#A89C8E;font-size:13px;padding:10px">표시할 이미지가 없습니다.</div>'; return; }
+  grid.innerHTML=list.map(im=>{
+    const kb=Math.round(im.size/1024);
+    const used=_imgLibUsage?_imgLibUsage.has(im.key):false;
+    const chip='<span style="font-size:10.5px;padding:1px 7px;border-radius:10px;'+(used?'background:#E7F5EC;color:#1E7A45':'background:#FCEDE6;color:#B4531E')+'">'+(used?'사용 중':'미사용')+'</span>';
+    return '<div style="border:1px solid #EDE7DF;border-radius:10px;overflow:hidden;background:#fff">'
+      + '<div style="background:#F7F4EF;height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden">'
+      + (im.data?('<img src="'+im.data+'" style="max-width:100%;max-height:120px;object-fit:contain">'):'<span style="color:#C4B8AA;font-size:11px">데이터 없음</span>')
+      + '</div>'
+      + '<div style="padding:8px 10px">'
+      + '<div style="font-family:monospace;font-size:11px;color:#3B342C;word-break:break-all;line-height:1.4;cursor:pointer" title="클릭하면 키 복사" onclick="imgLibCopyKey(this,\''+im.key.replace(/'/g,"\\'")+'\')">'+im.key+'</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;gap:6px">'
+      + '<span style="font-size:10.5px;color:#A89C8E">'+kb+'KB '+chip+'</span>'
+      + '<span style="display:flex;gap:5px">'
+      + '<button onclick="imgLibDownload(\''+im.key.replace(/'/g,"\\'")+'\')" style="background:#7F77DD;color:#fff;border:none;border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer">⬇</button>'
+      + '<button onclick="imgLibDelete(\''+im.key.replace(/'/g,"\\'")+'\')" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:8px;padding:5px 9px;font-size:11px;cursor:pointer">🗑</button>'
+      + '</span>'
+      + '</div></div></div>';
+  }).join('');
+}
+function imgLibCopyKey(el,key){
+  try{ navigator.clipboard.writeText('img://'+key); }catch(_){}
+  const old=el.textContent; el.textContent='복사됨: img://'+key; el.style.color='#1E7A45';
+  setTimeout(()=>{ el.textContent=old; el.style.color='#3B342C'; },1100);
+}
+function imgLibDownload(key){
+  const im=(_imgLib||[]).find(x=>x.key===key); if(!im||!im.data) return;
+  const a=document.createElement('a'); a.href=im.data; a.download=key+'.'+_imgLibExt(im.data);
+  document.body.appendChild(a); a.click(); a.remove();
+}
+// 현재 표시 중(기본=미사용) 이미지들을 이미지 내보내기와 동일한 JSON 번들로 저장 → 이미지 업로드로 복원 가능
+function imgLibExport(){
+  const list=_imgLibFiltered();
+  if(!list.length){ alert('내보낼 이미지가 없습니다.'); return; }
+  const mode=((document.getElementById('imgLibMode')||{}).value)||'unused';
+  const images=list.map(im=>({key:im.key, data:im.data}));
+  let bytes=0; images.forEach(im=>bytes+=(im.data||'').length);
+  const bundle={ images, exportedAt:(typeof _kstISO==='function'?_kstISO(new Date()):new Date().toISOString()), source:'imglib_'+mode, count:images.length };
+  const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='certlab_images_'+mode+'_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const st=document.getElementById('imgLibStatus'); if(st) st.innerHTML='✅ '+images.length+'개 이미지 내보내기 완료 (약 '+(Math.round(bytes/1024/1024*10)/10)+'MB) — 이미지 업로드로 복원 가능';
+}
+// 개별 삭제 (되돌릴 수 없음)
+async function imgLibDelete(key){
+  if(!confirm('이미지 "'+key+'" 를 삭제합니다.\n되돌릴 수 없습니다. 계속할까요?')) return;
+  if(_imgLibUsage && _imgLibUsage.has(key) && !confirm('⚠ 이 이미지는 문항에서 사용 중입니다.\n삭제하면 그 문항의 그림이 깨집니다. 그래도 삭제할까요?')) return;
+  try{
+    await db.collection('images').doc(key).delete();
+    _imgLib=(_imgLib||[]).filter(im=>im.key!==key);
+    if(_imgLibUsage) _imgLibUsage.delete(key);
+    imgLibRender();
+    const st=document.getElementById('imgLibStatus'); if(st) st.innerHTML='🗑 삭제됨: '+key;
+  }catch(e){ alert('삭제 실패: '+(e.message||e)+'\n\n(권한 오류면 Firestore 규칙에서 images 삭제 허용 필요)'); }
+}
+// 표시된 목록 중 '미사용'만 일괄 삭제 (사용 중은 자동 제외, 되돌릴 수 없음)
+async function imgLibDeleteShown(){
+  const list=_imgLibFiltered();
+  const del=list.filter(im=>!(_imgLibUsage&&_imgLibUsage.has(im.key)));
+  const usedSkip=list.length-del.length;
+  if(!del.length){ alert('삭제할 미사용 이미지가 없습니다.'+(usedSkip?(' (사용 중 '+usedSkip+'개는 제외)'):'')); return; }
+  if(!confirm('미사용 이미지 '+del.length+'개를 삭제합니다.'+(usedSkip?('\n(사용 중 '+usedSkip+'개는 안전을 위해 제외)'):'')+'\n\n되돌릴 수 없습니다. 계속할까요?')) return;
+  const st=document.getElementById('imgLibStatus'); let ok=0, fail=0;
+  for(const im of del){
+    try{ await db.collection('images').doc(im.key).delete(); _imgLib=(_imgLib||[]).filter(x=>x.key!==im.key); ok++; }
+    catch(e){ fail++; }
+    if(st) st.textContent='삭제 중… '+ok+'/'+del.length;
+  }
+  imgLibRender();
+  if(st) st.innerHTML='🗑 삭제 완료 <b>'+ok+'</b>개'+(fail?(' · <span style="color:#C0392B">실패 '+fail+'</span> (권한 오류면 Firestore 규칙 확인)'):'')+(usedSkip?(' · 사용 중 '+usedSkip+' 제외'):'');
+}
 // ===== 이미지 가져오기 (JSON → images 복구) =====
 let imgImpData=null; let _imgImpInited=false;
 function imgImpLog(msg,color){ const el=document.getElementById('imgImpLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
@@ -4042,7 +4246,7 @@ function crmCopyEmails(seg){
 /* ===== 이메일 발송 (Phase 1b) — emailTemplates CRUD + previewSegment/sendBulkEmail ===== */
 let emTpls = [], emEditingId = null, emInited = false;
 function emFns(){ return firebase.app().functions('asia-northeast3'); }
-const EM_CERTS = { appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사', bodybuilding:'생활체육지도사(보디빌딩) 구술,실기' };
+const EM_CERTS = { appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사', bodybuilding:'스포츠지도사 2급 실기·구술' };
 
 async function emInit(){
   if(!emInited){
@@ -4284,10 +4488,10 @@ const DDAY_CERTS = [
   {c:'appraiser', n:'감정평가사 1차', src:'qnet'},
   {c:'realestate1', n:'공인중개사 1차', src:'qnet'},
   {c:'realestate2', n:'공인중개사 2차', src:'qnet'},
-  {c:'housing', n:'주택관리사보 1차', src:'qnet'},
+  {c:'housing', n:'주택관리사 1차', src:'qnet'},
   {c:'housing2', n:'주택관리사 2차', src:'qnet'},
   {c:'koreanhistory', n:'한국사능력검정시험(심화)', src:'manual'},
-  {c:'bodybuilding', n:'생활체육지도사(보디빌딩) 구술,실기', src:'manual'}
+  {c:'bodybuilding', n:'스포츠지도사 2급 실기·구술', src:'manual'}
 ];
 let emExData = {}, emExEditing = null, emDdayRules = [], emDdayEditing = null;
 function emExToDate(v){ if(!v) return null; if(v.toDate) return v.toDate(); if(v.seconds) return new Date(v.seconds*1000); return new Date(v); }
