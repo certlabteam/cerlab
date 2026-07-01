@@ -1400,7 +1400,7 @@ function renderExpFull(q, mqCertVal){
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
     var blankStmts=(!comboOK && !isCV)?parseBlankStmts(q.q):[];   // 괄호빈칸 짝맞추기
-    var _apairs=(!comboOK && !isCV && !isCountType(q) && !(blankStmts.length>=2 && oFilled===blankStmts.length)) ? _assignPairs(q) : null;
+    var _apairs=(!comboOK && !isCountType(q) && !(blankStmts.length>=2 && oFilled===blankStmts.length)) ? _assignPairs(q) : null;
     var _asegs=_apairs ? _splitExpByMarker(oArr[(ansArr(q.ans)[0]||1)-1]||'', _apairs.map(function(p){return p.k;})) : null;
     if(isCountType(q)){
       var cStmts=splitCountStmts(q.q).stmts;
@@ -1440,7 +1440,7 @@ function renderExpFull(q, mqCertVal){
         return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' '+pickVerdict+' <span class="eo-badge">✅ 정답</span></div>';
       }).join('');
       body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">'+(stemNeg?'옳지 않은 지문들의 조합이다.':'정답 지문들의 조합이다.')+'</div></div></div>';
-    } else if(isCV){
+    } else if(isCV && !(_apairs && _asegs && _asegs.length>=2)){
       // 조합 변형형: 정답 보기 1칸만. 정답칸 예시를 보기에 나온 항목별로(중복제거) 한 줄씩 풀이.
       var cvIdx=ansN[0]-1;
       var cvSV=splitVerdict(stripRepeatedOpt(oArr[cvIdx]||'', q.opts&&q.opts[cvIdx]));
@@ -1484,7 +1484,8 @@ function renderExpFull(q, mqCertVal){
       }).join('')+'</div>';
       var _aN=ansArr(q.ans)[0];
       var _aOpt=(q.opts&&q.opts[_aN-1])?rm(q.opts[_aN-1],q):'';
-      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">'+(_aOpt?_aOpt+' ':'')+'<span class="eo-badge">\u2705 \uC815\uB2F5 '+_aN+'\uBC88</span></div></div></div>';
+      var _aEx=String(exArr[_aN-1]||'').trim();
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">'+(_aOpt?_aOpt+' ':'')+'<span class="eo-badge">\u2705 \uC815\uB2F5 '+_aN+'\uBC88</span></div>'+(_aEx?'<div class="eo-ex"><span class="eo-ex-ti">\uC608)</span>'+rm(_aEx,q)+'</div>':'')+'</div></div>';
     } else if(oFilled>=2){
       // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
       var fbCombo = isCombo && !comboOK;
