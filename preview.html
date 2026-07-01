@@ -1106,7 +1106,14 @@ function countStemHTML(rawStem, q, withOX){
 function parseJaryoStmts(qt, explicitJaryo){
   // 자료 영역에서 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ 지문 추출(줄·인라인 모두) → [{k,t}, ...]
   var jaryo=(splitJaryo(qt, explicitJaryo).jaryo)||qt||'';
-  return splitStmtMarkers(jaryo).stmts;
+  var st=splitStmtMarkers(jaryo).stmts;
+  // [FIX] 조합형이 표(explicit jaryo)를 함께 가지면 splitJaryo가 표를 자료로 잡아
+  //       표 안에서 ㄱㄴㄷ 진술을 못 찾는다(진술은 발문 qt에 있음).
+  //       → 자료에 진술 마커가 없고 explicit jaryo가 있을 때만 발문 qt에서 재탐색.
+  if(!st.length && explicitJaryo!=null && String(explicitJaryo).trim()!==''){
+    st=splitStmtMarkers(String(qt||'')).stmts;
+  }
+  return st;
 }
 
 // 괄호빈칸 짝맞추기형: 질문의 ( ㄱ )( ㄴ ) 빈칸과 그 설명 추출 → [{k,t}]
