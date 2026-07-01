@@ -5525,6 +5525,26 @@ async function goToCard(qid, certHint){
           }
         }
       } else { _poolInfo.push('AD_DATA 자체가 undefined'); }
+      // ★ 폴백: 캐시된 variantPool에 없으면 Firestore에서 최신 variantq를 직접 읽어 재탐색(6h 캐시·부분로드 우회)
+      if(!_found && typeof db!=='undefined' && db){
+        for(var fi=0; fi<_subs.length; fi++){
+          try{
+            var _sc=_subs[fi];
+            var _snap=await db.collection('adaptive').doc(certHint+'__'+_sc+'__variantq').get();
+            if(_snap && _snap.exists){
+              var _dd=(typeof _adParse==='function')?_adParse(_snap.data()):(_snap.data());
+              var _qs=(_dd&&_dd.questions)||[];
+              var _h2=_qs.find(function(q){ return q && q.id===qid; });
+              if(_h2){
+                _found=_h2; _foundSub=_sc;
+                try{ if(typeof AD_DATA!=='undefined' && AD_DATA[certHint+'|'+_sc]) AD_DATA[certHint+'|'+_sc].variantPool=_qs; }catch(_){}
+                try{ console.info('[레벨업 딥링크] 최신본 폴백으로 문항 찾음 qid='+qid+' sub='+_sc); }catch(_){}
+                break;
+              }
+            }
+          }catch(_){}
+        }
+      }
       if(!_found){ try{ console.warn('[레벨업 딥링크] 문항 못찾음 qid='+qid+' cert='+certHint+' subs='+JSON.stringify(_subs)+' pools='+_poolInfo.join(' / ')); }catch(_){} }
       if(_found){   // 단독 1문항 리뷰로 띄움 (채점·레벨변동 없이 문항+해설 확인)
         mqSub=_foundSub; mqSet=0; mqMode='all';
