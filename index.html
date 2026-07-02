@@ -3459,6 +3459,13 @@ async function _ltHookStart(){
 async function _ltResumeAfterLogin(){
   try{
     if(!currentUser) return;
+    // 게스트가 레벨테스트 도중 10문제에서 막혀 로그인 → 같은 세션 이어풀기(확정 아님)
+    if(typeof mqDiag!=='undefined' && mqDiag && typeof mqScreen!=='undefined' && mqScreen==='exam' && typeof mqList!=='undefined' && mqList && mqList.length && (Object.keys(mqAns||{}).length < mqList.length)){
+      try{ if(typeof hideLoginPopup==='function') hideLoginPopup(); }catch(_){}
+      if(typeof renderMCQ==='function') renderMCQ();
+      try{ window.scrollTo(0,0); }catch(_){}
+      return;
+    }
     var p=_ltPending;
     if(!p || !p.qs || !p.qs.length){
       var raw=null; try{ raw=localStorage.getItem('certlab_lt_pending'); }catch(_){}
@@ -5193,7 +5200,7 @@ function renderMcqExam(root){
 }
 function mqPick(qid,n){
   if(mqInReview) return;
-  if(!mqLevelTest && !canAccess(mqCert)) return;   // 레벨테스트는 제한 예외(끝까지 풀게) — 일반 풀이만 제한 적용
+  if(!canAccess(mqCert)) return;   // 레벨테스트 포함 게스트10/체험50 한도 적용(10에서 로그인 유도)
   const firstTime = mqAns[qid]===undefined;
   const changed = !firstTime && mqAns[qid]!==n;   // 답을 다른 보기로 바꾼 경우
   mqAns[qid]=n; mqShow[qid]=false;
@@ -5541,7 +5548,7 @@ async function enterCert(id, noGate){
     mqCert = id;
   }
   // 게스트 + 객관식: 후킹(무료 레벨테스트) 화면 먼저 띄우고 뱅크는 백그라운드 로드 → 30초 로딩 체감 제거
-  if(!currentUser && id!=='bodybuilding' && isMcqCert(id) && !loadedExams[id] && typeof _ltHookingScreen==='function' && typeof _ltGuestHasDone==='function' && !_ltGuestHasDone(id)){
+  if(!currentUser && id!=='bodybuilding' && isMcqCert(id) && typeof _ltHookingScreen==='function' && typeof _ltGuestHasDone==='function' && !_ltGuestHasDone(id)){
     mqCert=id; mqScreen='lthook';
     _ltHookingScreen(id);                  // 마케팅 화면이라 문제 데이터 불필요 → 즉시 표시
     if(typeof loadExam==='function') loadExam(id).catch(function(){});   // 뱅크 백그라운드 로드(시작 누를 때 사용)
