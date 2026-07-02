@@ -1358,16 +1358,19 @@ function perCertChips(per, max){
 }
 
 async function adminLogin() {
-  try { await auth.signInWithPopup(googleProvider); }
+  var P = (firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) || {};
+  var STORAGE_ERRS = ['auth/operation-not-supported-in-this-environment','auth/popup-blocked','auth/cancelled-popup-request','auth/web-storage-unsupported'];
+  // 1차: 기본(LOCAL) 팝업
+  try { await auth.signInWithPopup(googleProvider); return; }
   catch(e) {
     if (e.code === 'auth/popup-closed-by-user') return;
-    // 팝업 미지원(서드파티 쿠키 차단·인앱·storage 제약) → 리다이렉트 폴백
-    if (e.code === 'auth/operation-not-supported-in-this-environment' || e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/web-storage-unsupported') {
-      try { await auth.signInWithRedirect(googleProvider); return; }
-      catch(e2) { alert('로그인 오류: ' + (e2 && e2.message || e2) + '\n\n브라우저에서 이 사이트의 쿠키·사이트 데이터가 허용돼 있는지 확인해주세요.'); return; }
-    }
-    alert('로그인 오류: ' + e.message);
+    if (STORAGE_ERRS.indexOf(e.code) < 0) { alert('로그인 오류: ' + e.message); return; }
   }
+  // 2차: SESSION persistence로 낮춰 리다이렉트 (localStorage만 막힌 경우 대응)
+  try { if (P.SESSION) await auth.setPersistence(P.SESSION); await auth.signInWithRedirect(googleProvider); return; } catch(_){}
+  // 3차: 기본 persistence로 리다이렉트
+  try { await auth.signInWithRedirect(googleProvider); return; } catch(_){}
+  alert('이 브라우저에서는 로그인 저장소(쿠키·사이트 데이터)가 막혀 있어 로그인할 수 없어요.\n\n해결 방법:\n• 광고차단·프라이버시 확장프로그램을 이 사이트에서 끄기\n• 시크릿 모드면 일반 창에서 열기\n• 다른 브라우저(엣지)나 휴대폰에서 로그인 (휴대폰은 정상 작동)');
 }
 function adminLogout() { if(confirm('로그아웃 하시겠어요?')) auth.signOut(); }
 
