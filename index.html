@@ -4081,7 +4081,7 @@ function startConceptStudy(id,si,startIdx){
   mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
 }
 // 개념 카드 → 문제 풀이로
-function mqConceptSolve(){ mqConceptPhase='solve'; renderMCQ(); window.scrollTo(0,0); }
+function mqConceptSolve(){ if(mqLevelUp){ mqConcept=false; mqConceptPhase=''; renderMCQ(); window.scrollTo(0,0); return; } mqConceptPhase='solve'; renderMCQ(); window.scrollTo(0,0); }
 // 문제 풀이 → 다시 개념 카드(현재 문항)로
 function mqConceptBackToLearn(){ mqConceptPhase='learn'; renderMCQ(); window.scrollTo(0,0); }
 
@@ -4129,8 +4129,14 @@ function conceptOfferDismiss(){
   else { mqResult(); }
 }
 // 풀이 화면에서 현재 문항의 개념학습으로 이동 (그 회차에 exp.learn 다 있을 때만)
+function _qHasConcept(q){ if(!q||!q.exp) return false; var e=q.exp, L=e.learn;
+  return !!((L&&(L.title||L.sum||(Array.isArray(L.secs)&&L.secs.length))) || (Array.isArray(e.c)&&e.c.length)); }
 function goConceptFromQuestion(){
   if(mqInReview||mqDiag||mqConcept) return;
+  if(mqLevelUp){                                   // (2026-07-02) 레벨업: 현재 레벨업 문제의 자기 개념(exp.c/learn)만 표시 — 기출 세트 로드 안 함(mqList 유지)
+    if(!_qHasConcept(mqQuestions()[mqIdx])) return;
+    mqConcept=true; mqConceptPhase='learn'; renderMCQ(); window.scrollTo(0,0); return;
+  }
   if(!setConceptReady(mqCert,mqSub,mqSet)) return;
   var cur=mqQuestions()[mqIdx];
   var setQs=((curQB()[mqSub]||{}).sets||[])[mqSet]; setQs=setQs?setQs.questions:[];
@@ -5190,7 +5196,7 @@ function renderMcqExam(root){
     : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+q.id+'\')"><span class="gdot"></span>🎲 찍었어요</button>';
   const guessHint = (!mqInReview && guessOn) ? '<div class="guess-hint">확신이 없거나 <b>찍었을 때</b> 켜세요. 맞아도 <b>복습에 다시 나와요.</b></div>' : '';
   const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고">⚠️ 신고</button>';
-  const conceptGoBtn = (!mqInReview && !mqDiag && !mqConcept && setConceptReady(mqCert,mqSub,mqSet)) ? '<button class="go-concept" onclick="goConceptFromQuestion()">📖 선행학습</button>' : '';
+  const conceptGoBtn = (!mqInReview && !mqDiag && !mqConcept && (mqLevelUp ? _qHasConcept(q) : setConceptReady(mqCert,mqSub,mqSet))) ? '<button class="go-concept" onclick="goConceptFromQuestion()">📖 선행학습</button>' : '';
   root.innerHTML=
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="뒤로">'+BACK_ARROW+'</button>'+
