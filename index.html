@@ -1003,7 +1003,13 @@ async function signInWithGoogle() {
     hideLoginPopup();
     // CompleteRegistration은 loadUserPlan 신규회원 분기에서 발사(로그인 경로 무관 보장)
   } catch(e) {
-    if (e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message);
+    if (e.code === 'auth/popup-closed-by-user') return;
+    // 팝업 미지원(PC 서드파티 쿠키 차단·인앱·storage 제약) → 리다이렉트 폴백
+    if (e.code === 'auth/operation-not-supported-in-this-environment' || e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/web-storage-unsupported') {
+      try { await auth.signInWithRedirect(googleProvider); return; }
+      catch(e2) { alert('로그인 오류: ' + (e2 && e2.message || e2)); return; }
+    }
+    alert('로그인 오류: ' + e.message);
   }
 }
 
@@ -4030,7 +4036,7 @@ function startMcqReview(){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function startMcqExam(id,si,mode){
-  if(ltGate(mqCert)) return;                  // B2: 레벨테스트 필수 — 미완료면 차단
+  // (2026-07-02) 기출은 게스트도 자유 풀이(10문제 한도) — 레벨테스트 강제 제거
   mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mode=mode||'all';
   mqStopTimer();
@@ -4046,7 +4052,7 @@ function startMcqExam(id,si,mode){
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
 function resumeMcqExam(id,si){
-  if(ltGate(mqCert)) return;                  // B2: 레벨테스트 필수 — 미완료면 차단
+  // (2026-07-02) 기출은 게스트도 자유 풀이(10문제 한도) — 레벨테스트 강제 제거
   mqReview=false; mqDiag=false; mqInReview=false; mqConcept=false;
   mqStopTimer();
   const saved=mqLoadProgress(id,si);
@@ -4063,7 +4069,7 @@ function resumeMcqExam(id,si){
 }
 // ===== 개념학습 모드: 개념 카드 → 문제 풀기 → 다음 개념 → ... =====
 function startConceptStudy(id,si,startIdx){
-  if(ltGate(mqCert)) return;                  // 레벨테스트 필수 — 미완료면 차단(기출 풀이와 동일)
+  // (2026-07-02) 개념학습도 게스트 자유(10문제 한도) — 레벨테스트 강제 제거
   mqReview=false; mqDiag=false; mqInReview=false;
   mqStopTimer(); mqStopOverTimer();
   mqSub=id; mqSet=si; mqMode='all'; mqShow={}; mqGuess={};
