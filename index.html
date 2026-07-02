@@ -1340,7 +1340,17 @@ const PLAN_SETS={
             {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
             {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}]
 };
-function plansFor(cert){ return PLAN_SETS[cert]||PLAN_SETS._default; }
+let _pricingCfg=null;   // config/pricing: {tiers:{premium/standard/light:{m1,m3,m6,m12}}, certTier:{cert:tier}, freeDays}
+const _LEGACY_PLAN_NAMES={7:'1주 이용권',14:'2주 이용권',28:'4주 이용권',56:'8주 이용권',30:'1개월 이용권',90:'3개월 이용권',180:'6개월 이용권',365:'1년 이용권'};
+function _certTier(cert){ return (_pricingCfg&&_pricingCfg.certTier&&_pricingCfg.certTier[cert]) || 'standard'; }
+function _tierPlans(tier){
+  var t=(_pricingCfg&&_pricingCfg.tiers&&_pricingCfg.tiers[tier])||null; if(!t) return null;
+  return [ {d:30,p:+t.m1||0,name:'1개월 이용권',desc:'30일 전체 이용'},
+           {d:90,p:+t.m3||0,name:'3개월 이용권',desc:'90일 전체 이용'},
+           {d:180,p:+t.m6||0,name:'6개월 이용권',desc:'180일 전체 이용'},
+           {d:365,p:+t.m12||0,name:'1년 이용권',desc:'365일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1} ];
+}
+function plansFor(cert){ if(_pricingCfg){ var tp=_tierPlans(_certTier(cert)); if(tp) return tp; } return PLAN_SETS[cert]||PLAN_SETS._default; }
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
 function renderPlanCards(cert){
   const set=plansFor(cert), box=document.querySelector('.plan-cards'); if(!box) return;
@@ -5707,6 +5717,7 @@ async function loadManifest(){
   const mSnap=await db.collection('manifest').doc('exams').get();
   if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
   MANIFEST=mSnap.data();
+  try{ var _pc=await db.collection('config').doc('pricing').get(); if(_pc.exists) _pricingCfg=_pc.data(); }catch(_){}
   try{ buildCertRegistry(MANIFEST); }catch(e){ console.error('buildCertRegistry 실패', e); }   // 매니페스트 기반 새 시험 동적 등록(기존 7개는 무변경·확장만)
   try{ if(typeof reorderCertCards==='function') reorderCertCards(); }catch(_){}
   if(typeof loadExamSchedules==='function') loadExamSchedules();   // 시험일 읽어 D-day 정렬(가까운 순, 없음/지남=맨밑)
@@ -6288,7 +6299,8 @@ async function mpShowPayments(){
 }
 function mpPlanName(p){
   // PLAN_SETS에서 일수→이름(8주 이용권 등), 없으면 N일
-  try{ var set=(typeof PLAN_SETS!=='undefined')?(PLAN_SETS[p.certType]||PLAN_SETS._default):null; if(set){ var f=set.find(function(x){return x.d===p.planDays;}); if(f) return f.name; } }catch(_){}
+  try{ var set=plansFor(p.certType); if(set){ var f=set.find(function(x){return x.d===p.planDays;}); if(f) return f.name; } }catch(_){}
+  if(_LEGACY_PLAN_NAMES[p.planDays]) return _LEGACY_PLAN_NAMES[p.planDays];
   return (p.planDays!=null)?(p.planDays+'일'):'-';
 }
 function mpExpiryText(p){
