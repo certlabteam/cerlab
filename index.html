@@ -127,7 +127,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   </div>
   <div class="home-hero">
     <h1>내 합격 점수, AI가 미리 알려드려요</h1>
-    <p class="home-seo">무료 레벨테스트 3분이면 예상 점수·약점 끝.<br>틀린 문제는 망각곡선으로 까먹기 전에 자동 복습.</p>
+    <p class="home-seo">지금 내 실력이면 몇 점? 무료 레벨테스트로 예상 점수·약점 확인.<br>틀린 문제는 망각곡선으로 까먹기 전에 자동 복습.</p>
   </div>
   <div class="home-label">시험 선택</div>
   <div class="cert-cards">
@@ -605,6 +605,8 @@ const TRIAL_LIMIT = 50;
 const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing','housing2'];
 const CERT_LABELS = { bodybuilding:'스포츠지도사 실기·구술', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
 const CERT_FULLNAMES = { bodybuilding:'스포츠지도사 실기·구술', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험(심화)', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
+const LT_CERT_NAMES = { appraiser:'감정평가사 1차', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사 심화', sport2:'스포츠지도사 2급', laborattorney1:'공인노무사 1차', firemanager1:'소방시설관리사 1차', hesm:'건강운동관리사 1차' };
+function ltCertName(c){ return LT_CERT_NAMES[c] || (typeof CERT_FULLNAMES!=='undefined' && CERT_FULLNAMES[c]) || (typeof certLabel==='function'?certLabel(c):c); }
 // ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
 // 환급 이벤트 — 시험 구분 없이 단일 공통 문구(급수 시험은 최고 급수 달성 시)
 const REFUND = {
@@ -3235,9 +3237,9 @@ function mcqAnalysisCard(cert){
   }
   const s=mcqSubjectStats(cert);
   if(!ltDone(cert)){
-    var _ltN=_ltTotalCount(cert); var _ltG=(passRule(cert)&&passRule(cert).grade); var _ltM=_ltG?'예상 급수':'예상 점수';
-    return '<div class="anal-card"><div class="anal-top"><b>📊 내 '+_ltM+' &amp; 레벨</b></div>'
-      +'<div class="anal-empty">🎁 <b>100% 무료 · 가입 없이 바로</b><br>'+_ltN+'문제로 내 실력과 '+_ltM+'를 3분 만에 확인해보세요.</div>'
+    return '<div class="anal-card" style="text-align:center">'
+      +'<div style="font-size:16px;font-weight:800;color:#0C447C;line-height:1.4;margin:2px 0 8px">지금 '+ltCertName(cert)+' 보면 몇 점?</div>'
+      +'<div style="font-size:12px;color:#6B7280;margin-bottom:14px">🎁 100% 무료 · ⚡ 예상 점수 · 🎯 약점 분석</div>'
       +'<button class="anal-diag" onclick="diagResume()">🎯 무료 레벨테스트 '+(diagHasSave(cert)?'이어풀기':'시작')+'</button></div>';
   }
   const ap=adPredicted(cert);
@@ -3574,7 +3576,7 @@ function _ltShowGateModal(cert){
       +'<button class="popup-x" onclick="_ltCloseGate()" aria-label="닫기">✕</button>'
       +'<div style="font-size:36px;line-height:1;margin:6px 0 2px">🎯</div>'
       +'<div class="auth-sheet-title">레벨 테스트가 필요해요</div>'
-      +'<div class="auth-sheet-sub">먼저 레벨 테스트로 약점을 측정해야 맞춤 학습이 시작돼요.<br><span style="color:#8A7D6E;font-size:12px">과목당 '+per+'문항 · 한 번만 (이어풀기 가능)</span></div>'
+      +'<div class="auth-sheet-sub">먼저 레벨 테스트로 약점을 측정해야 맞춤 학습이 시작돼요.<br><span style="color:#8A7D6E;font-size:12px">한 번만 · 이어풀기 가능</span></div>'
       +'<button class="btn-google-login" onclick="_ltGateGo()" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;width:100%">레벨 테스트 하러가기</button>'
       +'</div>';
     document.body.appendChild(p);
@@ -5547,14 +5549,7 @@ async function enterCert(id, noGate){
     document.getElementById('modePill').style.display = 'none';
     mqCert = id;
   }
-  // 게스트 + 객관식: 후킹(무료 레벨테스트) 화면 먼저 띄우고 뱅크는 백그라운드 로드 → 30초 로딩 체감 제거
-  if(!currentUser && id!=='bodybuilding' && isMcqCert(id) && typeof _ltHookingScreen==='function' && typeof _ltGuestHasDone==='function' && !_ltGuestHasDone(id)){
-    mqCert=id; mqScreen='lthook';
-    _ltHookingScreen(id);                  // 마케팅 화면이라 문제 데이터 불필요 → 즉시 표시
-    if(typeof loadExam==='function') loadExam(id).catch(function(){});   // 뱅크 백그라운드 로드(시작 누를 때 사용)
-    if(typeof syncPlanMirror==='function') syncPlanMirror(); if(typeof updateAuthBar==='function') updateAuthBar();
-    return;
-  }
+  // (2026-07-02) 게스트 후킹 전체화면 강제 제거 — 시험 탭하면 바로 기출/과목 화면(레벨테스트는 대시보드 내 "무료 레벨테스트" 버튼으로). 무료 10문제 한도는 canAccess로 유지.
   // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
   if(!loadedExams[id]){
     var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
@@ -5569,12 +5564,7 @@ async function enterCert(id, noGate){
     refresh();
   } else if(isMcqCert(id)){
     mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
-    if(!currentUser && id!=='bodybuilding' && typeof _ltGuestGate==='function'){   // 비로그인: 후킹 랜딩 or 결과 게이트
-      (async function(){                                       // 적응형 로드는 비차단이라 진입 직후 adHasData가 false일 수 있음 → 로드 보장 후 판정
-        try{ if(typeof loadAdaptiveSubject==='function' && typeof qbOf==='function'){ var _qb=qbOf(id)||{}; await Promise.all(Object.keys(_qb).map(function(code){ return loadAdaptiveSubject(id, code).catch(function(){return null;}); })); } }catch(_){}
-        if(!currentUser && typeof adHasData==='function' && adHasData(id) && mqCert===id && mqScreen==='home' && !noGate) _ltGuestGate(id);
-      })();
-    }
+    // (2026-07-02) 게스트 진입 시 _ltGuestGate 후킹/게이트로 콘텐츠 덮던 것 제거 — 시험 탭하면 기출/과목 대시보드 유지(레벨테스트는 대시보드 내 CTA로). 레벨테스트 결과 로그인 게이트는 LT 완료 시(renderMqResultScreen 5298)에만.
   }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
