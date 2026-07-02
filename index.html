@@ -136,32 +136,32 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       <div class="cert-meta"><div class="nm">스포츠지도사 실기·구술</div><div class="ds">구술시험 대비 플래시카드 · 5과목</div><span class="tag">플래시카드</span></div>
       <div class="cert-go">›</div>
     </div>
-    <div class="cert-card" onclick="enterCert('appraiser')">
+    <div class="cert-card" id="certCard-appraiser" onclick="enterCert('appraiser')">
       <div class="cert-ic">📐</div>
       <div class="cert-meta"><div class="nm">감정평가사 1차</div><div class="ds">객관식 모의고사 · 5과목 460문항</div><span class="tag">모의고사</span></div>
       <div class="cert-go">›</div>
     </div>
-    <div class="cert-card" onclick="enterCert('realestate1')">
+    <div class="cert-card" id="certCard-realestate1" onclick="enterCert('realestate1')">
       <div class="cert-ic">🏠</div>
       <div class="cert-meta"><div class="nm">공인중개사 1차</div><div class="ds">객관식 · 부동산학개론 · 민법및민사특별법</div><span class="tag soon" id="certTag-realestate1">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
-    <div class="cert-card" onclick="enterCert('realestate2')">
+    <div class="cert-card" id="certCard-realestate2" onclick="enterCert('realestate2')">
       <div class="cert-ic">🏢</div>
       <div class="cert-meta"><div class="nm">공인중개사 2차</div><div class="ds">객관식 · 중개사법령 · 공법 · 공시법령및세법</div><span class="tag soon" id="certTag-realestate2">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
-    <div class="cert-card" onclick="enterCert('koreanhistory')">
+    <div class="cert-card" id="certCard-koreanhistory" onclick="enterCert('koreanhistory')">
       <div class="cert-ic">📜</div>
       <div class="cert-meta"><div class="nm">한국사능력검정시험(심화)</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon" id="certTag-koreanhistory">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
-    <div class="cert-card" onclick="enterCert('housing')">
+    <div class="cert-card" id="certCard-housing" onclick="enterCert('housing')">
       <div class="cert-ic">🏢</div>
       <div class="cert-meta"><div class="nm">주택관리사 1차</div><div class="ds">객관식 · 회계원리 · 공동주택시설개론 · 민법</div><span class="tag soon" id="certTag-housing">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
-    <div class="cert-card" onclick="enterCert('housing2')">
+    <div class="cert-card" id="certCard-housing2" onclick="enterCert('housing2')">
       <div class="cert-ic">🏢</div>
       <div class="cert-meta"><div class="nm">주택관리사 2차</div><div class="ds">객관식+주관식 · 주택관리관계법규 · 공동주택관리실무</div><span class="tag soon" id="certTag-housing2">준비 중</span></div>
       <div class="cert-go">›</div>
@@ -601,10 +601,27 @@ let userPlan = 'GUEST'; // (레거시 미러: 현재 활성 시험의 plan) GUES
 let trialCount = 0;     // (레거시 미러: 현재 활성 시험의 무료 사용 수)
 const GUEST_LIMIT = 10;
 const TRIAL_LIMIT = 50;
+const GUEST_DAILY_DEFAULT = 10, USER_DAILY_DEFAULT = 20;
+function _todayKST(){ return new Date(Date.now()+9*3600*1000).toISOString().slice(0,10); }
+function _guestDaily(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.guestDaily)||GUEST_DAILY_DEFAULT; }
+function _userDaily(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.userDaily)||USER_DAILY_DEFAULT; }
+function _guestDayGet(){ try{ var o=JSON.parse(localStorage.getItem('certlab_guest_daily')||'{}'); if(o&&o.date===_todayKST()&&o.counts) return o; }catch(_){} return {date:_todayKST(),counts:{}}; }
+function _guestDayCount(cert){ return (_guestDayGet().counts||{})[cert]||0; }
+function _guestDayBump(cert){ var o=_guestDayGet(); o.counts=o.counts||{}; o.counts[cert]=(o.counts[cert]||0)+1; o.date=_todayKST(); try{ localStorage.setItem('certlab_guest_daily',JSON.stringify(o)); }catch(_){} }
+function _userDayCount(cert){ var e=userEnt[cert]||{}; return (e.dayDate===_todayKST())?(e.dayCount||0):0; }
+function _userDayBump(cert){ var e=userEnt[cert]; if(!e) return; if(e.dayDate!==_todayKST()){ e.dayDate=_todayKST(); e.dayCount=0; } e.dayCount=(e.dayCount||0)+1; saveDailyCount(cert); }
+async function saveDailyCount(cert){ if(!currentUser||!userEnt[cert]) return; try{ await db.collection('users').doc(currentUser.uid).update({ ['entitlements.'+cert+'.dayDate']:userEnt[cert].dayDate, ['entitlements.'+cert+'.dayCount']:userEnt[cert].dayCount }); }catch(e){ console.error('일일카운트 저장 오류:', e); } }
 // ===== 시험별 이용권(entitlements) =====
 const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing','housing2'];
 const CERT_LABELS = { bodybuilding:'스포츠지도사 실기·구술', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
 const CERT_FULLNAMES = { bodybuilding:'스포츠지도사 실기·구술', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험(심화)', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
+const CERT_ICONS = { bodybuilding:'💪', appraiser:'📐', realestate1:'🏠', realestate2:'🏢', koreanhistory:'📜', housing:'🏢', housing2:'🏢', sport2:'🏅', laborattorney1:'⚖️', firemanager1:'🧯', hesm:'🏃' };
+function _certIcon(cert){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&_pricingCfg.certIcon&&_pricingCfg.certIcon[cert]) || CERT_ICONS[cert] || ''; }
+function applyCertIcons(){ try{
+  var ids=Object.keys(CERT_ICONS);
+  if(typeof _pricingCfg!=='undefined'&&_pricingCfg&&_pricingCfg.certIcon) Object.keys(_pricingCfg.certIcon).forEach(function(k){ if(ids.indexOf(k)<0) ids.push(k); });
+  ids.forEach(function(id){ var ic=_certIcon(id); if(!ic) return; var card=document.getElementById('certCard-'+id); if(!card) return; var el=card.querySelector('.cert-ic'); if(el) el.textContent=ic; });
+}catch(_){}}
 const LT_CERT_NAMES = { appraiser:'감정평가사 1차', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사 심화', sport2:'스포츠지도사 2급', laborattorney1:'공인노무사 1차', firemanager1:'소방시설관리사 1차', hesm:'건강운동관리사 1차' };
 function ltCertName(c){ return LT_CERT_NAMES[c] || (typeof CERT_FULLNAMES!=='undefined' && CERT_FULLNAMES[c]) || (typeof certLabel==='function'?certLabel(c):c); }
 // ===== 환급 이벤트 설정 (단일 관리처) — 시험 추가 시 이 객체에 한 줄만 추가 =====
@@ -1075,8 +1092,8 @@ function showLoginPopup(mode='default') {
   const title = document.getElementById('loginTitle');
   const sub = document.getElementById('loginSub');
   if (mode === 'guest_limit') {
-    title.textContent = '🎯 로그인하면 무료체험 계속!';
-    sub.textContent = '체험 문제를 다 푸셨어요. 구글 로그인하면 무료체험을 이어서 이용할 수 있어요!';
+    title.textContent = '🎯 로그인하면 하루 2배!';
+    sub.textContent = '오늘 무료 문제를 다 푸셨어요. 구글 로그인하면 하루 '+(typeof _userDaily==='function'?_userDaily():20)+'문제로 늘고, 학습 기록도 저장돼요!';
   } else {
     title.textContent = '📚 CertLab';
     sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
@@ -1256,9 +1273,9 @@ function featureCompareHTML(totalTxt){
 function showPlanPopup() {
   const cert = activeCertId();
   const titleEl = document.getElementById('planSheetTitle');
-  if (titleEl) titleEl.textContent = `⏰ 무료 체험 완료!`;
+  if (titleEl) titleEl.textContent = `⏰ 오늘 무료 학습 완료!`;
   const subEl = document.getElementById('planSub');
-  if (subEl) subEl.textContent = `이용권을 시작하면 전체 기출문제와 상세해설, 학습 기록을 계속 이용할 수 있어요.`;
+  if (subEl) subEl.textContent = `오늘의 무료 문제를 다 푸셨어요. 이용권을 시작하면 문제 수 제한 없이 전체 기출·해설·학습 기록을 이용할 수 있어요.`;
   const n = certQuestionCount(cert);
   const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
   const allN = totalQuestionCountAll();
@@ -1732,14 +1749,14 @@ function canAccess(cert) {
   const e = userEnt[cert] || { plan:'GUEST', trialCount:0 };
   const plan = e.plan;
   if (plan === 'GUEST') {
-    if ((guestCounts[cert]||0) >= GUEST_LIMIT) {
+    if (_guestDayCount(cert) >= _guestDaily()) {
       showLoginPopup('guest_limit');
       return false;
     }
     return true;
   }
   if (plan === 'FREE_TRIAL') {
-    if ((e.trialCount||0) >= TRIAL_LIMIT) {
+    if (_userDayCount(cert) >= _userDaily()) {
       showPlanPopup();
       return false;
     }
@@ -2717,8 +2734,8 @@ function rate(result){
   srRate(card,result);
   countUp('bodybuilding');
   { const e=userEnt.bodybuilding;
-    if(e.plan==='GUEST') guestCounts.bodybuilding++; if(typeof bumpGuestSolved==='function') bumpGuestSolved();
-    if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
+    if(e.plan==='GUEST') _guestDayBump('bodybuilding'); if(typeof bumpGuestSolved==='function') bumpGuestSolved();
+    if(e.plan==='FREE_TRIAL'){ _userDayBump('bodybuilding'); } }
   isFlipped=false; learnOpen=false;
   if(srMode==='review'){
     filtered=getFiltered();
@@ -2825,8 +2842,8 @@ function toggleWrong(){
     if(!canAccess('bodybuilding'))return;
     countUp('bodybuilding');
     { const e=userEnt.bodybuilding;
-      if(e.plan==='GUEST') guestCounts.bodybuilding++; if(typeof bumpGuestSolved==='function') bumpGuestSolved();
-      if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount('bodybuilding'); } }
+      if(e.plan==='GUEST') _guestDayBump('bodybuilding'); if(typeof bumpGuestSolved==='function') bumpGuestSolved();
+      if(e.plan==='FREE_TRIAL'){ _userDayBump('bodybuilding'); } }
     isFlipped=false;learnOpen=false;current++;renderCard();
   } else if(isSubjEnd()){
     showComplete();
@@ -5246,8 +5263,8 @@ function mqPick(qid,n){
     if(mqTimeUp) mqOvertimeCount++;
     countUp(mqCert);
     const e=userEnt[mqCert];
-    if(e.plan==='GUEST'){ guestCounts[mqCert]++; } if(typeof bumpGuestSolved==='function') bumpGuestSolved();
-    if(e.plan==='FREE_TRIAL'){ e.trialCount++; trialCount=e.trialCount; saveTrialCount(mqCert); } }
+    if(e.plan==='GUEST'){ _guestDayBump(mqCert); } if(typeof bumpGuestSolved==='function') bumpGuestSolved();
+    if(e.plan==='FREE_TRIAL'){ _userDayBump(mqCert); } }
   mqSaveProgress(); if(mqDiag) saveDiagProgress();
   if(mqLevelUp) luResumeSave();
   renderMCQ();
@@ -5719,6 +5736,7 @@ async function loadManifest(){
   MANIFEST=mSnap.data();
   try{ var _pc=await db.collection('config').doc('pricing').get(); if(_pc.exists) _pricingCfg=_pc.data(); }catch(_){}
   try{ buildCertRegistry(MANIFEST); }catch(e){ console.error('buildCertRegistry 실패', e); }   // 매니페스트 기반 새 시험 동적 등록(기존 7개는 무변경·확장만)
+  try{ applyCertIcons(); }catch(_){}   // config/pricing.certIcon(관리자 지정) → 홈 카드 아이콘 반영
   try{ if(typeof reorderCertCards==='function') reorderCertCards(); }catch(_){}
   if(typeof loadExamSchedules==='function') loadExamSchedules();   // 시험일 읽어 D-day 정렬(가까운 순, 없음/지남=맨밑)
   return MANIFEST;
@@ -5757,7 +5775,7 @@ function _addCertCard(ex, type){
     var id=ex.id; if(document.getElementById('certCard-'+id)) return;
     var subN=(ex.subjects||[]).length;
     var hasData=subN>0;
-    var icon=ex.icon||(type==='flashcard'?'🃏':'📘');
+    var icon=_certIcon(id)||ex.icon||(type==='flashcard'?'🃏':'📘');
     var desc=ex.desc||((type==='flashcard'?'플래시카드':'객관식 모의고사')+(subN?(' · '+subN+'과목'):''));
     var tagTxt=hasData?(type==='flashcard'?'플래시카드':'모의고사'):'준비 중';
     var tagCls=hasData?'tag':'tag soon';
