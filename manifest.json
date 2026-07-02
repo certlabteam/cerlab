@@ -1,17 +1,17 @@
 {
-  "name": "CertLab — 자격증 합격 학습",
+  "name": "CertLab 자격증 학습",
   "short_name": "CertLab",
-  "description": "도전하는 사람들의 성공을 돕습니다. 자격증·전문직 시험 학습 플랫폼.",
-  "start_url": "/index.html",
+  "description": "자격증 기출문제를 망각곡선 자동복습·약점 분석·예상점수로 학습하는 플랫폼",
+  "lang": "ko",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#185FA5",
+  "background_color": "#ffffff",
   "theme_color": "#185FA5",
-  "lang": "ko",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
