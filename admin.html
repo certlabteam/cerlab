@@ -1359,7 +1359,15 @@ function perCertChips(per, max){
 
 async function adminLogin() {
   try { await auth.signInWithPopup(googleProvider); }
-  catch(e) { if(e.code !== 'auth/popup-closed-by-user') alert('로그인 오류: ' + e.message); }
+  catch(e) {
+    if (e.code === 'auth/popup-closed-by-user') return;
+    // 팝업 미지원(서드파티 쿠키 차단·인앱·storage 제약) → 리다이렉트 폴백
+    if (e.code === 'auth/operation-not-supported-in-this-environment' || e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request' || e.code === 'auth/web-storage-unsupported') {
+      try { await auth.signInWithRedirect(googleProvider); return; }
+      catch(e2) { alert('로그인 오류: ' + (e2 && e2.message || e2) + '\n\n브라우저에서 이 사이트의 쿠키·사이트 데이터가 허용돼 있는지 확인해주세요.'); return; }
+    }
+    alert('로그인 오류: ' + e.message);
+  }
 }
 function adminLogout() { if(confirm('로그아웃 하시겠어요?')) auth.signOut(); }
 
