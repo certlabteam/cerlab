@@ -779,6 +779,8 @@ tr:hover td{background:#FAFAFA}
             <input id="imgLibSearch" oninput="imgLibRender()" placeholder="키 검색" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:180px">
             <button class="btn-sm" style="background:#E8F3EC;color:#1E7A45;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibExport()">⬇ 내보내기 (JSON 번들)</button>
             <button class="btn-sm" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibDeleteShown()">🗑 표시된 미사용 삭제</button>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#6E6256;cursor:pointer"><input type="checkbox" id="imgLibSelAll" onclick="imgLibToggleAll(this)" style="width:15px;height:15px;accent-color:#185FA5"> 전체</label>
+            <button class="btn-sm" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="imgLibChkDelete()">🗑 체크 삭제</button>
             <span id="imgLibCount" style="font-size:12.5px;color:#6E6256"></span>
           </div>
           <div id="imgLibStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 업로드 이미지와 사용처를 스캔해 미사용 이미지를 표시합니다.</div>
@@ -3936,6 +3938,8 @@ function seoLlms(urls){const pageUrls=urls.filter(u=>!u.endsWith('/seo/index.htm
 async function seoGenerate(){const btn=document.getElementById('seoBtn');if(btn)btn.disabled=true;const log=document.getElementById('seoLog');if(log)log.textContent='';if(typeof JSZip==='undefined'){seoLog('오류: JSZip 로드 실패(네트워크 확인)');if(btn)btn.disabled=false;return;}try{seoLog('Firestore 읽는 중…');const banks=await seoReadAllBanks();let qtot=0;banks.forEach(b=>qtot+=((b.data.questions||[]).length));seoLog('bank '+banks.length+'개 · 문항 '+qtot.toLocaleString()+'개. 페이지 생성 중…');const today=new Date().toISOString().slice(0,10);const zip=new JSZip();const sf=zip.folder('seo');const files=[];const SEO_LABELS={};for(const b of banks){const data=b.data;const cert=data.cert,sid=data.subject;const subjName=b.subjName||SEO_SUBJ_OVERRIDE[sid]||data.name||sid;const qs=data.questions||[];const groups={};for(const q of qs){const r=seoRound(q.set)||'__none';(groups[r]=groups[r]||[]).push(q);}for(const r in groups){const rr=(r==='__none')?null:r;const pg=seoPage(cert,subjName,rr,sid,groups[r]);sf.file(pg.fname,pg.html);files.push(pg.fname);SEO_LABELS[pg.fname]=subjName;}}const urls=['https://certlab.ai.kr/seo/index.html'].concat(files.map(f=>'https://certlab.ai.kr/seo/'+f));sf.file('index.html',seoHub(urls,SEO_LABELS));zip.file('sitemap.xml',seoSitemap(urls,today));zip.file('robots.txt',seoRobots());zip.file('llms.txt',seoLlms(urls));seoLog('페이지 '+files.length+'장 + 허브·sitemap·robots·llms 생성. 압축 중…');const blob=await zip.generateAsync({type:'blob'});const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download='certlab_seo.zip';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);seoLog('✅ 완료 — certlab_seo.zip 다운로드됨. 압축 풀어 GitHub 루트에 업로드(seo/ + sitemap.xml·robots.txt·llms.txt).');}catch(e){seoLog('오류: '+(e&&e.message||e));}if(btn)btn.disabled=false;}
 
 // ===== 이미지 내보내기 (images → JSON) =====
+function normKey(v){ if(!v) return null; v=String(v).trim(); return v.indexOf('img://')===0?v.slice(6):v; }
+function _qImgKeys(q){ var out=[]; var ik=normKey(q&&q.img); if(ik) out.push(ik); if(q&&Array.isArray(q.optImg)) q.optImg.forEach(function(o){ var ok=normKey(o); if(ok) out.push(ok); }); return out; }
 async function exportImages(){
   const st=document.getElementById('imgExpStatus');
   const sel=document.getElementById('imgExpCert'); const pick=(sel&&sel.value)||'__all';
@@ -3955,17 +3959,17 @@ async function exportImages(){
       // 과목: 선택값이 이 자격증에 없으면(드롭다운 stale) 무시하고 전체 과목
       let subs=(exam.subjects||[]);
       if(subPick!=='__all'){ const _m=subs.find(s=>s.code===subPick); if(_m) subs=[_m]; }
-      const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
+      const re=/img:\/\/([^\s\"'\\<>\]},]+)/g;
       const setNorm=String(setPick||'').trim();
       const allKeys=new Set();   // 범위(과목) 전체 키
       const filtKeys=new Set();  // 회차 필터 통과 키
       const setsSeen=new Set();  // 데이터에 실제 존재하는 회차(진단용)
       if(setPick==='__levelup'){
         // 레벨업(변형문항) 이미지: adaptive {cert}__{sub}__variantq 스캔
-        const re2=/img:\/\/([A-Za-z0-9_\-]+)/g;
+        const re2=/img:\/\/([^\s\"'\\<>\]},]+)/g;
         for(const sub of subs){
           try{ const vd=await db.collection('adaptive').doc(pick+'__'+sub.code+'__variantq').get();
-            if(vd.exists){ const t=JSON.stringify((vd.data()||{}).questions||[]); let mm; while((mm=re2.exec(t))!==null){ allKeys.add(mm[1]); filtKeys.add(mm[1]); } }
+            if(vd.exists){ const t=JSON.stringify((vd.data()||{}).questions||[]); let mm; while((mm=re2.exec(t))!==null){ allKeys.add(mm[1]); filtKeys.add(mm[1]); } ((vd.data()||{}).questions||[]).forEach(function(q){ _qImgKeys(q).forEach(function(kk){ allKeys.add(kk); filtKeys.add(kk); }); }); }
           }catch(_){}
         }
       } else
@@ -3986,7 +3990,7 @@ async function exportImages(){
             }
             // 전체 키 집계용으로도 모든 샤드가 필요하면 따로 읽음(폴백 진단용)
             if(setPick!=='__all'){
-              for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists&&Array.isArray(sd.data().questions)){ const aqt=JSON.stringify(sd.data().questions); let am; while((am=re.exec(aqt))!==null){ allKeys.add(am[1]); } re.lastIndex=0; } }catch(_){} }
+              for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists&&Array.isArray(sd.data().questions)){ const aqt=JSON.stringify(sd.data().questions); let am; while((am=re.exec(aqt))!==null){ allKeys.add(am[1]); } re.lastIndex=0; sd.data().questions.forEach(function(q){ _qImgKeys(q).forEach(function(kk){ allKeys.add(kk); }); }); } }catch(_){} }
             }
           } else {
             qs=data.questions||[];
@@ -3996,6 +4000,7 @@ async function exportImages(){
             const inSet=(setPick==='__all')||(qset===setNorm)|| (Array.isArray(data.shards)&&data.shards.length>0); // 샤드로 이미 좁혔으면 통과
             const qt=JSON.stringify(q); let m;
             while((m=re.exec(qt))!==null){ allKeys.add(m[1]); if(inSet) filtKeys.add(m[1]); }
+            _qImgKeys(q).forEach(function(kk){ allKeys.add(kk); if(inSet) filtKeys.add(kk); });
             re.lastIndex=0;
           }
         }catch(_){}
@@ -4057,7 +4062,7 @@ async function imgLibLoad(){
 async function _imgLibScan(){
   _imgLibUsage=new Set();
   if(!_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
-  const re=/img:\/\/([A-Za-z0-9_\-]+)/g;
+  const re=/img:\/\/([^\s\"'\\<>\]},]+)/g;
   const collect=(txt)=>{ let m; while((m=re.exec(txt))!==null) _imgLibUsage.add(m[1]); re.lastIndex=0; };
   for(const exam of (_expExams||[])){
     for(const sub of (exam.subjects||[])){
@@ -4095,7 +4100,8 @@ function imgLibRender(){
     const kb=Math.round(im.size/1024);
     const used=_imgLibUsage?_imgLibUsage.has(im.key):false;
     const chip='<span style="font-size:10.5px;padding:1px 7px;border-radius:10px;'+(used?'background:#E7F5EC;color:#1E7A45':'background:#FCEDE6;color:#B4531E')+'">'+(used?'사용 중':'미사용')+'</span>';
-    return '<div style="border:1px solid #EDE7DF;border-radius:10px;overflow:hidden;background:#fff">'
+    return '<div class="imglibcard" style="position:relative;border:1px solid #EDE7DF;border-radius:10px;overflow:hidden;background:#fff">'
+      + '<input type="checkbox" class="imglibchk" data-k="'+im.key.replace(/"/g,"&quot;")+'" onclick="imgLibChkSync(this)" style="position:absolute;top:7px;left:7px;width:18px;height:18px;z-index:3;accent-color:#185FA5;cursor:pointer">'
       + '<div style="background:#F7F4EF;height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden">'
       + (im.data?('<img src="'+im.data+'" style="max-width:100%;max-height:120px;object-fit:contain">'):'<span style="color:#C4B8AA;font-size:11px">데이터 없음</span>')
       + '</div>'
@@ -4161,6 +4167,25 @@ async function imgLibDeleteShown(){
   }
   imgLibRender();
   if(st) st.innerHTML='🗑 삭제 완료 <b>'+ok+'</b>개'+(fail?(' · <span style="color:#C0392B">실패 '+fail+'</span> (권한 오류면 Firestore 규칙 확인)'):'')+(usedSkip?(' · 사용 중 '+usedSkip+' 제외'):'');
+}
+// 체크박스 선택 삭제 (사용 중도 경고 후 삭제 가능)
+function imgLibChkSync(chk){ var c=chk.closest('.imglibcard'); if(c) c.style.outline=chk.checked?'2.5px solid #185FA5':''; if(c) c.style.outlineOffset=chk.checked?'-2px':''; }
+function imgLibToggleAll(m){ Array.prototype.slice.call(document.querySelectorAll('.imglibchk')).forEach(function(c){ c.checked=m.checked; imgLibChkSync(c); }); }
+async function imgLibChkDelete(){
+  var chks=Array.prototype.slice.call(document.querySelectorAll('.imglibchk:checked'));
+  if(!chks.length){ alert('체크된 이미지가 없습니다.'); return; }
+  var keys=chks.map(function(c){ return c.getAttribute('data-k'); });
+  var usedN=keys.filter(function(k){ return _imgLibUsage&&_imgLibUsage.has(k); }).length;
+  if(!confirm('체크한 이미지 '+keys.length+'개를 삭제합니다.'+(usedN?('\n⚠ 이 중 '+usedN+'개는 문항에서 사용 중 — 삭제하면 그림이 깨집니다.'):'')+'\n\n되돌릴 수 없습니다. 계속할까요?')) return;
+  var st=document.getElementById('imgLibStatus'); var okN=0, failN=0;
+  for(var i=0;i<keys.length;i++){
+    try{ await db.collection('images').doc(keys[i]).delete(); _imgLib=(_imgLib||[]).filter(function(x){return x.key!==keys[i];}); if(_imgLibUsage) _imgLibUsage.delete(keys[i]); okN++; }
+    catch(e){ failN++; }
+    if(st) st.textContent='삭제 중… '+okN+'/'+keys.length;
+  }
+  var sa=document.getElementById('imgLibSelAll'); if(sa) sa.checked=false;
+  imgLibRender();
+  if(st) st.innerHTML='🗑 체크 삭제 완료 <b>'+okN+'</b>개'+(failN?(' · <span style="color:#C0392B">실패 '+failN+'</span>'):'');
 }
 // ===== 이미지 가져오기 (JSON → images 복구) =====
 let imgImpData=null; let _imgImpInited=false;
