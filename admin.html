@@ -283,7 +283,8 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="grpmaster" onclick="switchTab('grpmaster')">📈 그래프 마스터</div>
         <div class="cat-item" data-tab="ottag" onclick="switchTab('ottag')">🏷️ OX진술 태그</div>
         <div class="cat-item" data-tab="imgup" onclick="switchTab('imgup')">이미지 업로드</div>
-        <div class="cat-item" data-tab="imglib" onclick="switchTab('imglib')">🖼️ 이미지 라이브러리</div>
+        <div class="cat-item" data-tab="imglib" onclick="switchTab('imglib')">🗑️ 이미지 삭제</div>
+        <div class="cat-item" data-tab="imgbank" onclick="switchTab('imgbank')">🖼️ 이미지 라이브러리</div>
         <div class="cat-item" data-tab="examadd" onclick="switchTab('examadd')">🗂 시험 관리</div>
         <div class="cat-item" data-tab="mncheck" onclick="switchTab('mncheck')" style="display:none">🔎 데이터 스캔</div>
       </div>
@@ -763,11 +764,11 @@ tr:hover td{background:#FAFAFA}
     <div class="tab-panel" id="panel-imglib">
       <div class="table-wrap">
         <div class="table-header">
-          <div class="table-title">🖼️ 이미지 라이브러리 (업로드된 모든 이미지 보기·다운로드·재사용)</div>
+          <div class="table-title">🗑️ 이미지 삭제 (문제에 안 쓰인 미사용 이미지 정리)</div>
         </div>
         <div style="padding:14px 20px">
           <div style="background:#EEF6FF;border:1px solid #BBD8F5;border-radius:8px;padding:10px 12px;color:#215787;font-size:12px;margin-bottom:12px">
-            불러오면 업로드된 이미지를 문항 참조와 대조해 <b>미사용(어느 문항에도 안 쓰인) 이미지</b>를 추려 보여줍니다. 필요한 걸 <b>내보내기(JSON 번들)</b>로 저장했다가, 나중에 <b>이미지 업로드</b>로 다시 복원해 재사용할 수 있습니다.
+            문항 참조와 대조해 <b>어느 문항에도 안 쓰인 미사용 이미지</b>를 추려 삭제·정리합니다. (보관이 필요한 자료 이미지는 <b>🖼️ 이미지 라이브러리</b> 탭에 따로 올리세요 — 여기 미사용 목록에는 잡히지 않습니다.) 필요하면 <b>내보내기(JSON 번들)</b>로 백업 후 삭제할 수 있습니다.
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
             <button class="btn-sm btn-extend" onclick="imgLibLoad()">🔄 불러오기 / 새로고침</button>
@@ -786,6 +787,29 @@ tr:hover td{background:#FAFAFA}
           <div id="imgLibStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 업로드 이미지와 사용처를 스캔해 미사용 이미지를 표시합니다.</div>
           <div id="imgLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- 🖼️ 이미지 라이브러리 (문제 무관 보관·다운로드) -->
+    <div class="tab-panel" id="panel-imgbank">
+      <div class="table-wrap">
+        <div class="table-header"><div class="table-title">🖼️ 이미지 라이브러리 (문제와 무관한 원본 자료 보관 — 다운받아 문제 제작에 사용)</div></div>
+        <div style="padding:0 4px 10px;font-size:12px;color:#A89C8E">문항과 연결되지 않는 원본 자료 이미지를 시험별로 보관합니다. <b>'🗑️ 이미지 삭제'(미사용 정리)에는 잡히지 않습니다.</b> 업로드 시 1600px로 리사이즈되며(원본 화질 유지), 필요할 때 낱장으로 다운로드해 문제 제작에 씁니다.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;padding:12px;background:#F7FAFF;border:1px solid #E3ECF7;border-radius:10px">
+          <span style="font-size:12.5px;font-weight:700;color:#185FA5">업로드</span>
+          <select id="imgBankCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">시험 선택…</option></select>
+          <input type="file" id="imgBankFile" accept="image/*" multiple style="font-size:12px">
+          <button class="btn-sm btn-extend" onclick="imgBankUpload()">⬆ 라이브러리에 올리기</button>
+          <span id="imgBankUpStatus" style="font-size:12px;color:#6E6256"></span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
+          <button class="btn-sm btn-extend" onclick="imgBankLoad()">🔄 불러오기 / 새로고침</button>
+          <select id="imgBankFilter" onchange="imgBankRender()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="">전체 시험</option></select>
+          <input id="imgBankSearch" oninput="imgBankRender()" placeholder="키 검색" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:160px">
+          <span id="imgBankCount" style="font-size:12.5px;color:#6E6256"></span>
+        </div>
+        <div id="imgBankStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 라이브러리 이미지를 표시합니다.</div>
+        <div id="imgBankGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
       </div>
     </div>
 
@@ -2955,6 +2979,7 @@ function switchTab(name) {
   if(name==='import') impInit();
   if(name==='imgup'){ iuInit(); openExportTab(); imgImpInit(); }
   if(name==='imglib'){ imgLibInit(); }
+  if(name==='imgbank'){ imgBankInit(); }
   if(name==='community') cmaInit();
   if(name==='mnem') mnemInit();
   if(name==='tblmaster') tblmInit();
@@ -4197,6 +4222,95 @@ async function imgLibChkDelete(){
   var sa=document.getElementById('imgLibSelAll'); if(sa) sa.checked=false;
   imgLibRender();
   if(st) st.innerHTML='🗑 체크 삭제 완료 <b>'+okN+'</b>개'+(failN?(' · <span style="color:#C0392B">실패 '+failN+'</span>'):'');
+}
+// ===== 🖼️ 이미지 라이브러리 (문제 무관 보관 — imageLibrary 컬렉션, '이미지 삭제'와 완전 분리) =====
+let _imgBank=null, _imgBankInited=false;
+async function imgBankInit(){
+  if(_imgBankInited) return; _imgBankInited=true;
+  try{ await _loadSubjNames(); }catch(_){}
+  var cm=(typeof _certNameMap!=='undefined'&&_certNameMap)||{};
+  var upSel=document.getElementById('imgBankCert'), fSel=document.getElementById('imgBankFilter');
+  Object.keys(cm).forEach(function(c){
+    var o1=document.createElement('option'); o1.value=c; o1.textContent=cm[c]||c; if(upSel) upSel.appendChild(o1);
+    var o2=document.createElement('option'); o2.value=c; o2.textContent=cm[c]||c; if(fSel) fSel.appendChild(o2);
+  });
+  imgBankLoad();
+}
+function imgBankResize(file, maxW, q){
+  return new Promise(function(res,rej){
+    var img=new Image(), url=URL.createObjectURL(file);
+    img.onload=function(){ var w=img.width,h=img.height; if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      var c=document.createElement('canvas'); c.width=w; c.height=h; var ctx=c.getContext('2d');
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h); URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', q||0.9)); };
+    img.onerror=function(){ URL.revokeObjectURL(url); rej(new Error('디코드 실패')); };
+    img.src=url;
+  });
+}
+async function imgBankUpload(){
+  var cert=(document.getElementById('imgBankCert')||{}).value||'';
+  var files=[].slice.call((document.getElementById('imgBankFile')||{}).files||[]);
+  var st=document.getElementById('imgBankUpStatus');
+  if(!cert){ st.textContent='시험을 먼저 선택하세요.'; st.style.color='#C0392B'; return; }
+  if(!files.length){ st.textContent='파일을 선택하세요.'; st.style.color='#C0392B'; return; }
+  st.style.color='#6E6256';
+  var ok=0, fail=0;
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    st.textContent='업로드 중… '+(i+1)+'/'+files.length+' ('+f.name+')';
+    try{
+      var data=await imgBankResize(f, 1600, 0.9);   // 1600px·0.9 (원본 화질 유지)
+      var bytes=Math.round(String(data).length*0.75);
+      if(bytes>950000){ fail++; continue; }          // Firestore 1MB 문서 한도
+      var key=f.name.replace(/\.[^.]+$/,'').trim(); if(!key) key='img_'+Date.now()+'_'+i;
+      await db.collection('imageLibrary').doc(key).set({ data:data, cert:cert, at:firebase.firestore.FieldValue.serverTimestamp() });
+      ok++;
+    }catch(e){ fail++; }
+  }
+  st.textContent='완료 — 성공 '+ok+(fail?(' · 실패/건너뜀 '+fail+'(1MB 초과 등)'):'');
+  st.style.color=fail?'#B4531E':'#15793F';
+  var fi=document.getElementById('imgBankFile'); if(fi) fi.value='';
+  imgBankLoad();
+}
+async function imgBankLoad(){
+  var st=document.getElementById('imgBankStatus'), grid=document.getElementById('imgBankGrid');
+  if(!st) return; st.textContent='라이브러리 읽는 중…'; if(grid) grid.innerHTML='';
+  try{
+    var snap=await db.collection('imageLibrary').get();
+    _imgBank=[]; var bytes=0;
+    snap.forEach(function(doc){ var d=doc.data()||{}; _imgBank.push({key:doc.id, data:d.data||'', cert:d.cert||'', size:(d.data||'').length}); bytes+=(d.data||'').length; });
+    _imgBank.sort(function(a,b){ return a.key<b.key?-1:1; });
+    st.innerHTML='총 <b>'+_imgBank.length+'</b>개 · 약 '+(Math.round(bytes/1024/1024*10)/10)+'MB';
+    imgBankRender();
+  }catch(e){ st.textContent='오류: '+e.message; }
+}
+function imgBankRender(){
+  var grid=document.getElementById('imgBankGrid'); if(!grid||!_imgBank) return;
+  var fc=(document.getElementById('imgBankFilter')||{}).value||'';
+  var q=((document.getElementById('imgBankSearch')||{}).value||'').trim().toLowerCase();
+  var list=_imgBank.filter(function(im){ return (!fc||im.cert===fc) && (!q||im.key.toLowerCase().indexOf(q)>=0); });
+  var cnt=document.getElementById('imgBankCount'); if(cnt) cnt.textContent='표시 '+list.length+'개';
+  grid.innerHTML = list.map(function(im){
+    var nm=(typeof certKo==='function'?certKo(im.cert):im.cert)||'(시험없음)';
+    var k=im.key.replace(/'/g,"\\'");
+    return '<div class="imgbankcard" style="border:1px solid #E8E8E8;border-radius:10px;padding:8px;background:#fff">'
+      +'<img src="'+im.data+'" style="width:100%;height:110px;object-fit:contain;background:#F5F5F5;border-radius:6px" loading="lazy">'
+      +'<div style="font-size:11px;color:#185FA5;font-weight:700;margin-top:6px">'+nm+'</div>'
+      +'<div style="font-size:11px;color:#6E6256;word-break:break-all;margin:2px 0 6px">'+im.key+'</div>'
+      +'<div style="display:flex;gap:5px">'
+      +'<button onclick="imgBankDownload(\''+k+'\')" style="flex:1;background:#E8F0FB;color:#185FA5;border:none;border-radius:7px;padding:6px;font-size:11px;font-weight:700;cursor:pointer">⬇ 다운</button>'
+      +'<button onclick="imgBankDelete(\''+k+'\')" style="flex:1;background:#FCEBEA;color:#C0392B;border:none;border-radius:7px;padding:6px;font-size:11px;font-weight:700;cursor:pointer">🗑 삭제</button>'
+      +'</div></div>';
+  }).join('') || '<div style="color:#A89C8E;font-size:13px;padding:20px">이미지가 없습니다. 위에서 시험을 고르고 업로드하세요.</div>';
+}
+function imgBankDownload(key){
+  var im=(_imgBank||[]).find(function(x){return x.key===key;}); if(!im) return;
+  var a=document.createElement('a'); a.href=im.data; a.download=key+'.jpg'; document.body.appendChild(a); a.click(); a.remove();
+}
+async function imgBankDelete(key){
+  if(!confirm('이 이미지를 라이브러리에서 삭제할까요?\n'+key)) return;
+  try{ await db.collection('imageLibrary').doc(key).delete(); _imgBank=(_imgBank||[]).filter(function(x){return x.key!==key;}); imgBankRender(); }
+  catch(e){ alert('삭제 오류: '+e.message); }
 }
 // ===== 이미지 가져오기 (JSON → images 복구) =====
 let imgImpData=null; let _imgImpInited=false;
