@@ -17,11 +17,22 @@ select{font-size:14px;padding:9px 11px;border:1px solid #CBD5E1;border-radius:9p
 .summary{font-size:12.5px;color:#475569}
 .summary b{color:var(--ink)}
 .sort{font-size:12px;color:var(--sub)}
+.expbtn{font-size:12px;font-weight:700;padding:6px 13px;border-radius:8px;background:#185FA5;color:#fff;border:none;cursor:pointer}
+.expbtn:disabled{opacity:.5;cursor:default}
 .grouphd{font-size:12.5px;font-weight:800;color:var(--blue);margin:16px 2px 8px;padding-bottom:5px;border-bottom:1px solid #E2E8F0}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 @media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:500px){.grid{grid-template-columns:1fr}}
-.card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.card{position:relative;background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.cardchk{position:absolute;top:8px;left:8px;width:19px;height:19px;z-index:3;cursor:pointer;accent-color:#185FA5}
+.card.checked{outline:2.5px solid #185FA5;outline-offset:-2px}
+.cardacts{display:flex;gap:6px;margin:0 12px 12px}
+.actbtn{flex:1;padding:7px 4px;border-radius:9px;border:1.5px solid #CBD5E1;background:#fff;color:#334155;font-size:12px;font-weight:700;cursor:pointer}
+.actbtn:hover{background:#F1F5F9}
+.selall{display:flex;align-items:center;gap:5px;font-size:12px;color:#475569;cursor:pointer;user-select:none}
+.selall input{width:16px;height:16px;accent-color:#185FA5}
+.delchk{font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;background:#FCEBEA;color:#C0392B;border:none;cursor:pointer}
+.delchk:disabled{opacity:.45;cursor:default}
 .thumb{background:#F8FAFC;min-height:130px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #EEF2F7;padding:6px}
 .thumb img{max-width:100%;max-height:150px;height:auto;display:block}
 .thumb .ph{font-size:12px;color:#B4A99C;padding:30px 10px;text-align:center}
@@ -32,7 +43,11 @@ select{font-size:14px;padding:9px 11px;border:1px solid #CBD5E1;border-radius:9p
 .meta .imgid{font-size:11.5px;color:var(--sub);margin-top:3px;word-break:break-all}
 .meta .st{font-size:11.5px;font-weight:700;margin-top:6px}
 .st.ok{color:var(--ok)}.st.bad{color:var(--bad)}.st.load{color:#9AA3AE}
-.gobtn{display:block;text-align:center;margin:6px 12px 12px;padding:8px;border-radius:9px;background:#185FA5;color:#fff;text-decoration:none;font-size:12.5px;font-weight:700}
+.gobtn{flex:1;display:block;text-align:center;padding:8px;border-radius:9px;background:#185FA5;color:#fff;text-decoration:none;font-size:12.5px;font-weight:700}
+.cardfoot{display:flex;gap:6px;margin:6px 12px 12px;align-items:stretch}
+.delbtn{flex:0 0 auto;padding:8px 12px;border-radius:9px;background:#fff;border:1.5px solid #E4A0A0;color:#B23B3B;font-size:12.5px;font-weight:700;cursor:pointer}
+.delbtn:hover{background:#FBEBEB}
+.card.deleting{opacity:.45;pointer-events:none}
 .empty{font-size:13px;color:var(--sub);text-align:center;padding:40px 10px}
 </style></head>
 <body><div class="wrap">
@@ -47,7 +62,12 @@ select{font-size:14px;padding:9px 11px;border:1px solid #CBD5E1;border-radius:9p
 </div>
 <div class="bar">
   <div class="summary" id="summary">스캔 중…</div>
-  <div class="sort" id="sortBtn" onclick="cycleSort()" style="cursor:pointer;user-select:none" title="정렬 전환">↓ 최신순</div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <label class="selall"><input type="checkbox" id="selAll" onclick="toggleAll(this)"> 전체</label>
+    <button class="delchk" id="delChkBtn" onclick="chkDelete()">🗑 체크 삭제</button>
+    <button class="expbtn" id="expBtn" onclick="exportShown()">⬇ 내보내기</button>
+    <div class="sort" id="sortBtn" onclick="cycleSort()" style="cursor:pointer;user-select:none" title="정렬 전환">↓ 최신순</div>
+  </div>
 </div>
 <div id="grid"></div>
 </div>
@@ -69,6 +89,86 @@ const SITE = 'https://certlab.ai.kr/';
 
 // '이 문항 보기' — 설치 PWA가 같은 scope 링크를 앱창으로 캡처하는 걸 피하려 window.open 새 탭으로 연다.
 // ctrl/cmd/shift/가운데클릭은 브라우저 기본동작(새 탭/새 창) 유지.
+function _imgExt(u){ var m=/^data:image\/(png|jpeg|jpg|webp|gif);/i.exec(u||''); return m?(m[1]==='jpeg'?'jpg':m[1]):'png'; }
+function iuResize(file, maxW){
+  return new Promise(function(res,rej){
+    var img=new Image(); var url=URL.createObjectURL(file);
+    img.onload=function(){
+      var w=img.width, h=img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      var ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg',0.82));
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); rej(new Error('이미지 디코드 실패')); };
+    img.src=url;
+  });
+}
+async function dlOne(btn){
+  var key=btn.getAttribute('data-k'); if(!key) return;
+  var data=await fetchImg(key);
+  if(!data){ alert('이미지 데이터가 없습니다: '+key); return; }
+  var a=document.createElement('a'); a.href=data; a.download=key+'.'+_imgExt(data);
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function replaceImg(btn){
+  var key=btn.getAttribute('data-k'), cid=btn.getAttribute('data-cid'); if(!key) return;
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=async function(){
+    var file=inp.files&&inp.files[0]; if(!file) return;
+    if(!confirm('이미지 "'+key+'"를 이 파일로 교체할까요?\n\n※ 같은 키에 덮어씁니다. 이 이미지를 쓰는 모든 문항이 새 그림으로 바뀝니다.')) return;
+    var old=btn.textContent; btn.textContent='교체 중…'; btn.disabled=true;
+    try{
+      var data=await iuResize(file, 1000);
+      await db.collection('images').doc(key).set({ data:data }, { merge:true });
+      imgCache[key]=data;
+      var th=document.getElementById('th_'+cid);
+      if(th) th.innerHTML='<img src="'+data+'" alt="'+key+'">';
+      btn.textContent='✅ 교체됨'; setTimeout(function(){ btn.textContent=old; btn.disabled=false; }, 1200);
+    }catch(e){ alert('교체 실패: '+(e&&e.message||e)); btn.textContent=old; btn.disabled=false; }
+  };
+  inp.click();
+}
+function _checkedChks(){ return Array.prototype.slice.call(document.querySelectorAll('.cardchk:checked')); }
+function chkSync(chk){ var card=document.getElementById('card_'+chk.getAttribute('data-cid')); if(card) card.classList.toggle('checked', chk.checked); var b=document.getElementById('delChkBtn'); if(b) b.textContent='🗑 체크 삭제'+(_checkedChks().length?(' ('+_checkedChks().length+')'):''); }
+function toggleAll(master){ Array.prototype.slice.call(document.querySelectorAll('.cardchk')).forEach(function(c){ c.checked=master.checked; chkSync(c); }); }
+async function chkDelete(){
+  var chks=_checkedChks();
+  if(!chks.length){ alert('체크된 이미지가 없습니다.'); return; }
+  if(!confirm('체크한 이미지 '+chks.length+'개를 삭제할까요?\n\n※ Firestore images 문서가 완전히 지워집니다. 되돌릴 수 없습니다.\n이 이미지를 참조하는 문항은 "이미지 없음"이 됩니다.')) return;
+  var b=document.getElementById('delChkBtn'); if(b){ b.disabled=true; }
+  var okN=0, failN=0;
+  for(var i=0;i<chks.length;i++){
+    var key=chks[i].getAttribute('data-k'), cid=chks[i].getAttribute('data-cid');
+    var card=document.getElementById('card_'+cid);
+    try{
+      await db.collection('images').doc(key).delete();
+      if(imgCache) delete imgCache[key];
+      if(card&&card.parentNode) card.parentNode.removeChild(card);
+      okN++;
+    }catch(e){ failN++; if(card) card.classList.remove('checked'); }
+    if(b) b.textContent='삭제 중… '+okN+'/'+chks.length;
+  }
+  if(b){ b.disabled=false; b.textContent='🗑 체크 삭제'; }
+  var sa=document.getElementById('selAll'); if(sa) sa.checked=false;
+  summaryEl.textContent='🗑 삭제 완료: '+okN+'개'+(failN?(' · 실패 '+failN):'');
+}
+async function delImg(btn){
+  var key=btn.getAttribute('data-k'), cid=btn.getAttribute('data-cid');
+  if(!key) return;
+  if(!confirm('이미지 "'+key+'" 를 삭제할까요?\n\n※ Firestore images/'+key+' 문서가 완전히 지워집니다.\n이 이미지를 참조하는 문항이 있으면 그 문항은 "이미지 없음"이 됩니다.')) return;
+  var card=document.getElementById('card_'+cid);
+  if(card) card.classList.add('deleting');
+  try{
+    await db.collection('images').doc(key).delete();
+    if(imgCache) delete imgCache[key];
+    if(card){ card.style.transition='opacity .2s'; card.style.opacity='0'; setTimeout(function(){ if(card&&card.parentNode) card.parentNode.removeChild(card); }, 200); }
+  }catch(e){
+    alert('삭제 실패: '+(e&&e.message||e));
+    if(card) card.classList.remove('deleting');
+  }
+}
 function goCard(e, url){
   if(e && (e.ctrlKey||e.metaKey||e.shiftKey||e.button===1)) return true;
   if(e) e.preventDefault();
@@ -84,6 +184,31 @@ const grid=document.getElementById('grid');
 const summaryEl=document.getElementById('summary');
 
 const imgCache={};
+async function exportShown(){
+  const exF=examSel.value, subF=subSel.value, setF=setSel.value;
+  if(!exF || !subF){ alert('시험과 과목을 먼저 선택하세요.'); return; }
+  var items=ITEMS.filter(function(it){ return it.exam===exF && (subF==='__all'||it.sub===subF) && (!setF || it.setLabel===setF); });
+  var keys=[]; var seen={}; items.forEach(function(it){ if(it.key && !seen[it.key]){ seen[it.key]=1; keys.push(it.key); } });
+  if(!keys.length){ alert('내보낼 이미지가 없습니다. (화면에 보이는 이미지가 대상)'); return; }
+  var btn=document.getElementById('expBtn'); var old=btn?btn.textContent:'';
+  if(btn){ btn.textContent='내보내는 중…'; btn.disabled=true; }
+  var images=[], miss=0;
+  for(var i=0;i<keys.length;i++){
+    var data=await fetchImg(keys[i]);
+    if(data){ images.push({key:keys[i], data:data}); } else { miss++; }
+  }
+  if(btn){ btn.textContent=old; btn.disabled=false; }
+  if(!images.length){ alert('이미지 데이터를 찾지 못했습니다. (Firestore images에 저장 안 됨)'); return; }
+  var bundle={ _meta:{ kind:'images', generatedAt:new Date().toISOString(), exam:exF, sub:subF, set:(setF||'__all'), count:images.length }, images:images };
+  var exName=((EXAMS.find(function(e){return e.id===exF;})||{}).name)||exF;
+  var subName=(subF==='__all')?'전과목':(((EXAMS.find(function(e){return e.id===exF;})||{}).subs||[]).find(function(s){return s.code===subF;})||{}).name||subF;
+  var d=new Date(); var ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  var fn='\uC774\uBBF8\uC9C0\uBC31\uC5C5_'+exName+'_'+subName+(setF?'_'+setF:'')+'_'+ymd+'.json';
+  var blob=new Blob([JSON.stringify(bundle)], {type:'application/json'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 200);
+  summaryEl.textContent='\u2705 \uB0B4\uBCF4\uB0B4\uAE30 \uC644\uB8CC: '+images.length+'\uAC1C'+(miss?(' \u00B7 \uB370\uC774\uD130\uC5C6\uC74C '+miss):'');
+}
 async function fetchImg(id){
   if(imgCache[id]!==undefined) return imgCache[id];
   try{ const d=await db.collection('images').doc(id).get(); const b=(d.exists && d.data().data)?d.data().data:null; imgCache[id]=b; return b; }
@@ -212,12 +337,21 @@ function render(){
     it._cid=cid;
     var qn=qNum(it.qid);
     var title=((it.setLabel?it.setLabel+' ':'')+(qn?qn+'번':'')).trim() || it.qid;
-    return '<div class="card">'
+    var kAttr=String(it.key).replace(/"/g,'&quot;');
+    return '<div class="card" id="card_'+cid+'">'
+      +'<input type="checkbox" class="cardchk" data-k="'+kAttr+'" data-cid="'+cid+'" onclick="event.stopPropagation();chkSync(this)">'
       +'<div class="thumb" id="th_'+cid+'"><div class="ph">불러오는 중…</div></div>'
       +'<div class="meta"><div class="qid">'+title+'<span class="kind">'+it.kind+'</span></div>'
       +'<div class="imgid">'+it.qid+' · '+it.key+'</div>'
       +'<div class="st load" id="st_'+cid+'">확인 중…</div></div>'
+      +'<div class="cardfoot">'
       +'<a class="gobtn" href="'+SITE+'?card='+encodeURIComponent(it.qid)+'&cert='+encodeURIComponent(it.exam)+'" target="_blank" rel="noopener" onclick="return goCard(event,this.href)">이 문항 보기 →</a>'
+      +'</div>'
+      +'<div class="cardacts">'
+      +'<button class="actbtn" data-k="'+kAttr+'" onclick="dlOne(this)">⬇ 다운</button>'
+      +'<button class="actbtn" data-k="'+kAttr+'" data-cid="'+cid+'" onclick="replaceImg(this)">🔄 교체</button>'
+      +'<button class="delbtn" data-k="'+kAttr+'" data-cid="'+cid+'" onclick="delImg(this)">🗑 삭제</button>'
+      +'</div>'
       +'</div>';
   }
 
