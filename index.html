@@ -619,6 +619,28 @@ function _eloCanApply(cert,q){ try{ if(typeof eloState==='undefined'||!eloState)
   return true; }catch(_){ return true; } }
 function _eloMarkApplied(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return; var id=q&&q.id; if(!id) return; eloState._applied=eloState._applied||{}; _eloPruneToday(eloState._applied); eloState._applied[cert+'|'+id]=_todayKST(); }catch(_){} }
 function _eloMarkExpSeen(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return; var id=q&&q.id; if(!id) return; eloState._expSeen=eloState._expSeen||{}; _eloPruneToday(eloState._expSeen); eloState._expSeen[cert+'|'+id]=_todayKST(); }catch(_){} }
+// 단원 코드 개편 자동 마이그레이션: eloState의 옛 topic 키 → 새 코드(분할은 다 복사, 1회만)
+function _migrateEloTopics(es){ try{
+  if(!es || typeof es!=='object' || es._topicMig) return;
+  var MIG={ mi_producer:['mi_perfcomp','mi_production','mi_cost'], mi_welfare:['mi_surplus'], mi_oligopoly:['mi_oligopoly','mi_game'], mi_consumer:['mi_consumer','mi_consumer2'], ma_income:['ma_income','ma_consinv','ma_growth','ma_adas'], ma_inflation:['ma_inflation','ma_unemploy'] };
+  Object.keys(es).forEach(function(k){
+    if(k.charAt(0)==='_') return;                 // _applied/_expSeen/_levelTest 등 메타 스킵
+    var sub=es[k]; if(!sub || typeof sub!=='object') return;
+    Object.keys(MIG).forEach(function(oldT){
+      var rec=sub[oldT]; if(!rec || typeof rec!=='object' || typeof rec.score!=='number') return;
+      MIG[oldT].forEach(function(nt){
+        var cur=sub[nt];
+        if(cur && typeof cur.score==='number'){    // 이미 새 키 존재 → 높은 점수 유지
+          if(rec.score>cur.score) sub[nt]={score:rec.score, attempts:Math.max(cur.attempts||0, rec.attempts||0), seeded:!!(cur.seeded||rec.seeded)};
+        } else {
+          sub[nt]={score:rec.score, attempts:rec.attempts||0, seeded:!!rec.seeded};
+        }
+      });
+      if(MIG[oldT].indexOf(oldT)===-1) delete sub[oldT];   // 옛 키가 타깃에 없으면 삭제(mi_oligopoly는 유지)
+    });
+  });
+  es._topicMig=1;
+}catch(_){} }
 function _luTimeoutScoreUnanswered(){ try{ (mqQuestions()||[]).forEach(function(q){ if(!q||!q.id) return; if(mqAns[q.id]!==undefined) return; if(typeof adEloUpdate!=='function') return; if(!_eloCanApply(mqCert,q)) return; adEloUpdate(q, false); _eloMarkApplied(mqCert,q); }); }catch(_){} }
 // ===== 시험별 이용권(entitlements) =====
 const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing','housing2'];
@@ -811,6 +833,7 @@ async function loadUserData() {
       var _resync=srRestoreResume(data);   // 이어풀기 동기화: Firestore가 더 최신이면 로컬에 복원
       try{ srMergeOX(data); }catch(e){}    // 내 O/X 동기화: Firestore↔로컬 합치기(union, 로컬 우선)
       try{ if(data && data.eloState && typeof eloState!=='undefined') eloState=data.eloState; }catch(e){}   // 적응형 Elo 트랙 복원
+      try{ _migrateEloTopics(eloState); }catch(e){}   // 단원 코드 개편: 옛 topic → 새 코드 자동 이관(1회)
       try{ if(data){ luHistEnsure();
         if(data.luHist){ Object.keys(data.luHist).forEach(function(cert){ var rem=data.luHist[cert]||[], loc=luHistAll[cert]||[], seen={}; loc.forEach(function(r){ seen[(r&&r.ts||0)+'_'+(r&&r.sub||'')]=1; }); rem.forEach(function(r){ var key=(r&&r.ts||0)+'_'+(r&&r.sub||''); if(!seen[key]){ loc.push(r); seen[key]=1; } }); luHistAll[cert]=loc; luHistPrune(cert); }); }
         if(data.luResume){ Object.keys(data.luResume).forEach(function(cert){ var rem=data.luResume[cert], loc=luResumeAll[cert]; if(rem && (!loc || (rem.ts||0)>(loc.ts||0))) luResumeAll[cert]=rem; }); }
