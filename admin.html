@@ -686,11 +686,11 @@ tr:hover td{background:#FAFAFA}
             <button class="btn-sm" onclick="registerManifestExams()" style="background:#E6F4EA;color:#15793F;margin-left:auto">🗂 매니페스트 등록(새 시험)</button>
           </div>
           <div style="background:#FFF7E6;border:1px solid #F1D9A8;border-radius:8px;padding:9px 12px;color:#9A6A12;font-size:11.5px;margin-top:10px">
-            업로드 후 앱에 새 데이터가 안 보이면 <b>"manifest 버전 동기화"</b>를 누르세요. (manifest version을 각 bank의 실제 version과 일치시켜 캐시를 갱신합니다.)
+            업로드하면 <b>버전 동기화가 자동</b>으로 실행됩니다. (혹시 앱에 새 데이터가 안 보이면 아래 <b>"🔄 manifest 버전 동기화"</b>를 수동으로 눌러도 됩니다.)
           </div>
           <div id="syncStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
           <div style="background:#EAF3EC;border:1px solid #BFE0C6;border-radius:8px;padding:9px 12px;color:#2E7D46;font-size:11.5px;margin-top:10px">
-            새 시험(예: 주택관리사)을 처음 올릴 땐, 위에서 <b>manifest 포함 번들</b>을 올린 뒤 <b>"매니페스트 등록(새 시험)"</b>을 누르세요. 기존 시험은 그대로 두고 <b>새 시험만 추가</b>합니다(삭제·덮어쓰기 없음).
+            새 시험(예: 주택관리사)은 <b>manifest 포함 번들</b>을 업로드하면 <b>등록이 자동</b>으로 됩니다(기존 시험 무수정, 새 시험·과목만 추가). 아래 <b>"🗂 매니페스트 등록(새 시험)"</b>은 수동 폴백용입니다.
           </div>
           <div id="regManifestStatus" style="font-size:13px;color:#6E6256;margin-top:8px"></div>
 
@@ -3794,6 +3794,54 @@ function impRender(){
   }).join('');
 }
 async function impRefresh(){ await impLoadVersions(); impRender(); impLog('현재 버전 새로고침 완료'); }
+// ===== 업로드 후 자동: (A) 번들 manifest의 새 시험·과목 등록(비파괴) + (B) 업로드 cert의 버전 동기화 =====
+async function _impAutoManifest(uploadedCerts){
+  try{
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    let exams=(mSnap.exists && Array.isArray(mSnap.data().exams))?mSnap.data().exams.slice():[];
+    const byId=new Map(exams.map(e=>[e&&e.id,e]));
+    let regNew=0, regSubj=0, synced=0;
+    // (A) 번들에 manifest 블록이 있으면 신규 시험·과목만 병합(기존 무수정)
+    if(impBundleManifest && Array.isArray(impBundleManifest.exams)){
+      for(const e of impBundleManifest.exams){
+        if(!e||!e.id) continue;
+        const exist=byId.get(e.id);
+        if(!exist){ exams.push(e); byId.set(e.id,e); regNew++; continue; }
+        exist.subjects=Array.isArray(exist.subjects)?exist.subjects:[];
+        exist.versions=exist.versions||{};
+        const have=new Set(exist.subjects.map(s=>s&&s.code));
+        for(const s of (e.subjects||[])){
+          if(!s||!s.code||have.has(s.code)) continue;
+          let bv=(e.versions&&typeof e.versions[s.code]==='number')?e.versions[s.code]:1;
+          try{ const bd=await db.collection('banks').doc(e.id+'__'+s.code).get(); if(bd.exists&&typeof bd.data().version==='number') bv=bd.data().version; }catch(_){}
+          exist.subjects.push({code:s.code,name:s.name||s.code}); exist.versions[s.code]=bv; regSubj++;
+        }
+      }
+    }
+    // (B) 방금 업로드한 cert들의 manifest version을 bank version과 동기화
+    const certs=new Set(uploadedCerts||[]);
+    for(const ex of exams){
+      if(!ex||!ex.id) continue;
+      if(certs.size && !certs.has(ex.id)) continue;
+      ex.versions=ex.versions||{};
+      for(const sub of (ex.subjects||[])){
+        try{
+          const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
+          if(!bd.exists) continue;
+          const bv=bd.data().version;
+          if(typeof bv==='number' && ex.versions[sub.code]!==bv){ ex.versions[sub.code]=bv; synced++; }
+        }catch(_){}
+      }
+    }
+    if(regNew||regSubj||synced){
+      if(mSnap.exists) await db.collection('manifest').doc('exams').update({exams});
+      else await db.collection('manifest').doc('exams').set({exams});
+      impLog('✓ manifest 자동 반영 — 새 시험 '+regNew+' · 새 과목 '+regSubj+' · 버전 동기화 '+synced+'건','#15793F');
+    } else {
+      impLog('· manifest 변경 없음(이미 최신)','#8A7D6E');
+    }
+  }catch(e){ impLog('⚠️ manifest 자동 반영 실패: '+(e.message||e)+' — 필요하면 수동 "🔄 버전 동기화" 클릭','#f85149'); }
+}
 async function impUpload(){
   const ready=impItems.filter(it=>it.status==='ready');
   if(!ready.length) return;
@@ -3806,7 +3854,7 @@ async function impUpload(){
     if(typeof it.curVer==='number' && typeof it.version==='number' && it.version < it.curVer) warns.push('⚠️ '+it.docId+': 새 version('+it.version+')이 현재('+it.curVer+')보다 낮음 — 과거 파일일 수 있음');
   });
   const wtxt=warns.length?('\n\n'+warns.join('\n')):'';
-  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+wtxt+'\n\nmanifest는 변경하지 않습니다.')){ impLog('업로드 취소됨.'); return; }
+  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+wtxt+'\n\n업로드 후 manifest(번들에 새 시험·과목이 있으면 등록 + 버전 동기화)가 자동 반영됩니다.')){ impLog('업로드 취소됨.'); return; }
   document.getElementById('impRun').disabled=true;
   for(const it of ready){
     try{
@@ -3843,6 +3891,8 @@ async function impUpload(){
     }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); impLog('✗ '+it.docId+' 실패: '+(e.message||e),'#f85149'); }
     impRender();
   }
+  const _upCerts=[...new Set(ready.filter(it=>it.status==='done').map(it=>String(it.docId).split('__')[0]))];
+  if(_upCerts.length) await _impAutoManifest(_upCerts);
   impLog('— 작업 종료 — (앱에서 Ctrl+Shift+R로 캐시 갱신)','#5B50C0');
 }
 // ===== manifest ↔ bank 버전 동기화 =====
