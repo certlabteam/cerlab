@@ -611,6 +611,15 @@ function _guestDayBump(cert){ var o=_guestDayGet(); o.counts=o.counts||{}; o.cou
 function _userDayCount(cert){ var e=userEnt[cert]||{}; return (e.dayDate===_todayKST())?(e.dayCount||0):0; }
 function _userDayBump(cert){ var e=userEnt[cert]; if(!e) return; if(e.dayDate!==_todayKST()){ e.dayDate=_todayKST(); e.dayCount=0; } e.dayCount=(e.dayCount||0)+1; saveDailyCount(cert); }
 async function saveDailyCount(cert){ if(!currentUser||!userEnt[cert]) return; try{ await db.collection('users').doc(currentUser.uid).update({ ['entitlements.'+cert+'.dayDate']:userEnt[cert].dayDate, ['entitlements.'+cert+'.dayCount']:userEnt[cert].dayCount }); }catch(e){ console.error('일일카운트 저장 오류:', e); } }
+// ===== 레벨업 Elo 반영 게이트: 문제당 하루 1회만, 그날 해설 본 문제는 반영 안 함 (부정 방지) =====
+function _eloPruneToday(m){ if(!m) return; var t=_todayKST(); for(var k in m){ if(m[k]!==t) delete m[k]; } }
+function _eloCanApply(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return true; var id=q&&q.id; if(!id) return true; var k=cert+'|'+id; var t=_todayKST();
+  if(eloState._expSeen && eloState._expSeen[k]===t) return false;   // 오늘 해설 본 문제 → 반영 안 함
+  if(eloState._applied && eloState._applied[k]===t) return false;   // 오늘 이미 반영 → 반영 안 함
+  return true; }catch(_){ return true; } }
+function _eloMarkApplied(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return; var id=q&&q.id; if(!id) return; eloState._applied=eloState._applied||{}; _eloPruneToday(eloState._applied); eloState._applied[cert+'|'+id]=_todayKST(); }catch(_){} }
+function _eloMarkExpSeen(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return; var id=q&&q.id; if(!id) return; eloState._expSeen=eloState._expSeen||{}; _eloPruneToday(eloState._expSeen); eloState._expSeen[cert+'|'+id]=_todayKST(); }catch(_){} }
+function _luTimeoutScoreUnanswered(){ try{ (mqQuestions()||[]).forEach(function(q){ if(!q||!q.id) return; if(mqAns[q.id]!==undefined) return; if(typeof adEloUpdate!=='function') return; if(!_eloCanApply(mqCert,q)) return; adEloUpdate(q, false); _eloMarkApplied(mqCert,q); }); }catch(_){} }
 // ===== 시험별 이용권(entitlements) =====
 const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','koreanhistory','housing','housing2'];
 const CERT_LABELS = { bodybuilding:'스포츠지도사 실기·구술', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
@@ -1270,8 +1279,22 @@ function featureCompareHTML(totalTxt){
       + paid.map(t=>'<div class="cmp2-li">'+t+'</div>').join('') + '</div>'
     + '</div>';
 }
+function _togglePayUI(show){
+  var els=['.plan-cards','.discount-row','.bank-info','#mileUseBox','#depositorName','#btnPayment','.payment-note'];
+  els.forEach(function(sel){ document.querySelectorAll(sel).forEach(function(el){ el.style.display=show?'':'none'; }); });
+  if(!show){ var m=document.querySelector('.discount-msg'); if(m) m.style.display='none'; }
+}
+function showAppDailyDone(){
+  _togglePayUI(false);
+  var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🌙 오늘 무료 학습 완료!';
+  var sub=document.getElementById('planSub'); if(sub) sub.textContent='오늘 준비한 무료 문제를 다 푸셨어요. 내일 다시 오면 새 문제로 이어서 학습할 수 있어요!';
+  var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div><button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
+  var pp=document.getElementById('planPopup'); if(pp) pp.classList.remove('hidden');
+}
 function showPlanPopup() {
   const cert = activeCertId();
+  if (typeof pwaStandalone==='function' && pwaStandalone()) { showAppDailyDone(); return; }   // 앱(설치형)에선 결제 유도 대신 "내일 또" 안내(구글 정책 안전)
+  _togglePayUI(true);
   const titleEl = document.getElementById('planSheetTitle');
   if (titleEl) titleEl.textContent = `⏰ 오늘 무료 학습 완료!`;
   const subEl = document.getElementById('planSub');
@@ -3113,7 +3136,7 @@ function mqRunTimer(){
   mqTimer=setInterval(()=>{
     if(mqScreen!=='exam'){ mqStopTimer(); return; }
     mqTimeLeft--;
-    if(mqTimeLeft<=0){ mqTimeLeft=0; mqTimeUp=true; mqTimeUpIdx=mqIdx; mqStopTimer(); mqResult(); return; }
+    if(mqTimeLeft<=0){ mqTimeLeft=0; mqTimeUp=true; mqTimeUpIdx=mqIdx; mqStopTimer(); if(mqLevelUp) _luTimeoutScoreUnanswered(); mqResult(); return; }
     mqSaveProgress();
     const el=document.getElementById('mqTimer');
     if(el){ el.textContent=mqFmt(mqTimeLeft); if(mqTimeLeft<=300) el.classList.add('red'); }
@@ -3734,6 +3757,32 @@ function luRenderPopup(changes){
   root.innerHTML='<div class="mcq-result" style="text-align:center;padding:30px 20px"><div style="font-size:42px">'+em+'</div><div style="font-size:19px;font-weight:800;margin:8px 0 4px">'+ti+'</div>'+chg+'<div style="font-size:13.5px;color:#5F5E5A">'+desc+'</div>'+extra+'<div style="display:flex;gap:8px;margin-top:20px;max-width:320px;margin-left:auto;margin-right:auto">'+side+'<button onclick="luLoadRound(false)" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#0C447C;color:#fff;cursor:pointer">계속 풀기</button></div></div>';
   window.scrollTo(0,0);
 }
+function _infoModal(html){
+  return new Promise(function(res){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px';
+    ov.innerHTML='<div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.25)">'+html+'<button style="margin-top:16px;width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button></div>';
+    ov.querySelector('button').onclick=function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); res(); };
+    document.body.appendChild(ov);
+  });
+}
+async function _eloInfoPopups(qs, wasTimeUp){
+  try{
+    var t=_todayKST();
+    var sawExp=false;
+    (qs||[]).forEach(function(q){ if(q&&q.id&&typeof eloState!=='undefined'&&eloState&&eloState._expSeen&&eloState._expSeen[mqCert+'|'+q.id]===t) sawExp=true; });
+    if(sawExp && !localStorage.getItem('certlab_info_expElo')){
+      try{ localStorage.setItem('certlab_info_expElo','1'); }catch(_){}
+      await _infoModal('<div style="font-size:34px;margin-bottom:8px">📖</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 확인한 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">학습엔 좋지만, <b>오늘은 레벨에 반영되지 않아요.</b><br>내일 해설 없이 풀면 반영됩니다!</div>');
+    }
+    var hadUnans=false;
+    (qs||[]).forEach(function(q){ if(q&&q.id&&mqResultAns[q.id]===undefined) hadUnans=true; });
+    if(wasTimeUp && hadUnans && !localStorage.getItem('certlab_info_timeoutElo')){
+      try{ localStorage.setItem('certlab_info_timeoutElo','1'); }catch(_){}
+      await _infoModal('<div style="font-size:34px;margin-bottom:8px">⏰</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">시간 안에 못 푼 문제</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">시간 안에 못 푼 문제는 <b>오답으로 처리</b>돼요.<br>다음엔 시간 안에 도전해봐요!</div>');
+    }
+  }catch(_){}
+}
 function _luToast(msg){
   if(!msg) return;
   var t=document.createElement('div');
@@ -3834,7 +3883,7 @@ var _luLastSubName='', _luLastChanges=[], _luRoundRecRef=null;
 function _luAfterRound(qs, correct){
   var cert=mqCert, sub=luCurSub, k=cert+'|'+sub, changes=[];
   try{
-    (qs||[]).forEach(function(q){ try{ if(q && isSA(q) && !_luEloSA[q.id] && mqAns[q.id]!==undefined && saAnswered(q,mqAns[q.id]) && typeof adEloUpdate==='function'){ adEloUpdate(q, mqCorrect(q,mqAns[q.id])); _luEloSA[q.id]=1; } }catch(e){} });   // SA는 mqPick을 안 거치므로 라운드 종료 시 Elo 일괄 반영(중복방지 _luEloSA)
+    (qs||[]).forEach(function(q){ try{ if(q && isSA(q) && !_luEloSA[q.id] && mqAns[q.id]!==undefined && saAnswered(q,mqAns[q.id]) && typeof adEloUpdate==='function' && _eloCanApply(mqCert,q)){ adEloUpdate(q, mqCorrect(q,mqAns[q.id])); _eloMarkApplied(mqCert,q); _luEloSA[q.id]=1; } }catch(e){} });   // SA는 mqPick을 안 거치므로 라운드 종료 시 Elo 일괄 반영(중복방지 _luEloSA)
     var now=(typeof eloState!=='undefined'&&eloState[k])||{};
     var tmap=topicNameMap(cert,sub), nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub;
     for(var t in now){ if(t.charAt(0)==='_') continue; var before=luPreScores[t]; if(before==null) continue; var lb=AE.scoreToLevel(before), la=AE.scoreToLevel(now[t].score); if(la!==lb) changes.push({subName:nm, topic:(tmap[t]&&tmap[t].name)||t, from:lb, to:la, up:la>lb}); }
@@ -5250,7 +5299,13 @@ function mqPick(qid,n){
     if(q && mqHasAnswer(q)){
       if(mqGuess[qid]){ srRateK(mqCert, q.id, isCorr(q.ans,n)?1:0, mqTimeUp, changed); }   // 찍음: 맞아도 애매(1), 틀리면 틀림(0)
       else { srRateK(mqCert, q.id, isCorr(q.ans,n) ? 2 : 0, mqTimeUp, changed); }   // 평소: 정답=정확(2)/오답=틀림(0). OX 자가체크는 복습에 미반영(복습=오답+찍음만)
-      if(!mqLevelTest && typeof adEloUpdate==='function') adEloUpdate(q, isCorr(q.ans,n));   // 적응형 Elo 별도 트랙(레벨테스트 중엔 억제→끝에 일괄 init)
+      var _preBlk = mqLevelUp && !mqLevelTest && !_eloCanApply(mqCert,q);   // Elo 반영 전 차단 여부 캡처
+      var _preExp = (typeof eloState!=='undefined'&&eloState&&eloState._expSeen&&eloState._expSeen[mqCert+'|'+q.id]===_todayKST());
+      if(!mqLevelTest && typeof adEloUpdate==='function' && _eloCanApply(mqCert,q)){ adEloUpdate(q, isCorr(q.ans,n)); _eloMarkApplied(mqCert,q); }   // 적응형 Elo(하루1회·해설본문제 제외 게이트)
+      if(mqLevelUp && firstTime && isCorr(q.ans,n) && _preBlk && !_preExp && !localStorage.getItem('certlab_info_reapplyElo')){   // 오늘 이미 채점된 문제(시간초과 포함) 재풀이 정답 → 안내(최초1회)
+        try{ localStorage.setItem('certlab_info_reapplyElo','1'); }catch(_){}
+        setTimeout(function(){ _infoModal('<div style="font-size:34px;margin-bottom:8px">🔄</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">오늘 이미 채점된 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">시간초과됐거나 오늘 이미 푼 문제는 <b>다시 풀어도 오늘은 반영되지 않아요.</b><br>내일 다시 풀면 반영됩니다!</div>'); }, 300);
+      }
       if(mqLevelUp && firstTime){   // 게이미피케이션 콤보: 레벨업 풀이중·첫 응답만(기출/복습/찍음 제외)
         if(mqGuess[qid]){ /* 🎲 찍음: 콤보 끊지 않고 보류 */ }
         else if(isCorr(q.ans,n)){ luCombo++; if(luCombo>luRoundMaxCombo) luRoundMaxCombo=luCombo; luComboJustUp=true; if(luCombo===5||luCombo===10){ try{ navigator.vibrate&&navigator.vibrate(35); }catch(_){} } }
@@ -5274,6 +5329,7 @@ function mqPick(qid,n){
   else { setTimeout(()=>{ if(mqScreen==='exam'){ mqResult(); } }, 650); }  // 마지막 문제 → 자동 채점
 }
 function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid];
+  if(mqShow[qid] && mqLevelUp){ var _qx=mqQuestions().find(function(x){return x.id===qid;}); if(_qx) _eloMarkExpSeen(mqCert,_qx); }   // 레벨업: 해설 열람한 문제는 그날 Elo 반영 차단(부정 방지)
   if(mqShow[qid] && !mqInReview){ var _q=mqQuestions().find(function(x){return x.id===qid;});
     if(_q && isSA(_q) && saAnswered(_q,mqAns[qid]) && !mqGuess[qid]){ srRateK(mqCert, qid, saGrade(_q,mqAns[qid]).allOK?2:0, mqTimeUp, true); if(typeof srSaveDebounced==='function') srSaveDebounced(); } }
   renderMCQ(); }
@@ -5384,8 +5440,10 @@ function mqResult(){
     otc:mqOvertimeCount,ots:mqOverElapsed(),levelTest:_wasLevelTest,cert:mqCert,
     lu:_wasLU, luSubName:(_wasLU?_luLastSubName:''), luChanges:_luChanges, luFromHist:false, luCombo:(_wasLU?luRoundMaxCombo:0)};
   mqLevelUp=false;   // 채점화면에선 레벨업 풀이 상태 해제(버튼 분기는 meta.lu)
+  var _wasTimeUp=mqTimeUp;
   mqStopTimer(); mqStopOverTimer(); mqScreen='result';   // 결과화면 전용 상태 — 진행 재저장·플러시 방지
   renderMqResultScreen();
+  if(_wasLU){ setTimeout(function(){ _eloInfoPopups(mqResultQs, _wasTimeUp); }, 450); }
 }
 function renderMqResultScreen(){
   const M=mqResultMeta; if(!M){ return; }
