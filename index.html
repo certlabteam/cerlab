@@ -4851,8 +4851,8 @@ function countStemHTML(rawStem, q, withOX){
   var sp=splitCountStmts(rawStem);
   var head=sp.head ? '<div class="qpara">'+rm(sp.head,q)+'</div>' : '';
   var rows=sp.stmts.map(function(t,i){
-    var oxb=withOX?('<span class="jr-ox" style="margin-left:auto" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
-    return '<div class="qbul"><span class="qbul-m">○</span><span class="qbul-t">'+rm(t,q)+'</span>'+oxb+'</div>';
+    var oxb=withOX?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
+    return '<div class="qbul"><span class="qbul-m">○</span><span class="qbul-t">'+rm(t,q)+oxb+'</span></div>';
   }).join('');
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
