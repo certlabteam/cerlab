@@ -1145,6 +1145,27 @@ tr:hover td{background:#FAFAFA}
         <span id="tpStatus" style="font-size:12px;color:#6E6256;margin-left:10px"></span>
       </div>
       <div class="table-card" style="max-width:640px;margin-bottom:18px">
+        <div class="table-title">⏱ 문항 시간 배분 (난이도별)</div>
+        <div style="font-size:11.5px;color:#A89C8E;margin-bottom:12px;line-height:1.55">난이도(Lv)별 문항당 배정 시간(초). 세션 총 시간 = 각 문항 배정시간의 합. <b>계산문제는 +단계, 비계산은 −단계</b> 적용 후 이 표를 봅니다. 저장하면 <code>config/pricing</code>에 반영돼 앱에 바로 적용됩니다.</div>
+        <table style="width:100%;font-size:12.5px;border-collapse:collapse;margin-bottom:12px">
+          <thead><tr style="color:#8A7E70;font-size:11px"><th style="padding:5px 2px">Lv1</th><th style="padding:5px 2px">Lv2</th><th style="padding:5px 2px">Lv3</th><th style="padding:5px 2px">Lv4</th><th style="padding:5px 2px">Lv5</th></tr></thead>
+          <tbody><tr>
+            <td><input id="tp_diff1" type="number" class="tp-in" placeholder="30"></td>
+            <td><input id="tp_diff2" type="number" class="tp-in" placeholder="40"></td>
+            <td><input id="tp_diff3" type="number" class="tp-in" placeholder="60"></td>
+            <td><input id="tp_diff4" type="number" class="tp-in" placeholder="90"></td>
+            <td><input id="tp_diff5" type="number" class="tp-in" placeholder="120"></td>
+          </tr></tbody>
+        </table>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <label style="font-size:12.5px;font-weight:700;color:#6B5E4F;display:flex;align-items:center;gap:6px">🧮 계산문제 레벨 <input id="tp_calcDelta" type="number" value="1" style="width:60px;padding:6px;border:1.5px solid #E8E8E8;border-radius:8px;text-align:center"></label>
+          <label style="font-size:12.5px;font-weight:700;color:#6B5E4F;display:flex;align-items:center;gap:6px">📝 비계산 레벨 <input id="tp_nonCalcDelta" type="number" value="-1" style="width:60px;padding:6px;border:1.5px solid #E8E8E8;border-radius:8px;text-align:center"></label>
+        </div>
+        <div style="font-size:11px;color:#A89C8E;margin-bottom:10px">단위 = 초 · 예) 30 / 40 / 60 / 90 / 120 · 계산 +1 / 비계산 −1 (난이도 없는 문항은 Lv3 기준)</div>
+        <button onclick="tpSaveTime()" class="btn-sm btn-extend">💾 시간 배분 저장</button>
+        <span id="tpTimeStatus" style="font-size:12px;color:#6E6256;margin-left:10px"></span>
+      </div>
+      <div class="table-card" style="max-width:640px;margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div class="table-title" style="margin:0">📋 등록된 시험</div>
           <button type="button" onclick="eaToggleAdd()" style="margin-left:auto;background:#E6F1FB;color:#185FA5;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:800;cursor:pointer">+ 새 시험</button>
@@ -2876,7 +2897,30 @@ async function tpSave(){
     st.style.color='#15793F'; st.textContent='저장 완료 — 앱에 반영됨';
   }catch(e){ st.style.color='#C0392B'; st.textContent='저장 오류: '+e.message; }
 }
-function eaInit(){ if(_eaInit) return; _eaInit=true; eaRenderSubs(); eaRender(); eaLoadList(); tpInit(); }
+function eaInit(){ if(_eaInit) return; _eaInit=true; eaRenderSubs(); eaRender(); eaLoadList(); tpInit(); tpTimeInit(); }
+var _tpTimeInited=false;
+async function tpTimeInit(){
+  if(_tpTimeInited) return; _tpTimeInited=true;
+  var cfg={};
+  try{ var d=await db.collection('config').doc('pricing').get(); cfg=d.exists?(d.data()||{}):{}; }catch(_){}
+  var ds=(cfg&&cfg.diffSecs)||{}, def={1:30,2:40,3:60,4:90,5:120};
+  [1,2,3,4,5].forEach(function(l){ var el=document.getElementById('tp_diff'+l); if(el) el.value=(ds[l]!=null?ds[l]:def[l]); });
+  var cd=document.getElementById('tp_calcDelta'); if(cd) cd.value=(cfg.calcDelta!=null?cfg.calcDelta:1);
+  var nd=document.getElementById('tp_nonCalcDelta'); if(nd) nd.value=(cfg.nonCalcDelta!=null?cfg.nonCalcDelta:-1);
+}
+async function tpSaveTime(){
+  var st=document.getElementById('tpTimeStatus'); if(!st) return;
+  st.style.color='#6E6256'; st.textContent='저장 중…';
+  try{
+    var diffSecs={};
+    [1,2,3,4,5].forEach(function(l){ var v=+((document.getElementById('tp_diff'+l)||{}).value); if(v>0) diffSecs[l]=v; });
+    var calcDelta=+((document.getElementById('tp_calcDelta')||{}).value); if(isNaN(calcDelta)) calcDelta=1;
+    var nonCalcDelta=+((document.getElementById('tp_nonCalcDelta')||{}).value); if(isNaN(nonCalcDelta)) nonCalcDelta=-1;
+    await db.collection('config').doc('pricing').set({ diffSecs:diffSecs, calcDelta:calcDelta, nonCalcDelta:nonCalcDelta, updatedAt:new Date().toISOString() }, {merge:true});
+    if(_tpCfg){ _tpCfg.diffSecs=diffSecs; _tpCfg.calcDelta=calcDelta; _tpCfg.nonCalcDelta=nonCalcDelta; }
+    st.style.color='#15793F'; st.textContent='저장 완료 — 앱에 반영됨';
+  }catch(e){ st.style.color='#C0392B'; st.textContent='저장 오류: '+e.message; }
+}
 var _eaExams=[], _eaSched={};
 function eaToggleAdd(){ var c=document.getElementById('eaAddCard'); if(c) c.style.display=(c.style.display==='none'?'block':'none'); if(c&&c.style.display==='block') c.scrollIntoView({behavior:'smooth',block:'start'}); }
 function _eaSchedFmt(s){
