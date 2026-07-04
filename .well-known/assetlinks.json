@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "kr.certlab.app",
+      "sha256_cert_fingerprints": [
+        "E3:A2:C6:69:A5:99:15:EC:98:76:C7:71:3B:C2:AB:A1:64:B3:CB:3D:DC:D2:E7:E2:2D:3E:47:3A:2D:D7:1A:66",
+        "68:01:14:13:FC:34:70:E3:1B:2F:9B:0A:DB:A5:22:FD:15:12:2A:A4:33:50:68:A2:9C:8F:1B:88:36:B5:BE:97"
+      ]
+    }
+  }
+]
