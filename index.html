@@ -3365,9 +3365,9 @@ function mcqAnalysisCard(cert){
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
       Object.keys(sc).forEach(function(t){ var tl=AE.scoreToLevel(sc[t]), tn=(tmap[t]&&tmap[t].name)||t;
-        rows+='<div onclick="luStartTopic(\''+sub+'\',\''+t+'\')" style="display:flex;align-items:center;gap:8px;margin:3px 0;padding:5px 7px;border-radius:9px;background:#FBF8F4;cursor:pointer"><span style="font-size:12px;color:#6E6256;width:108px;flex:0 0 108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(tn)+'</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(tl/5*100)+'%;background:'+LVC[tl]+'"></div></div><span style="font-size:11px;font-weight:700;color:#8A7D6E;width:30px;text-align:right">Lv'+tl+'</span><span style="font-size:13px;color:#C9BDAC;flex:0 0 auto">›</span></div>';
+        rows+='<div onclick="luStartTopic(\''+sub+'\',\''+t+'\')" style="display:flex;align-items:center;gap:8px;margin:3px 0;padding:5px 7px;border-radius:9px;background:#FBF8F4;cursor:pointer"><span style="font-size:12px;color:#6E6256;width:108px;flex:0 0 108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(tn)+'</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(tl/5*100)+'%;background:'+LVC[tl]+'"></div></div><span style="font-size:11px;font-weight:700;color:#8A7D6E;width:30px;text-align:right">Lv'+tl+'</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:3px 9px;border-radius:999px;flex:0 0 auto">풀기</span></div>';
       });
-      var _thint=Object.keys(sc).length?'<div style="font-size:10.5px;color:#B4A99C;margin:0 2px 5px">단원을 누르면 그 단원만 5문제씩 풀어요</div>':'';
+      var _thint=Object.keys(sc).length?'<div style="font-size:11px;color:#8A7D6E;margin:0 2px 6px">단원을 누르면 그 단원만 5문제씩 풀어요</div>':'';
       if(!rows) rows='<div style="font-size:12px;color:#B4A99C;padding:4px">단원 데이터 준비 중</div>';
       body='<div style="padding:2px 4px 8px">'+_thint+rows+'</div>';
     }
