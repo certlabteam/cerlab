@@ -611,11 +611,10 @@ function _guestDayBump(cert){ var o=_guestDayGet(); o.counts=o.counts||{}; o.cou
 function _userDayCount(cert){ var e=userEnt[cert]||{}; return (e.dayDate===_todayKST())?(e.dayCount||0):0; }
 function _userDayBump(cert){ var e=userEnt[cert]; if(!e) return; if(e.dayDate!==_todayKST()){ e.dayDate=_todayKST(); e.dayCount=0; } e.dayCount=(e.dayCount||0)+1; saveDailyCount(cert); }
 async function saveDailyCount(cert){ if(!currentUser||!userEnt[cert]) return; try{ await db.collection('users').doc(currentUser.uid).update({ ['entitlements.'+cert+'.dayDate']:userEnt[cert].dayDate, ['entitlements.'+cert+'.dayCount']:userEnt[cert].dayCount }); }catch(e){ console.error('일일카운트 저장 오류:', e); } }
-// ===== 레벨업 Elo 반영 게이트: 문제당 하루 1회만, 그날 해설 본 문제는 반영 안 함 (부정 방지) =====
+// ===== Elo 반영 게이트: 문제당 하루 1회만 (해설 먼저 본 문제는 차단이 아니라 '오답'으로 반영 → mqPick에서 처리) =====
 function _eloPruneToday(m){ if(!m) return; var t=_todayKST(); for(var k in m){ if(m[k]!==t) delete m[k]; } }
-function _eloCanApply(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return true; var id=q&&q.id; if(!id) return true; var k=cert+'|'+id; var t=_todayKST();
-  if(eloState._expSeen && eloState._expSeen[k]===t) return false;   // 오늘 해설 본 문제 → 반영 안 함
-  if(eloState._applied && eloState._applied[k]===t) return false;   // 오늘 이미 반영 → 반영 안 함
+function _eloCanApply(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return true; var id=q&&q.id; if(!id) return true; var k=cert+'|'+id;
+  if(eloState._applied && eloState._applied[k]===_todayKST()) return false;   // 오늘 이미 반영 → 재반영 안 함(하루1회)
   return true; }catch(_){ return true; } }
 function _eloMarkApplied(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return; var id=q&&q.id; if(!id) return; eloState._applied=eloState._applied||{}; _eloPruneToday(eloState._applied); eloState._applied[cert+'|'+id]=_todayKST(); }catch(_){} }
 function _eloMarkExpSeen(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return; var id=q&&q.id; if(!id) return; eloState._expSeen=eloState._expSeen||{}; _eloPruneToday(eloState._expSeen); eloState._expSeen[cert+'|'+id]=_todayKST(); }catch(_){} }
@@ -1854,6 +1853,7 @@ function setStatCountUI(){ const el=document.getElementById('statCount'); if(el)
 const SR_CERT='bodybuilding';
 const SR_DAY=86400000;
 const SR_DAILY_CAP=40;
+const REVIEW_MCQ_CAP=40;   // MCQ 복습 하루 상한(급한 순 → 약한 목차 우선으로 선정)
 const SR_DEFAULT_EXAM={ bodybuilding:'2026-06-23' };
 let srProgress={};        // { 'B_1': {st,nx,lr,res,rc,w} }
 let srDiagnostics=[];      // 레벨 테스트 스냅샷 [{cert,at,score,total}]
@@ -3224,8 +3224,10 @@ function renderMcqHome(root){
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
   if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:11px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:11px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:11px;padding:8px 6px;font-size:11px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
-  const due=srDueReviewable(mqCert);
-  html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">틀렸거나 복습일이 된 문제</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
+  const dueAll=srDueReviewable(mqCert);
+  const due=Math.min(dueAll, REVIEW_MCQ_CAP);
+  const _dueSub = dueAll>REVIEW_MCQ_CAP ? ('급한 순 '+REVIEW_MCQ_CAP+'개 먼저 · 나머지는 다음에') : '틀렸거나 복습일이 된 문제';
+  html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">'+_dueSub+'</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
   // ▼ 약점개념카드 보류: exp.c가 문항 단위라 OX(진술 단위)·정답오답으로 집계 시 무관한 개념까지 잡힘.
   //   데이터방이 진술별 개념 태그를 붙인 뒤 재개. 재개 시 아래 false→mqWeakCache.length 로 복원.
   mqWeakCache=[];
@@ -3826,7 +3828,7 @@ async function _eloInfoPopups(qs, wasTimeUp){
     (qs||[]).forEach(function(q){ if(q&&q.id&&typeof eloState!=='undefined'&&eloState&&eloState._expSeen&&eloState._expSeen[mqCert+'|'+q.id]===t) sawExp=true; });
     if(sawExp && !localStorage.getItem('certlab_info_expElo')){
       try{ localStorage.setItem('certlab_info_expElo','1'); }catch(_){}
-      await _infoModal('<div style="font-size:34px;margin-bottom:8px">📖</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 확인한 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">학습엔 좋지만, <b>오늘은 레벨에 반영되지 않아요.</b><br>내일 해설 없이 풀면 반영됩니다!</div>');
+      await _infoModal('<div style="font-size:34px;margin-bottom:8px">📖</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>');
     }
     var hadUnans=false;
     (qs||[]).forEach(function(q){ if(q&&q.id&&mqResultAns[q.id]===undefined) hadUnans=true; });
@@ -4146,11 +4148,29 @@ function startGatherExam(label, list){      // 개념 모아풀기 (복습류 �
   mqList=list.slice(); mqTimeLeft=mqList.length*60;
   mqScreen='exam'; renderMCQ(); mqStartTimer(); window.scrollTo(0,0);
 }
+function _mcqTopicLevel(cert, subCode, q){   // 문제의 단원(topic) Elo 점수(낮을수록 약함). 목차·점수 없으면 뒤로(9999)
+  try{
+    var tp = q && q.topic;
+    if(!tp && typeof adLookup==='function'){ var info=adLookup(cert, subCode, q&&q.id); tp=info&&info.topic; }
+    if(!tp) return 9999;
+    var st=(typeof eloState!=='undefined'&&eloState[cert+'|'+subCode])||{};
+    var rec=st[tp];
+    return (rec&&typeof rec.score==='number') ? rec.score : 9999;
+  }catch(_){ return 9999; }
+}
 function startMcqReview(){
-  const qb=curQB(); const due=[];
+  const qb=curQB(); let due=[];
   const _sord={}; curOrder().forEach((id,i)=>{ _sord[id]=i; });   // 과목 순서 인덱스
-  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)){ q._subj=qb[id].name||id; q._grp=(_sord[id]||0); due.push(q); } })); });
-  due.sort((a,b)=>((a._grp||0)-(b._grp||0)));   // 같은 과목끼리 연속으로 쫙(이미 묶이지만 보장)
+  curOrder().forEach(id=>{ qb[id].sets.forEach(st=>st.questions.forEach(q=>{ if(srDueK(mqCert,q.id)){ q._subj=qb[id].name||id; q._subCode=id; q._grp=(_sord[id]||0); due.push(q); } })); });
+  // 하루 상한 선정: ①복습일 급한 순 → ②레벨 낮은(약한) 목차 우선 → ③중요도 높은 순
+  due.sort(function(a,b){
+    var pa=srProgress[mqCert+'|'+a.id]||{}, pb=srProgress[mqCert+'|'+b.id]||{};
+    return (pa.nx||0)-(pb.nx||0)
+        || _mcqTopicLevel(mqCert,a._subCode,a)-_mcqTopicLevel(mqCert,b._subCode,b)
+        || ((typeof _impStarOfQ==='function'?_impStarOfQ(b):(b.star||0))-(typeof _impStarOfQ==='function'?_impStarOfQ(a):(a.star||0)));
+  });
+  if(due.length>REVIEW_MCQ_CAP) due=due.slice(0,REVIEW_MCQ_CAP);
+  due.sort((a,b)=>((a._grp||0)-(b._grp||0)));   // 표시는 과목별로 묶어서(선정은 위 우선순위 유지)
   if(!due.length){
     const root=document.getElementById('mcqRoot');
     if(root) root.innerHTML='<div class="mcq-result"><div class="em">🎉</div>'
@@ -5350,12 +5370,18 @@ function mqPick(qid,n){
   if(firstTime || changed){
     const q=mqQuestions().find(x=>x.id===qid);
     if(q && mqHasAnswer(q)){
-      if(mqGuess[qid]){ srRateK(mqCert, q.id, isCorr(q.ans,n)?1:0, mqTimeUp, changed); }   // 찍음: 맞아도 애매(1), 틀리면 틀림(0)
-      else { srRateK(mqCert, q.id, isCorr(q.ans,n) ? 2 : 0, mqTimeUp, changed); }   // 평소: 정답=정확(2)/오답=틀림(0). OX 자가체크는 복습에 미반영(복습=오답+찍음만)
-      var _preBlk = mqLevelUp && !mqLevelTest && !_eloCanApply(mqCert,q);   // Elo 반영 전 차단 여부 캡처
-      var _preExp = (typeof eloState!=='undefined'&&eloState&&eloState._expSeen&&eloState._expSeen[mqCert+'|'+q.id]===_todayKST());
-      if(!mqLevelTest && typeof adEloUpdate==='function' && _eloCanApply(mqCert,q)){ adEloUpdate(q, isCorr(q.ans,n)); _eloMarkApplied(mqCert,q); }   // 적응형 Elo(하루1회·해설본문제 제외 게이트)
-      if(mqLevelUp && firstTime && isCorr(q.ans,n) && _preBlk && !_preExp && !localStorage.getItem('certlab_info_reapplyElo')){   // 오늘 이미 채점된 문제(시간초과 포함) 재풀이 정답 → 안내(최초1회)
+      var _sawExp = (typeof eloState!=='undefined'&&eloState&&eloState._expSeen&&eloState._expSeen[mqCert+'|'+q.id]===_todayKST());   // 답 고르기 전에 해설을 먼저 봤나 → 오답 처리(레벨업·복습·기출 공통)
+      var _corr = isCorr(q.ans,n);
+      if(_sawExp){ srRateK(mqCert, q.id, 0, mqTimeUp, changed); }   // 해설 먼저 봄 = 틀림(복습 재출제)
+      else if(mqGuess[qid]){ srRateK(mqCert, q.id, _corr?1:0, mqTimeUp, changed); }   // 찍음: 맞아도 애매(1), 틀리면 틀림(0)
+      else { srRateK(mqCert, q.id, _corr ? 2 : 0, mqTimeUp, changed); }   // 평소: 정답=정확(2)/오답=틀림(0)
+      var _preBlk = !mqLevelTest && !_eloCanApply(mqCert,q);   // 하루1회로 차단됐나(해설은 이제 차단 아님 → 오답 반영)
+      if(!mqLevelTest && typeof adEloUpdate==='function' && _eloCanApply(mqCert,q)){ adEloUpdate(q, _sawExp ? false : _corr); _eloMarkApplied(mqCert,q); }   // 해설 먼저 봄 → Elo 강제 오답, 아니면 정답/오답 그대로
+      if(_sawExp && _corr && !mqLevelTest && !localStorage.getItem('certlab_info_expElo')){   // 해설 보고 정답 누름 → 오답 처리 안내(최초1회)
+        try{ localStorage.setItem('certlab_info_expElo','1'); }catch(_){}
+        setTimeout(function(){ _infoModal('<div style="font-size:34px;margin-bottom:8px">📖</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>'); }, 300);
+      }
+      if(mqLevelUp && firstTime && _corr && !_sawExp && _preBlk && !localStorage.getItem('certlab_info_reapplyElo')){   // 오늘 이미 채점된 문제(시간초과 포함) 재풀이 정답 → 안내(최초1회)
         try{ localStorage.setItem('certlab_info_reapplyElo','1'); }catch(_){}
         setTimeout(function(){ _infoModal('<div style="font-size:34px;margin-bottom:8px">🔄</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">오늘 이미 채점된 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">시간초과됐거나 오늘 이미 푼 문제는 <b>다시 풀어도 오늘은 반영되지 않아요.</b><br>내일 다시 풀면 반영됩니다!</div>'); }, 300);
       }
@@ -5382,7 +5408,7 @@ function mqPick(qid,n){
   else { setTimeout(()=>{ if(mqScreen==='exam'){ mqResult(); } }, 650); }  // 마지막 문제 → 자동 채점
 }
 function mqToggleExp(qid){ mqShow[qid]=!mqShow[qid];
-  if(mqShow[qid] && mqLevelUp){ var _qx=mqQuestions().find(function(x){return x.id===qid;}); if(_qx) _eloMarkExpSeen(mqCert,_qx); }   // 레벨업: 해설 열람한 문제는 그날 Elo 반영 차단(부정 방지)
+  if(mqShow[qid] && !mqInReview && !mqLevelTest && !mqConcept){ var _qx=mqQuestions().find(function(x){return x.id===qid;}); if(_qx) _eloMarkExpSeen(mqCert,_qx); }   // 해설을 먼저 열람한 문제 → 그날 오답 처리(레벨업·복습·기출 공통, mqPick에서 반영)
   if(mqShow[qid] && !mqInReview){ var _q=mqQuestions().find(function(x){return x.id===qid;});
     if(_q && isSA(_q) && saAnswered(_q,mqAns[qid]) && !mqGuess[qid]){ srRateK(mqCert, qid, saGrade(_q,mqAns[qid]).allOK?2:0, mqTimeUp, true); if(typeof srSaveDebounced==='function') srSaveDebounced(); } }
   renderMCQ(); }
