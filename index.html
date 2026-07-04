@@ -459,6 +459,47 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   </div>
 </div>
 
+<!-- 회원 탈퇴 팝업 -->
+<div class="auth-popup hidden" id="delPopup">
+  <div class="auth-sheet">
+    <button class="popup-x" onclick="hideDeletePopup()" aria-label="닫기">✕</button>
+    <div class="auth-sheet-title">회원 탈퇴 · 계정 삭제</div>
+    <div class="auth-sheet-sub" id="delSub">아래 내용을 확인하신 뒤 진행해 주세요.</div>
+
+    <div id="delLoggedOut" style="display:none">
+      <div style="background:#F9F7F5;border:1px solid #EDE9E5;border-radius:12px;padding:14px;font-size:13px;color:#334155;line-height:1.7;margin:14px 0">
+        계정을 삭제하려면 먼저 삭제할 계정으로 로그인해야 합니다.<br>
+        아래 버튼으로 Google 로그인 후, 이 화면에서 탈퇴를 진행할 수 있어요.
+      </div>
+      <button class="btn-google-login" onclick="signInWithGoogle()">
+        <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Google로 로그인
+      </button>
+    </div>
+
+    <div id="delLoggedIn" style="display:none">
+      <div style="background:#FDF2F0;border:1px solid #F3D3CC;border-radius:12px;padding:14px;font-size:13px;color:#334155;line-height:1.75;margin:14px 0">
+        <b style="color:#C0392B">삭제되는 항목 (복구 불가)</b><br>
+        1. 계정(Google 로그인 정보)<br>
+        2. 학습 기록·Elo 점수·레벨업 기록<br>
+        3. 이용권·마일리지·추천 정보<br>
+        <div style="margin-top:10px;color:#64748B;font-size:12px">
+          결제 기록은 관련 법령(전자상거래법)에 따라 일정 기간 보관 후 파기되며, 개인정보처리방침에 안내되어 있습니다.
+        </div>
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#334155;cursor:pointer;margin-bottom:14px">
+        <input type="checkbox" id="delAgree" onchange="document.getElementById('delGoBtn').disabled=!this.checked" style="margin-top:3px">
+        <span>위 내용을 이해했으며, 계정과 관련 데이터의 영구 삭제에 동의합니다.</span>
+      </label>
+      <button class="btn-google-login" id="delGoBtn" disabled onclick="deleteMyAccount()" style="background:#C0392B;color:#fff;justify-content:center;opacity:1">
+        영구 삭제하기
+      </button>
+    </div>
+
+    <button class="auth-sheet-close" onclick="hideDeletePopup()">취소</button>
+  </div>
+</div>
+
 <!-- 이용권 팝업 -->
 <div class="auth-popup hidden" id="planPopup">
   <div class="auth-sheet">
@@ -695,6 +736,7 @@ if (firebaseReady) {
     }
     refresh();
     routeAfterAuth();
+    try { var _dp=document.getElementById('delPopup'); if(_dp && !_dp.classList.contains('hidden') && typeof _delSyncView==='function') _delSyncView(); } catch(_){}
     setTimeout(function(){ if(typeof maybeShowRefundPopup==='function') maybeShowRefundPopup(); }, 30000);
   });
 } else {
@@ -1148,6 +1190,82 @@ function showLoginPopup(mode='default') {
   }catch(_){}
 }
 function hideLoginPopup() { document.getElementById('loginPopup').classList.add('hidden'); }
+
+// ===== 회원 탈퇴 · 계정 삭제 =====
+function showDeletePopup() {
+  var p = document.getElementById('delPopup');
+  if (!p) return;
+  var d = document.getElementById('userDropdown'); if (d) d.classList.add('hidden');
+  _delSyncView();
+  p.classList.remove('hidden');
+}
+function hideDeletePopup() {
+  var p = document.getElementById('delPopup'); if (p) p.classList.add('hidden');
+  // URL 해시 정리(#account-delete로 진입한 경우)
+  if ((location.hash || '') === '#account-delete') {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch(_){ location.hash=''; }
+  }
+}
+function _delSyncView() {
+  var inBox = document.getElementById('delLoggedIn');
+  var outBox = document.getElementById('delLoggedOut');
+  var sub = document.getElementById('delSub');
+  var logged = (typeof currentUser !== 'undefined' && currentUser);
+  if (inBox) inBox.style.display = logged ? '' : 'none';
+  if (outBox) outBox.style.display = logged ? 'none' : '';
+  if (sub) sub.textContent = logged
+    ? ((currentUser.email || '내') + ' 계정을 삭제합니다.')
+    : '아래 내용을 확인하신 뒤 진행해 주세요.';
+  var cb = document.getElementById('delAgree'); if (cb) cb.checked = false;
+  var btn = document.getElementById('delGoBtn'); if (btn) btn.disabled = true;
+}
+async function deleteMyAccount() {
+  if (!firebaseReady || !db || !currentUser) { alert('로그인 상태에서만 탈퇴할 수 있어요.'); return; }
+  if (!confirm('정말 계정을 영구 삭제할까요?\n삭제된 학습 기록·이용권·마일리지는 되돌릴 수 없습니다.')) return;
+  var btn = document.getElementById('delGoBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '삭제 중…'; }
+  var uid = currentUser.uid;
+  try {
+    // 1) Firestore 사용자 데이터 삭제 (없는 문서는 무시)
+    await Promise.allSettled([
+      db.collection('users').doc(uid).delete(),
+      db.collection('userData').doc(uid).delete(),
+      db.collection('referrals').doc(uid).delete()
+    ]);
+    // 2) 인증 계정 삭제 (오래된 로그인이면 재인증 후 재시도)
+    try {
+      await currentUser.delete();
+    } catch (e) {
+      if (e && e.code === 'auth/requires-recent-login') {
+        try { await currentUser.reauthenticateWithPopup(googleProvider); }
+        catch (e2) {
+          if (e2 && (e2.code === 'auth/operation-not-supported-in-this-environment' || e2.code === 'auth/popup-blocked')) {
+            await currentUser.reauthenticateWithRedirect(googleProvider); return;
+          }
+          throw e2;
+        }
+        await currentUser.delete();
+      } else { throw e; }
+    }
+    // 3) 로컬 상태 정리
+    try { Object.keys(localStorage).forEach(function(k){ if (k.indexOf('certlab_') === 0) localStorage.removeItem(k); }); } catch(_){}
+    alert('계정과 관련 데이터가 삭제되었습니다. 그동안 이용해 주셔서 감사합니다.');
+    try { history.replaceState(null, '', location.pathname + location.search); } catch(_){ location.hash=''; }
+    location.reload();
+  } catch (e) {
+    console.error('계정 삭제 오류:', e);
+    alert('삭제 중 오류가 발생했습니다: ' + (e && e.message || e) + '\n잠시 후 다시 시도하거나 문의해 주세요.');
+    if (btn) { btn.disabled = false; btn.textContent = '영구 삭제하기'; }
+  }
+}
+// #account-delete 진입 시 팝업 오픈 (Play Console 삭제 링크용)
+(function(){
+  function _delRoute(){
+    if ((location.hash || '') === '#account-delete') { if (typeof showDeletePopup === 'function') showDeletePopup(); }
+  }
+  window.addEventListener('load', function(){ setTimeout(_delRoute, 300); });
+  window.addEventListener('hashchange', _delRoute);
+})();
 // 환급 안내 팝업 — 전 사용자(기존 가입자 포함)에게. X=24시간, '7일간 보지 않기'=7일 숨김
 // 헤더 이벤트 배지: 홈→공통 환급글, 이벤트 있는 시험→해당 글, 이벤트 없는 시험→숨김
 function updateEventBadge(){
@@ -6643,6 +6761,7 @@ function mpRenderHome(){
     +'<div class="mp-link" onclick="mpShowMyComments()"><span class="e">💬</span>내가 쓴 댓글</div>'
     +'<div class="mp-sec">회원정보</div>'
     +((window._cmUserDoc && window._cmUserDoc.boardNick) ? '<div class="mp-link" style="opacity:.6;cursor:default"><span class="e">\u270F\ufe0f</span>닉네임 '+cmEsc(window._cmUserDoc.boardNick)+' (변경 불가)</div>' : '<div class="mp-link" onclick="mpChangeNick()"><span class="e">\u270F\ufe0f</span>닉네임 설정</div>');
+  box.innerHTML += '<div class="mp-sec">계정</div><div class="mp-link" onclick="showDeletePopup()" style="color:#C0392B"><span class="e">⚠️</span>회원 탈퇴</div>';
 }
 function mpShowHistory(){
   var box=document.getElementById('mpBody'); if(!box) return;
