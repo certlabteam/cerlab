@@ -127,7 +127,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   </div>
   <div class="home-hero">
     <h1>내 합격 점수, AI가 미리 알려드려요</h1>
-    <p class="home-seo">지금 내 실력이면 몇 점? 무료 레벨테스트로 예상 점수·약점 확인.<br>틀린 문제는 망각곡선으로 까먹기 전에 자동 복습.</p>
+    <p class="home-seo">지금 내 실력이면 몇 점? 레벨테스트·예상점수 무료로 확인.<br>틀린 문제는 망각곡선으로 까먹기 전에 자동 복습.</p>
   </div>
   <div class="home-label">시험 선택</div>
   <div class="cert-cards">
@@ -400,7 +400,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div style="text-align:left;font-size:12.5px;color:#3C3C3A;line-height:1.9;margin:4px 2px 10px">
       ✓ 전 과목·회차 기출 + 상세 해설<br>
       ✓ 망각곡선 자동복습 · 오답노트<br>
-      ✓ 예상점수 & 약점 분석<br>
+      ✓ 레벨테스트·예상점수 무료<br>
       ✓ 음성 듣기 · 암기코드
     </div>
     <a class="btn-google-login" id="refundLink" href="#" onclick="closeRefundPopup('day')" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none">자세히 보기 →</a>
@@ -447,7 +447,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       <div class="auth-feat-grid">
         <div class="auth-feat-cell">🧠 망각곡선 자동복습</div>
         <div class="auth-feat-cell">📌 오답노트·즐겨찾기</div>
-        <div class="auth-feat-cell">📈 예상점수·약점 분석</div>
+        <div class="auth-feat-cell">📈 레벨테스트·예상점수 무료</div>
         <div class="auth-feat-cell">💾 학습 기록 저장</div>
       </div>
     </div>
@@ -1353,7 +1353,7 @@ function showWelcomePopup() {
   document.querySelector('.auth-features').innerHTML = `
     <div class="auth-feature-item">전체 기출문제 + 상세 해설</div>
     <div class="auth-feature-item">자동복습 & 오답노트</div>
-    <div class="auth-feature-item">예상점수 & 약점 분석</div>
+    <div class="auth-feature-item">레벨테스트·예상점수 무료</div>
     <div class="auth-feature-item">50문제 무료 체험!</div>
     <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(3일 안에 사용)</span><br>
       친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +10,000원 (1년 유효)
@@ -3346,7 +3346,7 @@ function mcqAnalysisCard(cert){
   if(!ltDone(cert)){
     return '<div class="anal-card" style="text-align:center">'
       +'<div style="font-size:16px;font-weight:800;color:#0C447C;line-height:1.4;margin:2px 0 8px">지금 '+ltCertName(cert)+' 보면 몇 점?</div>'
-      +'<div style="font-size:12px;color:#6B7280;margin-bottom:14px">🎁 100% 무료 · ⚡ 예상 점수 · 🎯 약점 분석</div>'
+      +'<div style="font-size:12px;color:#6B7280;margin-bottom:14px">🎁 100% 무료 · ⚡ 레벨테스트 · 📊 예상점수</div>'
       +'<button class="anal-diag" onclick="diagResume()">🎯 무료 레벨테스트 '+(diagHasSave(cert)?'이어풀기':'시작')+'</button></div>';
   }
   const ap=adPredicted(cert);
@@ -3381,8 +3381,217 @@ function mcqAnalysisCard(cert){
   return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
     +'<div class="anal-score">'+predHTML+'</div>'
     +((v && ap.predicted!=null)?_luGaugeHTML(cert,ap,v):'')
-    +subsHTML+noteHTML+'</div>';
+    +((ap.predicted!=null)?_passPlanEntryHTML(cert):'')
+    +_analLockWrap(cert,subsHTML)+noteHTML+'</div>';
 }
+
+/* ===== 합격 플랜 (1단계) ===== */
+function _planIsPaid(cert){ try{ return !!(typeof userEnt!=='undefined' && userEnt[cert] && userEnt[cert].plan==='ACTIVE'); }catch(_){ return false; } }
+function _officialExamMs(cert){
+  try{ if(typeof _examDateMs!=='undefined' && _examDateMs && _examDateMs[cert]!=null) return _examDateMs[cert]; }catch(_){}
+  try{ if(typeof SR_DEFAULT_EXAM!=='undefined' && SR_DEFAULT_EXAM[cert]) return new Date(SR_DEFAULT_EXAM[cert]+'T23:59:59').getTime(); }catch(_){}
+  return null;
+}
+var _crowdVotes = {};   // {cert: {date: count}}
+async function loadCrowdExamVotes(cert){
+  if(typeof firebaseReady==='undefined' || !firebaseReady || typeof db==='undefined' || !db || !cert) return;
+  try{ if(typeof firebase!=='undefined' && firebase.appCheck) await firebase.appCheck().getToken(); }catch(_){}
+  try{ var doc=await db.collection('examDateVotes').doc(cert).get(); _crowdVotes[cert]=(doc.exists?(doc.data()||{}):{}); }catch(_){}
+}
+function _crowdExamMs(cert){
+  var votes=_crowdVotes[cert]; if(!votes) return null;
+  var cands=Object.keys(votes).filter(function(d){ return (votes[d]||0)>=3 && /^\d{4}-\d{2}-\d{2}$/.test(d); }).sort();
+  if(!cands.length) return null;
+  var clusters=[], cur=null, anchorMs=null;   // ±1개월 회차 그룹(최초=가장 이른 날짜 기준)
+  cands.forEach(function(d){ var ms=new Date(d+'T23:59:59').getTime();
+    if(cur && (ms-anchorMs)<=31*86400000){ cur.push(d); } else { cur=[d]; clusters.push(cur); anchorMs=ms; } });
+  var now=Date.now(), best=null;   // 회차마다 최다표 날짜, 그 중 가장 가까운 미래
+  clusters.forEach(function(cl){ var top=cl[0], tc=votes[cl[0]]||0;
+    cl.forEach(function(d){ if((votes[d]||0)>tc){ tc=votes[d]||0; top=d; } });
+    var ms=new Date(top+'T23:59:59').getTime(); if(ms>=now && (best==null||ms<best)) best=ms; });
+  return best;
+}
+async function _crowdVote(cert, oldDate, newDate){
+  if(typeof firebaseReady==='undefined' || !firebaseReady || typeof db==='undefined' || !db || typeof currentUser==='undefined' || !currentUser || !cert) return;
+  if(oldDate===newDate) return;
+  try{ var upd={};
+    if(newDate && /^\d{4}-\d{2}-\d{2}$/.test(newDate)) upd[newDate]=firebase.firestore.FieldValue.increment(1);
+    if(oldDate && /^\d{4}-\d{2}-\d{2}$/.test(oldDate)) upd[oldDate]=firebase.firestore.FieldValue.increment(-1);
+    if(Object.keys(upd).length){ await db.collection('examDateVotes').doc(cert).set(upd,{merge:true}); _crowdVotes[cert]=null; loadCrowdExamVotes(cert); }
+  }catch(e){ try{ console.error('시험일 집계 오류', e); }catch(_){} }
+}
+function editExamDate(cert){
+  cert = cert || (typeof mqCert!=='undefined'?mqCert:null); if(!cert) return;
+  if(_officialExamMs(cert)!=null){ if(typeof clToast==='function') clToast('공식 시험일이 등록된 시험이에요'); return; }
+  if(typeof currentUser==='undefined' || !currentUser){ if(typeof showLoginPopup==='function') showLoginPopup('exam_date'); return; }
+  var old = (typeof srExamOverride!=='undefined' && srExamOverride[cert]) || '';
+  var v = prompt('시험일을 입력하세요 (YYYY-MM-DD)', old);
+  if(!v) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ alert('날짜 형식이 올바르지 않습니다. 예: 2026-06-23'); return; }
+  var ms=new Date(v+'T23:59:59').getTime();
+  if(isNaN(ms)){ alert('올바르지 않은 날짜예요.'); return; }
+  if(ms < Date.now()-86400000){ if(!confirm('이미 지난 날짜예요. 그래도 저장할까요?')) return; }
+  srExamOverride[cert]=v; if(typeof srFlush==='function') srFlush();
+  _crowdVote(cert, old, v);
+  var el=document.getElementById('passPlanOverlay'); if(el && el.style.display==='block'){ el.innerHTML=passPlanHTML(cert,_planIsPaid(cert)); }
+  if(typeof renderMCQ==='function' && typeof mqCert!=='undefined' && mqCert===cert){ try{ renderMCQ(); }catch(_){} }
+}
+function _planExamMs(cert){
+  var o=_officialExamMs(cert); if(o!=null) return o;                                    // ① 우리값(공식) 최우선
+  try{ if(typeof srExamOverride!=='undefined' && srExamOverride[cert]) return new Date(srExamOverride[cert]+'T23:59:59').getTime(); }catch(_){}   // ② 개인 입력값(그대로 유지)
+  var c=_crowdExamMs(cert); if(c!=null) return c;                                       // ③ 크라우드(3명↑ 회차)
+  return null;                                                                          // ④ 없음 → 등록 유도
+}
+function _planDaysLeft(cert){ var ms=_planExamMs(cert); if(ms==null) return null; return Math.ceil((ms-Date.now())/86400000); }
+function _planTopics(cert, sub){
+  var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), out=[];
+  for(var t in sc){
+    var lv=AE.scoreToLevel(sc[t]), star=0;
+    try{ if(typeof _impAutoStar==='function') star=_impAutoStar(cert,sub,t)||0; }catch(_){}
+    out.push({tcode:t, name:(tmap[t]&&tmap[t].name)||t, score:sc[t], lv:lv, star:star, lev:(5-lv)*(1+star*0.5)});
+  }
+  out.sort(function(a,b){ return b.lev-a.lev || a.lv-b.lv; });
+  return out;
+}
+function _planSimSubject(cert, sub, raiseTcodes, targetLv){
+  try{
+    var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), wsum=0,w=0, tgt=AE.levelToScore(targetLv||3);
+    for(var t in sc){ var s=sc[t]; if(raiseTcodes.indexOf(t)>=0 && s<tgt) s=tgt; var wt=(tmap[t]&&tmap[t].mode==='exam')?2:1; wsum+=s*wt; w+=wt; }
+    return w? eloToExamScore(wsum/w) : null;
+  }catch(_){ return null; }
+}
+var _PLAN_LVC={1:'#E24B4A',2:'#E24B4A',3:'#E0A52E',4:'#2E9B5E',5:'#2E9B5E'};
+function _planTopicRow(cert, sub, t, paid){
+  var fire = t.star>=3 ? '<span style="font-size:12px;flex:0 0 auto">🔥</span>' : '<span style="font-size:12px;flex:0 0 auto;opacity:.2">🔥</span>';
+  var solve = paid
+    ? '<span onclick="closePassPlan();luStartTopic(\''+sub+'\',\''+t.tcode+'\')" style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px;cursor:pointer">풀기</span>'
+    : '<span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px">풀기</span>';
+  return '<div style="display:flex;align-items:center;gap:7px;margin:4px 0;padding:6px 8px;border-radius:9px;background:#FBF8F4">'
+    +fire+'<span style="font-size:12px;color:#6E6256;width:78px;flex:0 0 78px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(t.name)+'</span>'
+    +'<div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(t.lv/5*100)+'%;background:'+_PLAN_LVC[t.lv]+'"></div></div>'
+    +'<span style="font-size:11px;font-weight:700;color:#8A7D6E;width:24px;text-align:right">Lv'+t.lv+'</span>'+solve+'</div>';
+}
+function _planSubCard(cert, s, rule, paid){
+  var tops=_planTopics(cert, s.code).slice(0,3);
+  if(!tops.length) return '';
+  var floor=(rule&&rule.floor)||0;
+  var isFail = floor>0 && s.score<floor;
+  var pill = isFail
+    ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 '+s.score+'점</span>'
+    : (s.score<((rule&&rule.pass)||60)
+       ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 '+s.score+'점</span>'
+       : '<span style="font-size:11px;font-weight:800;color:#946200;background:#FBF0D8;padding:2px 8px;border-radius:999px">🟡 '+s.score+'점</span>');
+  var raise=tops.map(function(t){return t.tcode;});
+  var sim=_planSimSubject(cert, s.code, raise, 3);
+  var simLine='';
+  if(sim!=null && sim>s.score){ var tail=isFail?'(과락 탈출)':(sim>=((rule&&rule.pass)||60)?'(합격권)':''); simLine='<div style="font-size:11.5px;color:#A38C7A;margin-bottom:8px">이 단원들 Lv3로 올리면 → <b style="color:#1E6B41">약 '+sim+'점 '+tail+'</b></div>'; }
+  var rows=tops.map(function(t){return _planTopicRow(cert, s.code, t, paid);}).join('');
+  return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+(isFail?'#F0C9C9':'#E2D6CC')+';border-radius:14px;padding:12px 13px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:14px;font-weight:800;color:#3C3C3A">'+mqEsc(s.name)+'</span>'+pill+'</div>'
+    +simLine+rows+'</div>';
+}
+function _planDummyCard(color){
+  return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+color+';border-radius:14px;padding:12px 13px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:14px;font-weight:800;color:#3C3C3A">○○○</span><span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 ○○점</span></div>'
+    +'<div style="display:flex;align-items:center;gap:7px;margin:4px 0;padding:6px 8px;border-radius:9px;background:#FBF8F4"><span style="font-size:12px">🔥</span><span style="font-size:12px;color:#6E6256;width:78px">○○○○</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;width:20%;background:#E24B4A;border-radius:999px"></div></div><span style="font-size:11px;color:#8A7D6E">Lv1</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px">풀기</span></div>'
+    +'<div style="display:flex;align-items:center;gap:7px;margin:4px 0;padding:6px 8px;border-radius:9px;background:#FBF8F4"><span style="font-size:12px">🔥</span><span style="font-size:12px;color:#6E6256;width:78px">○○○○</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;width:40%;background:#E24B4A;border-radius:999px"></div></div><span style="font-size:11px;color:#8A7D6E">Lv2</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px">풀기</span></div></div>';
+}
+function passPlanHTML(cert, paid){
+  var ap=adPredicted(cert), rule=passRule(cert), v=(ap.predicted!=null)?adVerdict(cert,ap):null;
+  var dl=_planDaysLeft(cert);
+  var vlabel=v?v.label:'', vcolor=v?v.color:'#8A7D6E';
+  var safe=Math.max(80,(rule.pass||60)+10);
+  var sorted=ap.per.filter(function(p){return p.score!=null;}).sort(function(a,b){return a.score-b.score;});
+  var weak=sorted.filter(function(p){return p.score<safe;});
+  if(!weak.length) weak=sorted.slice(0,Math.min(2,sorted.length));
+  var safeSubs=sorted.filter(function(p){return weak.indexOf(p)<0;});
+
+  var top=null;
+  if(weak.length){ var tt=_planTopics(cert, weak[0].code); if(tt.length) top={sub:weak[0].code, subName:weak[0].name, t:tt[0]}; }
+
+  var head='<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #EDE4D9;position:sticky;top:0;z-index:2">'
+    +'<span onclick="closePassPlan()" style="font-size:17px;color:#8A7D6E;cursor:pointer">←</span>'
+    +'<span style="font-size:15px;font-weight:800;color:#3C3C3A">🎯 합격 플랜</span></div>';
+
+  var official=_officialExamMs(cert)!=null;
+  var ddayChip;
+  if(dl!=null){
+    ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:800;color:#C0392B;background:#FCEBEB;padding:3px 10px;border-radius:999px;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+(official?'':' ✎')+'</span>';
+  } else {
+    ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:11.5px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 11px;border-radius:999px;cursor:pointer">📅 시험일 등록 →</span>';
+  }
+  var schedLine = (dl!=null && dl>0) ? '시험까지 '+dl+'일 · 하루 20문제씩 합격플랜대로 풀면 <b style="color:#1E6B41">안전권 도달</b> 예상' : '하루 20문제씩 합격플랜대로 풀면 <b style="color:#1E6B41">안전권 도달</b> 예상';
+  var summary='<div style="margin:14px 14px 0;background:#fff;border:1px solid #E2D6CC;border-radius:14px;padding:13px 15px">'
+    +'<div style="display:flex;align-items:baseline;gap:9px">'
+    +'<span style="font-size:30px;font-weight:800;color:#185FA5;line-height:1">'+(ap.predicted!=null?ap.predicted:'--')+'<span style="font-size:14px">점</span></span>'
+    +(vlabel?'<span style="font-size:13px;font-weight:800;color:'+vcolor+'">'+vlabel+'</span>':'')+ddayChip+'</div>'
+    +'<div style="margin-top:8px;font-size:12px;color:#7A6F62;line-height:1.5">'+schedLine+'</div></div>';
+
+  var todayCard='';
+  if(top){
+    var startBtn = paid
+      ? '<span onclick="closePassPlan();luStartTopic(\''+top.sub+'\',\''+top.t.tcode+'\')" style="font-size:12px;font-weight:800;color:#fff;background:#185FA5;padding:8px 16px;border-radius:999px;cursor:pointer">시작 →</span>'
+      : '<span onclick="showPlanPopup()" style="font-size:12px;font-weight:800;color:#fff;background:#9DB4CE;padding:8px 14px;border-radius:999px;cursor:pointer">🔒 시작</span>';
+    var previewBadge = paid ? '' : '<span style="font-size:9.5px;font-weight:800;color:#8A7D6E;background:#E4EAF2;padding:1px 7px;border-radius:999px;margin-left:5px">미리보기</span>';
+    todayCard='<div style="margin:12px 14px 0;background:#EAF1FB;border:1px solid #BFD8F2;border-radius:14px;padding:12px 14px">'
+      +'<div style="font-size:11px;font-weight:800;color:#185FA5;margin-bottom:3px">⚡ 오늘의 1순위'+previewBadge+'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px"><div style="flex:1">'
+      +'<div style="font-size:14px;font-weight:800;color:#0C447C">'+mqEsc(top.subName)+' · '+mqEsc(top.t.name)+' 20문제</div>'
+      +'<div style="font-size:11px;color:#5B6B7E;margin-top:1px">'+(top.t.star>=3?'🔥 약한데 자주 나옴 · 가장 이득':'가장 이득인 단원')+'</div></div>'+startBtn+'</div></div>';
+  }
+
+  var body;
+  if(paid){
+    var cards=weak.map(function(s){return _planSubCard(cert,s,rule,true);}).join('');
+    var safeLine = safeSubs.length ? '<div style="margin:0 14px 16px;padding:10px 13px;background:#EAF3EC;border-radius:12px;font-size:12px;color:#1E6B41">🟢 <b>'+mqEsc(safeSubs[0].name)+(safeSubs.length>1?' 외 '+(safeSubs.length-1)+'과목':'')+'</b>은 양호해요 · 복습만 유지</div>' : '';
+    body='<div style="margin:16px 14px 4px;font-size:11px;font-weight:800;color:#B4A99C">전체 합격 플랜 · 가성비 순</div>'+cards+safeLine;
+  } else {
+    body='<div style="margin:16px 14px 4px;font-size:11px;font-weight:800;color:#B4A99C">전체 합격 플랜 · 가성비 순</div>'
+      +'<div style="position:relative;height:392px;overflow:hidden">'
+      +'<div style="filter:blur(2.5px);opacity:.72;pointer-events:none">'+_planDummyCard('#F0C9C9')+_planDummyCard('#E2D6CC')+'</div>'
+      +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(253,247,240,0) 0%,rgba(253,247,240,0) 58%,rgba(253,247,240,.6) 78%,rgba(253,247,240,.94) 92%,#FDF7F0 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 20px;text-align:center">'
+      +'<div style="font-size:23px;margin-bottom:5px">🔒</div>'
+      +'<div style="font-size:13.5px;font-weight:800;color:#3C3C3A;line-height:1.45;margin-bottom:3px">과목별 약점 전체는 멤버십에서</div>'
+      +'<div style="font-size:11px;color:#8A7D6E;line-height:1.5;margin-bottom:12px">무료: 하루 20문제·예상점수·오늘 1순위<br>멤버십: <b style="color:#3C3C3A">무제한 + 맞춤 합격플랜 전체</b></div>'
+      +'<button onclick="_planUpsell()" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:12px 30px;border-radius:999px;cursor:pointer">멤버십 구매하기</button></div></div>';
+  }
+  return head+summary+todayCard+body+'<div style="height:20px"></div>';
+}
+function openPassPlan(){
+  var cert=mqCert; if(!cert) return;
+  if(typeof ltGate==='function' && ltGate(cert)){ if(typeof diagResume==='function') diagResume(); return; }
+  var el=document.getElementById('passPlanOverlay');
+  if(!el){ el=document.createElement('div'); el.id='passPlanOverlay'; el.style.cssText='position:fixed;inset:0;z-index:9000;background:#FDF7F0;overflow-y:auto;-webkit-overflow-scrolling:touch'; document.body.appendChild(el); }
+  el.innerHTML=passPlanHTML(cert, _planIsPaid(cert));
+  el.style.display='block'; el.scrollTop=0; document.body.style.overflow='hidden';
+  if(_officialExamMs(cert)==null){ loadCrowdExamVotes(cert).then(function(){ var e2=document.getElementById('passPlanOverlay'); if(e2 && e2.style.display==='block'){ e2.innerHTML=passPlanHTML(cert,_planIsPaid(cert)); } }); }
+}
+function closePassPlan(){ var el=document.getElementById('passPlanOverlay'); if(el){ el.style.display='none'; el.innerHTML=''; } document.body.style.overflow=''; }
+function _planUpsell(){
+  var w=document.createElement('div'); w.style.cssText='position:fixed;inset:0;z-index:9200;background:rgba(20,14,8,.45);display:flex;align-items:center;justify-content:center;padding:0 26px';
+  w.innerHTML='<div style="background:#fff;border-radius:18px;padding:20px;text-align:center;max-width:300px;width:100%">'
+    +'<div style="font-size:30px;margin-bottom:8px">🔒</div>'
+    +'<div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:6px">맞춤 합격 플랜은 멤버십</div>'
+    +'<div style="font-size:12.5px;color:#5F5A52;line-height:1.6;margin-bottom:15px">오늘의 1순위 학습, 과목별 약점 전체,<br>무제한 문제풀이까지 — 멤버십으로 합격까지 한 번에.</div>'
+    +'<button id="_pupBuy" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:13px 0;border-radius:12px;width:100%;cursor:pointer">멤버십 구매하기</button>'
+    +'<div id="_pupLater" style="font-size:11.5px;color:#A79C8C;margin-top:11px;cursor:pointer">나중에</div></div>';
+  document.body.appendChild(w);
+  w.querySelector('#_pupBuy').onclick=function(){ document.body.removeChild(w); if(typeof showPlanPopup==='function') showPlanPopup(); };
+  w.querySelector('#_pupLater').onclick=function(){ document.body.removeChild(w); };
+  w.onclick=function(e){ if(e.target===w) document.body.removeChild(w); };
+}
+function _passPlanEntryHTML(cert){
+  return '<div onclick="openPassPlan()" style="margin:10px 0 2px;border-radius:12px;background:#0C447C;color:#fff;padding:11px 14px;display:flex;align-items:center;gap:8px;cursor:pointer"><span style="font-size:16px">🎯</span><span style="flex:1;font-size:14px;font-weight:800">합격 플랜 확인하기</span><span style="font-size:15px">→</span></div>';
+}
+function _analLockWrap(cert, inner){
+  if(!inner || _planIsPaid(cert)) return inner;
+  return '<div style="position:relative;max-height:150px;overflow:hidden;margin-top:2px">'
+    +'<div style="filter:blur(3px);opacity:.6;pointer-events:none">'+inner+'</div>'
+    +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.9) 45%,#fff 80%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;gap:8px">'
+    +'<div style="font-size:12px;font-weight:700;color:#6B5E50;text-align:center;line-height:1.5">🔒 과목·단원별 약점은 멤버십에서</div>'
+    +'<button onclick="_planUpsell()" style="border:none;background:#0C447C;color:#fff;font-size:13px;font-weight:800;padding:9px 20px;border-radius:999px;cursor:pointer">멤버십 구매하기</button></div></div>';
+}
+
 // ===== 4-a 레벨 테스트 (진단 세션 위에 얹음. mqDiag 플밍 재사용) =====
 var mqLevelTest=false;                       // 레벨 테스트 세션 여부
 var LT_PER_SUBJECT=7;                         // 과목당 고정 문항수(시험 무관)
@@ -3469,7 +3678,7 @@ function _ltRenderResultGate(M){
     +'<div class="ltg-blurwrap"><div class="ltg-blur">'+blurCards+'</div>'
       +'<div class="ltg-gate"><div class="ltg-lock">🔒</div>'
         +'<div class="ltg-gt">로그인하면 결과 공개</div>'
-        +'<div class="ltg-gs">'+metric+'와 약점 분석을 확인하고,<br>맞춤 레벨업 학습을 무료로 시작하세요.</div>'
+        +'<div class="ltg-gs">'+metric+'를 확인하고,<br>맞춤 레벨업 학습을 무료로 시작하세요.</div>'
         +'<button class="ltg-btn" onclick="_ltGateLogin()"><span class="ltg-g">G</span> 구글로 1초 로그인하고 결과 보기</button>'
         +'<div class="ltg-note">가입하면 약점 집중 문제까지 무료로 풀 수 있어요</div>'
       +'</div></div>'
@@ -3551,7 +3760,7 @@ function _ltHookingScreen(cert){
     +'<div class="lth-badge">🎁 100% 무료 · 가입 없이 바로</div>'
     +'<div class="lth-ttl">'+mqEsc(nm)+'<br><span class="lth-hl">무료 레벨테스트</span></div>'
     +'<div class="lth-desc">'+n+'문제로 내 실력과 <b>'+metric+'</b>을<br>3분 만에 확인해보세요.</div>'
-    +'<div class="lth-free"><span>✓ 결제 없음</span><span>✓ 가입 없이 시작</span><span>✓ 약점 분석</span></div>'
+    +'<div class="lth-free"><span>✓ 결제 없음</span><span>✓ 가입 없이 시작</span><span>✓ 예상점수</span></div>'
     +'<button class="lth-cta" onclick="_ltHookStart()">무료로 시작하기 →</button>'
     +'<div class="lth-note">문제를 다 풀면 '+metric+'·약점 결과를 드려요</div>'
   +'</div>';
