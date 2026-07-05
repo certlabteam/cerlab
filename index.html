@@ -1424,6 +1424,15 @@ function _togglePayUI(show){
   els.forEach(function(sel){ document.querySelectorAll(sel).forEach(function(el){ el.style.display=show?'':'none'; }); });
   if(!show){ var m=document.querySelector('.discount-msg'); if(m) m.style.display='none'; }
 }
+function showAppWebPay(){
+  _togglePayUI(false);
+  var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🎯 멤버십 이용권';
+  var sub=document.getElementById('planSub'); if(sub) sub.textContent='맞춤 합격플랜과 무제한 문제풀이는 멤버십에서 이용할 수 있어요.';
+  var st=document.getElementById('planStats');
+  if(st) st.innerHTML='<div style="text-align:center;padding:16px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">멤버십 이용권은 <b style="color:#0C447C">certlab.ai.kr</b> (웹)에서<br>가입하신 계정으로 시작할 수 있어요.<br><span style="font-size:12px;color:#8A7D6E">웹에서 이용권을 시작하면 앱에서도 바로 열려요.</span></div>'
+    +'<button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
+  var pp=document.getElementById('planPopup'); if(pp) pp.classList.remove('hidden');
+}
 function showAppDailyDone(){
   _togglePayUI(false);
   var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🌙 오늘 무료 학습 완료!';
@@ -1431,14 +1440,17 @@ function showAppDailyDone(){
   var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div><button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
   var pp=document.getElementById('planPopup'); if(pp) pp.classList.remove('hidden');
 }
-function showPlanPopup() {
+function showPlanPopup(membership) {
   const cert = activeCertId();
-  if (typeof pwaStandalone==='function' && pwaStandalone()) { showAppDailyDone(); return; }   // 앱(설치형)에선 결제 유도 대신 "내일 또" 안내(구글 정책 안전)
+  if (typeof pwaStandalone==='function' && pwaStandalone()) {   // 설치앱: Play 정책 — 가격/결제 노출 금지
+    if (membership) { showAppWebPay(); } else { showAppDailyDone(); }
+    return;
+  }
   _togglePayUI(true);
   const titleEl = document.getElementById('planSheetTitle');
-  if (titleEl) titleEl.textContent = `⏰ 오늘 무료 학습 완료!`;
+  if (titleEl) titleEl.textContent = membership ? `🎯 멤버십 이용권` : `⏰ 오늘 무료 학습 완료!`;
   const subEl = document.getElementById('planSub');
-  if (subEl) subEl.textContent = `오늘의 무료 문제를 다 푸셨어요. 이용권을 시작하면 문제 수 제한 없이 전체 기출·해설·학습 기록을 이용할 수 있어요.`;
+  if (subEl) subEl.textContent = membership ? `이용권을 시작하면 맞춤 합격플랜과 무제한 문제풀이를 이용할 수 있어요.` : `오늘의 무료 문제를 다 푸셨어요. 이용권을 시작하면 문제 수 제한 없이 전체 기출·해설·학습 기록을 이용할 수 있어요.`;
   const n = certQuestionCount(cert);
   const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
   const allN = totalQuestionCountAll();
@@ -3508,7 +3520,7 @@ function mcqAnalysisCard(cert){
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
       Object.keys(sc).forEach(function(t){ var tl=AE.scoreToLevel(sc[t]), tn=(tmap[t]&&tmap[t].name)||t;
-        rows+='<div onclick="luStartTopic(\''+sub+'\',\''+t+'\')" style="display:flex;align-items:center;gap:8px;margin:3px 0;padding:5px 7px;border-radius:9px;background:#FBF8F4;cursor:pointer"><span style="font-size:12px;color:#6E6256;width:108px;flex:0 0 108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(tn)+'</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(tl/5*100)+'%;background:'+LVC[tl]+'"></div></div><span style="font-size:11px;font-weight:700;color:#8A7D6E;width:30px;text-align:right">Lv'+tl+'</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:3px 9px;border-radius:999px;flex:0 0 auto">풀기</span></div>';
+        rows+='<div onclick="_planTopicGo(\''+sub+'\',\''+t+'\')" style="display:flex;align-items:center;gap:8px;margin:3px 0;padding:5px 7px;border-radius:9px;background:#FBF8F4;cursor:pointer"><span style="font-size:12px;color:#6E6256;width:108px;flex:0 0 108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(tn)+'</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(tl/5*100)+'%;background:'+LVC[tl]+'"></div></div><span style="font-size:11px;font-weight:700;color:#8A7D6E;width:30px;text-align:right">Lv'+tl+'</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:3px 9px;border-radius:999px;flex:0 0 auto">풀기</span></div>';
       });
       var _thint=Object.keys(sc).length?'<div style="font-size:11px;color:#8A7D6E;margin:0 2px 6px">단원을 누르면 그 단원만 5문제씩 풀어요</div>':'';
       if(!rows) rows='<div style="font-size:12px;color:#B4A99C;padding:4px">단원 데이터 준비 중</div>';
@@ -3601,12 +3613,15 @@ function _planSimSubject(cert, sub, raiseTcodes, targetLv){
     return w? eloToExamScore(wsum/w) : null;
   }catch(_){ return null; }
 }
+function _planTopicGo(sub, tcode){
+  var cert=(typeof mqCert!=='undefined')?mqCert:null;
+  if(!_planIsPaid(cert)){ _planUpsell(); return; }   // 무료 → 멤버십 유도 팝업(플랜 유지)
+  closePassPlan(); luStartTopic(sub, tcode);          // 유료 → 플랜 닫고 풀기
+}
 var _PLAN_LVC={1:'#E24B4A',2:'#E24B4A',3:'#E0A52E',4:'#2E9B5E',5:'#2E9B5E'};
 function _planTopicRow(cert, sub, t, paid){
   var fire = t.star>=3 ? '<span style="font-size:12px;flex:0 0 auto">🔥</span>' : '<span style="font-size:12px;flex:0 0 auto;opacity:.2">🔥</span>';
-  var solve = paid
-    ? '<span onclick="closePassPlan();luStartTopic(\''+sub+'\',\''+t.tcode+'\')" style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px;cursor:pointer">풀기</span>'
-    : '<span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px">풀기</span>';
+  var solve = '<span onclick="_planTopicGo(\''+sub+'\',\''+t.tcode+'\')" style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px;cursor:pointer">풀기</span>';
   return '<div style="display:flex;align-items:center;gap:7px;margin:4px 0;padding:6px 8px;border-radius:9px;background:#FBF8F4">'
     +fire+'<span style="font-size:12px;color:#6E6256;width:78px;flex:0 0 78px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(t.name)+'</span>'
     +'<div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(t.lv/5*100)+'%;background:'+_PLAN_LVC[t.lv]+'"></div></div>'
@@ -3670,10 +3685,8 @@ function passPlanHTML(cert, paid){
 
   var todayCard='';
   if(top){
-    var startBtn = paid
-      ? '<span onclick="closePassPlan();luStartTopic(\''+top.sub+'\',\''+top.t.tcode+'\')" style="font-size:12px;font-weight:800;color:#fff;background:#185FA5;padding:8px 16px;border-radius:999px;cursor:pointer">시작 →</span>'
-      : '<span onclick="showPlanPopup()" style="font-size:12px;font-weight:800;color:#fff;background:#9DB4CE;padding:8px 14px;border-radius:999px;cursor:pointer">🔒 시작</span>';
-    var previewBadge = paid ? '' : '<span style="font-size:9.5px;font-weight:800;color:#8A7D6E;background:#E4EAF2;padding:1px 7px;border-radius:999px;margin-left:5px">미리보기</span>';
+    var startBtn = '<span onclick="_planTopicGo(\''+top.sub+'\',\''+top.t.tcode+'\')" style="font-size:12px;font-weight:800;color:#fff;background:#185FA5;padding:8px 16px;border-radius:999px;cursor:pointer">시작 →</span>';
+    var previewBadge = '';
     todayCard='<div style="margin:12px 14px 0;background:#EAF1FB;border:1px solid #BFD8F2;border-radius:14px;padding:12px 14px">'
       +'<div style="font-size:11px;font-weight:800;color:#185FA5;margin-bottom:3px">⚡ 오늘의 1순위'+previewBadge+'</div>'
       +'<div style="display:flex;align-items:center;gap:10px"><div style="flex:1">'
@@ -3681,21 +3694,9 @@ function passPlanHTML(cert, paid){
       +'<div style="font-size:11px;color:#5B6B7E;margin-top:1px">'+(top.t.star>=3?'🔥 약한데 자주 나옴 · 가장 이득':'가장 이득인 단원')+'</div></div>'+startBtn+'</div></div>';
   }
 
-  var body;
-  if(paid){
-    var cards=weak.map(function(s){return _planSubCard(cert,s,rule,true);}).join('');
-    var safeLine = safeSubs.length ? '<div style="margin:0 14px 16px;padding:10px 13px;background:#EAF3EC;border-radius:12px;font-size:12px;color:#1E6B41">🟢 <b>'+mqEsc(safeSubs[0].name)+(safeSubs.length>1?' 외 '+(safeSubs.length-1)+'과목':'')+'</b>은 양호해요 · 복습만 유지</div>' : '';
-    body='<div style="margin:16px 14px 4px;font-size:11px;font-weight:800;color:#B4A99C">전체 합격 플랜 · 가성비 순</div>'+cards+safeLine;
-  } else {
-    body='<div style="margin:16px 14px 4px;font-size:11px;font-weight:800;color:#B4A99C">전체 합격 플랜 · 가성비 순</div>'
-      +'<div style="position:relative;height:392px;overflow:hidden">'
-      +'<div style="filter:blur(2.5px);opacity:.72;pointer-events:none">'+_planDummyCard('#F0C9C9')+_planDummyCard('#E2D6CC')+'</div>'
-      +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(253,247,240,0) 0%,rgba(253,247,240,0) 58%,rgba(253,247,240,.6) 78%,rgba(253,247,240,.94) 92%,#FDF7F0 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px 20px;text-align:center">'
-      +'<div style="font-size:23px;margin-bottom:5px">🔒</div>'
-      +'<div style="font-size:13.5px;font-weight:800;color:#3C3C3A;line-height:1.45;margin-bottom:3px">과목별 약점 전체는 멤버십에서</div>'
-      +'<div style="font-size:11px;color:#8A7D6E;line-height:1.5;margin-bottom:12px">무료: 하루 20문제·예상점수·오늘 1순위<br>멤버십: <b style="color:#3C3C3A">무제한 + 맞춤 합격플랜 전체</b></div>'
-      +'<button onclick="_planUpsell()" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:12px 30px;border-radius:999px;cursor:pointer">멤버십 구매하기</button></div></div>';
-  }
+  var cards=weak.map(function(s){return _planSubCard(cert,s,rule,true);}).join('');
+  var safeLine = safeSubs.length ? '<div style="margin:0 14px 16px;padding:10px 13px;background:#EAF3EC;border-radius:12px;font-size:12px;color:#1E6B41">🟢 <b>'+mqEsc(safeSubs[0].name)+(safeSubs.length>1?' 외 '+(safeSubs.length-1)+'과목':'')+'</b>은 양호해요 · 복습만 유지</div>' : '';
+  var body='<div style="margin:16px 14px 4px;font-size:11px;font-weight:800;color:#B4A99C">전체 합격 플랜 · 가성비 순</div>'+cards+safeLine;
   return head+summary+todayCard+body+'<div style="height:20px"></div>';
 }
 function openPassPlan(){
@@ -3717,21 +3718,14 @@ function _planUpsell(){
     +'<button id="_pupBuy" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:13px 0;border-radius:12px;width:100%;cursor:pointer">멤버십 구매하기</button>'
     +'<div id="_pupLater" style="font-size:11.5px;color:#A79C8C;margin-top:11px;cursor:pointer">나중에</div></div>';
   document.body.appendChild(w);
-  w.querySelector('#_pupBuy').onclick=function(){ document.body.removeChild(w); if(typeof showPlanPopup==='function') showPlanPopup(); };
+  w.querySelector('#_pupBuy').onclick=function(){ document.body.removeChild(w); if(typeof showPlanPopup==='function') showPlanPopup(true); };
   w.querySelector('#_pupLater').onclick=function(){ document.body.removeChild(w); };
   w.onclick=function(e){ if(e.target===w) document.body.removeChild(w); };
 }
 function _passPlanEntryHTML(cert){
   return '<div onclick="openPassPlan()" style="margin:10px 0 2px;border-radius:12px;background:#0C447C;color:#fff;padding:11px 14px;display:flex;align-items:center;gap:8px;cursor:pointer"><span style="font-size:16px">🎯</span><span style="flex:1;font-size:14px;font-weight:800">합격 플랜 확인하기</span><span style="font-size:15px">→</span></div>';
 }
-function _analLockWrap(cert, inner){
-  if(!inner || _planIsPaid(cert)) return inner;
-  return '<div style="position:relative;max-height:150px;overflow:hidden;margin-top:2px">'
-    +'<div style="filter:blur(3px);opacity:.6;pointer-events:none">'+inner+'</div>'
-    +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.9) 45%,#fff 80%);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;gap:8px">'
-    +'<div style="font-size:12px;font-weight:700;color:#6B5E50;text-align:center;line-height:1.5">🔒 과목·단원별 약점은 멤버십에서</div>'
-    +'<button onclick="_planUpsell()" style="border:none;background:#0C447C;color:#fff;font-size:13px;font-weight:800;padding:9px 20px;border-radius:999px;cursor:pointer">멤버십 구매하기</button></div></div>';
-}
+function _analLockWrap(cert, inner){ return inner; }   // 블러 제거 — 다 보여주고 풀기 버튼(_planTopicGo)에서 게이트
 
 // ===== 4-a 레벨 테스트 (진단 세션 위에 얹음. mqDiag 플밍 재사용) =====
 var mqLevelTest=false;                       // 레벨 테스트 세션 여부
