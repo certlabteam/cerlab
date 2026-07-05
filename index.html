@@ -5636,8 +5636,25 @@ function renderMcqExam(root){
         body+='<div class="exp-opts"><div class="eo">'+optLine+aLine+'</div></div>';
         if(hasGraph) body+='<div class="calc-graph">'+q.exp.graph+'</div>';   // SVG 그대로(renderMath 미적용)
         if(hasSteps){
-          body+='<div class="calc-steps"><div class="cs-ti">풀이</div>'+
-            exArr.filter(Boolean).map(function(line){ return '<div class="cs-line">'+rm(String(line),q)+'</div>'; }).join('')+'</div>';
+          (function(){
+            var _ex=exArr.filter(Boolean).map(function(l){return rm(String(l),q);});
+            var _numRe=/^\s*([\u2460-\u2473]|\d+\s*[.)])/;
+            var _hasNum=_ex.some(function(s){return _numRe.test(s);});
+            var _inner;
+            if(_hasNum){
+              _inner='<div style="font-weight:800;color:#8A5A00">풀이)</div>'
+                + _ex.map(function(s,i){
+                    var _isNum=_numRe.test(s);
+                    var _st=_isNum?'padding-left:1.5em;text-indent:-1.5em':'padding-left:1.5em';
+                    return '<div style="font-weight:400;margin-top:'+(i===0?'5px':'4px')+';'+_st+'">'+s+'</div>';
+                  }).join('');
+            } else {
+              _inner=_ex.map(function(s,i){
+                return '<div style="font-weight:400;margin-top:'+(i===0?'0':'4px')+'">'+(i===0?'<b style="font-weight:800;color:#8A5A00">풀이) </b>':'')+s+'</div>';
+              }).join('');
+            }
+            body+='<div class="calc-sol" style="margin:10px 0 0;padding:12px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px;font-size:13px;color:#5E4A2A;line-height:1.8;word-break:keep-all;overflow-wrap:break-word">'+_inner+'</div>';
+          })();
         }
       } else {
         // 결론 한 줄(ㄱㄴㄷ형 등)
