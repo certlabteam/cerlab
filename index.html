@@ -4848,6 +4848,10 @@ function isEconQ(q){
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
 function rm(text, q){ return renderMath(text, isEconQ(q)); }
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
+function _jaryoDots(html){
+  // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
+  return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 5px 0 2px;position:relative;top:-1px">\u25CF</span>');
+}
 function stemHTML(html){
   // 순수 산문 스템만 문장(…다.) 단위로 단락 분리. ○/ㄱㄴㄷ 조합·자료형, 1문장은 기존 그대로.
   if(!html) return html;
@@ -5457,7 +5461,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+rm(jaryo,q).replace(/ \/ /g,'<br>')+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoDots(rm(jaryo,q).replace(/ \/ /g,'<br>'))+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
@@ -5704,7 +5708,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):stemHTML(rm(_stemQ,q)))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>'):'')+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q))+'</div>'):'')+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
