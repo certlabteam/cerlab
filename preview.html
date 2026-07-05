@@ -976,6 +976,8 @@ function isEconQ(q){
 
 function rm(text, q){ return renderMath(text, isEconQ(q)); }
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
+var _JDOT='<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 5px 0 2px;position:relative;top:-1px">\u25CF</span>';
+function _jaryoDots(html){ return String(html==null?'':html).replace(/\u25CB\s*/g,_JDOT); }
 function stemHTML(html){
   // 순수 산문 스템만 문장(…다.) 단위로 단락 분리. ○/ㄱㄴㄷ 조합·자료형, 1문장은 기존 그대로.
   if(!html) return html;
@@ -1335,12 +1337,12 @@ function renderQuestionBlock(q){
       var oIntro=parts.shift().trim();
       jaryoHTML='<div class="jaryo">'
         + (oIntro?'<div style="margin-bottom:6px">'+rm(oIntro,q)+'</div>':'')
-        + parts.map(function(t){ t=t.trim(); return t?'<div class="jr-stmt"><span class="jr-stmt-t">\u25CB '+rm(t,q)+'</span></div>':''; }).join('')
+        + parts.map(function(t){ t=t.trim(); return t?'<div class="jr-stmt"><span class="jr-stmt-t">'+_JDOT+rm(t,q)+'</span></div>':''; }).join('')
         + '</div>';
     } else if(parseBlankStmts(jr.jaryo).length>=2){
       jaryoHTML=jaryoBlanksHTML(jr.jaryo,q);
     } else {
-      jaryoHTML='<div class="jaryo">'+rm(jr.jaryo,q)+'</div>';
+      jaryoHTML='<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q))+'</div>';
     }
   }
   return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,true):stemHTML(rm(_stemQ,q)))+'</div></div>'+
