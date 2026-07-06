@@ -1117,6 +1117,10 @@ tr:hover td{background:#FAFAFA}
               <div id="itvmIdWarn" style="font-size:11px;color:#A32D2D;min-height:14px"></div>
               <label style="font-size:12px;font-weight:700;color:#555">name (한글 이름)</label>
               <input id="itvmNameField" placeholder="NPV와 교차점" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 10px;box-sizing:border-box">
+              <label style="font-size:12px;font-weight:700;color:#555">title (옵션 · 표시 제목, 비우면 name 사용)</label>
+              <input id="itvmTitleField" placeholder="(비우면 name 사용)" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 10px;box-sizing:border-box">
+              <label style="font-size:12px;font-weight:700;color:#555">story (옵션 · 위젯 위 설명글, 조작 안 해도 보임)</label>
+              <textarea id="itvmStoryField" placeholder="이 인터랙티브가 무엇을 보여주는지 2~4문장. 조작 없이도 요지가 전달되게." style="width:100%;height:64px;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 10px;box-sizing:border-box"></textarea>
               <label style="font-size:12px;font-weight:700;color:#555">template</label>
               <select id="itvmTemplateField" onchange="itvmPreview()" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid #E2E2E2;margin:3px 0 10px;box-sizing:border-box">
                 <option value="">(선택)</option>
@@ -2692,6 +2696,8 @@ function _itvmCsv(id){ return (document.getElementById(id).value||'').split(',')
 function itvmFill(g){
   document.getElementById('itvmIdField').value=g.id||'';
   document.getElementById('itvmNameField').value=g.name||'';
+  document.getElementById('itvmTitleField').value=g.title||'';
+  document.getElementById('itvmStoryField').value=g.story||'';
   document.getElementById('itvmTemplateField').value=g.template||'';
   document.getElementById('itvmParamsField').value=g.params?JSON.stringify(g.params,null,2):'';
   document.getElementById('itvmConceptsField').value=(g.concepts||[]).join(', ');
@@ -2734,6 +2740,7 @@ async function itvmSave(){
   if(!g.template){ alert('template을 선택하세요.'); return; }
   if(_ITV_TEMPLATES.indexOf(g.template)<0 && !confirm('미지원 템플릿("'+g.template+'")입니다. 그래도 저장할까요? (앱에서 "템플릿 미지원"으로 표시됨)')) return;
   var rec={ name:document.getElementById('itvmNameField').value.trim(),
+    title:document.getElementById('itvmTitleField').value.trim(), story:document.getElementById('itvmStoryField').value.trim(),
     template:g.template, params:(g.params&&typeof g.params==='object')?g.params:null,
     concepts:_itvmCsv('itvmConceptsField'), certs:_itvmCsv('itvmCertsField'),
     keywords:_itvmCsv('itvmKwField'), note:document.getElementById('itvmNoteField').value.trim(),
@@ -2788,11 +2795,11 @@ async function itvmImport(){
   for(var i=0;i<_itvmImpData.length;i++){
     var it=_itvmImpData[i]; var id=String(it.id);
     if(!/^itv_[a-z0-9_]+$/.test(id)){ fail++; continue; }
-    var rec={ name:it.name||'', template:it.template||'', params:(it.params&&typeof it.params==='object')?it.params:null,
+    var rec={ name:it.name||'', title:it.title||'', story:it.story||'', template:it.template||'', params:(it.params&&typeof it.params==='object')?it.params:null,
       concepts:Array.isArray(it.concepts)?it.concepts:[], certs:Array.isArray(it.certs)?it.certs:[],
       keywords:Array.isArray(it.keywords)?it.keywords:[], note:it.note||'',
       updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    _impPreserve(rec, it, _itvmAll[id], ['name','note','certs','keywords','template','params','concepts']);
+    _impPreserve(rec, it, _itvmAll[id], ['name','title','story','note','certs','keywords','template','params','concepts']);
     try{ await db.collection('interactives').doc(id).set(rec); _itvmAll[id]=_cacheRec(rec); ok++; }catch(e){ fail++; }
   }
   var stt=document.getElementById('itvmImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 올림: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패/형식오류 '+fail+'개'):'')+'.'; }
