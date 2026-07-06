@@ -2530,7 +2530,7 @@ var _itvTemplates={
     window._itvReg[instId]={template:'T1_curve_slider', rate:rc, series:series, unit:unit, scale:scale, geo:{X:X,Y:Y}, defaultVal:rc.default};
     var defHTML=''; if(p.intro) defHTML+='<div class="itv-def">'+p.intro+'</div>';
     if(Array.isArray(p.terms)&&p.terms.length){ defHTML+='<div class="itv-def">'+p.terms.map(function(t){return '<span class="term"><b>'+_itvEsc(t.t)+'</b> — '+_itvEsc(t.d)+'</span>';}).join('')+'</div>'; }
-    var storyHTML=p.story?'<div class="itv-story">'+p.story+'</div>':'';
+    var storyHTML=(it.story||p.story)?'<div class="itv-story">'+(it.story||p.story)+'</div>':'';
     var ctrl='<div class="itv-ctrl"><label>'+_itvEsc(rc.label||'')+'</label>'
       +'<input type="range" min="'+rc.min+'" max="'+rc.max+'" step="'+rc.step+'" value="'+rc.default+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
       +'<div class="itv-rate"><span>'+Number(rc.default).toFixed(rc.step<1?1:0)+'</span>'+_itvEsc(rc.unit||'')+'</div></div>';
@@ -2557,7 +2557,7 @@ var _itvTemplates={
     var legend='<div class="itv-legend">'+series.map(function(s){return '<span><i style="background:'+s.color+'"></i>'+_itvEsc(s.name)+'</span>';}).join('')+'<span><i style="background:#C0392B"></i>지금 위치</span></div>';
     var svg='<svg viewBox="0 0 '+W+' '+H+'" role="img">'+grid+curves+'<line id="'+instId+'_rline" stroke="#C0392B" stroke-width="1.5" stroke-dasharray="4 3" y1="'+T+'" y2="'+(H-Bm)+'"/>'+dots+'</svg>';
     var det='<details class="itv-det"><summary>전체 그림으로 보기</summary>'+svg+legend+crossNote+'</details>';
-    var ti2=it.name?'<div class="itv-ti">'+_itvEsc(it.name)+'</div>':'';
+    var ti2=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
     return '<div class="itv-box" id="'+instId+'">'+ti2+defHTML+storyHTML+ctrl+hint+say+bars+barNote+det+'</div>';
   },
 
@@ -2569,7 +2569,7 @@ var _itvTemplates={
     // 정의/스토리
     var defHTML='';
     if(Array.isArray(p.terms)&&p.terms.length) defHTML='<details class="itv-defd"><summary>용어 먼저 보기 ▾</summary><div class="itv-def" style="margin-top:6px">'+p.terms.map(function(t){return '<span class="term"><b>'+_itvEsc(t.t)+'</b> — '+_itvEsc(t.d)+'</span>';}).join('')+'</div></details>';
-    var storyHTML=p.story?'<div class="itv-story">'+p.story+'</div>':'';
+    var storyHTML=(it.story||p.story)?'<div class="itv-story">'+(it.story||p.story)+'</div>':'';
     var ctrl='<div class="itv-ctrl"><label>'+_itvEsc(sc.label||'판매 수량')+'</label>'
       +'<input type="range" min="'+sc.min+'" max="'+(sc.max||Q)+'" step="'+(sc.step||1)+'" value="'+(sc.default||0)+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
       +'<div class="itv-rate"><span id="'+instId+'_sv">'+(sc.default||0)+'</span>개</div></div>';
@@ -2598,7 +2598,7 @@ var _itvTemplates={
       +'</tbody></table>';
     var say='<div class="itv-say"><div class="h" id="'+instId+'_sayH">—</div><div class="w" id="'+instId+'_sayW">—</div></div>';
     var note=p.lifoNote?'<p class="itv-hint">※ '+_itvEsc(p.lifoNote)+'</p>':'';
-    var ti=it.name?'<div class="itv-ti">'+_itvEsc(it.name)+'</div>':'';
+    var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
     return '<div class="itv-box" id="'+instId+'">'+ti+defHTML+storyHTML+ctrl+legend+mbF+mbW+tip+table+say+note+'</div>';
   }
 };
@@ -2643,7 +2643,7 @@ _itvTemplates.T2_timeline=function(it, instId){
   var totalW=Math.max(1,phases.length)*bandPx;
   nodes.forEach(function(n){ var b=byPhase[n.phase]; if(!b){n._x=0;return;} var j=b.list.indexOf(n),k=b.list.length; n._x=b.pi*bandPx+(j+1)/(k+1)*bandPx; });
   window._itvReg[instId]={template:'T2_timeline', nodes:nodes, phases:phases, defaultVal:0, wired:false};
-  var ti=it.name?'<div class="itv-ti">'+_itvEsc(it.name)+'</div>':'';
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
   var eraLab='<div class="itv-tl-era">'+_itvEsc(era.label||'')+' '+_itvEsc(String(era.from||''))+'\u2013'+_itvEsc(String(era.to||''))+'</div>';
   var bands=''; phases.forEach(function(ph,pi){
     bands+='<div class="itv-tl-band'+(pi%2?' alt':'')+'" style="left:'+(pi*bandPx)+'px;width:'+bandPx+'px"></div>';
