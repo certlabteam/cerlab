@@ -3489,8 +3489,22 @@ function mcqLevel(pred,pass){
   if(pred>=pass) return {label:'🟡 합격권',color:'#E0A52E'};
   return {label:'🔴 위험권',color:'#E24B4A'};
 }
+function _certHasAnsQ(cert){
+  try{
+    var qb=(typeof qbOf==='function')?qbOf(cert):null; if(!qb) return false;
+    var codes=Object.keys(qb);
+    for(var i=0;i<codes.length;i++){
+      var sets=(qb[codes[i]]&&qb[codes[i]].sets)||[];
+      for(var s=0;s<sets.length;s++){
+        var qs=sets[s].questions||[];
+        for(var q=0;q<qs.length;q++){ if(mqHasAnswer(qs[q])) return true; }
+      }
+    }
+  }catch(e){}
+  return false;
+}
 function mcqAnalysisCard(cert){
-  if(!adHasData(cert)){
+  if(!adHasData(cert) && !_certHasAnsQ(cert)){   // 적응형 없고 기출(정답)도 없을 때만 준비중
     return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
       +'<div class="anal-empty">이 시험은 <b>레벨업 데이터 준비 중</b>이에요. 곧 레벨 테스트로 약점을 측정할 수 있어요.</div>'
       +'<button class="anal-diag" disabled style="opacity:.5;cursor:not-allowed">🎯 레벨 테스트 준비 중</button></div>';
@@ -4354,7 +4368,7 @@ function luHistReview(gIdx){ var list=luHistList(mqCert); var rec=list[gIdx]; if
   mqScreen='result'; renderMqResultScreen(); window.scrollTo(0,0); }
 // 과목 레벨: 토픽 점수 핵심(exam) 2 : 일반 1 가중평균 → Lv
 // 과목 Elo 점수(핵심 2:1 가중) — 0~100, 데이터 없으면 null
-function adSubjectScoreRaw(cert,sub){ var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), wsum=0, w=0; for(var t in sc){ var weight=(tmap[t]&&tmap[t].mode==='exam')?2:1; wsum+=sc[t]*weight; w+=weight; } return w?(wsum/w):null; }
+function adSubjectScoreRaw(cert,sub){ var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), wsum=0, w=0; for(var t in sc){ var weight=(tmap[t]&&tmap[t].mode==='exam')?2:1; wsum+=sc[t]*weight; w+=weight; } if(w) return wsum/w; try{ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; if(rec&&rec.summary&&rec.summary[sub]&&typeof rec.summary[sub].score==='number') return rec.summary[sub].score; }catch(e){} return null; }
 function luSubjectLevel(cert,sub){ var raw=adSubjectScoreRaw(cert,sub); return raw==null?null:AE.scoreToLevel(raw); }
 // 환산표 자리(회차 실측 보정 전: 항등). 이후 회차 실점수로 보정 지점.
 function eloToExamScore(score){ if(score==null) return null; return Math.round(Math.max(0,Math.min(100,score))); }
