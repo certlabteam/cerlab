@@ -948,20 +948,24 @@ function verdictColor(t){
 function renderMath(text, allowBareFraction){
   if(text==null) return '';
   var s=String(text);
-  // (1) 괄호 분수 (a/b) 숫자/숫자 → 플레이스홀더 [전 과목]
+  var _stash=[];
+  function _st(m){ _stash.push(m); return '\u0007'+(_stash.length-1)+'\u0008'; }
+  s = s.replace(/<svg[\s\S]*?<\/svg>/gi, _st);
+  s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return _st('<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'); });
+  s = s.replace(/<\/?[A-Za-z][A-Za-z0-9]*(?:\s[^<>]*)?\/?>/g, _st);
+  s = s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
   s = s.replace(/\((\d+)\/(\d+)\)/g, '\u0001$1\u0002$2\u0003');
-  // (2) 맨 분수 a/b → 분수 [econ 전용] (콤마숫자·축척·날짜 오변환 방지)
   if(allowBareFraction){
-    // (1b) 괄호 분수 (한글단위·변수 분모 포함) (150/시간),(P_x/P_y) → 분수 [econ 전용]
-    s = s.replace(/\(([^()\/\u0001-\u0003]+)\/([^()\/\u0001-\u0003]+)\)/g, '\u0001$1\u0002$2\u0003');
+    s = s.replace(/\(([^()\/\u0001-\u0003\u0007\u0008]+)\/([^()\/\u0001-\u0003\u0007\u0008]+)\)/g, '\u0001$1\u0002$2\u0003');
+    // (1c) 변수/변수 경제 비율 → 분수 [econ]: 양변이 수학변수(문자+선택 _첨자·^첨자), 이미지·날짜·한글분모·∂·√·and/or 제외
+    s = s.replace(/(?<![A-Za-z0-9_^:\/\u221A\u2202\uAC00-\uD7A3])([A-Za-z][A-Za-z0-9]{0,3}(?:_[A-Za-z0-9]+)?(?:\^[A-Za-z0-9]+)?)\/([A-Za-z][A-Za-z0-9]{0,3}(?:_[A-Za-z0-9]+)?(?:\^[A-Za-z0-9]+)?)(?![A-Za-z0-9_:\/\u221A\uAC00-\uD7A3])/g, function(m,a,b){ var stop=/^(and|or|per|the|of|to|in|on|km|kg|cm|mm)$/i; if(stop.test(a)||stop.test(b)) return m; return '\u0001'+a+'\u0002'+b+'\u0003'; });
     s = s.replace(/(?<![\d\/.,])(\d+)\/(\d+)(?![\d\/])/g, '\u0001$1\u0002$2\u0003');
   }
-  // (3) 윗첨자 ^토큰 / ^(그룹) / ^분수플레이스홀더 [전 과목]
   s = s.replace(/\^(\([^)]*\)|\u0001[^\u0003]*\u0003|[A-Za-z0-9]+)/g, function(m,g){ return '<sup>'+g.replace(/^\(|\)$/g,'')+'</sup>'; });
-  // (4) 아래첨자 _토큰 (영숫자까지만 → 한글 조사 유지) [전 과목]
   s = s.replace(/_([A-Za-z0-9]+)/g, '<sub>$1</sub>');
-  // (5) 분수 플레이스홀더 → HTML
   s = s.replace(/\u0001([^\u0002]+)\u0002([^\u0003]+)\u0003/g, '<span class="frac"><span class="fn">$1</span><span class="fd">$2</span></span>');
+  s = s.replace(/\u0007(\d+)\u0008/g, function(m,i){ return _stash[+i]||''; });
+  s = s.replace(/\u0004/g, '/');
   return s;
 }
 // 문항이 경제(econ)인지 — id 접두 'e' 또는 과목코드 econ
@@ -996,7 +1000,7 @@ function bulletStem(html){
   function flushBul(){
     if(!buf.length) return;
     out+='<div class="qbul-wrap">'+buf.map(function(t){
-      return '<div class="qbul"><span class="qbul-m">\u25CB</span><span class="qbul-t">'+t+'</span></div>';
+      return '<div class="qbul"><span class="qbul-m" style="color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle">\u25CF</span><span class="qbul-t">'+t+'</span></div>';
     }).join('')+'</div>';
     buf=[];
   }
@@ -1103,7 +1107,7 @@ function countStemHTML(rawStem, q, withOX){
   var head=sp.head ? '<div class="qpara">'+rm(sp.head,q)+'</div>' : '';
   var rows=sp.stmts.map(function(t,i){
     var oxb=withOX?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
-    return '<div class="qbul"><span class="qbul-m">○</span><span class="qbul-t">'+rm(t,q)+oxb+'</span></div>';
+    return '<div class="qbul"><span class="qbul-m" style="color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle">●</span><span class="qbul-t">'+rm(t,q)+oxb+'</span></div>';
   }).join('');
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
