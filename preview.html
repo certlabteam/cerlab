@@ -1692,7 +1692,7 @@ function showTypeBadge(q){
   el.innerHTML=rows;
 }
 
-var _items=null, _idx=0;   // 배열 입력 시 문항 목록·현재 인덱스
+var _items=null, _idx=0, _viewAll=false;   // 배열 입력 시 문항 목록·현재 인덱스 · _viewAll=전체 나란히 비교
 var _otMap={};   // OX태그(ottag): qid -> [{cpt:[id,...]}, ...] (진술/보기별)
 // 진술 i의 개념 칩 HTML — 개념 마스터(_cptMaster) 로드 시 이름, 아니면 id 표시
 function otChips(qid, i){
@@ -1705,37 +1705,61 @@ function otChips(qid, i){
     return '<span class="ot-chip" title="'+id+'">\uD83C\uDFF7 '+nm+'</span>';
   }).join('');
 }
+function _renderQHTML(q, cert){
+  try{
+    if(!q.exp && (q.a || q.learn)){ return renderOral(q, cert); }
+    if(isSA(q)){ return renderSaPreview(q, cert); }
+    var _learn='';
+    if(q.exp && q.exp.learn){
+      mqCert = cert;
+      _learn = '<div class="learn-hd"><span class="learn-step">📖 선행학습</span><span class="learn-num">미리보기</span></div>'
+             + '<div class="lcard">'+conceptCardHTML(q)+'</div>';
+    }
+    return _learn + renderQuestionBlock(q) + renderExpFull(q, cert);
+  }catch(e){ return '<div class="errx">렌더 오류: '+String(e.message)+'</div>'; }
+}
 function renderOne(q){
   var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
   var cert=document.getElementById('cert').value;
   errBox.innerHTML='';
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   try{ showTypeBadge(q); }catch(_){}
-  try{
-    if(!q.exp && (q.a || q.learn)){ out.innerHTML = renderOral(q, cert); }
-    else if(isSA(q)){ out.innerHTML = renderSaPreview(q, cert); }
-    else {
-      var _learn='';
-      if(q.exp && q.exp.learn){
-        mqCert = cert;
-        _learn = '<div class="learn-hd"><span class="learn-step">📖 선행학습</span><span class="learn-num">미리보기</span></div>'
-               + '<div class="lcard">'+conceptCardHTML(q)+'</div>';
-      }
-      out.innerHTML = _learn + renderQuestionBlock(q) + renderExpFull(q, cert);
-    }
-  }catch(e){ errBox.innerHTML='<div class="errx">렌더 오류: '+String(e.message)+'</div>'; }
+  out.innerHTML = _renderQHTML(q, cert);
+}
+function renderAll(){
+  var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
+  var cert=document.getElementById('cert').value;
+  errBox.innerHTML='';
+  var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
+  if(!_items){ return; }
+  out.innerHTML = _items.map(function(q,i){
+    return '<div style="border:2px solid #E2E8F0;border-radius:14px;padding:14px 14px 4px;margin-bottom:18px;background:#fff">'
+      +'<div style="font-size:12px;font-weight:800;color:#0C447C;margin-bottom:10px;padding-bottom:6px;border-bottom:1px dashed #E2E8F0">'
+      +(i+1)+' / '+_items.length+' <span style="color:#64748B;font-weight:600">'+(q.id||'')+'</span></div>'
+      +_renderQHTML(q, cert)+'</div>';
+  }).join('');
 }
 function drawNav(){
   var nav=document.getElementById('navBar'); if(!nav) return;
   if(!_items){ nav.innerHTML=''; return; }
-  var id=(_items[_idx]&&_items[_idx].id)?(' · '+_items[_idx].id):'';
-  nav.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px">'+
-    '<button id="navPrev" style="padding:5px 12px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;cursor:pointer;font-weight:700">◀ 이전</button>'+
-    '<span style="font-weight:800;color:#0C447C">'+(_idx+1)+' / '+_items.length+'<span style="color:#94A3B8;font-weight:600">'+id+'</span></span>'+
-    '<button id="navNext" style="padding:5px 12px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;cursor:pointer;font-weight:700">다음 ▶</button>'+
-    '</div>';
-  document.getElementById('navPrev').onclick=function(){ if(_idx>0){_idx--; renderOne(_items[_idx]); drawNav();} };
-  document.getElementById('navNext').onclick=function(){ if(_idx<_items.length-1){_idx++; renderOne(_items[_idx]); drawNav();} };
+  var btnS='padding:5px 12px;border:1px solid #CBD5E1;border-radius:8px;background:#fff;cursor:pointer;font-weight:700';
+  var togS='padding:5px 12px;border:1px solid #0C447C;border-radius:8px;background:#0C447C;color:#fff;cursor:pointer;font-weight:700;margin-left:auto';
+  var toggle='<button id="navAll" style="'+togS+'">'+(_viewAll?'📄 한 문항씩 보기':'🔀 전체 나란히 보기')+'</button>';
+  if(_viewAll){
+    nav.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px">'
+      +'<span style="font-weight:800;color:#0C447C">전체 '+_items.length+'문항</span>'
+      +'<span style="color:#94A3B8">스크롤로 비포·애프터 바로 비교</span>'+toggle+'</div>';
+    document.getElementById('navAll').onclick=function(){ _viewAll=false; drawNav(); renderOne(_items[_idx]); window.scrollTo(0,0); };
+  } else {
+    var id=(_items[_idx]&&_items[_idx].id)?(' · '+_items[_idx].id):'';
+    nav.innerHTML='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px">'
+      +'<button id="navPrev" style="'+btnS+'">◀ 이전</button>'
+      +'<span style="font-weight:800;color:#0C447C">'+(_idx+1)+' / '+_items.length+'<span style="color:#94A3B8;font-weight:600">'+id+'</span></span>'
+      +'<button id="navNext" style="'+btnS+'">다음 ▶</button>'+toggle+'</div>';
+    document.getElementById('navPrev').onclick=function(){ if(_idx>0){_idx--; renderOne(_items[_idx]); drawNav();} };
+    document.getElementById('navNext').onclick=function(){ if(_idx<_items.length-1){_idx++; renderOne(_items[_idx]); drawNav();} };
+    document.getElementById('navAll').onclick=function(){ _viewAll=true; drawNav(); renderAll(); window.scrollTo(0,0); };
+  }
 }
 // ===== 표(tables) — 로컬 캐시(붙여넣은 JSON의 tables/tbl_new에서 채움) =====
 var _tblCache={};
@@ -2084,7 +2108,7 @@ function render(){
   if(asQuestions && asQuestions.length){
     if(!asQuestions.length){ errBox.innerHTML='<div class="errx">빈 배열이다.</div>'; out.innerHTML=''; _items=null; return; }
     _items=(asQuestions.length>1)?asQuestions:null;
-    if(_items){ if(_idx>=_items.length) _idx=0; drawNav(); renderOne(_items[_idx]); }
+    if(_items){ if(_idx>=_items.length) _idx=0; _viewAll=(_items.length<=12); drawNav(); if(_viewAll) renderAll(); else renderOne(_items[_idx]); }
     else { renderOne(asQuestions[0]); }
     return;
   }
