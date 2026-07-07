@@ -7,7 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:1000px;margin:0 auto}
+body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:1600px;margin:0 auto}
 :root{--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#888780;--text:#2C2C2A;--text2:#5F5E5A;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:20px;--radius-sm:12px}
 .header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
 .event-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:10px;padding:4px 9px;line-height:1.2;flex-shrink:0;animation:ebPulse 2.2s ease-in-out infinite}
@@ -954,6 +954,7 @@ function renderMath(text, allowBareFraction){
   s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return _st('<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'); });
   s = s.replace(/<\/?[A-Za-z][A-Za-z0-9]*(?:\s[^<>]*)?\/?>/g, _st);
   s = s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s = s.replace(/[\u2460-\u2473]\s*/g, function(m){ return (m.charCodeAt(0)-9311)+'. '; });   // ①②③ 원번호 → 1. 2. 3. (답답함 완화)
   s = s.replace(/\((\d+)\/(\d+)\)/g, '\u0001$1\u0002$2\u0003');
   if(allowBareFraction){
     s = s.replace(/\(([^()\/\u0001-\u0003\u0007\u0008]+)\/([^()\/\u0001-\u0003\u0007\u0008]+)\)/g, '\u0001$1\u0002$2\u0003');
@@ -1341,7 +1342,7 @@ function renderQuestionBlock(q){
       var oIntro=parts.shift().trim();
       jaryoHTML='<div class="jaryo">'
         + (oIntro?'<div style="margin-bottom:6px">'+rm(oIntro,q)+'</div>':'')
-        + parts.map(function(t){ t=t.trim(); return t?'<div class="jr-stmt"><span class="jr-stmt-t">'+_JDOT+rm(t,q)+'</span></div>':''; }).join('')
+        + parts.map(function(t){ t=t.trim(); return t?'<div class="jr-stmt" style="display:flex;align-items:baseline;padding-left:2px;text-indent:0"><span class="jr-stmt-t" style="flex:1;min-width:0">'+_JDOT+rm(t,q)+'</span></div>':''; }).join('')
         + '</div>';
     } else if(parseBlankStmts(jr.jaryo).length>=2){
       jaryoHTML=jaryoBlanksHTML(jr.jaryo,q);
@@ -1526,16 +1527,15 @@ function renderExpFull(q, mqCertVal){
         if(hasGraph) body+='<div class="calc-graph">'+q.exp.graph+'</div>';   // SVG 그대로(renderMath 미적용)
         if(hasSteps){
           (function(){
-            var _ex=exArr.filter(Boolean).map(function(l){return rm(String(l),q);});
+            var _splitSteps=function(arr){ var out=[]; arr.forEach(function(it){ var s=String(it==null?'':it); var m=s.match(/[\u2460-\u2473]/g); if(m&&m.length>=2){ s.replace(/\s*(?=[\u2460-\u2473])/g,'\n').replace(/\s*(?=(?:따라서|그러므로)\s)/g,'\n').split('\n').forEach(function(p){ if(p.trim()) out.push(p.trim()); }); } else { out.push(it); } }); return out; };
+            var _ex=_splitSteps(exArr.filter(Boolean)).map(function(l){return rm(String(l),q);});
             var _numRe=/^\s*([\u2460-\u2473]|\d+\s*[.)])/;
             var _hasNum=_ex.some(function(s){return _numRe.test(s);});
             var _inner;
             if(_hasNum){
               _inner='<div style="font-weight:800;color:#8A5A00">풀이)</div>'
                 + _ex.map(function(s,i){
-                    var _isNum=_numRe.test(s);
-                    var _st=_isNum?'padding-left:1.5em;text-indent:-1.5em':'padding-left:1.5em';
-                    return '<div style="font-weight:400;margin-top:'+(i===0?'5px':'4px')+';'+_st+'">'+s+'</div>';
+                    return '<div style="font-weight:400;margin-top:'+(i===0?'5px':'4px')+'">'+s+'</div>';   // 왼쪽부터 평평(내어쓰기 없음) — 넘어가는 줄도 왼쪽 정렬
                   }).join('');
             } else {
               _inner=_ex.map(function(s,i){
@@ -1733,11 +1733,12 @@ function renderAll(){
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   if(!_items){ return; }
   var cells=_items.map(function(q,i){
-    return '<div style="flex:1 1 340px;min-width:300px;border:2px solid #E2E8F0;border-radius:14px;padding:14px 14px 4px;background:#fff;box-sizing:border-box">'
+    return '<div style="flex:1 1 420px;min-width:360px;border:2px solid #E2E8F0;border-radius:14px;padding:14px 14px 4px;background:#fff;box-sizing:border-box">'
       +'<div style="font-size:12px;font-weight:800;color:#0C447C;margin-bottom:10px;padding-bottom:6px;border-bottom:1px dashed #E2E8F0">'
       +(i+1)+' / '+_items.length+' <span style="color:#64748B;font-weight:600">'+(q.id||'')+'</span></div>'
       +_renderQHTML(q, cert)+'</div>';
   }).join('');
+  // PC·태블릿 좌우 2단(min-width로 좁으면 자동 위아래). 컨테이너(body 1600px) 폭을 채움
   out.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">'+cells+'</div>';
 }
 function drawNav(){
