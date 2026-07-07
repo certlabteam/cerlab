@@ -1234,6 +1234,9 @@ function renderOral(q, mqCertVal){
   }
   return h;
 }
+// exp.cpt(참조 개념) → 마스터 카드 펼침. 없으면 exp.c(인라인) 폴백. (개념 마스터 마이그레이션 이중지원)
+function _pvCptResolve(ref){ if(!ref) return null; var id=(typeof ref==='string'&&ref.indexOf('cpt://')===0)?ref.slice(6):ref; var c=((typeof _cptCache!=='undefined'&&_cptCache&&_cptCache[id]))||(typeof _cptMaster!=='undefined'&&_cptMaster[id])||null; return c?Object.assign({id:id},c):null; }
+function _conceptCards(q){ var e=q&&q.exp; if(!e) return []; if(Array.isArray(e.cpt)&&e.cpt.length){ var out=[]; e.cpt.forEach(function(r){ var c=_pvCptResolve(r); if(c&&Array.isArray(c.cards)) c.cards.forEach(function(cd){ out.push(cd); }); }); if(out.length) return out; } return Array.isArray(e.c)?e.c:[]; }
 // ===== 선행학습 카드(exp.learn v2) — 라이브 index.html conceptCardHTML verbatim 이식 =====
 function conceptCardHTML(q){
   const L=(q.exp&&q.exp.learn)?q.exp.learn:null;
@@ -1266,7 +1269,7 @@ function conceptCardHTML(q){
     if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+rm(L.trap,q)+'</div></div>';   // v1 호환
   } else {
     // 폴백: 기존 exp.c(개념) 나열
-    const cs=(q.exp&&q.exp.c)?q.exp.c:[];
+    const cs=_conceptCards(q);
     if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
     cs.forEach((c,i)=>{
       var sec='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div>';
@@ -1571,8 +1574,8 @@ function renderExpFull(q, mqCertVal){
         body+=pvMnBoxesHTML((typeof mn==='object')?mn:{code:(typeof mn==='string'?mn:''),desc:''});
       });
     }
-    if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
-      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
+    var _cc=_conceptCards(q); if(_cc.length){
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
@@ -1629,8 +1632,8 @@ function renderSaPreview(q, cert){
     return '<div class="sa-prow"><div class="sa-phd"><span class="sa-lab">'+b.label+'</span><span class="sa-pans">'+rm(String(b.ans||''),q)+'</span>'+kindTag+'</div>'+accTag+ex+'</div>';
   }).join('');
   var concept='';
-  if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
-    concept='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
+  var _cc=_conceptCards(q); if(_cc.length){
+    concept='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it){
       if(!it||!it.t) return '';
       var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
       if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
@@ -1769,7 +1772,7 @@ function drawNav(){
   }
 }
 // ===== 표(tables) — 로컬 캐시(붙여넣은 JSON의 tables/tbl_new에서 채움) =====
-var _tblCache={};
+var _tblCache={}; var _cptCache={};
 function tblEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function tblCell(v, rich){ var s=tblEsc(v); s=s.replace(/&lt;br\s*\/?&gt;/gi,'<br>'); s=s.replace(/&lt;span class=[\'"]k[\'"]&gt;/gi,'<span class="k">').replace(/&lt;\/span&gt;/gi,'</span>'); s=s.replace(/&lt;(\/?)(sup|sub)&gt;/gi,'<$1$2>'); return s; }
 function tblYul(s){ return String(s).replace(/\(([^)]*[0-9%][^)]*)\)/g,'<span class="tbl-yul">($1)</span>'); }
@@ -2010,7 +2013,7 @@ function pvNormalize(data){
             :(Array.isArray(b&&b.questions)?b.questions:[]);
       _qq=_qq.concat(arr);
     });
-    if(_qq.length) return { questions:_qq };
+    if(_qq.length){ var _r={questions:_qq}; ['concepts','mnemonics','tables','graphs','interactives'].forEach(function(k){ if(Array.isArray(data[k])) _r[k]=data[k]; }); return _r; }
   }
   // 단일 마스터 객체 1개가 통째로 온 경우(id 접두사로 판별) → 해당 묶음으로
   if(typeof data.id==='string' && !data.tables && !data.concepts && !data.graphs && !data.mnemonics && !data.questions
@@ -2060,6 +2063,8 @@ function pvBuildCaches(d){
   _mnemCache=Object.assign({}, _mnemMaster);
   _tblCache=Object.assign({}, _tblMaster);
   _grpCache=Object.assign({}, _grpMaster);
+  _cptCache=Object.assign({}, _cptMaster);
+  if(Array.isArray(d.concepts)) d.concepts.forEach(function(c){ if(c&&c.id) _cptCache[c.id]=c; });
   _conceptIndex={};
   if(Array.isArray(d.mnemonics)) d.mnemonics.forEach(function(m){ if(m&&m.id) _mnemCache[m.id]=m; });
   if(Array.isArray(d.tables))    d.tables.forEach(function(t){ if(t&&t.id) _tblCache[t.id]=t; });
@@ -2071,6 +2076,7 @@ function pvBuildCaches(d){
 }
 // 마스터/검토 모드 렌더 (questions 외)
 var _pvModes=[], _pvMode=null, _pvData=null;
+var _pvRaw=null, _qcAuto=false, _qcOn=false, _qcNotes={};
 function pvRenderMode(){
   var out=document.getElementById('mcqView');
   var m=_pvMode, d=_pvData;
@@ -2087,6 +2093,194 @@ function pvRenderModeBar(){
   var L={concepts:'📖 개념',mnemonics:'🔑 암기코드',tables:'📊 표',graphs:'📈 그래프',interactives:'🎛 인터랙티브',review:'🔀 검토비교'};
   bar.innerHTML=(_pvModes.length>1)?_pvModes.map(function(x){return '<span class="pv-modechip'+(x===_pvMode?' on':'')+'" onclick="pvSetMode(\''+x+'\')">'+L[x]+'</span>';}).join(''):'';
 }
+
+/* ===== 검수 게이트 코어(공용) ===== */
+/* ===== CertLab 검수 게이트 코어 (admin·preview 공용 · 기계판정 조항만) =====
+   V2 규칙 매핑:
+     EMDASH   = 대시 규칙(em대시 — 금지, 전 필드)            [05-mn §6·전역]
+     VERDICT  = 정오 종결형 옳다./옳지 않다.                  [03-explanation §A-8]
+     CX_EMPTY = 개념카드 cx 필수(예시 100%)                   [01-common §1-5·표준규칙]
+     CARD_LT2 = MCQ 개념카드 2장 이상                          [표준규칙 ⑥]
+     EX_NONAME= 예시가 '장면'(행위동사)인데 명명 인물 없음     [04-concept §A-7 검출기]
+     EX_ECHO  = 예시(ex)가 해설(o) 되풀이(종결어 제거 후 비교) [03 §베끼기·04 §C]
+   판단 필요 조항(사유→원리 순서·시험형 예시·대비 자리·핵심 함정)은 게이트 밖(사람 검수).
+*/
+var _qgAction=/샀|팔았|팔아|팔|빌려|빌린|맡겨|맡긴|점유|배상|청구|지급|처분|넘겨|넘긴|속여|속아|건네|매도|매수|양도|증여|담보|대여|변제|등기|지어|사들|잡아|되찾|취소|해지|반환|인도/;
+function _qgNamed(s){ return /[甲乙丙丁戊己庚辛壬癸]|매수인|매도인|임차인|임대인|채권자|채무자|수탁자|신탁자|양수인|양도인|저당권자|질권자|보증인|대리인|전득자|점유자/.test(s||''); }
+function _qgVerdict(t){ t=String(t||'').trim().replace(/\.+$/,''); var p=t.split(/\.\s+/); var last=p[p.length-1]||t; return /(옳지\s*않다|적절하지\s*않다|부적절하다|해당하지\s*않는다|틀리다|틀린다|옳다|적절하다|맞다|해당한다|아니다)$/.test(last); }
+function _qgBg(s){ s=String(s||'').replace(/\s/g,''); var b={}; for(var i=0;i<s.length-1;i++){ var g=s.substr(i,2); b[g]=(b[g]||0)+1; } return b; }
+function _qgSim(a,b){ var A=_qgBg(a),B=_qgBg(b),inter=0,na=0,nb=0,k; for(k in A){na+=A[k]; if(B[k])inter+=Math.min(A[k],B[k]);} for(k in B)nb+=B[k]; return (na+nb)?2*inter/(na+nb):0; }
+/* 해설(o) 끝의 판정 꼬리(…옳다./…본 점에서 옳지 않다.)를 떼어 예시와 순수 비교 */
+function _qgStripVerdict(o){ var p=String(o||'').split(/\.\s+/); while(p.length>1){ var last=p[p.length-1]; if(/(옳다|옳지\s*않다|적절하다|적절하지\s*않다|부적절하다|맞다|틀리다|틀린다|본\s*점에서|정답)/.test(last)) p.pop(); else break; } return p.join('. '); }
+function _qgWords(s){ return String(s||'').replace(/[.,·]/g,' ').split(/\s+/).filter(Boolean); }
+/* 연속 일치 어절(문장 복붙 직접 검출) 최대 길이 */
+function _qgRunMatch(a,b){ var A=_qgWords(a),B=_qgWords(b),best=0,i,j,k; for(i=0;i<A.length;i++){ for(j=0;j<B.length;j++){ k=0; while(i+k<A.length&&j+k<B.length&&A[i+k]===B[j+k])k++; if(k>best)best=k; } } return best; }
+/* 예시 줄 수 추정(2줄≈56자 → 28자/줄, 줄바꿈도 반영) — 장면화 최소 분량 판정 */
+function _qgLines(s){ var t=String(s||'').trim(); if(!t)return 0; var n=0; t.split(/\n/).forEach(function(p){ n+=Math.max(1,Math.ceil(p.length/28)); }); return n; }
+
+/* 한 문항의 위반 목록(구조화). kind=block(차단)/warn(경고). */
+function _qcViolations(q){
+  var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[], cards=exp.c||[];
+  var opts=(q&&Array.isArray(q.opts))?q.opts:[];
+  var isSAq=Array.isArray(q&&q.blanks)&&q.blanks.length;
+  var oFilled=o.filter(function(x){return x&&String(x).trim();}).length;
+  var isCalc=oFilled===1;
+  var isMCQ=Array.isArray(q&&q.opts)&&q.opts.length&&oFilled>=1&&!isSAq;
+  var _rel=/\uc591\ub3c4|\uc591\uc218|\ub300\uc704|\ubcf4\uc99d|\uc5f0\ub300|\uc9c8\uad8c|\uc800\ub2f9|\uc774\uc911\ub9e4\ub9e4|\uc804\ub4dd|\uba85\uc758\uc2e0\ud0c1|\uc0c1\uc18d|\uc99d\uc5ec|\ubb3c\uc0c1\ub300\uc704|\ucc44\ubb34\uc778\uc218|\uac00\ub4f1\uae30|\uc804\uc138\uad8c|\uc9c0\uc0c1\uad8c|\uc9c0\uc5ed\uad8c|\uad6c\uc0c1/;
+  var _arrow=/[\u2192\u25b6\u2193\u27f6\u21d2]/;
+  function em(t){ return t&&/\u2014/.test(String(t)); }
+  o.forEach(function(t,i){ if(em(t)) v.push({kind:'block',field:'o',idx:i,code:'EMDASH',msg:'\ud574\uc124(o)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:t}); });
+  ex.forEach(function(t,i){ if(em(t)) v.push({kind:'block',field:'ex',idx:i,code:'EMDASH',msg:'\uc608\uc2dc(ex)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:t}); });
+  cards.forEach(function(c,j){ var s=((c&&c.d)||'')+' '+((c&&c.cx)||'')+' '+((c&&c.t)||''); if(em(s)) v.push({kind:'block',field:'card',idx:j,code:'EMDASH',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+'\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:(c&&c.t)||''}); });
+  if(em(exp.tip)) v.push({kind:'block',field:'tip',idx:0,code:'EMDASH',msg:'tip\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.tip});
+  if(em(exp.s))   v.push({kind:'block',field:'s',idx:0,code:'EMDASH',msg:'\uc694\uc57d(s)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.s});
+  if(isMCQ && !isCalc){
+    o.forEach(function(t,i){ if(t&&String(t).trim()&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9ba\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
+  }
+  if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
+  if(isMCQ && !isCalc && cards.length && cards.length<2) v.push({kind:'block',field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+cards.length+'\uc7a5(<2)',text:''});
+  o.forEach(function(t,i){ if(t&&/\ubcf4\uae30\s*\d|\uc774\s*\ubcf4\uae30|\uc704\s*\ubcf4\uae30|^\s*[\u3131-\u314e]\s*:|^\s*\d+\.\s/.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_SELFREF',msg:'\ud574\uc124(o)\uc5d0 \ubcf4\uae30\ubc88\ud638\u00b7\uc790\uae30\ucc38\uc870(\ubcf4\uae30N/\uc774 \ubcf4\uae30/\u3131:) \u2192 \uc5d4\uc9c4 \uc790\ub3d9\uc774\ub77c \ub123\uc9c0 \uc54a\uc74c',text:t}); });
+  if(isMCQ && !isCalc){
+    o.forEach(function(t,i){ var op=opts[i]; if(!(t&&String(t).trim())||!op||String(op).length<10) return; if(/^[\u3131-\u314e][\s,\u3131-\u314e]*$/.test(String(op).trim())) return; var run=_qgRunMatch(op,t); if(run>=4) v.push({kind:'warn',field:'o',idx:i,code:'O_ECHO_OPT',msg:'\ud574\uc124(o)\uc774 \ubcf4\uae30 \ubb38\uc7a5 \ubca0\ub07c\uae30(\uc5f0\uc18d '+run+'\uc5b4\uc808) \u2192 \ubca0\ub07c\uc9c0 \ub9d0\uace0 \uc65c \uc633\uc740\uc9c0/\ud2c0\ub9b0\uc9c0 \uc0ac\uc720\ub85c',text:t}); });
+  }
+  cards.forEach(function(c,j){
+    if(!c) return; var d=String(c.d||''), cx=String(c.cx||''), t=String(c.t||'');
+    if(d&&cx&&_qgSim(d,cx)>=0.5) v.push({kind:'warn',field:'card',idx:j,code:'CX_ECHO_D',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' \uc608\uc2dc(cx)\uac00 \uc815\uc758(d) \ub418\ud480\uc774 \u2192 \ub2e4\ub978 \uc7a5\uba74\u00b7\uc218\uce58\ub85c',text:cx});
+    if(/^(\uc774|\uadf8|\uc704|\ud574\ub2f9)\s/.test(d.trim())||/^(\uc774|\uadf8|\uc704|\ud574\ub2f9)\s/.test(cx.trim())) v.push({kind:'warn',field:'card',idx:j,code:'CARD_DEICTIC',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' \uc815\uc758/\uc608\uc2dc\uac00 \uc9c0\uc2dc\uc5b4(\uc774/\uadf8/\uc704)\ub85c \uc2dc\uc791 \u2192 \uc77c\ubc18 \uc815\uc758\ubb38\uc73c\ub85c',text:t});
+    if(/\ubcf4\uae30\s*\d|\uc815\ub2f5|\uc2dc\ud5d8\s*\ud3ec\uc778\ud2b8/.test(t+' '+d+' '+cx)) v.push({kind:'warn',field:'card',idx:j,code:'CARD_LABEL',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+'\uc5d0 \ubcf4\uae30\u00b7\uc815\ub2f5\u00b7\uc2dc\ud5d8\ud3ec\uc778\ud2b8 \ub77c\ubca8(04 \u00a7A-4 \uae08\uc9c0) \u2192 \ube68\uac15 \uac15\uc870\ub85c\ub9cc',text:t});
+  });
+  if(isMCQ){
+    var _big=cards.map(function(c){return (c&&c.d||'')+(c&&c.cx||'');}).join(' ');
+    var _act={}; ((q.q||'')+' '+opts.join(' ')+' '+o.join(' ')+' '+ex.join(' ')+' '+_big).replace(/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/g,function(x){_act[x]=1;return x;});
+    var _relHit=_rel.test((q.q||'')+' '+opts.join(' ')+' '+o.join(' '));
+    if(Object.keys(_act).length>=3 && _relHit && !_arrow.test(_big)) v.push({kind:'warn',field:'card',idx:0,code:'REL_NO_ARROW',msg:'\uc778\ubb3c 3\uba85+ \uad00\uacc4\ud615 \ubb38\ud56d\uc778\ub370 \ud654\uc0b4\ud45c \ud750\ub984\ub3c4 \uc5c6\uc74c \u2192 \uccab \uac1c\ub150\uce74\ub4dc cx\uc5d0 \uad00\uacc4\ub3c4 \ucd94\uac00(04 \u00a7B)',text:''});
+  }
+  if(isMCQ){
+    ex.forEach(function(t,i){
+      if(!(t&&String(t).trim())) return;
+      var isScene=_qgAction.test(t)||_qgNamed(t);
+      if(_qgAction.test(t) && !_qgNamed(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_NONAME',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74(\ud589\uc704)\uc778\ub370 \uba85\uba85 \uc778\ubb3c(\u7532\u4e59\u4e19\u2026) \uc5c6\uc74c',text:t});
+      if(/^\uc608\s*\)/.test(String(t).trim())) v.push({kind:'warn',field:'ex',idx:i,code:'EX_PREFIX',msg:"\uc608\uc2dc\uc5d0 '\uc608)' \uc811\ub450 \uae08\uc9c0(\uc571\uc774 \uc608\uc2dc \ub77c\ubca8 \uc790\ub3d9 \ubd80\ucc29)",text:t});
+      if(/\uc81c\s*\d+\s*\uc870/.test(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_JOMUN',msg:'\uc608\uc2dc\uc5d0 \uc870\ubb38\ubc88\ud638(\uc81cN\uc870) \uae08\uc9c0 \u2014 \uc870\ubb38\uc740 \uac1c\ub150 d\uc5d0\ub9cc',text:t});
+      var oi=o[i], echo=false;
+      if(oi && String(oi).trim()){
+        var sim=_qgSim(_qgStripVerdict(oi), t), run=_qgRunMatch(oi,t);
+        if(sim>=0.5 || run>=6){ echo=true; v.push({kind:'warn',field:'ex',idx:i,code:'EX_ECHO',msg:'\uc608\uc2dc\uac00 \ud574\uc124(o) \ub418\ud480\uc774(\uc720\uc0ac\ub3c4 '+Math.round(sim*100)+'%\u00b7\uc5f0\uc18d\uc77c\uce58 '+run+'\uc5b4\uc808) \u2192 \ub2e4\ub978 \uc7a5\uba74\u00b7\uc218\uce58\ub85c',text:t}); }
+      }
+      if(isScene && !echo){ var _L=_qgLines(t); if(_L<4) v.push({kind:'warn',field:'ex',idx:i,code:'EX_SHORT',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74\uc778\ub370 '+_L+'\uc904(4\uc904 \ubbf8\ub9cc) \u2014 \ub2e8\uc21c\ubc18\ubcf5 \uc758\uc2ec, \uc2e4\uc0dd\ud65c \uc7a5\uba74\uc73c\ub85c \uc0b4 \ubd99\uc774\uae30',text:t}); }
+    });
+    var _fex=[]; ex.forEach(function(t,i){ if(t&&String(t).trim()) _fex.push([i,t]); });
+    for(var a=0;a<_fex.length;a++) for(var b=a+1;b<_fex.length;b++){ if(_qgSim(_fex[a][1],_fex[b][1])>=0.5) v.push({kind:'warn',field:'ex',idx:_fex[b][0],code:'EX_EX_ECHO',msg:'\uc608\uc2dc '+_fex[a][0]+'\ubc88\uacfc \uc8fc\uc5b4\u00b7\uc0c1\ud669\uc774 \ubc18\ubcf5 \u2192 \uc11c\ub85c \ub2e4\ub978 \uc7a5\uba74\uc73c\ub85c',text:_fex[b][1]}); }
+    var _exArrLen=ex.length;
+    if(_exArrLen>0 && _exArrLen!==o.length) v.push({kind:'warn',field:'ex',idx:0,code:'EX_LEN',msg:'\uc608\uc2dc \ubc30\uc5f4 \uae38\uc774('+_exArrLen+') \u2260 \ud574\uc124 \uae38\uc774('+o.length+') \u2192 \ubcf4\uae30 \uc218\ub9cc\ud07c \ub9de\ucda4(\uc5b5\uc9c0 \uc7a5\uba74\uc740 \ube48\uce78)',text:''});
+  }
+  return v;
+}
+
+
+/* ===================== 🔍 기출 검수(QC) — 검수창 ===================== */
+var _QC_SUB={civil:'민법',econ:'경제학원론',acct:'회계학',real:'부동산학원론',law:'감정평가관계법규',
+  s1:'노동법1',s2:'노동법2',s3:'민법(노무)',s4:'사회보험법',s5:'경제학원론',s6:'경영학개론'};
+var _QC_FLD={o:'해설',ex:'예시',card:'카드',tip:'함정tip',s:'요약'};
+function _qcNowKST(){ var d=new Date(Date.now()+9*3600*1000); return d.toISOString().replace(/\.\d+Z$/,'').replace('Z','')+'+09:00'; }
+function _qcEsc(v){ return (typeof tblEsc==='function')?tblEsc(v):String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* 로드된 원본(_pvRaw)에서 검수 대상 문항을 문맥(docId·과목)과 함께 수집 */
+function qcCollect(){
+  var raw=_pvRaw, out=[]; var certSel=((document.getElementById('cert')||{}).value)||'appraiser';
+  function push(docId,cert,subject,q,num){ if(q&&typeof q==='object') out.push({docId:docId||'',cert:cert||certSel,subject:subject||'',subjectName:(_QC_SUB[subject]||subject||''),q:q,num:num}); }
+  if(raw && Array.isArray(raw.banks)){
+    raw.banks.forEach(function(b){ var dt=(b&&b.data)?b.data:(b||{}); var arr=Array.isArray(dt.questions)?dt.questions:[]; arr.forEach(function(q,i){ push(b.docId, dt.cert, dt.subject, q, i+1); }); });
+    return out;
+  }
+  var meta=(raw&&raw._meta)||{}; var qarr=null;
+  if(raw && Array.isArray(raw.questions)) qarr=raw.questions;
+  else if(Array.isArray(raw)) qarr=raw;
+  else if(raw && (raw.q!=null||raw.exp)) qarr=[raw];
+  if(qarr) qarr.forEach(function(q,i){ push(meta.docId||((meta.cert||certSel)+'__'+(meta.subject||'')), meta.cert, meta.subject, q, i+1); });
+  return out;
+}
+function qcScan(list){
+  var items=[], blockN=0, warnN=0, flagged=0;
+  list.forEach(function(it){ var v=_qcViolations(it.q); if(v.length){ flagged++; var b=0,w=0; v.forEach(function(x){ if(x.kind==='block'){b++;blockN++;}else{w++;warnN++;} }); var o={}; for(var k in it)o[k]=it[k]; o.vios=v; o.blockN=b; o.warnN=w; items.push(o); } });
+  return {items:items, total:list.length, flagged:flagged, blockN:blockN, warnN:warnN};
+}
+function qcBadge(b,w){ var s=''; if(b)s+='<span style="display:inline-block;padding:1px 8px;border-radius:7px;background:#FEE2E2;color:#B91C1C;font-weight:800;font-size:11px">⛔ 차단 '+b+'</span> '; if(w)s+='<span style="display:inline-block;padding:1px 8px;border-radius:7px;background:#FEF3C7;color:#B45309;font-weight:800;font-size:11px">⚠ 경고 '+w+'</span>'; return s; }
+function qcVioRow(x){
+  var isB=x.kind==='block';
+  var snip=x.text?('<div style="color:#64748B;margin-top:3px;font-size:11px;line-height:1.45">「'+_qcEsc(String(x.text).slice(0,110))+(String(x.text).length>110?'…':'')+'」</div>'):'';
+  return '<div style="font-size:12px;line-height:1.5;padding:6px 9px;border-radius:8px;background:'+(isB?'#FEF2F2':'#FFFBEB')+';border:1px solid '+(isB?'#FCA5A5':'#FDE68A')+';margin-bottom:6px">'
+    +'<b style="color:'+(isB?'#B91C1C':'#B45309')+'">'+(isB?'⛔':'⚠')+' '+(_QC_FLD[x.field]||x.field)+'['+x.idx+']</b> · '+_qcEsc(x.msg)+snip+'</div>';
+}
+var _qcLast=null;
+function qcEnter(){
+  _qcOn=true; _qcLast=qcScan(qcCollect());
+  var cert=((document.getElementById('cert')||{}).value)||'';
+  var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
+  var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
+  var bar=document.getElementById('pvModeBar'); if(bar) bar.innerHTML='<span onclick="qcExit()" style="display:inline-block;cursor:pointer;padding:6px 14px;border-radius:20px;background:#64748B;color:#fff;font-weight:800;font-size:12.5px">◀ 문항 미리보기로</span>';
+  var out=document.getElementById('mcqView'); var res=_qcLast;
+  var head='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 16px;background:#0C447C;color:#fff;border-radius:12px">'
+    +'<span style="font-weight:800;font-size:14px">🔍 기출 검수 결과</span>'
+    +'<span style="font-size:12.5px;opacity:.95">위반 문항 <b>'+res.flagged+'</b> / 전체 '+res.total+' · ⛔ 차단 <b>'+res.blockN+'</b> · ⚠ 경고 <b>'+res.warnN+'</b></span>'
+    +'<button onclick="qcExport()" style="margin-left:auto;padding:7px 14px;border:none;border-radius:8px;background:#22C55E;color:#fff;font-weight:800;font-size:12.5px;cursor:pointer">💾 검수 결과표 다운로드</button>'
+    +'</div>';
+  if(!res.flagged){ out.innerHTML=head+'<div style="padding:26px;text-align:center;color:#15803D;font-weight:700">✓ 게이트 위반 없음 — 구조·예시 게이트 통과</div>'; window.scrollTo(0,0); return; }
+  var chips='<div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px">'+res.items.map(function(it){
+    return '<span onclick="qcJump(\''+it.q.id+'\')" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1px solid #CBD5E1;background:#fff;font-size:12px;font-weight:700;color:#0C447C">'+_qcEsc(it.subjectName+' '+it.num+'번')+' <span style="color:#94A3B8">'+(it.blockN?'⛔'+it.blockN:'')+(it.warnN?' ⚠'+it.warnN:'')+'</span></span>';
+  }).join('')+'</div>';
+  var cards=res.items.map(function(it){
+    var q=it.q; var qhtml=''; try{ qhtml=_renderQHTML(q, cert); }catch(e){ qhtml='<div class="errx">렌더 오류: '+_qcEsc(e.message)+'</div>'; }
+    var note=_qcEsc(_qcNotes[q.id]||'');
+    return '<div id="qccard-'+_qcEsc(q.id)+'" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;border:2px solid #E2E8F0;border-radius:14px;padding:14px;margin-bottom:16px;background:#fff;box-sizing:border-box">'
+      +'<div style="flex:2 1 460px;min-width:340px">'
+        +'<div style="font-weight:800;color:#0C447C;margin-bottom:8px;padding-bottom:6px;border-bottom:1px dashed #E2E8F0">'+_qcEsc(it.subjectName+' '+it.num+'번')+' <span style="color:#64748B;font-weight:600;font-size:12px">'+_qcEsc(q.id)+'</span>  '+qcBadge(it.blockN,it.warnN)+'</div>'
+        +qhtml
+      +'</div>'
+      +'<div style="flex:1 1 300px;min-width:270px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px;box-sizing:border-box">'
+        +'<div style="font-weight:800;color:#334155;margin-bottom:8px">📋 지적사항 <span style="color:#94A3B8;font-weight:600;font-size:11px">(지적된 항목만 수정)</span></div>'
+        +it.vios.map(qcVioRow).join('')
+        +'<div style="font-size:11px;color:#94A3B8;margin:12px 0 4px">■ 크리스 지적 (자유 입력 · 자동 저장)</div>'
+        +'<textarea oninput="qcNote(\''+_qcEsc(q.id)+'\',this.value)" placeholder="눈으로 본 지적을 적으세요 (예: 예시가 시험형이 아님 / 대비 개념 넣을 자리)" style="width:100%;height:88px;font-size:12px;line-height:1.5;border:1px solid #CBD5E1;border-radius:8px;padding:8px;box-sizing:border-box;resize:vertical;font-family:inherit">'+note+'</textarea>'
+      +'</div>'
+    +'</div>';
+  }).join('');
+  out.innerHTML=head+chips+cards; window.scrollTo(0,0);
+}
+function qcExit(){ _qcOn=false; render(); }
+function qcJump(qid){ var el=document.getElementById('qccard-'+qid); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+function qcNote(qid,val){ _qcNotes[qid]=val; }
+function qcInstallBar(){
+  var bar=document.getElementById('pvModeBar'); if(!bar) return;
+  var res=qcScan(qcCollect()); if(!res.total) return;
+  bar.innerHTML='<span onclick="qcEnter()" style="display:inline-block;cursor:pointer;padding:6px 14px;border-radius:20px;background:'+(res.flagged?'#0C447C':'#15803D')+';color:#fff;font-weight:800;font-size:12.5px">🔍 기출 검수'+(res.flagged?(' · 위반 '+(res.blockN+res.warnN)+'건 / 문항 '+res.flagged):' · 위반 없음 ✓')+'</span>';
+}
+function qcExport(){
+  var res=_qcLast||qcScan(qcCollect());
+  var cert=(res.items[0]&&res.items[0].cert)||((document.getElementById('cert')||{}).value)||'';
+  var subj=(res.items[0]&&res.items[0].subject)||'';
+  var items=res.items.filter(function(it){ return it.vios.length || (_qcNotes[it.q.id]&&_qcNotes[it.q.id].trim()); })
+    .map(function(it){ return { docId:it.docId, cert:it.cert, subject:it.subject, subjectName:it.subjectName, qid:it.q.id, num:it.num,
+      label:(it.subjectName+' '+it.num+'번'), violations:it.vios.map(function(x){ return {kind:x.kind,field:x.field,idx:x.idx,code:x.code,msg:x.msg,text:x.text||''}; }),
+      note:(_qcNotes[it.q.id]||'') }; });
+  // 위반은 없지만 크리스가 지적만 단 문항도 포함
+  qcCollect().forEach(function(it){ if((_qcNotes[it.q.id]&&_qcNotes[it.q.id].trim()) && !items.some(function(x){return x.qid===it.q.id;})){ items.push({docId:it.docId,cert:it.cert,subject:it.subject,subjectName:it.subjectName,qid:it.q.id,num:it.num,label:(it.subjectName+' '+it.num+'번'),violations:[],note:_qcNotes[it.q.id]}); } });
+  var payload={ _meta:{kind:'qc_review', tool:'preview qc', cert:cert, subject:subj, generatedAt:_qcNowKST()},
+    summary:{total:res.total, flagged:res.flagged, blockN:res.blockN, warnN:res.warnN, exported:items.length},
+    rule:'위에 지적된 항목만 수정한다. 통과한 문항·필드는 손대지 않는다.',
+    items:items };
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='검수결과표_'+(cert||'exam')+(subj?('_'+subj):'')+'_'+_qcNowKST().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+/* admin에서 ?qc=1로 열면 localStorage 페이로드를 불러 자동 진입 */
+(function qcBoot(){ try{
+  var qs=new URLSearchParams(location.search);
+  if(qs.get('qc')==='1'){ var pay=localStorage.getItem('certlab_qc_payload'); if(pay){ var s=document.getElementById('src'); if(s){ s.value=pay; _qcAuto=true; render(); } } }
+}catch(e){ console.warn('qc boot',e); } })();
+/* ===================== /🔍 기출 검수(QC) ===================== */
+
 
 function render(){
   var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
@@ -2107,6 +2301,7 @@ function render(){
   }
   var data; try{ data=JSON.parse(raw); }catch(e){ errBox.innerHTML='<div class="errx">JSON 오류: '+String(e.message)+'</div>'; out.innerHTML=''; _items=null; return; }
 
+  _pvRaw=data;
   // 배치 포맷 정규화 + 캐시(개념·암기코드·표·그래프) 채움
   var norm=pvNormalize(data);
   if(norm && typeof norm==='object' && !Array.isArray(norm)) pvBuildCaches(norm);
@@ -2133,6 +2328,7 @@ function render(){
     _items=(asQuestions.length>1)?asQuestions:null;
     if(_items){ if(_idx>=_items.length) _idx=0; _viewAll=(_items.length<=12); drawNav(); if(_viewAll) renderAll(); else renderOne(_items[_idx]); }
     else { renderOne(asQuestions[0]); }
+    try{ qcInstallBar(); if(_qcAuto){ _qcAuto=false; _qcOn=true; } if(_qcOn) qcEnter(); }catch(_){}
     return;
   }
   if(_pvModes.length){
