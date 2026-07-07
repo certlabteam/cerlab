@@ -683,6 +683,7 @@ tr:hover td{background:#FAFAFA}
           <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
             <button id="impRun" class="btn-sm btn-extend" disabled onclick="impUpload()">⬆ 업로드 실행</button>
             <button class="btn-sm" onclick="impRefresh()" style="background:#EDE9FB;color:#5B50C0">현재 ver 새로고침</button>
+            <button class="btn-sm" onclick="impClear()" style="background:#FDE2E1;color:#A32D2D">🗑 목록·로그 비우기</button>
             <button class="btn-sm btn-extend" onclick="syncManifest()">🔄 manifest 버전 동기화</button>
             <button class="btn-sm" onclick="registerManifestExams()" style="background:#E6F4EA;color:#15793F;margin-left:auto">🗂 매니페스트 등록(새 시험)</button>
           </div>
@@ -700,6 +701,8 @@ tr:hover td{background:#FAFAFA}
           <div style="font-size:11.5px;color:#A89C8E;margin-bottom:8px">위에 로드한 기출 JSON을 게이트로 <b>전수 검사</b>한 위반 목록에, 직접 본 지적을 더해 복사·다운로드해서 데이터방에 넘깁니다. <b>지적된 항목만 수정</b>되고 통과 문항은 안 건드립니다.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
             <button class="btn-sm" onclick="qcOpenReview()" style="background:#0C447C;color:#fff">🔍 검수 창 열기<span id="qcBtnCount"></span></button>
+            <button class="btn-sm" onclick="qcCfgUpload('gichul')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
+            <button class="btn-sm" onclick="qcCfgExport('gichul')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="btn-sm btn-extend" onclick="buildReviewNote()">🔍 지적서 만들기</button>
             <button class="btn-sm" onclick="copyReviewNote()" style="background:#EDE9FB;color:#5B50C0">📋 복사</button>
             <button class="btn-sm" onclick="downloadReviewNote()" style="background:#E6F4EA;color:#15793F">💾 .txt 다운로드</button>
@@ -881,6 +884,9 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="mnemImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('mnemImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="qcOpenReviewMaster('mnem')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
+            <button class="btn-sm" onclick="qcCfgUpload('mnem')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
+            <button class="btn-sm" onclick="qcCfgExport('mnem')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="upbar-export" onclick="mnemExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
@@ -931,6 +937,9 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="tblmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('tblmImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="qcOpenReviewMaster('table')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
+            <button class="btn-sm" onclick="qcCfgUpload('table')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
+            <button class="btn-sm" onclick="qcCfgExport('table')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="upbar-export" onclick="tblmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
@@ -986,6 +995,9 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="cptmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('cptmImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="qcOpenReviewCpt()" style="background:#0C447C;color:#fff">🔍 검수 창</button>
+            <button class="btn-sm" onclick="qcCfgUpload('concept')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
+            <button class="btn-sm" onclick="qcCfgExport('concept')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="upbar-export" onclick="cptmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
@@ -1061,6 +1073,9 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="grpmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('grpmImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="qcOpenReviewMaster('graph')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
+            <button class="btn-sm" onclick="qcCfgUpload('graph')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
+            <button class="btn-sm" onclick="qcCfgExport('graph')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="upbar-export" onclick="grpmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
@@ -1116,6 +1131,9 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="itvmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('itvmImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="qcOpenReviewMaster('interactive')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
+            <button class="btn-sm" onclick="qcCfgUpload('interactive')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
+            <button class="btn-sm" onclick="qcCfgExport('interactive')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="upbar-export" onclick="itvmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
@@ -1187,6 +1205,7 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="lvupImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('lvupImpFile').click()">⬆ 업로드</button>
+            <button class="upbar-export" onclick="qcOpenReviewLvup()" style="background:#0C447C;color:#fff">🔍 검수 창</button>
           </div>
         </div>
         <div style="padding:8px 4px;font-size:11.5px;color:#B4A99C">적재 경로: <code>adaptive/{cert}__{subject}__{map | diag | variants | variantq | calctmpl}</code></div>
@@ -2840,7 +2859,7 @@ async function itvmImport(){
   itvmRenderList();
 }
 
-var _lvupData=null;
+var _lvupData=null; var _lvupQStash=[];
 function lvupInit(){
   var drop=document.getElementById('lvupImpDrop'), file=document.getElementById('lvupImpFile');
   if(file) file.onchange=function(){ lvupImpHandle(file.files); };
@@ -2980,6 +2999,7 @@ function lvupImpHandle(fileList){
         if(stt){ stt.style.color='#475569'; stt.innerHTML='✓ 템플릿 검증 OK (생성성공률 '+_vr.summary+')<br><span style="color:#8a8175">샘플: '+(_vr.sample||'')+'</span>'; }
       }
       _lvupData={items:items};
+      _lvupQStash=(function(){ var byId={}; items.forEach(function(x){ if(x.kind==='variantq'&&Array.isArray(x.questions)){ var did=x.cert+'__'+x.sub; if(!byId[did]) byId[did]={docId:did,data:{cert:x.cert,subject:x.sub,name:csKo(x.cert,x.sub),questions:[]}}; byId[did].data.questions=byId[did].data.questions.concat(x.questions); } }); return Object.keys(byId).map(function(k){return byId[k];}); })();
       if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: <b>'+labels.join(', ')+'</b> · 항목 '+items.length+'개 — 올리는 중…'; }
       lvupImport();
     }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
@@ -4113,6 +4133,7 @@ function impRender(){
   try{ qcRefreshBtn(); }catch(_){}
 }
 async function impRefresh(){ await impLoadVersions(); impRender(); impLog('현재 버전 새로고침 완료'); }
+function impClear(){ impItems=[]; impBundleManifest=null; var lg=document.getElementById('impLog'); if(lg) lg.innerHTML='대기 중…'; try{ impRender(); }catch(_){} var r=document.getElementById('impRun'); if(r) r.disabled=true; }
 // ===== 업로드 후 자동: (A) 번들 manifest의 새 시험·과목 등록(비파괴) + (B) 업로드 cert의 버전 동기화 =====
 async function _impAutoManifest(uploadedCerts){
   try{
@@ -4264,6 +4285,49 @@ function qcRefreshBtn(){
   var b=0,w=0; items.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]); b+=g.block.length; w+=g.warn.length; });
   el.textContent=' · ⛔'+b+' ⚠'+w;
 }
+var _QC_DEFAULTS={
+  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true}},
+  concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
+  mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true}},
+  table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true}},
+  interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true}}
+};
+function qcCfgExport(section){
+  db.collection('config').doc('qc').get().then(function(d){
+    var saved=(d&&d.exists&&d.data()&&d.data()[section])||{};
+    var merged=Object.assign({}, _QC_DEFAULTS[section]||{}); for(var k in saved) merged[k]=saved[k];
+    var out={kind:'qc_config',section:section}; for(var k2 in merged) out[k2]=merged[k2];
+    var blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json;charset=utf-8'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='qc_config_'+section+'.json'; document.body.appendChild(a); a.click(); a.remove();
+  }).catch(function(e){ alert('내보내기 실패: '+e.message); });
+}
+function qcCfgUpload(section){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=function(){ var f=inp.files&&inp.files[0]; if(!f) return;
+    var rd=new FileReader();
+    rd.onload=function(){ try{
+      var o=JSON.parse(rd.result);
+      var cfg=(o&&typeof o[section]==='object')?o[section]:o;
+      var clean={}; for(var k in cfg){ if(k!=='kind'&&k!=='section'&&k!=='_meta'&&typeof cfg[k]==='object') clean[k]=cfg[k]; }
+      if(!Object.keys(clean).length){ alert('인식된 규칙 없음. 형식: {"EX_SHORT":{"on":true,"minLines":4}, ...}'); return; }
+      var payload={}; payload[section]=clean;
+      db.collection('config').doc('qc').set(payload,{merge:true}).then(function(){
+        alert('✅ 검수조건 저장 — ['+section+'] 규칙 '+Object.keys(clean).length+'개. 다음 검수부터 적용됩니다.');
+      }).catch(function(e){ alert('저장 실패: '+e.message); });
+    }catch(e){ alert('파싱 오류: '+e.message); } };
+    rd.readAsText(f);
+  };
+  inp.click();
+}
+function qcOpenReviewMaster(mtype){
+  var map={mnem:(typeof _mnemImpData!=='undefined'?_mnemImpData:null), table:(typeof _tblmImpData!=='undefined'?_tblmImpData:null), graph:(typeof _grpmImpData!=='undefined'?_grpmImpData:null), interactive:(typeof _itvmImpData!=='undefined'?_itvmImpData:null)};
+  var items=map[mtype];
+  if(!items||!items.length){ alert('먼저 해당 마스터 JSON을 로드하세요.'); return; }
+  var bundle={ _meta:{kind:'qc'}, kind:'master', mtype:mtype, items:items };
+  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }catch(e){ alert('검수 데이터 저장 실패: '+e.message); return; }
+  window.open('preview.html?qc=1','_blank');
+}
 function qcOpenReview(){
   var items=(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;});
   if(!items.length){ alert('먼저 위 드롭존에 기출 JSON을 로드하세요.'); return; }
@@ -4271,6 +4335,18 @@ function qcOpenReview(){
     banks: items.map(function(it){ return {docId:it.docId, data:it.data}; }) };
   try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }
   catch(e){ alert('검수 데이터 저장 실패(용량 초과 가능): '+e.message); return; }
+  window.open('preview.html?qc=1','_blank');
+}
+function qcOpenReviewCpt(){
+  if(!_cptmImpData||!_cptmImpData.length){ alert('먼저 개념 JSON을 로드하세요.'); return; }
+  var bundle={ _meta:{kind:'qc'}, kind:'cpt', concepts:_cptmImpData };
+  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }catch(e){ alert('검수 데이터 저장 실패: '+e.message); return; }
+  window.open('preview.html?qc=1','_blank');
+}
+function qcOpenReviewLvup(){
+  if(!_lvupQStash||!_lvupQStash.length){ alert('먼저 레벨업 JSON을 로드하세요(변형문항 있는 파일).'); return; }
+  var bundle={ _meta:{kind:'qc'}, banks:_lvupQStash };
+  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }catch(e){ alert('검수 데이터 저장 실패: '+e.message); return; }
   window.open('preview.html?qc=1','_blank');
 }
 function buildReviewNote(){
