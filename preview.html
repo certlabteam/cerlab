@@ -1524,7 +1524,6 @@ function renderExpFull(q, mqCertVal){
         var optLine = (q.opts&&q.opts[ansIdx]!=null) ? '<div class="eo-q">'+(ansIdx+1)+'. '+rm(q.opts[ansIdx],q)+vTag+' <span class="eo-badge">✅ 정답</span></div>' : '';
         var aLine = sv1.rest ? '<div class="eo-a">'+rm(sv1.rest,q)+'</div>' : '';
         body+='<div class="exp-opts"><div class="eo">'+optLine+aLine+'</div></div>';
-        if(hasGraph) body+='<div class="calc-graph">'+q.exp.graph+'</div>';   // SVG 그대로(renderMath 미적용)
         if(hasSteps){
           (function(){
             var _splitSteps=function(arr){ var out=[]; arr.forEach(function(it){ var s=String(it==null?'':it); var m=s.match(/[\u2460-\u2473]/g); if(m&&m.length>=2){ s.replace(/\s*(?=[\u2460-\u2473])/g,'\n').replace(/\s*(?=(?:따라서|그러므로)\s)/g,'\n').split('\n').forEach(function(p){ if(p.trim()) out.push(p.trim()); }); } else { out.push(it); } }); return out; };
@@ -1551,6 +1550,9 @@ function renderExpFull(q, mqCertVal){
       }
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
+    // exp.graph: 유형 무관 공통 렌더(해설 최상단). SVG 그대로(renderMath 미적용).
+    if(q.exp && q.exp.graph && String(q.exp.graph).trim() && body.indexOf('calc-graph')===-1)
+      body = '<div class="calc-graph">'+q.exp.graph+'</div>' + body;
     body += oxCompareHTML(q, oArr);   // 1단계: 내 O/X vs 정답 (텍스트·이미지·일반 통합)
     if(q.mn||(q.exp&&q.exp.mn)){ 
       var _mn=q.mn||q.exp.mn; 
