@@ -1314,7 +1314,9 @@ function renderQuestionBlock(q){
     var isAns=ansN.indexOf(n)>=0;
     var cls='opt'+(isAns?' cor':'');
     var hasT=op && String(op).trim();
-    var otxt=hasT?'<div class="otxt">'+rm(String(op),q)+'</div>':'';
+    // 일반 5지선다 선지 O/X 자가체크 버튼(조합형=자료 ㄱㄴㄷ, 개수형=○진술에 부착하므로 제외). live index.html과 동일.
+    var oxBtns=(!_isCombo && !isCountType(q) && hasT)?'<span class="opt-ox" data-oxk="o'+i+'" onclick="event.stopPropagation()"><button type="button" class="jox jox-o" onclick="event.stopPropagation();joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="event.stopPropagation();joxToggle(this)">X</button></span>':'';
+    var otxt=hasT?'<div class="otxt">'+rm(String(op),q)+oxBtns+'</div>':'';
     var oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
     var chip=_isCombo?'':otChips(q.id,i);
     return '<div class="'+cls+(oimg?' opt-img':'')+'"><div class="onum">'+n+'</div>'+otxt+oimg+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>';
