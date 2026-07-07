@@ -4621,7 +4621,7 @@ function setConceptReady(cert,sub,si){
       var e=qs[i].exp||{};
       var L=e.learn;
       var okL=L&&(L.title||L.sum||(Array.isArray(L.secs)&&L.secs.length));
-      var okC=Array.isArray(e.c)&&e.c.length;           // 전용 학습데이터 없어도 개념카드(exp.c) 있으면 인정
+      var okC=_hasConcept(e);           // 전용 학습데이터 없어도 개념카드(exp.c) 있으면 인정
       if(!okL&&!okC) return false;
     }
     return true;
@@ -4655,7 +4655,7 @@ function conceptOfferDismiss(){
 }
 // 풀이 화면에서 현재 문항의 개념학습으로 이동 (그 회차에 exp.learn 다 있을 때만)
 function _qHasConcept(q){ if(!q||!q.exp) return false; var e=q.exp, L=e.learn;
-  return !!((L&&(L.title||L.sum||(Array.isArray(L.secs)&&L.secs.length))) || (Array.isArray(e.c)&&e.c.length)); }
+  return !!((L&&(L.title||L.sum||(Array.isArray(L.secs)&&L.secs.length))) || _hasConcept(e)); }
 function goConceptFromQuestion(){
   if(mqInReview||mqDiag||mqConcept) return;
   if(mqLevelUp){                                   // (2026-07-02) 레벨업: 현재 레벨업 문제의 자기 개념(exp.c/learn)만 표시 — 기출 세트 로드 안 함(mqList 유지)
@@ -5215,6 +5215,17 @@ function mnBoxHTML(mn){
     return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
   }).join('');
 }
+// exp.cpt(참조 개념) → 마스터 카드 펼침. 없으면 exp.c(인라인) 폴백. (개념 마스터 마이그레이션 이중지원)
+function _conceptCards(q){
+  var e=q&&q.exp; if(!e) return [];
+  if(Array.isArray(e.cpt) && e.cpt.length){
+    var out=[];
+    e.cpt.forEach(function(r){ var c=cptResolve(r); if(c&&Array.isArray(c.cards)) c.cards.forEach(function(cd){ out.push(cd); }); });
+    if(out.length) return out;
+  }
+  return Array.isArray(e.c)?e.c:[];
+}
+function _hasConcept(e){ return !!(e && ((Array.isArray(e.cpt)&&e.cpt.length) || (Array.isArray(e.c)&&e.c.length))); }
 function conceptBoxHTML(c){
   if(!Array.isArray(c) || !c.length) return '';
   const rows=c.map(it=> (it&&it.t)?('<div class="cc-row"><b style="display:block;margin-bottom:2px">'+it.t+'</b>'+(it.d||'')+'</div>'):'').join('');
@@ -5253,7 +5264,7 @@ function conceptCardHTML(q){
     if(L.trap) body+='<div class="ltrap"><div class="lsec-t"><span class="lico">!</span>함정 포인트</div><div class="lsec-d">'+rm(L.trap,q)+'</div></div>';   // v1 호환
   } else {
     // 폴백: 기존 exp.c(개념) 나열
-    const cs=(q.exp&&q.exp.c)?q.exp.c:[];
+    const cs=_conceptCards(q);
     if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
     cs.forEach((c,i)=>{
       var sec='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div>';
@@ -5475,9 +5486,9 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
         return '<div class="eo"><div class="eo-q">'+b.label+'. '+rm(String(b.ans||''),q)+'</div>'+(ex?'<div class="eo-a">'+rm(String(ex),q)+'</div>':'')+'</div>';
       }).join('')+'</div>';
     }
-    if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
+    var _cc=_conceptCards(q); if(_cc.length){
       body+=tipBlockHTML(q);   // SA: 개념설명 앞 → ⚡ 시험 포인트
-      body+='<div class="concept-box"><div class="concept-ti">\uAC1C\uB150\uC124\uBA85</div>'+q.exp.c.map(function(it){
+      body+='<div class="concept-box"><div class="concept-ti">\uAC1C\uB150\uC124\uBA85</div>'+_cc.map(function(it){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
@@ -5721,8 +5732,8 @@ function renderMcqExam(root){
         body+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
       });
     }
-    if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
-      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+q.exp.c.map(function(it){
+    var _cc=_conceptCards(q); if(_cc.length){
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
