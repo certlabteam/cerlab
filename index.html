@@ -2267,6 +2267,22 @@ function tblResolve(ref){
   return '';
 }
 // 문항 exp.tbl(문자열/배열) → 표 블록. 암기코드 뒤·개념설명 앞에 삽입.
+// ⚡ 시험 포인트(exp.tip): O/X 판정 직후 함정·풀이요령 한 줄. 없으면 아무것도 안 그림(폴백).
+function tipEnsureCSS(){
+  if(document.getElementById('tip-css')) return;
+  var s=document.createElement('style'); s.id='tip-css';
+  s.textContent='.tip-box{border:1px solid #E2E8F0;border-radius:10px;padding:11px 13px;margin:12px 0;background:#fff;font-size:12.5px;line-height:1.62;color:#0F172A}'
+    +'.tip-box .tip-ti{font-weight:800;font-size:12.5px;color:#0F172A;margin-bottom:5px;letter-spacing:-.2px}'
+    +'.tip-box .tip-body{color:#334155}'
+    +'.tip-box .tip-k{color:#C0392B;font-weight:700}';
+  document.head.appendChild(s);
+}
+function tipBlockHTML(q){
+  var t=(q&&q.exp&&q.exp.tip!=null)?String(q.exp.tip).trim():'';
+  if(!t) return '';
+  tipEnsureCSS();
+  return '<div class="tip-box"><div class="tip-ti">\u26A1 \uC2DC\uD5D8 \uD3EC\uC778\uD2B8</div><div class="tip-body">'+rm(t,q)+'</div></div>';
+}
 function tblBlockHTML(q){
   var tb=q&&q.exp&&q.exp.tbl; if(!tb) return '';
   var list=Array.isArray(tb)?tb:[tb];
@@ -5460,6 +5476,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
       }).join('')+'</div>';
     }
     if(q.exp && Array.isArray(q.exp.c) && q.exp.c.length){
+      body+=tipBlockHTML(q);   // SA: 개념설명 앞 → ⚡ 시험 포인트
       body+='<div class="concept-box"><div class="concept-ti">\uAC1C\uB150\uC124\uBA85</div>'+q.exp.c.map(function(it){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
@@ -5691,6 +5708,7 @@ function renderMcqExam(root){
     if(q.exp && q.exp.graph && String(q.exp.graph).trim() && body.indexOf('calc-graph')===-1)
       body = '<div class="calc-graph">'+q.exp.graph+'</div>' + body;
     body += oxCompareHTML(q, oArr);   // 1단계: 내 O/X vs 정답 (텍스트·이미지·일반 통합)
+    body += tipBlockHTML(q);          // O/X 다음 → ⚡ 시험 포인트(함정 한 줄)
     if(q.mn||(q.exp&&q.exp.mn)){ 
       var _mn=q.mn||q.exp.mn; 
       var mnList=Array.isArray(_mn)?_mn:(_mn&&(typeof _mn==='object'||typeof _mn==='string')?[_mn]:[]);
