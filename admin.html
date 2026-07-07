@@ -2965,7 +2965,7 @@ async function lvupImport(){
     } else { preLines.push('• '+pit.sub+'/'+pit.kind+': 적재'); }
   }
   if(!confirm('레벨업 데이터 적재 — '+D.items.length+'개 항목\n\n'+preLines.join('\n')+'\n\n계속할까요?')) return;
-  var done=[];
+  var done=[], fails=[];
   for(var i=0;i<D.items.length;i++){
     var it=D.items[i];
     var docId=it.cert+'__'+it.sub+'__'+it.kind;
@@ -2980,15 +2980,20 @@ async function lvupImport(){
         existing.forEach(_push); arr.forEach(_push);   // 신규가 같은 id 덮어씀
         var merged=order.map(function(k){ return byId[k]; });
         var _rec={ subject:it.sub, kind:it.kind, count:merged.length, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; _rec[field]=merged;
+        var _bytes=null; try{ _bytes=new Blob([JSON.stringify(_rec)]).size; }catch(_){}
+        if(_bytes!==null && _bytes>1000000){ throw new Error('\ubb38\uc11c \ud06c\uae30 '+Math.round(_bytes/1024)+'KB\uac00 Firestore 1MB \ud55c\ub3c4 \ucd08\uacfc \u2014 \uacfc\ubaa9\uc744 \ub098\ub220 \uc62c\ub9ac\uc138\uc694'); }
         await db.collection('adaptive').doc(docId).set(_rec);
         done.push(it.sub+'/'+it.kind+'('+existing.length+'+'+arr.length+'\u2192'+merged.length+')');
       } else {
         await db.collection('adaptive').doc(docId).set(it.data);
         done.push(it.sub+'/'+it.kind+'('+it.data.count+')');
       }
-    }catch(e){ done.push((it.sub||'?')+'/'+it.kind+' 실패:'+e.message); }
+    }catch(e){ var _m=(it.sub||'?')+'/'+it.kind+' \uc2e4\ud328: '+e.message; done.push(_m); fails.push(_m); }
   }
-  if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 적재 완료: '+done.join(' · '); }
+  if(stt){
+    if(fails.length){ stt.style.color='#A32D2D'; stt.innerHTML='\u26A0\uFE0F '+fails.length+'\uac1c \uc2e4\ud328 (\ucd1d '+D.items.length+'\uac1c) \u2014 <b>'+fails.join(' \u00b7 ')+'</b>'; }
+    else { stt.style.color='#15793F'; stt.innerHTML='\u2705 \uc801\uc7ac \uc644\ub8cc: '+done.join(' \u00b7 '); }
+  }
   _lvupData=null;
 }
 var _lvupExpCache=null;
