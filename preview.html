@@ -1554,6 +1554,7 @@ function renderExpFull(q, mqCertVal){
     if(q.exp && q.exp.graph && String(q.exp.graph).trim() && body.indexOf('calc-graph')===-1)
       body = '<div class="calc-graph">'+q.exp.graph+'</div>' + body;
     body += oxCompareHTML(q, oArr);   // 1단계: 내 O/X vs 정답 (텍스트·이미지·일반 통합)
+    body += tipBlockHTML(q);          // O/X 다음 → ⚡ 시험 포인트(함정 한 줄)
     if(q.mn||(q.exp&&q.exp.mn)){ 
       var _mn=q.mn||q.exp.mn; 
       var mnList=Array.isArray(_mn)?_mn:(_mn&&(typeof _mn==='object'||typeof _mn==='string')?[_mn]:[]);
@@ -1808,6 +1809,22 @@ function tblResolve(ref){
     return '<div class="tbl-ph">'+tblEsc(ref)+' <span style="font-weight:400">(표 마스터 미동봉 — JSON에 tables 넣으면 실제 표로 렌더 · 앱에선 자동)</span></div>';
   }
   return '';
+}
+// ⚡ 시험 포인트(exp.tip): 라이브 index.html과 동일 렌더
+function tipEnsureCSS(){
+  if(document.getElementById('tip-css')) return;
+  var s=document.createElement('style'); s.id='tip-css';
+  s.textContent='.tip-box{border:1px solid #E2E8F0;border-radius:10px;padding:11px 13px;margin:12px 0;background:#fff;font-size:12.5px;line-height:1.62;color:#0F172A}'
+    +'.tip-box .tip-ti{font-weight:800;font-size:12.5px;color:#0F172A;margin-bottom:5px;letter-spacing:-.2px}'
+    +'.tip-box .tip-body{color:#334155}'
+    +'.tip-box .tip-k{color:#C0392B;font-weight:700}';
+  document.head.appendChild(s);
+}
+function tipBlockHTML(q){
+  var t=(q&&q.exp&&q.exp.tip!=null)?String(q.exp.tip).trim():'';
+  if(!t) return '';
+  tipEnsureCSS();
+  return '<div class="tip-box"><div class="tip-ti">\u26A1 \uC2DC\uD5D8 \uD3EC\uC778\uD2B8</div><div class="tip-body">'+rm(t,q)+'</div></div>';
 }
 function tblBlockHTML(q){
   var tb=q&&q.exp&&q.exp.tbl; if(!tb) return '';
