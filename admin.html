@@ -884,6 +884,7 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="mnemImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('mnemImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="mstImpClear('mnem')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
             <button class="btn-sm" onclick="qcOpenReviewMaster('mnem')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
             <button class="btn-sm" onclick="qcCfgUpload('mnem')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('mnem')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
@@ -937,6 +938,7 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="tblmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('tblmImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="mstImpClear('tbl')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
             <button class="btn-sm" onclick="qcOpenReviewMaster('table')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
             <button class="btn-sm" onclick="qcCfgUpload('table')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('table')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
@@ -995,6 +997,7 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="cptmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('cptmImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="mstImpClear('cpt')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
             <button class="upbar-export" onclick="qcOpenReviewCpt()" style="background:#0C447C;color:#fff">🔍 검수 창</button>
             <button class="btn-sm" onclick="qcCfgUpload('concept')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('concept')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
@@ -1073,6 +1076,7 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="grpmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('grpmImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="mstImpClear('grp')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
             <button class="btn-sm" onclick="qcOpenReviewMaster('graph')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
             <button class="btn-sm" onclick="qcCfgUpload('graph')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('graph')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
@@ -1131,6 +1135,7 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="itvmImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('itvmImpFile').click()">⬆ 업로드</button>
+            <button class="btn-sm" onclick="mstImpClear('itv')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
             <button class="btn-sm" onclick="qcOpenReviewMaster('interactive')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
             <button class="btn-sm" onclick="qcCfgUpload('interactive')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('interactive')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
@@ -4134,6 +4139,20 @@ function impRender(){
 }
 async function impRefresh(){ await impLoadVersions(); impRender(); impLog('현재 버전 새로고침 완료'); }
 function impClear(){ impItems=[]; impBundleManifest=null; var lg=document.getElementById('impLog'); if(lg) lg.innerHTML='대기 중…'; try{ impRender(); }catch(_){} var r=document.getElementById('impRun'); if(r) r.disabled=true; }
+/* 마스터(암기/표/개념/그래프/인터랙티브) 로드 데이터·상태 비우기 — 기출 impClear의 마스터판 */
+function mstImpClear(type){
+  try{
+    if(type==='mnem'){ _mnemImpData=null; }
+    else if(type==='tbl'){ _tblmImpData=null; }
+    else if(type==='cpt'){ _cptmImpData=null; if(typeof _cptmImpDelete!=='undefined') _cptmImpDelete=null; }
+    else if(type==='grp'){ _grpmImpData=null; }
+    else if(type==='itv'){ _itvmImpData=null; }
+  }catch(e){}
+  var sid={mnem:'mnemImpStatus',tbl:'tblmImpStatus',cpt:'cptmImpStatus',grp:'grpmImpStatus',itv:'itvmImpStatus'}[type];
+  var stt=document.getElementById(sid); if(stt){ stt.style.color=''; stt.innerHTML='🗑 목록·로그를 비웠습니다.'; }
+  var fid={mnem:'mnemImpFile',tbl:'tblmImpFile',cpt:'cptmImpFile',grp:'grpmImpFile',itv:'itvmImpFile'}[type];
+  var fl=document.getElementById(fid); if(fl) fl.value='';
+}
 // ===== 업로드 후 자동: (A) 번들 manifest의 새 시험·과목 등록(비파괴) + (B) 업로드 cert의 버전 동기화 =====
 async function _impAutoManifest(uploadedCerts){
   try{
@@ -4196,10 +4215,14 @@ async function _impAutoManifest(uploadedCerts){
    판단 필요 조항(사유→원리 순서·시험형 예시·대비 자리·핵심 함정)은 게이트 밖(사람 검수).
 */
 var _qgAction=/샀|팔았|팔아|팔|빌려|빌린|맡겨|맡긴|점유|배상|청구|지급|처분|넘겨|넘긴|속여|속아|건네|매도|매수|양도|증여|담보|대여|변제|등기|지어|사들|잡아|되찾|취소|해지|반환|인도/;
-function _qgNamed(s){ return /[甲乙丙丁戊己庚辛壬癸]|매수인|매도인|임차인|임대인|채권자|채무자|수탁자|신탁자|양수인|양도인|저당권자|질권자|보증인|대리인|전득자|점유자/.test(s||''); }
-function _qgVerdict(t){ t=String(t||'').trim().replace(/\.+$/,''); var p=t.split(/\.\s+/); var last=p[p.length-1]||t; return /(옳지\s*않다|적절하지\s*않다|부적절하다|해당하지\s*않는다|틀리다|틀린다|옳다|적절하다|맞다|해당한다|아니다)$/.test(last); }
+function _qgNamed(s){ return /[甲乙丙丁戊己庚辛壬癸]|[XYZ](회사|법인|은행|토지|아파트|건물|상가|주택|기계|점포|공장)|매수인|매도인|임차인|임대인|채권자|채무자|수탁자|신탁자|양수인|양도인|저당권자|질권자|보증인|대리인|전득자|점유자/.test(s||''); }
+function _qgVerdict(t){ t=String(t||'').trim().replace(/\.+$/,''); var p=t.split(/\.\s+/); var last=(p[p.length-1]||t).replace(/\s*\([^)]*\)\s*$/,''); return /(옳지\s*않다|적절하지\s*않다|부적절하다|해당하지\s*않는다|틀리다|틀린다|옳다|적절하다|맞다|해당한다|아니다)$/.test(last); }
 function _qgBg(s){ s=String(s||'').replace(/\s/g,''); var b={}; for(var i=0;i<s.length-1;i++){ var g=s.substr(i,2); b[g]=(b[g]||0)+1; } return b; }
 function _qgSim(a,b){ var A=_qgBg(a),B=_qgBg(b),inter=0,na=0,nb=0,k; for(k in A){na+=A[k]; if(B[k])inter+=Math.min(A[k],B[k]);} for(k in B)nb+=B[k]; return (na+nb)?2*inter/(na+nb):0; }
+// ===== 검수 조건(config/qc) — 영역별 on/off·임계값. 없으면 기본값 =====
+var _qcCfg={};
+function _qcOn(sec,code){ try{ var c=_qcCfg[sec]&&_qcCfg[sec][code]; return !c || c.on!==false; }catch(e){ return true; } }
+function _qcN(sec,code,param,def){ try{ var c=_qcCfg[sec]&&_qcCfg[sec][code]; var val=c&&c[param]; return (typeof val==='number')?val:def; }catch(e){ return def; } }
 /* 해설(o) 끝의 판정 꼬리(…옳다./…본 점에서 옳지 않다.)를 떼어 예시와 순수 비교 */
 function _qgStripVerdict(o){ var p=String(o||'').split(/\.\s+/); while(p.length>1){ var last=p[p.length-1]; if(/(옳다|옳지\s*않다|적절하다|적절하지\s*않다|부적절하다|맞다|틀리다|틀린다|본\s*점에서|정답)/.test(last)) p.pop(); else break; } return p.join('. '); }
 function _qgWords(s){ return String(s||'').replace(/[.,·]/g,' ').split(/\s+/).filter(Boolean); }
@@ -4209,6 +4232,11 @@ function _qgRunMatch(a,b){ var A=_qgWords(a),B=_qgWords(b),best=0,i,j,k; for(i=0
 function _qgLines(s){ var t=String(s||'').trim(); if(!t)return 0; var n=0; t.split(/\n/).forEach(function(p){ n+=Math.max(1,Math.ceil(p.length/28)); }); return n; }
 
 /* 한 문항의 위반 목록(구조화). kind=block(차단)/warn(경고). */
+// 엔진 _isCalcQ 이식 — 계산형 = oFilled 1칸 & (그래프 or 풀이단계). 단순 oFilled===1 아님(COMBO 결론 오인 방지)
+function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.indexOf('calc:')===0) return true;
+  var o=(q.exp&&q.exp.o)||[]; var oF=o.filter(function(x){return x&&String(x).trim();}).length; if(oF!==1) return false;
+  var hg=q.exp&&q.exp.graph&&String(q.exp.graph).trim(); var ex=(q.exp&&q.exp.ex)||[]; var hs=ex.filter(function(x){return x&&String(x).trim();}).length>0;
+  return !!(hg||hs); }
 function _qcViolations(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[], cards=exp.c||[];
   var opts=(q&&Array.isArray(q.opts))?q.opts:[];
@@ -4224,14 +4252,29 @@ function _qcViolations(q){
   cards.forEach(function(c,j){ var s=((c&&c.d)||'')+' '+((c&&c.cx)||'')+' '+((c&&c.t)||''); if(em(s)) v.push({kind:'block',field:'card',idx:j,code:'EMDASH',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+'\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:(c&&c.t)||''}); });
   if(em(exp.tip)) v.push({kind:'block',field:'tip',idx:0,code:'EMDASH',msg:'tip\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.tip});
   if(em(exp.s))   v.push({kind:'block',field:'s',idx:0,code:'EMDASH',msg:'\uc694\uc57d(s)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.s});
-  if(isMCQ && !isCalc){
+  if(isMCQ && !isCalc && !Array.isArray(q.ans)){ /* 전항·복수정답(ans 배열)은 정오 축 무효 → 종결형 면제 */
     o.forEach(function(t,i){ if(t&&String(t).trim()&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9ba\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
   }
   if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
   if(isMCQ && !isCalc && cards.length && cards.length<2) v.push({kind:'block',field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+cards.length+'\uc7a5(<2)',text:''});
-  o.forEach(function(t,i){ if(t&&/\ubcf4\uae30\s*\d|\uc774\s*\ubcf4\uae30|\uc704\s*\ubcf4\uae30|^\s*[\u3131-\u314e]\s*:|^\s*\d+\.\s/.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_SELFREF',msg:'\ud574\uc124(o)\uc5d0 \ubcf4\uae30\ubc88\ud638\u00b7\uc790\uae30\ucc38\uc870(\ubcf4\uae30N/\uc774 \ubcf4\uae30/\u3131:) \u2192 \uc5d4\uc9c4 \uc790\ub3d9\uc774\ub77c \ub123\uc9c0 \uc54a\uc74c',text:t}); });
+  if(_qcOn('gichul','O_PLACEHOLDER')){ var _PLACE=/\ud574\uc124\s*\ucd94\uac00|\uc218\uc815\s*\uc608\uc815|\uc791\uc131\s*\uc608\uc815|\ucd94\uac00\s*\uc608\uc815|\ubbf8\uc791\uc131|\ucc44\uc6b8\s*\uc608\uc815|\uc900\ube44\s*\uc911|TODO/; o.forEach(function(t,i){ if(_PLACE.test(String(t||''))) v.push({kind:'block',field:'o',idx:i,code:'O_PLACEHOLDER',msg:'\ud574\uc124(o)\uc5d0 \uc784\uc2dc \ubb38\uad6c \u2014 \ube48 \uce78\uc740 \ubc18\ub4dc\uc2dc \ube48 \ubb38\uc790\uc5f4("")\ub85c(\uc784\uc2dc\ubb38\uad6c\ub294 oFilled\ub85c \uc624\uacc4\uc0b0\ub418\uc5b4 \uc9c4\uc220\uc218 \uc5b4\uae4b\ub0a8)',text:t}); }); }
+  if(_qcOn('gichul','O_INCOMPLETE') && isMCQ && !isCalc && opts.length>=4){ var _mk=opts.some(function(op){return /^[\u3131-\u314e][\s,:\-]/.test(String(op).trim());}); if(!_mk){ var _emp=o.slice(0,opts.length).filter(function(x){return !(x&&String(x).trim());}).length; if(_emp>0) v.push({kind:'warn',field:'o',idx:0,code:'O_INCOMPLETE',msg:'\ubcf4\uae30 '+opts.length+'\uc9c0\uc778\ub370 \ud574\uc124(o) '+_emp+'\uce78 \ube44\uc5b4\uc788\uc74c \u2014 SC\ub294 \ubcf4\uae30 \uc804\ubd80 \ucc44\uc6c0(\uc815\uc758\ud655\uc778 \ubcf4\uae30\ub9cc \uc0dd\ub7b5)',text:''}); } }
+  if(_qcOn('gichul','CALC_WRONG_SLOT') && _isCalcQ(q) && q.ans && !Array.isArray(q.ans)){ var _fi=-1; for(var _ci=0;_ci<o.length;_ci++){ if(o[_ci]&&String(o[_ci]).trim()){_fi=_ci;break;} } if(_fi>=0 && _fi!==(q.ans-1)) v.push({kind:'block',field:'o',idx:_fi,code:'CALC_WRONG_SLOT',msg:'\uacc4\uc0b0\ud615 \uacb0\ub860\uc774 \uc815\ub2f5\uce78(o['+(q.ans-1)+'])\uc774 \uc544\ub2cc o['+_fi+']\uc5d0 \uc788\uc74c \u2192 \uc5d4\uc9c4\uc774 '+(_fi+1)+'\ubc88\uc744 \uc815\ub2f5\uc73c\ub85c \uc624\ud45c\uc2dc(\uc815\ub2f5\uce78 o[ans-1]\uc5d0 \uacb0\ub860)',text:o[_fi]}); }
+  try{ if(_qcOn('gichul','COMBO_STMT_MISMATCH') && typeof isComboQuestion==='function' && isComboQuestion(q.opts)){ var _st=comboStmtList(q); if(_st&&_st.length>=2 && oFilled>=2 && oFilled!==_st.length) v.push({kind:'warn',field:'o',idx:0,code:'COMBO_STMT_MISMATCH',msg:'\uc870\ud569\ud615 \uc9c4\uc220 '+_st.length+'\uac1c\uc778\ub370 \ud574\uc124(o) '+oFilled+'\uce78 \u2014 \uc9c4\uc220\uc218=\ucc44\uc6b4\uce78\uc218 \uc548 \ub9de\uc73c\uba74 \uc9c4\uc220\ubcc4\ub85c \uc548 \ud3bc\uccd0\uc9d0(\uc77c\ubc18\ud615 \ud3f4\ubc31)',text:''}); } }catch(_){}
+  if(_qcOn('gichul','FILL_BLANK_MISMATCH') && Array.isArray(q.blanks) && q.blanks.length && oFilled!==q.blanks.length) v.push({kind:'block',field:'o',idx:0,code:'FILL_BLANK_MISMATCH',msg:'\ube48\uce78 '+q.blanks.length+'\uac1c\uc778\ub370 \ud574\uc124(o) '+oFilled+'\uce78 \u2014 blanks==oFilled\uc774\uc5b4\uc57c \ube48\uce78\ubcc4\ub85c \ud3bc\uce68(\uc548 \ub9de\uc73c\uba74 \uc5c9\ub69c\ud55c \uce78\uc5d0 \ubd99\uc74c)',text:''});
+  if(_qcOn('gichul','O_ECHO_D')){ var _cds=(typeof _conceptCards==='function'?_conceptCards(q):(exp.c||[])).map(function(c){return String(c&&c.d||'');}).filter(Boolean); if(_cds.length){ o.forEach(function(t,i){ if(t&&String(t).trim()){ for(var _di=0;_di<_cds.length;_di++){ if(_qgSim(_qgStripVerdict(t),_cds[_di])>=_qcN('gichul','O_ECHO_D','minSim',0.6)){ v.push({kind:'warn',field:'o',idx:i,code:'O_ECHO_D',msg:'\ud574\uc124(o)\uc774 \uac1c\ub150\uce74\ub4dc \uc815\uc758(d) \ub418\ud480\uc774 \u2192 o\ub294 \uadf8 \ubcf4\uae30\uac00 \uc65c \ub9de/\ud2c0\ub9ac\ub294\uc9c0 \uc0ac\uc720\ub85c(\uc5ed\ud560\ubd84\ub9ac \u00a7337)',text:t}); break; } } } }); } }
+  if(_qcOn('gichul','O_NO_ACTOR')){ var _AC=/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/; o.forEach(function(t,i){ var op=opts[i]; if(op&&_AC.test(String(op)) && t&&String(t).trim() && !_AC.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_NO_ACTOR',msg:'\ubcf4\uae30\uc5d4 \uc778\ubb3c(\u7532\u4e59)\uc774 \uc788\ub294\ub370 \ud574\uc124(o)\uc5d0\uc11c \uc778\ubb3c \uc99d\ubc1c \u2192 \uc0ac\uc2e4\uad00\uacc4 \uadf8\ub300\ub85c \uc0b4\ub824 \uc801\uc6a9(\u00a7467)',text:t}); }); }
+  o.forEach(function(t,i){ if(t&&/\ubcf4\uae30\s*\d/.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_SELFREF',msg:'\ud574\uc124(o)\uc5d0 \ubcf4\uae30\ubc88\ud638\u00b7\uc790\uae30\ucc38\uc870(\ubcf4\uae30N/\uc774 \ubcf4\uae30/\u3131:) \u2192 \uc5d4\uc9c4 \uc790\ub3d9\uc774\ub77c \ub123\uc9c0 \uc54a\uc74c',text:t}); });
   if(isMCQ && !isCalc){
-    o.forEach(function(t,i){ var op=opts[i]; if(!(t&&String(t).trim())||!op||String(op).length<10) return; if(/^[\u3131-\u314e][\s,\u3131-\u314e]*$/.test(String(op).trim())) return; var run=_qgRunMatch(op,t); if(run>=4) v.push({kind:'warn',field:'o',idx:i,code:'O_ECHO_OPT',msg:'\ud574\uc124(o)\uc774 \ubcf4\uae30 \ubb38\uc7a5 \ubca0\ub07c\uae30(\uc5f0\uc18d '+run+'\uc5b4\uc808) \u2192 \ubca0\ub07c\uc9c0 \ub9d0\uace0 \uc65c \uc633\uc740\uc9c0/\ud2c0\ub9b0\uc9c0 \uc0ac\uc720\ub85c',text:t}); });
+    /* \uc2dd\ubcc4\ud615 \ubc1c\ubb38(\ubc11\uc904/\uc774 \uc778\ubb3c/\uc774 \ub2e8\uccb4/(\uac00)/\ud65c\ub3d9\u00b7\uc124\uba85\uc73c\ub85c \uc633\uc740)\uc740 \ubcf4\uae30 \ud65c\ub3d9\uc744 \ub418\ubc1b\uc544 \uc8fc\uccb4 \uc9c0\ubaa9\ud558\ub294 \uad6c\uc870 \u2192 O_ECHO \uba74\uc81c */
+    var _idQ=/\ubc11\uc904|\uc774\s*\uc778\ubb3c|\uc774\s*\ub2e8\uccb4|\uc774\s*\ub098\ub77c|\uc774\s*\uc655|[(\uff08]\s*[\uac00-\ud558]\s*[)\uff09]|\ud65c\ub3d9\uc73c\ub85c\s*\uc633|\uc124\uba85\uc73c\ub85c\s*\uc633|\ud55c\s*\uc77c\ub85c\s*\uc633/.test(String(q.q||''));
+    o.forEach(function(t,i){ var op=opts[i]; if(!(t&&String(t).trim())||!op||String(op).length<10) return; if(/^[\u3131-\u314e][\s,\u3131-\u314e]*$/.test(String(op).trim())) return; var _ts=String(t);
+      /* \u00a7376/1257 \uc608\uc678: \ud2c0\ub9b0 \ubcf4\uae30 \ubc18\ubc15 \uc778\uc6a9(\uc0ac\uc720 \uc788\uc73c\uba74 \ud5c8\uc6a9)\u00b7\uc218\uce58 \uac80\uc99d(\ubcf4\uae30 \uc218\uce58 \uadf8\ub300\ub85c \uacc4\uc0b0 \ud655\uc778)\uc740 \ubca0\ub07c\uae30 \uc544\ub2d8 */
+      var _rebut=/\uc633\uc9c0\s*\uc54a|\ud2c0\ub9ac|\ud2c0\ub9b0|\uc544\ub2c8\ub2e4|\uc544\ub2c8\ub77c|\ubc18\ub300|\uc798\ubabb|\ud574\ub2f9\ud558\uc9c0\s*\uc54a|\ub2ec\ub77c|\ub4e4\uc9c0\s*\uc54a|\ub4e4\uc5b4\uac00\uc9c0\s*\uc54a|\ud3ec\ud568\ub418\uc9c0\s*\uc54a|\uac70\uafd2/.test(_ts);
+      var _hasNum=/[0-9]/.test(_ts);
+      var _ident=/(\uac83\uc740|\ub2e8\uccb4\ub294|\uc778\ubb3c\uc740|\ub098\ub77c\ub294|\uc2dc\uae30\ub294|\uc655\uc870\ub294|\uae30\uad6c\ub294)\s/.test(_ts); /* \uc2dd\ubcc4\uadc0\uc18d(\uad6d\uc0ac \uc778\ubb3c/\ud65c\ub3d9 \uc9c0\ubaa9)\uc740 \ubca0\ub07c\uae30 \uc544\ub2d8 */
+      if(_rebut||_hasNum||_ident||_idQ) return;
+      var run=_qgRunMatch(op,t); if(_qcOn('gichul','O_ECHO_OPT') && run>=_qcN('gichul','O_ECHO_OPT','minRun',4)) v.push({kind:'warn',field:'o',idx:i,code:'O_ECHO_OPT',msg:'\ud574\uc124(o)\uc774 \ubcf4\uae30 \ubb38\uc7a5 \ubca0\ub07c\uae30(\uc5f0\uc18d '+run+'\uc5b4\uc808) \u2192 \ubca0\ub07c\uc9c0 \ub9d0\uace0 \uc65c \uc633\uc740\uc9c0/\ud2c0\ub9b0\uc9c0 \uc0ac\uc720\ub85c',text:t}); });
   }
   cards.forEach(function(c,j){
     if(!c) return; var d=String(c.d||''), cx=String(c.cx||''), t=String(c.t||'');
@@ -4243,27 +4286,36 @@ function _qcViolations(q){
     var _big=cards.map(function(c){return (c&&c.d||'')+(c&&c.cx||'');}).join(' ');
     var _act={}; ((q.q||'')+' '+opts.join(' ')+' '+o.join(' ')+' '+ex.join(' ')+' '+_big).replace(/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/g,function(x){_act[x]=1;return x;});
     var _relHit=_rel.test((q.q||'')+' '+opts.join(' ')+' '+o.join(' '));
-    if(Object.keys(_act).length>=3 && _relHit && !_arrow.test(_big)) v.push({kind:'warn',field:'card',idx:0,code:'REL_NO_ARROW',msg:'\uc778\ubb3c 3\uba85+ \uad00\uacc4\ud615 \ubb38\ud56d\uc778\ub370 \ud654\uc0b4\ud45c \ud750\ub984\ub3c4 \uc5c6\uc74c \u2192 \uccab \uac1c\ub150\uce74\ub4dc cx\uc5d0 \uad00\uacc4\ub3c4 \ucd94\uac00(04 \u00a7B)',text:''});
+    if(_qcOn('gichul','REL_NO_ARROW') && Object.keys(_act).length>=3 && _relHit && !_arrow.test(_big)) v.push({kind:'warn',field:'card',idx:0,code:'REL_NO_ARROW',msg:'\uc778\ubb3c 3\uba85+ \uad00\uacc4\ud615 \ubb38\ud56d\uc778\ub370 \ud654\uc0b4\ud45c \ud750\ub984\ub3c4 \uc5c6\uc74c \u2192 \uccab \uac1c\ub150\uce74\ub4dc cx\uc5d0 \uad00\uacc4\ub3c4 \ucd94\uac00(04 \u00a7B)',text:''});
   }
   if(isMCQ){
+    var _qCalc=_isCalcQ(q); /* A-7 예외(b): CALC 단계풀이 ex는 장면 검사 면제 */
+    var _qCast=/[甲乙丙丁戊己庚辛壬癸]/.test(String(q.q||'')+' '+opts.join(' ')+' '+String(q.jaryo||'')); /* 문항이 배역 제공 → 예시는 역할 유지(A-7② 단서) */
     ex.forEach(function(t,i){
       if(!(t&&String(t).trim())) return;
       var isScene=_qgAction.test(t)||_qgNamed(t);
-      if(_qgAction.test(t) && !_qgNamed(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_NONAME',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74(\ud589\uc704)\uc778\ub370 \uba85\uba85 \uc778\ubb3c(\u7532\u4e59\u4e19\u2026) \uc5c6\uc74c',text:t});
+      if(!_qCalc && _qcOn('gichul','EX_NONAME') && _qgAction.test(t) && !_qgNamed(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_NONAME',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74(\ud589\uc704)\uc778\ub370 \uba85\uba85 \uc778\ubb3c(\u7532\u4e59\u4e19\u2026) \uc5c6\uc74c',text:t});
       if(/^\uc608\s*\)/.test(String(t).trim())) v.push({kind:'warn',field:'ex',idx:i,code:'EX_PREFIX',msg:"\uc608\uc2dc\uc5d0 '\uc608)' \uc811\ub450 \uae08\uc9c0(\uc571\uc774 \uc608\uc2dc \ub77c\ubca8 \uc790\ub3d9 \ubd80\ucc29)",text:t});
       if(/\uc81c\s*\d+\s*\uc870/.test(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_JOMUN',msg:'\uc608\uc2dc\uc5d0 \uc870\ubb38\ubc88\ud638(\uc81cN\uc870) \uae08\uc9c0 \u2014 \uc870\ubb38\uc740 \uac1c\ub150 d\uc5d0\ub9cc',text:t});
+      if(/[甲乙丙丁戊己庚辛壬癸]/.test(String(t))){ var _pt=String(t).replace(/<[^>]+>/g,'').trim(); /* A-7 검사범위: 甲乙丙 등장 ex만 ①② 검사 */
+        if(!_qCalc && _qcOn('gichul','EX_NO_SUBJECT_FIRST')){ var _okStart=/^([\u7532\u4e59\u4e19\u4e01\u620a]|[XYZ])/.test(_pt) && !/^([\u7532\u4e59\u4e19\u4e01\u620a]|[XYZ][\uac00-\ud7a3]*)\uc758\s/.test(_pt); var _actorSubj=/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a\u8f9b\u58ec\u7678](\uc774|\uac00|\uc740|\ub294|\uc5d0\uac8c|\uaed8\uc11c|\uaed8)/.test(_pt)||/[XYZ][\uac00-\ud7a3]*(\uc774|\uac00|\uc740|\ub294|\uc5d0\uac8c|\uaed8\uc11c)/.test(_pt); if(!_okStart && !_actorSubj) v.push({kind:'warn',field:'ex',idx:i,code:'EX_NO_SUBJECT_FIRST',msg:'\uc7a5\uba74\uc774 \uc778\ubb3c \uc8fc\uc5b4(\u7532\u4e59\u00b7X\ud68c\uc0ac)\ub85c \uc2dc\uc791 \uc548 \ud568(\ubd80\uc0ac\uc808\u00b7\uc18c\uc720\uaca9 \uc555\ub450) \u2014 \u00a7A-7\u2460 \u7532 \ubb38\ub450',text:t}); }
+        if(!_qCalc && !_qCast && _qcOn('gichul','EX_NOT_GAP_FIRST')){ var _fpm=_pt.match(/[\u7532\u4e59\u4e19\u4e01\u620a]/); if(_fpm && _fpm[0]!=='\u7532') v.push({kind:'warn',field:'ex',idx:i,code:'EX_NOT_GAP_FIRST',msg:'\ucc98\uc74c \ub4f1\uc7a5 \uc778\ubb3c\uc774 \u7532\uc774 \uc544\ub2cc '+_fpm[0]+' \u2014 \u00a7A-7\u2461 \u7532\ubd80\ud130 \uc21c\uc11c\ub300\ub85c',text:t}); }
+      }
       var oi=o[i], echo=false;
       if(oi && String(oi).trim()){
         var sim=_qgSim(_qgStripVerdict(oi), t), run=_qgRunMatch(oi,t);
-        if(sim>=0.5 || run>=6){ echo=true; v.push({kind:'warn',field:'ex',idx:i,code:'EX_ECHO',msg:'\uc608\uc2dc\uac00 \ud574\uc124(o) \ub418\ud480\uc774(\uc720\uc0ac\ub3c4 '+Math.round(sim*100)+'%\u00b7\uc5f0\uc18d\uc77c\uce58 '+run+'\uc5b4\uc808) \u2192 \ub2e4\ub978 \uc7a5\uba74\u00b7\uc218\uce58\ub85c',text:t}); }
+        if(!_qCalc && _qcOn('gichul','EX_ECHO') && (sim>=_qcN('gichul','EX_ECHO','minSim',0.5) || run>=_qcN('gichul','EX_ECHO','minRun',6))){ echo=true; v.push({kind:'warn',field:'ex',idx:i,code:'EX_ECHO',msg:'\uc608\uc2dc\uac00 \ud574\uc124(o) \ub418\ud480\uc774(\uc720\uc0ac\ub3c4 '+Math.round(sim*100)+'%\u00b7\uc5f0\uc18d\uc77c\uce58 '+run+'\uc5b4\uc808) \u2192 \ub2e4\ub978 \uc7a5\uba74\u00b7\uc218\uce58\ub85c',text:t}); }
       }
-      if(isScene && !echo){ var _L=_qgLines(t); if(_L<4) v.push({kind:'warn',field:'ex',idx:i,code:'EX_SHORT',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74\uc778\ub370 '+_L+'\uc904(4\uc904 \ubbf8\ub9cc) \u2014 \ub2e8\uc21c\ubc18\ubcf5 \uc758\uc2ec, \uc2e4\uc0dd\ud65c \uc7a5\uba74\uc73c\ub85c \uc0b4 \ubd99\uc774\uae30',text:t}); }
+      if(!_qCalc && _qcOn('gichul','EX_SHORT') && isScene && !echo){ var _L=_qgLines(t); if(_L<_qcN('gichul','EX_SHORT','minLines',2)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_SHORT',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74\uc778\ub370 '+_L+'\uc904(2\uc904 \ubbf8\ub9cc) \u2014 \ub2e8\uc21c\ubc18\ubcf5 \uc758\uc2ec, \uc2e4\uc0dd\ud65c \uc7a5\uba74\uc73c\ub85c \uc0b4 \ubd99\uc774\uae30',text:t}); }
     });
     var _fex=[]; ex.forEach(function(t,i){ if(t&&String(t).trim()) _fex.push([i,t]); });
-    for(var a=0;a<_fex.length;a++) for(var b=a+1;b<_fex.length;b++){ if(_qgSim(_fex[a][1],_fex[b][1])>=0.5) v.push({kind:'warn',field:'ex',idx:_fex[b][0],code:'EX_EX_ECHO',msg:'\uc608\uc2dc '+_fex[a][0]+'\ubc88\uacfc \uc8fc\uc5b4\u00b7\uc0c1\ud669\uc774 \ubc18\ubcf5 \u2192 \uc11c\ub85c \ub2e4\ub978 \uc7a5\uba74\uc73c\ub85c',text:_fex[b][1]}); }
+    for(var a=0;a<_fex.length;a++) for(var b=a+1;b<_fex.length;b++){ if(!_qCalc && _qcOn('gichul','EX_EX_ECHO') && _qgSim(_fex[a][1],_fex[b][1])>=_qcN('gichul','EX_EX_ECHO','minSim',0.5)) v.push({kind:'warn',field:'ex',idx:_fex[b][0],code:'EX_EX_ECHO',msg:'\uc608\uc2dc '+_fex[a][0]+'\ubc88\uacfc \uc8fc\uc5b4\u00b7\uc0c1\ud669\uc774 \ubc18\ubcf5 \u2192 \uc11c\ub85c \ub2e4\ub978 \uc7a5\uba74\uc73c\ub85c',text:_fex[b][1]}); }
+    ex.forEach(function(t,i){ if(_qcOn('gichul','EX_MULTILINE') && String(t||'').split(/\n/).filter(function(l){return l.trim();}).length>=2) v.push({kind:'warn',field:'ex',idx:i,code:'EX_MULTILINE',msg:'예시/풀이(ex) 한 원소에 여러 줄 \u2014 줄은 배열 원소로 쪼갬(안 그러면 화면서 한 줄로 붙음)',text:t}); });
+    if(_qcOn('gichul','EX_STEPS_CRAMMED') && _isCalcQ(q)){ ex.forEach(function(t,i){ var _mk=(String(t||'').match(/[\u2460-\u246e](?![\ubc88\uc21c\uc9f8])/g)||[]); var _u={}; _mk.forEach(function(m){_u[m]=1;}); if(Object.keys(_u).length>=2) v.push({kind:'warn',field:'ex',idx:i,code:'EX_STEPS_CRAMMED',msg:'\ud55c ex \uc6d0\uc18c\uc5d0 \uacc4\uc0b0 \ub2e8\uacc4(\u2460\u2461\u2462) \uc5ec\ub7ec \uac1c \ub6ed\uce68 \u2192 \ub2e8\uacc4=\ubc30\uc5f4 \uc6d0\uc18c \ud558\ub098\ub85c \ucaa8\uac9c \u00a7367',text:t}); }); }
     var _exArrLen=ex.length;
-    if(_exArrLen>0 && _exArrLen!==o.length) v.push({kind:'warn',field:'ex',idx:0,code:'EX_LEN',msg:'\uc608\uc2dc \ubc30\uc5f4 \uae38\uc774('+_exArrLen+') \u2260 \ud574\uc124 \uae38\uc774('+o.length+') \u2192 \ubcf4\uae30 \uc218\ub9cc\ud07c \ub9de\ucda4(\uc5b5\uc9c0 \uc7a5\uba74\uc740 \ube48\uce78)',text:''});
+    if(_exArrLen>0 && _exArrLen!==o.length && !_isCalcQ(q)) v.push({kind:'warn',field:'ex',idx:0,code:'EX_LEN',msg:'\uc608\uc2dc \ubc30\uc5f4 \uae38\uc774('+_exArrLen+') \u2260 \ud574\uc124 \uae38\uc774('+o.length+') \u2192 \ubcf4\uae30 \uc218\ub9cc\ud07c \ub9de\ucda4(\uc5b5\uc9c0 \uc7a5\uba74\uc740 \ube48\uce78)',text:''});
   }
+  if(_qcOn('gichul','BARE_ACRONYM')){ var _allT=[].concat(o||[],ex||[]).map(function(x){return String(x||'');}).join('\n'); var _ACR=/(GDP|GNP|GNI|GDI|LTV|DTI|DSR|MRS|MRT|MRTS|IRR|NPV|ROE|ROA|EPS|PER|PBR)/g, _seen={}, _mm; while((_mm=_ACR.exec(_allT))){ var _ac=_mm[1]; if(_seen[_ac])continue; _seen[_ac]=1; var _re2=new RegExp(_ac+'\\s*[(\uff08]'); if(!_re2.test(_allT)) v.push({kind:'warn',field:'o',idx:0,code:'BARE_ACRONYM',msg:'\uc601\uc5b4\uc57d\uc790 '+_ac+' \ud480\uc774 \uc5c6\uc774 \ub178\ucd9c \u2014 \uccab \ub4f1\uc7a5 1\ud68c \ud480\uc5b4\uc4f0\uae30('+_ac+', \ud55c\uae00\ud480\uc774) \u00a72-1',text:_ac}); } }
   return v;
 }
 function qualityGate(questions){
@@ -4320,12 +4372,20 @@ function qcCfgUpload(section){
   };
   inp.click();
 }
+/* 검수 번들 전달: 같은 출처 opener 메모리로 넘겨 localStorage 5MB 한도를 우회.
+   localStorage는 하위호환 폴백(초과해도 조용히 무시 — opener 경로가 커버). */
+function _qcStash(bundle){
+  try{ window.__certlabQC=bundle; }catch(e){}
+  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }
+  catch(e){ try{ localStorage.removeItem('certlab_qc_payload'); }catch(_){} }
+  return true;
+}
 function qcOpenReviewMaster(mtype){
   var map={mnem:(typeof _mnemImpData!=='undefined'?_mnemImpData:null), table:(typeof _tblmImpData!=='undefined'?_tblmImpData:null), graph:(typeof _grpmImpData!=='undefined'?_grpmImpData:null), interactive:(typeof _itvmImpData!=='undefined'?_itvmImpData:null)};
   var items=map[mtype];
   if(!items||!items.length){ alert('먼저 해당 마스터 JSON을 로드하세요.'); return; }
   var bundle={ _meta:{kind:'qc'}, kind:'master', mtype:mtype, items:items };
-  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }catch(e){ alert('검수 데이터 저장 실패: '+e.message); return; }
+  _qcStash(bundle);
   window.open('preview.html?qc=1','_blank');
 }
 function qcOpenReview(){
@@ -4333,20 +4393,19 @@ function qcOpenReview(){
   if(!items.length){ alert('먼저 위 드롭존에 기출 JSON을 로드하세요.'); return; }
   var bundle={ _meta:{kind:'qc', generatedAt:new Date().toISOString(), source:'admin'},
     banks: items.map(function(it){ return {docId:it.docId, data:it.data}; }) };
-  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }
-  catch(e){ alert('검수 데이터 저장 실패(용량 초과 가능): '+e.message); return; }
+  _qcStash(bundle);
   window.open('preview.html?qc=1','_blank');
 }
 function qcOpenReviewCpt(){
   if(!_cptmImpData||!_cptmImpData.length){ alert('먼저 개념 JSON을 로드하세요.'); return; }
   var bundle={ _meta:{kind:'qc'}, kind:'cpt', concepts:_cptmImpData };
-  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }catch(e){ alert('검수 데이터 저장 실패: '+e.message); return; }
+  _qcStash(bundle);
   window.open('preview.html?qc=1','_blank');
 }
 function qcOpenReviewLvup(){
   if(!_lvupQStash||!_lvupQStash.length){ alert('먼저 레벨업 JSON을 로드하세요(변형문항 있는 파일).'); return; }
   var bundle={ _meta:{kind:'qc'}, banks:_lvupQStash };
-  try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }catch(e){ alert('검수 데이터 저장 실패: '+e.message); return; }
+  _qcStash(bundle);
   window.open('preview.html?qc=1','_blank');
 }
 function buildReviewNote(){
