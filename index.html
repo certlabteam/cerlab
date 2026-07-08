@@ -4716,7 +4716,7 @@ async function resolveImages(scope){
 function splitVerdict(ex){
   // 해설 끝의 판정어(옳다/옳지 않다 등)를 분리 → {v:판정, vc:색클래스, rest:교정문}
   if(!ex) return {v:'', vc:'', rest:''};
-  var m=ex.match(/\s*(옳지\s*않다|옳지않다|적절하지\s*않다|적절하지않다|부적절하다|옳다|적절하다|맞다|틀리다|틀린다)\.?\s*$/);
+  var m=ex.match(/\s*(옳지\s*않다|옳지않다|적절하지\s*않다|적절하지않다|부적절하다|해당하지\s*않는다|해당되지\s*않는다|옳다|적절하다|맞다|틀리다|틀린다|해당한다|해당된다|아니다|아니라)(\s*\([^)]*\))?\.?\s*$/);
   if(!m) return {v:'', vc:'', rest:ex.trim()};
   var v=m[1].replace(/\s+/g,' ');
   // 판정어가 문장 맨앞(^)이거나 마침표 바로 뒤(=독립 판정문)일 때만 본문에서 제거.
@@ -4731,8 +4731,8 @@ function verdictLabel(v){ if(!v) return v; if(/옳지|적절하지|부적절|틀
 // O/X 자가체크 → 실제 정답 판정 비교 (1단계)
 function verdictIsO(v){
   if(!v) return null;
-  if(/옳다|적절하다|맞다/.test(v)) return true;
-  if(/옳지|적절하지|부적절|틀리/.test(v)) return false;
+  if(/옳지|적절하지|부적절|틀리|해당하지\s*않|해당되지\s*않|아니다|아니라/.test(v)) return false;
+  if(/옳다|적절하다|맞다|해당한다|해당된다/.test(v)) return true;
   return null;
 }
 function oxCompareHTML(q, oArr){
