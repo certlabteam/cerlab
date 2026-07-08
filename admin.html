@@ -702,6 +702,7 @@ tr:hover td{background:#FAFAFA}
           <div style="font-size:11.5px;color:#A89C8E;margin-bottom:8px">위에 로드한 기출 JSON을 게이트로 <b>전수 검사</b>한 위반 목록에, 직접 본 지적을 더해 복사·다운로드해서 데이터방에 넘깁니다. <b>지적된 항목만 수정</b>되고 통과 문항은 안 건드립니다.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
             <button class="btn-sm" onclick="qcOpenReview()" style="background:#0C447C;color:#fff">🔍 검수 창 열기<span id="qcBtnCount"></span></button>
+            <button class="btn-sm" onclick="qcOpenReviewAll()" style="background:#0F6E56;color:#fff">🔍 통합 검수 (올린 것 전부)</button>
             <button class="btn-sm" onclick="qcCfgUpload('gichul')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('gichul')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="btn-sm btn-extend" onclick="buildReviewNote()">🔍 지적서 만들기</button>
@@ -4336,6 +4337,20 @@ function qcOpenReviewCpt(){
 function qcOpenReviewLvup(){
   if(!_lvupQStash||!_lvupQStash.length){ alert('먼저 레벨업 JSON을 로드하세요(변형문항 있는 파일).'); return; }
   var bundle={ _meta:{kind:'qc'}, banks:_lvupQStash };
+  _qcStash(bundle);
+  window.open('preview.html?qc=1','_blank');
+}
+function qcOpenReviewAll(){
+  var bundle={ _meta:{kind:'qc',generatedAt:new Date().toISOString(),source:'admin'}, kind:'unified' }; var any=false;
+  var bk=(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;}).map(function(it){return {docId:it.docId,data:it.data};});
+  if(bk.length){ bundle.banks=bk; any=true; }
+  if(typeof _lvupQStash!=='undefined'&&_lvupQStash&&_lvupQStash.length){ bundle.lvup=_lvupQStash; any=true; }
+  if(typeof _cptmImpData!=='undefined'&&_cptmImpData&&_cptmImpData.length){ bundle.concepts=_cptmImpData; any=true; }
+  if(typeof _mnemImpData!=='undefined'&&_mnemImpData&&_mnemImpData.length){ bundle.mnem=_mnemImpData; any=true; }
+  if(typeof _tblmImpData!=='undefined'&&_tblmImpData&&_tblmImpData.length){ bundle.table=_tblmImpData; any=true; }
+  if(typeof _grpmImpData!=='undefined'&&_grpmImpData&&_grpmImpData.length){ bundle.graph=_grpmImpData; any=true; }
+  if(typeof _itvmImpData!=='undefined'&&_itvmImpData&&_itvmImpData.length){ bundle.interactive=_itvmImpData; any=true; }
+  if(!any){ alert('먼저 검수할 JSON을 하나 이상 로드하세요 (기출·레벨업·개념·암기·표·그래프·인터랙티브 어느 탭이든).'); return; }
   _qcStash(bundle);
   window.open('preview.html?qc=1','_blank');
 }
