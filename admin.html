@@ -4231,6 +4231,26 @@ function _qgWords(s){ return String(s||'').replace(/[.,·]/g,' ').split(/\s+/).f
 function _qgRunMatch(a,b){ var A=_qgWords(a),B=_qgWords(b),best=0,i,j,k; for(i=0;i<A.length;i++){ for(j=0;j<B.length;j++){ k=0; while(i+k<A.length&&j+k<B.length&&A[i+k]===B[j+k])k++; if(k>best)best=k; } } return best; }
 /* 예시 줄 수 추정(2줄≈56자 → 28자/줄, 줄바꿈도 반영) — 장면화 최소 분량 판정 */
 function _qgLines(s){ var t=String(s||'').trim(); if(!t)return 0; var n=0; t.split(/\n/).forEach(function(p){ n+=Math.max(1,Math.ceil(p.length/28)); }); return n; }
+// 단계 뭉침 검출: 개행 없는 한 덩어리(줄) 안에 단계 마커 2개 이상 → 그 줄 반환(없으면 null)
+//  · 원문자 ①②…(뒤에 번/순/째 오면 제외) 서로 다른 것 2개+
+//  · 아라비아 "1. "과 "2. "가 같은 줄에 함께(연번 시작 확인 — 소수·조문 오탐 방지)
+function _qgCrammedSteps(t){
+  var lines=String(t||'').replace(/<br\s*\/?>/gi,'\n').split(/\n/);
+  for(var li=0; li<lines.length; li++){
+    var L=lines[li]; if(!L.trim()) continue;
+    var mk=(L.match(/[\u2460-\u2473](?![\ubc88\uc21c\uc9f8])/g)||[]); var u={}; mk.forEach(function(m){u[m]=1;});
+    if(Object.keys(u).length>=2) return L.trim();
+    if(/(^|\s)1\.\s/.test(L) && /\s2\.\s/.test(L)) return L.trim();
+  }
+  return null;
+}
+// 이미지 라이브러리 키 집합(IMG_MISSING 검사용) — 지적서/업로드 게이트 직전에 1회 로드
+var _qcImgKeys=null;
+async function _qcLoadImgKeys(){
+  if(_qcImgKeys) return _qcImgKeys;
+  try{ var snap=await db.collection('images').get(); var s=new Set(); snap.forEach(function(d){ s.add(d.id); }); _qcImgKeys=s; }catch(e){ _qcImgKeys=null; }
+  return _qcImgKeys;
+}
 
 /* 한 문항의 위반 목록(구조화). kind=block(차단)/warn(경고). */
 // 엔진 _isCalcQ 이식 — 계산형 = oFilled 1칸 & (그래프 or 풀이단계). 단순 oFilled===1 아님(COMBO 결론 오인 방지)
@@ -4265,6 +4285,8 @@ function _qcViolations(q){
   if(_qcOn('gichul','FILL_BLANK_MISMATCH') && Array.isArray(q.blanks) && q.blanks.length && oFilled!==q.blanks.length) v.push({kind:'block',field:'o',idx:0,code:'FILL_BLANK_MISMATCH',msg:'\ube48\uce78 '+q.blanks.length+'\uac1c\uc778\ub370 \ud574\uc124(o) '+oFilled+'\uce78 \u2014 blanks==oFilled\uc774\uc5b4\uc57c \ube48\uce78\ubcc4\ub85c \ud3bc\uce68(\uc548 \ub9de\uc73c\uba74 \uc5c9\ub69c\ud55c \uce78\uc5d0 \ubd99\uc74c)',text:''});
   if(_qcOn('gichul','O_ECHO_D')){ var _cds=(typeof _conceptCards==='function'?_conceptCards(q):(exp.c||[])).map(function(c){return String(c&&c.d||'');}).filter(Boolean); if(_cds.length){ o.forEach(function(t,i){ if(t&&String(t).trim()){ for(var _di=0;_di<_cds.length;_di++){ if(_qgSim(_qgStripVerdict(t),_cds[_di])>=_qcN('gichul','O_ECHO_D','minSim',0.6)){ v.push({kind:'warn',field:'o',idx:i,code:'O_ECHO_D',msg:'\ud574\uc124(o)\uc774 \uac1c\ub150\uce74\ub4dc \uc815\uc758(d) \ub418\ud480\uc774 \u2192 o\ub294 \uadf8 \ubcf4\uae30\uac00 \uc65c \ub9de/\ud2c0\ub9ac\ub294\uc9c0 \uc0ac\uc720\ub85c(\uc5ed\ud560\ubd84\ub9ac \u00a7337)',text:t}); break; } } } }); } }
   if(_qcOn('gichul','O_NO_ACTOR')){ var _AC=/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/; o.forEach(function(t,i){ var op=opts[i]; if(op&&_AC.test(String(op)) && t&&String(t).trim() && !_AC.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_NO_ACTOR',msg:'\ubcf4\uae30\uc5d4 \uc778\ubb3c(\u7532\u4e59)\uc774 \uc788\ub294\ub370 \ud574\uc124(o)\uc5d0\uc11c \uc778\ubb3c \uc99d\ubc1c \u2192 \uc0ac\uc2e4\uad00\uacc4 \uadf8\ub300\ub85c \uc0b4\ub824 \uc801\uc6a9(\u00a7467)',text:t}); }); }
+  if(_qcOn('gichul','O_STEPS_NOBR')){ o.forEach(function(t,i){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'o',idx:i,code:'O_STEPS_NOBR',msg:'해설(o)에 단계(①②③/1.2.3.) 나열이 줄바꿈 없이 한 덩어리 → 단계 사이 줄바꿈(\\n) 또는 문장으로 풀기',text:_cl}); }); }
+  if(_qcOn('gichul','IMG_MISSING') && _qcImgKeys){ var _reI=/img:\/\/([^\s"'\\<>\]},]+)/g, _refs={}, _mI, _blobQ=''; try{ _blobQ=JSON.stringify(q)||''; }catch(_){} while((_mI=_reI.exec(_blobQ))){ _refs[_mI[1]]=1; } for(var _rk in _refs){ if(!_qcImgKeys.has(_rk)) v.push({kind:'warn',field:'q',idx:0,code:'IMG_MISSING',msg:'img://'+_rk+' 참조하는데 이미지 라이브러리에 그 키 없음 → 이미지 업로드 또는 키 수정(앱에서 참조 문자열이 그대로 노출됨)',text:'img://'+_rk}); } }
   o.forEach(function(t,i){ if(t&&/\ubcf4\uae30\s*\d/.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_SELFREF',msg:'\ud574\uc124(o)\uc5d0 \ubcf4\uae30\ubc88\ud638\u00b7\uc790\uae30\ucc38\uc870(\ubcf4\uae30N/\uc774 \ubcf4\uae30/\u3131:) \u2192 \uc5d4\uc9c4 \uc790\ub3d9\uc774\ub77c \ub123\uc9c0 \uc54a\uc74c',text:t}); });
   if(isMCQ && !isCalc){
     /* \uc2dd\ubcc4\ud615 \ubc1c\ubb38(\ubc11\uc904/\uc774 \uc778\ubb3c/\uc774 \ub2e8\uccb4/(\uac00)/\ud65c\ub3d9\u00b7\uc124\uba85\uc73c\ub85c \uc633\uc740)\uc740 \ubcf4\uae30 \ud65c\ub3d9\uc744 \ub418\ubc1b\uc544 \uc8fc\uccb4 \uc9c0\ubaa9\ud558\ub294 \uad6c\uc870 \u2192 O_ECHO \uba74\uc81c */
@@ -4312,7 +4334,8 @@ function _qcViolations(q){
     var _fex=[]; ex.forEach(function(t,i){ if(t&&String(t).trim()) _fex.push([i,t]); });
     for(var a=0;a<_fex.length;a++) for(var b=a+1;b<_fex.length;b++){ if(!_qCalc && _qcOn('gichul','EX_EX_ECHO') && _qgSim(_fex[a][1],_fex[b][1])>=_qcN('gichul','EX_EX_ECHO','minSim',0.5)) v.push({kind:'warn',field:'ex',idx:_fex[b][0],code:'EX_EX_ECHO',msg:'\uc608\uc2dc '+_fex[a][0]+'\ubc88\uacfc \uc8fc\uc5b4\u00b7\uc0c1\ud669\uc774 \ubc18\ubcf5 \u2192 \uc11c\ub85c \ub2e4\ub978 \uc7a5\uba74\uc73c\ub85c',text:_fex[b][1]}); }
     ex.forEach(function(t,i){ if(_qcOn('gichul','EX_MULTILINE') && String(t||'').split(/\n/).filter(function(l){return l.trim();}).length>=2) v.push({kind:'warn',field:'ex',idx:i,code:'EX_MULTILINE',msg:'예시/풀이(ex) 한 원소에 여러 줄 \u2014 줄은 배열 원소로 쪼갬(안 그러면 화면서 한 줄로 붙음)',text:t}); });
-    if(_qcOn('gichul','EX_STEPS_CRAMMED') && _isCalcQ(q)){ ex.forEach(function(t,i){ var _mk=(String(t||'').match(/[\u2460-\u246e](?![\ubc88\uc21c\uc9f8])/g)||[]); var _u={}; _mk.forEach(function(m){_u[m]=1;}); if(Object.keys(_u).length>=2) v.push({kind:'warn',field:'ex',idx:i,code:'EX_STEPS_CRAMMED',msg:'\ud55c ex \uc6d0\uc18c\uc5d0 \uacc4\uc0b0 \ub2e8\uacc4(\u2460\u2461\u2462) \uc5ec\ub7ec \uac1c \ub6ed\uce68 \u2192 \ub2e8\uacc4=\ubc30\uc5f4 \uc6d0\uc18c \ud558\ub098\ub85c \ucaa8\uac9c \u00a7367',text:t}); }); }
+    if(_qcOn('gichul','EX_STEPS_CRAMMED') && _isCalcQ(q)){ ex.forEach(function(t,i){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'ex',idx:i,code:'EX_STEPS_CRAMMED',msg:'\ud55c ex \uc6d0\uc18c\uc5d0 \uacc4\uc0b0 \ub2e8\uacc4(\u2460\u2461\u2462/1.2.3.) \uc5ec\ub7ec \uac1c \ub6ed\uce68 \u2192 \ub2e8\uacc4=\ubc30\uc5f4 \uc6d0\uc18c \ud558\ub098\ub85c \ucaa8\uac9c \u00a7367',text:_cl}); }); }
+    if(_qcOn('gichul','EX_STEPS_NOBR') && !_isCalcQ(q)){ ex.forEach(function(t,i){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'ex',idx:i,code:'EX_STEPS_NOBR',msg:'예시(ex)에 단계(1.2.3./①②③) 나열이 한 덩어리로 붙음(화면에도 그대로 붙어 보임) → 계산 단계면 원문자 ①②③로, 일반 예시면 이어지는 문장·장면으로 재작성',text:_cl}); }); }
     var _exArrLen=ex.length;
     if(_exArrLen>0 && _exArrLen!==o.length && !_isCalcQ(q)) v.push({kind:'warn',field:'ex',idx:0,code:'EX_LEN',msg:'\uc608\uc2dc \ubc30\uc5f4 \uae38\uc774('+_exArrLen+') \u2260 \ud574\uc124 \uae38\uc774('+o.length+') \u2192 \ubcf4\uae30 \uc218\ub9cc\ud07c \ub9de\ucda4(\uc5b5\uc9c0 \uc7a5\uba74\uc740 \ube48\uce78)',text:''});
   }
@@ -4339,7 +4362,7 @@ function qcRefreshBtn(){
   el.textContent=' · ⛔'+b+' ⚠'+w;
 }
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true}},
+  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
   mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true}},
@@ -4492,10 +4515,12 @@ async function masterLinkAudit(){
   L.push('※ 방향: 문항→개념→(표·암기·그래프). 마스터 고아는 대상 아님. 마스터를 방금 올렸으면 10분 캐시 → 새로고침 후 재실행.');
   ta.value=L.join('\n');
 }
-function buildReviewNote(){
+async function buildReviewNote(){
   var items=(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;});
   if(!items.length){ alert('먼저 위 드롭존에 기출 JSON을 로드하세요.'); return; }
+  await _qcLoadImgKeys();   // img:// 참조 대조용 이미지 키(실패 시 IMG_MISSING만 생략)
   var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'','■ 게이트 자동 위반 (기계 판정 — 이 항목만 수정)'];
+  if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — img:// 누락 검사(IMG_MISSING)는 생략됨)');
   var any=false;
   items.forEach(function(it){
     var g=qualityGate((it.data&&it.data.questions)||[]);
@@ -4514,17 +4539,18 @@ async function impUpload(){
   const noDate=ready.filter(it=>_impFileDate(it.data)==null).map(it=>it.docId);
   if(noDate.length){ alert('❌ 업로드 차단 — 날짜 누락 [기출]\n\n규칙: 기출 파일에 _meta.generatedAt 필수.\n\n누락: '+noDate.join(', ')); impLog('날짜 누락으로 차단: '+noDate.join(', ')); return; }
   // 품질 게이트(전수): 구조 오류=하드 차단 / 품질 경고=확인 후 우회
+  await _qcLoadImgKeys();   // img:// 참조 대조용(실패 시 IMG_MISSING만 생략)
   var _gBlock=[], _gWarn=[];
   ready.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]); g.block.forEach(function(m){ _gBlock.push(it.docId+' · '+m); }); g.warn.forEach(function(m){ _gWarn.push(it.docId+' · '+m); }); });
   if(_gBlock.length){
-    buildReviewNote();
+    await buildReviewNote();
     var _rn=document.getElementById('reviewNote'); if(_rn) _rn.scrollIntoView({behavior:'smooth',block:'center'});
     alert('❌ 업로드 차단 — 구조 위반 '+_gBlock.length+'건\n\n검수 지적서가 자동 작성됐어요. 아래 "■ 크리스 지적"에 본 것을 더해 📋 복사 → 데이터방에 전달하세요.');
     impLog('업로드 차단(구조 '+_gBlock.length+'건) → 지적서 자동 작성'); return;
   }
   if(_gWarn.length){
     if(!confirm('⚠️ 품질 경고 '+_gWarn.length+'건 (ex 명명 인물 없음 / o 되풀이)\n\n[확인] 무시하고 업로드    /    [취소] 지적서 작성해서 데이터방에 전달')){
-      buildReviewNote();
+      await buildReviewNote();
       var _rn2=document.getElementById('reviewNote'); if(_rn2) _rn2.scrollIntoView({behavior:'smooth',block:'center'});
       impLog('품질 경고 '+_gWarn.length+'건 → 지적서 자동 작성'); return;
     }
