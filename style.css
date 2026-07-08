@@ -382,7 +382,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .jaryo .jr-stmt{display:flow-root;line-height:1.85;margin-bottom:9px;padding-left:1.7em;text-indent:-1.7em}
 #mcqView .jaryo .jr-stmt:last-child{margin-bottom:0}
 #mcqView .jaryo .jr-stmt-t{min-width:0}
-#mcqView .jaryo .jr-stmt-k{margin-right:3px}
+#mcqView .jaryo .jr-stmt-k{display:inline-block;width:1.7em;margin-right:0;text-indent:0}
 #mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px;text-indent:0}
 #mcqView .jox{width:30px;height:30px;border-radius:6px;border:1.5px solid #CBD5E1;background:#F1F5F9;color:#94A3B8;font-size:13px;font-weight:800;cursor:pointer;line-height:1;padding:0;transition:all .12s}
 #mcqView .jox:active{transform:scale(.92)}
