@@ -2130,6 +2130,12 @@ function qcCollect(){
     raw.banks.forEach(function(b){ var dt=(b&&b.data)?b.data:(b||{}); var arr=Array.isArray(dt.questions)?dt.questions:[]; arr.forEach(function(q,i){ push(b.docId, dt.cert, dt.subject, q, i+1); }); });
     return out;
   }
+  if(raw && Array.isArray(raw.subjects)){   // 레벨업 subjects[] — 과목별 questions 펼침
+    raw.subjects.forEach(function(s){ var sm=(s&&s._meta)||{}; var subj=sm.subject||s.subject||''; var cert=sm.cert||s.cert||(raw._meta&&raw._meta.cert);
+      var arr=Array.isArray(s.questions)?s.questions:(Array.isArray(s.variants)?s.variants:[]);
+      arr.forEach(function(q,i){ push((cert||certSel)+'__'+subj, cert, subj, q, i+1); }); });
+    return out;
+  }
   var meta=(raw&&raw._meta)||{}; var qarr=null;
   if(raw && Array.isArray(raw.questions)) qarr=raw.questions;
   else if(Array.isArray(raw)) qarr=raw;
@@ -2189,12 +2195,14 @@ function qcEnter(){
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   var bar=document.getElementById('pvModeBar'); if(bar) bar.innerHTML='';
   var out=document.getElementById('mcqView'); var res=_qcLast;
+  var _lvVios=[]; try{ if(_pvRaw&&Array.isArray(_pvRaw.subjects)&&typeof _qcLevelup==='function') _lvVios=_qcLevelup(_pvRaw); }catch(e){}
+  var _lvHtml=_lvVios.length?('<div style="margin:10px 0 4px;padding:11px 15px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;font-size:12.5px;line-height:1.75"><b style="color:#B45309">⚡ 레벨업 과목 검사</b><br>'+_lvVios.map(function(x){var m=(typeof _QC_SEV_META!=='undefined'&&_QC_SEV_META[x.sev])||{icon:'⚠',fg:'#B45309'};return '<span style="color:'+m.fg+'">'+m.icon+' '+_qcEsc(x.msg)+'</span>';}).join('<br>')+'</div>'):'';
   var head='<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 16px;background:#0C447C;color:#fff;border-radius:12px">'
     +'<span style="font-weight:800;font-size:14px">🔍 기출 검수 결과</span>'
     +'<span style="font-size:12.5px;opacity:.95">위반 문항 <b>'+res.flagged+'</b> / 전체 '+res.total+' · ⛔ 차단 <b>'+res.blockN+'</b> · ⚠ 경고 <b>'+res.warnN+'</b></span>'
     +'<button onclick="qcExport()" style="margin-left:auto;padding:7px 14px;border:none;border-radius:8px;background:#22C55E;color:#fff;font-weight:800;font-size:12.5px;cursor:pointer">💾 검수 결과표 다운로드</button>'
     +'</div>';
-  if(!res.flagged){ out.innerHTML=head+'<div style="padding:26px;text-align:center;color:#15803D;font-weight:700">✓ 게이트 위반 없음 — 구조·예시 게이트 통과</div>'; window.scrollTo(0,0); return; }
+  if(!res.flagged){ out.innerHTML=head+_lvHtml+'<div style="padding:26px;text-align:center;color:#15803D;font-weight:700">✓ 게이트 위반 없음 — 구조·예시 게이트 통과</div>'; window.scrollTo(0,0); return; }
   var chips='<div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px">'+res.items.map(function(it){
     return '<span onclick="qcJump(\''+it.q.id+'\')" style="cursor:pointer;padding:4px 10px;border-radius:16px;border:1px solid #CBD5E1;background:#fff;font-size:12px;font-weight:700;color:#0C447C">'+_qcEsc(it.subjectName+' '+it.num+'번')+' <span style="color:#94A3B8">'+(it.blockN?'⛔'+it.blockN:'')+(it.warnN?' ⚠'+it.warnN:'')+'</span></span>';
   }).join('')+'</div>';
@@ -2214,7 +2222,7 @@ function qcEnter(){
       +'</div>'
     +'</div>';
   }).join('');
-  out.innerHTML=head+chips+cards; window.scrollTo(0,0);
+  out.innerHTML=head+_lvHtml+chips+cards; window.scrollTo(0,0);
 }
 function qcExit(){ _qcMode=false; render(); }
 function qcJump(qid){ var el=document.getElementById('qccard-'+qid); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
