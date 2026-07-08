@@ -159,7 +159,7 @@ function qualityGate(questions){
 var _QC_DEFAULTS={
   gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
-  levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_COUNT:{on:false,target:100},LVUP_LV_BAND:{on:false,per:20},LVUP_DUP_GICHUL:{on:false}},
+  levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
   mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true}},
@@ -191,9 +191,9 @@ var _QC_SEV = {
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
-  LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'WARNING', LVUP_LV_BAND:'WARNING', LVUP_DUP_GICHUL:'WARNING',
+  LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
   /* INFO (NICE — 참고) */
-  EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO'
+  EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
 };
 function _qcSevOf(code, kind){
   if(_QC_SEV[code]) return _QC_SEV[code];
@@ -326,31 +326,38 @@ function _qcRecordDate(rec){
    · LVUP_ANS_SKEW: 정답(ans) 최빈 비율 > maxPct(기본 30%)
    · LVUP_COUNT(기본 OFF): 과목당 문항수 != target
    · LVUP_LV_BAND / LVUP_DUP_GICHUL: 스키마 확정 후 활성(기본 OFF)  */
+function _qcLvIsCalc(q){ return q&&(q._kind==='calc'||q._engine==='CALC'||(typeof q.id==='string'&&(q.id.indexOf('calc:')===0||q.id.indexOf('_calc')>=0))); }
 function _qcLevelup(subjects){
   var out=[]; var subs = Array.isArray(subjects)?subjects
     : (subjects&&Array.isArray(subjects.subjects))?subjects.subjects
     : (subjects&&Array.isArray(subjects.questions))?[{subject:(subjects.subject||''),questions:subjects.questions}]
     : [];
   subs.forEach(function(sb){
-    var name=sb.subject||sb.name||''; var qs=Array.isArray(sb.questions)?sb.questions:(Array.isArray(sb.variants)?sb.variants:[]);
+    var sm=(sb&&sb._meta)||{}; var name=sm.subject||sb.subject||sb.name||'';
+    var qs=Array.isArray(sb.questions)?sb.questions:(Array.isArray(sb.variants)?sb.variants:[]);
     if(!qs.length) return;
-    // 정답 편중
+    // (1) 정답 편중 — 계산형 제외(정답 위치가 계산으로 고정돼 재배치 불가 → 오탐 방지)
     if(_qcOn('levelup','LVUP_ANS_SKEW')){
+      var theory=qs.filter(function(q){ return !_qcLvIsCalc(q); });
       var cnt={}, tot=0;
-      qs.forEach(function(q){ var a=q&&q.ans; if(a==null) return; var key=Array.isArray(a)?a.slice().sort().join(','):String(a); cnt[key]=(cnt[key]||0)+1; tot++; });
+      theory.forEach(function(q){ var a=q&&q.ans; if(a==null) return; var key=Array.isArray(a)?a.slice().sort().join(','):String(a); cnt[key]=(cnt[key]||0)+1; tot++; });
       var top=0, topKey=''; for(var k in cnt){ if(cnt[k]>top){top=cnt[k];topKey=k;} }
       var pct = tot? Math.round(top/tot*100) : 0; var maxPct=_qcN('levelup','LVUP_ANS_SKEW','maxPct',30);
-      if(tot>=10 && pct>maxPct) out.push({kind:'warn',field:'ans',idx:0,code:'LVUP_ANS_SKEW',subject:name,msg:'['+name+'] 정답 편중 — 최빈 정답("'+topKey+'") '+pct+'% (>'+maxPct+'%). 정답 위치를 분산',text:''});
+      if(tot>=10 && pct>maxPct) out.push({kind:'warn',field:'ans',idx:0,code:'LVUP_ANS_SKEW',subject:name,msg:'['+name+'] 정답 편중 — 이론문항 '+tot+'개(계산형 제외) 중 최빈 정답 "'+topKey+'" '+pct+'% (>'+maxPct+'%). 정답 위치를 분산',text:''});
     }
-    // 과목당 문항수(기본 OFF)
-    if(_qcOn('levelup','LVUP_COUNT')){ var target=_qcN('levelup','LVUP_COUNT','target',100);
-      if(qs.length!==target) out.push({kind:'warn',field:'count',idx:0,code:'LVUP_COUNT',subject:name,msg:'['+name+'] 문항수 '+qs.length+' ≠ 목표 '+target,text:''}); }
-    // Lv 밴드 20×5 (diff/lv 필드 있을 때만·기본 OFF)
-    if(_qcOn('levelup','LVUP_LV_BAND')){ var band={}, has=false;
-      qs.forEach(function(q){ var lv=(q&&(q.lv||q.diff||q.level)); if(lv!=null){has=true; band[lv]=(band[lv]||0)+1;} });
-      var per=_qcN('levelup','LVUP_LV_BAND','per',20);
-      if(has){ for(var b in band){ if(band[b]!==per) out.push({kind:'warn',field:'lv',idx:0,code:'LVUP_LV_BAND',subject:name,msg:'['+name+'] Lv'+b+' 밴드 '+band[b]+'문항 (기대 '+per+')',text:''}); } }
+    // (2) id 중복(레벨업 변형끼리) — 명백한 결함
+    if(_qcOn('levelup','LVUP_DUP')){
+      var seen={}, dups={}; qs.forEach(function(q){ var id=q&&q.id; if(id==null||id==='')return; if(seen[id])dups[id]=1; else seen[id]=1; });
+      var dk=Object.keys(dups); if(dk.length) out.push({kind:'block',field:'id',idx:0,code:'LVUP_DUP',subject:name,msg:'['+name+'] 변형 id 중복 '+dk.length+'건: '+dk.slice(0,5).join(', ')+(dk.length>5?' 외':''),text:''});
     }
+    // (3) Lv 밴드 — diff 1~5 중 "빈 밴드(0개)"만 결함으로(문항수는 과목별로 20×5 아님·다름). 기본 OFF(참고)
+    if(_qcOn('levelup','LVUP_LV_BAND')){
+      var band={}, has=false; qs.forEach(function(q){ var lv=(q&&(q.diff||q.lv||q.level)); if(lv!=null){has=true; band[lv]=(band[lv]||0)+1;} });
+      if(has){ [1,2,3,4,5].forEach(function(b){ if(!band[b]) out.push({kind:'warn',field:'diff',idx:0,code:'LVUP_LV_BAND',subject:name,msg:'['+name+'] Lv'+b+' 밴드 문항 0개 — 레벨테스트 밴드 비어 있음',text:''}); }); }
+    }
+    // (4) 과목당 문항수 하한(기본 OFF) — 고정 100 아님(과목별 상이). 켜면 하한 미달만
+    if(_qcOn('levelup','LVUP_COUNT')){ var floor=_qcN('levelup','LVUP_COUNT','floor',100);
+      if(qs.length<floor) out.push({kind:'warn',field:'count',idx:0,code:'LVUP_COUNT',subject:name,msg:'['+name+'] 문항수 '+qs.length+' < 하한 '+floor,text:''}); }
   });
   _qcApplySev(out); return out;
 }
