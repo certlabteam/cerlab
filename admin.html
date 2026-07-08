@@ -4251,6 +4251,13 @@ async function _qcLoadImgKeys(){
   try{ var snap=await db.collection('images').get(); var s=new Set(); snap.forEach(function(d){ s.add(d.id); }); _qcImgKeys=s; }catch(e){ _qcImgKeys=null; }
   return _qcImgKeys;
 }
+// exp.cpt(참조 개념) 카드 검수용 — concepts 마스터 id → cards[] 맵 (실패 시 null: cpt 링크 문항의 카드 검사만 생략)
+var _qcCptCards=null;
+async function _qcLoadCptCards(){
+  if(_qcCptCards) return _qcCptCards;
+  try{ var snap=await db.collection('concepts').get(); var m={}; snap.forEach(function(d){ var r=d.data()||{}; m[d.id]=Array.isArray(r.cards)?r.cards:[]; }); _qcCptCards=m; }catch(e){ _qcCptCards=null; }
+  return _qcCptCards;
+}
 
 /* 한 문항의 위반 목록(구조화). kind=block(차단)/warn(경고). */
 // 엔진 _isCalcQ 이식 — 계산형 = oFilled 1칸 & (그래프 or 풀이단계). 단순 oFilled===1 아님(COMBO 결론 오인 방지)
@@ -4260,6 +4267,18 @@ function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.index
   return !!(hg||hs); }
 function _qcViolations(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[], cards=exp.c||[];
+  // exp.cpt(마스터 링크) 카드: 개수(CARD_LT2)·화살표(REL_NO_ARROW) 판정에만 반영.
+  // 카드 내용검사(CX_EMPTY 등)는 인라인 exp.c 전용 — 마스터 카드 품질은 masterLinkAudit 소관.
+  var _cptSkip=false, _lk=[];
+  if(Array.isArray(exp.cpt) && exp.cpt.length){
+    if(_qcCptCards){
+      exp.cpt.forEach(function(r){
+        var cs=_qcCptCards[String(r)];
+        if(cs===undefined) v.push({kind:'block',field:'card',idx:0,code:'CPT_MISSING',msg:'exp.cpt 참조 개념이 마스터에 없음: '+r+' → 개념 마스터 먼저 업로드',text:String(r)});
+        else cs.forEach(function(cd){ _lk.push(cd); });
+      });
+    } else { _cptSkip=true; }
+  }
   var opts=(q&&Array.isArray(q.opts))?q.opts:[];
   var isSAq=Array.isArray(q&&q.blanks)&&q.blanks.length;
   var oFilled=o.filter(function(x){return x&&String(x).trim();}).length;
@@ -4277,7 +4296,7 @@ function _qcViolations(q){
     o.forEach(function(t,i){ if(t&&String(t).trim()&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9ba\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
   }
   if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
-  if(isMCQ && !isCalc && cards.length && cards.length<2) v.push({kind:'block',field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+cards.length+'\uc7a5(<2)',text:''});
+  var _cTot=cards.length+_lk.length; if(isMCQ && !isCalc && !_cptSkip && _cTot && _cTot<2) v.push({kind:(cards.length?'block':'warn'),field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c \ud3ec\ud568)'+(cards.length?'':' \u2192 \ub9c1\ud06c\ub41c \uac1c\ub150\uc5d0 \uce74\ub4dc \ubcf4\uac15'),text:''});
   if(_qcOn('gichul','O_PLACEHOLDER')){ var _PLACE=/\ud574\uc124\s*\ucd94\uac00|\uc218\uc815\s*\uc608\uc815|\uc791\uc131\s*\uc608\uc815|\ucd94\uac00\s*\uc608\uc815|\ubbf8\uc791\uc131|\ucc44\uc6b8\s*\uc608\uc815|\uc900\ube44\s*\uc911|TODO/; o.forEach(function(t,i){ if(_PLACE.test(String(t||''))) v.push({kind:'block',field:'o',idx:i,code:'O_PLACEHOLDER',msg:'\ud574\uc124(o)\uc5d0 \uc784\uc2dc \ubb38\uad6c \u2014 \ube48 \uce78\uc740 \ubc18\ub4dc\uc2dc \ube48 \ubb38\uc790\uc5f4("")\ub85c(\uc784\uc2dc\ubb38\uad6c\ub294 oFilled\ub85c \uc624\uacc4\uc0b0\ub418\uc5b4 \uc9c4\uc220\uc218 \uc5b4\uae4b\ub0a8)',text:t}); }); }
   if(_qcOn('gichul','O_INCOMPLETE') && isMCQ && !isCalc && opts.length>=4){ var _mk=opts.some(function(op){return /^[\u3131-\u314e][\s,:\-]/.test(String(op).trim());}); if(!_mk){ var _emp=o.slice(0,opts.length).filter(function(x){return !(x&&String(x).trim());}).length; if(_emp>0) v.push({kind:'warn',field:'o',idx:0,code:'O_INCOMPLETE',msg:'\ubcf4\uae30 '+opts.length+'\uc9c0\uc778\ub370 \ud574\uc124(o) '+_emp+'\uce78 \ube44\uc5b4\uc788\uc74c \u2014 SC\ub294 \ubcf4\uae30 \uc804\ubd80 \ucc44\uc6c0(\uc815\uc758\ud655\uc778 \ubcf4\uae30\ub9cc \uc0dd\ub7b5)',text:''}); } }
   if(_qcOn('gichul','CALC_WRONG_SLOT') && _isCalcQ(q) && q.ans && !Array.isArray(q.ans)){ var _fi=-1; for(var _ci=0;_ci<o.length;_ci++){ if(o[_ci]&&String(o[_ci]).trim()){_fi=_ci;break;} } if(_fi>=0 && _fi!==(q.ans-1)) v.push({kind:'block',field:'o',idx:_fi,code:'CALC_WRONG_SLOT',msg:'\uacc4\uc0b0\ud615 \uacb0\ub860\uc774 \uc815\ub2f5\uce78(o['+(q.ans-1)+'])\uc774 \uc544\ub2cc o['+_fi+']\uc5d0 \uc788\uc74c \u2192 \uc5d4\uc9c4\uc774 '+(_fi+1)+'\ubc88\uc744 \uc815\ub2f5\uc73c\ub85c \uc624\ud45c\uc2dc(\uc815\ub2f5\uce78 o[ans-1]\uc5d0 \uacb0\ub860)',text:o[_fi]}); }
@@ -4306,10 +4325,10 @@ function _qcViolations(q){
     if(/\ubcf4\uae30\s*\d|\uc815\ub2f5|\uc2dc\ud5d8\s*\ud3ec\uc778\ud2b8/.test(t+' '+d+' '+cx)) v.push({kind:'warn',field:'card',idx:j,code:'CARD_LABEL',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+'\uc5d0 \ubcf4\uae30\u00b7\uc815\ub2f5\u00b7\uc2dc\ud5d8\ud3ec\uc778\ud2b8 \ub77c\ubca8(04 \u00a7A-4 \uae08\uc9c0) \u2192 \ube68\uac15 \uac15\uc870\ub85c\ub9cc',text:t});
   });
   if(isMCQ){
-    var _big=cards.map(function(c){return (c&&c.d||'')+(c&&c.cx||'');}).join(' ');
+    var _big=cards.concat(_lk).map(function(c){return (c&&c.d||'')+(c&&c.cx||'');}).join(' ');
     var _act={}; ((q.q||'')+' '+opts.join(' ')+' '+o.join(' ')+' '+ex.join(' ')+' '+_big).replace(/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/g,function(x){_act[x]=1;return x;});
     var _relHit=_rel.test((q.q||'')+' '+opts.join(' ')+' '+o.join(' '));
-    if(_qcOn('gichul','REL_NO_ARROW') && Object.keys(_act).length>=3 && _relHit && !_arrow.test(_big)) v.push({kind:'warn',field:'card',idx:0,code:'REL_NO_ARROW',msg:'\uc778\ubb3c 3\uba85+ \uad00\uacc4\ud615 \ubb38\ud56d\uc778\ub370 \ud654\uc0b4\ud45c \ud750\ub984\ub3c4 \uc5c6\uc74c \u2192 \uccab \uac1c\ub150\uce74\ub4dc cx\uc5d0 \uad00\uacc4\ub3c4 \ucd94\uac00(04 \u00a7B)',text:''});
+    if(_qcOn('gichul','REL_NO_ARROW') && !_cptSkip && Object.keys(_act).length>=3 && _relHit && !_arrow.test(_big)) v.push({kind:'warn',field:'card',idx:0,code:'REL_NO_ARROW',msg:'\uc778\ubb3c 3\uba85+ \uad00\uacc4\ud615 \ubb38\ud56d\uc778\ub370 \ud654\uc0b4\ud45c \ud750\ub984\ub3c4 \uc5c6\uc74c \u2192 \uccab \uac1c\ub150\uce74\ub4dc cx\uc5d0 \uad00\uacc4\ub3c4 \ucd94\uac00(04 \u00a7B)',text:''});
   }
   if(isMCQ){
     var _qCalc=_isCalcQ(q); /* A-7 예외(b): CALC 단계풀이 ex는 장면 검사 면제 */
@@ -4519,6 +4538,7 @@ async function buildReviewNote(){
   var items=(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;});
   if(!items.length){ alert('먼저 위 드롭존에 기출 JSON을 로드하세요.'); return; }
   await _qcLoadImgKeys();   // img:// 참조 대조용 이미지 키(실패 시 IMG_MISSING만 생략)
+  await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
   var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'','■ 게이트 자동 위반 (기계 판정 — 이 항목만 수정)'];
   if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — img:// 누락 검사(IMG_MISSING)는 생략됨)');
   var any=false;
@@ -4540,6 +4560,7 @@ async function impUpload(){
   if(noDate.length){ alert('❌ 업로드 차단 — 날짜 누락 [기출]\n\n규칙: 기출 파일에 _meta.generatedAt 필수.\n\n누락: '+noDate.join(', ')); impLog('날짜 누락으로 차단: '+noDate.join(', ')); return; }
   // 품질 게이트(전수): 구조 오류=하드 차단 / 품질 경고=확인 후 우회
   await _qcLoadImgKeys();   // img:// 참조 대조용(실패 시 IMG_MISSING만 생략)
+  await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
   var _gBlock=[], _gWarn=[];
   ready.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]); g.block.forEach(function(m){ _gBlock.push(it.docId+' · '+m); }); g.warn.forEach(function(m){ _gWarn.push(it.docId+' · '+m); }); });
   if(_gBlock.length){
