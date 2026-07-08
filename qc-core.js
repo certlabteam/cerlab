@@ -157,7 +157,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false}},
+  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
@@ -179,7 +179,7 @@ var _QC_DEFAULTS={
    WARNING = SHOULD 위반(권장 수정) · INFO = NICE(참고). 미등록 코드는 kind로 폴백. */
 var _QC_SEV = {
   /* ERROR (MUST — 반송) */
-  EMDASH:'ERROR', VERDICT:'ERROR', CX_EMPTY:'ERROR', CARD_LT2:'ERROR', O_PLACEHOLDER:'ERROR',
+  EMDASH:'ERROR', VERDICT:'ERROR', EX_VERDICT:'ERROR', CX_EMPTY:'ERROR', CARD_LT2:'ERROR', O_PLACEHOLDER:'ERROR',
   CALC_WRONG_SLOT:'ERROR', FILL_BLANK_MISMATCH:'ERROR', CPT_MISSING:'ERROR', CPT_BROKEN:'ERROR',
   TBL_BROKEN:'ERROR', GRP_BROKEN:'ERROR', ITV_BROKEN:'ERROR', CHILD_MISSING:'ERROR',
   OTTAG_LEN:'ERROR', DUP_ID:'ERROR',
@@ -234,6 +234,14 @@ function _qcRefs(q){
 function _qcExtraRules(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[];
   var oFilledArr=o.filter(function(x){return x&&String(x).trim();});
+  /* (0) 예시(exp.ex)에 정오 판정(옳다/옳지 않다…) 종결 금지 — 예시는 판정문이 아니라 명명 인물의 장면.
+     정오 판정은 해설(exp.o) 끝에만. [해설 o = 정오 판정 / 예시 ex = 별개 장면] */
+  if(_qcOn('gichul','EX_VERDICT')){
+    var _EXVD=/(옳다|옳지\s*않다|적절하다|적절하지\s*않다|부적절하다|틀리다|틀린다|정답)[.。!\s]*$/;
+    ex.forEach(function(t,i){ var s=String(t||''); if(!s.trim()) return;
+      var hit=s.split(/\n/).some(function(ln){ return _EXVD.test(ln.trim()); });
+      if(hit) v.push({kind:'block',field:'ex',idx:i,code:'EX_VERDICT',msg:'예시(ex)에 정오 판정(옳다/옳지 않다) 종결 — 예시는 명명 인물의 구체적 장면이어야 함. 정오 판정은 해설(o) 끝에만',text:s.slice(0,80)}); });
+  }
   /* (a) ottag(exp.ot) 길이 == exp.o 길이  [10-levelup·OX진술 태그] */
   if(_qcOn('gichul','OTTAG_LEN') && Array.isArray(exp.ot) && exp.ot.length && exp.ot.length!==o.length){
     v.push({kind:'block',field:'o',idx:0,code:'OTTAG_LEN',
