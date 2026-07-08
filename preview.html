@@ -2386,6 +2386,68 @@ function qcExport(){
   a.download='검수결과표_'+(cert||'exam')+(subj?('_'+subj):'')+'_'+_qcNowKST().slice(0,10)+'.json';
   document.body.appendChild(a); a.click(); a.remove();
 }
+/* ===== 통합 검수: 올린 JSON(문항+마스터)을 한 번에 스캔·구역별 렌더 ===== */
+var _qcUniLast=null;
+function _qcUniScanQ(arr){ if(!Array.isArray(arr)||!arr.length) return {items:[],total:0}; var saved=_pvRaw;
+  try{ _pvRaw={banks:arr}; try{ var nz=pvNormalize(_pvRaw); if(nz&&typeof nz==='object'&&!Array.isArray(nz)) pvBuildCaches(nz); }catch(_){}
+    var r=qcScan(qcCollect()); return r; } finally { _pvRaw=saved; } }
+function qcEnterUnified(pj){
+  _qcMode=true;
+  var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
+  var tbb=document.getElementById('typeBadge'); if(tbb) tbb.innerHTML='';
+  var bar=document.getElementById('pvModeBar'); if(bar) bar.innerHTML='';
+  var out=document.getElementById('mcqView');
+  var sections=[], sumB=0, sumW=0, sumFlag=0, secStat=[];
+  function esc(x){ return _qcEsc(String(x==null?'':x)); }
+  function sectionHTML(icon,title,flagged,total){
+    var b=0,w=0; flagged.forEach(function(it){ b+=it.blockN||0; w+=it.warnN||0; }); sumB+=b; sumW+=w; sumFlag+=flagged.length;
+    secStat.push({title:title,flagged:flagged.length,total:total,b:b,w:w});
+    var body=flagged.length? flagged.map(function(it){ var note=esc(_qcNotes[it.key]||'');
+      return '<div style="border:1px solid #E2E8F0;border-radius:12px;padding:12px;margin-bottom:10px;background:#fff">'
+        +'<div style="font-weight:800;color:#0C447C;margin-bottom:6px;font-size:13px">'+esc(it.title)+' '+qcBadge(it.blockN,it.warnN)+'</div>'
+        +it.vios.map(qcVioRow).join('')
+        +'<textarea oninput="qcNote(\''+esc(it.key)+'\',this.value)" placeholder="■ 크리스 지적" style="width:100%;height:52px;font-size:12px;border:1px solid #CBD5E1;border-radius:8px;padding:8px;box-sizing:border-box;margin-top:8px;resize:vertical;font-family:inherit">'+note+'</textarea></div>';
+    }).join('') : '<div style="padding:10px 2px;color:#15803D;font-weight:700;font-size:12.5px">✓ 위반 없음</div>';
+    return '<div style="margin-bottom:18px"><div style="font-weight:800;color:#334155;margin:6px 0 8px;font-size:13.5px">'+icon+' '+esc(title)+' <span style="color:#64748B;font-weight:600;font-size:12px">· 위반 '+flagged.length+' / 전체 '+total+'</span></div>'+body+'</div>';
+  }
+  // 문항: 기출(banks) + 레벨업(lvup) 각각 스캔 후 합침
+  var qArr=[]; ['banks','lvup'].forEach(function(k){ if(Array.isArray(pj[k])&&pj[k].length){ var r=_qcUniScanQ(pj[k]);
+    r.items.forEach(function(it){ qArr.push({title:((it.subjectName||it.subject||'')+' '+it.num+'번 ('+(it.q&&it.q.id||'')+')'), vios:it.vios, blockN:it.blockN, warnN:it.warnN, key:'q:'+((it.q&&it.q.id)||(it.docId+'#'+it.num))}); });
+    _qcUniLast=_qcUniLast||{}; } });
+  var qTotal=0; ['banks','lvup'].forEach(function(k){ if(Array.isArray(pj[k])) pj[k].forEach(function(bk){ var d=(bk&&bk.data)?bk.data:bk; if(d&&Array.isArray(d.questions)) qTotal+=d.questions.length; else if(Array.isArray(bk&&bk.questions)) qTotal+=bk.questions.length; }); });
+  if(qArr.length||qTotal) sections.push(sectionHTML('📝','문항 (기출·레벨업)',qArr,qTotal));
+  // 레벨업 과목 검사(정답 편중 등)
+  if(Array.isArray(pj.lvup)&&pj.lvup.length&&typeof _qcLevelup==='function'){ try{
+    var subs=pj.lvup.map(function(bk){ var d=(bk&&bk.data)?bk.data:bk; return {_meta:{subject:(d&&d.subject)||''},questions:(d&&d.questions)||[]}; });
+    var lv=_qcLevelup(subs); if(lv.length){ var lvItems=lv.map(function(x,i){ return {title:(x.subject||'')+' — '+x.code, vios:[x], blockN:x.kind==='block'?1:0, warnN:x.kind==='block'?0:1, key:'lv:'+i}; });
+      sections.push(sectionHTML('⚡','레벨업 과목 검사',lvItems,subs.length)); }
+  }catch(_){}}
+  // 개념 카드
+  if(Array.isArray(pj.concepts)&&pj.concepts.length){ var ci=[], tot=0;
+    pj.concepts.forEach(function(c){ (c.cards||[]).forEach(function(card,idx){ tot++; var vi=(typeof _qcCardViolations==='function')?_qcCardViolations(card):[]; if(vi.length){ var b=0,w=0; vi.forEach(function(x){x.kind==='block'?b++:w++;}); ci.push({title:(c.name||c.id||'')+' · 카드'+(idx+1), vios:vi, blockN:b, warnN:w, key:'cpt:'+c.id+'#'+idx}); } }); });
+    sections.push(sectionHTML('📘','개념 카드',ci,tot)); }
+  // 나머지 마스터(암기·표·그래프·인터랙티브)
+  [['mnem','🔑','암기코드'],['table','📊','표'],['graph','📈','그래프'],['interactive','🎛','인터랙티브']].forEach(function(m){
+    var key=m[0], arr=pj[key]; if(!Array.isArray(arr)||!arr.length) return; var def=_QC_MASTER[key]; if(!def) return;
+    var it=[]; arr.forEach(function(rec){ var vi=def.fn(rec); if(vi.length){ var b=0,w=0; vi.forEach(function(x){x.kind==='block'?b++:w++;}); it.push({title:(rec.name||rec.id||''), vios:vi, blockN:b, warnN:w, key:key+':'+(rec.id||rec.name||'')}); } });
+    sections.push(sectionHTML(m[1],m[2],it,arr.length)); });
+
+  _qcUniLast={sections:secStat,blockN:sumB,warnN:sumW,flagged:sumFlag};
+  var chips=secStat.map(function(s){ return '<span style="font-size:11.5px;background:rgba(255,255,255,.16);padding:3px 9px;border-radius:20px">'+esc(s.title)+' '+s.flagged+'</span>'; }).join(' ');
+  var head='<div style="padding:11px 16px;background:#0C447C;color:#fff;border-radius:12px;margin-bottom:14px">'
+    +'<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font-weight:800;font-size:14px">🔍 통합 검수</span>'
+    +'<span style="font-size:12.5px;opacity:.95">위반 <b>'+sumFlag+'</b> · ⛔ <b>'+sumB+'</b> · ⚠ <b>'+sumW+'</b></span>'
+    +'<button onclick="qcExportUnified()" style="margin-left:auto;padding:7px 14px;border:none;border-radius:8px;background:#22C55E;color:#fff;font-weight:800;font-size:12.5px;cursor:pointer">💾 검수 결과표 다운로드</button></div>'
+    +(chips?'<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+chips+'</div>':'')+'</div>';
+  out.innerHTML=head+sections.join(''); window.scrollTo(0,0);
+}
+function qcExportUnified(){
+  var r=_qcUniLast||{sections:[]};
+  var payload={_meta:{kind:'qc_result_unified',generatedAt:_qcNowKST()},summary:{flagged:r.flagged,blockN:r.blockN,warnN:r.warnN,sections:r.sections},
+    notes:Object.keys(_qcNotes).filter(function(k){return _qcNotes[k]&&_qcNotes[k].trim();}).map(function(k){return {key:k,note:_qcNotes[k]};})};
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='통합검수결과_'+_qcNowKST().slice(0,10)+'.json'; document.body.appendChild(a); a.click(); a.remove();
+}
 /* admin에서 ?qc=1로 열면 localStorage 페이로드를 불러 자동 진입 */
 (function qcBoot(){ try{
   var qs=new URLSearchParams(location.search);
@@ -2397,7 +2459,8 @@ function qcExport(){
     var payStr; if(typeof pay==='string'){ payStr=pay; } else { try{payStr=JSON.stringify(pay);}catch(e){payStr='';} }
     if(s){ s.value=payStr;
     var pj=null; if(typeof pay==='string'){ try{pj=JSON.parse(pay);}catch(e){} } else { pj=pay; }
-    if(pj && Array.isArray(pj.concepts) && pj.kind==='cpt'){ _qcCptData=pj.concepts; render(); qcInstallBar(); qcEnterCpt(); }
+    if(pj && pj.kind==='unified'){ try{ render(); }catch(_){} qcInstallBar(); qcEnterUnified(pj); }
+    else if(pj && Array.isArray(pj.concepts) && pj.kind==='cpt'){ _qcCptData=pj.concepts; render(); qcInstallBar(); qcEnterCpt(); }
     else if(pj && pj.kind==='master' && _QC_MASTER[pj.mtype] && Array.isArray(pj.items)){ _qcMasterKind=pj.mtype; _qcMasterData=pj.items; render(); qcInstallBar(); qcEnterMaster(); }
     else { _qcAuto=true; render(); }
   } } }
