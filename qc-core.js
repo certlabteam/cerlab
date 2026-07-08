@@ -107,10 +107,10 @@ function _qcViolations(q){
     if(/\ubcf4\uae30\s*\d|\uc815\ub2f5|\uc2dc\ud5d8\s*\ud3ec\uc778\ud2b8/.test(t+' '+d+' '+cx)) v.push({kind:'warn',field:'card',idx:j,code:'CARD_LABEL',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+'\uc5d0 \ubcf4\uae30\u00b7\uc815\ub2f5\u00b7\uc2dc\ud5d8\ud3ec\uc778\ud2b8 \ub77c\ubca8(04 \u00a7A-4 \uae08\uc9c0) \u2192 \ube68\uac15 \uac15\uc870\ub85c\ub9cc',text:t});
   });
   if(isMCQ){
-    var _big=cards.concat(_lk).map(function(c){return (c&&c.d||'')+(c&&c.cx||'');}).join(' ');
-    var _act={}; ((q.q||'')+' '+opts.join(' ')+' '+o.join(' ')+' '+ex.join(' ')+' '+_big).replace(/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/g,function(x){_act[x]=1;return x;});
+    var _card0=(function(){var _c0=(cards&&cards.length)?cards[0]:((_lk&&_lk.length)?_lk[0]:null);return _c0?((_c0.d||'')+(_c0.cx||'')):'';})(); /* 관계도(REL_NO_ARROW) 판정은 첫 개념카드(card0)만 대상 — 문항 보기의 인물 수로 공유 개념카드 오탐 방지 */
+    var _act={}; _card0.replace(/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/g,function(x){_act[x]=1;return x;});
     var _relHit=_rel.test((q.q||'')+' '+opts.join(' ')+' '+o.join(' '));
-    if(_qcOn('gichul','REL_NO_ARROW') && !_cptSkip && Object.keys(_act).length>=3 && _relHit && !_arrow.test(_big)) v.push({kind:'warn',field:'card',idx:0,code:'REL_NO_ARROW',msg:'\uc778\ubb3c 3\uba85+ \uad00\uacc4\ud615 \ubb38\ud56d\uc778\ub370 \ud654\uc0b4\ud45c \ud750\ub984\ub3c4 \uc5c6\uc74c \u2192 \uccab \uac1c\ub150\uce74\ub4dc cx\uc5d0 \uad00\uacc4\ub3c4 \ucd94\uac00(04 \u00a7B)',text:''});
+    if(_qcOn('gichul','REL_NO_ARROW') && !_cptSkip && Object.keys(_act).length>=3 && _relHit && !_arrow.test(_card0)) v.push({kind:'warn',field:'card',idx:0,code:'REL_NO_ARROW',msg:'\uc778\ubb3c 3\uba85+ \uad00\uacc4\ud615 \ubb38\ud56d\uc778\ub370 \ud654\uc0b4\ud45c \ud750\ub984\ub3c4 \uc5c6\uc74c \u2192 \uccab \uac1c\ub150\uce74\ub4dc cx\uc5d0 \uad00\uacc4\ub3c4 \ucd94\uac00(04 \u00a7B)',text:''});
   }
   if(isMCQ){
     var _qCalc=_isCalcQ(q); /* A-7 예외(b): CALC 단계풀이 ex는 장면 검사 면제 */
