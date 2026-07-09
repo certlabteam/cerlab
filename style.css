@@ -396,6 +396,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-ti{font-size:13px;font-weight:800;color:#0F172A}
 #mcqView .exp-st{font-size:13px;font-weight:800}
 #mcqView .exp .note{font-size:13px;color:#475569;line-height:1.72;margin-bottom:12px}
+#mcqView .exp .note .note-arrow{display:block;text-align:center;color:#185FA5;font-weight:900;font-size:17px;line-height:1;margin:7px 0 6px}
 #mcqView .exp-opts{display:flex;flex-direction:column;gap:0}
 #mcqView .exp-opts .eo{font-size:13px;line-height:1.72;margin-bottom:12px;padding-bottom:11px;border-bottom:1px dashed #E2E8F0}
 #mcqView .exp-opts .eo:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
