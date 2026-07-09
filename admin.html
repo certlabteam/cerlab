@@ -1013,6 +1013,11 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">개념은 카드(t·d·cx) + <b>mn://·tbl://·grp://</b> 참조를 묶습니다. 문항에선 <b>cpt://id</b>로 참조. 미리보기에서 묶인 암기코드·표가 실제로 풀려 보입니다.</div>
         <div id="cptmStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
+        <div style="padding:6px 20px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:12px;color:#6E6256">목록 범위:</span>
+          <select id="cptmScopeCert" onchange="cptmLoad(this.value)" style="padding:5px 10px;border-radius:8px;border:1.5px solid #E2E2E2;font-size:12px"><option value="">시험 선택…</option></select>
+          <span style="font-size:11px;color:#A89C8E">시험을 고르면 그 시험 개념만 빠르게 불러옵니다.</span>
+        </div>
         <div class="upbar">
           <div class="upbar-drop" id="cptmImpDrop">📁 개념 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">concepts / cpt_new 형식</span></div>
           <input id="cptmImpFile" type="file" accept=".json,application/json" style="display:none">
@@ -1645,6 +1650,18 @@ function _kstISO(d){ d=(d instanceof Date)?d:new Date(); if(isNaN(d.getTime())) 
 function _uaISO(v, fb){ if(typeof v==='string'){ var t=Date.parse(v); if(!isNaN(t)) return _kstISO(new Date(t)); } else if(v && typeof v.toDate==='function'){ try{ return _kstISO(v.toDate()); }catch(e){} } else if(v && typeof v.seconds==='number'){ return _kstISO(new Date(v.seconds*1000)); } return _kstISO(fb||new Date()); }
 // 저장/임포트 직후 캐시에는 센티넬 대신 KST ISO 문자열을 박아 export 라운드트립을 깨끗하게 유지
 function _cacheRec(rec){ return Object.assign({}, rec, { updatedAt:_kstISO(new Date()) }); }
+// [부분로드] 올린 id들의 기존 문서만 골라 읽기 — 전체 컬렉션 read 회피(업로드 속도가 올린 개수에만 비례). 병렬 get, 청크 60.
+async function _loadExistingByIds(col, ids){
+  var out={}, uniq=[], seen={};
+  (ids||[]).forEach(function(x){ x=String(x||''); if(x&&!seen[x]){ seen[x]=1; uniq.push(x); } });
+  var CH=60;
+  for(var i=0;i<uniq.length;i+=CH){
+    var chunk=uniq.slice(i,i+CH);
+    var snaps=await Promise.all(chunk.map(function(id){ return db.collection(col).doc(id).get().catch(function(){return null;}); }));
+    snaps.forEach(function(sn){ if(sn&&sn.exists) out[sn.id]=sn.data()||{}; });
+  }
+  return out;
+}
 // [배치] 여러 문서 쓰기를 writeBatch로 묶어 커밋(왕복 최소화). ops=[{ref,data[,after]}] set / {ref,del:true[,after]} delete. 청크 450.
 async function _qbWrite(ops, onProg){
   var ok=0, fail=0, CH=450;
@@ -1930,7 +1947,8 @@ function mnemImpHandle(fileList){
 }
 async function mnemImport(){
   if(!_mnemImpData||!_mnemImpData.length) return;
-  if(!_impPreviewConfirm('암기코드 '+_mnemImpData.length+'개 적재', _mnemAll, _mnemImpData, 'id', ['code','desc','certs','keywords'], /^mn_[a-z0-9_]+$/)) return;
+  var _ex=await _loadExistingByIds('mnemonics', _mnemImpData.map(function(x){return String(x.id);}));
+  if(!_impPreviewConfirm('암기코드 '+_mnemImpData.length+'개 적재', _ex, _mnemImpData, 'id', ['code','desc','certs','keywords'], /^mn_[a-z0-9_]+$/)) return;
   var run=document.getElementById('mnemImpRun'); if(run) run.disabled=true;
   var ok=0, fail=0;
   var _ops=[];
@@ -1944,7 +1962,7 @@ async function mnemImport(){
     if(_bx) rec.boxes=_bx;            // 박스형(멀티그룹) 보존
     if(it.kind) rec.kind=it.kind;     // 문장형 등 kind 보존 (kind:"sentence")
     // 박스형이면 code/desc는 boxes[0] 미러라 기존값 복원 금지(옛 flat code 되살아남 방지)
-    _impPreserve(rec, it, _mnemAll[id], _bx?['name','note','certs','keywords']:['name','note','certs','keywords','code','desc']);
+    _impPreserve(rec, it, _ex[id], _bx?['name','note','certs','keywords']:['name','note','certs','keywords','code','desc']);
     (function(_id,_rec){ _ops.push({ref:db.collection('mnemonics').doc(_id), data:_rec, after:function(){ _mnemAll[_id]=_cacheRec(_rec); }}); })(id,rec);
   }
   var _r=await _qbWrite(_ops, function(n,t){var _s=document.getElementById('mnemImpStatus'); if(_s){_s.style.color='#475569';_s.innerHTML='처리 중… <b>'+n+'</b>/'+t;}}); ok+=_r.ok; fail+=_r.fail;
@@ -2127,7 +2145,8 @@ function tblmImpHandle(fileList){
 }
 async function tblmImport(){
   if(!_tblmImpData||!_tblmImpData.length) return;
-  if(!_impPreviewConfirm('표 '+_tblmImpData.length+'개 적재', _tblmAll, _tblmImpData, 'id', ['certs','keywords','caption_chant'], /^tbl_[a-z0-9_]+$/)) return;
+  var _ex=await _loadExistingByIds('tables', _tblmImpData.map(function(x){return String(x.id);}));
+  if(!_impPreviewConfirm('표 '+_tblmImpData.length+'개 적재', _ex, _tblmImpData, 'id', ['certs','keywords','caption_chant'], /^tbl_[a-z0-9_]+$/)) return;
   var ok=0, fail=0;
   var _ops=[];
   for(var i=0;i<_tblmImpData.length;i++){
@@ -2140,7 +2159,7 @@ async function tblmImport(){
     if(it.type) rec.type=it.type;   // type 보존(html 등) — 구조형 표라도 type:"html"이면 rich 렌더(span/sup/sub)
     if(isHtml){ rec.type='html'; rec.html=it.html; }
     else { rec.headers=it.headers; rec.rows=it.rows; rec.merge=Array.isArray(it.merge)?it.merge:[]; }
-    var payload=Object.assign({},_impPreserve(rec, it, _tblmAll[id], ['name','note','certs','keywords','caption_chant'])); if(!isHtml) payload.rows=JSON.stringify(rec.rows);  // 구조형만 rows 문자열화
+    var payload=Object.assign({},_impPreserve(rec, it, _ex[id], ['name','note','certs','keywords','caption_chant'])); if(!isHtml) payload.rows=JSON.stringify(rec.rows);  // 구조형만 rows 문자열화
     (function(_id,_pl,_rec){ _ops.push({ref:db.collection('tables').doc(_id), data:_pl, after:function(){ _tblmAll[_id]=_cacheRec(_rec); }}); })(id,payload,rec);
   }
   var _r=await _qbWrite(_ops, function(n,t){var _s=document.getElementById('tblmImpStatus'); if(_s){_s.style.color='#475569';_s.innerHTML='처리 중… <b>'+n+'</b>/'+t;}}); ok+=_r.ok; fail+=_r.fail;
@@ -2177,7 +2196,7 @@ function cptmInit(){
   // 참조 해석 위해 mn·표 마스터도 로드(없으면)
   if(!_mnemLoaded) mnemLoad();
   if(!_tblmLoaded) tblmLoad();
-  if(!_cptmLoaded) cptmLoad();
+  cptmScopeInit();
   if(!_cptmImpBound){ _cptmImpBound=true;
     var drop=document.getElementById('cptmImpDrop'), file=document.getElementById('cptmImpFile');
     if(drop) drop.onclick=function(){ file&&file.click(); };
@@ -2189,15 +2208,22 @@ function cptmInit(){
     }
   }
 }
-async function cptmLoad(){
-  var st=document.getElementById('cptmStatus'); if(st){ st.style.color='#7F77DD'; st.textContent='불러오는 중…'; }
+async function cptmLoad(cert){
+  var st=document.getElementById('cptmStatus'); var scoped=(cert&&cert!==''&&cert!=='__all');
+  if(st){ st.style.color='#7F77DD'; st.textContent=(scoped?(certWithId(cert)+' 개념 '):'')+'불러오는 중…'; }
   try{
-    var snap=await db.collection('concepts').get();
+    var snap = scoped ? await db.collection('concepts').where('certs','array-contains',cert).get() : await db.collection('concepts').get();
     _cptmAll={}; snap.forEach(function(d){ _cptmAll[d.id]=d.data()||{}; });
-    _cptmLoaded=true;
-    if(st) st.textContent='등록 '+Object.keys(_cptmAll).length+'개';
+    _cptmLoaded = !scoped;   // 전체일 때만 완전로드로 표시(내보내기·게이트가 필요 시 전체 재로드)
+    if(st) st.textContent=(scoped?(certWithId(cert)+' 개념 '):'등록 ')+Object.keys(_cptmAll).length+'개';
     cptmRenderList();
-  }catch(e){ if(st){ st.style.color='#A32D2D'; st.textContent='로드 실패: '+e.message; } }
+  }catch(e){ if(st){ st.style.color='#A32D2D'; st.textContent='로드 실패: '+e.message+' (array-contains 인덱스 필요할 수 있음)'; } }
+}
+async function cptmScopeInit(){
+  try{ if(!_expExams){ var m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; } }catch(e){ _expExams=_expExams||[]; }
+  var sel=document.getElementById('cptmScopeCert');
+  if(sel&&sel.options.length<=1){ sel.innerHTML='<option value="">시험 선택…</option>'+(_expExams||[]).map(function(e){return '<option value="'+e.id+'">'+(e.name||e.id)+'</option>';}).join('')+'<option value="__all">⚠ 전체 (무거움)</option>'; }
+  var st=document.getElementById('cptmStatus'); if(st && !_cptmLoaded && !Object.keys(_cptmAll).length){ st.style.color='#7F77DD'; st.textContent='시험을 선택하면 그 시험 개념만 빠르게 불러옵니다. (전역 개념은 ⚠전체)'; }
 }
 // 개념 1개 → 앱 모습 HTML (카드 + 묶인 mn·표·grp 풀어서)
 function cptmRenderConcept(c){
@@ -2345,7 +2371,7 @@ async function masterExportScoped(){ var c=(document.getElementById('mexpCert')|
   try{ await masterExportAll(); } finally { _mexpScope=null; } }
 if(typeof window!=='undefined'){ (document.readyState==='loading') ? window.addEventListener('DOMContentLoaded',function(){setTimeout(function(){try{mexpInit();}catch(_){}},400);}) : setTimeout(function(){try{mexpInit();}catch(_){}},400); }
 async function cptmExport(){
-  if(!Object.keys(_cptmAll).length){ try{ var _s=await db.collection('concepts').get(); _cptmAll={}; _s.forEach(function(d){ _cptmAll[d.id]=d.data()||{}; }); _cptmLoaded=true; }catch(e){ alert('로드 실패: '+e.message); return; } }
+  if(!_cptmLoaded){ try{ var _s=await db.collection('concepts').get(); _cptmAll={}; _s.forEach(function(d){ _cptmAll[d.id]=d.data()||{}; }); _cptmLoaded=true; }catch(e){ alert('로드 실패: '+e.message); return; } }
   var ids=Object.keys(_cptmAll);
   if(_mexpScope) ids=ids.filter(function(id){ return _mexpKeep(id,_cptmAll[id]); });
   if(!ids.length){ alert('등록된 개념이 없어요.'); return; }
@@ -2381,7 +2407,8 @@ function cptmImpHandle(fileList){
 async function cptmImport(){
   var _hasAdd=_cptmImpData&&_cptmImpData.length, _hasDel=_cptmImpDelete&&_cptmImpDelete.length;
   if(!_hasAdd && !_hasDel) return;
-  if(_hasAdd){ if(!_impPreviewConfirm('개념 '+_cptmImpData.length+'개 적재', _cptmAll, _cptmImpData, 'id', ['cards','mn','tbl','grp','certs','keywords'], /^cpt_[a-z0-9_]+$/)) return; }
+  var _ex=_hasAdd?await _loadExistingByIds('concepts', _cptmImpData.map(function(x){return String(x.id);})):{};
+  if(_hasAdd){ if(!_impPreviewConfirm('개념 '+_cptmImpData.length+'개 적재', _ex, _cptmImpData, 'id', ['cards','mn','tbl','grp','certs','keywords'], /^cpt_[a-z0-9_]+$/)) return; }
   if(_hasDel){ if(!confirm('개념 '+_cptmImpDelete.length+'개 삭제(고아 정리) — 되돌릴 수 없습니다. 계속?')) return; }
   var ok=0, fail=0, del=0;
   var _ops=[];
@@ -2393,7 +2420,7 @@ async function cptmImport(){
       mn:norm(it.mn,'mn'), tbl:norm(it.tbl,'tbl'), grp:norm(it.grp,'grp'),
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
       note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    _impPreserve(rec, it, _cptmAll[id], ['name','note','certs','keywords','cards','mn','tbl','grp']);
+    _impPreserve(rec, it, _ex[id], ['name','note','certs','keywords','cards','mn','tbl','grp']);
     (function(_id,_rec){ _ops.push({ref:db.collection('concepts').doc(_id), data:_rec, after:function(){ _cptmAll[_id]=_cacheRec(_rec); }}); })(id,rec);
   }
   var _r=await _qbWrite(_ops, function(n,t){var _s=document.getElementById('cptmImpStatus'); if(_s){_s.style.color='#475569';_s.innerHTML='처리 중… <b>'+n+'</b>/'+t;}}); ok+=_r.ok; fail+=_r.fail;
@@ -2771,7 +2798,8 @@ function grpmImpHandle(fileList){
 }
 async function grpmImport(){
   if(!_grpmImpData||!_grpmImpData.length) return;
-  if(!_impPreviewConfirm('그래프 '+_grpmImpData.length+'개 적재', _grpmAll, _grpmImpData, 'id', ['svg','certs','keywords'], /^grp_[a-z0-9_]+$/)) return;
+  var _ex=await _loadExistingByIds('graphs', _grpmImpData.map(function(x){return String(x.id);}));
+  if(!_impPreviewConfirm('그래프 '+_grpmImpData.length+'개 적재', _ex, _grpmImpData, 'id', ['svg','certs','keywords'], /^grp_[a-z0-9_]+$/)) return;
   var ok=0, fail=0;
   var _ops=[];
   for(var i=0;i<_grpmImpData.length;i++){
@@ -2780,7 +2808,7 @@ async function grpmImport(){
     var rec={ name:it.name||'', svg:it.svg||'', type:it.type||'', params:_grpParams(it.params),
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
       note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    _impPreserve(rec, it, _grpmAll[id], ['name','note','certs','keywords','svg','type','params']);
+    _impPreserve(rec, it, _ex[id], ['name','note','certs','keywords','svg','type','params']);
     (function(_id,_rec){ _ops.push({ref:db.collection('graphs').doc(_id), data:_rec, after:function(){ _grpmAll[_id]=_cacheRec(_rec); }}); })(id,rec);
   }
   var _r=await _qbWrite(_ops, function(n,t){var _s=document.getElementById('grpmImpStatus'); if(_s){_s.style.color='#475569';_s.innerHTML='처리 중… <b>'+n+'</b>/'+t;}}); ok+=_r.ok; fail+=_r.fail;
@@ -2935,7 +2963,8 @@ function itvmImpHandle(fileList){
 }
 async function itvmImport(){
   if(!_itvmImpData||!_itvmImpData.length) return;
-  if(!_impPreviewConfirm('인터랙티브 '+_itvmImpData.length+'개 적재', _itvmAll, _itvmImpData, 'id', ['template','certs','keywords'], /^itv_[a-z0-9_]+$/)) return;
+  var _ex=await _loadExistingByIds('interactives', _itvmImpData.map(function(x){return String(x.id);}));
+  if(!_impPreviewConfirm('인터랙티브 '+_itvmImpData.length+'개 적재', _ex, _itvmImpData, 'id', ['template','certs','keywords'], /^itv_[a-z0-9_]+$/)) return;
   var ok=0, fail=0;
   var _ops=[];
   for(var i=0;i<_itvmImpData.length;i++){
@@ -2945,7 +2974,7 @@ async function itvmImport(){
       concepts:Array.isArray(it.concepts)?it.concepts:[], certs:Array.isArray(it.certs)?it.certs:[],
       keywords:Array.isArray(it.keywords)?it.keywords:[], note:it.note||'',
       updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    _impPreserve(rec, it, _itvmAll[id], ['name','title','story','note','certs','keywords','template','params','concepts']);
+    _impPreserve(rec, it, _ex[id], ['name','title','story','note','certs','keywords','template','params','concepts']);
     (function(_id,_rec){ _ops.push({ref:db.collection('interactives').doc(_id), data:_rec, after:function(){ _itvmAll[_id]=_cacheRec(_rec); }}); })(id,rec);
   }
   var _r=await _qbWrite(_ops, function(n,t){var _s=document.getElementById('itvmImpStatus'); if(_s){_s.style.color='#475569';_s.innerHTML='처리 중… <b>'+n+'</b>/'+t;}}); ok+=_r.ok; fail+=_r.fail;
