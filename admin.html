@@ -275,6 +275,7 @@ tr:hover td{background:#FAFAFA}
       <div class="cat-items">
         <div class="cat-item" data-tab="preview" onclick="switchTab('preview')">🔍 미리보기</div>
         <div class="cat-item" data-tab="imgcheck" onclick="switchTab('imgcheck')">🖼️ 이미지 확인</div>
+        <div class="cat-item" data-tab="liveqc" onclick="switchTab('liveqc')">🔍 라이브 검수</div>
         <div class="cat-item" data-tab="export" onclick="switchTab('export')">기출 내보내기</div>
         <div class="cat-item" data-tab="import" onclick="switchTab('import')">기출 업로드</div>
         <div class="cat-item" data-tab="levelup" onclick="switchTab('levelup')">⚡ 레벨업 업로드</div>
@@ -636,6 +637,25 @@ tr:hover td{background:#FAFAFA}
             <li>콘텐츠가 늘면 다시 눌러 재생성 → 올리면 끝</li>
           </ul>
           <pre id="seoLog" style="background:#0f1115;color:#cdd9e5;padding:12px;border-radius:8px;font-size:12px;max-height:320px;overflow:auto;white-space:pre-wrap">대기 중…</pre>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" id="panel-liveqc">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">🔍 라이브 통합 검수 <span style="color:#94A3B8;font-weight:600;font-size:12px">(파일 없이 Firestore 직접 검사)</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="liveqcCert" onchange="liveqcFillSub()" onfocus="liveqcInit()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 시험)</option></select>
+            <select id="liveqcSub" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none" disabled><option value="__all">전체 과목</option></select>
+            <button class="btn-sm btn-extend" onclick="qcLiveAudit()">🔍 라이브 검수 실행</button>
+          </div>
+        </div>
+        <div style="padding:16px 20px">
+          <div id="liveqcStatus" style="font-size:13px;color:#6E6256">시험·과목을 고르고 실행하면, 파일 없이 현재 서비스 중인 데이터(기출·레벨업+마스터)를 읽어 통합 검수 창으로 띄웁니다.</div>
+          <div style="font-size:11px;color:#A89C8E;margin-top:10px;line-height:1.6">
+            ※ 전체는 모든 시험을 읽어 무겁고 마스터는 생략됩니다 — 보통 시험·과목으로 좁혀 쓰세요.<br>
+            ※ 시험을 고르면 그 시험이 쓰는 마스터까지 함ꔀ 검사. 결과는 통합 검수 창(새 탭)에 구역별로 나옵니다.
+          </div>
         </div>
       </div>
     </div>
@@ -3481,6 +3501,7 @@ function switchTab(name) {
   if(name==='stats') renderStats();
   if(name==='entitlements') renderEntMembers();
   if(name==='export'){ openExportTab(); imgImpInit(); }
+  if(name==='liveqc'){ liveqcInit(); }
   if(name==='import') impInit();
   if(name==='imgup'){ iuInit(); openExportTab(); imgImpInit(); }
   if(name==='imglib'){ imgLibInit(); }
@@ -4357,6 +4378,60 @@ function qcCfgUpload(section){
 }
 /* 검수 번들 전달: 같은 출처 opener 메모리로 넘겨 localStorage 5MB 한도를 우회.
    localStorage는 하위호환 폴백(초과해도 조용히 무시 — opener 경로가 커버). */
+function liveqcFillSub(){
+  var cert=document.getElementById('liveqcCert'), sub=document.getElementById('liveqcSub'); if(!cert||!sub) return;
+  if(cert.value==='__all'){ sub.innerHTML='<option value="__all">\uC804\uCCB4 \uACFC\uBAA9</option>'; sub.disabled=true; return; }
+  sub.disabled=false;
+  var ex=(_expExams||[]).find(function(e){return e.id===cert.value;}); var subs=(ex&&ex.subjects)||[];
+  sub.innerHTML='<option value="__all">\uC804\uCCB4 \uACFC\uBAA9</option>'+subs.map(function(s){return '<option value="'+s.code+'">'+(s.name||s.code)+'</option>';}).join('');
+}
+async function liveqcInit(){
+  try{ if(!_expExams){ var m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; } }catch(e){ _expExams=_expExams||[]; }
+  var c=document.getElementById('liveqcCert'); if(c&&c.options.length<=1){ c.innerHTML='<option value="__all">\uC804\uCCB4 (\uBAA8\uB4E0 \uC2DC\uD5D8)</option>'+(_expExams||[]).map(function(e){return '<option value="'+e.id+'">'+(e.name||e.id)+'</option>';}).join(''); } liveqcFillSub();
+}
+async function qcLiveAudit(){
+  var cert=(document.getElementById('liveqcCert')||{}).value||'__all';
+  var sub=(document.getElementById('liveqcSub')||{}).value||'__all';
+  var st=document.getElementById('liveqcStatus');
+  function stx(t){ if(st){ st.style.color='#475569'; st.textContent=t; } }
+  stx('\uC77D\uB294 \uC911\u2026 \uB9E4\uB2C8\uD398\uC2A4\uD2B8');
+  try{
+    var m=await db.collection('manifest').doc('exams').get();
+    var exams=(m.exists&&m.data().exams)||[];
+    var target = cert==='__all' ? exams : exams.filter(function(e){return e.id===cert;});
+    var bundle={ _meta:{kind:'qc',generatedAt:new Date().toISOString(),source:'live'}, kind:'unified' };
+    stx('\uC77D\uB294 \uC911\u2026 \uAE30\uCD9C \uBB38\uD56D');
+    var banks=[];
+    for(var i=0;i<target.length;i++){ var e=target[i];
+      for(var j=0;j<(e.subjects||[]).length;j++){ var scode=e.subjects[j].code;
+        if(cert!=='__all' && sub!=='__all' && scode!==sub) continue;
+        var docId=e.id+'__'+scode;
+        try{ var bd=await db.collection('banks').doc(docId).get(); if(bd.exists){ var data=bd.data();
+          if(Array.isArray(data.shards)&&data.shards.length){ var qs=[]; for(var k=0;k<data.shards.length;k++){ var sd=await db.collection('banks').doc(docId+'__'+data.shards[k]).get(); if(sd.exists&&Array.isArray(sd.data().questions)) qs=qs.concat(sd.data().questions); } data=Object.assign({},data,{questions:qs}); }
+          banks.push({docId:docId, data:data}); } }catch(_){}
+      }
+    }
+    if(banks.length) bundle.banks=banks;
+    stx('\uC77D\uB294 \uC911\u2026 \uB808\uBCA8\uC5C5');
+    try{ var groups=await lvupReadGroups(); var lv=Object.keys(groups).map(function(kk){return groups[kk];}).filter(function(g){ var c=(g._meta&&g._meta.cert)||'', s2=(g._meta&&g._meta.subject)||''; if(cert!=='__all'&&c!==cert) return false; if(cert!=='__all'&&sub!=='__all'&&s2!==sub) return false; return true; }).map(function(g){ return {docId:(g._meta.cert||'')+'__'+(g._meta.subject||''), data:{cert:g._meta.cert,subject:g._meta.subject,name:csKo(g._meta.cert,g._meta.subject),questions:(g.questions||[])}}; });
+      if(lv.length) bundle.lvup=lv; }catch(_){}
+    if(cert!=='__all'){
+      stx('\uC77D\uB294 \uC911\u2026 \uB9C8\uC2A4\uD130');
+      _mexpScope={cert:cert, sub:sub};
+      try{ var cols=[['concepts','concepts'],['mnemonics','mnem'],['tables','table'],['graphs','graph'],['interactives','interactive']];
+        for(var ci=0;ci<cols.length;ci++){ var col=cols[ci][0], key=cols[ci][1];
+          try{ var snap=await db.collection(col).get(); var arr=[]; snap.forEach(function(d){ var rec=Object.assign({id:d.id}, d.data()||{}); if(_mexpKeep(d.id, rec)) arr.push(rec); }); if(arr.length) bundle[key]=arr; }catch(_){}
+        }
+      } finally { _mexpScope=null; }
+    }
+    var nQ=(bundle.banks||[]).reduce(function(n,b){return n+((b.data&&b.data.questions||[]).length);},0);
+    var nL=(bundle.lvup||[]).reduce(function(n,b){return n+((b.data&&b.data.questions||[]).length);},0);
+    if(!bundle.banks && !bundle.lvup && !bundle.concepts){ if(st){st.style.color='#A32D2D';st.textContent='\uD574\uB2F9 \uBC94\uC704\uC5D0 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
+    _qcStash(bundle);
+    if(st){ st.style.color='#15793F'; st.innerHTML='\u2705 \uC77D\uAE30 \uC644\uB8CC \u2014 \uAE30\uCD9C <b>'+nQ+'</b> \u00B7 \uB808\uBCA8\uC5C5 <b>'+nL+'</b> \uBB38\uD56D. \uD1B5\uD569 \uAC80\uC218 \uCC3D\uC744 \uC5FD\uB2C8\uB2E4\u2026'; }
+    window.open('preview.html?qc=1','_blank');
+  }catch(e){ if(st){st.style.color='#A32D2D';st.textContent='\uC624\uB958: '+e.message;} }
+}
 function _qcStash(bundle){
   try{ window.__certlabQC=bundle; }catch(e){}
   try{ localStorage.setItem('certlab_qc_payload', JSON.stringify(bundle)); }
