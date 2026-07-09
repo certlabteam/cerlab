@@ -644,7 +644,8 @@ tr:hover td{background:#FAFAFA}
         <div class="table-header">
           <div class="table-title">기출 내보내기 (현재 Firestore → JSON)</div>
           <div style="display:flex;gap:8px;align-items:center">
-            <select id="expCert" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 자격증)</option></select>
+            <select id="expCert" onchange="expFillSub()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 시험)</option></select>
+            <select id="expSub" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none" disabled><option value="__all">전체 과목</option></select>
             <button class="btn-sm btn-extend" onclick="exportData()">⬇ JSON 다운로드</button>
           </div>
         </div>
@@ -707,7 +708,6 @@ tr:hover td{background:#FAFAFA}
             <button class="btn-sm" onclick="qcCfgExport('gichul')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="btn-sm btn-extend" onclick="buildReviewNote()">🔍 지적서 만들기 (일반+마스터)</button>
             <button class="btn-sm" onclick="downloadReviewNote()" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
-            <button class="btn-sm" onclick="downloadReviewNote()" style="background:#E6F4EA;color:#15793F">💾 .txt 다운로드</button>
           </div>
           <textarea id="reviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'🔍 지적서 만들기'를 누르면 게이트 위반이 채워집니다. '■ 크리스 지적' 아래에 고칠 점을 자유롭게 적은 뒤 복사/다운로드하세요."></textarea>
 
@@ -1204,7 +1204,8 @@ tr:hover td{background:#FAFAFA}
         <div class="table-header">
           <div class="table-title">⚡ 레벨업 데이터 업로드</div>
           <div style="display:flex;gap:8px;align-items:center">
-            <select id="lvupExpSel" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 과목)</option></select>
+            <select id="lvupExpCert" onchange="lvupExpFillSub()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none"><option value="__all">전체 (모든 시험)</option></select>
+            <select id="lvupExpSub" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none" disabled><option value="__all">전체 과목</option></select>
             <button class="btn-sm btn-extend" onclick="lvupExportSel()">⬇ JSON 다운로드</button>
           </div>
         </div>
@@ -1215,9 +1216,18 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-summary" id="lvupImpStatus"></div>
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('lvupImpFile').click()">⬆ 업로드</button>
-            <button class="upbar-export" onclick="qcOpenReviewLvup()" style="background:#0C447C;color:#fff">🔍 검수 창</button>
           </div>
         </div>
+        <hr style="border:none;border-top:1px solid #EFE9E2;margin:14px 0">
+          <div class="table-title" style="margin-bottom:6px">🔍 검수 지적서 (레벨업 → 데이터방)</div>
+          <div style="font-size:11.5px;color:#A89C8E;margin-bottom:8px">로드한 레벨업 JSON을 게이트로 <b>전수 검사</b>한 위반에, 직접 본 지적을 더해 TXT로 데이터방에 넘깁니다. (기출 검수와 동일)</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <button class="btn-sm" onclick="qcOpenReviewLvup()" style="background:#0C447C;color:#fff">🔍 검수 창 열기</button>
+            <button class="btn-sm" onclick="qcOpenReviewAll()" style="background:#0F6E56;color:#fff">🔍 통합 검수 (올린 것 전부)</button>
+            <button class="btn-sm btn-extend" onclick="buildReviewNote('lvup')">🔍 지적서 만들기 (일반+마스터)</button>
+            <button class="btn-sm" onclick="downloadReviewNote('lvup')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
+          </div>
+          <textarea id="lvupReviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'🔍 지적서 만들기'를 누르면 게이트 위반이 채워집니다. '■ 크리스 지적' 아래에 고칠 점을 적은 뒤 TXT 다운로드하세요."></textarea>
         <div style="padding:8px 4px;font-size:11.5px;color:#B4A99C">적재 경로: <code>adaptive/{cert}__{subject}__{map | diag | variants | variantq | calctmpl}</code></div>
       </div>
     </div>
@@ -3153,14 +3163,24 @@ function certWithId(cert){ var nm=certKo(cert); return nm+(nm!==cert&&cert?(' ('
 function csKo(cert, sub){ var sn=subjNameOf(cert,sub); return certWithId(cert)+' / '+sn+(sn!==sub&&sub?(' ('+sub+')'):''); }
 function _lvupExpLabel(g){ var c=(g._meta&&g._meta.cert)||'', s=(g._meta&&g._meta.subject)||''; return csKo(c,s); }
 async function lvupPopulateExp(){
-  var sel=document.getElementById('lvupExpSel'); if(!sel) return;
+  var sel=document.getElementById('lvupExpCert'); if(!sel) return;
   try{
     var groups=await lvupReadGroups(); _lvupExpCache=groups;
     await _loadSubjNames();
-    var keys=Object.keys(groups).sort();
-    sel.innerHTML='<option value="__all">전체 (모든 시험)</option>'
-      + (function(){ var certs={}; Object.keys(groups).forEach(function(k){ var g=groups[k]; var c=(g._meta&&g._meta.cert)||''; (certs[c]=certs[c]||[]).push(g); }); return Object.keys(certs).sort().map(function(c){ var subs=certs[c]; var qtot=subs.reduce(function(n,x){return n+((x.questions&&x.questions.length)||0);},0); var nm=certWithId(c); return '<option value="cert:'+c+'">'+nm+' ('+subs.length+'과목 · '+qtot+'문항)</option>'; }).join(''); })();
+    var certs={}; Object.keys(groups).forEach(function(k){ var g=groups[k]; var c=(g._meta&&g._meta.cert)||''; (certs[c]=certs[c]||[]).push(g); });
+    sel.innerHTML='<option value="__all">\uC804\uCCB4 (\uBAA8\uB4E0 \uC2DC\uD5D8)</option>'
+      + Object.keys(certs).sort().map(function(c){ var subs=certs[c]; var qtot=subs.reduce(function(n,x){return n+((x.questions&&x.questions.length)||0);},0); return '<option value="'+c+'">'+certWithId(c)+' ('+subs.length+'\uACFC\uBAA9 \u00B7 '+qtot+'\uBB38\uD56D)</option>'; }).join('');
+    lvupExpFillSub();
   }catch(e){}
+}
+function lvupExpFillSub(){
+  var cert=document.getElementById('lvupExpCert'), sub=document.getElementById('lvupExpSub'); if(!cert||!sub) return;
+  var groups=_lvupExpCache||{};
+  if(cert.value==='__all'){ sub.innerHTML='<option value="__all">\uC804\uCCB4 \uACFC\uBAA9</option>'; sub.disabled=true; return; }
+  sub.disabled=false;
+  var subs=Object.keys(groups).map(function(k){return groups[k];}).filter(function(g){return (g._meta&&g._meta.cert)===cert.value;})
+    .sort(function(x,y){ return String((x._meta&&x._meta.subject)||'').localeCompare(String((y._meta&&y._meta.subject)||'')); });
+  sub.innerHTML='<option value="__all">\uC804\uCCB4 \uACFC\uBAA9</option>'+subs.map(function(g){ var sc=(g._meta&&g._meta.subject)||''; var cnt=(g.questions&&g.questions.length)||0; return '<option value="'+sc+'">'+subjNameOf(cert.value,sc)+' ('+cnt+'\uBB38\uD56D)</option>'; }).join('');
 }
 function _lvupDownload(subjects, fnameSuffix){
   var bundle={ _meta:{ kind:'levelup_export', exportedAt:_kstISO(new Date()), subjectCount:subjects.length }, subjects:subjects };
@@ -3170,30 +3190,29 @@ function _lvupDownload(subjects, fnameSuffix){
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 async function lvupExportSel(){
-  var sel=document.getElementById('lvupExpSel'), stt=document.getElementById('lvupImpStatus');
-  var key=sel?sel.value:'__all';
+  var certSel=document.getElementById('lvupExpCert'), subSel=document.getElementById('lvupExpSub'), stt=document.getElementById('lvupImpStatus');
+  var cert=certSel?certSel.value:'__all'; var sub=subSel?subSel.value:'__all';
   if(stt){ stt.style.color='#475569'; stt.textContent='\uB0B4\uBCF4\uB0B4\uB294 \uC911\u2026 adaptive \uC77D\uB294 \uC911'; }
   try{
     var groups=_lvupExpCache; if(!groups){ groups=await lvupReadGroups(); _lvupExpCache=groups; }
-    if(key==='__all'){
-      var subjects=Object.keys(groups).map(function(k){ return groups[k]; });
-      if(!subjects.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='adaptive\uC5D0 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
-      _lvupDownload(subjects, 'all');
-      var tot=subjects.reduce(function(n,s){ return n+((s.questions&&s.questions.length)||0); },0);
-      if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 \uC804\uCCB4 \uB0B4\uBCF4\uB0B4\uAE30 \u2014 \uACFC\uBAA9 <b>'+subjects.length+'</b>\uAC1C \u00B7 \uBCC0\uD615\uBB38\uD56D <b>'+tot+'</b>\uAC1C. (\uC774 \uD30C\uC77C\uC744 \uB2E4\uC2DC \uB4DC\uB86D\uD558\uBA74 \uBCF5\uC6D0)'; }
-    } else if(key.indexOf('cert:')===0){
-      var _cert=key.slice(5);
-      var _subs=Object.keys(groups).map(function(k){return groups[k];}).filter(function(g){ return (g._meta&&g._meta.cert)===_cert; });
-      if(!_subs.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='선택한 시험 데이터를 찾을 수 없습니다.';} return; }
-      _lvupDownload(_subs, _cert);
+    var all=Object.keys(groups).map(function(k){ return groups[k]; });
+    if(cert==='__all'){
+      if(!all.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='adaptive\uC5D0 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
+      _lvupDownload(all,'all');
+      var tot=all.reduce(function(n,s2){ return n+((s2.questions&&s2.questions.length)||0); },0);
+      if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 \uC804\uCCB4 \uB0B4\uBCF4\uB0B4\uAE30 \u2014 \uACFC\uBAA9 <b>'+all.length+'</b>\uAC1C \u00B7 \uBCC0\uD615\uBB38\uD56D <b>'+tot+'</b>\uAC1C.'; }
+    } else if(sub==='__all'){
+      var _subs=all.filter(function(g){ return (g._meta&&g._meta.cert)===cert; });
+      if(!_subs.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uC120\uD0DD\uD55C \uC2DC\uD5D8 \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
+      _lvupDownload(_subs, cert);
       var _tot=_subs.reduce(function(n,x){ return n+((x.questions&&x.questions.length)||0); },0);
-      var _nm=certWithId(_cert);
-      if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ '+_nm+' — 과목 <b>'+_subs.length+'</b>개 · 변형문항 <b>'+_tot+'</b>개. (이 파일을 다시 드롭하면 복원)'; }
+      if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 '+certWithId(cert)+' \u2014 \uACFC\uBAA9 <b>'+_subs.length+'</b>\uAC1C \u00B7 \uBCC0\uD615\uBB38\uD56D <b>'+_tot+'</b>\uAC1C.'; }
     } else {
-      var g=groups[key]; if(!g){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uC120\uD0DD\uD55C \uACFC\uBAA9 \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
-      _lvupDownload([g], (g._meta.cert||'')+'__'+(g._meta.subject||''));
+      var g=all.filter(function(x){ return (x._meta&&x._meta.cert)===cert && (x._meta&&x._meta.subject)===sub; })[0];
+      if(!g){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uC120\uD0DD\uD55C \uACFC\uBAA9 \uB370\uC774\uD130\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.';} return; }
+      _lvupDownload([g], cert+'__'+sub);
       var cnt=(g.questions&&g.questions.length)||0;
-      if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 '+_lvupExpLabel(g)+' \u2014 \uBCC0\uD615\uBB38\uD56D <b>'+cnt+'</b>\uAC1C. (\uC774 \uD30C\uC77C\uC744 \uB2E4\uC2DC \uB4DC\uB86D\uD558\uBA74 \uBCF5\uC6D0)'; }
+      if(stt){ stt.style.color='#15793F'; stt.innerHTML='\u2705 '+_lvupExpLabel(g)+' \u2014 \uBCC0\uD615\uBB38\uD56D <b>'+cnt+'</b>\uAC1C.'; }
     }
   }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='\uB0B4\uBCF4\uB0B4\uAE30 \uC624\uB958: '+e.message;} }
 }
@@ -3939,10 +3958,19 @@ async function openExportTab(){
   const sel=document.getElementById('expCert'); if(!sel) return;
   sel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
     + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
+  expFillSub();
   const isel=document.getElementById('imgExpCert');
   if(isel) isel.innerHTML='<option value="__all">전체 (모든 자격증)</option>'
     + _expExams.map(e=>'<option value="'+e.id+'">'+(e.name||e.id)+'</option>').join('');
   imgExpFill();
+}
+// 기출 내보내기: 시험 선택 시 과목 채우기
+function expFillSub(){
+  const cert=document.getElementById('expCert'), sub=document.getElementById('expSub'); if(!cert||!sub) return;
+  if(cert.value==='__all'){ sub.innerHTML='<option value="__all">전체 과목</option>'; sub.disabled=true; return; }
+  sub.disabled=false;
+  const ex=(_expExams||[]).find(e=>e.id===cert.value); const subs=(ex&&ex.subjects)||[];
+  sub.innerHTML='<option value="__all">전체 과목</option>'+subs.map(s=>'<option value="'+s.code+'">'+(s.name||s.code)+'</option>').join('');
 }
 // 이미지 내보내기: 자격증 선택 시 과목 채우기
 function imgExpFill(){
@@ -4453,12 +4481,13 @@ function _mlaAuditLines(items, M){
   L.push('※ 방향: 문항→개념→(표·암기·그래프). 마스터 고아는 대상 아님. 마스터를 방금 올렸으면 10분 캐시 → 새로고침 후 재실행.');
   return L;
 }
-async function buildReviewNote(){
-  var items=(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;});
-  if(!items.length){ alert('먼저 위 드롭존에 기출 JSON을 로드하세요.'); return; }
+async function buildReviewNote(src){
+  src=src||'gichul';
+  var items=(src==='lvup')?(typeof _lvupQStash!=='undefined'?_lvupQStash:[]).filter(function(it){return it&&it.data;}):(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;});
+  if(!items.length){ alert('먼저 '+(src==='lvup'?'레벨업':'기출')+' JSON을 로드하세요.'); return; }
   await _qcLoadImgKeys();   // img:// 참조 대조용 이미지 키(실패 시 IMG_MISSING만 생략)
   await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
-  var ta=document.getElementById('reviewNote'); ta.value='⏳ 검수 중… 일반 검수 + 마스터 로드(수 초)';
+  var ta=document.getElementById(src==='lvup'?'lvupReviewNote':'reviewNote'); ta.value='⏳ 검수 중… 일반 검수 + 마스터 로드(수 초)';
   var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'',
     '━━━━━ ① 일반 검수 (문항 게이트) ━━━━━'];
   if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — IMG_MISSING 검사 생략)');
@@ -4474,8 +4503,8 @@ async function buildReviewNote(){
   ta.value=L.join('\n');
 }
 function copyReviewNote(){ var t=document.getElementById('reviewNote'); if(!t.value.trim()){ alert('먼저 지적서를 만들어 주세요.'); return; } t.select(); var ok=false; try{ if(navigator.clipboard){ navigator.clipboard.writeText(t.value); ok=true; } }catch(_){ } if(!ok){ try{ document.execCommand('copy'); }catch(__){} } alert('복사됐어요. 데이터방에 붙여넣으세요.'); }
-function downloadReviewNote(){ var t=document.getElementById('reviewNote'); if(!t.value.trim()){ alert('먼저 지적서를 만들어 주세요.'); return; } var fn=(typeof impItems!=='undefined'&&impItems[0]&&impItems[0].docId)?impItems[0].docId:'exam'; var blob=new Blob([t.value],{type:'text/plain;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='검수지적서_'+fn+'_'+new Date().toISOString().slice(0,10)+'.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
-function downloadReviewNote(){ var v=document.getElementById('reviewNote').value; if(!v.trim()){ alert('먼저 지적서를 만들어 주세요.'); return; } var b=new Blob([v],{type:'text/plain;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='검수지적서_'+(new Date().toISOString().slice(0,10))+'.txt'; document.body.appendChild(a); a.click(); a.remove(); }
+function downloadReviewNote(src){ src=src||'gichul'; var taId=(src==='lvup')?'lvupReviewNote':'reviewNote'; var t=document.getElementById(taId); if(!t||!t.value.trim()){ alert('먼저 지적서를 만들어 주세요.'); return; } var arr=(src==='lvup')?(typeof _lvupQStash!=='undefined'?_lvupQStash:[]):(typeof impItems!=='undefined'?impItems:[]); var fn=(arr[0]&&arr[0].docId)?arr[0].docId:(src==='lvup'?'levelup':'exam'); var blob=new Blob([t.value],{type:'text/plain;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='검수지적서_'+fn+'_'+new Date().toISOString().slice(0,10)+'.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
+
 async function impUpload(){
   const ready=impItems.filter(it=>it.status==='ready');
   if(!ready.length) return;
@@ -4696,6 +4725,7 @@ async function renameExam(){
 }
 async function exportData(){
   const sel=document.getElementById('expCert'); const pick=(sel&&sel.value)||'__all';
+  const subPick=(document.getElementById('expSub')||{}).value||'__all';
   const st=document.getElementById('expStatus');
   st.textContent='읽는 중... 잠시만요.';
   try{
@@ -4706,6 +4736,7 @@ async function exportData(){
     const banks=[]; let qcnt=0;
     for(const e of target){
       for(const sub of (e.subjects||[])){
+        if(subPick!=='__all' && sub.code!==subPick) continue;
         const docId=e.id+'__'+sub.code;
         try{ const bd=await db.collection('banks').doc(docId).get(); if(bd.exists){ let data=bd.data();
           if(Array.isArray(data.shards)&&data.shards.length){
@@ -4720,7 +4751,7 @@ async function exportData(){
     const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url;
-    a.download='certlab_export_'+(pick==='__all'?'all':pick)+'_'+new Date().toISOString().slice(0,10)+'.json';
+    a.download='certlab_export_'+(pick==='__all'?'all':pick)+(subPick!=='__all'?('__'+subPick):'')+'_'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     st.innerHTML='✅ 내보내기 완료 — 문서 <b>'+banks.length+'</b>개 · 문항 <b>'+qcnt.toLocaleString()+'</b>개. 다운로드된 JSON이 현재 서비스 데이터입니다.';
   }catch(e){ st.textContent='오류: '+e.message; }
