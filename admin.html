@@ -4569,12 +4569,17 @@ function qcOpenReviewAll(){
 // ===== 마스터 연결 검수 (개념 미연결·죽은 링크·딸림 mn/tbl/grp·직접 tbl·img/itv·cx빈칸) =====
 var _mlaCache=null;
 function _mlaClean(u){ return String(u||'').replace(/^(cpt|tbl|mn|grp|img|itv):\/\//,''); }
+var _CS_GRP=/수요곡선|공급곡선|수요·공급|수요와\s*공급|초과수요|초과공급|수요량|공급량|탄력성|균형점|한계효용|무차별곡선|비용곡선|IS-?LM|로렌츠|지니계수|필립스곡선|AD-?AS|총수요|총공급|생산가능곡선|한계비용|한계수입|평균비용/;
+var _CS_TBL=/\bvs\b|비교|차이점|대비|매칭|기준표|종류별|유형별|구분|분류/;
+var _CS_MN=/[3-9]\s*(가지|요건|단계|종류|유형|원칙|요소|관점|활동|분류)|[3-9]개\s*(요건|요소|종류|유형|원칙|단계|기능)|[③④⑤⑥⑦⑧⑨].*[③④⑤⑥⑦⑧⑨]/;
+var _CS_ITV=/선입선출|후입선출|가중평균|이동평균|원가흐름|재고자산\s*평가|NPV|IRR|피셔수익률|순현재가치|내부수익률/;
 async function _mlaLoadMasters(force){
   if(!force && _mlaCache && (Date.now()-_mlaCache.at)<10*60*1000) return _mlaCache;
   var concepts={}, tables={}, mnems={}, graphs={}, images={}, itvs={};
-  (await db.collection('concepts').get()).forEach(function(d){ var r=d.data()||{}; var cards=Array.isArray(r.cards)?r.cards:[]; var empty=0;
-    cards.forEach(function(c){ if(!c||!String(c.cx||'').trim()) empty++; });
-    concepts[d.id]={ name:r.name||'', cards:cards.length, emptyCx:empty,
+  (await db.collection('concepts').get()).forEach(function(d){ var r=d.data()||{}; var cards=Array.isArray(r.cards)?r.cards:[]; var empty=0, hasSvg=false, hasTbl=false;
+    var _txt=(r.name||''); cards.forEach(function(c){ var cx=String((c&&c.cx)||''); if(!cx.trim()) empty++; if(cx.indexOf('<svg')>=0) hasSvg=true; if(cx.indexOf('<table')>=0) hasTbl=true; _txt+=' '+((c&&c.t)||'')+' '+((c&&c.d)||'')+' '+cx; });
+    concepts[d.id]={ name:r.name||'', cards:cards.length, emptyCx:empty, hasCxSvg:hasSvg, hasCxTbl:hasTbl, cert:(Array.isArray(r.certs)&&r.certs[0])||'',
+      sigGrp:_CS_GRP.test(_txt), sigTbl:_CS_TBL.test(_txt), sigMn:_CS_MN.test(_txt), sigItv:_CS_ITV.test(_txt),
       tbl:(Array.isArray(r.tbl)?r.tbl:[]).map(_mlaClean),
       mn:(Array.isArray(r.mn)?r.mn:[]).map(_mlaClean),
       grp:(Array.isArray(r.grp)?r.grp:[]).map(_mlaClean) }; });
@@ -4582,8 +4587,12 @@ async function _mlaLoadMasters(force){
   (await db.collection('mnemonics').get()).forEach(function(d){ mnems[d.id]=1; });
   (await db.collection('graphs').get()).forEach(function(d){ graphs[d.id]=1; });
   (await db.collection('images').get()).forEach(function(d){ images[d.id]=1; });
-  (await db.collection('interactives').get()).forEach(function(d){ itvs[d.id]=1; });
-  _mlaCache={concepts:concepts,tables:tables,mnems:mnems,graphs:graphs,images:images,interactives:itvs,at:Date.now()};
+  var itvCov={};
+  (await db.collection('interactives').get()).forEach(function(d){ itvs[d.id]=1; var r=d.data()||{};
+    (Array.isArray(r.concepts)?r.concepts:[]).forEach(function(c){ if(c) itvCov[_mlaClean(c)]=1; });
+    var _nd=(r.params&&(r.params.nodes||r.params.events||r.params.items))||[]; if(Array.isArray(_nd)) _nd.forEach(function(n){ if(n&&n.cpt) itvCov[_mlaClean(n.cpt)]=1; });
+  });
+  _mlaCache={concepts:concepts,tables:tables,mnems:mnems,graphs:graphs,images:images,interactives:itvs,itvCov:itvCov,at:Date.now()};
   return _mlaCache;
 }
 function _mlaRefs(q){
@@ -4600,8 +4609,10 @@ function _mlaRefs(q){
 }
 function _mlaAuditLines(items, M){
   var L=['마스터: 개념 '+Object.keys(M.concepts).length+' · 표 '+Object.keys(M.tables).length+' · 암기 '+Object.keys(M.mnems).length+' · 그래프 '+Object.keys(M.graphs).length+' · 이미지 '+Object.keys(M.images).length+' · 인터랙티브 '+Object.keys(M.interactives).length,''];
-  var noCptL=[], deadL=[], childL=[], mediaL=[], cxL=[];
-  var nNoCpt=0,nDead=0,nChild=0,nMedia=0,nCx=0, seenCx={}, seenChild={};
+  var noCptL=[], deadL=[], childL=[], mediaL=[], cxL=[], needL=[];
+  var nNoCpt=0,nDead=0,nChild=0,nMedia=0,nCx=0,nNeed=0,nNeed7=0, seenCx={}, seenChild={}, _refCpt={}, need7L=[];
+  var _VIS_Q=/수요곡선|공급곡선|비용곡선|무차별곡선|필립스곡선|IS-?LM|로렌츠|지니계수|총수요|총공급|탄력성|균형점|한계효용|한계비용|한계수입|평균비용|생산가능곡선|NPV|IRR|순현재가치|내부수익률|손익분기|현재가치법|곡선을?\s*그리|그래프로\s*나타|그림으로\s*(나타|표현)|도해|순서도|흐름도/;
+  var _IMG_Q=/다음\s*(그림|사진|지도|도표|사진자료)|그림과\s*같은|사진(?:은|의|에서|을|과)\s|지도(?:의|에서|에\s*표시)|위\s*(그림|지도)|아래\s*(그림|지도)|유물|유적|문화재|다음\s*\(?[가-바]\)?\s*(유물|지역|시대|인물|건축|나라|사진)|해부도|근육도|골격도|인체도|그림의\s*(동작|자세|근육|부위|관절|뼈|힘줄|장기|구조)|화살표가\s*가리키는|표시된\s*(부위|근육|위치|지점)|그림에서\s*(가리키|나타|표시)/;
   items.forEach(function(it){
     var qs=(it.data&&it.data.questions)||[];
     qs.forEach(function(q){
@@ -4612,6 +4623,7 @@ function _mlaAuditLines(items, M){
       R.cpt.forEach(function(r){
         var c=M.concepts[r.id];
         if(!c){ deadL.push('  [누락] '+it.docId+' · '+id+' '+r.where+' → 개념 '+r.id+' 마스터에 없음(죽은 링크)'); nDead++; return; }
+        _refCpt[r.id]=1;
         if(c.cards===0){ deadL.push('  [누락] '+it.docId+' · '+id+' '+r.where+' → 개념 '+r.id+' 카드 0개'); nDead++; }
         else if(c.emptyCx>0 && !seenCx[r.id]){ seenCx[r.id]=1; cxL.push('  [경고] 개념 '+r.id+' ('+c.name+') 카드 '+c.cards+'개 중 cx 빈칸 '+c.emptyCx+'개'); nCx++; }
         // 3) 개념 딸림 mn/tbl/grp
@@ -4625,7 +4637,24 @@ function _mlaAuditLines(items, M){
       // 5) img/itv
       R.img.forEach(function(r){ if(!M.images[r.id]){ mediaL.push('  [누락] '+it.docId+' · '+id+' 이미지 img://'+r.id+' 없음'); nMedia++; } });
       R.itv.forEach(function(r){ if(!M.interactives[r.id]){ mediaL.push('  [누락] '+it.docId+' · '+id+' 인터랙티브 itv://'+r.id+' 없음'); nMedia++; } });
+      // 7) 문항 자체 시각자료 필요 (과목 무관 — 그 문항 풀이에 그래프/이미지가 필요한데 아무 데도 없음)
+      var _qb=''; try{ _qb=JSON.stringify(q); }catch(_){}
+      var _lc7=R.cpt.map(function(r){return M.concepts[r.id];}).filter(Boolean);
+      var _qVis=(q.exp&&q.exp.graph&&String(q.exp.graph).trim())||/<svg|img:\/\//.test(_qb)||_lc7.some(function(c){return (c.grp||[]).length||c.hasCxSvg;})||(M.itvCov&&R.cpt.some(function(r){return M.itvCov[r.id];}));
+      var _hasImg=/img:\/\//.test(_qb)||(q.img&&String(q.img).trim());
+      if(_VIS_Q.test(_qb) && !_qVis){ need7L.push('  [경고] '+it.docId+' · '+id+' 문항 자체가 시각 풀이형(곡선·계산곡선·흐름 등)인데 풀이 그래프/이미지 없음 → exp.graph 추가 또는 개념 grp 연결'); nNeed7++; }
+      else if(_IMG_Q.test(_qb) && !_hasImg){ need7L.push('  [경고] '+it.docId+' · '+id+' 이미지 지시(그림·사진·지도·유물·동작·부위 등)인데 이미지 참조 없음 → 이미지(img://) 연결/제작'); nNeed7++; }
     });
+  });
+  // 6) 마스터 필요한데 없음 — 개념 단위 전수(참조 개념 1회씩·내용 신호 기반)
+  Object.keys(_refCpt).forEach(function(cid){ var c=M.concepts[cid]; if(!c) return;
+    var hasGrp=(c.grp||[]).length||c.hasCxSvg, hasTbl=(c.tbl||[]).length||c.hasCxTbl, hasMn=(c.mn||[]).length, hasItv=(M.itvCov&&M.itvCov[cid]);
+    var miss=[];
+    if(c.sigGrp && !hasGrp) miss.push('그래프');
+    if(c.sigItv && !hasItv) miss.push('인터랙티브');
+    if(c.sigTbl && !hasTbl) miss.push('표');
+    if(c.sigMn && !hasMn) miss.push('암기');
+    if(miss.length){ needL.push('  [경고] 개념 '+cid+' ('+(c.name||'')+')'+(c.cert?(' ['+c.cert+']'):'')+' → '+miss.join('·')+' 필요한데 없음'); nNeed++; }
   });
   L.push('■ 1) 개념 미연결 (exp.cpt 비어 있음 — 개념카드 통째 안 뜸)');
   L=L.concat(noCptL.length?noCptL:['  (없음 — 모든 문항에 개념 연결됨)']);
@@ -4637,7 +4666,11 @@ function _mlaAuditLines(items, M){
   L=L.concat(mediaL.length?mediaL:['  (없음)']);
   L.push('','■ 5) 개념카드 예시(cx) 빈칸 (참조 개념 한정·개념별 1회)');
   L=L.concat(cxL.length?cxL:['  (없음)']);
-  L.push('','요약: 개념미연결 '+nNoCpt+' · 죽은링크 '+nDead+' · 딸림/표 누락 '+nChild+' · 이미지/인터랙티브 '+nMedia+' · cx빈칸 개념 '+nCx);
+  L.push('','■ 6) 마스터 필요한데 없음 [개념 단위 전수] (곡선→그래프·조작형→인터랙티브·비교→표·열거→암기)');
+  L=L.concat(needL.length?needL:['  (없음)']);
+  L.push('','■ 7) 문항 풀이 시각자료 필요 [문항 단위·과목무관] (문항 자체가 그래프/이미지형인데 시각자료 없음 — 경제 곡선·한국사 유물·건운사 해부·스포츠 동작 등)');
+  L=L.concat(need7L.length?need7L:['  (없음)']);
+  L.push('','요약: 개념미연결 '+nNoCpt+' · 죽은링크 '+nDead+' · 딸림/표 누락 '+nChild+' · 이미지/인터랙티브 '+nMedia+' · cx빈칸 개념 '+nCx+' · 마스터필요(개념) '+nNeed+' · 문항시각필요 '+nNeed7);
   L.push('※ 방향: 문항→개념→(표·암기·그래프). 마스터 고아는 대상 아님. 마스터를 방금 올렸으면 10분 캐시 → 새로고침 후 재실행.');
   return L;
 }
