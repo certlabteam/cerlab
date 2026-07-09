@@ -4949,6 +4949,12 @@ function isEconQ(q){
 }
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
 function rm(text, q){ return renderMath(text, isEconQ(q)); }
+function expNoteHTML(text, q){
+  return rm(text, q)
+    .replace(/\r\n?/g, '\n')
+    .replace(/(^|\n)\s*([↓→])\s*(?=\n|$)/g, '$1<span class="note-arrow">$2</span>')
+    .replace(/\n/g, '<br>');
+}
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
 function _jaryoDots(html){
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
@@ -5550,7 +5556,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     var statusTxt=g.allOK?'\uC815\uB2F5':(saAnswered(q,ansObj)?'\uC624\uB2F5':'\uBBF8\uC751\uB2F5');
     var statusCol=g.allOK?'#0F6E56':'#A32D2D';
     var body='';
-    if(q.exp && q.exp.s) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
+    if(q.exp && q.exp.s) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
     var oArr=(q.exp&&q.exp.o)||[];
     if(oArr.length){
       body+='<div class="exp-opts">'+q.blanks.map(function(b,i){
@@ -5636,7 +5642,7 @@ function renderMcqExam(root){
     let body='';
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
-    if(q.exp && q.exp.s) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
+    if(q.exp && q.exp.s) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
     var isCombo=isComboQuestion(q.opts);
     var stmts = isCombo ? parseJaryoStmts(q.q) : [];
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
