@@ -705,9 +705,8 @@ tr:hover td{background:#FAFAFA}
             <button class="btn-sm" onclick="qcOpenReviewAll()" style="background:#0F6E56;color:#fff">🔍 통합 검수 (올린 것 전부)</button>
             <button class="btn-sm" onclick="qcCfgUpload('gichul')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('gichul')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
-            <button class="btn-sm btn-extend" onclick="buildReviewNote()">🔍 지적서 만들기</button>
-            <button class="btn-sm" onclick="masterLinkAudit()" style="background:#FFF4E5;color:#B45309">🧩 마스터 연결 검수</button>
-            <button class="btn-sm" onclick="copyReviewNote()" style="background:#EDE9FB;color:#5B50C0">📋 복사</button>
+            <button class="btn-sm btn-extend" onclick="buildReviewNote()">🔍 지적서 만들기 (일반+마스터)</button>
+            <button class="btn-sm" onclick="downloadReviewNote()" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
             <button class="btn-sm" onclick="downloadReviewNote()" style="background:#E6F4EA;color:#15793F">💾 .txt 다운로드</button>
           </div>
           <textarea id="reviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'🔍 지적서 만들기'를 누르면 게이트 위반이 채워집니다. '■ 크리스 지적' 아래에 고칠 점을 자유롭게 적은 뒤 복사/다운로드하세요."></textarea>
@@ -1005,7 +1004,9 @@ tr:hover td{background:#FAFAFA}
             <button class="btn-sm" onclick="qcCfgUpload('concept')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
             <button class="btn-sm" onclick="qcCfgExport('concept')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="upbar-export" onclick="cptmExport()">⬇ 내보내기 (백업)</button>
-            <button class="upbar-export" onclick="masterExportAll()">📦 마스터 일괄 내보내기</button>
+            <select id="mexpCert" onchange="mexpFill()" onfocus="mexpInit()" style="padding:6px 10px;border-radius:8px;border:1.5px solid #E2E2E2;font-size:12px"><option value="__all">전체 (모든 시험)</option></select>
+            <select id="mexpSub" style="padding:6px 10px;border-radius:8px;border:1.5px solid #E2E2E2;font-size:12px" disabled><option value="__all">전체 과목</option></select>
+            <button class="upbar-export" onclick="masterExportScoped()">📦 마스터 내보내기</button>
           </div>
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
@@ -1867,13 +1868,14 @@ async function mnemDelete(id){
 async function mnemExport(){
   if(!Object.keys(_mnemAll).length){ try{ var _s=await db.collection('mnemonics').get(); _mnemAll={}; _s.forEach(function(d){ _mnemAll[d.id]=d.data()||{}; }); }catch(e){ alert('로드 실패: '+e.message); return; } }
   var ids=Object.keys(_mnemAll);
+  if(_mexpScope) ids=ids.filter(function(id){ return _mexpKeep(id,_mnemAll[id]); });
   if(!ids.length){ alert('등록된 코드가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _mnemAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
   var bundle={ _meta:{ generatedAt:_xnow }, mnemonics:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
-  a.href=url; a.download='certlab_mnemonics_'+new Date().toISOString().slice(0,10)+'.json';
+  a.href=url; a.download='certlab_mnemonics'+_mexpSuffix()+'_'+new Date().toISOString().slice(0,10)+'.json';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   var st=document.getElementById('mnemStatus'); if(st){ st.style.color='#15793F'; st.textContent='✅ 백업 '+arr.length+'개 다운로드'; }
 }
@@ -2063,13 +2065,14 @@ async function tblmDelete(id){
 async function tblmExport(){
   if(!Object.keys(_tblmAll).length){ try{ var _s=await db.collection('tables').get(); _tblmAll={}; _s.forEach(function(d){ _tblmAll[d.id]=d.data()||{}; }); }catch(e){ alert('로드 실패: '+e.message); return; } }
   var ids=Object.keys(_tblmAll);
+  if(_mexpScope) ids=ids.filter(function(id){ return _mexpKeep(id,_tblmAll[id]); });
   if(!ids.length){ alert('등록된 표가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _tblmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
   var bundle={ _meta:{ generatedAt:_xnow }, tables:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
-  a.href=url; a.download='certlab_tables_'+new Date().toISOString().slice(0,10)+'.json';
+  a.href=url; a.download='certlab_tables'+_mexpSuffix()+'_'+new Date().toISOString().slice(0,10)+'.json';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   var st=document.getElementById('tblmStatus'); if(st){ st.style.color='#15793F'; st.textContent='✅ 백업 '+arr.length+'개 다운로드'; }
 }
@@ -2295,16 +2298,33 @@ async function masterExportAll(){
   }
   if(st){ st.style.color='#15793F'; st.textContent='✅ 마스터 6종(개념·암기·표·그래프·인터랙티브·OX진술태그) 각각 다운로드 완료'; }
 }
+var _mexpScope=null;
+function _mexpKeep(id, rec){ var sc=_mexpScope; if(!sc) return true;
+  if(sc.cert && sc.cert!=='__all'){ var cs=(rec&&rec.certs)||[]; if(cs.indexOf(sc.cert)<0) return false; }
+  if(sc.sub && sc.sub!=='__all'){ if(mfSubjOf(id, rec)!==sc.sub) return false; }
+  return true; }
+function _mexpSuffix(){ var sc=_mexpScope; if(!sc) return ''; var s=''; if(sc.cert&&sc.cert!=='__all') s+='_'+sc.cert; if(sc.sub&&sc.sub!=='__all') s+='_'+sc.sub; return s; }
+async function mexpInit(){ try{ if(!_expExams){ var m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; } }catch(e){ _expExams=_expExams||[]; }
+  var c=document.getElementById('mexpCert'); if(c&&c.options.length<=1){ c.innerHTML='<option value="__all">​전체 (모든 시험)</option>'+(_expExams||[]).map(function(e){return '<option value="'+e.id+'">'+(e.name||e.id)+'</option>';}).join(''); } mexpFill(); }
+function mexpFill(){ var c=document.getElementById('mexpCert'), sb=document.getElementById('mexpSub'); if(!c||!sb) return;
+  if(c.value==='__all'){ sb.innerHTML='<option value="__all">전체 과목</option>'; sb.disabled=true; return; }
+  sb.disabled=false; var ex=(_expExams||[]).find(function(e){return e.id===c.value;}); var subs=(ex&&ex.subjects)||[];
+  sb.innerHTML='<option value="__all">전체 과목</option>'+subs.map(function(x){return '<option value="'+x.code+'">'+(x.name||x.code)+'</option>';}).join(''); }
+async function masterExportScoped(){ var c=(document.getElementById('mexpCert')||{}).value||'__all'; var sb=(document.getElementById('mexpSub')||{}).value||'__all';
+  _mexpScope=(c==='__all'&&sb==='__all')?null:{cert:c,sub:sb};
+  try{ await masterExportAll(); } finally { _mexpScope=null; } }
+if(typeof window!=='undefined'){ (document.readyState==='loading') ? window.addEventListener('DOMContentLoaded',function(){setTimeout(function(){try{mexpInit();}catch(_){}},400);}) : setTimeout(function(){try{mexpInit();}catch(_){}},400); }
 async function cptmExport(){
   if(!Object.keys(_cptmAll).length){ try{ var _s=await db.collection('concepts').get(); _cptmAll={}; _s.forEach(function(d){ _cptmAll[d.id]=d.data()||{}; }); _cptmLoaded=true; }catch(e){ alert('로드 실패: '+e.message); return; } }
   var ids=Object.keys(_cptmAll);
+  if(_mexpScope) ids=ids.filter(function(id){ return _mexpKeep(id,_cptmAll[id]); });
   if(!ids.length){ alert('등록된 개념이 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _cptmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
   var bundle={ _meta:{ generatedAt:_xnow }, concepts:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
-  a.href=url; a.download='certlab_concepts_'+new Date().toISOString().slice(0,10)+'.json';
+  a.href=url; a.download='certlab_concepts'+_mexpSuffix()+'_'+new Date().toISOString().slice(0,10)+'.json';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   var st=document.getElementById('cptmStatus'); if(st){ st.style.color='#15793F'; st.textContent='✅ 백업 '+arr.length+'개 다운로드'; }
 }
@@ -2498,6 +2518,7 @@ async function ottagExport(){
       if(!qs.length) return;
       var cert=d.cert, subject=d.subject;
       if(!cert||!subject){ var p=doc.id.split('__'); cert=cert||p[0]; subject=subject||p[1]; }
+      if(_mexpScope&&((_mexpScope.cert&&_mexpScope.cert!=='__all'&&cert!==_mexpScope.cert)||(_mexpScope.sub&&_mexpScope.sub!=='__all'&&subject!==_mexpScope.sub))) return;
       qs.forEach(function(q){
         if(q&&q.id&&q.exp&&q.exp.ot){
           var key=cert+'||'+subject;
@@ -2688,13 +2709,14 @@ async function grpmDelete(id){
 async function grpmExport(){
   if(!Object.keys(_grpmAll).length){ try{ var _s=await db.collection('graphs').get(); _grpmAll={}; _s.forEach(function(d){ _grpmAll[d.id]=d.data()||{}; }); }catch(e){ alert('로드 실패: '+e.message); return; } }
   var ids=Object.keys(_grpmAll);
+  if(_mexpScope) ids=ids.filter(function(id){ return _mexpKeep(id,_grpmAll[id]); });
   if(!ids.length){ alert('등록된 그래프가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _grpmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
   var bundle={ _meta:{ generatedAt:_xnow }, graphs:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
-  a.href=url; a.download='certlab_graphs_'+new Date().toISOString().slice(0,10)+'.json';
+  a.href=url; a.download='certlab_graphs'+_mexpSuffix()+'_'+new Date().toISOString().slice(0,10)+'.json';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   var st=document.getElementById('grpmStatus'); if(st){ st.style.color='#15793F'; st.textContent='✅ 백업 '+arr.length+'개 다운로드'; }
 }
@@ -2851,13 +2873,14 @@ async function itvmDelete(id){
 async function itvmExport(){
   if(!Object.keys(_itvmAll).length){ try{ var _s=await db.collection('interactives').get(); _itvmAll={}; _s.forEach(function(d){ _itvmAll[d.id]=d.data()||{}; }); }catch(e){ alert('로드 실패: '+e.message); return; } }
   var ids=Object.keys(_itvmAll);
+  if(_mexpScope) ids=ids.filter(function(id){ return _mexpKeep(id,_itvmAll[id]); });
   if(!ids.length){ alert('등록된 인터랙티브가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _itvmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
   var bundle={ _meta:{ generatedAt:_xnow }, interactives:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
-  a.href=url; a.download='certlab_interactives_'+new Date().toISOString().slice(0,10)+'.json';
+  a.href=url; a.download='certlab_interactives'+_mexpSuffix()+'_'+new Date().toISOString().slice(0,10)+'.json';
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   var st=document.getElementById('itvmStatus'); if(st){ st.style.color='#15793F'; st.textContent='✅ 백업 '+arr.length+'개 다운로드'; }
 }
@@ -4387,15 +4410,8 @@ function _mlaRefs(q){
   var reV=/itv:\/\/([A-Za-z0-9_\-]+)/g; while((m=reV.exec(blob))) out.itv.push({id:m[1]});
   return out;
 }
-async function masterLinkAudit(){
-  var items=(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;});
-  if(!items.length){ alert('먼저 위 드롭존에 기출 JSON을 로드하세요.'); return; }
-  var ta=document.getElementById('reviewNote');
-  ta.value='⏳ 마스터(concepts·tables·mnemonics·graphs·images·interactives) 로드 중… 개념 1만+건이라 수 초 걸립니다.';
-  var M; try{ M=await _mlaLoadMasters(false); }catch(e){ ta.value='❌ 마스터 로드 실패: '+(e.message||e); return; }
-  var L=['[CertLab 마스터 연결 검수]','파일: '+items.map(function(it){return it.docId;}).join(', '),
-    '생성: '+new Date().toLocaleString('ko-KR'),
-    '마스터: 개념 '+Object.keys(M.concepts).length+' · 표 '+Object.keys(M.tables).length+' · 암기 '+Object.keys(M.mnems).length+' · 그래프 '+Object.keys(M.graphs).length+' · 이미지 '+Object.keys(M.images).length+' · 인터랙티브 '+Object.keys(M.interactives).length,''];
+function _mlaAuditLines(items, M){
+  var L=['마스터: 개념 '+Object.keys(M.concepts).length+' · 표 '+Object.keys(M.tables).length+' · 암기 '+Object.keys(M.mnems).length+' · 그래프 '+Object.keys(M.graphs).length+' · 이미지 '+Object.keys(M.images).length+' · 인터랙티브 '+Object.keys(M.interactives).length,''];
   var noCptL=[], deadL=[], childL=[], mediaL=[], cxL=[];
   var nNoCpt=0,nDead=0,nChild=0,nMedia=0,nCx=0, seenCx={}, seenChild={};
   items.forEach(function(it){
@@ -4435,26 +4451,30 @@ async function masterLinkAudit(){
   L=L.concat(cxL.length?cxL:['  (없음)']);
   L.push('','요약: 개념미연결 '+nNoCpt+' · 죽은링크 '+nDead+' · 딸림/표 누락 '+nChild+' · 이미지/인터랙티브 '+nMedia+' · cx빈칸 개념 '+nCx);
   L.push('※ 방향: 문항→개념→(표·암기·그래프). 마스터 고아는 대상 아님. 마스터를 방금 올렸으면 10분 캐시 → 새로고침 후 재실행.');
-  ta.value=L.join('\n');
+  return L;
 }
 async function buildReviewNote(){
   var items=(typeof impItems!=='undefined'?impItems:[]).filter(function(it){return it&&it.data;});
   if(!items.length){ alert('먼저 위 드롭존에 기출 JSON을 로드하세요.'); return; }
   await _qcLoadImgKeys();   // img:// 참조 대조용 이미지 키(실패 시 IMG_MISSING만 생략)
   await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
-  var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'','■ 게이트 자동 위반 (기계 판정 — 이 항목만 수정)'];
-  if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — img:// 누락 검사(IMG_MISSING)는 생략됨)');
+  var ta=document.getElementById('reviewNote'); ta.value='⏳ 검수 중… 일반 검수 + 마스터 로드(수 초)';
+  var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'',
+    '━━━━━ ① 일반 검수 (문항 게이트) ━━━━━'];
+  if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — IMG_MISSING 검사 생략)');
   var any=false;
-  items.forEach(function(it){
-    var g=qualityGate((it.data&&it.data.questions)||[]);
+  items.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]);
     g.block.forEach(function(m){ L.push('  [차단] '+it.docId+' · '+m); any=true; });
-    g.warn.forEach(function(m){ L.push('  [경고] '+it.docId+' · '+m); any=true; });
-  });
+    g.warn.forEach(function(m){ L.push('  [경고] '+it.docId+' · '+m); any=true; }); });
   if(!any) L.push('  (자동 위반 없음 — 구조·예시 게이트 통과)');
-  L.push('','■ 크리스 지적 (자유 입력 — 판단 필요 항목: 예시 품질·대비 개념·함정 등)','  예) c2021_3 예시가 너무 길다 / 6번 관계도 방향이 반대다','  ','  ','','※ 규칙: 위에 지적된 항목만 수정한다. 통과한 문항·필드는 손대지 않는다.');
-  document.getElementById('reviewNote').value=L.join('\n');
+  L.push('','━━━━━ ② 마스터 연결 검수 (참조 연결) ━━━━━');
+  try{ var M=await _mlaLoadMasters(false); L=L.concat(_mlaAuditLines(items, M)); }
+  catch(e){ L.push('  ❌ 마스터 로드 실패: '+(e.message||e)+' (일반 검수만 표시)'); }
+  L.push('','━━━━━ ③ 크리스 지적 (자유 입력) ━━━━━','  예) c2021_3 예시가 너무 길다 / 6번 관계도 방향이 반대다','  ','  ','','※ 규칙: 위에 지적된 항목만 수정한다. 통과한 문항·필드는 손대지 않는다.');
+  ta.value=L.join('\n');
 }
 function copyReviewNote(){ var t=document.getElementById('reviewNote'); if(!t.value.trim()){ alert('먼저 지적서를 만들어 주세요.'); return; } t.select(); var ok=false; try{ if(navigator.clipboard){ navigator.clipboard.writeText(t.value); ok=true; } }catch(_){ } if(!ok){ try{ document.execCommand('copy'); }catch(__){} } alert('복사됐어요. 데이터방에 붙여넣으세요.'); }
+function downloadReviewNote(){ var t=document.getElementById('reviewNote'); if(!t.value.trim()){ alert('먼저 지적서를 만들어 주세요.'); return; } var fn=(typeof impItems!=='undefined'&&impItems[0]&&impItems[0].docId)?impItems[0].docId:'exam'; var blob=new Blob([t.value],{type:'text/plain;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='검수지적서_'+fn+'_'+new Date().toISOString().slice(0,10)+'.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); }
 function downloadReviewNote(){ var v=document.getElementById('reviewNote').value; if(!v.trim()){ alert('먼저 지적서를 만들어 주세요.'); return; } var b=new Blob([v],{type:'text/plain;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='검수지적서_'+(new Date().toISOString().slice(0,10))+'.txt'; document.body.appendChild(a); a.click(); a.remove(); }
 async function impUpload(){
   const ready=impItems.filter(it=>it.status==='ready');
