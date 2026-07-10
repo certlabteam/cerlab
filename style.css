@@ -996,3 +996,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .cx-recall{margin:12px 0 0;padding:11px 13px;background:#fff;border:1px solid #F5E6C8;border-radius:9px}
 #mcqView .cx-recall-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:7px}
 #mcqView .cx-recall-flow{font-size:13px;line-height:1.9;color:#5E4A2A;text-align:center}
+
+/* 계산형 요약/상세 — 프로토타입 매칭 추가 (소제목 강조·최종정리) */
+#mcqView .calc-sol .cs-label{font-weight:800;color:#8A5A00;margin-bottom:4px}
+#mcqView .calc-sol .cs-step{font-weight:400}
+#mcqView .calc-sol .cs-step b{color:#7A4E00}
+#mcqView .calc-sol .cs-key{font-weight:800;color:#7A4E00}
+#mcqView .cx-final{margin:12px 0 0;padding:11px 13px;background:#F0F6FC;border-left:3px solid #0C447C;border-radius:8px;font-size:13.5px;line-height:1.7;color:#1E3A5F}
+#mcqView .cx-final b{color:#0C447C}
