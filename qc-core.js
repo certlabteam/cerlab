@@ -157,7 +157,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false}},
+  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
@@ -191,9 +191,10 @@ var _QC_SEV = {
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
+  CALC_MECHANICAL:'WARNING', CALC_REPEAT_LEAD:'WARNING', TYPE_MISMATCH:'WARNING',
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
   /* INFO (NICE — 참고) */
-  EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
+  EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
 };
 function _qcSevOf(code, kind){
   if(_QC_SEV[code]) return _QC_SEV[code];
@@ -262,6 +263,36 @@ function _qcExtraRules(q){
     ex.forEach(function(t,i){ var s=String(t||''); if(_CONST.test(s) && !_BASIS.test(s))
       v.push({kind:'warn',field:'ex',idx:i,code:'CONST_NO_BASIS',
         msg:'풀이에 상수·환산계수가 근거 설명 없이 등장 — 최초 등장 시 "왜 그 숫자인지" 1줄 명시 권장(참고)',text:s.slice(0,80)}); });
+  }
+  /* (d) 계산형 강의화 — 기계적 반복 문구 금지 [계산형 해설 강의형 가이드 2026-07 §작성금지] */
+  if(_qcOn('gichul','CALC_MECHANICAL') && _isCalcQ(q)){
+    var _MECH=/(먼저|이제|다음으로?|마지막으로)\s*계산(한다|하면|하자|을?\s*진행한다)|앞에서\s*구한\s*값을\s*이용(한다|하면)|그대로\s*대입하면\s*된다|한\s*곳에\s*모은다|기준값이다/;
+    ex.forEach(function(t,i){ var s=String(t||''); if(_MECH.test(s))
+      v.push({kind:'warn',field:'ex',idx:i,code:'CALC_MECHANICAL',
+        msg:'계산형 풀이가 기계적 문구(먼저/이제 계산한다·앞에서 구한 값 이용·그대로 대입·한곳에 모은다 등) — 계산만 하지 말고 왜 이 계산을 하는지 강의하듯 설명(강의형 가이드 §작성금지)',text:s.slice(0,80)}); });
+  }
+  /* (e) 계산형 강의화 — 같은 문두 연속 반복 금지 [강의형 가이드 §작성금지: 같은 문장구조 반복 금지] */
+  if(_qcOn('gichul','CALC_REPEAT_LEAD') && _isCalcQ(q)){
+    var _fx=ex.filter(function(x){return x&&String(x).trim();});
+    var _lead=function(s){return String(s).replace(/^[\s①-⑩·\-\d.]+/,'').replace(/\s+/g,'').slice(0,6);};
+    for(var _k=1;_k<_fx.length;_k++){ var _a=_lead(_fx[_k-1]),_b=_lead(_fx[_k]); if(_b&&_b.length>=4&&_b===_a)
+      v.push({kind:'warn',field:'ex',idx:_k,code:'CALC_REPEAT_LEAD',
+        msg:'풀이 줄이 앞줄과 같은 문두("'+_b+'…")로 시작 — 같은 문장 구조를 연속 반복하지 않음(강의형 가이드 §작성금지)',text:String(_fx[_k]).slice(0,60)}); }
+  }
+  /* (g) 형식 태깅 검수 — 의도(q.type) vs 자동판별 불일치 [V2 §248 · 타입 검수기(certlab_typecheck) 연동]
+     certlab_typecheck.js가 로드돼 있으면(CertLabTypeCheck) 연동, 없으면 조용히 스킵(하드 의존 X). */
+  if(_qcOn('gichul','TYPE_MISMATCH') && q && q.type){
+    var _TC=(typeof CertLabTypeCheck!=='undefined')?CertLabTypeCheck:((typeof globalThis!=='undefined'&&globalThis.CertLabTypeCheck)||null);
+    if(_TC && typeof _TC.classify==='function'){ try{ var _tc=_TC.classify(q);
+      if(_tc && _tc.mismatch) v.push({kind:'warn',field:'type',idx:0,code:'TYPE_MISMATCH',
+        msg:'형식 의도(type='+_tc.mismatch.intent+')와 자동판별('+_tc.mismatch.auto+')이 다름 — type 태그 또는 exp.o 구조(oFilled/blanks) 점검(V2 §248)',text:String(q.type)}); }catch(e){} }
+  }
+  /* (f) 계산형 강의화 — 접근(무엇을·왜) 없이 첫 줄이 바로 공식/수치 [강의형 가이드 §1 접근] (기본 OFF·오탐영역) */
+  if(_qcOn('gichul','CALC_NO_APPROACH') && _isCalcQ(q)){
+    var _f0=(ex.filter(function(x){return x&&String(x).trim();})[0])||'';
+    if(_f0 && /^\s*(\[?\s*공식|[A-Za-z]{1,5}\s*=|\d[\d,.]*\s*[=×÷+\-])/.test(_f0))
+      v.push({kind:'warn',field:'ex',idx:0,code:'CALC_NO_APPROACH',
+        msg:'풀이 첫 줄이 접근 설명 없이 바로 공식/수치 — 먼저 "무엇을 구하는 문제인지·왜 이 값부터 구하는지"를 한 줄로(강의형 가이드 §1 접근·02 §CALC 조건정리)',text:String(_f0).slice(0,60)});
   }
   return v;
 }
