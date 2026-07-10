@@ -411,6 +411,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
 #mcqView .exp-opts .eo-ex{margin-top:7px;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
+#mcqView .calc-sol .calc-arrow{display:block;text-align:center;color:#185FA5;font-weight:900;font-size:17px;line-height:1;margin:8px 0 7px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 #mcqView .cv-list{margin-top:9px;display:flex;flex-direction:column}
 #mcqView .cv-item{padding:8px 0;border-bottom:1px dashed #E2E8F0;line-height:1.65;font-size:13px}
