@@ -5,8 +5,8 @@
 ## 기출문제·해설
 - [기출문제 모음(허브)](https://certlab.ai.kr/seo/index.html)
 - [감정평가사 기출문제](https://certlab.ai.kr/seo/appraiser-32-civil.html)
-- [공인중개사 1차 기출문제](https://certlab.ai.kr/seo/realestate1-34-re1_intro.html)
-- [공인중개사 2차 기출문제](https://certlab.ai.kr/seo/realestate2-34-re2_law.html)
+- [공인중개사 1차 기출문제](https://certlab.ai.kr/seo/realestate1-33-re1_intro.html)
+- [공인중개사 2차 기출문제](https://certlab.ai.kr/seo/realestate2-33-re2_law.html)
 - [주택관리사보 기출문제](https://certlab.ai.kr/seo/housing-25-hm_acct.html)
 - [주택관리사 2차 기출문제](https://certlab.ai.kr/seo/housing2-25-hm2_law.html)
 - [한국사능력검정시험(심화) 기출문제](https://certlab.ai.kr/seo/koreanhistory-74-ksh.html)
