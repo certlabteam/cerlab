@@ -5767,29 +5767,7 @@ function renderMcqExam(root){
         var optLine = (q.opts&&q.opts[ansIdx]!=null) ? '<div class="eo-q">'+(ansIdx+1)+'. '+rm(q.opts[ansIdx],q)+vTag+' <span class="eo-badge">✅ 정답</span></div>' : '';
         var aLine = sv1.rest ? '<div class="eo-a">'+rm(sv1.rest,q)+'</div>' : '';
         body+='<div class="exp-opts"><div class="eo">'+optLine+aLine+'</div></div>';
-        if(hasSteps){
-          (function(){
-            // 한 항목에 ①②③ 마커가 2개 이상 뭉쳐 있으면 각 마커·결과문 앞에서 줄 분리(데이터 무수정 렌더 교정)
-            var _splitSteps=function(arr){ var out=[]; arr.forEach(function(it){ var s=String(it==null?'':it); var m=s.match(/[\u2460-\u2473]/g); if(m&&m.length>=2){ s.replace(/\s*(?=[\u2460-\u2473])/g,'\n').replace(/\s*(?=(?:따라서|그러므로)\s)/g,'\n').split('\n').forEach(function(p){ if(p.trim()) out.push(p.trim()); }); } else { out.push(it); } }); return out; };
-            var _ex=_splitSteps(exArr.filter(Boolean)).map(function(l){return rm(String(l),q);});
-            var _numRe=/^\s*([\u2460-\u2473]|\d+\s*[.)])/;
-            var _hasNum=_ex.some(function(s){return _numRe.test(s);});
-            var _inner;
-            if(_hasNum){
-              _inner='<div style="font-weight:800;color:#8A5A00">풀이)</div>'
-                + _ex.map(function(s,i){
-                    if(/^\s*[↓→]\s*$/.test(String(s).replace(/<[^>]+>/g,''))) return '<div class="calc-arrow">'+s+'</div>';
-                    return '<div style="font-weight:400;margin-top:'+(i===0?'5px':'4px')+'">'+s+'</div>';   // 왼쪽부터 평평(내어쓰기 없음) — 넘어가는 줄도 왼쪽 정렬
-                  }).join('');
-            } else {
-              _inner=_ex.map(function(s,i){
-                if(/^\s*[↓→]\s*$/.test(String(s).replace(/<[^>]+>/g,''))) return '<div class="calc-arrow">'+s+'</div>';
-                return '<div style="font-weight:400;margin-top:'+(i===0?'0':'4px')+'">'+(i===0?'<b style="font-weight:800;color:#8A5A00">풀이) </b>':'')+s+'</div>';
-              }).join('');
-            }
-            body+='<div class="calc-sol" style="margin:10px 0 0;padding:12px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px;font-size:13px;color:#5E4A2A;line-height:1.8;word-break:keep-all;overflow-wrap:break-word">'+_inner+'</div>';
-          })();
-        }
+        body += certlabCalcHTML(q, exArr, rm);
       } else {
         // 결론 한 줄(ㄱㄴㄷ형 등)
         body+='<div class="exp-opts"><div class="eo"><div class="eo-a">'+rm(concl,q)+'</div></div></div>';   // 결론 한 줄: 해설 전체 정오색 제거(일반 해설처럼 검정) — 배지(splitVerdict vc)는 유지
@@ -5801,6 +5779,7 @@ function renderMcqExam(root){
       body = '<div class="calc-graph">'+q.exp.graph+'</div>' + body;
     body += oxCompareHTML(q, oArr);   // 1단계: 내 O/X vs 정답 (텍스트·이미지·일반 통합)
     body += tipBlockHTML(q);          // O/X 다음 → ⚡ 시험 포인트(함정 한 줄)
+    body += certlabRecallHTML(q, rm);
     var _mnCh=_conceptChain(q,'mn');
     if(q.mn||(q.exp&&q.exp.mn)||_mnCh.length){ 
       var _mn=q.mn||q.exp.mn; 
@@ -7432,5 +7411,6 @@ function adEloUpdate(q, correct){
 }
 </script>
 <script src="community.js"></script>
+<script src="calc-render.js"></script>
 </body>
 </html>
