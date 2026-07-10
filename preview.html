@@ -718,7 +718,7 @@ function renderExpFull(q, mqCertVal){
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
     var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false) ? false : (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
-    if(q.exp && q.exp.s) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
+    if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
     var isCombo=isComboQuestion(q.opts);
     var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
