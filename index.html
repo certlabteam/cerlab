@@ -5556,7 +5556,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     var statusTxt=g.allOK?'\uC815\uB2F5':(saAnswered(q,ansObj)?'\uC624\uB2F5':'\uBBF8\uC751\uB2F5');
     var statusCol=g.allOK?'#0F6E56':'#A32D2D';
     var body='';
-    if(q.exp && q.exp.s) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
+    if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
     var oArr=(q.exp&&q.exp.o)||[];
     if(oArr.length){
       body+='<div class="exp-opts">'+q.blanks.map(function(b,i){
@@ -5643,7 +5643,7 @@ function renderMcqExam(root){
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
     var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false) ? false : (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
-    if(q.exp && q.exp.s) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
+    if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
     var isCombo=isComboQuestion(q.opts);
     var stmts = isCombo ? parseJaryoStmts(q.q) : [];
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
