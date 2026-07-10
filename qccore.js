@@ -344,7 +344,88 @@ function qcDiff(questions, baseline){
   neu.sort(function(a,b){ return (_rank[a.sev]||9)-(_rank[b.sev]||9); });
   return {newViolations:neu, fixed:fixed, carried:carried};
 }
-if(typeof module!=='undefined'&&module.exports){ module.exports.qcBaseline=qcBaseline; module.exports.qcDiff=qcDiff; module.exports._qcViolations=_qcViolations; }
+/* ── 마스터 참조 스캔 게이트 (마스터 수정 전후 참조 무결성) ──────────────────
+ * 문제: 개념(cpt)·표(tbl)·그래프(grp)·암기(mn)·이미지(img)·인터랙(itv) 마스터를 고치면(개명·삭제·재구성)
+ *       그걸 참조하던 문항들이 고아/깨진 참조가 됨(CPT_MISSING BLOCKER 등). 한쪽만 고치면 중간에 깨진 상태.
+ * 해법: 마스터 수정 '전'과 '후'에 참조를 스캔(qcRefScan)하고, qcRefGate로 **이 수정이 새로 깨뜨린 참조만** 집어
+ *       원자적 업데이트(마스터+참조문항 한 배치)를 강제한다. (베이스라인 diff의 참조 버전.)
+ *   - qcRefScan(questions, masters) → { refs:{type:{id:[qid...]}}, broken:[{type,id,qids}] }
+ *       masters = {concepts,tables,graphs,mnems,interactives,images} (없는 타입은 판정보류=broken 오판 안 함)
+ *       images는 Set/배열/객체 모두 허용. 미제공 시 전역 _qcCptCards·_qcImgKeys 폴백.
+ *   - qcRefGate(before, after) → { newBroken, fixed, ok }
+ *       newBroken = after에서 새로 깨진 참조(이번 수정이 유발) → 있으면 차단, 그 qids를 같은 배치로 정정.
+ * 운영: before=qcRefScan(문항, 수정전 마스터) → [마스터·문항 편집] → after=qcRefScan(문항, 수정후 마스터)
+ *       → gate=qcRefGate(before,after); if(!gate.ok) 업로드 보류(gate.newBroken 정정). */
+function _qcMasterHas(masters, type, id){
+  masters=masters||{};
+  if(type==='img'){ var ik=masters.images||((typeof _qcImgKeys!=='undefined')?_qcImgKeys:null);
+    if(!ik) return null;
+    if(typeof ik.has==='function') return ik.has(id);
+    if(Array.isArray(ik)) return ik.indexOf(id)>=0;
+    if(typeof ik==='object') return (id in ik);
+    return null; }
+  var map={cpt:masters.concepts, tbl:masters.tables, grp:masters.graphs, mn:masters.mnems, itv:masters.interactives};
+  var m=map[type];
+  if(!m && type==='cpt' && typeof _qcCptCards!=='undefined' && _qcCptCards) m=_qcCptCards;
+  if(!m || typeof m!=='object') return null;   /* 마스터 미제공 → 판정보류(있다고도 없다고도 안 함) */
+  return (id in m);
+}
+function qcRefScan(questions, masters){
+  var refs={cpt:{},tbl:{},grp:{},mn:{},img:{},itv:{}}, broken=[];
+  (questions||[]).forEach(function(q){
+    if(!q) return; var qid=(q.id!=null)?String(q.id):'?';
+    var r; try{ r=_qcRefs(q); }catch(e){ return; }
+    ['cpt','tbl','grp','mn','img','itv'].forEach(function(t){
+      (r[t]||[]).forEach(function(ref){ var k=ref&&ref.id; if(!k) return; (refs[t][k]=refs[t][k]||[]).push(qid); });
+    });
+  });
+  ['cpt','tbl','grp','mn','img','itv'].forEach(function(t){
+    Object.keys(refs[t]).forEach(function(k){ if(_qcMasterHas(masters,t,k)===false) broken.push({type:t,id:k,qids:refs[t][k].slice()}); });
+  });
+  return {refs:refs, broken:broken};
+}
+function qcRefGate(before, after){
+  before=before||{broken:[]}; after=after||{broken:[]};
+  function key(b){ return b.type+'://'+b.id; }
+  var bset={}; (before.broken||[]).forEach(function(b){ bset[key(b)]=1; });
+  var aset={}; (after.broken||[]).forEach(function(b){ aset[key(b)]=1; });
+  var newBroken=(after.broken||[]).filter(function(b){ return !bset[key(b)]; });
+  var fixed=(before.broken||[]).filter(function(b){ return !aset[key(b)]; });
+  return {newBroken:newBroken, fixed:fixed, ok:newBroken.length===0};
+}
+
+/* ── 참조 개명 자동수정 (rename auto-fix) ──────────────────────────────────
+ * 마스터 키를 '개명'했을 때(삭제 아님) 참조 문항들의 키를 일괄 갱신 → 개명은 막지 말고 고친다.
+ * (삭제/오타는 자동수정 불가 = 사람이 정해야 하므로 게이트가 막는다. rename만 이 함수로 원자적 처리.)
+ *   qcRefRemap(questions, renameMap) → { changed, details:[{id,where,from,to}] }
+ *     renameMap: { "옛키":"새키" }  (접두 cpt://·mn:// 유무 무관 — 있으면 보존, 없으면 그대로)
+ *   커버 필드: exp.cpt · exp.ot[].cpt · exp.tbl · exp.c[].tbl · exp.mn(문자열/배열).
+ *   운영: 마스터 개명 → qcRefRemap(문항, {옛:새})로 참조 갱신 → qcRefGate로 새 고아 0 확인 → 마스터+문항 함께 업로드. */
+function qcRefRemap(questions, renameMap){
+  var norm={};
+  Object.keys(renameMap||{}).forEach(function(k){
+    var ok=String(k).replace(/^[a-z]+:\/\//,''), nv=String(renameMap[k]).replace(/^[a-z]+:\/\//,'');
+    if(ok) norm[ok]=nv;
+  });
+  var details=[];
+  function mp(v){ if(typeof v!=='string') return null;
+    var pre=(v.match(/^[a-z]+:\/\//)||[''])[0]; var bare=v.replace(/^[a-z]+:\/\//,'');
+    if(norm[bare]!==undefined && norm[bare]!==bare) return pre+norm[bare]; return null; }
+  function doArr(arr, where){ if(!Array.isArray(arr)) return;
+    for(var i=0;i<arr.length;i++){ var nn=mp(arr[i]); if(nn){ details.push({id:qid, where:where+'['+i+']', from:arr[i], to:nn}); arr[i]=nn; } } }
+  var qid;
+  (questions||[]).forEach(function(q){
+    if(!q||!q.exp) return; qid=q.id; var exp=q.exp;
+    doArr(exp.cpt,'exp.cpt'); doArr(exp.tbl,'exp.tbl');
+    if(typeof exp.mn==='string'){ var nn=mp(exp.mn); if(nn){ details.push({id:qid,where:'exp.mn',from:exp.mn,to:nn}); exp.mn=nn; } }
+    else doArr(exp.mn,'exp.mn');
+    (Array.isArray(exp.ot)?exp.ot:[]).forEach(function(o,oi){ if(o&&Array.isArray(o.cpt)) doArr(o.cpt,'exp.ot['+oi+'].cpt'); });
+    (Array.isArray(exp.c)?exp.c:[]).forEach(function(c,ci){ if(c&&Array.isArray(c.tbl)) doArr(c.tbl,'exp.c['+ci+'].tbl'); });
+  });
+  return {changed:details.length, details:details};
+}
+
+if(typeof module!=='undefined'&&module.exports){ module.exports.qcBaseline=qcBaseline; module.exports.qcDiff=qcDiff; module.exports._qcViolations=_qcViolations; module.exports.qcRefScan=qcRefScan; module.exports.qcRefGate=qcRefGate; module.exports.qcRefRemap=qcRefRemap; }
 
 /* ---- 2) 마스터 연결 편입: _qcMasterLink(q, M) ----
    M = {concepts, tables, mnems, graphs, images, interactives} 각각 {id:...} 맵(없으면 null=그 타입 스킵).
