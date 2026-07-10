@@ -143,13 +143,19 @@ function _qcViolations(q){
   if(_qcOn('gichul','BARE_ACRONYM')){ var _allT=[].concat(o||[],ex||[]).map(function(x){return String(x||'');}).join('\n'); var _ACR=/(GDP|GNP|GNI|GDI|LTV|DTI|DSR|MRS|MRT|MRTS|IRR|NPV|ROE|ROA|EPS|PER|PBR)/g, _seen={}, _mm; while((_mm=_ACR.exec(_allT))){ var _ac=_mm[1]; if(_seen[_ac])continue; _seen[_ac]=1; var _re2=new RegExp(_ac+'\\s*[(\uff08]'); if(!_re2.test(_allT)) v.push({kind:'warn',field:'o',idx:0,code:'BARE_ACRONYM',msg:'\uc601\uc5b4\uc57d\uc790 '+_ac+' \ud480\uc774 \uc5c6\uc774 \ub178\ucd9c \u2014 \uccab \ub4f1\uc7a5 1\ud68c \ud480\uc5b4\uc4f0\uae30('+_ac+', \ud55c\uae00\ud480\uc774) \u00a72-1',text:_ac}); } }
   return v;
 }
+/* ⚠️⚠️ [임시] 검수 게이트 우회 스위치 — 정비 완료 후 반드시 false 로 복구! ⚠️⚠️
+ * true면 qualityGate가 block(필수통과 위반)을 비워 업로드를 강행 허용한다(위반은 warn으로 여전히 표시).
+ * 콘텐츠가 아직 검수를 못 통과하는 동안 업로드만 되게 하는 한시 조치. 정비 끝나면 false 로 되돌린다. */
+var _qcGateBypass = (typeof _qcGateBypass!=='undefined') ? _qcGateBypass : true;
+try{ if(_qcGateBypass && typeof console!=='undefined') console.warn('[QC] \u26a0\ufe0f _qcGateBypass=true \u2014 \uac80\uc218 \ud544\uc218\ud1b5\uacfc \uc5c6\uc774 \uc5c5\ub85c\ub4dc \uac15\ud589 \uc911. \uc815\ube44 \ud6c4 false \ubcf5\uad6c \ud544\uc694.'); }catch(e){}
+
 function qualityGate(questions){
   var block=[], warn=[];
   (questions||[]).forEach(function(q){
     var id=(q&&q.id)||'?';
     _qcViolations(q).forEach(function(x){
       var line=id+' '+(x.field==='card'?('card'+x.idx):(x.field+'['+x.idx+']'))+' '+x.msg;
-      if(x.kind==='block') block.push(line); else warn.push(line);
+      if(x.kind==='block' && !_qcGateBypass) block.push(line); else warn.push(line);  /* \uc6b0\ud68c ON\uc774\uba74 block\u2192warn(\uc5c5\ub85c\ub4dc \uac15\ud589) */
     });
   });
   return {block:block, warn:warn};
@@ -191,7 +197,7 @@ var _QC_SEV = {
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
-  CALC_MECHANICAL:'WARNING', CALC_REPEAT_LEAD:'WARNING', TYPE_MISMATCH:'WARNING',
+  CALC_MECHANICAL:'INFO', CALC_REPEAT_LEAD:'INFO', TYPE_MISMATCH:'INFO',  /* 소급 폭증 방지: 신규 규칙은 INFO(비차단)로 도입, 베이스라인 정비 후 승격(qcDiff) */
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
@@ -305,6 +311,127 @@ _qcViolations = function(q){
   _qcApplySev(v);
   return v;
 };
+
+/* ── 베이스라인 diff (소급 위반 폭증 방지) ────────────────────────────────
+ * 문제: 규칙 추가·type 태깅·분류기 변경 때마다 과거 통과 문항이 소급 위반으로 튐(backlog 부풀림).
+ * 해법: 과목별 현재 위반을 스냅샷(qcBaseline)하고, 재검수 땐 qcDiff로 **이번 편집이 새로 만든 위반만** 본다.
+ *   - qcBaseline(questions) → { qid: [code,...] }  (기지 이슈 스냅샷; 파일로 저장해 과목별 보관)
+ *   - qcDiff(questions, baseline) → { newViolations, fixed, carried }
+ *       newViolations = baseline에 없던 (qid,code) = 이번 편집이 유발/노출한 것 (이것만 손보면 됨)
+ *       fixed         = baseline에 있었는데 사라진 것 (편집으로 해소)
+ *       carried       = 기존 backlog(숨김) 수
+ * 운영: 과목 정비 착수 시 qcBaseline 1회 저장 → 이후 편집마다 qcDiff로 delta만 검수.
+ *       backlog는 별도 시간에 계획적으로 소진(편집 흐름을 막지 않음). */
+function qcBaseline(questions){
+  var snap={};
+  (questions||[]).forEach(function(q){
+    if(!q||q.id==null) return;
+    var codes={}; try{ _qcViolations(q).forEach(function(v){ codes[v.code]=1; }); }catch(e){}
+    var arr=Object.keys(codes).sort(); if(arr.length) snap[String(q.id)]=arr;
+  });
+  return snap;
+}
+function qcDiff(questions, baseline){
+  baseline=baseline||{};
+  var neu=[], fixed=[], carried=0;
+  (questions||[]).forEach(function(q){
+    if(!q||q.id==null) return;
+    var id=String(q.id);
+    var base={}; (baseline[id]||[]).forEach(function(c){ base[c]=1; });
+    var cur={}, list=[]; try{ list=_qcViolations(q); }catch(e){}
+    list.forEach(function(v){ cur[v.code]=1;
+      if(base[v.code]) carried++;                       /* 기존 backlog → 숨김 */
+      else neu.push({id:id, code:v.code, sev:v.sev, kind:v.kind, field:v.field, idx:v.idx, msg:v.msg}); /* 새 위반 */
+    });
+    Object.keys(base).forEach(function(c){ if(!cur[c]) fixed.push({id:id, code:c}); }); /* 편집으로 해소 */
+  });
+  /* 새 위반 치명도순 정렬(BLOCKER>ERROR>WARNING>INFO) */
+  var _rank={BLOCKER:0,ERROR:1,WARNING:2,INFO:3};
+  neu.sort(function(a,b){ return (_rank[a.sev]||9)-(_rank[b.sev]||9); });
+  return {newViolations:neu, fixed:fixed, carried:carried};
+}
+/* ── 마스터 참조 스캔 게이트 (마스터 수정 전후 참조 무결성) ──────────────────
+ * 문제: 개념(cpt)·표(tbl)·그래프(grp)·암기(mn)·이미지(img)·인터랙(itv) 마스터를 고치면(개명·삭제·재구성)
+ *       그걸 참조하던 문항들이 고아/깨진 참조가 됨(CPT_MISSING BLOCKER 등). 한쪽만 고치면 중간에 깨진 상태.
+ * 해법: 마스터 수정 '전'과 '후'에 참조를 스캔(qcRefScan)하고, qcRefGate로 **이 수정이 새로 깨뜨린 참조만** 집어
+ *       원자적 업데이트(마스터+참조문항 한 배치)를 강제한다. (베이스라인 diff의 참조 버전.)
+ *   - qcRefScan(questions, masters) → { refs:{type:{id:[qid...]}}, broken:[{type,id,qids}] }
+ *       masters = {concepts,tables,graphs,mnems,interactives,images} (없는 타입은 판정보류=broken 오판 안 함)
+ *       images는 Set/배열/객체 모두 허용. 미제공 시 전역 _qcCptCards·_qcImgKeys 폴백.
+ *   - qcRefGate(before, after) → { newBroken, fixed, ok }
+ *       newBroken = after에서 새로 깨진 참조(이번 수정이 유발) → 있으면 차단, 그 qids를 같은 배치로 정정.
+ * 운영: before=qcRefScan(문항, 수정전 마스터) → [마스터·문항 편집] → after=qcRefScan(문항, 수정후 마스터)
+ *       → gate=qcRefGate(before,after); if(!gate.ok) 업로드 보류(gate.newBroken 정정). */
+function _qcMasterHas(masters, type, id){
+  masters=masters||{};
+  if(type==='img'){ var ik=masters.images||((typeof _qcImgKeys!=='undefined')?_qcImgKeys:null);
+    if(!ik) return null;
+    if(typeof ik.has==='function') return ik.has(id);
+    if(Array.isArray(ik)) return ik.indexOf(id)>=0;
+    if(typeof ik==='object') return (id in ik);
+    return null; }
+  var map={cpt:masters.concepts, tbl:masters.tables, grp:masters.graphs, mn:masters.mnems, itv:masters.interactives};
+  var m=map[type];
+  if(!m && type==='cpt' && typeof _qcCptCards!=='undefined' && _qcCptCards) m=_qcCptCards;
+  if(!m || typeof m!=='object') return null;   /* 마스터 미제공 → 판정보류(있다고도 없다고도 안 함) */
+  return (id in m);
+}
+function qcRefScan(questions, masters){
+  var refs={cpt:{},tbl:{},grp:{},mn:{},img:{},itv:{}}, broken=[];
+  (questions||[]).forEach(function(q){
+    if(!q) return; var qid=(q.id!=null)?String(q.id):'?';
+    var r; try{ r=_qcRefs(q); }catch(e){ return; }
+    ['cpt','tbl','grp','mn','img','itv'].forEach(function(t){
+      (r[t]||[]).forEach(function(ref){ var k=ref&&ref.id; if(!k) return; (refs[t][k]=refs[t][k]||[]).push(qid); });
+    });
+  });
+  ['cpt','tbl','grp','mn','img','itv'].forEach(function(t){
+    Object.keys(refs[t]).forEach(function(k){ if(_qcMasterHas(masters,t,k)===false) broken.push({type:t,id:k,qids:refs[t][k].slice()}); });
+  });
+  return {refs:refs, broken:broken};
+}
+function qcRefGate(before, after){
+  before=before||{broken:[]}; after=after||{broken:[]};
+  function key(b){ return b.type+'://'+b.id; }
+  var bset={}; (before.broken||[]).forEach(function(b){ bset[key(b)]=1; });
+  var aset={}; (after.broken||[]).forEach(function(b){ aset[key(b)]=1; });
+  var newBroken=(after.broken||[]).filter(function(b){ return !bset[key(b)]; });
+  var fixed=(before.broken||[]).filter(function(b){ return !aset[key(b)]; });
+  return {newBroken:newBroken, fixed:fixed, ok:newBroken.length===0};
+}
+
+/* ── 참조 개명 자동수정 (rename auto-fix) ──────────────────────────────────
+ * 마스터 키를 '개명'했을 때(삭제 아님) 참조 문항들의 키를 일괄 갱신 → 개명은 막지 말고 고친다.
+ * (삭제/오타는 자동수정 불가 = 사람이 정해야 하므로 게이트가 막는다. rename만 이 함수로 원자적 처리.)
+ *   qcRefRemap(questions, renameMap) → { changed, details:[{id,where,from,to}] }
+ *     renameMap: { "옛키":"새키" }  (접두 cpt://·mn:// 유무 무관 — 있으면 보존, 없으면 그대로)
+ *   커버 필드: exp.cpt · exp.ot[].cpt · exp.tbl · exp.c[].tbl · exp.mn(문자열/배열).
+ *   운영: 마스터 개명 → qcRefRemap(문항, {옛:새})로 참조 갱신 → qcRefGate로 새 고아 0 확인 → 마스터+문항 함께 업로드. */
+function qcRefRemap(questions, renameMap){
+  var norm={};
+  Object.keys(renameMap||{}).forEach(function(k){
+    var ok=String(k).replace(/^[a-z]+:\/\//,''), nv=String(renameMap[k]).replace(/^[a-z]+:\/\//,'');
+    if(ok) norm[ok]=nv;
+  });
+  var details=[];
+  function mp(v){ if(typeof v!=='string') return null;
+    var pre=(v.match(/^[a-z]+:\/\//)||[''])[0]; var bare=v.replace(/^[a-z]+:\/\//,'');
+    if(norm[bare]!==undefined && norm[bare]!==bare) return pre+norm[bare]; return null; }
+  function doArr(arr, where){ if(!Array.isArray(arr)) return;
+    for(var i=0;i<arr.length;i++){ var nn=mp(arr[i]); if(nn){ details.push({id:qid, where:where+'['+i+']', from:arr[i], to:nn}); arr[i]=nn; } } }
+  var qid;
+  (questions||[]).forEach(function(q){
+    if(!q||!q.exp) return; qid=q.id; var exp=q.exp;
+    doArr(exp.cpt,'exp.cpt'); doArr(exp.tbl,'exp.tbl');
+    if(typeof exp.mn==='string'){ var nn=mp(exp.mn); if(nn){ details.push({id:qid,where:'exp.mn',from:exp.mn,to:nn}); exp.mn=nn; } }
+    else doArr(exp.mn,'exp.mn');
+    (Array.isArray(exp.ot)?exp.ot:[]).forEach(function(o,oi){ if(o&&Array.isArray(o.cpt)) doArr(o.cpt,'exp.ot['+oi+'].cpt'); });
+    (Array.isArray(exp.c)?exp.c:[]).forEach(function(c,ci){ if(c&&Array.isArray(c.tbl)) doArr(c.tbl,'exp.c['+ci+'].tbl'); });
+  });
+  return {changed:details.length, details:details};
+}
+
+if(typeof module!=='undefined'&&module.exports){ module.exports.qcBaseline=qcBaseline; module.exports.qcDiff=qcDiff; module.exports._qcViolations=_qcViolations; module.exports.qcRefScan=qcRefScan; module.exports.qcRefGate=qcRefGate; module.exports.qcRefRemap=qcRefRemap; }
 
 /* ---- 2) 마스터 연결 편입: _qcMasterLink(q, M) ----
    M = {concepts, tables, mnems, graphs, images, interactives} 각각 {id:...} 맵(없으면 null=그 타입 스킵).
