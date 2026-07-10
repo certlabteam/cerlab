@@ -5777,10 +5777,12 @@ function renderMcqExam(root){
             if(_hasNum){
               _inner='<div style="font-weight:800;color:#8A5A00">풀이)</div>'
                 + _ex.map(function(s,i){
+                    if(/^\s*[↓→]\s*$/.test(String(s).replace(/<[^>]+>/g,''))) return '<div class="calc-arrow">'+s+'</div>';
                     return '<div style="font-weight:400;margin-top:'+(i===0?'5px':'4px')+'">'+s+'</div>';   // 왼쪽부터 평평(내어쓰기 없음) — 넘어가는 줄도 왼쪽 정렬
                   }).join('');
             } else {
               _inner=_ex.map(function(s,i){
+                if(/^\s*[↓→]\s*$/.test(String(s).replace(/<[^>]+>/g,''))) return '<div class="calc-arrow">'+s+'</div>';
                 return '<div style="font-weight:400;margin-top:'+(i===0?'0':'4px')+'">'+(i===0?'<b style="font-weight:800;color:#8A5A00">풀이) </b>':'')+s+'</div>';
               }).join('');
             }
