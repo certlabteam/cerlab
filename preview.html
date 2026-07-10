@@ -1407,6 +1407,7 @@ function renderExpFull(q, mqCertVal){
     let body='';
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
+    var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false) ? false : (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
     if(q.exp && q.exp.s) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
     var isCombo=isComboQuestion(q.opts);
     var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];
@@ -1500,7 +1501,7 @@ function renderExpFull(q, mqCertVal){
       var _aOpt=(q.opts&&q.opts[_aN-1])?rm(q.opts[_aN-1],q):'';
       var _aEx=String(exArr[_aN-1]||'').trim();
       body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">'+(_aOpt?_aOpt+' ':'')+'<span class="eo-badge">\u2705 \uC815\uB2F5 '+_aN+'\uBC88</span></div>'+(_aEx?'<div class="eo-ex"><span class="eo-ex-ti">\uC608)</span>'+rm(_aEx,q)+'</div>':'')+'</div></div>';
-    } else if(oFilled>=2){
+    } else if(!_isCalc && oFilled>=1){
       // 보기별 해설: 설명이 있는 보기만. (콤보인데 파싱 실패 시 폴백 = 정답 보기만)
       var fbCombo = isCombo && !comboOK;
       body+='<div class="exp-opts">'+oArr.map(function(t,i){
@@ -1519,7 +1520,7 @@ function renderExpFull(q, mqCertVal){
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
       }).join('')+'</div>';
-    } else if(oFilled===1){
+    } else if(_isCalc){
       var concl=oArr.filter(Boolean)[0];
       var hasGraph = q.exp && q.exp.graph && String(q.exp.graph).trim();
       var hasSteps = exArr.filter(Boolean).length>0;
@@ -1660,7 +1661,10 @@ function detectRenderType(q){
   if(isCombo && stmts.length>0 && stmts.length!==oFilled) return '일반형(보기별) ※조합 인식 실패';
   if(typeof isComboVariant==='function' && isComboVariant(q)) return '조합 변형형';
   if(oFilled>=2) return '보기별 해설(SC/NEG/COUNT)';
-  if(oFilled===1) return '계산형(풀이박스)';
+  var _ic = (q.calc===true)?(oFilled>=1):(q.calc===false)?false:(q.type==='CALC'?(oFilled>=1):(oFilled===1));
+  var _sub = q.type?(' · '+q.type):'';
+  if(_ic) return '계산형(풀이박스)'+((q.calc===true||q.type==='CALC')?' [확정]':' [추정]')+_sub;
+  if(oFilled===1) return '일반(풀이 아님)'+_sub;
   return '해설 폴백(빈 해설)';
 }
 // 데이터방 의도(type 원문)와 엔진 인식을 나란히 표시. type 코드값은 검증 안 함(새 코드 자유) — 원문 그대로 보여줌.
@@ -2257,6 +2261,7 @@ function _qcMnViolations(m){
   var _dn=desc.replace(/<k>(.*?)<\/k>/g,'⟨$1⟩').replace(/<span class=['"]?k['"]?>(.*?)<\/span>/g,'⟨$1⟩');
   if(_qcOn('mnem','MN_DESC_REDUP') && /(⟨[^⟩]{1,3}⟩[·,\s]*){3,}/.test(_dn)) v.push({kind:'warn',code:'MN_DESC_REDUP',msg:'설명(desc)에 빨강 두문자만 재나열(코드 반복) → 풀어서 설명으로',text:desc});
   if(_qcOn('mnem','MN_NO_K') && kind!=='sentence' && !/class=['"]?k['"]?|<k>/.test(code+desc)) v.push({kind:'warn',code:'MN_NO_K',msg:'두문자 강조(<k>) 없음 — 머리글자 빨강 표시 누락',text:code});
+  if(_qcOn('mnem','MN_NO_KW') && (!Array.isArray(m&&m.keywords)||!m.keywords.length)) v.push({kind:'warn',code:'MN_NO_KW',msg:'keywords 없음 — 검색·개념 연결용 키워드 권장',text:m&&m.name||''});
   if(_qcEm(code)||_qcEm(desc)) v.push({kind:'block',code:'MN_EMDASH',msg:'em대시(—) 금지',text:code});
   return v;
 }
@@ -2265,6 +2270,9 @@ function _qcTblViolations(t){
   if(!rows.length) v.push({kind:'block',code:'TBL_NO_ROWS',msg:'표에 행(rows) 없음',text:t&&t.name||''});
   if(_qcOn('table','TBL_RAGGED') && heads.length){ var bad=rows.filter(function(r){return Array.isArray(r)&&r.length!==heads.length;}).length; if(bad) v.push({kind:'warn',code:'TBL_RAGGED',msg:'행 '+bad+'개의 열 수가 헤더('+heads.length+')와 다름',text:t&&t.name||''}); }
   if(_qcOn('table','TBL_NO_CAPTION') && !cap.trim()) v.push({kind:'warn',code:'TBL_NO_CAPTION',msg:'요약 암기문장(caption_chant) 없음',text:t&&t.name||''});
+  if(_qcOn('table','TBL_ONE_ROW') && rows.length===1) v.push({kind:'warn',code:'TBL_ONE_ROW',msg:'행이 1개뿐 — 표로 만들 내용인지 확인(한 줄이면 개념/암기가 나음)',text:t&&t.name||''});
+  if(_qcOn('table','TBL_ONE_HEAD') && heads.length===1) v.push({kind:'warn',code:'TBL_ONE_HEAD',msg:'열(헤더)이 1개뿐 — 비교 표는 2열 이상',text:t&&t.name||''});
+  if(_qcOn('table','TBL_CAP_SHORT') && cap.trim() && cap.trim().length<15) v.push({kind:'warn',code:'TBL_CAP_SHORT',msg:'요약 암기문장이 너무 짧음('+cap.trim().length+'자) — 한 문장으로',text:cap});
   if(_qcEm(cap)||rows.some(function(r){return Array.isArray(r)&&r.some(_qcEm);})) v.push({kind:'block',code:'TBL_EMDASH',msg:'em대시(—) 금지',text:cap});
   return v;
 }
@@ -2272,6 +2280,8 @@ function _qcGrpViolations(g){
   var v=[], svg=String(g&&g.svg||''), type=String(g&&g.type||'');
   if((type==='svg'||!type) && svg.indexOf('<svg')<0) v.push({kind:'block',code:'GRP_NO_SVG',msg:'SVG 없음(<svg> 미포함)',text:g&&g.name||''});
   if(_qcOn('graph','GRP_PARAMS_OBJ') && g && g.params!=null && typeof g.params==='object') v.push({kind:'warn',code:'GRP_PARAMS_OBJ',msg:'params가 객체 — 규칙상 null이어야(렌더 깨짐 위험)',text:g&&g.name||''});
+  if(_qcOn('graph','GRP_NO_VIEWBOX') && svg.indexOf('<svg')>=0 && svg.indexOf('viewBox')<0) v.push({kind:'warn',code:'GRP_NO_VIEWBOX',msg:'viewBox 없음 — 반응형 크기 위해 viewBox 필요',text:g&&g.name||''});
+  if(_qcOn('graph','GRP_BG_FILL')){ var _OKB={'#FFFFFF':1,'#FFF':1,'#F8FAFC':1,'#F1F5F9':1,'#FBFCFE':1,'#E2E8F0':1,'#FDFDFD':1}; var _bg=[], _rm, _rre=/<rect[^>]*\bfill="(#[0-9A-Fa-f]{3,6})"/g; while((_rm=_rre.exec(svg))){ var _c=_rm[1].toUpperCase(); if(!_OKB[_c] && _bg.indexOf(_c)<0) _bg.push(_c); } if(_bg.length) v.push({kind:'warn',code:'GRP_BG_FILL',msg:'칸/박스 배경 강조색('+_bg.slice(0,3).join(', ')+') — 덤덤하게: 흰 바탕+회색 괘선만, 강조는 글씨색으로(축척 등 내용색은 예외)',text:g&&g.name||''}); }
   if(_qcEm(svg)) v.push({kind:'warn',code:'GRP_EMDASH',msg:'SVG 텍스트에 em대시(—)',text:g&&g.name||''});
   return v;
 }
@@ -2281,6 +2291,11 @@ function _qcItvViolations(it){
   if(!tpl.trim()) v.push({kind:'block',code:'ITV_NO_TEMPLATE',msg:'template 없음',text:it&&it.name||''});
   else if(_qcOn('interactive','ITV_UNKNOWN') && !_ITV_WL[tpl]) v.push({kind:'warn',code:'ITV_UNKNOWN',msg:'화이트리스트 밖 템플릿: '+tpl,text:it&&it.name||''});
   if(_qcOn('interactive','ITV_NO_PARAMS') && (!it||it.params==null||(typeof it.params==='object'&&!Object.keys(it.params).length))) v.push({kind:'warn',code:'ITV_NO_PARAMS',msg:'params(데이터) 비어있음',text:it&&it.name||''});
+  var _p=(it&&it.params)||{}, _nd=(_p.nodes||_p.events||_p.items||[]);
+  if(_qcOn('interactive','ITV_TIMELINE_FEW') && tpl==='T2_timeline' && Array.isArray(_nd) && _nd.length<5) v.push({kind:'warn',code:'ITV_TIMELINE_FEW',msg:'연표(T2)인데 사건 '+_nd.length+'개(<5) — 연표는 5개 이상일 때 의미',text:it&&it.name||''});
+  if(_qcOn('interactive','ITV_NODE_NO_YEAR') && tpl==='T2_timeline' && Array.isArray(_nd) && _nd.some(function(n){return n && (n.year==null||n.year==='');})) v.push({kind:'warn',code:'ITV_NODE_NO_YEAR',msg:'연표 노드에 연도(year) 빠진 것 있음',text:it&&it.name||''});
+  if(_qcOn('interactive','ITV_NO_STORY') && !String((it&&(it.story||(it.params&&it.params.story)))||'').trim()) v.push({kind:'warn',code:'ITV_NO_STORY',msg:'story 없음 — 조작 안 해도 요지 전달되는 설명글 필수(접근성 폴백)',text:it&&it.name||''});
+  if(_qcOn('interactive','ITV_NO_CONCEPTS')){ var _cc=(Array.isArray(it&&it.concepts)&&it.concepts.length)||(Array.isArray(_nd)&&_nd.some(function(n){return n&&n.cpt;})); if(!_cc) v.push({kind:'warn',code:'ITV_NO_CONCEPTS',msg:'개념(concepts) 연결 없음 — 인터랙티브 단독 금지, 개념카드 연결',text:it&&it.name||''}); }
   return v;
 }
 var _QC_MASTER={mnem:{fn:_qcMnViolations,label:'암기코드'},table:{fn:_qcTblViolations,label:'표'},graph:{fn:_qcGrpViolations,label:'그래프'},interactive:{fn:_qcItvViolations,label:'인터랙티브'}};
