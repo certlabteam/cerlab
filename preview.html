@@ -1577,7 +1577,7 @@ function _qcGrpViolations(g){
   if(_qcEm(svg)) v.push({kind:'warn',code:'GRP_EMDASH',msg:'SVG 텍스트에 em대시(—)',text:g&&g.name||''});
   return v;
 }
-var _ITV_WL={T1_curve_slider:1,T2_timeline:1,T5_inventory_flow:1,T_risk_return:1,T_duration:1,T_cvp:1,T_eup:1,T_lcnrv:1,T_eps:1};
+var _ITV_WL={T1_curve_slider:1,T2_timeline:1,T5_inventory_flow:1,T_risk_return:1,T_duration:1,T_cvp:1,T_eup:1,T_lcnrv:1,T_eps:1,T_eva:1,T_capint:1};
 function _qcItvViolations(it){
   var v=[], tpl=String(it&&it.template||'');
   if(!tpl.trim()) v.push({kind:'block',code:'ITV_NO_TEMPLATE',msg:'template 없음',text:it&&it.name||''});
