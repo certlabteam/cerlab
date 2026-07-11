@@ -64,7 +64,7 @@ function _qcViolations(q){
   var opts=(q&&Array.isArray(q.opts))?q.opts:[];
   var isSAq=Array.isArray(q&&q.blanks)&&q.blanks.length;
   var oFilled=o.filter(function(x){return x&&String(x).trim();}).length;
-  var isCalc=oFilled===1;
+  var isCalc=_isCalcQ(q);   /* [FIX] oFilled===1 순진판 → 견고판(_isCalcQ). 미완성 조합형이 계산형으로 오인돼 종결형/카드 검사 건너뛰던 문제 해결 */
   var isMCQ=Array.isArray(q&&q.opts)&&q.opts.length&&oFilled>=1&&!isSAq;
   var _rel=/\uc591\ub3c4|\uc591\uc218|\ub300\uc704|\ubcf4\uc99d|\uc5f0\ub300|\uc9c8\uad8c|\uc800\ub2f9|\uc774\uc911\ub9e4\ub9e4|\uc804\ub4dd|\uba85\uc758\uc2e0\ud0c1|\uc0c1\uc18d|\uc99d\uc5ec|\ubb3c\uc0c1\ub300\uc704|\ucc44\ubb34\uc778\uc218|\uac00\ub4f1\uae30|\uc804\uc138\uad8c|\uc9c0\uc0c1\uad8c|\uc9c0\uc5ed\uad8c|\uad6c\uc0c1/;
   var _arrow=/[\u2192\u25b6\u2193\u27f6\u21d2]/;
@@ -163,7 +163,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true}},
+  gichul:{EX_SHORT:{on:true,minLines:4},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
@@ -199,6 +199,8 @@ var _QC_SEV = {
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
   CALC_MECHANICAL:'INFO', CALC_REPEAT_LEAD:'INFO', TYPE_MISMATCH:'INFO',  /* 소급 폭증 방지: 신규 규칙은 INFO(비차단)로 도입, 베이스라인 정비 후 승격(qcDiff) */
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
+  EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO',
+  OX_STMT_MISMATCH:'WARNING', OX_DUP_PATTERN:'WARNING',
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
 };
@@ -237,6 +239,21 @@ function _qcRefs(q){
   return out;
 }
 
+/* ---- OX(참/거짓 판정형) 보기 파서 ----
+   보기 한 줄에서 (진술라벨 ㄱ~ㅇ, 판정 참/거짓/○/×/ⓞ) 쌍을 뽑는다.
+   두 표기 모두 지원: "ㄱ○ ㄴ× ㄷ×"(기호 직결) · "ㄱ 거짓 / ㄴ 참"(낱말·슬래시).
+   참/○/ⓞ→true, 거짓/×→false. COMBO(ㄱ,ㄴ)엔 판정어가 없어 자동 제외된다. */
+function _qcParseOX(opt){
+  var s=String(opt||''), re=/([ㄱㄴㄷㄹㅁㅂㅅㅇ])\s*(참|거짓|[○×ⓞ])/g, m, out=[];
+  while((m=re.exec(s))){ out.push({k:m[1], v:(m[2]==='참'||m[2]==='○'||m[2]==='ⓞ')}); }
+  return out;
+}
+function _qcIsOXq(q){
+  if(q && q.type && String(q.type).toUpperCase()==='OX') return true;
+  var opts=(q&&Array.isArray(q.opts))?q.opts:[];
+  return opts.filter(function(o){ return _qcParseOX(o).length>=2; }).length>=2;
+}
+
 /* ---- 3) 미구현 per-q 규칙 (ottag 길이 · CALC 흐름 · 상수 근거) ---- */
 function _qcExtraRules(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[];
@@ -257,7 +274,8 @@ function _qcExtraRules(q){
   /* (b) CALC 흐름: 계산형인데 풀이(ex)에 [공식] 표기가 없음  [02 §CALC · 구 #79] */
   if(_qcOn('gichul','CALC_NO_FORMULA') && _isCalcQ(q)){
     var exJoin=ex.filter(function(x){return x&&String(x).trim();}).join('\n');
-    if(exJoin && !/\[\s*공식\s*\]/.test(exJoin))
+    var _newFmt=(exp.principle&&String(exp.principle).trim())||(Array.isArray(exp.exSum)&&exp.exSum.filter(Boolean).length);  /* 신 강의형: 원리(principle)/요약풀이(exSum)로 [공식] 대체 인정 */
+    if(exJoin && !/\[\s*공식\s*\]/.test(exJoin) && !_newFmt)
       v.push({kind:'warn',field:'ex',idx:0,code:'CALC_NO_FORMULA',
         msg:'계산형 풀이(ex) 첫 줄에 [공식] 표기 없음 — 흐름은 [공식]→대입→계산→검산→최종답 권장',text:exJoin.slice(0,80)});
   }
@@ -293,6 +311,28 @@ function _qcExtraRules(q){
       if(_tc && _tc.mismatch) v.push({kind:'warn',field:'type',idx:0,code:'TYPE_MISMATCH',
         msg:'형식 의도(type='+_tc.mismatch.intent+')와 자동판별('+_tc.mismatch.auto+')이 다름 — type 태그 또는 exp.o 구조(oFilled/blanks) 점검(V2 §248)',text:String(q.type)}); }catch(e){} }
   }
+  /* (g2) OX(참/거짓 판정형) 구조 정합성 — 진술 수·판정 수·정답 유일성 [OX 전용]
+     보기가 각 진술의 참/거짓 조합인 형식. 해설(exp.o)은 보기별(SC경로가 종결형 검사) → 여기선 구조만 본다. */
+  if(_qcIsOXq(q)){
+    var _oxP=(Array.isArray(q.opts)?q.opts:[]).map(_qcParseOX);
+    var _oxF=_oxP.filter(function(p){return p.length;});
+    /* OX_STMT_MISMATCH: 보기마다 판정 개수가 다르거나, 문두 진술 수와 보기 판정 수가 어긋남 */
+    if(_qcOn('gichul','OX_STMT_MISMATCH') && _oxF.length){
+      var _cnts=_oxF.map(function(p){return p.length;});
+      var _uni=_cnts.every(function(c){return c===_cnts[0];});
+      var _stemN=(String((q&&q.q)||'').match(/(?:^|[\s\n])[ㄱㄴㄷㄹㅁㅂㅅㅇ][.．]/g)||[]).length;
+      if(!_uni) v.push({kind:'warn',field:'opts',idx:0,code:'OX_STMT_MISMATCH',msg:'OX 보기마다 참/거짓 판정 개수가 다름('+_cnts.join('/')+') — 모든 보기가 같은 진술 집합을 판정해야 함',text:''});
+      else if(_stemN>0 && _cnts[0] && _cnts[0]!==_stemN) v.push({kind:'warn',field:'opts',idx:0,code:'OX_STMT_MISMATCH',msg:'문두 진술 수('+_stemN+')와 보기 판정 수('+_cnts[0]+') 불일치 — 진술 개수와 각 보기 판정 개수가 같아야 함',text:''});
+    }
+    /* OX_DUP_PATTERN: 두 보기의 참/거짓 배열이 동일 — 정답 유일성 깨짐(중복 = 문항 버그) */
+    if(_qcOn('gichul','OX_DUP_PATTERN')){
+      var _seen={}, _dup=null;
+      _oxP.forEach(function(p,i){ if(!p.length||_dup) return;
+        var key=p.slice().sort(function(a,b){return a.k<b.k?-1:(a.k>b.k?1:0);}).map(function(x){return x.k+(x.v?'1':'0');}).join(',');
+        if(_seen[key]!=null) _dup=[_seen[key],i]; else _seen[key]=i; });
+      if(_dup) v.push({kind:'warn',field:'opts',idx:_dup[1],code:'OX_DUP_PATTERN',msg:'보기 '+(_dup[0]+1)+'·'+(_dup[1]+1)+'의 참/거짓 배열이 동일 — 정답이 유일하지 않음(보기 중복)',text:''});
+    }
+  }
   /* (f) 계산형 강의화 — 접근(무엇을·왜) 없이 첫 줄이 바로 공식/수치 [강의형 가이드 §1 접근] (기본 OFF·오탐영역) */
   if(_qcOn('gichul','CALC_NO_APPROACH') && _isCalcQ(q)){
     var _f0=(ex.filter(function(x){return x&&String(x).trim();})[0])||'';
@@ -300,6 +340,31 @@ function _qcExtraRules(q){
       v.push({kind:'warn',field:'ex',idx:0,code:'CALC_NO_APPROACH',
         msg:'풀이 첫 줄이 접근 설명 없이 바로 공식/수치 — 먼저 "무엇을 구하는 문제인지·왜 이 값부터 구하는지"를 한 줄로(강의형 가이드 §1 접근·02 §CALC 조건정리)',text:String(_f0).slice(0,60)});
   }
+  /* ===== [신규] 업데이트된 풀이 구조 필드 검수 (요약풀이·상세풀이·접근·원리·최종정리·시험/암기 포인트) ===== */
+  var _emx=function(t){ return t && /—/.test(String(t)); };
+  /* (h) em대시 — 본체 EMDASH가 안 보는 새 필드(approach·principle·recall·exSum)도 검사 */
+  ['approach','principle','recall'].forEach(function(f){ if(_emx(exp[f])) v.push({kind:'block',field:f,idx:0,code:'EMDASH',msg:f+'에 em대시(—) 금지(en대시 –·* 설명으로)',text:String(exp[f]||'')}); });
+  (Array.isArray(exp.exSum)?exp.exSum:[]).forEach(function(t,i){ if(_emx(t)) v.push({kind:'block',field:'exSum',idx:i,code:'EMDASH',msg:'요약풀이(exSum)에 em대시(—) 금지',text:t}); });
+  /* (i) 요약풀이 단계 뭉침·여러 줄 (상세풀이 ex와 동일 기준) */
+  (Array.isArray(exp.exSum)?exp.exSum:[]).forEach(function(t,i){
+    if(_qcOn('gichul','EX_SUM_CRAMMED')){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'exSum',idx:i,code:'EX_SUM_CRAMMED',msg:'요약풀이 한 원소에 단계(①②③) 뭉침 — 단계는 배열 원소 하나로',text:_cl}); }
+    if(_qcOn('gichul','EX_SUM_MULTILINE') && String(t||'').split(/\n/).filter(function(l){return l.trim();}).length>=2) v.push({kind:'warn',field:'exSum',idx:i,code:'EX_SUM_MULTILINE',msg:'요약풀이 한 원소에 여러 줄 — 줄은 원소로 쪼갬',text:t});
+  });
+  /* (j) 새 형식 일관성 — 요약풀이 있으면 상세풀이·최종정리도 세트로 (INFO) */
+  if(_qcOn('gichul','CALC_NEWFMT_PARTIAL') && Array.isArray(exp.exSum) && exp.exSum.filter(Boolean).length){
+    var _miss=[]; if(!(Array.isArray(exp.ex)&&exp.ex.filter(Boolean).length)) _miss.push('상세풀이(ex)'); if(!(exp.s&&String(exp.s).trim())) _miss.push('최종정리(s)');
+    if(_miss.length) v.push({kind:'warn',field:'exSum',idx:0,code:'CALC_NEWFMT_PARTIAL',msg:'요약풀이는 있는데 '+_miss.join('·')+' 없음 — 새 풀이 형식은 요약+상세+최종정리 세트',text:''});
+  }
+  /* (k) 요약↔상세 최종답 일치 — 요약풀이 마지막 <b>값</b>이 상세/정답결론/최종정리에 없으면 경고 */
+  if(_qcOn('gichul','CALC_SUM_ANS') && Array.isArray(exp.exSum) && exp.exSum.length){
+    var _bd=[]; exp.exSum.forEach(function(t){ (String(t||'').match(/<b>[\s\S]*?<\/b>/g)||[]).forEach(function(x){ var _z=x.replace(/<[^>]+>/g,'').trim(); if(_z) _bd.push(_z); }); });
+    var _lastB=_bd[_bd.length-1];
+    if(_lastB){ var _hay=((exp.ex||[]).join(' ')+' '+(o||[]).join(' ')+' '+(exp.s||'')).replace(/<[^>]+>/g,''); if(_hay.indexOf(_lastB)<0) v.push({kind:'warn',field:'exSum',idx:0,code:'CALC_SUM_ANS',msg:'요약풀이 최종답("'+_lastB+'")이 상세풀이·정답결론·최종정리에 없음 — 요약·상세 결과 일치 확인',text:_lastB}); }
+  }
+  /* (l) 계산형인데 시험 포인트(tip) 없음 — 기본 OFF(권장 항목) */
+  if(_qcOn('gichul','CALC_NO_TIP') && _isCalcQ(q) && !(exp.tip&&String(exp.tip).trim())) v.push({kind:'warn',field:'tip',idx:0,code:'CALC_NO_TIP',msg:'계산형인데 시험 포인트(tip) 없음 — 함정·실수 방지 한 줄 권장(참고)',text:''});
+  /* (m) calc 플래그 ↔ 자동판별 교차검증 (certlab_typecheck.js 없이도 동작) */
+  if(_qcOn('gichul','CALC_FLAG_MISMATCH') && typeof q.calc==='boolean'){ var _autoCalc=_isCalcQ(q); if(q.calc!==_autoCalc) v.push({kind:'warn',field:'calc',idx:0,code:'CALC_FLAG_MISMATCH',msg:'calc 플래그('+q.calc+')와 자동판별('+_autoCalc+') 불일치 — 계산형 태그 또는 exp.o/ex 구조 점검',text:''}); }
   return v;
 }
 
