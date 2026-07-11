@@ -364,7 +364,15 @@ function _qcExtraRules(q){
   /* (l) 계산형인데 시험 포인트(tip) 없음 — 기본 OFF(권장 항목) */
   if(_qcOn('gichul','CALC_NO_TIP') && _isCalcQ(q) && !(exp.tip&&String(exp.tip).trim())) v.push({kind:'warn',field:'tip',idx:0,code:'CALC_NO_TIP',msg:'계산형인데 시험 포인트(tip) 없음 — 함정·실수 방지 한 줄 권장(참고)',text:''});
   /* (m) calc 플래그 ↔ 자동판별 교차검증 (certlab_typecheck.js 없이도 동작) */
-  if(_qcOn('gichul','CALC_FLAG_MISMATCH') && typeof q.calc==='boolean'){ var _autoCalc=_isCalcQ(q); if(q.calc!==_autoCalc) v.push({kind:'warn',field:'calc',idx:0,code:'CALC_FLAG_MISMATCH',msg:'calc 플래그('+q.calc+')와 자동판별('+_autoCalc+') 불일치 — 계산형 태그 또는 exp.o/ex 구조 점검',text:''}); }
+  if(_qcOn('gichul','CALC_FLAG_MISMATCH') && typeof q.calc==='boolean'){ var _autoCalc=_isCalcQ(q);
+    if(q.calc!==_autoCalc){
+      /* 빈칸채우기(FILL) 법조문 문항 억제: 빈칸 + 들어갈/알맞은/순서 → oFilled=1·풀이단계라 auto=계산형으로 오인되나 값 계산 아님.
+         인간 calc=false를 존중(오탐). calc=true인데 auto=false(태그 과다)는 여전히 잡는다. */
+      var _fillLike=/\(\s*[ㄱ-ㅎ가-힣]?\s*\)/.test(String(q.q||'')) && /들어갈|알맞은|순서/.test(String(q.q||''));
+      if(!(_fillLike && q.calc===false && _autoCalc===true))
+        v.push({kind:'warn',field:'calc',idx:0,code:'CALC_FLAG_MISMATCH',msg:'calc 플래그('+q.calc+')와 자동판별('+_autoCalc+') 불일치 — 계산형 태그 또는 exp.o/ex 구조 점검',text:''});
+    }
+  }
   return v;
 }
 
