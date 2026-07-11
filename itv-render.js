@@ -685,3 +685,33 @@ _itvUpdaters.T_capint=function(instId, rawVal, P){
   var nt=d.querySelector('#'+instId+'_note');
   if(nt) nt.innerHTML='연평균지출 '+_itvWon(P.wavg)+'에 자본화율 '+r.toFixed(1)+'%를 곱하면 자본화 대상 이자는 <b class="itv-k">'+_itvWon(ci)+'</b>다. 실제 발생한 차입원가를 넘지 못하며, 전기에 자본화한 이자 자체는 지출액에 더하지 않는다.';
 };
+
+/* ================= 추가 템플릿: T_fvpl (FVPL 취득수수료·무상증자 단가) ================= */
+/* FVPL 금융자산: 취득수수료는 당기비용(원가 미산입). 무상증자로 주식수 늘면 총원가 불변, 이동평균 단가 하락. */
+_itvTemplates.T_fvpl=function(it, instId){
+  var p=it.params||{};
+  var shares=+(p.shares||0), price=+(p.price||0), fee=+(p.fee||0);
+  var B=p.bonus||{min:0,max:shares||100,step:Math.max(1,Math.round((shares||100)/10)),default:Math.round((shares||100)*0.2)};
+  var cost=shares*price;
+  window._itvReg[instId]={template:'T_fvpl', shares:shares, price:price, fee:fee, cost:cost, defaultVal:(B.default!=null?B.default:0)};
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var def='<div class="itv-def">'+shares+'주를 주당 '+_itvWon(price)+'에 취득(거래수수료 '+_itvWon(fee)+'). FVPL(당기손익-공정가치)은 <b>수수료를 취득원가에 더하지 않고 당기비용</b>으로 턴다. 무상증자를 움직여 이동평균 단가가 어떻게 되는지 보라 — <b>총취득원가는 그대로, 주식수만 늘어 단가가 내려간다</b>.</div>';
+  var ctrl='<div class="itv-ctrl"><label>무상증자 수령주식</label>'
+    +'<input type="range" min="'+B.min+'" max="'+B.max+'" step="'+B.step+'" value="'+(B.default!=null?B.default:0)+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_bv">'+(B.default!=null?B.default:0)+'</span>주</div></div>';
+  var cards='<div class="itv-cards"><div class="itv-card"><div class="t">총 보유주식수</div><div class="v" id="'+instId+'_tot">—</div></div>'
+    +'<div class="itv-card"><div class="t">이동평균 단가</div><div class="v" id="'+instId+'_unit">—</div></div></div>';
+  var fin='<div class="itv-tip" id="'+instId+'_fin">취득원가 '+_itvWon(cost)+'(수수료 '+_itvWon(fee)+'는 당기비용, 원가 제외).</div>';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_note">—</div></div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+def+ctrl+cards+fin+say+'</div>';
+};
+_itvUpdaters.T_fvpl=function(instId, rawVal, P){
+  var d=document.getElementById(instId); if(!d) return;
+  var b=parseInt(rawVal,10)||0; var tot=P.shares+b, unit=tot>0?P.cost/tot:0;
+  var bv=d.querySelector('#'+instId+'_bv'); if(bv) bv.textContent=b;
+  var totEl=d.querySelector('#'+instId+'_tot'); if(totEl) totEl.textContent=tot.toLocaleString()+'주';
+  var unitEl=d.querySelector('#'+instId+'_unit'); if(unitEl) unitEl.textContent=_itvWon(Math.round(unit*100)/100);
+  var nt=d.querySelector('#'+instId+'_note');
+  if(nt){ if(b===0) nt.innerHTML='무상증자 전에는 이동평균 단가가 취득원가 ÷ 주식수 = '+_itvWon(P.price)+'다. 취득수수료 '+_itvWon(P.fee)+'은 원가에 넣지 않고 당기비용으로 처리한다.';
+    else nt.innerHTML='무상증자 '+b+'주를 공짜로 받아 총 '+tot.toLocaleString()+'주가 됐지만 총취득원가는 '+_itvWon(P.cost)+' 그대로다. 그래서 이동평균 단가가 '+_itvWon(P.price)+'에서 <b class="itv-k">'+_itvWon(Math.round(unit*100)/100)+'</b>으로 내려간다.'; }
+};
