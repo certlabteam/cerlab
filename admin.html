@@ -719,6 +719,8 @@ tr:hover td{background:#FAFAFA}
             <button class="btn-sm" onclick="qcCfgExport('gichul')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="btn-sm btn-extend" onclick="buildReviewNote()">🔍 지적서 만들기 (일반+마스터)</button>
             <button class="btn-sm" onclick="downloadReviewNote()" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
+            <button class="btn-sm" onclick="qcBaselinePick()" style="background:#EFF6FF;color:#1D4ED8" title="qcBaseline JSON을 불러오면 델타검수(새 위반만 표시)가 켜집니다">📌 베이스라인<span id="qcBaselineStat"></span></button>
+            <input type="file" id="qcBaselineFile" accept=".json,application/json" multiple style="display:none" onchange="qcBaselineLoad(this.files)">
           </div>
           <textarea id="reviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'🔍 지적서 만들기'를 누르면 게이트 위반이 채워집니다. '■ 크리스 지적' 아래에 고칠 점을 자유롭게 적은 뒤 복사/다운로드하세요."></textarea>
 
@@ -4479,16 +4481,64 @@ async function qcLiveAudit(kind, cert, sub, statusId, badgeId){
   }catch(e){ stx('오류: '+e.message,'#A32D2D'); }
 }
 // 지적서 라인 조립(일반+마스터) — items=[{docId,data:{questions}}]
+/* ── 델타검수 베이스라인 (qcBaseline JSON 로드 → 새 위반만 표시) ──
+   베이스라인 형태: { 문항id: [위반코드,...] } (admin/node의 qcBaseline() 산출물).
+   여러 과목 파일을 합쳐 전역 map에 병합(문항 id는 과목 간 충돌 없음). */
+var _qcBaselines = (typeof _qcBaselines!=='undefined') ? _qcBaselines : {};
+function _qcBaselineCount(){ return Object.keys(_qcBaselines).length; }
+function _qcBaselineStatShow(){ var el=document.getElementById('qcBaselineStat'); if(el) el.textContent = _qcBaselineCount()? (' ('+_qcBaselineCount()+')') : ''; }
+function qcBaselineClear(){ _qcBaselines={}; _qcBaselineStatShow(); }
+function qcBaselinePick(){
+  if(_qcBaselineCount()>0){
+    if(!confirm('베이스라인 '+_qcBaselineCount()+'개 문항 로드됨 (델타검수 ON).\n\n[확인] 파일 더 추가    /    [취소] 해제하고 전체검수로 복귀')){ qcBaselineClear(); alert('베이스라인 해제 — 전체 위반 표시로 복귀'); return; }
+  }
+  var f=document.getElementById('qcBaselineFile'); if(f){ f.value=''; f.click(); }
+}
+function qcBaselineLoad(files){
+  if(!files||!files.length) return;
+  var done=0, added=0, bad=[];
+  Array.prototype.forEach.call(files, function(file){
+    var r=new FileReader();
+    r.onload=function(){
+      try{ var j=JSON.parse(r.result);
+        if(!j||typeof j!=='object'||Array.isArray(j)) throw new Error('형식이 {문항id:[코드]} 아님');
+        Object.keys(j).forEach(function(k){ if(Array.isArray(j[k])){ _qcBaselines[k]=j[k]; added++; } });
+      }catch(e){ bad.push(file.name+': '+(e.message||e)); }
+      done++;
+      if(done===files.length){ _qcBaselineStatShow();
+        alert('📌 베이스라인 로드 — 문항 '+_qcBaselineCount()+'개 (델타검수 ON)'+(bad.length?('\n\n실패: '+bad.join(' / ')):'')+'\n\n이제 "지적서 만들기"를 누르면 베이스라인에 없던 새 위반만 표시됩니다.');
+      }
+    };
+    r.readAsText(file);
+  });
+}
 async function _buildReviewLines(items){
   await _qcLoadImgKeys(); await _qcLoadCptCards();
   var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'',
     '━━━━━ ① 일반 검수 (문항 게이트) ━━━━━'];
   if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — IMG_MISSING 검사 생략)');
   var any=false;
-  items.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]);
-    g.block.forEach(function(m){ L.push('  [차단] '+it.docId+' · '+m); any=true; });
-    g.warn.forEach(function(m){ L.push('  [경고] '+it.docId+' · '+m); any=true; }); });
-  if(!any) L.push('  (자동 위반 없음 — 구조·예시 게이트 통과)');
+  if(_qcBaselineCount()>0){
+    /* 델타검수: 베이스라인에 없던 위반(=이번 편집이 만든 것)만 표시, 기존 backlog는 숨김 */
+    L.push('  [델타검수 ON] 베이스라인 대비 새 위반만 표시 (베이스라인 문항 '+_qcBaselineCount()+'개)');
+    var _carried=0;
+    items.forEach(function(it){ ((it.data&&it.data.questions)||[]).forEach(function(q){
+      var base=_qcBaselines[String(q&&q.id)]; var bset={}; if(base) base.forEach(function(c){ bset[c]=1; });
+      var vs; try{ vs=_qcViolations(q)||[]; }catch(e){ vs=[]; }
+      vs.forEach(function(x){
+        if(base && bset[x.code]){ _carried++; return; }   /* 기존 backlog → 숨김 */
+        var loc=(x.field==='card'?('card'+x.idx):(x.field+'['+x.idx+']'));
+        L.push('  ['+(x.kind==='block'?'차단':'경고')+'] '+it.docId+' · '+(q&&q.id)+' '+loc+' '+x.msg); any=true;
+      });
+    }); });
+    if(!any) L.push('  (새 위반 없음 — 이번 편집이 만든 위반 0건)');
+    L.push('  · 기존 backlog '+_carried+'건 숨김 (📌 버튼으로 해제하면 전체 표시)');
+  } else {
+    items.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]);
+      g.block.forEach(function(m){ L.push('  [차단] '+it.docId+' · '+m); any=true; });
+      g.warn.forEach(function(m){ L.push('  [경고] '+it.docId+' · '+m); any=true; }); });
+    if(!any) L.push('  (자동 위반 없음 — 구조·예시 게이트 통과)');
+  }
   L.push('','━━━━━ ② 마스터 연결 검수 (참조 연결) ━━━━━');
   try{ var M=await _mlaLoadMasters(false); L=L.concat(_mlaAuditLines(items, M)); }
   catch(e){ L.push('  ❌ 마스터 로드 실패: '+(e.message||e)+' (일반 검수만 표시)'); }
