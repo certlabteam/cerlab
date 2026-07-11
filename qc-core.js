@@ -357,7 +357,10 @@ function _qcExtraRules(q){
   }
   /* (j2) [신규] 옛 형식 계산문항 탐지 — 계산형인데 요약풀이(exSum) 자체가 없음 → 7단 새 형식으로 변환 권장.
      요약풀이·상세풀이 등 새 형식을 검수기가 잡아 옛 형식을 색출한다. */
-  if(_qcOn('gichul','CALC_OLD_FORMAT') && _isCalcQ(q) && !(Array.isArray(exp.exSum) && exp.exSum.filter(Boolean).length))
+  /* 빈칸채우기(FILL) 법조문 문항 억제(CALC_FLAG_MISMATCH와 동일 판별): 빈칸 + 들어갈/알맞은/순서/나열
+     → oFilled=1·풀이단계라 auto=계산형으로 오인되나 값 계산이 아니므로 7단 변환 대상 아님. */
+  var _oldFillLike=/\(\s*[ㄱ-ㅎ가-힣]?\s*\)/.test(String(q.q||'')) && /들어갈|알맞은|순서|나열/.test(String(q.q||''));
+  if(_qcOn('gichul','CALC_OLD_FORMAT') && _isCalcQ(q) && !_oldFillLike && !(Array.isArray(exp.exSum) && exp.exSum.filter(Boolean).length))
     v.push({kind:'warn',field:'ex',idx:0,code:'CALC_OLD_FORMAT',msg:'계산형인데 새 풀이 형식(요약풀이·상세풀이) 아님 — 접근·원리·요약풀이·상세풀이·최종정리·시험/암기 포인트 7단으로 변환 권장(§G)',text:''});
   /* (k) 요약↔상세 최종답 일치 — 요약풀이 마지막 <b>값</b>이 상세/정답결론/최종정리에 없으면 경고 */
   if(_qcOn('gichul','CALC_SUM_ANS') && Array.isArray(exp.exSum) && exp.exSum.length){
