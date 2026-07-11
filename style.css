@@ -971,36 +971,33 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   .lu-xp>i,.lu-g-fill{transition:none}
 }
 
-/* ========================================================================
-   계산형 요약/상세 풀이 — 신규 섹션 CSS (style.css 하단에 붙여넣기)
-   화살표 중앙정렬(#mcqView .calc-sol .calc-arrow)은 이미 style.css에 있으므로 재정의 불필요.
-   요약풀이·상세풀이 박스는 기존 .calc-sol 을 재사용하므로 화살표도 자동 중앙정렬됨.
-   ======================================================================== */
+/* ===== 계산형 해설 — 평면(flat): 타이틀(색 글자) + 바로 밑 텍스트, 박스/테두리/배경 없음 ===== */
+#mcqView .cx-sec{margin:14px 0 0}
+#mcqView .cx-h{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:4px}
+#mcqView .cx-h.cx-h-final{color:#0C447C}
+#mcqView .cx-body{font-size:13px;line-height:1.75;color:#334155}
+#mcqView .cx-final-body b{color:#0C447C}
 
-/* 접근·원리 칩 + 본문 */
-#mcqView .cx-sec{margin:12px 0 0}
-#mcqView .cx-h{font-size:12px;font-weight:800;color:#185FA5;background:#EEF4FC;border-radius:7px;padding:4px 10px;display:inline-block;margin-bottom:7px}
-#mcqView .cx-body{font-size:13px;line-height:1.75;color:#3A4A5E}
-
-/* 상세풀이 토글 버튼 */
-#mcqView .detail-toggle{margin-top:10px;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:800;color:#8A6D1F;background:#FFF9EC;border:1.5px solid #F1D9A8;padding:9px 12px;border-radius:999px;cursor:pointer;box-sizing:border-box}
-#mcqView .detail-toggle:active{transform:scale(.98)}
-#mcqView .detail-toggle .chev{transition:transform .2s}
-#mcqView .detail-toggle.open .chev{transform:rotate(180deg)}
-
-/* 상세풀이 접힘/펼침 컨테이너 (이게 없으면 상세가 항상 보이거나 토글이 안 먹음) */
-#mcqView .detail-wrap{overflow:hidden;transition:max-height .28s ease;max-height:0}
-#mcqView .detail-wrap.open{max-height:2600px}
-
-/* 암기 포인트(흐름) 박스 — 암기코드(mn)와 별개 */
-#mcqView .cx-recall{margin:12px 0 0;padding:11px 13px;background:#fff;border:1px solid #F5E6C8;border-radius:9px}
-#mcqView .cx-recall-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:7px}
-#mcqView .cx-recall-flow{font-size:13px;line-height:1.9;color:#5E4A2A;text-align:center}
-
-/* 계산형 요약/상세 — 프로토타입 매칭 추가 (소제목 강조·최종정리) */
-#mcqView .calc-sol .cs-label{font-weight:800;color:#8A5A00;margin-bottom:4px}
+/* 요약풀이/상세풀이 본문 — 박스 없이 텍스트만(화살표 중앙은 기존 .calc-sol .calc-arrow) */
+#mcqView .calc-sol{font-size:13px;line-height:1.8;color:#334155;word-break:keep-all;overflow-wrap:break-word}
 #mcqView .calc-sol .cs-step{font-weight:400}
-#mcqView .calc-sol .cs-step b{color:#7A4E00}
-#mcqView .calc-sol .cs-key{font-weight:800;color:#7A4E00}
-#mcqView .cx-final{margin:12px 0 0;padding:11px 13px;background:#F0F6FC;border-left:3px solid #0C447C;border-radius:8px;font-size:13.5px;line-height:1.7;color:#1E3A5F}
-#mcqView .cx-final b{color:#0C447C}
+#mcqView .calc-sol .cs-step b{color:#0F172A}
+#mcqView .calc-sol .cs-key{font-weight:800;color:#0F172A}
+
+/* 상세풀이 토글 = 타이틀형(파란 글자 + 꺾쇠), 박스 없음 */
+#mcqView .detail-toggle{display:inline-flex;align-items:center;gap:6px;margin:14px 0 0;padding:0;background:none;border:none;cursor:pointer;font-size:13px;font-weight:800;color:#185FA5}
+#mcqView .detail-toggle .chev{display:inline-block;font-size:11px;transition:transform .2s;transform:rotate(-90deg)}
+#mcqView .detail-toggle.open .chev{transform:rotate(0)}
+#mcqView .detail-wrap{overflow:hidden;transition:max-height .3s ease;max-height:0}
+#mcqView .detail-wrap.open{max-height:3000px}
+
+/* 암기 포인트 — 타이틀(앰버) + 흐름, 박스 없음 */
+#mcqView .cx-recall{margin:14px 0 0}
+#mcqView .cx-recall-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:4px}
+#mcqView .cx-recall-flow{font-size:13px;line-height:1.9;color:#334155}
+
+/* 시험 포인트 — tipEnsureCSS(JS 주입) 박스를 #mcqView 특이도로 평면화 */
+#mcqView .tip-box{border:none;background:none;border-radius:0;padding:0;margin:14px 0 0}
+#mcqView .tip-box .tip-ti{color:#C0392B;margin-bottom:4px}
+#mcqView .tip-box .tip-body{color:#334155}
+
