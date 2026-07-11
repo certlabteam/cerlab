@@ -47,7 +47,7 @@
       if(sum&&sum.length){
         var sid='dt_'+String(q.id||'x').replace(/[^a-zA-Z0-9_]/g,'');
         h+='<div class="cx-sec"><div class="cx-h">요약풀이</div><div class="calc-sol">'+_renderInner(sum,q,rm)+'</div></div>'
-          +'<button class="detail-toggle" onclick="calcToggle(this,\''+sid+'\')"><span class="chev">▾</span>상세풀이</button>'
+          +'<button class="detail-toggle" onclick="calcToggle(this,\''+sid+'\')"><span class="chev">▶</span><span class="dt-label">상세풀이 보기</span></button>'
           +'<div class="detail-wrap" id="'+sid+'"><div class="calc-sol" style="margin-top:6px">'+_renderInner(exArr,q,rm)+'</div></div>';
         // 최종정리(요약풀이 있을 때) — 타이틀 + 텍스트. 상단 note는 caller가 exSum이면 생략.
         if(e.s) h+='<div class="cx-sec"><div class="cx-h cx-h-final">최종정리</div><div class="cx-body cx-final-body">'+rm(e.s,q)+'</div></div>';
@@ -64,9 +64,10 @@
     return e.recall ? '<div class="cx-recall"><div class="cx-recall-ti">암기 포인트</div><div class="cx-recall-flow">'+rm(e.recall,q)+'</div></div>' : '';
   };
 
-  // 상세풀이 토글 — 꺾쇠 회전으로 상태 표시(글자 그대로 '상세풀이')
+  // 상세풀이 토글 — ▶ 회전 + 라벨(보기/접기)로 클릭 가능함을 표시
   window.calcToggle=function(btn,id){
     var w=document.getElementById(id); if(!w) return;
-    w.classList.toggle('open'); btn.classList.toggle('open');
+    var open=w.classList.toggle('open'); btn.classList.toggle('open');
+    var lb=btn.querySelector('.dt-label'); if(lb) lb.textContent=open?'상세풀이 접기':'상세풀이 보기';
   };
 })();
