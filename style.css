@@ -985,9 +985,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .calc-sol .cs-key{font-weight:800;color:#0F172A}
 
 /* 상세풀이 토글 = 타이틀형(파란 글자 + 꺾쇠), 박스 없음 */
-#mcqView .detail-toggle{display:inline-flex;align-items:center;gap:6px;margin:14px 0 0;padding:0;background:none;border:none;cursor:pointer;font-size:13px;font-weight:800;color:#185FA5}
-#mcqView .detail-toggle .chev{display:inline-block;font-size:11px;transition:transform .2s;transform:rotate(-90deg)}
-#mcqView .detail-toggle.open .chev{transform:rotate(0)}
+#mcqView .detail-toggle{display:inline-flex;align-items:center;gap:8px;margin:14px 0 0;padding:0;background:none;border:none;cursor:pointer;font-size:13px;font-weight:800;color:#185FA5}
+#mcqView .detail-toggle .dt-label{text-decoration:underline;text-underline-offset:3px}
+#mcqView .detail-toggle .chev{display:inline-block;font-size:16px;line-height:1;transition:transform .2s}   /* ▶ 재생 버튼 크게 */
+#mcqView .detail-toggle.open .chev{transform:rotate(90deg)}   /* ▶ → ▼ */
 #mcqView .detail-wrap{overflow:hidden;transition:max-height .3s ease;max-height:0}
 #mcqView .detail-wrap.open{max-height:3000px}
 
