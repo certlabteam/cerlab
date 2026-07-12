@@ -846,6 +846,9 @@ tr:hover td{background:#FAFAFA}
               <option value="all">전체</option>
               <option value="used">사용 중만</option>
             </select>
+            <select id="mstCert" onchange="mstRender()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="">전체 시험</option>
+            </select>
             <input id="mstSearch" oninput="mstRender()" placeholder="id·이름 검색" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:180px">
             <button class="btn-sm" style="background:#E8F3EC;color:#1E7A45;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="mstExport()">⬇ 내보내기 (백업)</button>
             <button class="btn-sm" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="mstDeleteShown()">🗑 표시된 미사용 삭제</button>
@@ -5326,7 +5329,15 @@ async function imgLibChkDelete(){
   if(st) st.innerHTML='🗑 체크 삭제 완료 <b>'+okN+'</b>개'+(failN?(' · <span style="color:#C0392B">실패 '+failN+'</span>'):'');
 }
 // ===== 🗑️ 마스터 삭제 (문항·개념에서 안 쓰인 미사용 개념·표·암기·그래프 정리) =====
-let _mstAll=null, _mstUsed=null;
+let _mstAll=null, _mstUsed=null, _mstScanStat=null;
+function _mstFillCerts(){
+  const sel=document.getElementById('mstCert'); if(!sel||!_mstAll) return;
+  const cur=sel.value; const set={};
+  _mstAll.forEach(m=>{ (m.certs||[]).forEach(c=>{ if(c) set[c]=(set[c]||0)+1; }); });
+  const certs=Object.keys(set).sort();
+  sel.innerHTML='<option value="">전체 시험</option>'+certs.map(c=>'<option value="'+c.replace(/"/g,'&quot;')+'">'+c+' ('+set[c]+')</option>').join('')+'<option value="__none__">(시험 미지정)</option>';
+  if(cur && (cur==='__none__' || certs.indexOf(cur)>=0)) sel.value=cur;
+}
 function _mstStrip(u){ return String(u||'').replace(/^(cpt|tbl|mn|grp):\/\//,''); }
 function _mstSetOf(type){ return _mstUsed[type==='concept'?'cpt':(type==='table'?'tbl':(type==='mnemonic'?'mn':'grp'))]; }
 function _mstKo(type){ return type==='concept'?'개념':(type==='table'?'표':(type==='mnemonic'?'암기':'그래프')); }
@@ -5341,14 +5352,18 @@ async function mstLoad(){
     st.textContent='사용처 스캔 중… (문항 exp.cpt·개념 tbl/mn/grp 링크 수집)';
     await _mstScan();
     _mstAll.forEach(m=>{ m.used=_mstSetOf(m.type).has(m.id); });
+    _mstFillCerts();
     const by={concept:[0,0],table:[0,0],mnemonic:[0,0],graph:[0,0]};
     _mstAll.forEach(m=>{ by[m.type][0]++; if(!m.used) by[m.type][1]++; });
-    st.innerHTML='개념 <b>'+by.concept[0]+'</b>(미사용 <b style="color:#B4531E">'+by.concept[1]+'</b>) · 표 <b>'+by.table[0]+'</b>(미사용 <b style="color:#B4531E">'+by.table[1]+'</b>) · 암기 <b>'+by.mnemonic[0]+'</b>(미사용 <b style="color:#B4531E">'+by.mnemonic[1]+'</b>) · 그래프 <b>'+by.graph[0]+'</b>(미사용 <b style="color:#B4531E">'+by.graph[1]+'</b>)';
+    const sc=_mstScanStat||{ok:0,fail:0};
+    const cov='<span style="color:'+(sc.fail?'#C0392B':'#8A7E70')+'">문항은행 '+sc.ok+'개 읽음'+(sc.fail?(' · <b>실패 '+sc.fail+'개 ⚠ 이 상태로는 미사용 판정을 믿지 마세요</b>'):'')+'</span>';
+    st.innerHTML='개념 <b>'+by.concept[0]+'</b>(미사용 <b style="color:#B4531E">'+by.concept[1]+'</b>) · 표 <b>'+by.table[0]+'</b>(미사용 <b style="color:#B4531E">'+by.table[1]+'</b>) · 암기 <b>'+by.mnemonic[0]+'</b>(미사용 <b style="color:#B4531E">'+by.mnemonic[1]+'</b>) · 그래프 <b>'+by.graph[0]+'</b>(미사용 <b style="color:#B4531E">'+by.graph[1]+'</b>)<br>'+cov;
     mstRender();
   }catch(e){ st.textContent='오류: '+(e.message||e); }
 }
 async function _mstScan(){
   _mstUsed={cpt:new Set(), tbl:new Set(), mn:new Set(), grp:new Set()};
+  _mstScanStat={ok:0, fail:0};
   if(typeof _expExams==='undefined' || !_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
   const reT=/tbl:\/\/([^\s"'\\<>\]},]+)/g, reM=/mn:\/\/([^\s"'\\<>\]},]+)/g, reG=/grp:\/\/([^\s"'\\<>\]},]+)/g, reC=/cpt:\/\/([^\s"'\\<>\]},]+)/g;
   const grab=(re,set,txt)=>{ let m; re.lastIndex=0; while((m=re.exec(txt))!==null) set.add(m[1]); };
@@ -5358,10 +5373,11 @@ async function _mstScan(){
       const docId=exam.id+'__'+sub.code;
       try{ const bd=await db.collection('banks').doc(docId).get();
         if(bd.exists){ const data=bd.data()||{};
-          if(Array.isArray(data.shards)&&data.shards.length){ for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists) scanQs(sd.data().questions||[]); }catch(_){} } }
+          if(Array.isArray(data.shards)&&data.shards.length){ for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists) scanQs(sd.data().questions||[]); }catch(_){ _mstScanStat.fail++; } } }
           else scanQs(data.questions||[]);
+          _mstScanStat.ok++;
         }
-      }catch(_){}
+      }catch(_){ _mstScanStat.fail++; }
       try{ const vd=await db.collection('adaptive').doc(docId+'__variantq').get(); if(vd.exists) scanQs((vd.data()||{}).questions||[]); }catch(_){}
     }
   }
@@ -5372,11 +5388,14 @@ function _mstFiltered(){
   if(!_mstAll) return [];
   const type=((document.getElementById('mstType')||{}).value)||'all';
   const mode=((document.getElementById('mstMode')||{}).value)||'unused';
+  const cert=((document.getElementById('mstCert')||{}).value)||'';
   const q=((document.getElementById('mstSearch')||{}).value||'').trim().toLowerCase();
   return _mstAll.filter(m=>{
     if(type!=='all' && m.type!==type) return false;
     if(mode==='unused' && m.used) return false;
     if(mode==='used' && !m.used) return false;
+    if(cert==='__none__'){ if((m.certs||[]).length) return false; }
+    else if(cert){ if((m.certs||[]).indexOf(cert)<0) return false; }
     if(q && (m.id.toLowerCase().indexOf(q)<0 && (m.name||'').toLowerCase().indexOf(q)<0)) return false;
     return true;
   });
