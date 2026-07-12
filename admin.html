@@ -289,6 +289,7 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="imgbank" onclick="switchTab('imgbank')">🖼️ 이미지 라이브러리</div>
         <div class="cat-item" data-tab="examadd" onclick="switchTab('examadd')">🗂 시험 관리</div>
         <div class="cat-item" data-tab="mncheck" onclick="switchTab('mncheck')" style="display:none">🔎 데이터 스캔</div>
+        <div class="cat-item" data-tab="mstdel" onclick="switchTab('mstdel')">🗑️ 마스터 삭제</div>
       </div>
     </div>
     <div class="cat cat-single" data-tab="community">
@@ -817,6 +818,42 @@ tr:hover td{background:#FAFAFA}
           </div>
           <div id="imgLibStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 업로드 이미지와 사용처를 스캔해 미사용 이미지를 표시합니다.</div>
           <div id="imgLibGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🗑️ 마스터 삭제 (문항·개념에서 안 쓰인 미사용 마스터 정리) -->
+    <div class="tab-panel" id="panel-mstdel">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-title">🗑️ 마스터 삭제 (안 쓰인 미사용 개념·표·암기·그래프 정리)</div>
+        </div>
+        <div style="padding:14px 20px">
+          <div style="background:#EEF6FF;border:1px solid #BBD8F5;border-radius:8px;padding:10px 12px;color:#215787;font-size:12px;margin-bottom:12px">
+            전 과목 <b>문항 exp.cpt</b>·<b>개념의 tbl/mn/grp 링크</b>와 대조해 <b>어디에서도 참조하지 않는 미사용(고아) 마스터</b>를 추립니다. 개념을 새로 만들어 옛 개념이 안 쓰이게 됐을 때 정리하기 좋습니다. 삭제 전 <b>내보내기(JSON 백업)</b>를 권장합니다. <b>사용 중</b> 마스터는 일괄 삭제에서 자동 제외됩니다. (개념을 지우면 그 개념이 물던 표·암기가 새로 고아가 될 수 있으니, 삭제 후 <b>다시 불러오기</b>로 재스캔하세요.)
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+            <button class="btn-sm btn-extend" onclick="mstLoad()">🔄 불러오기 / 새로고침</button>
+            <select id="mstType" onchange="mstRender()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="all">전체 종류</option>
+              <option value="concept">개념</option>
+              <option value="table">표</option>
+              <option value="mnemonic">암기</option>
+              <option value="graph">그래프</option>
+            </select>
+            <select id="mstMode" onchange="mstRender()" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none">
+              <option value="unused">미사용만</option>
+              <option value="all">전체</option>
+              <option value="used">사용 중만</option>
+            </select>
+            <input id="mstSearch" oninput="mstRender()" placeholder="id·이름 검색" style="padding:7px 12px;border-radius:20px;border:1.5px solid #E8E8E8;font-size:13px;outline:none;min-width:180px">
+            <button class="btn-sm" style="background:#E8F3EC;color:#1E7A45;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="mstExport()">⬇ 내보내기 (백업)</button>
+            <button class="btn-sm" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="mstDeleteShown()">🗑 표시된 미사용 삭제</button>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#6E6256;cursor:pointer"><input type="checkbox" id="mstSelAll" onclick="mstToggleAll(this)" style="width:15px;height:15px;accent-color:#185FA5"> 전체</label>
+            <button class="btn-sm" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer" onclick="mstChkDelete()">🗑 체크 삭제</button>
+          </div>
+          <div id="mstStatus" style="font-size:13px;color:#8A7E70;margin-bottom:10px">'불러오기'를 누르면 마스터와 사용처를 스캔해 미사용 마스터를 표시합니다.</div>
+          <div id="mstList"></div>
         </div>
       </div>
     </div>
@@ -5287,6 +5324,132 @@ async function imgLibChkDelete(){
   var sa=document.getElementById('imgLibSelAll'); if(sa) sa.checked=false;
   imgLibRender();
   if(st) st.innerHTML='🗑 체크 삭제 완료 <b>'+okN+'</b>개'+(failN?(' · <span style="color:#C0392B">실패 '+failN+'</span>'):'');
+}
+// ===== 🗑️ 마스터 삭제 (문항·개념에서 안 쓰인 미사용 개념·표·암기·그래프 정리) =====
+let _mstAll=null, _mstUsed=null;
+function _mstStrip(u){ return String(u||'').replace(/^(cpt|tbl|mn|grp):\/\//,''); }
+function _mstSetOf(type){ return _mstUsed[type==='concept'?'cpt':(type==='table'?'tbl':(type==='mnemonic'?'mn':'grp'))]; }
+function _mstKo(type){ return type==='concept'?'개념':(type==='table'?'표':(type==='mnemonic'?'암기':'그래프')); }
+async function mstLoad(){
+  const st=document.getElementById('mstStatus'), box=document.getElementById('mstList');
+  st.textContent='마스터 읽는 중…'; if(box) box.innerHTML='';
+  try{
+    _mstAll=[];
+    const load=async(coll,type)=>{ const snap=await db.collection(coll).get(); snap.forEach(doc=>{ const d=doc.data()||{}; _mstAll.push({type:type, coll:coll, id:doc.id, name:d.name||'', certs:(Array.isArray(d.certs)?d.certs:[]), tbl:(Array.isArray(d.tbl)?d.tbl:[]), mn:(Array.isArray(d.mn)?d.mn:[]), grp:(Array.isArray(d.grp)?d.grp:[]), _raw:d }); }); };
+    await load('concepts','concept'); await load('tables','table'); await load('mnemonics','mnemonic');
+    try{ await load('graphs','graph'); }catch(_){}
+    st.textContent='사용처 스캔 중… (문항 exp.cpt·개념 tbl/mn/grp 링크 수집)';
+    await _mstScan();
+    _mstAll.forEach(m=>{ m.used=_mstSetOf(m.type).has(m.id); });
+    const by={concept:[0,0],table:[0,0],mnemonic:[0,0],graph:[0,0]};
+    _mstAll.forEach(m=>{ by[m.type][0]++; if(!m.used) by[m.type][1]++; });
+    st.innerHTML='개념 <b>'+by.concept[0]+'</b>(미사용 <b style="color:#B4531E">'+by.concept[1]+'</b>) · 표 <b>'+by.table[0]+'</b>(미사용 <b style="color:#B4531E">'+by.table[1]+'</b>) · 암기 <b>'+by.mnemonic[0]+'</b>(미사용 <b style="color:#B4531E">'+by.mnemonic[1]+'</b>) · 그래프 <b>'+by.graph[0]+'</b>(미사용 <b style="color:#B4531E">'+by.graph[1]+'</b>)';
+    mstRender();
+  }catch(e){ st.textContent='오류: '+(e.message||e); }
+}
+async function _mstScan(){
+  _mstUsed={cpt:new Set(), tbl:new Set(), mn:new Set(), grp:new Set()};
+  if(typeof _expExams==='undefined' || !_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
+  const reT=/tbl:\/\/([^\s"'\\<>\]},]+)/g, reM=/mn:\/\/([^\s"'\\<>\]},]+)/g, reG=/grp:\/\/([^\s"'\\<>\]},]+)/g, reC=/cpt:\/\/([^\s"'\\<>\]},]+)/g;
+  const grab=(re,set,txt)=>{ let m; re.lastIndex=0; while((m=re.exec(txt))!==null) set.add(m[1]); };
+  const scanQs=(qs)=>{ (qs||[]).forEach(q=>{ const cpt=(q&&q.exp&&q.exp.cpt)||[]; (Array.isArray(cpt)?cpt:[cpt]).forEach(c=>{ if(c) _mstUsed.cpt.add(_mstStrip(c)); }); const txt=JSON.stringify(q||{}); grab(reT,_mstUsed.tbl,txt); grab(reM,_mstUsed.mn,txt); grab(reG,_mstUsed.grp,txt); grab(reC,_mstUsed.cpt,txt); }); };
+  for(const exam of (_expExams||[])){
+    for(const sub of (exam.subjects||[])){
+      const docId=exam.id+'__'+sub.code;
+      try{ const bd=await db.collection('banks').doc(docId).get();
+        if(bd.exists){ const data=bd.data()||{};
+          if(Array.isArray(data.shards)&&data.shards.length){ for(const sh of data.shards){ try{ const sd=await db.collection('banks').doc(docId+'__'+sh).get(); if(sd.exists) scanQs(sd.data().questions||[]); }catch(_){} } }
+          else scanQs(data.questions||[]);
+        }
+      }catch(_){}
+      try{ const vd=await db.collection('adaptive').doc(docId+'__variantq').get(); if(vd.exists) scanQs((vd.data()||{}).questions||[]); }catch(_){}
+    }
+  }
+  // 개념이 물고 있는 표·암기·그래프 링크는 '사용 중'으로 간주(개념을 먼저 지운 뒤 재스캔하면 새 고아가 드러남)
+  (_mstAll||[]).forEach(c=>{ if(c.type!=='concept') return; (c.tbl||[]).forEach(r=>_mstUsed.tbl.add(_mstStrip(r))); (c.mn||[]).forEach(r=>_mstUsed.mn.add(_mstStrip(r))); (c.grp||[]).forEach(r=>_mstUsed.grp.add(_mstStrip(r))); });
+}
+function _mstFiltered(){
+  if(!_mstAll) return [];
+  const type=((document.getElementById('mstType')||{}).value)||'all';
+  const mode=((document.getElementById('mstMode')||{}).value)||'unused';
+  const q=((document.getElementById('mstSearch')||{}).value||'').trim().toLowerCase();
+  return _mstAll.filter(m=>{
+    if(type!=='all' && m.type!==type) return false;
+    if(mode==='unused' && m.used) return false;
+    if(mode==='used' && !m.used) return false;
+    if(q && (m.id.toLowerCase().indexOf(q)<0 && (m.name||'').toLowerCase().indexOf(q)<0)) return false;
+    return true;
+  });
+}
+function mstRender(){
+  const box=document.getElementById('mstList'); if(!box||!_mstAll) return;
+  const list=_mstFiltered();
+  if(!list.length){ box.innerHTML='<div style="color:#A89C8E;font-size:13px;padding:10px">표시할 마스터가 없습니다.</div>'; return; }
+  const tk={concept:['개념','#EAF1FB','#215787'],table:['표','#EAF6EE','#1E7A45'],mnemonic:['암기','#F5EFFB','#6B3FA0'],graph:['그래프','#FBF1E6','#B4531E']};
+  const rows=list.map(m=>{
+    const t=tk[m.type]||['?','#eee','#555'];
+    const chip='<span style="font-size:10.5px;padding:1px 7px;border-radius:10px;'+(m.used?'background:#E7F5EC;color:#1E7A45':'background:#FCEDE6;color:#B4531E')+'">'+(m.used?'사용 중':'미사용')+'</span>';
+    const idEsc=m.id.replace(/'/g,"\\'");
+    return '<tr style="border-bottom:1px solid #F0ECE5">'
+      + '<td style="padding:7px 8px"><input type="checkbox" class="mstchk" data-id="'+m.id.replace(/"/g,"&quot;")+'" data-type="'+m.type+'" style="width:16px;height:16px;accent-color:#185FA5;cursor:pointer"></td>'
+      + '<td style="padding:7px 8px"><span style="font-size:11px;padding:2px 8px;border-radius:9px;background:'+t[1]+';color:'+t[2]+';font-weight:700">'+t[0]+'</span></td>'
+      + '<td style="padding:7px 8px;font-family:monospace;font-size:11.5px;color:#3B342C;word-break:break-all">'+m.id+'</td>'
+      + '<td style="padding:7px 8px;font-size:12.5px;color:#4A4237">'+(m.name||'<span style=\"color:#C4B8AA\">(이름 없음)</span>')+'</td>'
+      + '<td style="padding:7px 8px;font-size:11px;color:#A89C8E">'+((m.certs||[]).join(', ')||'-')+'</td>'
+      + '<td style="padding:7px 8px">'+chip+'</td>'
+      + '<td style="padding:7px 8px"><button onclick="mstDelete(\''+idEsc+'\',\''+m.type+'\')" style="background:#FCEBEA;color:#C0392B;border:none;border-radius:8px;padding:4px 9px;font-size:11px;cursor:pointer">🗑</button></td>'
+      + '</tr>';
+  }).join('');
+  box.innerHTML='<div style="font-size:12px;color:#6E6256;margin-bottom:6px">표시 <b>'+list.length+'</b> / 전체 '+_mstAll.length+'</div>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#F7F4EF;text-align:left">'
+    + '<th style="padding:7px 8px;width:34px"></th><th style="padding:7px 8px;width:64px">종류</th><th style="padding:7px 8px">id</th><th style="padding:7px 8px">이름</th><th style="padding:7px 8px;width:90px">시험</th><th style="padding:7px 8px;width:64px">상태</th><th style="padding:7px 8px;width:48px"></th>'
+    + '</tr></thead><tbody>'+rows+'</tbody></table>';
+}
+// 표시 중(기본=미사용) 마스터를 종류별로 묶어 복원 가능한 백업 JSON으로 저장
+function mstExport(){
+  const list=_mstFiltered();
+  if(!list.length){ alert('내보낼 마스터가 없습니다.'); return; }
+  const bundle={ concepts:[], tables:[], mnemonics:[], graphs:[] };
+  list.forEach(m=>{ const raw=Object.assign({id:m.id}, m._raw||{}); if(m.type==='concept') bundle.concepts.push(raw); else if(m.type==='table') bundle.tables.push(raw); else if(m.type==='mnemonic') bundle.mnemonics.push(raw); else bundle.graphs.push(raw); });
+  bundle.exportedAt=(typeof _kstISO==='function'?_kstISO(new Date()):new Date().toISOString());
+  bundle.source='mstdel_backup'; bundle.count=list.length;
+  const blob=new Blob([JSON.stringify(bundle)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='certlab_masters_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  const st=document.getElementById('mstStatus'); if(st) st.innerHTML='✅ '+list.length+'개 마스터 백업 완료 (개념 '+bundle.concepts.length+' · 표 '+bundle.tables.length+' · 암기 '+bundle.mnemonics.length+' · 그래프 '+bundle.graphs.length+')';
+}
+async function _mstDoDelete(id,type){ const m=(_mstAll||[]).find(x=>x.id===id&&x.type===type); if(!m) return false; await db.collection(m.coll).doc(id).delete(); _mstAll=_mstAll.filter(x=>!(x.id===id&&x.type===type)); const set=_mstSetOf(type); if(set) set.delete(id); return true; }
+async function mstDelete(id,type){
+  const m=(_mstAll||[]).find(x=>x.id===id&&x.type===type); if(!m) return;
+  if(!confirm(_mstKo(type)+' "'+id+'"'+(m.name?(' ('+m.name+')'):'')+' 를 삭제합니다.\n되돌릴 수 없습니다. 계속할까요?')) return;
+  if(m.used && !confirm('⚠ 이 '+_mstKo(type)+'는 문항 또는 개념에서 사용 중입니다.\n삭제하면 그 참조가 깨집니다(고아·죽은 링크). 그래도 삭제할까요?')) return;
+  const st=document.getElementById('mstStatus');
+  try{ await _mstDoDelete(id,type); mstRender(); if(st) st.innerHTML='🗑 삭제됨: '+_mstKo(type)+' '+id; }
+  catch(e){ alert('삭제 실패: '+(e.message||e)+'\n\n(권한 오류면 Firestore 규칙에서 해당 컬렉션 삭제 허용 필요)'); }
+}
+async function mstDeleteShown(){
+  const list=_mstFiltered();
+  const del=list.filter(m=>!m.used); const usedSkip=list.length-del.length;
+  if(!del.length){ alert('삭제할 미사용 마스터가 없습니다.'+(usedSkip?(' (사용 중 '+usedSkip+'개는 제외)'):'')); return; }
+  if(!confirm('미사용 마스터 '+del.length+'개를 삭제합니다.'+(usedSkip?('\n(사용 중 '+usedSkip+'개는 안전을 위해 제외)'):'')+'\n\n되돌릴 수 없습니다. 백업(내보내기)했나요? 계속할까요?')) return;
+  const st=document.getElementById('mstStatus'); let ok=0, fail=0;
+  for(const m of del){ try{ await _mstDoDelete(m.id,m.type); ok++; }catch(e){ fail++; } if(st) st.textContent='삭제 중… '+ok+'/'+del.length; }
+  const sa=document.getElementById('mstSelAll'); if(sa) sa.checked=false;
+  mstRender();
+  if(st) st.innerHTML='🗑 삭제 완료 <b>'+ok+'</b>개'+(fail?(' · <span style="color:#C0392B">실패 '+fail+'</span> (권한 오류면 Firestore 규칙 확인)'):'')+(usedSkip?(' · 사용 중 '+usedSkip+' 제외'):'')+' — 재스캔하려면 다시 불러오기.';
+}
+function mstToggleAll(m){ Array.prototype.slice.call(document.querySelectorAll('.mstchk')).forEach(function(c){ c.checked=m.checked; }); }
+async function mstChkDelete(){
+  const chks=Array.prototype.slice.call(document.querySelectorAll('.mstchk:checked'));
+  if(!chks.length){ alert('체크된 마스터가 없습니다.'); return; }
+  const items=chks.map(c=>({id:c.getAttribute('data-id'), type:c.getAttribute('data-type')}));
+  const usedN=items.filter(it=>{ const m=(_mstAll||[]).find(x=>x.id===it.id&&x.type===it.type); return m&&m.used; }).length;
+  if(!confirm('체크한 마스터 '+items.length+'개를 삭제합니다.'+(usedN?('\n⚠ 이 중 '+usedN+'개는 사용 중 — 삭제하면 참조가 깨집니다.'):'')+'\n\n되돌릴 수 없습니다. 계속할까요?')) return;
+  const st=document.getElementById('mstStatus'); let ok=0, fail=0;
+  for(const it of items){ try{ await _mstDoDelete(it.id,it.type); ok++; }catch(e){ fail++; } if(st) st.textContent='삭제 중… '+ok+'/'+items.length; }
+  const sa=document.getElementById('mstSelAll'); if(sa) sa.checked=false;
+  mstRender();
+  if(st) st.innerHTML='🗑 체크 삭제 완료 <b>'+ok+'</b>개'+(fail?(' · <span style="color:#C0392B">실패 '+fail+'</span>'):'');
 }
 // ===== 🖼️ 이미지 라이브러리 (문제 무관 보관 — imageLibrary 컬렉션, '이미지 삭제'와 완전 분리) =====
 let _imgBank=null, _imgBankInited=false, _imgBankPicked=[];
