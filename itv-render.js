@@ -715,3 +715,65 @@ _itvUpdaters.T_fvpl=function(instId, rawVal, P){
   if(nt){ if(b===0) nt.innerHTML='무상증자 전에는 이동평균 단가가 취득원가 ÷ 주식수 = '+_itvWon(P.price)+'다. 취득수수료 '+_itvWon(P.fee)+'은 원가에 넣지 않고 당기비용으로 처리한다.';
     else nt.innerHTML='무상증자 '+b+'주를 공짜로 받아 총 '+tot.toLocaleString()+'주가 됐지만 총취득원가는 '+_itvWon(P.cost)+' 그대로다. 그래서 이동평균 단가가 '+_itvWon(P.price)+'에서 <b class="itv-k">'+_itvWon(Math.round(unit*100)/100)+'</b>으로 내려간다.'; }
 };
+
+/* ================= 추가 템플릿: T_cost_reverse (원가흐름 역산) ================= */
+/* 매출원가 → (+기말제품 −기초제품) 당기제품제조원가 → (+기말재공품 −기초재공품) 당기총제조원가. */
+_itvTemplates.T_cost_reverse=function(it, instId){
+  var p=it.params||{};
+  var cogs=+(p.salesCogs||0), begFG=+(p.begFG||0), endFG=+(p.endFG||0), begWIP=+(p.begWIP||0), endWIP=+(p.endWIP||0);
+  var S=p.cogsRange||{min:Math.max(0,cogs-40000),max:cogs+40000,step:5000,default:cogs};
+  var dv=(S.default!=null?S.default:cogs);
+  window._itvReg[instId]={template:'T_cost_reverse', begFG:begFG,endFG:endFG,begWIP:begWIP,endWIP:endWIP, defaultVal:dv};
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var def='<div class="itv-def">기초제품 '+_itvWon(begFG)+', 기말제품 '+_itvWon(endFG)+', 기초재공품 '+_itvWon(begWIP)+', 기말재공품 '+_itvWon(endWIP)+'. 매출원가를 움직여 원가흐름을 거꾸로 올라가 보라. <b>매출원가 → (＋기말제품 −기초제품) 당기제품제조원가 → (＋기말재공품 −기초재공품) 당기총제조원가</b>. 직접재료 잔액은 역산에 쓰지 않는다.</div>';
+  var ctrl='<div class="itv-ctrl"><label>매출원가</label>'
+    +'<input type="range" min="'+S.min+'" max="'+S.max+'" step="'+S.step+'" value="'+dv+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_cv">'+_itvWon(dv)+'</span></div></div>';
+  var cards='<div class="itv-cards"><div class="itv-card"><div class="t">당기제품제조원가</div><div class="v" id="'+instId+'_cogm">—</div></div>'
+    +'<div class="itv-card"><div class="t">당기총제조원가</div><div class="v" id="'+instId+'_tmc">—</div></div></div>';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_note">—</div></div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+def+ctrl+cards+say+'</div>';
+};
+_itvUpdaters.T_cost_reverse=function(instId, rawVal, P){
+  var d=document.getElementById(instId); if(!d) return;
+  var cogs=parseFloat(rawVal); if(isNaN(cogs)) cogs=0;
+  var cogm=cogs+P.endFG-P.begFG;      // 당기제품제조원가
+  var tmc=cogm+P.endWIP-P.begWIP;     // 당기총제조원가
+  var cv=d.querySelector('#'+instId+'_cv'); if(cv) cv.textContent=_itvWon(cogs);
+  var a=d.querySelector('#'+instId+'_cogm'); if(a) a.textContent=_itvWon(cogm);
+  var b=d.querySelector('#'+instId+'_tmc'); if(b) b.textContent=_itvWon(tmc);
+  var nt=d.querySelector('#'+instId+'_note');
+  if(nt) nt.innerHTML='매출원가 '+_itvWon(cogs)+'에 기말제품 '+_itvWon(P.endFG)+'을 더하고 기초제품 '+_itvWon(P.begFG)+'을 빼면 당기제품제조원가 <b class="itv-k">'+_itvWon(cogm)+'</b>. 여기에 기말재공품 '+_itvWon(P.endWIP)+'을 더하고 기초재공품 '+_itvWon(P.begWIP)+'을 빼면 당기총제조원가 <b class="itv-k">'+_itvWon(tmc)+'</b>가 된다.';
+};
+
+/* ================= 추가 템플릿: T_retail (소매재고법·매가환원법) ================= */
+/* 원가율(원가합÷판매가합)을 기말재고 판매가(=판매가합−매출액)에 곱해 기말재고 원가를 구함. */
+_itvTemplates.T_retail=function(it, instId){
+  var p=it.params||{};
+  var cb=+(p.costBeg||0), pb=+(p.priceBeg||0), cp=+(p.costPur||0), pp=+(p.pricePur||0);
+  var costSum=cb+cp, priceSum=pb+pp;
+  var S=p.salesRange||{min:0,max:priceSum,step:50000,default:+(p.sales||Math.round(priceSum*0.8))};
+  var dv=(S.default!=null?S.default:Math.round(priceSum*0.8));
+  window._itvReg[instId]={template:'T_retail', costSum:costSum, priceSum:priceSum, defaultVal:dv};
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var ratio=priceSum>0?costSum/priceSum:0;
+  var def='<div class="itv-def">판매 가능액 — 원가 합계 '+_itvWon(costSum)+', 판매가 합계 '+_itvWon(priceSum)+' (원가율 '+Math.round(ratio*1000)/10+'%). 매출액을 움직여 보라. <b>기말재고 판매가 = 판매가합 − 매출액</b>, <b>기말재고 원가 = 기말재고 판매가 × 원가율</b>.</div>';
+  var ctrl='<div class="itv-ctrl"><label>매출액(판매가)</label>'
+    +'<input type="range" min="'+S.min+'" max="'+S.max+'" step="'+S.step+'" value="'+dv+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_sv">'+_itvWon(dv)+'</span></div></div>';
+  var cards='<div class="itv-cards"><div class="itv-card"><div class="t">원가율</div><div class="v" id="'+instId+'_ratio">'+(Math.round(ratio*1000)/10)+'%</div></div>'
+    +'<div class="itv-card"><div class="t">기말재고 원가</div><div class="v" id="'+instId+'_endcost">—</div></div></div>';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_note">—</div></div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+def+ctrl+cards+say+'</div>';
+};
+_itvUpdaters.T_retail=function(instId, rawVal, P){
+  var d=document.getElementById(instId); if(!d) return;
+  var sales=parseFloat(rawVal); if(isNaN(sales)) sales=0;
+  var ratio=P.priceSum>0?P.costSum/P.priceSum:0;
+  var endPrice=Math.max(0,P.priceSum-sales);
+  var endCost=endPrice*ratio;
+  var sv=d.querySelector('#'+instId+'_sv'); if(sv) sv.textContent=_itvWon(sales);
+  var ec=d.querySelector('#'+instId+'_endcost'); if(ec) ec.textContent=_itvWon(endCost);
+  var nt=d.querySelector('#'+instId+'_note');
+  if(nt) nt.innerHTML='기말재고 판매가 = 판매가합 '+_itvWon(P.priceSum)+' − 매출액 '+_itvWon(sales)+' = '+_itvWon(endPrice)+'. 여기에 원가율 '+(Math.round(ratio*1000)/10)+'%를 곱하면 기말재고 원가 <b class="itv-k">'+_itvWon(endCost)+'</b>가 된다. 매출이 늘면 남는 재고가 줄어 기말재고 원가도 줄어든다.';
+};
