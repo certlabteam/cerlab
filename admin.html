@@ -5366,8 +5366,11 @@ async function _mstScan(){
   _mstScanStat={ok:0, fail:0};
   if(typeof _expExams==='undefined' || !_expExams){ try{ const m=await db.collection('manifest').doc('exams').get(); _expExams=(m.exists&&m.data().exams)||[]; }catch(_){ _expExams=[]; } }
   const reT=/tbl:\/\/([^\s"'\\<>\]},]+)/g, reM=/mn:\/\/([^\s"'\\<>\]},]+)/g, reG=/grp:\/\/([^\s"'\\<>\]},]+)/g, reC=/cpt:\/\/([^\s"'\\<>\]},]+)/g;
+  // 접두사(://) 없이 exp.cpt·exp.ot[].cpt·기타 필드에 박힌 bare id(cpt_/tbl_/mn_/grp_)도 전부 '사용 중'으로 수집 — 과다수집(안전 방향)
+  const reBareC=/cpt_[A-Za-z0-9_]+/g, reBareT=/tbl_[A-Za-z0-9_]+/g, reBareM=/mn_[A-Za-z0-9_]+/g, reBareG=/grp_[A-Za-z0-9_]+/g;
   const grab=(re,set,txt)=>{ let m; re.lastIndex=0; while((m=re.exec(txt))!==null) set.add(m[1]); };
-  const scanQs=(qs)=>{ (qs||[]).forEach(q=>{ const cpt=(q&&q.exp&&q.exp.cpt)||[]; (Array.isArray(cpt)?cpt:[cpt]).forEach(c=>{ if(c) _mstUsed.cpt.add(_mstStrip(c)); }); const txt=JSON.stringify(q||{}); grab(reT,_mstUsed.tbl,txt); grab(reM,_mstUsed.mn,txt); grab(reG,_mstUsed.grp,txt); grab(reC,_mstUsed.cpt,txt); }); };
+  const grab0=(re,set,txt)=>{ let m; re.lastIndex=0; while((m=re.exec(txt))!==null) set.add(m[0]); };
+  const scanQs=(qs)=>{ (qs||[]).forEach(q=>{ const cpt=(q&&q.exp&&q.exp.cpt)||[]; (Array.isArray(cpt)?cpt:[cpt]).forEach(c=>{ if(c) _mstUsed.cpt.add(_mstStrip(c)); }); const txt=JSON.stringify(q||{}); grab(reT,_mstUsed.tbl,txt); grab(reM,_mstUsed.mn,txt); grab(reG,_mstUsed.grp,txt); grab(reC,_mstUsed.cpt,txt); grab0(reBareC,_mstUsed.cpt,txt); grab0(reBareT,_mstUsed.tbl,txt); grab0(reBareM,_mstUsed.mn,txt); grab0(reBareG,_mstUsed.grp,txt); }); };
   for(const exam of (_expExams||[])){
     for(const sub of (exam.subjects||[])){
       const docId=exam.id+'__'+sub.code;
