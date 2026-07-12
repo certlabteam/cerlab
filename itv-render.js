@@ -777,3 +777,92 @@ _itvUpdaters.T_retail=function(instId, rawVal, P){
   var nt=d.querySelector('#'+instId+'_note');
   if(nt) nt.innerHTML='기말재고 판매가 = 판매가합 '+_itvWon(P.priceSum)+' − 매출액 '+_itvWon(sales)+' = '+_itvWon(endPrice)+'. 여기에 원가율 '+(Math.round(ratio*1000)/10)+'%를 곱하면 기말재고 원가 <b class="itv-k">'+_itvWon(endCost)+'</b>가 된다. 매출이 늘면 남는 재고가 줄어 기말재고 원가도 줄어든다.';
 };
+
+/* ================= 추가 템플릿: T_moving_avg (가중이동평균 예측) ================= */
+/* 직전 n기 실제값에 가중치를 달리 줘 다음 기를 예측. 최근에 큰 가중치(k↑)일수록 최근 추세를 빨리 반영. 가중치 합=1. */
+function _itvMAWeights(n,k){ var w=[],s=0,i; for(i=0;i<n;i++){ var v=Math.pow(k,i); w.push(v); s+=v; } for(i=0;i<n;i++) w[i]=w[i]/s; return w; } /* w[i]: 오래된(i=0)→최근(i=n-1) */
+function _itvMAForecast(vals,w){ var f=0; for(var i=0;i<w.length;i++) f+=w[i]*vals[i]; return f; }
+function _itvMASVG(P,w,f){
+  var last=P.last, n=last.length, all=last.concat([f]);
+  var mx=Math.max.apply(null,all)*1.12, PL=45,PB=155,PW=500,bw=PW/(n+1), s='';
+  s+='<line x1="'+PL+'" y1="'+PB+'" x2="'+(PL+PW)+'" y2="'+PB+'" stroke="#94A3B8" stroke-width="1.3"/>';
+  last.forEach(function(v,i){ var h=v/mx*120, x=PL+i*bw+bw*0.2, wd=bw*0.6;
+    s+='<rect x="'+x+'" y="'+(PB-h)+'" width="'+wd+'" height="'+h+'" rx="3" fill="#2563EB" opacity="0.85"/>';
+    s+='<text x="'+(x+wd/2)+'" y="'+(PB+15)+'" font-size="10" fill="#64748B" text-anchor="middle">'+(P.series.length-n+i+1)+'기</text>';
+    s+='<text x="'+(x+wd/2)+'" y="'+(PB-h-5)+'" font-size="9.5" fill="#475569" text-anchor="middle">'+Math.round(v)+'</text>';
+    s+='<text x="'+(x+wd/2)+'" y="'+(PB-h-18)+'" font-size="9" fill="#94A3B8" text-anchor="middle">'+(w[i]*100).toFixed(0)+'%</text>';
+  });
+  var fx=PL+n*bw+bw*0.2, fw=bw*0.6, fh=f/mx*120;
+  s+='<rect x="'+fx+'" y="'+(PB-fh)+'" width="'+fw+'" height="'+fh+'" rx="3" fill="#C0392B"/>';
+  s+='<text x="'+(fx+fw/2)+'" y="'+(PB+15)+'" font-size="10" fill="#C0392B" text-anchor="middle" font-weight="700">예측</text>';
+  s+='<text x="'+(fx+fw/2)+'" y="'+(PB-fh-5)+'" font-size="10" fill="#C0392B" text-anchor="middle" font-weight="700">'+Math.round(f)+'</text>';
+  return s;
+}
+_itvTemplates.T_moving_avg=function(it, instId){
+  var p=it.params||{};
+  var series=((p.series&&p.series.length)?p.series:[100,120,110,130,150]).map(Number);
+  var n=Math.min(p.n||3, series.length);
+  var RC=p.recency||{min:1,max:3,step:0.1,default:2};
+  var last=series.slice(series.length-n);
+  window._itvReg[instId]={template:'T_moving_avg', series:series, n:n, last:last, defaultVal:(RC.default!=null?RC.default:2)};
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var def='<div class="itv-def">다음 기 예측에는 <b>직전 '+n+'기</b>의 실제값만 쓴다. 최근 기에 줄 가중치를 키울수록(k↑) 최근 추세를 더 빨리 반영한다. <b>가중치의 합은 1</b>이다.</div>';
+  var svg='<svg class="itv-svg" id="'+instId+'_svg" viewBox="0 0 560 195" role="img"></svg>';
+  var ctrl='<div class="itv-ctrl"><label>최근 가중 k</label>'
+    +'<input type="range" min="'+RC.min+'" max="'+RC.max+'" step="'+RC.step+'" value="'+(RC.default!=null?RC.default:2)+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_kv">'+Number(RC.default!=null?RC.default:2).toFixed(1)+'</span></div></div>';
+  var cards='<div class="itv-cards"><div class="itv-card"><div class="t">가중치(오래된→최근)</div><div class="v" id="'+instId+'_w" style="font-size:14px">—</div></div>'
+    +'<div class="itv-card"><div class="t">다음 기 예측값</div><div class="v" id="'+instId+'_f">—</div></div></div>';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_note">—</div></div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+def+svg+ctrl+cards+say+'</div>';
+};
+_itvUpdaters.T_moving_avg=function(instId, rawVal, P){
+  var d=document.getElementById(instId); if(!d) return;
+  var k=parseFloat(rawVal); if(isNaN(k)||k<=0) k=1;
+  var w=_itvMAWeights(P.n,k), f=_itvMAForecast(P.last,w);
+  var kv=d.querySelector('#'+instId+'_kv'); if(kv) kv.textContent=k.toFixed(1);
+  var sv=d.querySelector('#'+instId+'_svg'); if(sv) sv.innerHTML=_itvMASVG(P,w,f);
+  var wv=d.querySelector('#'+instId+'_w'); if(wv) wv.textContent=w.map(function(x){return (x*100).toFixed(0)+'%';}).join(' · ');
+  var fv=d.querySelector('#'+instId+'_f'); if(fv) fv.textContent=f.toFixed(1);
+  var nt=d.querySelector('#'+instId+'_note'); if(nt) nt.innerHTML='k='+k.toFixed(1)+'이면 가중치는 <b>'+w.map(function(x){return (x*100).toFixed(0)+'%';}).join('·')+'</b>(오래된→최근), 예측값은 <b class="itv-k">'+f.toFixed(1)+'</b>이다. k를 키우면 최근 값에 더 쏠려 최근 추세를 빨리 따라간다.';
+};
+
+/* ================= 추가 템플릿: T_price_index (가중 물가지수) ================= */
+/* 물가지수 = 품목별 소비 비중(가중치)으로 가격변화를 가중평균한 값. 비중 큰 품목의 가격변화가 지수를 더 크게 움직인다. */
+function _itvPI(items){ var ws=0,acc=0; items.forEach(function(x){ ws+=x.weight; acc+=x.weight*(1+x.change/100); }); return ws?100*acc/ws:100; }
+function _itvPISVG(items,si){
+  var PL=45,PB=110,PW=500,bw=PW/items.length,s='',mxW=Math.max.apply(null,items.map(function(x){return x.weight;}));
+  s+='<line x1="'+PL+'" y1="'+PB+'" x2="'+(PL+PW)+'" y2="'+PB+'" stroke="#94A3B8" stroke-width="1.3"/>';
+  items.forEach(function(x,i){ var h=x.weight/mxW*80, xx=PL+i*bw+bw*0.2, wd=bw*0.6;
+    s+='<rect x="'+xx+'" y="'+(PB-h)+'" width="'+wd+'" height="'+h+'" rx="3" fill="'+(i===si?'#C0392B':'#2563EB')+'" opacity="0.85"/>';
+    s+='<text x="'+(xx+wd/2)+'" y="'+(PB+15)+'" font-size="10" fill="#64748B" text-anchor="middle">'+_itvEsc(x.name)+'</text>';
+    s+='<text x="'+(xx+wd/2)+'" y="'+(PB-h-5)+'" font-size="9" fill="#475569" text-anchor="middle">비중'+x.weight+'% '+(x.change>=0?'+':'')+x.change+'%</text>';
+  });
+  return s;
+}
+_itvTemplates.T_price_index=function(it, instId){
+  var p=it.params||{};
+  var items=((p.items&&p.items.length)?p.items:[{name:'식료품',weight:40,change:5},{name:'주거',weight:35,change:3},{name:'교통',weight:25,change:2}]).map(function(x){return {name:x.name,weight:+x.weight,change:+x.change};});
+  var si=(p.sliderItem!=null?p.sliderItem:0); if(si<0||si>=items.length) si=0;
+  var SC=p.slider||{min:-10,max:20,step:1,default:items[si].change};
+  window._itvReg[instId]={template:'T_price_index', items:items, si:si, defaultVal:(SC.default!=null?SC.default:0)};
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var def='<div class="itv-def">물가지수는 품목별 <b>소비 비중(가중치)</b>으로 가격변화를 가중평균한 값이다. 지출이 큰 품목의 가격이 오르면 지수가 더 크게 움직인다. 아래에서 <b>'+_itvEsc(items[si].name)+'</b>의 가격변화를 움직여 보라.</div>';
+  var svg='<svg class="itv-svg" id="'+instId+'_svg" viewBox="0 0 560 145" role="img"></svg>';
+  var ctrl='<div class="itv-ctrl"><label>'+_itvEsc(items[si].name)+' 가격변화(%)</label>'
+    +'<input type="range" min="'+SC.min+'" max="'+SC.max+'" step="'+SC.step+'" value="'+(SC.default!=null?SC.default:0)+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_cv">'+(SC.default!=null?SC.default:0)+'%</span></div></div>';
+  var cards='<div class="itv-cards"><div class="itv-card"><div class="t">가중 물가지수(기준 100)</div><div class="v" id="'+instId+'_idx">—</div></div></div>';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_note">—</div></div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+def+svg+ctrl+cards+say+'</div>';
+};
+_itvUpdaters.T_price_index=function(instId, rawVal, P){
+  var d=document.getElementById(instId); if(!d) return;
+  var c=parseFloat(rawVal); if(isNaN(c)) c=0;
+  P.items[P.si].change=c;
+  var idx=_itvPI(P.items);
+  var cv=d.querySelector('#'+instId+'_cv'); if(cv) cv.textContent=(c>=0?'+':'')+c+'%';
+  var sv=d.querySelector('#'+instId+'_svg'); if(sv) sv.innerHTML=_itvPISVG(P.items,P.si);
+  var ix=d.querySelector('#'+instId+'_idx'); if(ix) ix.textContent=idx.toFixed(2);
+  var nt=d.querySelector('#'+instId+'_note'); if(nt) nt.innerHTML='비중 '+P.items[P.si].weight+'%인 <b>'+_itvEsc(P.items[P.si].name)+'</b>의 가격이 '+(c>=0?'+':'')+c+'%면 지수는 <b class="itv-k">'+idx.toFixed(2)+'</b>다. 같은 가격변화라도 비중이 큰 품목일수록 지수를 더 크게 움직인다.';
+};
