@@ -866,3 +866,101 @@ _itvUpdaters.T_price_index=function(instId, rawVal, P){
   var ix=d.querySelector('#'+instId+'_idx'); if(ix) ix.textContent=idx.toFixed(2);
   var nt=d.querySelector('#'+instId+'_note'); if(nt) nt.innerHTML='비중 '+P.items[P.si].weight+'%인 <b>'+_itvEsc(P.items[P.si].name)+'</b>의 가격이 '+(c>=0?'+':'')+c+'%면 지수는 <b class="itv-k">'+idx.toFixed(2)+'</b>다. 같은 가격변화라도 비중이 큰 품목일수록 지수를 더 크게 움직인다.';
 };
+
+/* ================= 추가 템플릿: T_pred_value (예측도 PPV·NPV) ================= */
+/* 민감도·특이도가 같아도 유병률(사전확률)이 낮으면 양성예측도(PPV)가 크게 떨어진다. 2×2 분할표로 확인. */
+function _itvPV(sens,spec,prev,N){
+  var dis=N*prev, well=N*(1-prev);
+  var TP=dis*sens, FN=dis*(1-sens), TN=well*spec, FP=well*(1-spec);
+  var PPV=(TP+FP)?TP/(TP+FP):0, NPV=(TN+FN)?TN/(TN+FN):0;
+  return {TP:TP,FN:FN,TN:TN,FP:FP,PPV:PPV,NPV:NPV};
+}
+function _itvPVSVG(r,si){
+  function C(x,y,w,h,fill,lab,val){ return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="4" fill="'+fill+'" opacity="0.88"/>'
+    +'<text x="'+(x+w/2)+'" y="'+(y+h/2-4)+'" font-size="11" fill="#fff" text-anchor="middle">'+lab+'</text>'
+    +'<text x="'+(x+w/2)+'" y="'+(y+h/2+13)+'" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">'+val+'</text>'; }
+  var x0=150,y0=30,cw=170,ch=55,gap=8;
+  var s='';
+  s+='<text x="'+(x0+cw/2)+'" y="20" font-size="10" fill="#475569" text-anchor="middle">질환 있음</text>';
+  s+='<text x="'+(x0+cw+gap+cw/2)+'" y="20" font-size="10" fill="#475569" text-anchor="middle">질환 없음</text>';
+  s+='<text x="'+(x0-8)+'" y="'+(y0+ch/2+4)+'" font-size="10" fill="#475569" text-anchor="end">검사 양성</text>';
+  s+='<text x="'+(x0-8)+'" y="'+(y0+ch+gap+ch/2+4)+'" font-size="10" fill="#475569" text-anchor="end">검사 음성</text>';
+  s+=C(x0,y0,cw,ch,'#2563EB','진양성 TP',Math.round(r.TP));
+  s+=C(x0+cw+gap,y0,cw,ch,'#EF4444','가양성 FP',Math.round(r.FP));
+  s+=C(x0,y0+ch+gap,cw,ch,'#F59E0B','가음성 FN',Math.round(r.FN));
+  s+=C(x0+cw+gap,y0+ch+gap,cw,ch,'#10B981','진음성 TN',Math.round(r.TN));
+  return s;
+}
+_itvTemplates.T_pred_value=function(it, instId){
+  var p=it.params||{};
+  var sens=(p.sens!=null?p.sens:0.90), spec=(p.spec!=null?p.spec:0.90), N=(p.N||1000);
+  var PC=p.prevalence||{min:1,max:50,step:1,default:10};
+  var prev0=(PC.default!=null?PC.default:10)/100;
+  window._itvReg[instId]={template:'T_pred_value', sens:sens, spec:spec, N:N, defaultVal:(PC.default!=null?PC.default:10)};
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var def='<div class="itv-def">민감도 '+Math.round(sens*100)+'%, 특이도 '+Math.round(spec*100)+'%로 고정된 검사다. <b>유병률(질환자 비율)</b>을 움직여 보라. 민감도·특이도가 같아도 유병률이 낮으면 <b>양성예측도(PPV)</b>가 크게 떨어진다.</div>';
+  var svg='<svg class="itv-svg" id="'+instId+'_svg" viewBox="0 0 560 165" role="img"></svg>';
+  var ctrl='<div class="itv-ctrl"><label>유병률(%)</label>'
+    +'<input type="range" min="'+PC.min+'" max="'+PC.max+'" step="'+PC.step+'" value="'+(PC.default!=null?PC.default:10)+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_pv">'+(PC.default!=null?PC.default:10)+'%</span></div></div>';
+  var cards='<div class="itv-cards"><div class="itv-card"><div class="t">양성예측도 PPV</div><div class="v" id="'+instId+'_ppv">—</div></div>'
+    +'<div class="itv-card"><div class="t">음성예측도 NPV</div><div class="v" id="'+instId+'_npv">—</div></div></div>';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_note">—</div></div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+def+svg+ctrl+cards+say+'</div>';
+};
+_itvUpdaters.T_pred_value=function(instId, rawVal, P){
+  var d=document.getElementById(instId); if(!d) return;
+  var pr=parseFloat(rawVal); if(isNaN(pr)) pr=10; if(pr<0) pr=0; if(pr>100) pr=100;
+  var r=_itvPV(P.sens,P.spec,pr/100,P.N);
+  var pv=d.querySelector('#'+instId+'_pv'); if(pv) pv.textContent=pr+'%';
+  var sv=d.querySelector('#'+instId+'_svg'); if(sv) sv.innerHTML=_itvPVSVG(r);
+  var pp=d.querySelector('#'+instId+'_ppv'); if(pp) pp.textContent=(r.PPV*100).toFixed(1)+'%';
+  var np=d.querySelector('#'+instId+'_npv'); if(np) np.textContent=(r.NPV*100).toFixed(1)+'%';
+  var nt=d.querySelector('#'+instId+'_note'); if(nt) nt.innerHTML='유병률 '+pr+'%면 PPV는 <b class="itv-k">'+(r.PPV*100).toFixed(1)+'%</b>, NPV는 <b>'+(r.NPV*100).toFixed(1)+'%</b>다. 유병률이 낮을수록 양성이 나와도 실제 환자일 확률(PPV)이 낮아진다.';
+};
+
+/* ================= 추가 템플릿: T_weighted_mean (가중평균·평균의 종류) ================= */
+/* 가중평균 = Σ(값×사례수) ÷ Σ사례수. 사례수가 많은 집단의 값이 평균을 더 끌어당긴다. */
+function _itvWM(groups){ var ws=0,acc=0; groups.forEach(function(g){ ws+=g.count; acc+=g.value*g.count; }); return ws?acc/ws:0; }
+function _itvWMSVG(groups,mean,si){
+  var PL=45,PB=115,PW=500,bw=PW/groups.length,s='',mxV=Math.max.apply(null,groups.map(function(g){return g.value;}))||1;
+  s+='<line x1="'+PL+'" y1="'+PB+'" x2="'+(PL+PW)+'" y2="'+PB+'" stroke="#94A3B8" stroke-width="1.3"/>';
+  var my=PB-mean/mxV*90;
+  s+='<line x1="'+PL+'" y1="'+my+'" x2="'+(PL+PW)+'" y2="'+my+'" stroke="#C0392B" stroke-width="1.5" stroke-dasharray="5 4"/>';
+  s+='<text x="'+(PL+PW)+'" y="'+(my-4)+'" font-size="10" fill="#C0392B" text-anchor="end">가중평균 '+mean.toFixed(1)+'</text>';
+  groups.forEach(function(g,i){ var h=g.value/mxV*90, xx=PL+i*bw+bw*0.2, wd=bw*0.6;
+    s+='<rect x="'+xx+'" y="'+(PB-h)+'" width="'+wd+'" height="'+h+'" rx="3" fill="'+(i===si?'#C0392B':'#2563EB')+'" opacity="0.85"/>';
+    s+='<text x="'+(xx+wd/2)+'" y="'+(PB+14)+'" font-size="10" fill="#64748B" text-anchor="middle">'+_itvEsc(g.name)+'</text>';
+    s+='<text x="'+(xx+wd/2)+'" y="'+(PB-h-5)+'" font-size="9" fill="#475569" text-anchor="middle">값'+g.value+' ·n'+g.count+'</text>';
+  });
+  return s;
+}
+_itvTemplates.T_weighted_mean=function(it, instId){
+  var p=it.params||{};
+  var groups=((p.groups&&p.groups.length)?p.groups:[{name:'A집단',value:60,count:20},{name:'B집단',value:75,count:50},{name:'C집단',value:90,count:30}]).map(function(g){return {name:g.name,value:+g.value,count:+g.count};});
+  var si=(p.sliderGroup!=null?p.sliderGroup:1); if(si<0||si>=groups.length) si=0;
+  var SC=p.slider||{min:0,max:100,step:5,default:groups[si].count};
+  window._itvReg[instId]={template:'T_weighted_mean', groups:groups, si:si, defaultVal:(SC.default!=null?SC.default:groups[si].count)};
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var def='<div class="itv-def">가중평균은 <b>Σ(값×사례수) ÷ Σ사례수</b>다. 사례수(비중)가 큰 집단의 값이 평균을 더 강하게 끌어당긴다. <b>'+_itvEsc(groups[si].name)+'</b>의 사례수를 움직여 보라.</div>';
+  var svg='<svg class="itv-svg" id="'+instId+'_svg" viewBox="0 0 560 140" role="img"></svg>';
+  var ctrl='<div class="itv-ctrl"><label>'+_itvEsc(groups[si].name)+' 사례수(n)</label>'
+    +'<input type="range" min="'+SC.min+'" max="'+SC.max+'" step="'+SC.step+'" value="'+(SC.default!=null?SC.default:groups[si].count)+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_nv">'+(SC.default!=null?SC.default:groups[si].count)+'</span></div></div>';
+  var cards='<div class="itv-cards"><div class="itv-card"><div class="t">가중평균</div><div class="v" id="'+instId+'_wm">—</div></div>'
+    +'<div class="itv-card"><div class="t">단순평균(비교)</div><div class="v" id="'+instId+'_sm">—</div></div></div>';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_note">—</div></div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+def+svg+ctrl+cards+say+'</div>';
+};
+_itvUpdaters.T_weighted_mean=function(instId, rawVal, P){
+  var d=document.getElementById(instId); if(!d) return;
+  var n=parseFloat(rawVal); if(isNaN(n)||n<0) n=0;
+  P.groups[P.si].count=n;
+  var wm=_itvWM(P.groups);
+  var sm=P.groups.reduce(function(a,g){return a+g.value;},0)/P.groups.length;
+  var nv=d.querySelector('#'+instId+'_nv'); if(nv) nv.textContent=n;
+  var sv=d.querySelector('#'+instId+'_svg'); if(sv) sv.innerHTML=_itvWMSVG(P.groups,wm,P.si);
+  var wmv=d.querySelector('#'+instId+'_wm'); if(wmv) wmv.textContent=wm.toFixed(1);
+  var smv=d.querySelector('#'+instId+'_sm'); if(smv) smv.textContent=sm.toFixed(1);
+  var nt=d.querySelector('#'+instId+'_note'); if(nt) nt.innerHTML='<b>'+_itvEsc(P.groups[P.si].name)+'</b>의 사례수가 '+n+'이면 가중평균은 <b class="itv-k">'+wm.toFixed(1)+'</b>다. 사례수가 큰 집단 쪽으로 평균이 끌려간다(단순평균 '+sm.toFixed(1)+'과 비교).';
+};
