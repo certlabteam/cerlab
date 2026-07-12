@@ -1190,7 +1190,7 @@ tr:hover td{background:#FAFAFA}
             <button class="btn-sm" onclick="itvmLoad()" style="background:#F1F5F9;color:#475569">새로고침</button>
           </div>
         </div>
-        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">슬라이더·애니메이션형 자료. <b>template</b>(T1_curve_slider·T5_inventory_flow·T2_timeline·T_risk_return·T_duration·T_cvp·T_eup·T_lcnrv·T_eps·T_eva·T_capint·T_fvpl·T_moving_avg·T_price_index) + <b>params</b>(JSON)로 등록. 문항/개념에선 <b>itv://id</b>로 참조(exp.itv).</div>
+        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">슬라이더·애니메이션형 자료. <b>template</b>(T1_curve_slider·T5_inventory_flow·T2_timeline·T_risk_return·T_duration·T_cvp·T_eup·T_lcnrv·T_eps·T_eva·T_capint·T_fvpl·T_moving_avg·T_price_index·T_pred_value·T_weighted_mean) + <b>params</b>(JSON)로 등록. 문항/개념에선 <b>itv://id</b>로 참조(exp.itv).</div>
         <div id="itvmStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
         <div class="upbar">
           <div class="upbar-drop" id="itvmImpDrop">📁 인터랙티브 JSON 끌어다 놓기 / 클릭해서 선택<span class="sub">interactives 형식</span></div>
@@ -1225,6 +1225,8 @@ tr:hover td{background:#FAFAFA}
                 <option value="T1_curve_slider">T1_curve_slider (경제 곡선 슬라이더)</option>
                 <option value="T_moving_avg">T_moving_avg (가중이동평균 예측)</option>
                 <option value="T_price_index">T_price_index (가중 물가지수)</option>
+                <option value="T_pred_value">T_pred_value (예측도 PPV·NPV)</option>
+                <option value="T_weighted_mean">T_weighted_mean (가중평균)</option>
                 <option value="T5_inventory_flow">T5_inventory_flow (재고 원가흐름)</option>
                 <option value="T2_timeline">T2_timeline (연표)</option>
                 <option value="T_risk_return">T_risk_return (상관계수·위험수익)</option>
@@ -2887,7 +2889,7 @@ async function grpmImport(){
 
 // ===== 🎛 인터랙티브 마스터 (Firestore interactives CRUD · template+params) =====
 var _itvmAll={}, _itvmLoaded=false, _itvmImpBound=false, _itvmImpData=null;
-var _ITV_TEMPLATES=['T1_curve_slider','T5_inventory_flow','T2_timeline','T_risk_return','T_duration','T_cvp','T_eup','T_lcnrv','T_eps','T_eva','T_capint','T_fvpl','T_moving_avg','T_price_index'];
+var _ITV_TEMPLATES=['T1_curve_slider','T5_inventory_flow','T2_timeline','T_risk_return','T_duration','T_cvp','T_eup','T_lcnrv','T_eps','T_eva','T_capint','T_fvpl','T_moving_avg','T_price_index','T_pred_value','T_weighted_mean'];
 function itvmEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function itvmInit(){
   if(!_itvmLoaded) itvmLoad();
