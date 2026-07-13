@@ -50,7 +50,7 @@ gtag('config', 'G-RPZRZQ779J');
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20260713">
 <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -4107,16 +4107,22 @@ function topicNameMap(cert,sub){
   return m;
 }
 function luRecentSeen(cert,sub){ var seen={}; try{ var qb=qbOf(cert)[sub]; if(qb) qb.sets.forEach(function(st){ st.questions.forEach(function(q){ var p=(typeof srGetK==='function')&&srGetK(cert,q.id); if(p&&p.rc>0) seen[q.id]=true; }); }); }catch(e){} return seen; }
-function luBuildPool(cert,sub){ var pool=[], byId={}; try{
+function luBuildPool(cert,sub){ var pool=[], byId={}, seenQ={}; try{
+    function _qkey(q){ return String((q&&q.q)||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').slice(0,200); }  // 내용 기준 중복 판별
     var qb=qbOf(cert)[sub];
-    if(qb) qb.sets.forEach(function(st){ st.questions.forEach(function(q){ if(!mqHasAnswer(q)) return; var info=(typeof adLookup==='function')&&adLookup(cert,sub,q.id); if(!info||!info.topic||!info.diff) return; q._subj=sub; pool.push({id:q.id, topic:info.topic, level:info.diff, subtopic:info.subtopic||null, _q:q}); byId[q.id]=true; }); });
+    if(qb) qb.sets.forEach(function(st){ st.questions.forEach(function(q){ if(!mqHasAnswer(q)) return; var info=(typeof adLookup==='function')&&adLookup(cert,sub,q.id); if(!info||!info.topic||!info.diff) return; q._subj=sub; pool.push({id:q.id, topic:info.topic, level:info.diff, subtopic:info.subtopic||null, _q:q}); byId[q.id]=true; seenQ[_qkey(q)]=1; }); });
     var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; var vp=(b&&b.variantPool)||[];
-    vp.forEach(function(v){ if(!v||!v.id||byId[v.id]||!v.topic||!v.diff) return; v._subj=sub; pool.push({id:v.id, topic:v.topic, level:v.diff, subtopic:v.subtopic||null, _q:v}); byId[v.id]=true; });
+    vp.forEach(function(v){ if(!v||!v.id||byId[v.id]||!v.topic||!v.diff) return; if(seenQ[_qkey(v)]) return; v._subj=sub; pool.push({id:v.id, topic:v.topic, level:v.diff, subtopic:v.subtopic||null, _q:v}); byId[v.id]=true; seenQ[_qkey(v)]=1; });
     var tmpls=(b&&b.calcTemplates)||[];   // 계산형 자동생성: 템플릿×밴드당 fresh seed 인스턴스 편입
     tmpls.forEach(function(tm){ if(!tm||!tm.id||!tm.topic) return; var bands=Array.isArray(tm.diff)?tm.diff:[tm.diff];
-      bands.forEach(function(bd){ for(var ci=0; ci<CALC_PER_BAND; ci++){ var seed=(Math.floor(Math.random()*4294967296))>>>0;
-        var inst=genCalcValid(Object.assign({}, tm, {_diff:bd}), seed, 40);
-        if(inst && !byId[inst.id]){ inst._subj=sub; pool.push({id:inst.id, topic:inst.topic, level:bd, subtopic:inst.subtopic||null, _q:inst}); byId[inst.id]=true; } } });
+      bands.forEach(function(bd){ var made=0, tries=0;
+        while(made<CALC_PER_BAND && tries<CALC_PER_BAND*10){ tries++;   // 같은 파라미터(동일 문항)면 다른 seed로 재시도 → 서로 다른 인스턴스만 편입
+          var seed=(Math.floor(Math.random()*4294967296))>>>0;
+          var inst=genCalcValid(Object.assign({}, tm, {_diff:bd}), seed, 40);
+          if(!inst || byId[inst.id]) continue;
+          var _ik=_qkey(inst); if(seenQ[_ik]) continue;   // 내용 중복 제거(기출·변형·다른 인스턴스와 동일 문항 방지)
+          inst._subj=sub; pool.push({id:inst.id, topic:inst.topic, level:bd, subtopic:inst.subtopic||null, _q:inst}); byId[inst.id]=true; seenQ[_ik]=1; made++;
+        } });
     });
   }catch(e){} return pool; }
 /* ===== 예상점수 감가상각: 단원을 안 푼 지 오래되면 점수가 서서히 내려간다 =====
@@ -4960,9 +4966,45 @@ function _jaryoDots(html){
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
   return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 5px 0 2px;position:relative;top:-1px">\u25CF</span>');
 }
+// [ADD 2026-07] 현가/연금 계수 블록을 표로 렌더 — q(불변)는 그대로 두고 화면만 (기간×이자율) 표로 정리.
+//  대괄호 안에 '현가계수/연금현가/할인계수' + 'N기간 R%값' 항목이 있을 때만 변환. 파싱 실패 시 원문 유지(안전).
+function _coefParse(inner){
+  var rawGroups=String(inner).split(/\s+\/\s+/), groups=[], periodSet={};
+  for(var gi=0; gi<rawGroups.length; gi++){
+    var part=rawGroups[gi], ci=part.indexOf(':'); if(ci<0) continue;
+    var label=part.slice(0,ci).replace(/현가계수[.．]?/,'').replace(/￦?\s*1\b/,'').replace(/[￦\s]+/g,' ').trim(); if(!label) label='계수';
+    var body=part.slice(ci+1), rows={}, entries=body.split(/,\s*/);
+    for(var ei=0; ei<entries.length; ei++){
+      var em=entries[ei].match(/(\d+)\s*기간\s*(.+)/); if(!em) continue;
+      var per=em[1], rk=em[2].split('/'), cells={};
+      for(var ri=0; ri<rk.length; ri++){ var vm=rk[ri].match(/(\d+(?:\.\d+)?)\s*%\s*([\d.]+)/); if(vm) cells[vm[1]]=vm[2]; }
+      if(Object.keys(cells).length){ rows[per]=cells; periodSet[per]=1; }
+    }
+    if(Object.keys(rows).length) groups.push({label:label, rows:rows});
+  }
+  return {groups:groups, periods:Object.keys(periodSet).map(Number).sort(function(a,b){return a-b;})};
+}
+function _coefTable(g){
+  g.groups.forEach(function(gr){ var rs={}; g.periods.forEach(function(p){ var c=gr.rows[p]||{}; Object.keys(c).forEach(function(r){rs[r]=1;}); }); gr.rates=Object.keys(rs).map(Number).sort(function(a,b){return a-b;}).map(String); });
+  var h='<table class="qcoef"><thead><tr><th rowspan="2">기간</th>';
+  g.groups.forEach(function(gr){ h+='<th colspan="'+gr.rates.length+'">'+gr.label+'</th>'; });
+  h+='</tr><tr>';
+  g.groups.forEach(function(gr){ gr.rates.forEach(function(r){ h+='<th>'+r+'%</th>'; }); });
+  h+='</tr></thead><tbody>';
+  g.periods.forEach(function(p){ h+='<tr><td>'+p+'</td>'; g.groups.forEach(function(gr){ var c=gr.rows[p]||{}; gr.rates.forEach(function(r){ h+='<td>'+(c[r]!=null?c[r]:'')+'</td>'; }); }); h+='</tr>'; });
+  return h+'</tbody></table>';
+}
+function _coefGridHTML(html){
+  if(!html || html.indexOf('기간')<0) return html;
+  if(!/현가계수|현재가치계수|연금현가|할인계수|현가율/.test(html)) return html;
+  return String(html).replace(/\[([^\[\]]*?(?:현가계수|현재가치계수|연금현가|할인계수)[^\[\]]*?)\]/g, function(whole, inner){
+    try{ var g=_coefParse(inner); if(!g||g.groups.length<1||g.periods.length<1) return whole; return _coefTable(g); }catch(e){ return whole; }
+  });
+}
 function stemHTML(html){
   // 순수 산문 스템만 문장(…다.) 단위로 단락 분리. ○/ㄱㄴㄷ 조합·자료형, 1문장은 기존 그대로.
   if(!html) return html;
+  html=_coefGridHTML(html);   // [ADD 2026-07] 계수 블록 → 표(화면 전용)
   // [ADD] 발문 진술형 원문자 마커(㉠~㉭ + 따옴표) 앞 줄바꿈 — 질문머리(㉠~㉣이)·괄호빈칸(( ㉠ ))은 제외
   html=String(html).replace(/\s*([\u3260-\u326D])(\s*["\u201C\u201F\u300C])/g, '<br>$1$2');
   if(html.indexOf('\u25CB')>=0 || /(^|\n)\s*[ㄱ-ㅎ]\s*[.\u00B7)\]]/.test(html)) return bulletStem(html);
@@ -5820,7 +5862,7 @@ function renderMcqExam(root){
       _comboJaryoHTML='<div class="jaryo">'+_cs.stmts.map(function(s){return s.k+'. '+s.t;}).join('\n')+'</div>';
     }
   }
-  const curSubj=(q&&q._subj)?q._subj:'';   // 혼합과목(복습·진단·SR) 현재 문항 과목 → 헤더로
+  const curSubj=(function(){ var _sc=(q&&q._subj)?q._subj:''; if(!_sc) return ''; try{ var _qb=qbOf(mqCert)[_sc]; return (_qb&&_qb.name)||_sc; }catch(_){ return _sc; } })();   // 혼합과목(복습·진단·SR) 현재 문항 과목명(코드→한글) → 헤더로
   const subjTag='';                         // 카드 안 과목 배지는 제거(헤더로 옮김)
   const relearnBadge=(mqLevelUp && !mqInReview && _luRelearn && _luRelearn[q.id])?'<span class="imp" style="background:#EAF2FB;color:#0C447C;border-color:#C7DBF2">🔁 복습</span>':'';
   const tags=subjTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q)+relearnBadge;
@@ -7322,8 +7364,12 @@ function genCalc(tmpl, seed){
     var rng=_calcRng(seed), vars={};
     var pk=Object.keys(tmpl.params||{});
     for(var pi=0; pi<pk.length; pi++){ var p=tmpl.params[pk[pi]], step=p.step||1, span=Math.floor((p.max-p.min)/step); vars[pk[pi]]=p.min+step*Math.floor(rng()*(span+1)); }
-    var dk=Object.keys(tmpl.derive||{});
-    for(var di=0; di<dk.length; di++) vars[dk[di]]=_calcEval(tmpl.derive[dk[di]], vars);
+    /* [FIX 2026-07-13] derive를 키 순서가 아니라 의존성 순으로 해석 — 미해결(var:) 예외면 뒤로 미뤄 재시도(고정점). admin genCalc와 동일. */
+    var dk=Object.keys(tmpl.derive||{}), _pend=dk.slice(), _prog=true;
+    while(_pend.length && _prog){ _prog=false; var _next=[];
+      for(var di=0; di<_pend.length; di++){ try{ vars[_pend[di]]=_calcEval(tmpl.derive[_pend[di]], vars); _prog=true; }catch(_e){ if(String(_e.message||_e).indexOf('var:')===0) _next.push(_pend[di]); else throw _e; } }
+      _pend=_next; }
+    if(_pend.length) throw new Error('var:'+_pend[0]);
     var answer=_calcEval(tmpl.answer, vars); vars.answer=answer;
     var rnd=tmpl.round||0, fpow=Math.pow(10,rnd); function rd(x){ return Math.round(x*fpow)/fpow; }
     var ansR=rd(answer), distVals=[];
