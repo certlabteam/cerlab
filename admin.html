@@ -10,7 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="qc-core.js?v=20260712"></script>
+<script src="qc-core.js?v=20260713"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
@@ -3119,8 +3119,13 @@ function genCalc(tmpl, seed){
     var rng=_calcRng(seed), vars={};
     var pk=Object.keys(tmpl.params||{});
     for(var pi=0; pi<pk.length; pi++){ var p=tmpl.params[pk[pi]], step=p.step||1, span=Math.floor((p.max-p.min)/step); vars[pk[pi]]=p.min+step*Math.floor(rng()*(span+1)); }
-    var dk=Object.keys(tmpl.derive||{});
-    for(var di=0; di<dk.length; di++) vars[dk[di]]=_calcEval(tmpl.derive[dk[di]], vars);
+    /* [FIX 2026-07] derive는 키 순서가 아니라 의존성 순으로 해석 — 미해결(var:) 예외면 뒤로 미뤄 재시도(고정점).
+       (예전엔 나중에 정의될 파생값을 먼저 참조하는 템플릿이 "유효 인스턴스 0개"로 업로드 차단됨) */
+    var dk=Object.keys(tmpl.derive||{}), _pend=dk.slice(), _prog=true;
+    while(_pend.length && _prog){ _prog=false; var _next=[];
+      for(var di=0; di<_pend.length; di++){ try{ vars[_pend[di]]=_calcEval(tmpl.derive[_pend[di]], vars); _prog=true; }catch(_e){ if(String(_e.message||_e).indexOf('var:')===0) _next.push(_pend[di]); else throw _e; } }
+      _pend=_next; }
+    if(_pend.length) throw new Error('var:'+_pend[0]);  /* 순환 등 진짜 미해결 → 기존대로 실패 */
     var answer=_calcEval(tmpl.answer, vars); vars.answer=answer;
     var rnd=tmpl.round||0, fpow=Math.pow(10,rnd); function rd(x){ return Math.round(x*fpow)/fpow; }
     var ansR=rd(answer), distVals=[];
