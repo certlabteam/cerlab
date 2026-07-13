@@ -4720,6 +4720,7 @@ function _mlaRefs(q){
   return out;
 }
 function _mlaAuditLines(items, M){
+  if(typeof QC!=='undefined' && QC.masterAudit) return QC.masterAudit(items, M);   /* [2026-07-13] ② 감사 단일소스: qc-core. 구버전 qc-core면 아래 인라인 폴백 */
   var L=['마스터: 개념 '+Object.keys(M.concepts).length+' · 표 '+Object.keys(M.tables).length+' · 암기 '+Object.keys(M.mnems).length+' · 그래프 '+Object.keys(M.graphs).length+' · 이미지 '+Object.keys(M.images).length+' · 인터랙티브 '+Object.keys(M.interactives).length,''];
   var noCptL=[], deadL=[], childL=[], mediaL=[], cxL=[], needL=[];
   var nNoCpt=0,nDead=0,nChild=0,nMedia=0,nCx=0,nNeed=0,nNeed7=0, seenCx={}, seenChild={}, _refCpt={}, need7L=[];
