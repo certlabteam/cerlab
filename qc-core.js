@@ -662,11 +662,67 @@ try{
       needVisStem:sigVis,
       needImgStem:(sigImgQ || (!/appraiser|realestate/.test(docId) && sigImgArt && !sigImgEx)) };
   }
+  /* ---- ② 마스터 연결 검수 전체 감사 — admin _mlaAuditLines에서 이관(2026-07-13). 단일소스: admin·오프라인 검증기 공용.
+     items=[{docId,data:{questions}}], M={concepts{id→{name,cards,emptyCx,hasCxSvg,hasCxTbl,cert,sigGrp/Tbl/Mn/Itv,mn,tbl,grp}},tables,mnems,graphs,images,interactives,itvCov}.
+     반환: 지적서 ② 라인 배열. ⑦은 위 _qcVisualSignals 재사용. */
+  function _qcMlaClean(u){ return String(u||'').replace(/^(cpt|tbl|mn|grp|img|itv):\/\//,''); }
+  function _qcMlaRefs(q){ var exp=(q&&q.exp)||{}; var out={cpt:[],tbl:[],img:[],itv:[]};
+    (Array.isArray(exp.cpt)?exp.cpt:[]).forEach(function(id,i){ if(id) out.cpt.push({id:_qcMlaClean(id),where:'exp.cpt['+i+']'}); });
+    (Array.isArray(exp.ot)?exp.ot:[]).forEach(function(o,i){ if(o&&Array.isArray(o.cpt)) o.cpt.forEach(function(id){ if(id) out.cpt.push({id:_qcMlaClean(id),where:'ot['+i+']'}); }); });
+    (Array.isArray(exp.tbl)?exp.tbl:[]).forEach(function(id){ if(id) out.tbl.push({id:_qcMlaClean(id),where:'exp.tbl'}); });
+    var qb=''; try{ qb=JSON.stringify(q); }catch(_){}
+    (qb.match(/img:\/\/([^\s"'\\<>\]},]+)/g)||[]).forEach(function(m){ out.img.push({id:m.replace('img://','')}); });
+    (qb.match(/itv:\/\/([^\s"'\\<>\]},]+)/g)||[]).forEach(function(m){ out.itv.push({id:m.replace('itv://','')}); });
+    return out;
+  }
+  function _qcMasterAudit(items, M){
+    var L=['마스터: 개념 '+Object.keys(M.concepts).length+' · 표 '+Object.keys(M.tables).length+' · 암기 '+Object.keys(M.mnems).length+' · 그래프 '+Object.keys(M.graphs).length+' · 이미지 '+Object.keys(M.images).length+' · 인터랙티브 '+Object.keys(M.interactives).length,''];
+    var noCptL=[],deadL=[],childL=[],mediaL=[],cxL=[],needL=[],need7L=[];
+    var nNoCpt=0,nDead=0,nChild=0,nMedia=0,nCx=0,nNeed=0,nNeed7=0, seenCx={},seenChild={},_refCpt={};
+    items.forEach(function(it){ ((it.data&&it.data.questions)||[]).forEach(function(q){ var id=(q&&q.id)||'?', R=_qcMlaRefs(q);
+      if(R.cpt.length===0){ noCptL.push('  [누락] '+it.docId+' · '+id+' 개념 연결 없음(exp.cpt 비어 있음)'); nNoCpt++; }
+      R.cpt.forEach(function(r){ var c=M.concepts[r.id];
+        if(!c){ deadL.push('  [누락] '+it.docId+' · '+id+' '+r.where+' → 개념 '+r.id+' 마스터에 없음(죽은 링크)'); nDead++; return; }
+        _refCpt[r.id]=1;
+        if(c.cards===0){ deadL.push('  [누락] '+it.docId+' · '+id+' '+r.where+' → 개념 '+r.id+' 카드 0개'); nDead++; }
+        else if(c.emptyCx>0 && !seenCx[r.id]){ seenCx[r.id]=1; cxL.push('  [경고] 개념 '+r.id+' ('+c.name+') 카드 '+c.cards+'개 중 cx 빈칸 '+c.emptyCx+'개'); nCx++; }
+        [['암기','mn',c.mn,M.mnems],['표','tbl',c.tbl,M.tables],['그래프','grp',c.grp,M.graphs]].forEach(function(k){
+          (k[2]||[]).forEach(function(cid){ if(!k[3][cid]){ var key=k[1]+':'+r.id+':'+cid; if(seenChild[key])return; seenChild[key]=1; childL.push('  [누락] '+it.docId+' · '+id+' 개념 '+r.id+' → '+k[0]+' '+cid+' 마스터에 없음'); nChild++; } });
+        });
+      });
+      R.tbl.forEach(function(r){ if(!M.tables[r.id]){ childL.push('  [누락] '+it.docId+' · '+id+' '+r.where+' → 표 '+r.id+' 마스터에 없음'); nChild++; } });
+      R.img.forEach(function(r){ if(!M.images[r.id]){ mediaL.push('  [누락] '+it.docId+' · '+id+' 이미지 img://'+r.id+' 없음'); nMedia++; } });
+      R.itv.forEach(function(r){ if(!M.interactives[r.id]){ mediaL.push('  [누락] '+it.docId+' · '+id+' 인터랙티브 itv://'+r.id+' 없음'); nMedia++; } });
+      var _qb=''; try{ _qb=JSON.stringify(q); }catch(_){}
+      var _lc7=R.cpt.map(function(r){return M.concepts[r.id];}).filter(Boolean);
+      var _qVis=(q.exp&&q.exp.graph&&String(q.exp.graph).trim())||/<svg|img:\/\//.test(_qb)||_lc7.some(function(c){return (c.grp||[]).length||c.hasCxSvg;})||(M.itvCov&&R.cpt.some(function(r){return M.itvCov[r.id];}));
+      var _hasImg=/img:\/\//.test(_qb)||(q.img&&String(q.img).trim());
+      var _sv=_qcVisualSignals(String((q&&q.q)||''), it.docId||'');
+      if(_sv.needVisStem && !_qVis){ need7L.push('  [경고] '+it.docId+' · '+id+' 문항 자체가 시각 풀이형(곡선·계산곡선·흐름 등)인데 풀이 그래프/이미지 없음 → exp.graph 추가 또는 개념 grp 연결'); nNeed7++; }
+      else if(_sv.needImgStem && !_hasImg){ need7L.push('  [경고] '+it.docId+' · '+id+' 이미지 지시(그림·사진·지도·유물·동작·부위 등)인데 이미지 참조 없음 → 이미지(img://) 연결/제작'); nNeed7++; }
+    }); });
+    Object.keys(_refCpt).forEach(function(cid){ var c=M.concepts[cid]; if(!c) return;
+      var hasGrp=(c.grp||[]).length||c.hasCxSvg, hasTbl=(c.tbl||[]).length||c.hasCxTbl, hasMn=(c.mn||[]).length, hasItv=(M.itvCov&&M.itvCov[cid]);
+      var miss=[]; if(c.sigGrp&&!hasGrp)miss.push('그래프'); if(c.sigItv&&!hasItv)miss.push('인터랙티브'); if(c.sigTbl&&!hasTbl)miss.push('표'); if(c.sigMn&&!hasMn)miss.push('암기');
+      if(miss.length){ needL.push('  [경고] 개념 '+cid+' ('+(c.name||'')+')'+(c.cert?(' ['+c.cert+']'):'')+' → '+miss.join('·')+' 필요한데 없음'); nNeed++; }
+    });
+    L.push('■ 1) 개념 미연결 (exp.cpt 비어 있음 — 개념카드 통째 안 뜸)'); L=L.concat(noCptL.length?noCptL:['  (없음 — 모든 문항에 개념 연결됨)']);
+    L.push('','■ 2) 죽은 링크 (가리킨 개념이 마스터에 없음/카드 0개)'); L=L.concat(deadL.length?deadL:['  (없음)']);
+    L.push('','■ 3) 딸림 마스터 누락 (개념→표·암기·그래프 + 문항 직접 표참조)'); L=L.concat(childL.length?childL:['  (없음)']);
+    L.push('','■ 4) 이미지·인터랙티브 누락'); L=L.concat(mediaL.length?mediaL:['  (없음)']);
+    L.push('','■ 5) 개념카드 예시(cx) 빈칸 (참조 개념 한정·개념별 1회)'); L=L.concat(cxL.length?cxL:['  (없음)']);
+    L.push('','■ 6) 마스터 필요한데 없음 [개념 단위 전수]'); L=L.concat(needL.length?needL:['  (없음)']);
+    L.push('','■ 7) 문항 풀이 시각자료 필요 [문항 단위·과목무관]'); L=L.concat(need7L.length?need7L:['  (없음)']);
+    L.push('','요약: 개념미연결 '+nNoCpt+' · 죽은링크 '+nDead+' · 딸림/표 누락 '+nChild+' · 이미지/인터랙티브 '+nMedia+' · cx빈칸 개념 '+nCx+' · 마스터필요(개념) '+nNeed+' · 문항시각필요 '+nNeed7);
+    L.counts={nNoCpt:nNoCpt,nDead:nDead,nChild:nChild,nMedia:nMedia,nCx:nCx,nNeed:nNeed,nNeed7:nNeed7};
+    return L;
+  }
   window.QC = {
     violations:_qcViolations, gate:qualityGate, masterLink:_qcMasterLink, bundle:_qcBundle,
     levelup:_qcLevelup, applySev:_qcApplySev, sevOf:_qcSevOf, sevMeta:_QC_SEV_META,
     refs:_qcRefs, recordDate:_qcRecordDate, defaults:_QC_DEFAULTS,
     conceptSignals:_qcConceptSignals, CS:{grp:_CS_GRP, tbl:_CS_TBL, mn:_CS_MN, itv:_CS_ITV},
-    visualSignals:_qcVisualSignals, VIS:{q:_VIS_Q, imgQ:_IMG_Q, imgArt:_IMG_ART, imgEx:_IMG_EX}
+    visualSignals:_qcVisualSignals, VIS:{q:_VIS_Q, imgQ:_IMG_Q, imgArt:_IMG_ART, imgEx:_IMG_EX},
+    masterAudit:_qcMasterAudit, mlaRefs:_qcMlaRefs, cleanRef:_qcMlaClean
   };
 }catch(e){}
