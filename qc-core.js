@@ -163,7 +163,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true}},
+  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
@@ -199,7 +199,7 @@ var _QC_SEV = {
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
   CALC_MECHANICAL:'INFO', CALC_REPEAT_LEAD:'INFO', TYPE_MISMATCH:'INFO',  /* 소급 폭증 방지: 신규 규칙은 INFO(비차단)로 도입, 베이스라인 정비 후 승격(qcDiff) */
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
-  EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO',
+  EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO', CALC_ARITH_MISMATCH:'WARNING', CALC_ANS_NO_MATCH:'WARNING',
   OX_STMT_MISMATCH:'WARNING', OX_DUP_PATTERN:'WARNING',
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
@@ -367,6 +367,29 @@ function _qcExtraRules(q){
     var _bd=[]; exp.exSum.forEach(function(t){ (String(t||'').match(/<b>[\s\S]*?<\/b>/g)||[]).forEach(function(x){ var _z=x.replace(/<[^>]+>/g,'').trim(); if(_z) _bd.push(_z); }); });
     var _lastB=_bd[_bd.length-1];
     if(_lastB){ var _hay=((exp.ex||[]).join(' ')+' '+(o||[]).join(' ')+' '+(exp.s||'')).replace(/<[^>]+>/g,''); if(_hay.indexOf(_lastB)<0) v.push({kind:'warn',field:'exSum',idx:0,code:'CALC_SUM_ANS',msg:'요약풀이 최종답("'+_lastB+'")이 상세풀이·정답결론·최종정리에 없음 — 요약·상세 결과 일치 확인',text:_lastB}); }
+  }
+  /* (l0) [신규 2026-07] 계산형 산술 정합성 — 풀이 줄 등식이 실제 계산과 맞는지(A) · 정답값이 풀이에 등장하는지(B).
+     calc_audit 이식. 오탐 방지: 천단위콤마 제거·절 분리·%/²/HTML 정규화·단위(%)세그먼트 제외·2% 여유·2부분답 분리. WARNING(비차단). */
+  if((_qcOn('gichul','CALC_ARITH_MISMATCH')||_qcOn('gichul','CALC_ANS_NO_MATCH')) && _isCalcQ(q)){
+    var _cnorm=function(seg){ var s=String(seg).replace(/<[^>]+>/g,'').replace(/₩|원|,/g,''); s=s.replace(/[×·]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-').replace(/²/g,'**2').replace(/³/g,'**3'); s=s.replace(/(\d+(?:\.\d+)?)\s*%/g,'($1/100)'); return s.replace(/\s/g,''); };
+    var _cpure=function(s){ return /^[\d.+\-*\/()]+$/.test(s) && /\d/.test(s); };
+    var _ceval=function(seg){ if(/%\s*$/.test(String(seg).trim())) return null; var s=_cnorm(seg); if(!_cpure(s)) return null; try{ var v=Function('"use strict";return('+s+')')(); return (v!=null&&isFinite(v))?v:null; }catch(e){ return null; } };
+    var _clines=[].concat(exp.exSum||[], exp.ex||[]).map(String);
+    if(_qcOn('gichul','CALC_ARITH_MISMATCH')){
+      for(var _li=0;_li<_clines.length;_li++){ var _ln=String(_clines[_li]).replace(/<[^>]+>/g,''); var _p; do{ _p=_ln; _ln=_ln.replace(/(\d),(\d)/g,'$1$2'); }while(_ln!==_p);
+        var _cls=_ln.split(/[,，;、。→]|(?:이고|이며|이다|한다|하면|또는|이므로|이라|라서|므로|따라서|에서|인데)/);
+        var _hit=null;
+        for(var _ci=0;_ci<_cls.length;_ci++){ var _segs=_cls[_ci].split('='), _vals=[]; for(var _si=0;_si<_segs.length;_si++){ var _vv=_ceval(_segs[_si]); if(_vv!=null)_vals.push(_vv); }
+          if(_vals.length>=2){ var _mn=Math.min.apply(null,_vals), _mx=Math.max.apply(null,_vals); if(_mx-_mn>Math.max(1,Math.abs(_mx)*0.02)){ _hit=_cls[_ci].trim(); break; } } }
+        if(_hit){ v.push({kind:'warn',field:'exSum',idx:0,code:'CALC_ARITH_MISMATCH',msg:'계산형 풀이 줄의 등식이 실제 계산과 어긋남("'+_hit.slice(0,40)+'") — 좌우변 값 확인',text:_hit.slice(0,60)}); break; } }
+    }
+    if(_qcOn('gichul','CALC_ANS_NO_MATCH') && typeof q.ans==='number' && Array.isArray(q.opts)){
+      var _opt=String(q.opts[q.ans-1]||''); var _parts=_opt.split(/,\s+|\s*·\s*|\s*\/\s*/); var _nums=[];
+      _parts.forEach(function(pp){ var m=pp.replace(/[,\s₩원]/g,'').match(/\d+(?:\.\d+)?/); if(m)_nums.push(m[0]); });
+      if(_nums.length){ var _blob=[].concat(exp.exSum||[],exp.ex||[],[exp.s||'']).join(' ').replace(/<[^>]+>/g,'').replace(/[,\s₩원]/g,'');
+        var _seen=_nums.some(function(n){ var a=(n.indexOf('.')>=0)?n.replace(/0+$/,'').replace(/\.$/,''):n; return _blob.indexOf(n)>=0||_blob.indexOf(a)>=0; });
+        if(!_seen) v.push({kind:'warn',field:'exSum',idx:0,code:'CALC_ANS_NO_MATCH',msg:'정답 보기 값("'+_opt.slice(0,20)+'")이 풀이(요약·상세·최종정리) 어디에도 안 나옴 — 답↔풀이 불일치 의심',text:_opt.slice(0,30)}); }
+    }
   }
   /* (l) 계산형인데 시험 포인트(tip) 없음 — 기본 OFF(권장 항목) */
   if(_qcOn('gichul','CALC_NO_TIP') && _isCalcQ(q) && !(exp.tip&&String(exp.tip).trim())) v.push({kind:'warn',field:'tip',idx:0,code:'CALC_NO_TIP',msg:'계산형인데 시험 포인트(tip) 없음 — 함정·실수 방지 한 줄 권장(참고)',text:''});
@@ -610,9 +633,17 @@ function _qcLevelup(subjects){
 
 /* ---- 전역 노출(양 호스트 공용) ---- */
 try{
+  /* ---- ⑥ 마스터 필요 판정 신호 (masterLinkAudit용) — admin에서 이관, 모든 검수 규칙은 qc-core 단일소스 ----
+     개념 카드 텍스트에 아래 신호가 있으면 그 종류의 마스터(그래프/표/암기/인터랙티브)가 필요하다고 본다. */
+  var _CS_GRP=/수요곡선|공급곡선|수요·공급|수요와\s*공급|초과수요|초과공급|수요량|공급량|탄력성|균형점|한계효용|무차별곡선|비용곡선|IS-?LM|로렌츠|지니계수|필립스곡선|AD-?AS|총수요|총공급|생산가능곡선|한계비용|한계수입|평균비용/;
+  var _CS_TBL=/\bvs\b|비교|차이점|대비|매칭|기준표|종류별|유형별|구분|분류|체계|계층|구성요소|근본적|보강적|세부특성|(로|으로)\s*구성|(로|으로)\s*나뉘|하위\s*(요소|항목|특성)|상위\s*개념/;
+  var _CS_MN=/[3-9]\s*(가지|요건|단계|종류|유형|원칙|요소|관점|활동|분류)|[3-9]개\s*(요건|요소|종류|유형|원칙|단계|기능)|[③④⑤⑥⑦⑧⑨].*[③④⑤⑥⑦⑧⑨]/;
+  var _CS_ITV=/선입선출|후입선출|가중평균|이동평균|원가흐름|재고자산\s*평가|NPV|IRR|피셔수익률|순현재가치|내부수익률/;
+  function _qcConceptSignals(txt){ txt=String(txt||''); return { sigGrp:_CS_GRP.test(txt), sigTbl:_CS_TBL.test(txt), sigMn:_CS_MN.test(txt), sigItv:_CS_ITV.test(txt) }; }
   window.QC = {
     violations:_qcViolations, gate:qualityGate, masterLink:_qcMasterLink, bundle:_qcBundle,
     levelup:_qcLevelup, applySev:_qcApplySev, sevOf:_qcSevOf, sevMeta:_QC_SEV_META,
-    refs:_qcRefs, recordDate:_qcRecordDate, defaults:_QC_DEFAULTS
+    refs:_qcRefs, recordDate:_qcRecordDate, defaults:_QC_DEFAULTS,
+    conceptSignals:_qcConceptSignals, CS:{grp:_CS_GRP, tbl:_CS_TBL, mn:_CS_MN, itv:_CS_ITV}
   };
 }catch(e){}
