@@ -213,6 +213,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <button class="bar-btn" onclick="openPrintSheet()">🖨️ 인쇄</button>
 </div>
 </div>
+<div class="cert-view hidden" id="subjectiveView"><div id="subjMount"></div></div>
 <div class="cert-view hidden" id="mcqView">
   <div class="mcq-wrap" id="mcqRoot"></div>
 </div>
@@ -1434,14 +1435,14 @@ function showAppWebPay(){
   var st=document.getElementById('planStats');
   if(st) st.innerHTML='<div style="text-align:center;padding:16px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">멤버십 이용권은 <b style="color:#0C447C">certlab.ai.kr</b> (웹)에서<br>가입하신 계정으로 시작할 수 있어요.<br><span style="font-size:12px;color:#8A7D6E">웹에서 이용권을 시작하면 앱에서도 바로 열려요.</span></div>'
     +'<button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
-  var pp=document.getElementById('planPopup'); if(pp) pp.classList.remove('hidden');
+  _planPopupShow();
 }
 function showAppDailyDone(){
   _togglePayUI(false);
   var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🌙 오늘 무료 학습 완료!';
   var sub=document.getElementById('planSub'); if(sub) sub.textContent='오늘 준비한 무료 문제를 다 푸셨어요. 내일 다시 오면 새 문제로 이어서 학습할 수 있어요!';
   var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div><button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
-  var pp=document.getElementById('planPopup'); if(pp) pp.classList.remove('hidden');
+  _planPopupShow();
 }
 function showPlanPopup(membership) {
   const cert = activeCertId();
@@ -1473,11 +1474,12 @@ function showPlanPopup(membership) {
         + '</div></div>'
       + featureCompareHTML(totalTxt);
   }
-  document.getElementById('planPopup').classList.remove('hidden');
+  _planPopupShow();
   renderPlanCards(cert);
   mileApplyOn=false; renderMileUse();
 }
-function hidePlanPopup() { document.getElementById('planPopup').classList.add('hidden'); }
+function _planPopupShow(){ var pp=document.getElementById('planPopup'); if(!pp) return; var ov=document.getElementById('passPlanOverlay'); pp.style.zIndex=(ov && ov.style.display==='block')?'9300':''; pp.classList.remove('hidden'); }  /* [FIX 2026-07] 합격플랜 전체화면(z9000) 위로 결제팝업을 올려 가려짐 방지 */
+function hidePlanPopup() { var pp=document.getElementById('planPopup'); if(pp){ pp.classList.add('hidden'); pp.style.zIndex=''; } }
 
 function showWelcomePopup() {
   const popup = document.getElementById('loginPopup');
@@ -6251,6 +6253,12 @@ async function enterCert(id, noGate){
     document.getElementById('mcqView').classList.add('hidden');
     document.getElementById('certSwitchName').textContent = '스포츠지도사 실기·구술';
     document.getElementById('modePill').style.display = '';
+  } else if(_isSubjCert(id)){
+    document.getElementById('subjectiveView').classList.remove('hidden');
+    document.getElementById('mcqView').classList.add('hidden');
+    document.getElementById('bodybuildingView').classList.add('hidden');
+    document.getElementById('certSwitchName').textContent = certLabel(id);
+    document.getElementById('modePill').style.display = 'none';
   } else if(isMcqCert(id)){
     document.getElementById('mcqView').classList.remove('hidden');
     document.getElementById('bodybuildingView').classList.add('hidden');
@@ -6261,7 +6269,7 @@ async function enterCert(id, noGate){
   // (2026-07-02) 게스트 후킹 전체화면 강제 제거 — 시험 탭하면 바로 기출/과목 화면(레벨테스트는 대시보드 내 "무료 레벨테스트" 버튼으로). 무료 10문제 한도는 canAccess로 유지.
   // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
   if(!loadedExams[id]){
-    var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
+    var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : (_isSubjCert(id) ? document.getElementById('subjMount') : document.getElementById('mcqRoot'));
     if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px"><button onclick="goHome()" aria-label="홈" style="border:none;background:none;font-size:22px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1">←</button><span style="font-size:15px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
     try{ await loadExam(id); }
     catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
@@ -6275,6 +6283,7 @@ async function enterCert(id, noGate){
     mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
     // (2026-07-02) 게스트 진입 시 _ltGuestGate 후킹/게이트로 콘텐츠 덮던 것 제거 — 시험 탭하면 기출/과목 대시보드 유지(레벨테스트는 대시보드 내 CTA로). 레벨테스트 결과 로그인 게이트는 LT 완료 시(renderMqResultScreen 5298)에만.
   }
+  if(_isSubjCert(id)){ try{ if(window.CLSubj) CLSubj.mount(document.getElementById('subjMount'), SUBJ_EXAMS[id], { mountId:'subjMount', endpoint:(window.SUBJ_GRADE_URL||null), onRate:function(qid,n,r){ try{ if(typeof srRateK==='function') srRateK(id, qid, r, false, false); }catch(_){} } }); }catch(e){ console.error('subj mount',e); } }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
   if(currentUser && userEnt[id] && userEnt[id].plan === 'EXPIRED'){ setTimeout(()=>showPlanPopup(), 600); }
@@ -6415,6 +6424,8 @@ async function loadManifest(){
 // 기존 하드코딩 7개(MCQ_EXAMS 등)는 그대로 두고, 매니페스트에만 있는 새 시험을 런타임 생성.
 // 호출 멱등 — 같은 cert는 한 번만 등록. additive(기존 이용권·설정 안 건드림).
 var _certRegBuilt={};
+var SUBJ_EXAMS={};   // [2026-07] 주관식(서술형) 시험 데이터: id → {name, questions:[문제]}
+function _isSubjCert(id){ return typeof SUBJ_EXAMS!=='undefined' && !!SUBJ_EXAMS[id]; }
 function buildCertRegistry(man){
   var exams=(man&&man.exams)||[];
   exams.forEach(function(ex){
@@ -6425,7 +6436,9 @@ function buildCertRegistry(man){
     if(typeof CERT_LABELS!=='undefined' && !CERT_LABELS[id]) CERT_LABELS[id]=ex.label||ex.name||id;
     if(typeof PASS_RULE!=='undefined' && ex.pass && !PASS_RULE[id]) PASS_RULE[id]=ex.pass;       // 없으면 _default
     if(typeof PLAN_SETS!=='undefined' && ex.plan && !PLAN_SETS[id]) PLAN_SETS[id]=ex.plan;        // 없으면 _default
-    if(type!=='flashcard'){
+    if(type==='subjective'){
+      if(!SUBJ_EXAMS[id]) SUBJ_EXAMS[id]={name:ex.name||id, questions:[]};   // 주관식 컨테이너(applyBank가 채움)
+    } else if(type!=='flashcard'){
       if(!MCQ_EXAMS[id]){
         var qb={}; (ex.subjects||[]).forEach(function(s){ if(s&&s.code) qb[s.code]={name:s.name||s.code, sets:[]}; });
         MCQ_EXAMS[id]={name:ex.name||id, qb:qb};
@@ -6445,9 +6458,9 @@ function _addCertCard(ex, type){
     var id=ex.id; if(document.getElementById('certCard-'+id)) return;
     var subN=(ex.subjects||[]).length;
     var hasData=subN>0;
-    var icon=_certIcon(id)||ex.icon||(type==='flashcard'?'🃏':'📘');
-    var desc=ex.desc||((type==='flashcard'?'플래시카드':'객관식 모의고사')+(subN?(' · '+subN+'과목'):''));
-    var tagTxt=hasData?(type==='flashcard'?'플래시카드':'모의고사'):'준비 중';
+    var icon=_certIcon(id)||ex.icon||(type==='flashcard'?'🃏':(type==='subjective'?'📝':'📘'));
+    var desc=ex.desc||((type==='flashcard'?'플래시카드':(type==='subjective'?'주관식 서술형':'객관식 모의고사'))+(subN?(' · '+subN+'과목'):''));
+    var tagTxt=hasData?(type==='flashcard'?'플래시카드':(type==='subjective'?'주관식':'모의고사')):'준비 중';
     var tagCls=hasData?'tag':'tag soon';
     var card=document.createElement('div');
     card.className='cert-card'; card.id='certCard-'+id;
@@ -6618,6 +6631,12 @@ async function loadAllBanks(){
 }
 function applyBank(ex,sub,doc){
   const qs=doc.questions||[];
+  if(ex.type==='subjective'){
+    const se=SUBJ_EXAMS[ex.id]; if(!se) return;
+    const seen=new Set(se.questions.map(x=>x.id));
+    qs.forEach(q=>{ if(!seen.has(q.id)){ seen.add(q.id); se.questions.push(Object.assign({_subj:sub.name||sub.code}, q)); } });
+    return;
+  }
   if(ex.type==='flashcard'){
     const _seen=new Set(D.map(c=>c.id));   // 이미 적재된 id — 중복 push 방지
     qs.forEach(c=>{ if(_seen.has(c.id)) return; _seen.add(c.id); const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,img:c.img||null,learn:c.learn||null,mn:c.mn||null,star:c.star||1,since:c.since||null,newType:c.newType||false,w:false,fav:false}); });
@@ -7458,5 +7477,6 @@ function adEloUpdate(q, correct){
 </script>
 <script src="community.js"></script>
 <script src="calc-render.js"></script>
+<script src="subjective.js?v=20260713"></script>
 </body>
 </html>
