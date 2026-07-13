@@ -163,7 +163,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true}},
+  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
@@ -199,7 +199,7 @@ var _QC_SEV = {
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
   CALC_MECHANICAL:'INFO', CALC_REPEAT_LEAD:'INFO', TYPE_MISMATCH:'INFO',  /* 소급 폭증 방지: 신규 규칙은 INFO(비차단)로 도입, 베이스라인 정비 후 승격(qcDiff) */
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
-  EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO', CALC_ARITH_MISMATCH:'WARNING', CALC_ANS_NO_MATCH:'WARNING',
+  EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO', CALC_ARITH_MISMATCH:'WARNING', CALC_ANS_NO_MATCH:'WARNING', FACTOR_TABLE_PROSE:'WARNING',
   OX_STMT_MISMATCH:'WARNING', OX_DUP_PATTERN:'WARNING',
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
@@ -389,6 +389,16 @@ function _qcExtraRules(q){
       if(_nums.length){ var _blob=[].concat(exp.exSum||[],exp.ex||[],[exp.s||'']).join(' ').replace(/<[^>]+>/g,'').replace(/[,\s₩원]/g,'');
         var _seen=_nums.some(function(n){ var a=(n.indexOf('.')>=0)?n.replace(/0+$/,'').replace(/\.$/,''):n; return _blob.indexOf(n)>=0||_blob.indexOf(a)>=0; });
         if(!_seen) v.push({kind:'warn',field:'exSum',idx:0,code:'CALC_ANS_NO_MATCH',msg:'정답 보기 값("'+_opt.slice(0,20)+'")이 풀이(요약·상세·최종정리) 어디에도 안 나옴 — 답↔풀이 불일치 의심',text:_opt.slice(0,30)}); }
+    }
+  }
+  /* (l1) [신규 2026-07] 계수표 줄글 몰림 — 현가/연금 계수처럼 (기간×이자율) 2D 데이터가 본문(q.q)에 표 없이 줄글로 크램.
+     q는 불변 필드라 데이터 수정 대상이 아니라 앱 렌더(표) 개선 신호. 4개 이상 소수 계수 + 계수 키워드 + 표 없음이면 WARNING. */
+  if(_qcOn('gichul','FACTOR_TABLE_PROSE')){
+    var _fq=String(q.q||'');
+    if(!/<table|tbl:\/\//.test(_fq) && /현가계수|현재가치계수|연금현가|할인계수|현가표|계수표|현가율/.test(_fq)){
+      var _fmin=(_QC_DEFAULTS.gichul.FACTOR_TABLE_PROSE&&_QC_DEFAULTS.gichul.FACTOR_TABLE_PROSE.minVals)||4;
+      var _fnum=(_fq.match(/\d\.\d{3,4}/g)||[]).length;
+      if(_fnum>=_fmin) v.push({kind:'warn',field:'q',idx:0,code:'FACTOR_TABLE_PROSE',msg:'현가/연금 계수표가 본문에 줄글로 몰려 있음('+_fnum+'개 계수) — 기간×이자율 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_fq.slice(0,60)});
     }
   }
   /* (l) 계산형인데 시험 포인트(tip) 없음 — 기본 OFF(권장 항목) */
@@ -640,10 +650,23 @@ try{
   var _CS_MN=/[3-9]\s*(가지|요건|단계|종류|유형|원칙|요소|관점|활동|분류)|[3-9]개\s*(요건|요소|종류|유형|원칙|단계|기능)|[③④⑤⑥⑦⑧⑨].*[③④⑤⑥⑦⑧⑨]/;
   var _CS_ITV=/선입선출|후입선출|가중평균|이동평균|원가흐름|재고자산\s*평가|NPV|IRR|피셔수익률|순현재가치|내부수익률/;
   function _qcConceptSignals(txt){ txt=String(txt||''); return { sigGrp:_CS_GRP.test(txt), sigTbl:_CS_TBL.test(txt), sigMn:_CS_MN.test(txt), sigItv:_CS_ITV.test(txt) }; }
+  /* ⑦ 문항시각/이미지 신호 — admin masterLinkAudit에서 이관(2026-07-13). 스템(q.q) 기반 판정만 담당(보유 여부는 admin이 M으로 판단).
+     _VIS_Q: 풀이에 그래프/곡선/흐름이 필요한 시각형. _IMG_Q: 과목무관 이미지 지시. _IMG_ART: 유물·유적·사진(한국사 등, 감평·중개는 내용어라 제외). _IMG_EX: 사료·예시나열(이미지 아님 → _IMG_ART 오탐 제외). */
+  var _VIS_Q=/수요곡선|공급곡선|비용곡선|무차별곡선|필립스곡선|IS-?LM|로렌츠|지니계수|총수요|총공급|탄력성|균형점|한계효용|한계비용|한계수입|평균비용|생산가능곡선|NPV|IRR|순현재가치|내부수익률|손익분기|현재가치법|곡선을?\s*그리|그래프로\s*나타|그림으로\s*(나타|표현)|(?<![가-힣])도해|순서도|흐름도/;
+  var _IMG_Q=/다음\s*(그림|사진|지도|도표|사진자료)|그림과\s*같은|지도(?:에서|에\s*표시)|위\s*(그림|지도)|아래\s*(그림|지도)|다음\s*\(?[가-바]\)?\s*(유물|지역|시대|인물|건축|나라|사진)|해부도|근육도|골격도|인체도|그림의\s*(동작|자세|근육|부위|관절|뼈|힘줄|장기|구조)|화살표가\s*가리키는|표시된\s*(부위|근육|위치|지점)|그림에서\s*(가리키|나타|표시)/;
+  var _IMG_ART=/(?<![가-힣])유물(?!사관|론|주의)|(?<![가-힣])유적|(?<![가-힣])문화재(?!단)|다음\s*사진|사진\s*자료|사진을?\s*(보|참고|참조)/;
+  var _IMG_EX=/사료|(?:비문|문헌|그림|유물|유적)\s*[·,]|(?:유물|유적|그림|문헌)\s*(?:처럼|같은|등)/;
+  function _qcVisualSignals(stem, docId){ stem=String(stem||''); docId=String(docId||'');
+    var sigVis=_VIS_Q.test(stem), sigImgQ=_IMG_Q.test(stem), sigImgArt=_IMG_ART.test(stem), sigImgEx=_IMG_EX.test(stem);
+    return { sigVis:sigVis, sigImgQ:sigImgQ, sigImgArt:sigImgArt, sigImgEx:sigImgEx,
+      needVisStem:sigVis,
+      needImgStem:(sigImgQ || (!/appraiser|realestate/.test(docId) && sigImgArt && !sigImgEx)) };
+  }
   window.QC = {
     violations:_qcViolations, gate:qualityGate, masterLink:_qcMasterLink, bundle:_qcBundle,
     levelup:_qcLevelup, applySev:_qcApplySev, sevOf:_qcSevOf, sevMeta:_QC_SEV_META,
     refs:_qcRefs, recordDate:_qcRecordDate, defaults:_QC_DEFAULTS,
-    conceptSignals:_qcConceptSignals, CS:{grp:_CS_GRP, tbl:_CS_TBL, mn:_CS_MN, itv:_CS_ITV}
+    conceptSignals:_qcConceptSignals, CS:{grp:_CS_GRP, tbl:_CS_TBL, mn:_CS_MN, itv:_CS_ITV},
+    visualSignals:_qcVisualSignals, VIS:{q:_VIS_Q, imgQ:_IMG_Q, imgArt:_IMG_ART, imgEx:_IMG_EX}
   };
 }catch(e){}
