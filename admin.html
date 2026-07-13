@@ -4676,17 +4676,17 @@ function qcOpenReviewAll(){
 // ===== 마스터 연결 검수 (개념 미연결·죽은 링크·딸림 mn/tbl/grp·직접 tbl·img/itv·cx빈칸) =====
 var _mlaCache=null;
 function _mlaClean(u){ return String(u||'').replace(/^(cpt|tbl|mn|grp|img|itv):\/\//,''); }
-var _CS_GRP=/수요곡선|공급곡선|수요·공급|수요와\s*공급|초과수요|초과공급|수요량|공급량|탄력성|균형점|한계효용|무차별곡선|비용곡선|IS-?LM|로렌츠|지니계수|필립스곡선|AD-?AS|총수요|총공급|생산가능곡선|한계비용|한계수입|평균비용/;
-var _CS_TBL=/\bvs\b|비교|차이점|대비|매칭|기준표|종류별|유형별|구분|분류/;
-var _CS_MN=/[3-9]\s*(가지|요건|단계|종류|유형|원칙|요소|관점|활동|분류)|[3-9]개\s*(요건|요소|종류|유형|원칙|단계|기능)|[③④⑤⑥⑦⑧⑨].*[③④⑤⑥⑦⑧⑨]/;
-var _CS_ITV=/선입선출|후입선출|가중평균|이동평균|원가흐름|재고자산\s*평가|NPV|IRR|피셔수익률|순현재가치|내부수익률/;
+/* [qc-core.js로 이관] ⑥ 마스터 필요 판정 신호(_CS_GRP/_CS_TBL/_CS_MN/_CS_ITV)는 qc-core.js 단일소스.
+   QC.conceptSignals(txt) → {sigGrp,sigTbl,sigMn,sigItv}. (구버전 qc-core 대비 폴백 유지) */
+var _qcCS=(typeof QC!=='undefined'&&QC.conceptSignals)?QC.conceptSignals:function(t){t=String(t||'');var G=(QC&&QC.CS&&QC.CS.grp),T=(QC&&QC.CS&&QC.CS.tbl),M=(QC&&QC.CS&&QC.CS.mn),I=(QC&&QC.CS&&QC.CS.itv);return {sigGrp:G?G.test(t):false,sigTbl:T?T.test(t):false,sigMn:M?M.test(t):false,sigItv:I?I.test(t):false};};
 async function _mlaLoadMasters(force){
   if(!force && _mlaCache && (Date.now()-_mlaCache.at)<10*60*1000) return _mlaCache;
   var concepts={}, tables={}, mnems={}, graphs={}, images={}, itvs={};
   (await db.collection('concepts').get()).forEach(function(d){ var r=d.data()||{}; var cards=Array.isArray(r.cards)?r.cards:[]; var empty=0, hasSvg=false, hasTbl=false;
     var _txt=(r.name||''); cards.forEach(function(c){ var cx=String((c&&c.cx)||''); if(!cx.trim()) empty++; if(cx.indexOf('<svg')>=0) hasSvg=true; if(cx.indexOf('<table')>=0) hasTbl=true; _txt+=' '+((c&&c.t)||'')+' '+((c&&c.d)||'')+' '+cx; });
+    var _sig=_qcCS(_txt);
     concepts[d.id]={ name:r.name||'', cards:cards.length, emptyCx:empty, hasCxSvg:hasSvg, hasCxTbl:hasTbl, cert:(Array.isArray(r.certs)&&r.certs[0])||'',
-      sigGrp:_CS_GRP.test(_txt), sigTbl:_CS_TBL.test(_txt), sigMn:_CS_MN.test(_txt), sigItv:_CS_ITV.test(_txt),
+      sigGrp:_sig.sigGrp, sigTbl:_sig.sigTbl, sigMn:_sig.sigMn, sigItv:_sig.sigItv,
       tbl:(Array.isArray(r.tbl)?r.tbl:[]).map(_mlaClean),
       mn:(Array.isArray(r.mn)?r.mn:[]).map(_mlaClean),
       grp:(Array.isArray(r.grp)?r.grp:[]).map(_mlaClean) }; });
