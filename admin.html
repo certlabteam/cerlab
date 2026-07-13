@@ -1391,9 +1391,9 @@ tr:hover td{background:#FAFAFA}
         <div style="margin-bottom:13px">
           <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">유형</div>
           <span style="display:inline-flex;border:1.5px solid #E8E8E8;border-radius:9px;overflow:hidden">
-            <button type="button" id="eaTMcq" class="ea-seg ea-on" onclick="eaSetType('mcq')">객관식</button><button type="button" id="eaTFc" class="ea-seg" onclick="eaSetType('flashcard')">플래시카드</button>
+            <button type="button" id="eaTMcq" class="ea-seg ea-on" onclick="eaSetType('mcq')">객관식</button><button type="button" id="eaTFc" class="ea-seg" onclick="eaSetType('flashcard')">플래시카드</button><button type="button" id="eaTSubj" class="ea-seg" onclick="eaSetType('subjective')">주관식</button>
           </span>
-          <div style="font-size:11px;color:#A89C8E;margin-top:6px;line-height:1.5">객관식엔 단답형(SA)·개수형이 섞여 있어도 데이터가 알아서 처리돼요. 유형에 SA 따로 없음.</div>
+          <div style="font-size:11px;color:#A89C8E;margin-top:6px;line-height:1.5">객관식엔 단답형(SA)·개수형이 섞여 있어도 데이터가 알아서 처리돼요. 유형에 SA 따로 없음. · 주관식(서술형)은 문제→물음(배점)→모범답안(논점 목차) 구조로, 자가채점+복습(SR)으로 학습돼요.</div>
         </div>
         <div style="margin-bottom:13px">
           <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">과목 <span style="font-weight:500;color:#A89C8E;font-size:11px">· 한글 이름만 — 코드 자동</span></div>
@@ -3521,7 +3521,7 @@ async function eaEditSave(id){
     setTimeout(eaLoadList, 700);
   }catch(err){ st.style.color='#A32D2D'; st.textContent='오류: '+err.message; }
 }
-function eaSetType(t){ eaType=t; var a=document.getElementById('eaTMcq'), b=document.getElementById('eaTFc'); if(a)a.classList.toggle('ea-on',t==='mcq'); if(b)b.classList.toggle('ea-on',t==='flashcard'); eaRender(); }
+function eaSetType(t){ eaType=t; var a=document.getElementById('eaTMcq'), b=document.getElementById('eaTFc'), c=document.getElementById('eaTSubj'); if(a)a.classList.toggle('ea-on',t==='mcq'); if(b)b.classList.toggle('ea-on',t==='flashcard'); if(c)c.classList.toggle('ea-on',t==='subjective'); eaRender(); }
 function eaAddSub(){ eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
 function eaDelSub(i){ eaSubs.splice(i,1); if(!eaSubs.length) eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
 function eaRenderSubs(){
