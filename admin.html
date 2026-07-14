@@ -332,6 +332,18 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div id="paymentList"><div class="loading">로딩 중...</div></div>
       </div>
+      <!-- 🤖 AI 크레딧 관리 (부여·차감) — 결제 관리와 같은 탭 -->
+      <div class="table-wrap" style="margin-top:16px">
+        <div class="table-header"><div class="table-title">🤖 AI 크레딧 관리 <span style="font-size:12px;color:#A89C8E;font-weight:400">— 첨삭·해설 잔액 직접 부여·차감. 위 목록에서 충전 승인/취소.</span></div></div>
+        <div style="padding:14px 16px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+            <input id="acmEmail" class="search-input" placeholder="회원 이메일 입력 후 조회" style="min-width:240px" onkeydown="if(event.key==='Enter')acmLookup()">
+            <button class="btn-sm btn-extend" onclick="acmLookup()">조회</button>
+            <span id="acmStatus" style="font-size:12px;color:#6E6256"></span>
+          </div>
+          <div id="acmResult" style="margin-top:6px"></div>
+        </div>
+      </div>
     </div>
 
     <!-- 회원 관리 -->
@@ -1315,10 +1327,12 @@ tr:hover td{background:#FAFAFA}
     <div class="tab-panel" id="panel-examadd">
       <div class="table-card" style="max-width:640px;margin-bottom:18px">
         <div class="table-title">💰 티어 가격 &amp; 시험 배정</div>
-        <div style="font-size:11.5px;color:#A89C8E;margin-bottom:12px;line-height:1.55">3개 티어의 기간별 가격(원)을 정하고, 각 시험을 티어에 배정합니다. 저장하면 <code>config/pricing</code>에 반영돼 앱 결제화면에 바로 나타납니다. (기존 주단위 가격은 무시됩니다.)</div>
+        <div style="font-size:11.5px;color:#A89C8E;margin-bottom:12px;line-height:1.55">회원권 티어(프리미엄+/프리미엄/표준/라이트)의 기간별 가격(원)을 정하고, 각 시험을 티어에 배정합니다. 저장하면 <code>config/pricing</code>에 반영돼 앱 결제화면에 바로 나타납니다.</div>
         <table style="width:100%;font-size:12.5px;border-collapse:collapse;margin-bottom:12px">
           <thead><tr style="color:#8A7E70;font-size:11px"><th style="text-align:left;padding:5px 4px">티어</th><th style="padding:5px 2px">1개월</th><th style="padding:5px 2px">3개월</th><th style="padding:5px 2px">6개월</th><th style="padding:5px 2px">1년</th></tr></thead>
           <tbody>
+            <tr><td style="font-weight:800;color:#7C2D12;padding:6px 4px">프리미엄+<div style="font-size:9.5px;font-weight:600;color:#B0A89C">감평2차 등</div></td>
+              <td><input id="tp_premiumplus_m1" type="number" class="tp-in"></td><td><input id="tp_premiumplus_m3" type="number" class="tp-in"></td><td><input id="tp_premiumplus_m6" type="number" class="tp-in"></td><td><input id="tp_premiumplus_m12" type="number" class="tp-in"></td></tr>
             <tr><td style="font-weight:800;color:#C2611B;padding:6px 4px">프리미엄</td>
               <td><input id="tp_premium_m1" type="number" class="tp-in"></td><td><input id="tp_premium_m3" type="number" class="tp-in"></td><td><input id="tp_premium_m6" type="number" class="tp-in"></td><td><input id="tp_premium_m12" type="number" class="tp-in"></td></tr>
             <tr><td style="font-weight:800;color:#185FA5;padding:6px 4px">표준</td>
@@ -1327,6 +1341,43 @@ tr:hover td{background:#FAFAFA}
               <td><input id="tp_light_m1" type="number" class="tp-in"></td><td><input id="tp_light_m3" type="number" class="tp-in"></td><td><input id="tp_light_m6" type="number" class="tp-in"></td><td><input id="tp_light_m12" type="number" class="tp-in"></td></tr>
           </tbody>
         </table>
+        <!-- 🤖 AI첨삭 충전 요금 (회원권과 별도 · 횟수 충전제) -->
+        <div style="background:#FAF7FF;border:1px solid #E4DAFB;border-radius:10px;padding:11px 12px;margin-bottom:14px">
+          <div style="font-size:12.5px;font-weight:800;color:#6D28D9;margin-bottom:3px">🤖 AI 충전 요금 <span style="font-size:10.5px;font-weight:600;color:#9A8AB8">· 회원권과 완전히 별도 · 첨삭/해설 지갑 분리</span></div>
+          <div style="font-size:11px;color:#8A7CA8;margin-bottom:9px;line-height:1.5"><b>첨삭</b>과 <b>개념설명</b>은 <b>충전이 따로</b>예요(잔액도 각각). 각 1건당 1회 차감, 잔액 만료 없음. 회수·금액 모두 수정 가능.</div>
+          <div style="font-size:11.5px;font-weight:800;color:#8A4B00;margin:4px 0 4px">✍️ AI 첨삭 충전(주관식 채점)</div>
+          <table style="width:100%;font-size:12.5px;border-collapse:collapse">
+            <thead><tr style="color:#9A8AB8;font-size:11px"><th style="text-align:left;padding:4px 2px">구간</th><th style="padding:4px 2px">①</th><th style="padding:4px 2px">②</th><th style="padding:4px 2px">③</th><th style="padding:4px 2px">④</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:700;color:#6B5E4F;padding:4px 2px">충전 회수</td>
+                <td><input id="tp_aicg_n0" type="number" class="tp-in" placeholder="회"></td><td><input id="tp_aicg_n1" type="number" class="tp-in" placeholder="회"></td><td><input id="tp_aicg_n2" type="number" class="tp-in" placeholder="회"></td><td><input id="tp_aicg_n3" type="number" class="tp-in" placeholder="회"></td></tr>
+              <tr><td style="font-weight:700;color:#6B5E4F;padding:4px 2px">금액(원)</td>
+                <td><input id="tp_aicg_p0" type="number" class="tp-in" placeholder="원"></td><td><input id="tp_aicg_p1" type="number" class="tp-in" placeholder="원"></td><td><input id="tp_aicg_p2" type="number" class="tp-in" placeholder="원"></td><td><input id="tp_aicg_p3" type="number" class="tp-in" placeholder="원"></td></tr>
+            </tbody>
+          </table>
+          <div style="font-size:11.5px;font-weight:800;color:#5B3FA0;margin:12px 0 4px">💡 AI 개념설명 충전(객관식 해설 심화)</div>
+          <table style="width:100%;font-size:12.5px;border-collapse:collapse">
+            <thead><tr style="color:#9A8AB8;font-size:11px"><th style="text-align:left;padding:4px 2px">구간</th><th style="padding:4px 2px">①</th><th style="padding:4px 2px">②</th><th style="padding:4px 2px">③</th><th style="padding:4px 2px">④</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:700;color:#6B5E4F;padding:4px 2px">충전 회수</td>
+                <td><input id="tp_aice_n0" type="number" class="tp-in" placeholder="회"></td><td><input id="tp_aice_n1" type="number" class="tp-in" placeholder="회"></td><td><input id="tp_aice_n2" type="number" class="tp-in" placeholder="회"></td><td><input id="tp_aice_n3" type="number" class="tp-in" placeholder="회"></td></tr>
+              <tr><td style="font-weight:700;color:#6B5E4F;padding:4px 2px">금액(원)</td>
+                <td><input id="tp_aice_p0" type="number" class="tp-in" placeholder="원"></td><td><input id="tp_aice_p1" type="number" class="tp-in" placeholder="원"></td><td><input id="tp_aice_p2" type="number" class="tp-in" placeholder="원"></td><td><input id="tp_aice_p3" type="number" class="tp-in" placeholder="원"></td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px dashed #E4DAFB">
+            <div style="font-size:11.5px;color:#6D28D9;font-weight:700">사용 모델</div>
+            <label style="font-size:12px;font-weight:700;color:#6B5E4F;display:flex;align-items:center;gap:5px">✍️ 첨삭
+              <select id="tp_aimodel_grade" style="padding:5px 8px;border:1.5px solid #D9CBF3;border-radius:8px;font-size:12px;background:#fff">
+                <option value="claude-sonnet-5">Sonnet(정확·권장)</option><option value="claude-haiku-4-5">Haiku(저렴)</option><option value="claude-opus-4-8">Opus(최고·비쌈)</option>
+              </select></label>
+            <label style="font-size:12px;font-weight:700;color:#6B5E4F;display:flex;align-items:center;gap:5px">💡 개념설명
+              <select id="tp_aimodel_explain" style="padding:5px 8px;border:1.5px solid #D9CBF3;border-radius:8px;font-size:12px;background:#fff">
+                <option value="claude-haiku-4-5">Haiku(빠름·권장)</option><option value="claude-sonnet-5">Sonnet(정확)</option>
+              </select></label>
+          </div>
+          <div style="font-size:10.5px;color:#9A8AB8;margin-top:5px">모델을 바꾸면 재배포 없이 다음 요청부터 적용됩니다. 상위 모델로 올리면 원가가 커지니 차감 회수도 함께 조정하세요.</div>
+        </div>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
           <label style="font-size:12.5px;font-weight:700;color:#6B5E4F;display:flex;align-items:center;gap:6px">🙅 비로그인 하루 <input id="tp_guestDaily" type="number" value="10" style="width:60px;padding:6px;border:1.5px solid #E8E8E8;border-radius:8px;text-align:center"></label>
           <label style="font-size:12.5px;font-weight:700;color:#6B5E4F;display:flex;align-items:center;gap:6px">🔓 로그인 하루 <input id="tp_userDaily" type="number" value="20" style="width:60px;padding:6px;border:1.5px solid #E8E8E8;border-radius:8px;text-align:center"></label>
@@ -1419,6 +1470,10 @@ tr:hover td{background:#FAFAFA}
           </div>
         </div>
         <div style="margin-bottom:14px;background:#FFF7E6;border:1px solid #F1D9A8;border-radius:9px;padding:10px 12px;font-size:12px;color:#9A6A12;line-height:1.5">💰 가격은 위 <b>'티어 가격 & 배정'</b>에서 티어(프리미엄/표준/라이트)로 관리합니다. 저장 후 이 시험을 티어에 배정하세요.</div>
+        <div id="eaAiBox" style="display:none;margin-bottom:14px;background:#F1ECFB;border:1px solid #D9CBF3;border-radius:9px;padding:11px 12px">
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#5B3FA0;cursor:pointer"><input type="checkbox" id="eaAiSell" checked onchange="eaRender()"> 🤖 이 시험에 AI 첨삭 판매</label>
+          <div style="font-size:11px;color:#8A7CA8;margin-top:6px;line-height:1.5">가격은 위 <b>'AI첨삭 충전 요금'</b>(10·50·100·500회 횟수 충전제)으로 관리돼요. <b>회원권과 완전히 별도</b>로 작동합니다. 끄면 이 시험은 AI 첨삭 없이 자가채점만 제공합니다.</div>
+        </div>
         <div style="margin-bottom:14px;display:none">
           <div style="font-size:12.5px;font-weight:700;color:#6B5E4F;margin-bottom:5px">가격 (원)</div>
           <div style="display:flex;gap:8px">
@@ -3367,17 +3422,28 @@ var eaType='mcq', eaSubs=[{n:''}], _eaInit=false;
 // ===== 💰 티어 가격 & 시험 배정 (config/pricing) =====
 var _tpCfg=null, _tpInited=false;
 var CERT_ICONS={ bodybuilding:'💪', appraiser:'📐', realestate1:'🏠', realestate2:'🏢', koreanhistory:'📜', housing:'🏢', housing2:'🏢', sport2:'🏅', laborattorney1:'⚖️', firemanager1:'🧯', hesm:'🏃' };
-var TP_DEFAULT={ tiers:{ premium:{m1:14900,m3:39000,m6:69000,m12:119000}, standard:{m1:9900,m3:25000,m6:45000,m12:79000}, light:{m1:6900,m3:17000,m6:29000,m12:49000} },
-  certTier:{ appraiser:'premium', laborattorney1:'premium', firemanager1:'premium', hesm:'premium', realestate1:'standard', realestate2:'standard', housing:'standard', housing2:'standard', koreanhistory:'light', sport2:'light' }, freeDays:7, guestDaily:10, userDaily:20 };
+var TP_DEFAULT={ tiers:{ premiumplus:{m1:24900,m3:64000,m6:110000,m12:190000}, premium:{m1:14900,m3:39000,m6:69000,m12:119000}, standard:{m1:9900,m3:25000,m6:45000,m12:79000}, light:{m1:6900,m3:17000,m6:29000,m12:49000} },
+  aiCredits:{ grade:[ {n:10,p:29000}, {n:30,p:79000}, {n:50,p:120000}, {n:100,p:220000} ], explain:[ {n:50,p:900}, {n:100,p:1700}, {n:300,p:4900}, {n:500,p:7900} ] }, aiModel:{ grade:'claude-sonnet-5', explain:'claude-haiku-4-5' },
+  certTier:{ appraiser:'premiumplus', laborattorney1:'premium', firemanager1:'premium', hesm:'premium', realestate1:'standard', realestate2:'standard', housing:'standard', housing2:'standard', koreanhistory:'light', sport2:'light' }, freeDays:7, guestDaily:10, userDaily:20 };
+var TP_TIERS=['premiumplus','premium','standard','light'];
 async function tpInit(){
   if(_tpInited) return; _tpInited=true;
   try{ var d=await db.collection('config').doc('pricing').get(); _tpCfg=d.exists?d.data():null; }catch(_){ _tpCfg=null; }
   if(!_tpCfg||!_tpCfg.tiers){ _tpCfg=JSON.parse(JSON.stringify(TP_DEFAULT)); }
   if(!_tpCfg.certTier) _tpCfg.certTier={};
-  ['premium','standard','light'].forEach(function(t){
+  TP_TIERS.forEach(function(t){
     var tv=(_tpCfg.tiers&&_tpCfg.tiers[t])||{};
     ['m1','m3','m6','m12'].forEach(function(m){ var el=document.getElementById('tp_'+t+'_'+m); if(el) el.value=tv[m]!=null?tv[m]:''; });
   });
+  var _aic=(_tpCfg.aiCredits&&typeof _tpCfg.aiCredits==='object'&&!Array.isArray(_tpCfg.aiCredits))?_tpCfg.aiCredits:TP_DEFAULT.aiCredits;
+  var _gp=Array.isArray(_aic.grade)?_aic.grade:TP_DEFAULT.aiCredits.grade;
+  var _ep=Array.isArray(_aic.explain)?_aic.explain:TP_DEFAULT.aiCredits.explain;
+  [0,1,2,3].forEach(function(i){ var g=_gp[i]||{}, e=_ep[i]||{};
+    var gn=document.getElementById('tp_aicg_n'+i), gpv=document.getElementById('tp_aicg_p'+i); if(gn) gn.value=(g.n!=null?g.n:''); if(gpv) gpv.value=(g.p!=null?g.p:'');
+    var en=document.getElementById('tp_aice_n'+i), epv=document.getElementById('tp_aice_p'+i); if(en) en.value=(e.n!=null?e.n:''); if(epv) epv.value=(e.p!=null?e.p:''); });
+  var _amod=(_tpCfg.aiModel)||TP_DEFAULT.aiModel;
+  var _mg=document.getElementById('tp_aimodel_grade'); if(_mg) _mg.value=_amod.grade||'claude-sonnet-5';
+  var _me=document.getElementById('tp_aimodel_explain'); if(_me) _me.value=_amod.explain||'claude-haiku-4-5';
   var fd=document.getElementById('tp_freeDays'); if(fd) fd.value=_tpCfg.freeDays!=null?_tpCfg.freeDays:7;
   var gd=document.getElementById('tp_guestDaily'); if(gd) gd.value=_tpCfg.guestDaily!=null?_tpCfg.guestDaily:10;
   var ud=document.getElementById('tp_userDaily'); if(ud) ud.value=_tpCfg.userDaily!=null?_tpCfg.userDaily:20;
@@ -3396,7 +3462,7 @@ async function tpRenderCerts(){
       +'<input data-cert="'+e.id+'" class="tp-cert-ic" value="'+((_tpCfg.certIcon&&_tpCfg.certIcon[e.id])||CERT_ICONS[e.id]||e.icon||'\uD83D\uDCD8')+'" maxlength="4" title="이모지(홈·티어 반영)" style="width:40px;text-align:center;font-size:16px;padding:4px;border:1.5px solid #E8E8E8;border-radius:8px">'
       +'<span style="flex:1"><b>'+(e.name||e.id)+'</b> <span style="font-family:monospace;font-size:10px;color:#B0A89C">'+e.id+'</span></span>'
       +'<select data-cert="'+e.id+'" class="tp-cert-sel" style="padding:5px 10px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:12px;outline:none">'
-      +opt('premium','프리미엄')+opt('standard','표준')+opt('light','라이트')+'</select></div>';
+      +opt('premiumplus','프리미엄+')+opt('premium','프리미엄')+opt('standard','표준')+opt('light','라이트')+'</select></div>';
   }).join('');
 }
 async function tpSave(){
@@ -3404,7 +3470,12 @@ async function tpSave(){
   st.style.color='#6E6256'; st.textContent='저장 중…';
   try{
     var tiers={};
-    ['premium','standard','light'].forEach(function(t){ tiers[t]={}; ['m1','m3','m6','m12'].forEach(function(m){ tiers[t][m]=+((document.getElementById('tp_'+t+'_'+m)||{}).value)||0; }); });
+    TP_TIERS.forEach(function(t){ tiers[t]={}; ['m1','m3','m6','m12'].forEach(function(m){ tiers[t][m]=+((document.getElementById('tp_'+t+'_'+m)||{}).value)||0; }); });
+    var _gpk=[], _epk=[]; [0,1,2,3].forEach(function(i){
+      var gn=+((document.getElementById('tp_aicg_n'+i)||{}).value)||0, gp=+((document.getElementById('tp_aicg_p'+i)||{}).value)||0; if(gn>0) _gpk.push({n:gn,p:gp});
+      var en=+((document.getElementById('tp_aice_n'+i)||{}).value)||0, ep=+((document.getElementById('tp_aice_p'+i)||{}).value)||0; if(en>0) _epk.push({n:en,p:ep}); });
+    var aiCredits={ grade:_gpk, explain:_epk };
+    var aiModel={ grade:((document.getElementById('tp_aimodel_grade')||{}).value)||'claude-sonnet-5', explain:((document.getElementById('tp_aimodel_explain')||{}).value)||'claude-haiku-4-5' };
     var certTier={};
     [].slice.call(document.querySelectorAll('.tp-cert-sel')).forEach(function(sel){ certTier[sel.getAttribute('data-cert')]=sel.value; });
     var certIcon={};
@@ -3412,7 +3483,7 @@ async function tpSave(){
     var freeDays=+((document.getElementById('tp_freeDays')||{}).value)||7;
     var guestDaily=+((document.getElementById('tp_guestDaily')||{}).value)||10;
     var userDaily=+((document.getElementById('tp_userDaily')||{}).value)||20;
-    var payload={ tiers:tiers, certTier:certTier, certIcon:certIcon, freeDays:freeDays, guestDaily:guestDaily, userDaily:userDaily, updatedAt:new Date().toISOString() };
+    var payload={ tiers:tiers, aiCredits:aiCredits, aiModel:aiModel, certTier:certTier, certIcon:certIcon, freeDays:freeDays, guestDaily:guestDaily, userDaily:userDaily, updatedAt:new Date().toISOString() };
     await db.collection('config').doc('pricing').set(payload, {merge:true});
     _tpCfg=payload;
     st.style.color='#15793F'; st.textContent='저장 완료 — 앱에 반영됨';
@@ -3483,6 +3554,7 @@ function eaEditForm(e,s){
     +'<div style="margin-bottom:8px">'+_lbl('가격(원) — 1주 / 2주 / 4주 / 8주')+'<div style="display:flex;gap:6px">'
       +_inp(pid+'_p1',pget(7),'','text-align:center')+_inp(pid+'_p2',pget(14),'','text-align:center')+_inp(pid+'_p4',pget(28),'','text-align:center')+_inp(pid+'_p8',pget(56),'','text-align:center')+'</div></div>'
     +'<div style="margin-bottom:8px">'+passHtml+'</div>'
+    +((e.type==='subjective')?('<div style="margin-bottom:8px;background:#F1ECFB;border:1px solid #D9CBF3;border-radius:9px;padding:9px 10px"><label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:#5B3FA0;cursor:pointer"><input type="checkbox" id="'+pid+'_aisell"'+(((!e.aiGrade)||e.aiGrade.enabled!==false)?' checked':'')+'> 🤖 AI 첨삭 판매</label><div style="font-size:10.5px;color:#8A7CA8;margin-top:4px">가격은 \'AI첨삭 충전 요금\'(횟수 충전제)로 관리 · 회원권과 별도</div></div>'):'')
     +'<div style="display:flex;gap:8px;margin-bottom:10px"><div style="flex:1">'+_lbl('큐넷 gId(비우면 자동수집 안 함)')+_inp(pid+'_gid',gid,'예: 05','font-family:monospace')+'</div>'
       +'<div style="flex:0 0 100px">'+_lbl('차수')+'<select id="'+pid+'_qtab" style="width:100%;padding:8px;border:1.5px solid #E8E8E8;border-radius:8px;font-size:13px;background:#fff">'
       +['1차','2차','3차'].map(function(t,i){return '<option value="'+i+'"'+(i===qtab?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div></div>'
@@ -3528,6 +3600,7 @@ async function eaEditSave(id){
       var ps=+g('pass')||60, fl=+g('floor')||0;
       e.pass={pass:ps,floor:fl,label:'평균 '+ps+'점'+(fl>0?(' \u00B7 과목별 '+fl+'점'):'')};
     }
+    if(e.type==='subjective'){ var _as=document.getElementById(pid+'_aisell'); e.aiGrade={ enabled: _as? !!_as.checked : true }; }
     var idx=_eaExams.findIndex(function(x){return x.id===id;});
     _eaExams[idx]=e;
     await db.collection('manifest').doc('exams').update({ exams: _eaExams });
@@ -3541,7 +3614,7 @@ async function eaEditSave(id){
     setTimeout(eaLoadList, 700);
   }catch(err){ st.style.color='#A32D2D'; st.textContent='오류: '+err.message; }
 }
-function eaSetType(t){ eaType=t; var a=document.getElementById('eaTMcq'), b=document.getElementById('eaTFc'), c=document.getElementById('eaTSubj'); if(a)a.classList.toggle('ea-on',t==='mcq'); if(b)b.classList.toggle('ea-on',t==='flashcard'); if(c)c.classList.toggle('ea-on',t==='subjective'); eaRender(); }
+function eaSetType(t){ eaType=t; var a=document.getElementById('eaTMcq'), b=document.getElementById('eaTFc'), c=document.getElementById('eaTSubj'); if(a)a.classList.toggle('ea-on',t==='mcq'); if(b)b.classList.toggle('ea-on',t==='flashcard'); if(c)c.classList.toggle('ea-on',t==='subjective'); var ai=document.getElementById('eaAiBox'); if(ai)ai.style.display=(t==='subjective'?'block':'none'); eaRender(); }
 function eaAddSub(){ eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
 function eaDelSub(i){ eaSubs.splice(i,1); if(!eaSubs.length) eaSubs.push({n:''}); eaRenderSubs(); eaRender(); }
 function eaRenderSubs(){
@@ -3575,6 +3648,7 @@ function eaBuildBlock(){
   }
   else { block.pass={pass:+_eaVal('eaPass')||60, floor:+_eaVal('eaFloor')||0, label:'평균 '+(+_eaVal('eaPass')||60)+'점'+((+_eaVal('eaFloor')>0)?(' · 과목별 '+(+_eaVal('eaFloor'))+'점'):'')}; }
   block.plan=[{d:7,p:+_eaVal('eaP1')||0,name:'1주 이용권',desc:'7일 전체 이용'},{d:14,p:+_eaVal('eaP2')||0,name:'2주 이용권',desc:'14일 전체 이용'},{d:28,p:+_eaVal('eaP4')||0,name:'4주 이용권',desc:'28일 전체 이용'},{d:56,p:+_eaVal('eaP8')||0,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}];
+  if(eaType==='subjective'){ var _as=document.getElementById('eaAiSell'); block.aiGrade={ enabled: _as? !!_as.checked : true }; }   // AI 첨삭 판매 여부(가격은 config/pricing.aiCredits 횟수충전제).
   return block;
 }
 function eaRender(){ var pre=document.getElementById('eaJson'); if(pre) pre.textContent=JSON.stringify(eaBuildBlock(),null,2); }
@@ -3976,7 +4050,7 @@ function renderRecentPayments() {
         <tr>
           <td>${p.email||'-'}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
           <td style="font-size:11px">${certNameOf(p)}</td>
-          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${p.kind==='aigrade'?'<span style="color:#7F4FD8;font-weight:700">🤖 '+(p.wallet==='explain'?'해설':'첨삭')+' '+(p.packSize||0)+'회</span>':(planNames[p.planDays]||p.planDays+'일')}</td>
           <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
           <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
           <td>${fmtDate(p.createdAt)}</td>
@@ -3995,7 +4069,7 @@ function renderPayments(list) {
           <td>${p.email||'-'}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
           <td><strong>${p.depositorName||'-'}</strong></td>
           <td style="font-size:11px">${certNameOf(p)}</td>
-          <td>${planNames[p.planDays]||p.planDays+'일'}</td>
+          <td>${p.kind==='aigrade'?'<span style="color:#7F4FD8;font-weight:700">🤖 '+(p.wallet==='explain'?'해설':'첨삭')+' '+(p.packSize||0)+'회</span>':(planNames[p.planDays]||p.planDays+'일')}</td>
           <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
           <td><span class="badge ${statusBadge(p.status)}">${statusLabel(p.status)}</span></td>
           <td>${fmtDate(p.createdAt)}</td>
@@ -6416,6 +6490,15 @@ async function confirmApprove() {
       status: 'approved',
       approvedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    if (p.kind === 'aigrade') {
+      // AI 충전(횟수): 지갑(첨삭 grade / 해설 explain)에 packSize 가산
+      const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
+      await db.collection('users').doc(p.uid).update({ ['aiCredits.'+w]: firebase.firestore.FieldValue.increment(ps) });
+      closeModal();
+      alert(`✅ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} ${ps}회 충전 승인 완료!`);
+      await loadAll();
+      return;
+    }
     const upd = {
       ['entitlements.'+cert+'.plan']: 'ACTIVE',
       ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
@@ -6451,6 +6534,20 @@ async function confirmRevoke() {
       status: 'revoked',
       revokedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    if (p.kind === 'aigrade') {
+      // AI 충전 취소: 해당 지갑에서 packSize 회수(음수 방지)
+      const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
+      let aref=null;
+      if (p.uid) aref=db.collection('users').doc(p.uid);
+      else if (p.email) { const qs=await db.collection('users').where('email','==',p.email).limit(1).get(); if(!qs.empty) aref=qs.docs[0].ref; }
+      if (aref) {
+        await db.runTransaction(async (tx)=>{ const s=await tx.get(aref); const cur=(s.exists&&s.data().aiCredits&&+s.data().aiCredits[w])||0; var nv={}; nv[w]=Math.max(0,cur-ps); tx.set(aref,{ aiCredits:nv },{merge:true}); });
+      }
+      closeModal();
+      alert(`⛔ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} 충전 취소 완료. ${ps}회 회수.`);
+      await loadAll();
+      return;
+    }
     // 회원 문서 찾기 (uid 우선, 없으면 이메일로)
     let ref=null, data=null;
     if (p.uid) { ref=db.collection('users').doc(p.uid); const d=await ref.get(); if(d.exists) data=d.data(); }
@@ -6550,6 +6647,45 @@ async function markReportDone(reportId) {
     });
     await loadReports();
   } catch(e) { alert('오류: ' + e.message); }
+}
+
+// ===== 🤖 AI 크레딧 관리 (첨삭 grade · 해설 explain 지갑) =====
+var _acmUid=null, _acmEmail=null;
+async function acmLookup(){
+  var em=((document.getElementById('acmEmail')||{}).value||'').trim().toLowerCase();
+  var st=document.getElementById('acmStatus'), res=document.getElementById('acmResult');
+  if(!em){ if(st){st.style.color='#A32D2D';st.textContent='이메일을 입력하세요.';} return; }
+  if(st){st.style.color='#6E6256';st.textContent='조회 중…';} if(res)res.innerHTML=''; _acmUid=null;
+  try{
+    var qs=await db.collection('users').where('email','==',em).limit(1).get();
+    if(qs.empty){ if(st){st.style.color='#A32D2D';st.textContent='해당 이메일 회원이 없습니다.';} return; }
+    var doc=qs.docs[0]; _acmUid=doc.id; _acmEmail=em; var u=doc.data();
+    var g=(u.aiCredits&&+u.aiCredits.grade)||0, e=(u.aiCredits&&+u.aiCredits.explain)||0;
+    if(st){st.style.color='#15793F';st.textContent=em+' 조회됨';}
+    if(res)res.innerHTML=acmCard('grade','✍️ AI 첨삭',g)+acmCard('explain','💡 AI 개념설명',e);
+  }catch(err){ if(st){st.style.color='#A32D2D';st.textContent='오류: '+err.message;} }
+}
+function acmCard(w,label,bal){
+  return '<div style="display:inline-block;vertical-align:top;border:1px solid #E7EBF1;border-radius:12px;padding:12px 14px;margin:0 10px 10px 0;min-width:236px">'
+    +'<div style="font-size:13px;font-weight:800;color:#2C2C2A">'+label+' 잔액 <b id="acmBal_'+w+'" style="color:#6D28D9">'+bal+'</b>회</div>'
+    +'<div style="display:flex;gap:6px;margin-top:9px;align-items:center">'
+    +'<input id="acmN_'+w+'" type="number" min="1" placeholder="회수" style="width:76px;padding:6px;border:1.5px solid #E1E6EE;border-radius:8px;text-align:center">'
+    +'<button class="btn-sm btn-extend" onclick="acmAdjust(\''+w+'\',1)">＋부여</button>'
+    +'<button class="btn-sm" style="background:#FCEBEA;color:#B5302F" onclick="acmAdjust(\''+w+'\',-1)">－차감</button>'
+    +'</div></div>';
+}
+async function acmAdjust(w, sign){
+  if(!_acmUid){ alert('먼저 회원을 조회하세요.'); return; }
+  var n=+((document.getElementById('acmN_'+w)||{}).value)||0; if(n<=0){ alert('회수를 입력하세요.'); return; }
+  var delta=sign>0?n:-n, label=(w==='grade'?'첨삭':'해설');
+  if(!confirm(_acmEmail+' · '+label+' 크레딧 '+(delta>0?'+':'')+delta+'회\n진행할까요?')) return;
+  try{
+    var uref=db.collection('users').doc(_acmUid); var left=0;
+    await db.runTransaction(async function(tx){ var s=await tx.get(uref); var cur=(s.exists&&s.data().aiCredits&&+s.data().aiCredits[w])||0; left=Math.max(0,cur+delta); var nv={}; nv[w]=left; tx.set(uref,{aiCredits:nv},{merge:true}); });
+    var b=document.getElementById('acmBal_'+w); if(b) b.textContent=left;
+    var inp=document.getElementById('acmN_'+w); if(inp) inp.value='';
+    try{ await db.collection('users').doc(_acmUid).collection('aiCreditLog').add({ wallet:w, delta:delta, by:((firebase.auth().currentUser&&firebase.auth().currentUser.email)||'admin'), at: firebase.firestore.FieldValue.serverTimestamp() }); }catch(_){}
+  }catch(err){ alert('오류: '+err.message); }
 }
 
 // ===== 회원권 관리 (시험별 이용권) =====
