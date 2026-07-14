@@ -6,6 +6,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <script src="qc-core.js?v=20260713"></script>
+<script src="qc-gate-patch.js?v=20260714"></script>
 <style>
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:1600px;margin:0 auto}
 #mcqView .pv-oralcard{position:relative;transform:none;min-height:auto;width:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px 22px;border-radius:var(--radius);text-align:center;margin-bottom:12px}
@@ -35,6 +36,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .tbl-ph{color:#7F77DD;font-size:12.5px;background:#F5F4FE;border:1px solid #E0DDF7;border-radius:8px;padding:8px 11px;margin:8px 0;font-family:monospace}
 #mcqView .mn-code .k,#mcqView .mn-desc .k{color:#C0392B;font-weight:800}
 #mcqView .cc-ex{margin:9px 0 0;padding:8px 11px 8px 12px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.65;color:#28425E;word-break:keep-all;overflow-wrap:break-word}
+.cc-dia{white-space:pre;font-family:ui-monospace,'D2Coding','Menlo','Courier New',monospace;font-size:13px;line-height:1.55;margin:6px 0;overflow-x:auto;color:inherit}
 #mcqView .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em;word-break:keep-all;overflow-wrap:break-word}
 #mcqView .sa-plist{display:flex;flex-direction:column;gap:10px;margin:4px 0 0}
 #mcqView .sa-prow{border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;background:#fff}
@@ -295,6 +297,14 @@ function isEconQ(q){
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
 
 function rm(text, q){ return renderMath(text, isEconQ(q)); }
+/* [2026-07-14] 관계도 블록 [dia]…[/dia] → 고정폭·공백유지 <pre>. renderMath가 _·/·^를 수식으로
+   바꾸지 못하게 렌더 전에 빼내 보호했다가, 뒤에 escape해서 복원한다(2D 화살표 관계도 유지). */
+function rmCx(text, q){
+  var blocks=[];
+  var s=String(text==null?'':text).replace(/\[dia\]\r?\n?([\s\S]*?)\r?\n?\[\/dia\]/g, function(m, inner){ blocks.push(inner.replace(/\s+$/,'')); return '@@DIA'+(blocks.length-1)+'@@'; });
+  var html=rm(s, q);
+  return html.replace(/@@DIA(\d+)@@/g, function(m,i){ var t=String(blocks[+i]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); return '<pre class="cc-dia">'+t+'</pre>'; });
+}
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
 var _JDOT='<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 5px 0 2px;position:relative;top:-1px">\u25CF</span>';
 function _jaryoDots(html){ return String(html==null?'':html).replace(/\u25CB\s*/g,_JDOT); }
@@ -624,9 +634,9 @@ function conceptCardHTML(q){
     if(!cs.length){ body+='<div class="lsum">이 문제의 개념 설명이 아직 준비 중입니다. 바로 문제를 풀어볼까요?</div>'; }
     cs.forEach((c,i)=>{
       var sec='<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+rm(c.t||'',q)+'</div><div class="lsec-d">'+rm(c.d||'',q)+'</div>';
-      if(c.cx && String(c.cx).trim()) sec+='<div class="cc-ex">'+rm(String(c.cx).trim(),q)+'</div>';
+      if(c.cx && String(c.cx).trim()) sec+='<div class="cc-ex">'+rmCx(String(c.cx).trim(),q)+'</div>';
       else if(mqCert==='bodybuilding' && c.exd && String(c.exd).trim()) sec+='<div class="cc-exd">💡 '+rm(String(c.exd).trim(),q)+'</div>';
-      if(c.ex && String(c.ex).trim()) sec+='<div class="cc-ex">'+rm(String(c.ex).trim(),q)+'</div>';
+      if(c.ex && String(c.ex).trim()) sec+='<div class="cc-ex">'+rmCx(String(c.ex).trim(),q)+'</div>';
       body+=sec+'</div>';
     });
   }
@@ -1645,7 +1655,17 @@ var _qcMasterLast=null, _qcMasterKind=null, _qcMasterData=null;
 function qcEnterMaster(){
   _qcMode=true; var kind=_qcMasterKind, def=_QC_MASTER[kind]; if(!def) return;
   var arr=_qcMasterData||[], items=[], blockN=0, warnN=0;
-  arr.forEach(function(m){ var vi=def.fn(m); if(vi.length){ var b=0,w=0; vi.forEach(function(x){ x.kind==='block'?(b++,blockN++):(w++,warnN++); }); items.push({item:m,vios:vi,blockN:b,warnN:w,key:m.id||(m.name||'')}); } });
+  /* [2026-07-14] 패치 audit(교차검사 MN_DUP 등)을 검수 창에도 반영. 암기는 QC.mnemAudit을
+     배열 전체로 1회 돌려 id별로 묶고, per-item 옛 검사(def.fn)에 코드 중복 없이 합친다. */
+  var _patchById={};
+  if(kind==='mnem' && typeof QC!=='undefined' && QC.mnemAudit){
+    try{ (QC.mnemAudit(arr)||[]).forEach(function(x){ (_patchById[x.id]=_patchById[x.id]||[]).push(x); }); }catch(_){}
+  }
+  arr.forEach(function(m){
+    var vi=def.fn(m)||[];
+    var extra=_patchById[m.id]||[]; if(extra.length){ var seen={}; vi.forEach(function(x){ seen[x.code]=1; }); extra.forEach(function(x){ if(!seen[x.code]) vi.push(x); }); }
+    if(vi.length){ var b=0,w=0; vi.forEach(function(x){ (x.kind==='block'||x.sev==='ERROR'||x.sev==='BLOCKER')?(b++,blockN++):(w++,warnN++); }); items.push({item:m,vios:vi,blockN:b,warnN:w,key:m.id||(m.name||'')}); }
+  });
   var nav=document.getElementById('navBar'); if(nav) nav.innerHTML='';
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   var bar=document.getElementById('pvModeBar'); if(bar) bar.innerHTML='';
