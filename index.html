@@ -47,10 +47,11 @@ gtag('config', 'G-RPZRZQ779J');
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<link rel="stylesheet" href="style.css?v=20260713">
+<link rel="stylesheet" href="style.css?v=20260714">
 <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -75,6 +76,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
+<script src="subjective.js?v=20260714"></script>
 </head>
 <body>
 <!-- 인앱 브라우저 안내 팝업 -->
@@ -213,7 +215,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <button class="bar-btn" onclick="openPrintSheet()">🖨️ 인쇄</button>
 </div>
 </div>
-<div class="cert-view hidden" id="subjectiveView"><div id="subjMount"></div></div>
+<div class="cert-view hidden" id="subjectiveView"><div id="subjHeader"></div><div id="subjMount"></div></div>
+<!-- AI 첨삭 기록 모달 -->
+<div class="psucc-ov hidden" id="gradeLogOv"><div class="psucc-box" style="max-width:560px;text-align:left">
+  <button class="psucc-x" onclick="closeGradeLogs()" aria-label="닫기">✕</button>
+  <div style="font-size:16px;font-weight:800;color:#2C2C2A;margin-bottom:3px">📋 내 AI 첨삭 기록</div>
+  <div style="font-size:12px;color:#8A7D6E;margin-bottom:12px" id="gradeLogSub">최근 채점 내역을 다시 볼 수 있어요.</div>
+  <div id="gradeLogBody" style="max-height:60vh;overflow:auto"></div>
+</div></div>
 <div class="cert-view hidden" id="mcqView">
   <div class="mcq-wrap" id="mcqRoot"></div>
 </div>
@@ -314,6 +323,21 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       <div class="psucc-warn">⚠️ 입금자명을 신청자명과 동일하게 보내주세요.<br>입금이 확인되지 않으면 이용권이 취소될 수 있어요.</div>
     </div>
     <button class="psucc-ok" onclick="closePaySuccess()">확인했어요</button>
+  </div>
+</div>
+<!-- AI 크레딧 충전 모달 (회원권과 별도 · 횟수 충전제) -->
+<div class="psucc-ov hidden" id="aiBuyOv">
+  <div class="psucc-box">
+    <button class="psucc-x" onclick="closeAiGradeBuy()" aria-label="닫기">✕</button>
+    <div class="psucc-ic">🤖</div>
+    <div class="psucc-ti" id="aiBuyTitle">AI 충전</div>
+    <div class="psucc-sub" id="aiBuySub"></div>
+    <div id="aiBuyBal" style="font-size:12px;color:#6D28D9;font-weight:700;margin:6px 0 2px"></div>
+    <div id="aiBuyPacks" style="display:flex;flex-direction:column;gap:8px;margin:12px 0 6px"></div>
+    <div style="text-align:left;margin:8px 0 6px;font-size:12.5px;font-weight:700;color:#2C2C2A">입금자 이름 <span style="font-weight:500;color:#9A8E7E">· 입금 확인용</span></div>
+    <input id="aiBuyName" placeholder="입금하실 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
+    <div style="font-size:11.5px;color:#8A7D6E;line-height:1.5;margin-bottom:12px">‘충전 신청’을 누르면 입금 안내가 떠요. 입금 확인 후 <b>약 10분 뒤 승인</b>되며, 승인되면 잔액에 자동 반영됩니다(만료 없음). 입금이 확인되지 않으면 관리자가 취소할 수 있어요.</div>
+    <button class="psucc-ok" id="aiBuyBtn" onclick="submitAiBuy()">충전 신청</button>
   </div>
 </div>
 <!-- 포인트 적립/차감 안내 모달 -->
@@ -563,7 +587,7 @@ const firebaseConfig = {
   messagingSenderId: "698827699707",
   appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
-let auth = null, db = null, storage = null, googleProvider = null, firebaseReady = false;
+let auth = null, db = null, storage = null, googleProvider = null, firebaseReady = false, fbFunctions = null;
 try {
   firebase.initializeApp(firebaseConfig);
   firebase.appCheck().activate(
@@ -574,6 +598,7 @@ try {
   db = firebase.firestore();
   try{ db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }catch(e){ console.warn('firestore settings', e); }
   storage = firebase.storage();
+  try{ fbFunctions = (firebase.app().functions) ? firebase.app().functions('asia-northeast3') : null; }catch(e){ console.warn('functions init', e); fbFunctions=null; }
   googleProvider = new firebase.auth.GoogleAuthProvider();
   firebaseReady = true;
   // 첫 로드 때 goHome이 db 준비 전에 돌아 공지바가 빈 채 끝나는 경우 보강 — 준비되면 홈에서 한 번 더 로드
@@ -585,6 +610,14 @@ try {
 
 // ===== 사용자 상태 =====
 let currentUser = null;
+// ===== AI 크레딧 지갑(회원권과 별도, 횟수 충전제): users/{uid}.aiCredits =====
+// 첨삭(Sonnet)·개념설명(Haiku) 공용. 1회당 1 차감.
+// 첨삭(grade)·해설(explain) 지갑 분리
+window._aiCredits = { grade:0, explain:0 };
+function _walletBal(k){ var w=window._aiCredits; return (w && typeof w==='object' && +w[k]>0) ? +w[k] : 0; }
+function gradeBal(){ return _walletBal('grade'); }
+function explainBal(){ return _walletBal('explain'); }
+function _setWallet(k, n){ if(typeof n==='number' && n>=0){ if(!window._aiCredits||typeof window._aiCredits!=='object') window._aiCredits={grade:0,explain:0}; window._aiCredits[k]=n; try{ if(typeof _refreshAiCreditUI==='function') _refreshAiCreditUI(); }catch(_){} } }
 // ===== 추천/마일리지 =====
 const MILE_DAY = 86400000;
 // ===== 추천 대기정산 (추천인 본인 로그인 시 자기 문서에 적립) =====
@@ -795,6 +828,7 @@ async function loadUserPlan(user) {
         } catch(_){}
       }
       try { localStorage.removeItem('pendingRef'); } catch(_){}
+      window._aiCredits = { grade:0, explain:0 };
       userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
       if(typeof pwaSignupBanner==='function') pwaSignupBanner();
       return;
@@ -826,6 +860,7 @@ async function loadUserPlan(user) {
         }
       }
     }
+    window._aiCredits = (data.aiCredits && typeof data.aiCredits==='object') ? { grade:+(data.aiCredits.grade||0), explain:+(data.aiCredits.explain||0) } : { grade:0, explain:0 };
     userEnt = ent; syncPlanMirror(); updateAuthBar(); loadUserData();
     // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
     myReferralCode = data.referralCode || null;
@@ -1678,12 +1713,188 @@ async function submitPayment() {
   }
 }
 
+// ===== AI 심층첨삭(주관식 별도 애드온) =====
+// onCall 호출: 서버가 로그인·이용권·일일한도 확인 후 Claude(Sonnet) 채점 → {score,perNode,feedback,pt}
+async function callGradeSubjective(payload){
+  if(!fbFunctions){ var e=new Error('AI 채점 서버에 연결할 수 없어요.'); e.code='unavailable'; throw e; }
+  var fn = fbFunctions.httpsCallable('gradeSubjective');
+  var res = await fn(payload||{});
+  return res.data;   // { score, perNode:[{h,level,comment}], feedback, pt }
+}
+// 첨삭·해설은 지갑이 분리 → 각 1건당 각자 지갑에서 1회 차감
+function _aiCost(){ return 1; }
+// ===== AI 개념설명(객관식 해설 심화 · 같은 크레딧 지갑) =====
+async function callExplainConcept(payload){
+  if(!fbFunctions){ var e=new Error('AI 서버에 연결할 수 없어요.'); e.code='unavailable'; throw e; }
+  var fn = fbFunctions.httpsCallable('explainConcept');
+  var res = await fn(payload||{});
+  return res.data;   // { text, creditsLeft }
+}
+window._aiExpReg = {};   // qid → { subject, question, whole, cards:[{t,text}] }
+function aiExpRegister(qid, data){ if(qid) window._aiExpReg[String(qid)]=data; }
+function _aiEsc(s){ return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+function _aiMd(md){ var t=_aiEsc(md);
+  t=t.replace(/^\s*#{1,6}\s*(.+)$/gm,'<b>$1</b>');
+  t=t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  t=t.replace(/^\s*[-*]\s+(.+)$/gm,'• $1');
+  t=t.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+  return t; }
+async function _aiRunExplain(payload, boxId, btn){
+  if(!currentUser){ if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  if(explainBal() < 1){ openAiBuy('explain'); return; }
+  var box=document.getElementById(boxId);
+  if(box){ box.style.display='block'; box.innerHTML='<div class="ai-exp-load">🤖 AI가 자세히 설명 중…</div>'; }
+  if(btn) btn.disabled=true;
+  try{
+    var out=await callExplainConcept(payload);
+    if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft);
+    if(box) box.innerHTML='<div class="ai-exp-hd">🤖 AI 설명 <span class="ai-exp-left">해설 남은 '+explainBal().toLocaleString()+'회</span></div><div class="ai-exp-body">'+_aiMd(out&&out.text||'')+'</div>';
+  }catch(err){ var e=String((err&&err.code)||'')+' '+String((err&&err.message)||'');
+    if(/permission-denied|충전/.test(e)){ if(box) box.style.display='none'; openAiBuy('explain'); }
+    else if(/unauthenticated|로그인/.test(e)){ if(box) box.style.display='none'; if(typeof showLoginPopup==='function') showLoginPopup(); }
+    else if(box) box.innerHTML='<div class="ai-exp-load">설명을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</div>';
+  } finally{ if(btn) btn.disabled=false; }
+}
+// 맨 아래 자유질문 위젯(객관식·주관식 공용 형식)
+function _aiAskWidget(qid){
+  return '<div class="ai-ask-wrap">'
+    +'<div class="ai-ask-hd">🤖 AI에게 더 물어보기</div>'
+    +'<div class="ai-ask-guide">더 알고 싶은 게 있으면 여기 적으세요. 위 <b>📋복사</b>를 누르면 그 항목이 여기로 들어와요. 문제 전체가 궁금하면 아래 <b>＋문제전체</b>를 누르거나 직접 <b>문제전체</b>라고 적으면 돼요.</div>'
+    +'<div class="ai-chip-row"><button type="button" class="ai-chip" onclick="aiAskInsertWhole(\''+qid+'\')">＋ 문제전체</button></div>'
+    +'<textarea class="ai-ask" id="aiask_'+qid+'" placeholder="예: 이 부분이 왜 그런지 더 자세히 설명해줘"></textarea>'
+    +'<button class="ai-exp-btn ai-exp-whole" id="aiaskbtn_'+qid+'" onclick="aiAskSubmit(\''+qid+'\')">🤖 AI에게 질문 <span class="ai-exp-cost">'+_aiCost('explain')+'회</span></button>'
+    +'<div class="ai-exp-box" id="aiexp_'+qid+'_ask" style="display:none"></div>'
+    +'</div>';
+}
+function aiAskInsert(qid, i){ var r=window._aiExpReg[String(qid)]; if(!r) return; var c=(r.cards||[])[i]; if(!c) return;
+  var ta=document.getElementById('aiask_'+qid); if(!ta) return;
+  ta.value=(ta.value?ta.value.replace(/\s+$/,'')+'\n':'')+c.text+'\n'; ta.focus();
+  try{ ta.scrollIntoView({block:'center',behavior:'smooth'}); }catch(_){}
+}
+function aiAskInsertWhole(qid){ var ta=document.getElementById('aiask_'+qid); if(!ta) return;
+  if(!/문제전체/.test(ta.value)) ta.value=(ta.value?ta.value.replace(/\s+$/,'')+'\n':'')+'문제전체'; ta.focus();
+}
+function aiAskSubmit(qid){ var r=window._aiExpReg[String(qid)]||{}; var ta=document.getElementById('aiask_'+qid); var t=(ta&&ta.value||'').trim();
+  if(!t){ alert('물어볼 내용을 적어주세요. (위 📋복사로 항목을 넣거나 직접 입력)'); return; }
+  var whole=/문제전체/.test(t);
+  _aiRunExplain({ subject:r.subject, question:r.question, ask:t, context:(r.whole||''), mode:(whole?'all':'ask') }, 'aiexp_'+qid+'_ask', document.getElementById('aiaskbtn_'+qid));
+}
+
+// AI 충전 팩(첨삭·해설 분리) — config/pricing.aiCredits = { grade:[{n,p}...], explain:[{n,p}...] }
+var AICREDIT_DEFAULT={ grade:[{n:10,p:29000},{n:30,p:79000},{n:50,p:120000},{n:100,p:220000}], explain:[{n:50,p:900},{n:100,p:1700},{n:300,p:4900},{n:500,p:7900}] };
+function _aiPacks(kind){ var c=(_pricingCfg&&_pricingCfg.aiCredits&&_pricingCfg.aiCredits[kind]); var a=Array.isArray(c)?c:AICREDIT_DEFAULT[kind]; a=a.filter(function(x){return x&&+x.n>0;}); return a.length?a:AICREDIT_DEFAULT[kind]; }
+var _aiBuyKind='grade', _aiBuyIdx=0;
+function openAiBuy(kind){
+  if(!currentUser){ if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  _aiBuyKind=(kind==='explain'?'explain':'grade'); _aiBuyIdx=0;
+  var isG=_aiBuyKind==='grade', packs=_aiPacks(_aiBuyKind);
+  var ti=document.getElementById('aiBuyTitle'); if(ti) ti.textContent=isG?'✍️ AI 첨삭 충전':'💡 AI 개념설명 충전';
+  var sub=document.getElementById('aiBuySub'); if(sub) sub.innerHTML=(isG?'주관식 답안을 채점위원 수준으로 첨삭받는 이용권이에요.':'객관식 해설을 AI가 더 자세히 설명해주는 이용권이에요.')+'<br><span style="display:inline-block;margin-top:5px;background:#F5F3FF;color:#6D28D9;font-weight:700;font-size:11.5px;padding:2px 9px;border-radius:8px">⚠️ 회원권과 별개 · 첨삭/해설 충전은 서로 따로예요</span>';
+  var bal=document.getElementById('aiBuyBal'); if(bal) bal.innerHTML='현재 '+(isG?'첨삭':'해설')+' 잔액: <b>'+(isG?gradeBal():explainBal()).toLocaleString()+'회</b>';
+  var wrap=document.getElementById('aiBuyPacks'); if(wrap){ wrap.innerHTML=packs.map(function(p,i){ var n=+p.n, pr=+p.p||0, per=n?Math.round(pr/n):0;
+    return '<label style="display:flex;align-items:center;gap:10px;border:1.5px solid '+(i===_aiBuyIdx?'#6D28D9':'#E8E8E8')+';background:'+(i===_aiBuyIdx?'#FAF7FF':'#fff')+';border-radius:11px;padding:11px 13px;cursor:pointer" onclick="_aiPickPack('+i+')">'
+      +'<input type="radio" name="aiPack" '+(i===_aiBuyIdx?'checked':'')+' style="accent-color:#6D28D9">'
+      +'<span style="flex:1;text-align:left"><b style="font-size:14px">'+n+'회</b> <span style="font-size:11px;color:#9A8AB8">회당 '+per.toLocaleString()+'원</span></span>'
+      +'<b style="font-size:14px;color:#6D28D9">'+pr.toLocaleString()+'원</b></label>';
+  }).join(''); }
+  var nm=document.getElementById('aiBuyName'); if(nm) nm.value=(currentUser&&currentUser.displayName)||'';
+  var ov=document.getElementById('aiBuyOv'); if(ov) ov.classList.remove('hidden');
+}
+function _aiPickPack(i){ _aiBuyIdx=i; openAiBuy(_aiBuyKind); }
+function closeAiGradeBuy(){ var ov=document.getElementById('aiBuyOv'); if(ov) ov.classList.add('hidden'); }
+async function submitAiBuy(){
+  if(!currentUser){ closeAiGradeBuy(); return; }
+  var packs=_aiPacks(_aiBuyKind); var pk=packs[_aiBuyIdx]||packs[0]||{n:0,p:0};
+  var packN=+pk.n||0, price=+pk.p||0, kind=_aiBuyKind;
+  var depositorName=(document.getElementById('aiBuyName').value||'').trim();
+  if(!depositorName){ alert('입금자 이름을 입력해 주세요.'); return; }
+  var btn=document.getElementById('aiBuyBtn'); if(btn){ btn.disabled=true; btn.textContent='처리 중…'; }
+  try{
+    if(!fbFunctions) throw new Error('서버에 연결할 수 없어요.');
+    var res=await fbFunctions.httpsCallable('buyAiCredits')({ kind:kind, packIndex:_aiBuyIdx, depositorName:depositorName });
+    var out=res.data||{};
+    var gotN=out.granted||packN, gotP=(out.price!=null?out.price:price);
+    var lb=(kind==='grade'?'AI 첨삭':'AI 개념설명')+' '+gotN+'회 충전 신청';
+    try{ clTrack('InitiateCheckout', { value:gotP, currency:'KRW', content_name:lb, content_category:'aigrade_'+kind, content_type:'product', contents:[{id:'aigrade_'+kind+'_'+gotN, quantity:1}], num_items:1 }); }catch(_){}
+    closeAiGradeBuy();
+    // 즉시 지급이 아니라 1시간 뒤 일괄 승인 → 잔액은 승인 후 반영
+    showPaySuccess({ certName: lb, planLabel:'입금 확인 후 약 10분 뒤 승인 → 잔액 반영', expireAt: null, payable: gotP, depositorName: depositorName, sub:'충전 신청이 접수됐어요. 입금 확인 후 약 10분 뒤 승인되며, 승인되면 잔액에 자동 반영됩니다.' });
+  }catch(e){ var m=(e&&e.message)||String(e); alert('충전 실패: '+m); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='충전 신청'; } }
+}
+// 주관식 시험 마운트(재사용 — 진입 시·구매 후 리마운트)
+function mountSubjExam(id){
+  if(!window.CLSubj || !SUBJ_EXAMS[id]) return;
+  CLSubj.mount(document.getElementById('subjMount'), SUBJ_EXAMS[id], {
+    mountId:'subjMount',
+    aiSell:(SUBJ_EXAMS[id].aiSell!==false),
+    aiCost:1, explainCost:1,
+    creditBalance:function(){ return gradeBal(); },
+    explainBalance:function(){ return explainBal(); },
+    hasEntitlement:function(){ return gradeBal() >= 1; },
+    gradeAi:function(payload){ return callGradeSubjective(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('grade', out.creditsLeft); return out; }); },
+    explainAi:function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); },
+    buyAi:function(){ openAiBuy('grade'); },
+    buyExplain:function(){ openAiBuy('explain'); },
+    needLogin:function(){ if(typeof showLoginPopup==='function') showLoginPopup(); },
+    onGraded:function(rec){ saveGradeLog(id, rec); },
+    onRate:function(qid,n,r){ try{ if(typeof srRateK==='function') srRateK(id, qid, r, false, false); }catch(_){} }
+  });
+  renderSubjHeader(id);
+}
+// 주관식 화면 상단: 크레딧 잔액 + 첨삭 기록 버튼
+var _subjHeaderCert=null;
+function renderSubjHeader(cert){ _subjHeaderCert=cert; var el=document.getElementById('subjHeader'); if(!el) return;
+  el.innerHTML='<div class="subj-hdrbar">'
+    +'<span class="subj-bal">🤖 첨삭 <b id="subjBalG">'+gradeBal().toLocaleString()+'</b>회 · 해설 <b id="subjBalE">'+explainBal().toLocaleString()+'</b>회</span>'
+    +'<span style="flex:1"></span>'
+    +'<button class="subj-hbtn" onclick="openAiBuy(\'grade\')">＋첨삭</button>'
+    +'<button class="subj-hbtn" onclick="openAiBuy(\'explain\')">＋해설</button>'
+    +'<button class="subj-hbtn primary" onclick="openGradeLogs(\''+cert+'\')">📋 기록</button>'
+    +'</div>'; }
+function _refreshAiCreditUI(){ var g=document.getElementById('subjBalG'); if(g) g.textContent=gradeBal().toLocaleString(); var e=document.getElementById('subjBalE'); if(e) e.textContent=explainBal().toLocaleString(); }
+async function saveGradeLog(cert, rec){ if(!currentUser||!db||!rec) return;
+  try{ await db.collection('users').doc(currentUser.uid).collection('gradeLogs').add({
+    cert:cert, qid:rec.qid||'', question:rec.question||'', answer:rec.answer||'',
+    score:(rec.score!=null?rec.score:null), pt:(rec.pt!=null?rec.pt:null),
+    perNode:Array.isArray(rec.perNode)?rec.perNode:[], feedback:rec.feedback||'',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp() }); }catch(e){ console.warn('gradeLog save', e); }
+}
+async function openGradeLogs(cert){ if(!currentUser){ if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  var ov=document.getElementById('gradeLogOv'), body=document.getElementById('gradeLogBody'); if(!ov||!body) return;
+  ov.classList.remove('hidden'); body.innerHTML='<div style="text-align:center;color:#8A7D6E;padding:20px">불러오는 중…</div>';
+  try{
+    var snap=await db.collection('users').doc(currentUser.uid).collection('gradeLogs').where('cert','==',cert).get();
+    var logs=snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    logs.sort(function(a,b){ var ta=a.createdAt&&a.createdAt.seconds||0, tb=b.createdAt&&b.createdAt.seconds||0; return tb-ta; });
+    if(!logs.length){ body.innerHTML='<div style="text-align:center;color:#8A7D6E;padding:24px">아직 채점 기록이 없어요.<br>답안을 쓰고 AI 심층채점을 받아보세요.</div>'; return; }
+    window._gradeLogsCache=logs;
+    body.innerHTML=logs.map(function(l,i){ var pct=(l.pt?Math.round((l.score/l.pt)*100):0); var col=pct>=70?'#0F6E56':pct>=40?'#B7791F':'#C0322F';
+      var dt=l.createdAt&&l.createdAt.seconds?new Date(l.createdAt.seconds*1000).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+      return '<div class="glog-item" onclick="openGradeLogDetail('+i+')">'
+        +'<div class="glog-score" style="color:'+col+'">'+(l.score!=null?l.score:'-')+'<span>/'+(l.pt||'-')+'</span></div>'
+        +'<div class="glog-mid"><div class="glog-q">'+cmEsc((l.question||'').slice(0,60))+'…</div><div class="glog-dt">'+dt+'</div></div>'
+        +'<span class="glog-arr">›</span></div>'; }).join('');
+  }catch(e){ body.innerHTML='<div style="text-align:center;color:#C0322F;padding:20px">불러오기 실패: '+cmEsc(e.message||String(e))+'</div>'; }
+}
+function openGradeLogDetail(i){ var l=(window._gradeLogsCache||[])[i]; if(!l) return; var body=document.getElementById('gradeLogBody'); if(!body) return;
+  var pct=(l.pt?Math.round((l.score/l.pt)*100):0), col=pct>=70?'#0F6E56':pct>=40?'#B7791F':'#C0322F';
+  var nodes=(l.perNode||[]).map(function(p){ var lv=p.level||0; var mk=lv>=2?'✓':lv===1?'△':'✕'; var cls=lv>=2?'hit':lv===1?'amb':'miss';
+    return '<div class="subj-chk '+cls+'"><span class="mk">'+mk+'</span><span>'+cmEsc(p.h||'')+'</span></div>'+(p.comment?'<div class="subj-why">'+cmEsc(p.comment)+'</div>':''); }).join('');
+  body.innerHTML='<button class="subj-hbtn" style="margin-bottom:10px" onclick="openGradeLogs(\''+cmEsc(l.cert||_subjHeaderCert||'')+'\')">‹ 목록</button>'
+    +'<div class="subj-scorebox"><div class="ring" style="background:#F6F6F4;color:'+col+'">'+(l.score!=null?l.score:'-')+'</div><div class="stx"><b>'+(l.score!=null?l.score:'-')+' / '+(l.pt||'-')+'점</b><br>'+cmEsc((l.question||'')).slice(0,80)+'</div></div>'
+    +(l.feedback?'<div class="subj-sect">채점 총평</div><div class="subj-feed">'+cmEsc(l.feedback)+'</div>':'')
+    +(l.answer?'<div class="subj-sect">내가 쓴 답안</div><div class="subj-feed" style="background:#F8FAFC;border-color:#E3EDF7;color:#334155">'+cmEsc(l.answer)+'</div>':'')
+    +(nodes?'<div class="subj-sect">논점별 채점 근거</div>'+nodes:'');
+}
+function closeGradeLogs(){ var ov=document.getElementById('gradeLogOv'); if(ov) ov.classList.add('hidden'); }
+
 // ===== 결제 완료 + 입금 안내 모달 =====
 function showPaySuccess(info){
   var ov=document.getElementById('paySuccessOv'); if(!ov) return;
   var pointOnly = !(info.payable>0);
-  document.getElementById('psuccSub').textContent = pointOnly ? '포인트로 결제 완료! 즉시 활성화되었습니다.' : '이용권이 즉시 활성화되었습니다.';
-  document.getElementById('psuccPlan').innerHTML = '<b>['+cmEsc(info.certName)+'] '+cmEsc(info.planLabel)+'</b><br>만료일: '+info.expireAt.toLocaleDateString('ko-KR');
+  document.getElementById('psuccSub').textContent = info.sub || (pointOnly ? '포인트로 결제 완료! 즉시 활성화되었습니다.' : '이용권이 즉시 활성화되었습니다.');
+  document.getElementById('psuccPlan').innerHTML = '<b>['+cmEsc(info.certName)+'] '+cmEsc(info.planLabel)+'</b>'+(info.expireAt?('<br>만료일: '+info.expireAt.toLocaleDateString('ko-KR')):'');
   var wrap=document.getElementById('psuccDepositWrap');
   if(pointOnly){ wrap.style.display='none'; }
   else {
@@ -5859,15 +6070,22 @@ function renderMcqExam(root){
       });
     }
     var _cc=_conceptCards(q); if(_cc.length){
-      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it){
+      var _aiCards=[];
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it,ci){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
         if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
+        // 🤖 이 개념 AI 심화설명 (같은 크레딧 지갑)
+        _aiCards.push({ t:String(it.t||''), text:[it.t,it.d,it.cx,it.ex].filter(function(x){return x&&String(x).trim();}).join('\n') });
+        row+='<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')">📋 복사</button>';
         return row;
-      }).join('')+'</div>';
+      }).join('')
+      + _aiAskWidget(q.id)
+      +'</div>';
+      aiExpRegister(q.id, { subject:(typeof certLabel==='function'?certLabel(mqCert):mqCert), question:(q.q||''), whole:((q.exp&&q.exp.s?String(q.exp.s)+'\n':'')+_aiCards.map(function(c){return c.text;}).join('\n\n')), cards:_aiCards });
     }
     body+=grpBlockHTML(q);   // 개념 뒤 → 그래프
     body+=itvBlockHTML(q);   // 개념 뒤 → 인터랙티브
@@ -6304,7 +6522,7 @@ async function enterCert(id, noGate){
     mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
     // (2026-07-02) 게스트 진입 시 _ltGuestGate 후킹/게이트로 콘텐츠 덮던 것 제거 — 시험 탭하면 기출/과목 대시보드 유지(레벨테스트는 대시보드 내 CTA로). 레벨테스트 결과 로그인 게이트는 LT 완료 시(renderMqResultScreen 5298)에만.
   }
-  if(_isSubjCert(id)){ try{ if(window.CLSubj) CLSubj.mount(document.getElementById('subjMount'), SUBJ_EXAMS[id], { mountId:'subjMount', endpoint:(window.SUBJ_GRADE_URL||null), onRate:function(qid,n,r){ try{ if(typeof srRateK==='function') srRateK(id, qid, r, false, false); }catch(_){} } }); }catch(e){ console.error('subj mount',e); } }
+  if(_isSubjCert(id)){ try{ mountSubjExam(id); }catch(e){ console.error('subj mount',e); } }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
   if(currentUser && userEnt[id] && userEnt[id].plan === 'EXPIRED'){ setTimeout(()=>showPlanPopup(), 600); }
@@ -6459,1045 +6677,7 @@ function buildCertRegistry(man){
     if(typeof PLAN_SETS!=='undefined' && ex.plan && !PLAN_SETS[id]) PLAN_SETS[id]=ex.plan;        // 없으면 _default
     if(type==='subjective'){
       if(!SUBJ_EXAMS[id]) SUBJ_EXAMS[id]={name:ex.name||id, questions:[]};   // 주관식 컨테이너(applyBank가 채움)
-    } else if(type!=='flashcard'){
-      if(!MCQ_EXAMS[id]){
-        var qb={}; (ex.subjects||[]).forEach(function(s){ if(s&&s.code) qb[s.code]={name:s.name||s.code, sets:[]}; });
-        MCQ_EXAMS[id]={name:ex.name||id, qb:qb};
-        if(typeof MCQ_CERTS!=='undefined' && MCQ_CERTS.indexOf(id)<0) MCQ_CERTS.push(id);   // isMcqCert 갱신
-      }
-    }
-    if(ALL_CERTS.indexOf(id)<0) ALL_CERTS.push(id);
-    try{ if(typeof userEnt!=='undefined' && userEnt && !userEnt[id]) userEnt[id]={plan:'GUEST',trialCount:0,expireAt:null,planDays:null}; }catch(_){}
-    try{ if(typeof guestCounts!=='undefined' && guestCounts && guestCounts[id]==null) guestCounts[id]=0; }catch(_){}
-    _addCertCard(ex, type);
-    _certRegBuilt[id]=1;
-  });
-}
-function _addCertCard(ex, type){
-  try{
-    var wrap=document.querySelector('.cert-cards'); if(!wrap) return;
-    var id=ex.id; if(document.getElementById('certCard-'+id)) return;
-    var subN=(ex.subjects||[]).length;
-    var hasData=subN>0;
-    var icon=_certIcon(id)||ex.icon||(type==='flashcard'?'🃏':(type==='subjective'?'📝':'📘'));
-    var desc=ex.desc||((type==='flashcard'?'플래시카드':(type==='subjective'?'주관식 서술형':'객관식 모의고사'))+(subN?(' · '+subN+'과목'):''));
-    var tagTxt=hasData?(type==='flashcard'?'플래시카드':(type==='subjective'?'주관식':'모의고사')):'준비 중';
-    var tagCls=hasData?'tag':'tag soon';
-    var card=document.createElement('div');
-    card.className='cert-card'; card.id='certCard-'+id;
-    card.setAttribute('onclick', "enterCert('"+id+"')");
-    card.innerHTML='<div class="cert-ic">'+icon+'</div>'
-      +'<div class="cert-meta"><div class="nm">'+mqEsc(ex.name||id)+'</div><div class="ds">'+mqEsc(desc)+'</div>'
-      +'<span class="'+tagCls+'" id="certTag-'+id+'">'+tagTxt+'</span></div>'
-      +'<div class="cert-go">›</div>';
-    wrap.appendChild(card);
-  }catch(e){}
-}
-// ===== 시험 D-day 자동정렬 (examSchedules = 이메일 D-day 데이터 재사용) =====
-var _examDateMs = null;   // {cert: ms} 다음 시험일(미래 회차 우선)
-async function loadExamSchedules(_retry){
-  if(!firebaseReady || !db){ if((_retry||0)<5){ setTimeout(function(){ loadExamSchedules((_retry||0)+1); }, 500); } return; }
-  try{ if(firebase && firebase.appCheck) await firebase.appCheck().getToken(); }catch(_){}   // 모바일: App Check 토큰 발급 기다린 뒤 읽기(토큰 늦으면 permission denied)
-  try{
-    var snap = await db.collection('examSchedules').get();
-    var map = {}, now = Date.now();
-    var toMs = function(v){ if(!v) return null; if(v.toDate) return v.toDate().getTime(); if(v.seconds) return v.seconds*1000; var t=new Date(v).getTime(); return isNaN(t)?null:t; };
-    snap.forEach(function(d){
-      var sx = d.data() || {}, best = null;
-      if(Array.isArray(sx.upcoming)) sx.upcoming.forEach(function(u){ var m=toMs(u&&u.date); if(m!=null && m>=now && (best==null||m<best)) best=m; });
-      if(best==null){ var nm=toMs(sx.nextExamDate); if(nm!=null) best=nm; }
-      if(best!=null) map[d.id]=best;
-    });
-    _examDateMs = map; window._exErr=null;
-    // 즉시 + 지연 재정렬(모바일: 카드 동적추가/늦은 렌더와의 경합 방지)
-    if(typeof reorderCertCards==='function'){ reorderCertCards(); setTimeout(reorderCertCards,400); setTimeout(reorderCertCards,1200); setTimeout(reorderCertCards,2500); }
-    try{ if(/[?&]dbg=1/.test(location.search) && typeof clToast==='function') clToast('\uC2DC\uD5D8\uC77C '+Object.keys(map).length+'\uAC1C \uB85C\uB4DC\u00B7\uC815\uB82C'); }catch(_){}
-  }catch(e){ window._exErr=(e&&e.message)||String(e); try{ if(/[?&]dbg=1/.test(location.search) && typeof clToast==='function') clToast('\uC2DC\uD5D8\uC77C \uC77D\uAE30 \uC2E4\uD328: '+window._exErr); }catch(_){} if((_retry||0)<5){ setTimeout(function(){ loadExamSchedules((_retry||0)+1); }, 1200); } }
-}
-function reorderCertCards(){
-  try{
-    var wrap=document.querySelector('.cert-cards'); if(!wrap) return;
-    var cards=[].slice.call(wrap.querySelectorAll('.cert-card')); if(!cards.length) return;
-    var now=Date.now(), dm=_examDateMs||{};
-    function certOf(card){ var id=(card.id||'').replace('certCard-',''); if(id) return id; var m=(card.getAttribute('onclick')||'').match(/enterCert\('([^']+)'\)/); return m?m[1]:''; }
-    function key(card){ var ms=dm[certOf(card)]; return (ms!=null && ms>=now) ? ms : Infinity; }   // 미래=가까운순, 없음/지남=맨밑
-    cards.map(function(card,i){ return {card:card, k:key(card), i:i}; })
-         .sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; })   // 안정 정렬(동순위 기존순서)
-         .forEach(function(o){ wrap.appendChild(o.card); });
-    var _sp=document.getElementById('certCard-sport2'), _bb=document.getElementById('certCard-bodybuilding');
-    if(_sp&&_bb&&_sp.parentNode){ _sp.parentNode.insertBefore(_bb, _sp.nextSibling); }   // 구술을 필기(sport2) 바로 밑으로
-  }catch(e){}
-}
-// QB 캐시 신선도: 같은 버전 재업로드도 이 시간 안에 자동 반영(버전 미범프 안전망). 0이면 TTL 무시(영구 캐시).
-const QB_TTL_MS=6*60*60*1000;   // 6시간
-// ===== 큰 문제은행 전용 로더: SDK(WebChannel) 대신 일반 fetch로 Firestore REST 호출 =====
-// 이유: Safari 26.4에서 Firestore SDK의 큰 문서 읽기가 비정상적으로 느림(복불복). 일반 fetch는 영향 없음.
-function _decodeFsValue(v){
-  if(v==null) return null;
-  if('stringValue' in v) return v.stringValue;
-  if('integerValue' in v) return parseInt(v.integerValue,10);
-  if('doubleValue' in v) return (typeof v.doubleValue==='number')?v.doubleValue:parseFloat(v.doubleValue);
-  if('booleanValue' in v) return v.booleanValue;
-  if('nullValue' in v) return null;
-  if('timestampValue' in v) return v.timestampValue;
-  if('mapValue' in v) return _decodeFsFields((v.mapValue&&v.mapValue.fields)||{});
-  if('arrayValue' in v){ var arr=(v.arrayValue&&v.arrayValue.values)||[]; return arr.map(_decodeFsValue); }
-  return null;
-}
-function _decodeFsFields(fields){ var o={}; for(var k in fields){ o[k]=_decodeFsValue(fields[k]); } return o; }
-async function _bankGet(docId){               // REST 우선, 실패 시 SDK 폴백(안전망)
-  var _dbg=/[?&]dbg=1/.test(location.search), _t0=Date.now();
-  var d=await _bankRestGet(docId);
-  if(d){ if(_dbg && typeof clToast==='function') clToast('REST OK '+((Date.now()-_t0)/1000).toFixed(1)+'s'); return d; }
-  if(_dbg && typeof clToast==='function') clToast('REST 실패\u2192SDK 폴백');
-  try{ var sn=await db.collection('banks').doc(docId).get(); return sn.exists? sn.data() : null; }catch(_){ return null; }
-}
-async function _bankRestGet(docId){
-  try{
-    var url='https://firestore.googleapis.com/v1/projects/'+firebaseConfig.projectId+'/databases/(default)/documents/banks/'+encodeURIComponent(docId)+'?key='+firebaseConfig.apiKey;
-    var headers={};
-    try{ if(firebase && firebase.appCheck){ var t=await firebase.appCheck().getToken(); if(t && t.token) headers['X-Firebase-AppCheck']=t.token; } }catch(_){}
-    var res=await fetch(url,{headers:headers});
-    if(!res.ok) return null;                 // 404=문서없음 등
-    var j=await res.json();
-    if(!j || !j.fields) return null;
-    return _decodeFsFields(j.fields);
-  }catch(e){ return null; }
-}
-// 과목 1개 로드(캐시→Firestore REST→샤드합치기) 후 applyBank
-async function loadOneSubject(ex, sub){
-  const ver=(ex.versions&&ex.versions[sub.code])||1;
-  const ck='qb:'+ex.id+':'+sub.code+':v'+ver;
-  let doc=null;
-  try{
-    const c=localStorage.getItem(ck);
-    if(c){
-      const w=JSON.parse(c);
-      if(w && w.__qbts){                                       // 신형 캐시 {__qbts, d}
-        if(!QB_TTL_MS || (Date.now()-w.__qbts)<=QB_TTL_MS) doc=w.d;   // TTL 이내만 사용
-      }
-      // 구형(타임스탬프 없는 raw)·TTL초과 → doc=null 유지 → 아래서 1회 갱신·신형 재기록
-    }
-  }catch(e){}
-  if(!doc){
-    const meta=await _bankGet(ex.id+'__'+sub.code);   // 일반 fetch 우선, 실패 시 SDK 폴백
-    if(meta){
-      if(Array.isArray(meta.shards) && meta.shards.length){
-        // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
-        const parts=await Promise.all(meta.shards.map(function(sid){
-          return _bankGet(ex.id+'__'+sub.code+'__'+sid);
-        }));
-        const qs=[];
-        parts.forEach(function(pd){ if(pd && Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); });
-        if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
-        else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
-      } else {
-        doc=meta;   // 기존 단일 문서(하위호환 폴백)
-      }
-      try{
-        // 같은 과목의 옛 버전 캐시 키 청소(잔재 누적·용량초과 방지)
-        const pfx='qb:'+ex.id+':'+sub.code+':v';
-        for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k && k!==ck && k.indexOf(pfx)===0) localStorage.removeItem(k); }
-        localStorage.setItem(ck,JSON.stringify({__qbts:Date.now(), d:doc}));
-      }catch(e){}
-    }
-  }
-  if(doc) applyBank(ex,sub,doc);
-}
-// 시험 1개의 과목들을 병렬 로드 (idempotent)
-var loadingExams={};   // 진행 중인 로드 Promise(동시호출 중복 방지)
-var _mastersPromise=null;
-// 공유 마스터 4종(개념/표/그래프/암기) 단일 로드 promise. 받았으면 즉시 통과(각 로더가 promise 가드).
-function ensureMasters(){
-  if(!_mastersPromise) _mastersPromise=Promise.all([loadMnemonics(),loadTables(),loadGraphs(),loadConcepts(),loadInteractives()]);
-  return _mastersPromise;
-}
-/* ===== [임시] 로딩 성능 측정: ?perf=1 접속 시에만 동작 (측정 후 제거) ===== */
-var PERF=false; try{ if(/[?&]perf=1/.test(location.search)){ PERF=true; localStorage.setItem('certlab_perf','1'); } else if(localStorage.getItem('certlab_perf')==='1'){ PERF=true; } }catch(e){}
-function _perfShow(msg){ try{ var b=document.getElementById('_perfBox'); if(!b){ b=document.createElement('div'); b.id='_perfBox'; b.style.cssText='position:fixed;left:8px;right:8px;bottom:70px;z-index:100001;background:#0C447C;color:#fff;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:pre-wrap'; b.onclick=function(){ b.remove(); }; document.body.appendChild(b); b._lines=[]; } b._lines.unshift('⏱ '+msg); if(b._lines.length>8) b._lines.length=8; b.textContent=b._lines.join('\n')+'\n(탭하면 닫힘)'; }catch(e){} }
-async function loadExam(examId){
-  if(loadedExams[examId]) return;
-  if(loadingExams[examId]) return loadingExams[examId];   // 이미 로딩 중이면 같은 작업 공유
-  loadingExams[examId]=(async()=>{
-    await loadManifest();
-    // 마스터 4종(개념/표/그래프/암기)은 문제 목록 표시엔 불필요 → 백그라운드 로드(해설·개념 렌더 때만 필요)
-    var _mp=ensureMasters();
-    const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
-    if(!ex){ loadedExams[examId]=true; return; }
-    var _t0=PERF?((window.performance&&performance.now)?performance.now():Date.now()):0;
-    await Promise.all((ex.subjects||[]).map(sub=>loadOneSubject(ex,sub)));   // 문제 뱅크 먼저 → 목록 즉시 표시
-    loadedExams[examId]=true;
-    rebuildQid();
-    if(PERF){ try{ var _t1=(window.performance&&performance.now)?performance.now():Date.now(); var _ms=_t1-_t0; var _subs=(ex.subjects||[]).length; var _bytes=0,_qn=0; var _qb=qbOf(examId)||{}; try{ _bytes=JSON.stringify(_qb).length; }catch(e){} Object.keys(_qb).forEach(function(k){ (_qb[k].sets||[]).forEach(function(st){ _qn+=(st.questions||[]).length; }); }); var _ac=(typeof window.__acFail!=='undefined')?('AppCheck실패:'+window.__acFail):(typeof window.__acMs!=='undefined')?('AppCheck '+(window.__acMs/1000).toFixed(1)+'초'):'AppCheck ?'; var _line=certLabel(examId)+': '+(_bytes/1048576).toFixed(2)+'MB / '+(_ms/1000).toFixed(1)+'초 ('+_subs+'과목 '+_qn+'문항) · '+_ac; console.log('[PERF] '+_line); _perfShow(_line); }catch(e){} }
-    // 마스터 로드 완료 시 1회 재렌더(선행학습 버튼·cpt/tbl/grp/mn 링크 채움)
-    _mp.then(function(){ try{
-      if(typeof renderMCQ!=='function' || typeof mqCert==='undefined' || mqCert!==examId || typeof mqScreen==='undefined') return;
-      if(mqScreen==='home'){ renderMCQ(); return; }
-      // 풀이화면: 해설을 이미 펼쳤거나 선행학습 모드일 때만 재렌더(마스터 링크 필요) — 문제만 읽는 중엔 깜빡임 방지. 위치·응답은 상태에서 복원됨
-      if(mqScreen==='exam' && ((typeof mqShow!=='undefined' && Object.keys(mqShow).length>0) || (typeof mqConcept!=='undefined' && mqConcept))){ renderMCQ(); }
-    }catch(e){} }).catch(function(){});
-    // 적응형 데이터(map/diag/variants/변형풀) — 비차단·실패무시. 미준비 과목은 빈 룩업(Elo훅이 스킵).
-    if(typeof loadAdaptiveSubject==='function'){
-      Promise.all((ex.subjects||[]).map(function(sub){ try{ return loadAdaptiveSubject(examId, sub.code).catch(function(){return null;}); }catch(e){ return null; } }))
-        .then(function(){ try{ if(typeof renderMCQ==='function' && typeof mqCert!=='undefined' && mqCert===examId && typeof mqScreen!=='undefined' && mqScreen==='home') renderMCQ(); }catch(e){} });
-    }
-  })();
-  try{ await loadingExams[examId]; } finally { delete loadingExams[examId]; }
-}
-// 전체 로드(폴백·관리용; 진입 시엔 안 씀)
-async function loadAllBanks(){
-  await loadManifest();
-  for(const ex of (MANIFEST.exams||[])) await loadExam(ex.id);
-  rebuildQid();
-}
-function applyBank(ex,sub,doc){
-  const qs=doc.questions||[];
-  if(ex.type==='subjective'){
-    const se=SUBJ_EXAMS[ex.id]; if(!se) return;
-    const seen=new Set(se.questions.map(x=>x.id));
-    qs.forEach(q=>{ if(!seen.has(q.id)){ seen.add(q.id); se.questions.push(Object.assign({_subj:sub.name||sub.code}, q)); } });
-    return;
-  }
-  if(ex.type==='flashcard'){
-    const _seen=new Set(D.map(c=>c.id));   // 이미 적재된 id — 중복 push 방지
-    qs.forEach(c=>{ if(_seen.has(c.id)) return; _seen.add(c.id); const dispS=(c.cat&&BB_CAT[c.cat])?BB_CAT[c.cat]:sub.name; D.push({id:c.id, s:dispS, q:c.q,a:c.a,img:c.img||null,learn:c.learn||null,mn:c.mn||null,star:c.star||1,since:c.since||null,newType:c.newType||false,w:false,fav:false}); });
-  } else {
-    const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
-    if(!qb||!qb[sub.code]) return;
-    const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; byset[lab].push(it); });
-    qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
-    // 최신 회차/연도가 위로 — 라벨 내 가장 큰 숫자 기준 내림차순
-    const setKey=lab=>{ const m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };
-    qb[sub.code].sets.sort((a,b)=>setKey(b.label)-setKey(a.label));
-  }
-}
-function showDataError(err){
-  console.error('문제 데이터 로드 실패',err);
-  var b=document.createElement('div');
-  b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#b00020;color:#fff;padding:10px;text-align:center;z-index:99999;font-size:14px';
-  b.textContent='문제 데이터를 불러오지 못했습니다. 네트워크/Firestore 설정을 확인해 주세요.';
-  document.body.appendChild(b);
-}
-showHome();
+      SUBJ_EXAMS[id].aiSell=(!ex.aiGrade || ex.aiGrade.enabled!==false);      // AI 첨삭 판매 여부(가격은 config aiCredits 충전제)
 
-/* ===== 폰 백버튼: 앱 안에서 단계적으로 뒤로 (실수 종료 방지) ===== */
-var clLastBack=0;
-function clOpenOverlay(){
-  var ids=['conceptOfferPopup','reportSheet','csSheet','planPopup','refundPopup','loginPopup','inappPopup','milestoneBox','completeOv','userDropdown'];
-  for(var i=0;i<ids.length;i++){ var el=document.getElementById(ids[i]); if(el && !el.classList.contains('hidden')) return el; }
-  return null;
-}
-function clToast(msg){
-  var t=document.getElementById('clToast');
-  if(!t){ t=document.createElement('div'); t.id='clToast'; t.style.cssText='position:fixed;left:50%;bottom:66px;transform:translateX(-50%);background:rgba(20,20,24,.92);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:100000;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap'; document.body.appendChild(t); }
-  t.textContent=msg; t.style.opacity='1';
-  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.opacity='0'; },1700);
-}
-// 글/댓글 작성 후 서버(Cloud Function) 적립분을 폴링해 +NP 토스트 + 잔액 캐시 갱신
-function clHandleBack(){
-  var ov=clOpenOverlay();
-  if(ov){ ov.classList.add('hidden'); return true; }
-  if(typeof activeCert!=='undefined' && activeCert){
-    if(typeof isMcqCert==='function' && isMcqCert(activeCert) && typeof mqScreen!=='undefined'){
-      if(mqInReview){ if(typeof mqBackToResult==='function') mqBackToResult(); return true; }
-      if(mqScreen==='result'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
-      if(mqScreen==='luhist'){ if(typeof luHistBack==='function'){ luHistBack(); } else if(typeof mqBackHome==='function'){ mqBackHome(); } return true; }
-      if(mqScreen==='lusummary'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
-      if(mqScreen==='exam'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
-      if(mqScreen==='home'){ showHome(); return true; }
-    }
-    showHome(); return true;   // 플래시카드 등 기타 과목 → 메인 홈
-  }
-  return false;   // 메인 홈 → 종료 단계
-}
-(function(){ try{
-  history.replaceState({cl:'root'},'');
-  history.pushState({cl:'app'},'');
-  window.addEventListener('popstate', function(){
-    if(clHandleBack()){
-      history.pushState({cl:'app'},'');                 // 재무장: 앱 안에 머무름
-    } else {
-      var now=Date.now();
-      if(now-clLastBack<2000){ history.back(); }         // 2초 내 두 번째 → 종료
-      else { clLastBack=now; clToast('한 번 더 누르면 종료됩니다'); history.pushState({cl:'app'},''); }
-    }
-  });
-}catch(_){ } })();
-
-function refreshCertCards(){
-  ['realestate1','realestate2','koreanhistory','housing','housing2'].forEach(cert=>{
-    const tag=document.getElementById('certTag-'+cert); if(!tag) return;
-    // manifest에 이 시험이 과목과 함께 있으면 데이터 있음(lazy 로드 전이라도). 폴백: 로드된 문항수.
-    let has=false;
-    try{ const ex=MANIFEST&&(MANIFEST.exams||[]).find(e=>e.id===cert); has=!!(ex&&ex.subjects&&ex.subjects.length); }catch(e){}
-    if(!has && typeof certQuestionCount==='function') has=certQuestionCount(cert)>0;
-    if(has){ tag.textContent='모의고사'; tag.classList.remove('soon'); }
-    else { tag.textContent='준비 중'; tag.classList.add('soon'); }
-  });
-}
-loadManifest().then(async ()=>{
-  if(typeof refreshCertCards==='function') refreshCertCards();   // manifest 기반 — 로드 전이라도 정상 표시
-  // lazy: 진입 시 전 과목 안 받고 '첫 시험 하나'만 — 이어풀기 대상 → 마지막 본 시험 → 없으면 안 받음
-  let firstExam=null;
-  try{ const a=JSON.parse(localStorage.getItem('certlab_mcq_active')||'null'); if(a&&a.cert) firstExam=a.cert; }catch(_){}
-  if(!firstExam && typeof getLastCert==='function') firstExam=getLastCert();
-  if(firstExam && MANIFEST && (MANIFEST.exams||[]).some(e=>e.id===firstExam)){
-    try{ await loadExam(firstExam); }catch(e){ console.error('첫 시험 로드 실패',e); }
-  }
-  rebuildQid();
-  // 비동기 로딩 전에 빈 D로 굳은 카드 스냅샷을 실데이터로 재동기화
-  if(typeof cards!=='undefined'){ cards=[...D]; filtered=[...cards]; current=0; }
-  if(typeof activeCert!=='undefined' && activeCert==='bodybuilding' && typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; }   // 로드 완료 시 생체면 새 순서
-  if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
-  if(typeof refresh==='function') refresh();
-  if(typeof mqOXLoad==='function') mqOXLoad();   // 저장된 O/X 복원(새로고침·오답노트용)
-  var _resumed=false; try{ if(typeof mqAutoResume==='function') _resumed=mqAutoResume(); }catch(_){}
-  if(!_resumed && typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
-  // ?card= 딥링크 실행 (데이터 로드 완료 후 1회)
-  if(typeof pendingLt!=='undefined' && pendingLt && typeof _ltEnterHooking==='function'){ var _lt2=pendingLt; pendingLt=null; pendingCard=null; pendingCardCert=null; setTimeout(function(){ try{ _ltEnterHooking(_lt2); }catch(_){} }, 200); }
-  else if(typeof pendingCard!=='undefined' && pendingCard && typeof goToCard==='function'){ var _pc=pendingCard, _cc=(typeof pendingCardCert!=='undefined')?pendingCardCert:null; pendingCard=null; setTimeout(function(){ goToCard(_pc,_cc); }, 200); }
-  // ?cert=appraiser 단독 딥링크 → 해당 과목으로 직행 (card 없을 때, D-day 메일 버튼 등)
-  else if(typeof pendingCardCert!=='undefined' && pendingCardCert && typeof enterCert==='function'){ var _cc2=pendingCardCert; pendingCardCert=null; setTimeout(function(){ try{ enterCert(_cc2); window.scrollTo(0,0); }catch(_){} }, 200); }
-  if(typeof cmLoadNoticeBar==='function') cmLoadNoticeBar();   // 공지 롤링바 — db·community.js 준비된 시점에 로드(첫 goHome이 db 전이라 비는 것 보강)
-  if(typeof loadExamSchedules==='function') loadExamSchedules();   // 모든 렌더 후 시험일 정렬 재확인(모바일 경합 보강)
-}).catch(showDataError);
-
-/* ===== PWA: 홈 화면에 추가 (service worker 미사용 — 캐시 사고 방지) ===== */
-(function(){
-  // 캐시 안 하는 최소 SW 등록 → PWA 설치(beforeinstallprompt) 활성화. fetch를 네트워크로 직행시켜 옛 파일 캐시 사고 없음.
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sw.js').then(function(reg){ window._swReg=reg; }).catch(()=>{});
-  }
-})();
-// 설치 신호 캡처 (있으면 원터치 설치에 사용)
-let pwaPrompt=null;
-window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); pwaPrompt=e; });
-window.addEventListener('appinstalled', ()=>{ pwaPrompt=null; });
-// ===== 복습 푸시: 권한 배너 + FCM 토큰 (크롬·안드로이드 / iOS 제외) =====
-var _PUSH_VAPID='BK9KllMfvIRa1XUAtvPfl9hYIz7wmcYphIp4_zlvZfbvbPMltpN8jciCwHbho5uxHQUEmX77jDFZDs6LUB_d4zk';
-var _pushBannerShown=false, _pushSynced=false;
-function _pushIsIOS(){ var ua=navigator.userAgent; var isAnd=/android/i.test(ua); return !isAnd && (/iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)); }
-function _pushSnoozed(){ try{ return Date.now() < (+localStorage.getItem('certlab_push_snooze')||0); }catch(_){ return false; } }
-function _pushSnooze(){ try{ localStorage.setItem('certlab_push_snooze', String(Date.now()+7*86400000)); }catch(_){} }
-function _pushTick(){
-  try{
-    if(!_pushSynced && typeof currentUser!=='undefined' && currentUser){ _pushSynced=true; _pushSyncIfGranted(); }
-    _pushMaybePrompt();
-  }catch(_){}
-}
-function _pushMaybePrompt(){
-  try{
-    if(_pushBannerShown) return;
-    if(typeof currentUser==='undefined' || !currentUser) return;          // 토큰 대상 uid 필요
-    if(typeof totalSolve==='function' && totalSolve()<30) return;          // 누적 30문제(전 시험 통합)
-    if(!('Notification' in window) || Notification.permission!=='default') return;
-    if(_pushIsIOS() || _pushSnoozed()) return;
-    var busy=['loginPopup','planPopup','inappPopup','guestFeatPopup','refundPopup','conceptOfferPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
-    if(busy) return;
-    _pushShowBanner();
-  }catch(_){}
-}
-function _pushShowBanner(){
-  if(document.getElementById('pushBannerWrap')) return;
-  _pushBannerShown=true;
-  if(!document.getElementById('pushBannerCss')){
-    var st=document.createElement('style'); st.id='pushBannerCss';
-    st.textContent='#pushBannerWrap{position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;justify-content:center;padding:0 12px calc(14px + env(safe-area-inset-bottom,0px));pointer-events:none}'
-      +'#pushBanner{pointer-events:auto;width:100%;max-width:440px;background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(31,41,55,.18);padding:16px 16px 14px;animation:pbUp .42s cubic-bezier(.22,1,.36,1)}'
-      +'@keyframes pbUp{from{transform:translateY(130%);opacity:.3}to{transform:translateY(0);opacity:1}}'
-      +'#pushBanner .pb-top{display:flex;gap:12px;align-items:flex-start}'
-      +'#pushBanner .pb-ic{flex:0 0 44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#EEF0FF,#E0E4FF);display:flex;align-items:center;justify-content:center;font-size:22px}'
-      +'#pushBanner .pb-title{font-size:15px;font-weight:800;color:#1F2937;margin:1px 0 3px}'
-      +'#pushBanner .pb-desc{font-size:12.5px;color:#6B7280;line-height:1.5}'
-      +'#pushBanner .pb-x{flex:0 0 auto;border:none;background:none;color:#C3C9D4;font-size:20px;cursor:pointer;line-height:1;padding:0 2px}'
-      +'#pushBanner .pb-btns{display:flex;gap:8px;margin-top:12px}'
-      +'#pushBanner .pb-btns button{flex:1;border:none;border-radius:11px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer}'
-      +'#pushBanner .pb-later{background:#F1F3F7;color:#8A93A3}'
-      +'#pushBanner .pb-allow{background:linear-gradient(135deg,#5B6CF0,#4453D6);color:#fff}';
-    document.head.appendChild(st);
-  }
-  var wrap=document.createElement('div'); wrap.id='pushBannerWrap';
-  wrap.innerHTML='<div id="pushBanner"><div class="pb-top"><div class="pb-ic">🔁</div>'
-    +'<div style="flex:1;min-width:0"><div class="pb-title">복습 알림 받을까요?</div>'
-    +'<div class="pb-desc">복습할 문제가 쌓이면 알려드려요. 까먹기 전에 콕 짚어 챙겨드릴게요.</div></div>'
-    +'<button class="pb-x" onclick="_pushDismiss()">×</button></div>'
-    +'<div class="pb-btns"><button class="pb-later" onclick="_pushDismiss()">나중에</button>'
-    +'<button class="pb-allow" onclick="_pushEnable()">알림 받기</button></div></div>';
-  document.body.appendChild(wrap);
-}
-function _pushHideBanner(){
-  var w=document.getElementById('pushBannerWrap'); if(!w) return;
-  var b=document.getElementById('pushBanner');
-  if(b){ b.style.transition='transform .3s ease,opacity .3s ease'; b.style.transform='translateY(140%)'; b.style.opacity='0'; }
-  setTimeout(function(){ if(w&&w.parentNode) w.parentNode.removeChild(w); },320);
-}
-function _pushDismiss(){ _pushSnooze(); _pushHideBanner(); }
-async function _pushEnable(){
-  _pushHideBanner();
-  try{
-    var perm=await Notification.requestPermission();
-    if(perm==='granted') await _pushRegisterToken();
-  }catch(e){ console.error('push enable', e); }
-}
-async function _pushRegisterToken(){
-  try{
-    if(!firebase || !firebase.messaging) return;
-    if(firebase.messaging.isSupported && !firebase.messaging.isSupported()) return;
-    var reg = window._swReg || await navigator.serviceWorker.ready;
-    var token = await firebase.messaging().getToken({ vapidKey:_PUSH_VAPID, serviceWorkerRegistration:reg });
-    if(token && typeof currentUser!=='undefined' && currentUser && db){
-      await db.collection('userData').doc(currentUser.uid).set({
-        fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
-        pushUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, {merge:true});
-    }
-  }catch(e){ console.error('fcm token', e); }
-}
-function _pushSyncIfGranted(){ try{ if(!_pushIsIOS() && ('Notification' in window) && Notification.permission==='granted') _pushRegisterToken(); }catch(_){} }
-
-function pwaStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
-// 프로필 메뉴: 홈 화면에 추가
-async function addToHome(e){
-  if(e){ e.stopPropagation(); }
-  const dd=document.getElementById('userDropdown'); if(dd) dd.classList.add('hidden');
-  const ua=navigator.userAgent;
-  const isAndroid=/android/i.test(ua);
-  const isIOS=!isAndroid && (/iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1));
-  if(pwaStandalone()){ alert('이미 앱으로 설치되어 실행 중이에요.'); return; }
-  if(pwaPrompt){                       // 안드로이드·크롬·엣지: 원터치 설치
-    pwaPrompt.prompt();
-    try{ await pwaPrompt.userChoice; }catch(_){}
-    pwaPrompt=null; return;
-  }
-  if(isIOS){                           // 아이폰: 사파리 공유 안내 (alert — 무조건 닫힘)
-    alert('아이폰에서 홈 화면에 추가하기\n\n1) 사파리 하단 공유 버튼(↑)을 누르세요\n2) "홈 화면에 추가"를 선택하세요\n3) 오른쪽 위 "추가"를 누르면 끝!');
-    return;
-  }
-  // 그 외(설치 신호 없음) — 기기별 안내
-  if(isAndroid){
-    alert('안드로이드에서 홈 화면에 추가하기\n\n1) 크롬 오른쪽 위 ⋮(점 3개) 메뉴를 누르세요\n2) "앱 설치" 또는 "홈 화면에 추가"를 선택하세요\n\n메뉴에 안 보이면 잠시 후 다시 시도해 주세요.');
-    return;
-  }
-  alert('PC에서 홈 화면(바탕화면)에 추가하기\n\n크롬·엣지 주소창 오른쪽의 설치 아이콘(⊕ 또는 모니터 모양)을 누르세요. 안 보이면 잠시 후 다시 시도해 주세요.');
-}
-
-/* ===== 시험장용 인쇄 ===== */
-let prScope='all',prSubsSel=null,prMnemonic=true,prFold=false;
-function prCardsFor(s){let b=(cards||[]).slice();if(s==='wrong')b=b.filter(c=>srMastery(c)==='weak'||srMastery(c)==='learning');return b;}
-function prSubjectsPresent(){let has={},out=[];(cards||[]).forEach(c=>{if(c&&c.s)has[c.s]=true;});(SUBJS||[]).forEach(s=>{if(has[s]){out.push(s);has[s]=false;}});(cards||[]).forEach(c=>{if(c&&c.s&&has[c.s]&&c.s!=='전체'){out.push(c.s);has[c.s]=false;}});return out;}
-function prSelectedSubs(){let p=prSubjectsPresent();if(prSubsSel===null)return p.slice();return p.filter(s=>prSubsSel[s]);}
-function prJsStr(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\'");}
-function prMnHTML(c){let m=c.mn;if(!m)return '';let code=(typeof m==='string')?m:(m.code||'');let desc=(m&&typeof m==='object'&&m.desc)?m.desc:'';if(!code)return '';return '<div class="pa-mn"><span class="lab">암기</span>'+code+(desc?' — '+desc:'')+'</div>';}
-function openPrintSheet(){prScope='all';prMnemonic=true;prFold=false;prSubsSel=null;renderPrintSheet();document.getElementById('printSheet').classList.remove('hidden');}
-function closePrintSheet(){document.getElementById('printSheet').classList.add('hidden');}
-function prSetScope(s){prScope=s;renderPrintSheet();}
-function prToggleSub(s){let p=prSubjectsPresent();if(prSubsSel===null){prSubsSel={};p.forEach(x=>{prSubsSel[x]=true;});}prSubsSel[s]=!prSubsSel[s];renderPrintSheet();}
-function prToggleOpt(w){if(w==='mn')prMnemonic=!prMnemonic;else if(w==='fold')prFold=!prFold;renderPrintSheet();}
-function renderPrintSheet(){let present=prSubjectsPresent();let allCnt=prCardsFor('all').length,wrongCnt=prCardsFor('wrong').length;let subs=prSelectedSubs();let sel=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);let chips=present.map(s=>{let on=(prSubsSel===null)||prSubsSel[s];return '<span class="pr-chip'+(on?' on':'')+'" onclick="prToggleSub(\''+prJsStr(s)+'\')">' +s+'</span>';}).join('');let html='<h3>🖨️ 시험장용 인쇄</h3><p class="pr-desc">폰 반납 대비, 종이로 들고 갈 자료를 만듭니다.</p>'+'<div class="pr-lbl">범위</div><div class="pr-seg">'+'<button class="'+(prScope==='all'?'on':'')+'" onclick="prSetScope(\'all\')">전체 과목<span class="pr-cnt">'+allCnt+'문항</span></button>'+'<button class="'+(prScope==='wrong'?'on':'')+'" onclick="prSetScope(\'wrong\')">오답 복습<span class="pr-cnt">'+wrongCnt+'문항</span></button></div>'+'<div class="pr-lbl">과목 (탭하여 켜고 끄기)</div><div class="pr-chips">'+chips+'</div>'+'<div class="pr-lbl">옵션</div><div class="pr-opts">'+'<label class="pr-opt"><input type="checkbox" '+(prMnemonic?'checked':'')+' onchange="prToggleOpt(\'mn\')"> 암기코드 포함</label>'+'<label class="pr-opt"><input type="checkbox" '+(prFold?'checked':'')+' onchange="prToggleOpt(\'fold\')"> 접지형(질문↔답, 접어서 셀프테스트)</label></div>';if(sel.length===0){html+='<div class="pr-empty">'+(prScope==='wrong'?'오답(미숙·학습중) 카드가 아직 없습니다. 카드를 풀어 복습 이력이 쌓이면 채워집니다.':'선택한 과목에 카드가 없습니다.')+'</div>'+'<button class="pr-go" disabled style="opacity:.5">인쇄할 카드 없음</button>';}else{html+='<button class="pr-go" onclick="doPrint()">인쇄 / PDF로 저장 ('+sel.length+'문항)</button>';}html+='<button class="pr-cancel" onclick="closePrintSheet()">취소</button>';document.getElementById('printSheetBody').innerHTML=html;}
-function doPrint(){let subs=prSelectedSubs();let list=prCardsFor(prScope).filter(c=>subs.indexOf(c.s)>=0);if(!list.length)return;let groups={};subs.forEach(s=>{groups[s]=[];});list.forEach(c=>{if(!groups[c.s])groups[c.s]=[];groups[c.s].push(c);});let scopeLbl=prScope==='wrong'?'오답 복습':'전체 과목';let n=new Date();let ds=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');let body='<div class="pa-h"><span class="t">스포츠지도사 실기·구술 · '+scopeLbl+'</span><span class="m">CertLab · '+ds+'</span></div>';if(prFold)body+='<div class="pa-foldnote">✂ 가운데 점선을 따라 접으면 오른쪽 답이 가려집니다 — 질문을 보고 답해 본 뒤 펴서 확인하세요.</div>';subs.forEach(s=>{let g=groups[s];if(!g||!g.length)return;body+='<div class="pa-sub">'+s+' ('+g.length+')</div><div class="pa-cols">';g.forEach((c,i)=>{let mn=prMnemonic?prMnHTML(c):'';if(prFold){body+='<div class="pa-qa"><div class="pa-qcell"><span class="no">'+(i+1)+'.</span> '+(c.q||'')+'</div>'+'<div class="pa-acell"><div class="pa-a">'+(c.a||'')+'</div>'+mn+'</div></div>';}else{body+='<div class="pa-qa"><p class="pa-q"><span class="no">'+(i+1)+'.</span>'+(c.q||'')+'</p><p class="pa-a">'+(c.a||'')+'</p>'+mn+'</div>';}});body+='</div>';});let pa=document.getElementById('printArea');if(!pa){pa=document.createElement('div');pa.id='printArea';document.body.appendChild(pa);}pa.className=prFold?'pa-fold':'';pa.innerHTML=body;closePrintSheet();setTimeout(()=>{window.print();},60);}
-
-
-/* ===== 커뮤니티 게시판 (2단계: 목록) ===== */
-window._cmUserDoc = window._cmUserDoc || null;
-function cmIsAdmin(){ return !!((window._cmUserDoc && window._cmUserDoc.isAdmin) || (currentUser && currentUser.email==='certlab.team@gmail.com')); }
-function cmEsc(t){ return (t==null?'':String(t)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function cmTimeAgo(ts){
-  if(!ts) return '';
-  var d = ts && ts.toDate ? ts.toDate() : new Date(ts);
-  var diff = (Date.now()-d.getTime())/1000;
-  if(diff<60) return '방금';
-  if(diff<3600) return Math.floor(diff/60)+'분 전';
-  if(diff<86400) return Math.floor(diff/3600)+'시간 전';
-  if(diff<2592000) return Math.floor(diff/86400)+'일 전';
-  return (d.getMonth()+1)+'월 '+d.getDate()+'일';
-}
-async function cmLoadUserDoc(){
-  if(!currentUser||!firebaseReady||!db){ window._cmUserDoc=null; return; }
-  try{ var d=await db.collection('users').doc(currentUser.uid).get(); window._cmUserDoc=d.exists?d.data():{}; }catch(_){ window._cmUserDoc={}; }
-}
-function cmGetNick(){
-  if(window._cmUserDoc && window._cmUserDoc.boardNick) return window._cmUserDoc.boardNick;
-  if(currentUser && currentUser.displayName) return currentUser.displayName;
-  return '익명';
-}
-function clRouteFromHash(){
-  var h=location.hash||''; var m=h.match(/^#post\/(.+)$/);
-  if(!m||!m[1]) return false;
-  var id=decodeURIComponent(m[1]);
-  if(typeof openCommunity==='function') openCommunity();
-  setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(id); }, 220);
-  return true;
-}
-(function(){
-  function tryRoute(n){
-    if(typeof firebaseReady!=='undefined' && firebaseReady && typeof openCommunity==='function'){ clRouteFromHash(); return; }
-    if(n>0) setTimeout(function(){ tryRoute(n-1); }, 300);
-  }
-  window.addEventListener('load', function(){ if((location.hash||'').indexOf('#post/')===0) tryRoute(20); });
-  window.addEventListener('hashchange', function(){ if((location.hash||'').indexOf('#post/')===0) clRouteFromHash(); });
-})();
-
-
-/* 커뮤니티 이미지 업로드 (5단계) */
-
-
-/* 마이페이지 (6단계) */
-function cmHistDate(at){ if(!at) return ''; var d=new Date(at); return (d.getMonth()+1)+'/'+d.getDate(); }
-function mpHistLabel(t){
-  var m={signup:'가입 축하', ref_signup:'추천 가입 보상', ref_paid:'추천 결제 보상', ref_join:'추천 가입 보너스',
-    board_post:'글 작성', board_comment:'댓글 작성', board_post_cancel:'글 삭제 회수',
-    board_comment_cancel:'댓글 삭제 회수', purchase:'이용권 결제 사용', use:'이용권 결제 사용', event:'이벤트 보너스', event_refund:'합격 후기 환급'};
-  return m[t]||t||'포인트 변동';
-}
-async function openMyPage(){
-  if(!currentUser){ alert('로그인이 필요해요.'); if(typeof showLoginPopup==='function') showLoginPopup(); return; }
-  var dd=document.getElementById('userDropdown'); if(dd) dd.classList.add('hidden');
-  if(typeof mqStopTimer==='function') mqStopTimer();
-  if(typeof mqStopOverTimer==='function') mqStopOverTimer();
-  ['homeView','bodybuildingView','mcqView','communityView'].forEach(function(id){var el=document.getElementById(id); if(el) el.classList.add('hidden');});
-  document.getElementById('myPageView').classList.remove('hidden');
-  var _ft=document.querySelector('.footer'); if(_ft) _ft.classList.add('hidden');
-  var cs=document.getElementById('certSwitch'); if(cs) cs.classList.remove('hidden');
-  await cmLoadUserDoc();
-  mpRenderHome();
-}
-function mpRenderHome(){
-  var box=document.getElementById('mpBody'); if(!box) return;
-  var nick=cmGetNick(); var email=(currentUser&&currentUser.email)||'';
-  var _lots=(window._cmUserDoc && Array.isArray(window._cmUserDoc.mileageLots))?window._cmUserDoc.mileageLots:myMileageLots;
-  var bal=(typeof mileageBalance==='function')?mileageBalance(_lots):0;
-  var av=(currentUser&&currentUser.photoURL)?'<img class="mp-av" src="'+cmEsc(currentUser.photoURL)+'" alt="">':'<div class="mp-av"></div>';
-  box.innerHTML=
-    '<div class="mp-prof">'+av+'<div><div class="mp-nick">'+cmEsc(nick)+'</div><div class="mp-email">'+cmEsc(email)+'</div></div></div>'
-    +'<div class="pt-card"><div class="pt-top"><span class="l">💰 보유 포인트</span><span class="pt-detail" onclick="mpShowHistory()">상세내역 \u203a</span></div>'
-    +'<div class="pt-v">'+bal.toLocaleString()+' P</div><div class="pt-sub">이용권 결제에 사용 (1P = 1원)</div></div>'
-    +'<div class="mp-sec">활동</div>'
-    +'<div class="mp-link" onclick="mpShowPayments()"><span class="e">💳</span>결제 내역</div>'
-    +'<div class="mp-link" onclick="mpShowMyPosts()"><span class="e">📝</span>내가 쓴 글</div>'
-    +'<div class="mp-link" onclick="mpShowMyComments()"><span class="e">💬</span>내가 쓴 댓글</div>'
-    +'<div class="mp-sec">회원정보</div>'
-    +((window._cmUserDoc && window._cmUserDoc.boardNick) ? '<div class="mp-link" style="opacity:.6;cursor:default"><span class="e">\u270F\ufe0f</span>닉네임 '+cmEsc(window._cmUserDoc.boardNick)+' (변경 불가)</div>' : '<div class="mp-link" onclick="mpChangeNick()"><span class="e">\u270F\ufe0f</span>닉네임 설정</div>');
-  box.innerHTML += '<div class="mp-sec">계정</div><div class="mp-link" onclick="showDeletePopup()" style="color:#C0392B"><span class="e">⚠️</span>회원 탈퇴</div>';
-}
-function mpShowHistory(){
-  var box=document.getElementById('mpBody'); if(!box) return;
-  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>포인트 내역</span></div>';
-  var hist=(window._cmUserDoc&&Array.isArray(window._cmUserDoc.mileageHistory))?window._cmUserDoc.mileageHistory.slice():[];
-  hist.sort(function(a,b){return (b.at||0)-(a.at||0);});
-  var h=top;
-  if(!hist.length) h+='<div class="cm-empty">아직 내역이 없어요.</div>';
-  hist.forEach(function(x){
-    var amt=(x.a==null?0:x.a); var sign=amt>=0?'+':''; var cls=amt>=0?'plus':'minus';
-    h+='<div class="hist"><div class="ht">'+cmEsc(mpHistLabel(x.t))+'<div class="hd">'+cmHistDate(x.at)+'</div></div><div class="ha '+cls+'">'+sign+amt.toLocaleString()+'</div></div>';
-  });
-  box.innerHTML=h;
-}
-async function mpShowPayments(){
-  var box=document.getElementById('mpBody'); if(!box) return;
-  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>결제 내역</span></div>';
-  var accBox='<div class="psucc-acc" style="margin:0 16px 14px">'
-    +'<div class="accrow"><span class="accnum">토스뱅크 1000-2406-0293</span><button class="psucc-copy" onclick="copyDepositAcc()">복사</button></div>'
-    +'<div>예금주: 박성환</div>'
-    +'<div style="font-size:12px;color:#8A6A2A;margin-top:4px">입금자명을 신청자명과 동일하게 보내주세요. 입금 확인은 영업일 기준 처리됩니다.</div></div>';
-  box.innerHTML=top+'<div class="cm-loading">불러오는 중\u2026</div>';
-  try{
-    var snap=await db.collection('payments').where('uid','==',currentUser.uid).get();
-    var rows=[]; snap.forEach(function(d){ rows.push(d.data()); });
-    rows.sort(function(a,b){ var da=(a.createdAt&&a.createdAt.toDate?a.createdAt.toDate().getTime():0), db2=(b.createdAt&&b.createdAt.toDate?b.createdAt.toDate().getTime():0); return db2-da; });
-    var h=top+accBox;
-    if(!rows.length){ h+='<div class="cm-empty">결제 내역이 없어요.</div>'; box.innerHTML=h; return; }
-    rows.forEach(function(p){
-      var isCoupon=(p.paidByCoupon||p.discountCode);
-      var cName=p.certName||certFull(p.certType||'')||'-';
-      var plan=mpPlanName(p);
-      var amt=isCoupon ? '0원 <span style="font-size:11px;color:#0F6E56">🎟 '+cmEsc(p.discountCode||'할인코드')+'</span>'
-                       : (p.depositAmount!=null?p.depositAmount:(p.price||0)).toLocaleString()+'원';
-      var mil=(!isCoupon&&p.mileageUsed>0)?(' <span style="font-size:11px;color:#C2611B">(+P '+p.mileageUsed.toLocaleString()+')</span>'):'';
-      var st=mpPayStatus(p);
-      var exp=mpExpiryText(p);
-      var dt=(p.createdAt&&p.createdAt.toDate)?mpFmtDate(p.createdAt.toDate()):'';
-      h+='<div class="hist" style="align-items:flex-start">'
-        +'<div class="ht">'+cmEsc(cName)+' · '+plan
-        +'<div class="hd">신청일 '+dt+(exp?(' · 만료 '+exp):'')+'</div></div>'
-        +'<div style="text-align:right"><div style="font-weight:700;color:#2C2C2A">'+amt+mil+'</div>'
-        +'<div style="margin-top:3px">'+st+'</div></div></div>';
-    });
-    box.innerHTML=h;
-  }catch(e){ console.warn('mpShowPayments',e); box.innerHTML=top+accBox+'<div class="cm-empty">불러오지 못했어요.</div>'; }
-}
-function mpPlanName(p){
-  // PLAN_SETS에서 일수→이름(8주 이용권 등), 없으면 N일
-  try{ var set=plansFor(p.certType); if(set){ var f=set.find(function(x){return x.d===p.planDays;}); if(f) return f.name; } }catch(_){}
-  if(_LEGACY_PLAN_NAMES[p.planDays]) return _LEGACY_PLAN_NAMES[p.planDays];
-  return (p.planDays!=null)?(p.planDays+'일'):'-';
-}
-function mpExpiryText(p){
-  if(p.status==='revoked'||p.status==='rejected'||p.status==='pending') return '';
-  // 해당 시험 이용권의 현재 만료일
-  var ent=(window._cmUserDoc&&window._cmUserDoc.entitlements&&window._cmUserDoc.entitlements[p.certType])||null;
-  if(!ent||!ent.expireAt) return '';
-  var d=ent.expireAt.toDate?ent.expireAt.toDate():new Date(ent.expireAt);
-  return mpFmtDate(d);
-}
-function mpPayStatus(p){
-  var s=p.status;
-  if(s==='revoked') return '<span style="font-size:11px;font-weight:700;color:#A32D2D;background:#FCEBEB;padding:2px 8px;border-radius:10px">철회</span>';
-  if(s==='rejected') return '<span style="font-size:11px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:10px">거절</span>';
-  if(s==='pending') return '<span style="font-size:11px;font-weight:700;color:#A8650A;background:#FFF4E0;padding:2px 8px;border-radius:10px">승인대기</span>';
-  var ent=(window._cmUserDoc&&window._cmUserDoc.entitlements&&window._cmUserDoc.entitlements[p.certType])||null;
-  var now=Date.now();
-  var exp=ent&&ent.expireAt?(ent.expireAt.toDate?ent.expireAt.toDate().getTime():new Date(ent.expireAt).getTime()):0;
-  if(ent&&ent.plan==='ACTIVE'&&exp>now) return '<span style="font-size:11px;font-weight:700;color:#15793F;background:#E7F6EC;padding:2px 8px;border-radius:10px">이용중</span>';
-  return '<span style="font-size:11px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:10px">만료</span>';
-}
-function mpFmtDate(d){ return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }
-async function mpShowMyPosts(){
-  var box=document.getElementById('mpBody'); if(!box) return;
-  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>내가 쓴 글</span></div>';
-  box.innerHTML=top+'<div class="cm-loading">불러오는 중\u2026</div>';
-  try{
-    var snap=await db.collection('posts').where('authorUid','==',currentUser.uid).orderBy('createdAt','desc').limit(50).get();
-    var h=top;
-    if(snap.empty) h+='<div class="cm-empty">아직 쓴 글이 없어요.</div>';
-    snap.forEach(function(doc){ var p=doc.data(); p._id=doc.id; h+=cmCardHTML(p); });
-    box.innerHTML=h;
-  }catch(e){ console.warn('mpShowMyPosts',e); box.innerHTML=top+'<div class="cm-empty">'+((/index/i.test(e.message||''))?'목록 인덱스가 필요해요. (콘솔에서 생성)':'불러오지 못했어요.')+'</div>'; }
-}
-async function mpShowMyComments(){
-  var box=document.getElementById('mpBody'); if(!box) return;
-  var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>내가 쓴 댓글</span></div>';
-  box.innerHTML=top+'<div class="cm-loading">불러오는 중\u2026</div>';
-  try{
-    var snap=await db.collectionGroup('comments').where('authorUid','==',currentUser.uid).orderBy('createdAt','desc').limit(50).get();
-    var h=top;
-    if(snap.empty) h+='<div class="cm-empty">아직 쓴 댓글이 없어요.</div>';
-    snap.forEach(function(dc){
-      var c=dc.data(); var pid=(dc.ref.parent&&dc.ref.parent.parent)?dc.ref.parent.parent.id:'';
-      h+='<div class="cm-post" onclick="cmOpenDetail(\''+pid+'\')"><div class="cm-pe" style="-webkit-line-clamp:3">'+cmEsc(c.body||'').replace(/\n/g,'<br>')+'</div><div class="cm-pm"><span>'+cmTimeAgo(c.createdAt)+'</span></div></div>';
-    });
-    box.innerHTML=h;
-  }catch(e){ console.warn('mpShowMyComments',e); box.innerHTML=top+'<div class="cm-empty">'+((/index/i.test(e.message||''))?'목록 인덱스가 필요해요. (콘솔에서 생성)':'불러오지 못했어요.')+'</div>'; }
-}
-async function mpChangeNick(){
-  if(!currentUser) return;
-  if(window._cmUserDoc && window._cmUserDoc.boardNick){ alert('닉네임은 한 번 정하면 바꿀 수 없어요.'); return; }
-  var cur=cmGetNick(); if(cur==='익명') cur='';
-  var nv=prompt('새 닉네임을 입력하세요 (20자 이내)', cur);
-  if(nv==null) return; nv=nv.trim();
-  if(!nv){ alert('닉네임을 입력해 주세요.'); return; }
-  if(nv.length>20){ alert('닉네임은 20자 이내로 해주세요.'); return; }
-  try{
-    await db.collection('users').doc(currentUser.uid).set({boardNick:nv},{merge:true});
-    window._cmUserDoc=window._cmUserDoc||{}; window._cmUserDoc.boardNick=nv;
-    mpRenderHome(); alert('닉네임이 변경됐어요.');
-  }catch(e){ console.warn('mpChangeNick',e); alert('변경 중 오류가 났어요.'); }
-}
-
-
-/* 메인 공지바 + 오늘의 글 (7단계) */
-var _cmNbItems=[], _cmNbIdx=0, _cmNbTimer=null;
-
-
-/* 게시글 신고 (8a) */
-
-</script>
-
-<div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
-  <div class="pr-sheet" id="printSheetBody"></div>
-</div>
-<div id="printArea"></div>
-<script>
-/* ===== CertLab 적응형 엔진 모듈 (2-a 삽입) ===== */
-/* --- eloEngine (AE) --- */
-/* =====================================================================
- * CertLab 적응형 학습 — Elo 점수 엔진 (골격 v0.1)
- * ---------------------------------------------------------------------
- * 목적: 사용자의 "토픽별 실력 점수(0~100)"를 매 문제 결과로 갱신.
- *  - 현재 점수보다 어려운 문제 맞히면 → 크게 상승
- *  - 현재 점수보다 쉬운 문제 틀리면   → 크게 하락
- *  - 자기 수준 언저리 문제는 변동 작음 (빠른 수렴)
- *  - K값(학습률): 시도 적을 때 크게 → 쌓이면 작게(안정)
- *
- * 순수 계산 로직만 담음(토픽 태그·UI·저장과 독립). 토픽이 무엇이든
- * 점수·레벨만 넘기면 동작. 나중에 index.html에 통합.
- *
- * 네임스페이스: AE_ (기존 srSave/mcqSubject/mcqVerdict 등과 비충돌)
- * ===================================================================== */
-(function (global) {
-  'use strict';
-
-  // --- 튜닝 파라미터 (시뮬레이션으로 조정) ---
-  var CFG = {
-    SCALE: 48,        // 점수차 → 기대정답확률 완만함. 작을수록 레벨차에 민감 (완만B)
-    K_MAX: 20,        // 초반(데이터 적음) 학습률 (완만B: 초보 하락폭 완화)
-    K_MIN: 7,         // 충분히 쌓인 뒤 학습률
-    K_TAU: 12,        // K가 K_MAX→K_MIN으로 감쇠하는 속도(시도 수 기준)
-    SCORE_MIN: 0,
-    SCORE_MAX: 100,
-    DEFAULT_SCORE: 50 // 진단 미실시 토픽 기본값(Lv3)
-  };
-
-  // 난이도 레벨(1~5) → 점수 환산(각 구간 중앙값)
-  var LEVEL_SCORE = { 1: 10, 2: 30, 3: 50, 4: 70, 5: 90 };
-
-  function clamp(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
-
-  // 점수(0~100) → 레벨(1~5)
-  function scoreToLevel(score) {
-    var s = clamp(score, 0, 100);
-    if (s <= 20) return 1;
-    if (s <= 40) return 2;
-    if (s <= 60) return 3;
-    if (s <= 80) return 4;
-    return 5;
-  }
-
-  // 레벨(1~5) → 환산 점수
-  function levelToScore(level) {
-    return LEVEL_SCORE[clamp(Math.round(level), 1, 5)] || 50;
-  }
-
-  // 기대 정답확률: 사용자 점수 P, 문항 환산점수 D
-  //  D>P(나보다 어려움) → 낮음 / D<P(쉬움) → 높음 / D≈P → 0.5
-  function expectedProb(playerScore, itemScore, scale) {
-    scale = scale || CFG.SCALE;
-    return 1 / (1 + Math.pow(10, (itemScore - playerScore) / scale));
-  }
-
-  // 학습률 K: 시도 횟수 attempts가 늘수록 K_MAX→K_MIN으로 감쇠
-  function kFactor(attempts) {
-    var a = attempts < 0 ? 0 : attempts;
-    return CFG.K_MIN + (CFG.K_MAX - CFG.K_MIN) * Math.exp(-a / CFG.K_TAU);
-  }
-
-  /* 한 문제 결과로 토픽 점수 갱신
-   * @param current   현재 토픽 점수(0~100)
-   * @param itemLevel 문항 난이도 레벨(1~5)
-   * @param correct   맞힘 true / 틀림 false
-   * @param attempts  이 토픽에서 지금까지 푼 문제 수(K 감쇠용)
-   * @returns {score, delta, expected, k}
-   */
-  function updateScore(current, itemLevel, correct, attempts) {
-    var P = clamp(current == null ? CFG.DEFAULT_SCORE : current, 0, 100);
-    var D = levelToScore(itemLevel);
-    var E = expectedProb(P, D);
-    var S = correct ? 1 : 0;
-    var K = kFactor(attempts || 0);
-    var next = clamp(P + K * (S - E), CFG.SCORE_MIN, CFG.SCORE_MAX);
-    return {
-      score: Math.round(next * 10) / 10,
-      delta: Math.round((next - P) * 10) / 10,
-      expected: Math.round(E * 1000) / 1000,
-      k: Math.round(K * 10) / 10
-    };
-  }
-
-  // 콜드스타트: 진단 정답 개수 → 토픽 초기 점수
-  //  설계: 3/3→70대, 2/3→50대, 1/3→35, 0/3→15 (비례 보간)
-  function initFromDiagnostic(correctCount, total) {
-    if (!total || total <= 0) return CFG.DEFAULT_SCORE;
-    var r = clamp(correctCount / total, 0, 1);
-    // 0→15, 0.33→35, 0.67→55, 1→72 로 매끄럽게
-    return Math.round(15 + r * 57);
-  }
-
-  var AE = {
-    CFG: CFG,
-    scoreToLevel: scoreToLevel,
-    levelToScore: levelToScore,
-    expectedProb: expectedProb,
-    kFactor: kFactor,
-    updateScore: updateScore,
-    initFromDiagnostic: initFromDiagnostic
-  };
-
-  if (typeof module !== 'undefined' && module.exports) module.exports = AE;
-  global.AE = AE;
-})(typeof window !== 'undefined' ? window : this);
-/* --- selector 패치본 (SEL) 폴백캡+subtopic라운드로빈 --- */
-/* =====================================================================
- * CertLab 적응형 학습 — 출제 선택 로직 (골격 v0.1)
- * ---------------------------------------------------------------------
- * 역할: 사용자 토픽별 점수 + 공용 풀 → 다음에 풀 문항 N개 선택.
- *   원칙:
- *   1) 약점 토픽(점수 낮음) 우선 — 단 한 토픽 편중은 피하고 분산
- *   2) 난이도: 본인 레벨 70% + 한 칸 위 30% (성장 견인)
- *   3) 미출제 문항 우선(중복 회피), 없으면 인접 레벨 폴백
- *   API 호출 없는 순수 선택(접속 즉시 가능). 토픽/레벨 메타만 가정.
- *
- * 의존: scoreToLevel은 AE(eloEngine)와 동일 규칙. 독립 동작 위해 내장.
- * 네임스페이스: SEL_
- * ===================================================================== */
-'use strict';
-(function (global) {
-
-  var DEFAULT_SCORE = 50;          // 진단 안 한 토픽 기본(Lv3)
-  var SELF_LEVEL_RATIO = 0.7;      // 본인 레벨 비율
-  var TOPIC_FOCUS = 3;             // 약점 상위 N토픽에 가중 집중(완전 편중 방지)
-
-  function clamp(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }
-
-  function scoreToLevel(score) {
-    var s = clamp(score, 0, 100);
-    if (s <= 20) return 1;
-    if (s <= 40) return 2;
-    if (s <= 60) return 3;
-    if (s <= 80) return 4;
-    return 5;
-  }
-
-  // 약점 가중 토픽 1개 뽑기: 점수 낮을수록 가중 큼. 상위 약점에 집중.
-  function pickTopic(topicScores, topicList, rng) {
-    var arr = topicList.map(function (t) {
-      var sc = (topicScores[t] != null) ? topicScores[t] : DEFAULT_SCORE;
-      return { t: t, score: sc };
-    });
-    arr.sort(function (a, b) { return a.score - b.score; }); // 약점 우선
-    // 약점 상위 TOPIC_FOCUS개 위주, 나머지는 작은 꼬리 가중
-    var weights = arr.map(function (o, i) {
-      var base = (100 - o.score) + 1;          // 점수 낮을수록 큼
-      var focus = (i < TOPIC_FOCUS) ? 1.0 : 0.25; // 상위 약점에 집중
-      return base * focus;
-    });
-    var sum = weights.reduce(function (a, b) { return a + b; }, 0);
-    var r = rng() * sum;
-    for (var i = 0; i < arr.length; i++) {
-      r -= weights[i];
-      if (r <= 0) return arr[i].t;
-    }
-    return arr[0].t;
-  }
-
-  // 난이도 레벨 결정: 본인 레벨 70% / 한 칸 위 30%
-  function pickLevel(score, rng) {
-    var lv = scoreToLevel(score);
-    if (rng() < SELF_LEVEL_RATIO) return lv;
-    return Math.min(lv + 1, 5);
-  }
-
-  // 풀에서 (토픽, 레벨, 미출제) 우선으로 1문항. 없으면 인접레벨→토픽내→null 폴백
-  // subtopic 분산: 후보 중 이번 세션 노출 적은 subtopic 우선(동일 topic·level 안에서만).
-  // subtopic 없으면 모두 동일 버킷 → 기존 무작위 동작과 동일(graceful).
-  function chooseBalanced(cands, subCount, rng) {
-    var minC = Infinity;
-    cands.forEach(function (q) {
-      var s = (subCount[q.subtopic || '_'] || 0);
-      if (s < minC) minC = s;
-    });
-    var least = cands.filter(function (q) { return (subCount[q.subtopic || '_'] || 0) === minC; });
-    return least[Math.floor(rng() * least.length)];
-  }
-
-  function pickQuestion(pool, topic, level, seen, rng, subCount) {
-    subCount = subCount || {};
-    function candidates(lv) {
-      return pool.filter(function (q) {
-        return q.topic === topic && q.level === lv && !seen[q.id];
-      });
-    }
-    var tries = [level, level + 1, level - 1, level - 2, level - 3, level - 4]; // 폴백 캡: 위로는 +1까지만
-    for (var i = 0; i < tries.length; i++) {
-      var lv = tries[i];
-      if (lv < 1 || lv > 5) continue;
-      var c = candidates(lv);
-      if (c.length) return chooseBalanced(c, subCount, rng);
-    }
-    // 캡 내(요청레벨+1 이하) 토픽 미출제 중 가장 가까운 레벨 → 그 안에서 subtopic 분산
-    var capped = pool.filter(function (q) { return q.topic === topic && !seen[q.id] && q.level <= level + 1; });
-    if (capped.length) {
-      var nearest = Math.min.apply(null, capped.map(function (q) { return Math.abs(q.level - level); }));
-      var near = capped.filter(function (q) { return Math.abs(q.level - level) === nearest; });
-      return chooseBalanced(near, subCount, rng);
-    }
-    return null; // 캡 내 없으면 출제 보류(과난도 강제 금지) — 빈 풀은 batch가 채움
-  }
-
-  /* 출제 세트 선택
-   * @param topicScores {topic: score}
-   * @param pool 문항 배열 [{id, topic, level, ...}]
-   * @param n 문항 수
-   * @param opts {seen:{id:true}, rng}
-   * @returns {items:[q...], byTopic:{}, byLevel:{}}
-   */
-  function selectQuestions(topicScores, pool, n, opts) {
-    opts = opts || {};
-    var rng = opts.rng || Math.random;
-    var seen = {};
-    if (opts.seen) for (var k in opts.seen) seen[k] = true;
-
-    var topicList = {};
-    pool.forEach(function (q) { topicList[q.topic] = true; });
-    topicList = Object.keys(topicList);
-
-    var items = [], byTopic = {}, byLevel = {}, bySub = {};
-    var subCount = {}; // topic별 subtopic 노출수(분산용) — "topic|subtopic" 키
-    var guard = 0;
-    while (items.length < n && guard < n * 20) {
-      guard++;
-      var topic = pickTopic(topicScores, topicList, rng);
-      var sc = (topicScores[topic] != null) ? topicScores[topic] : DEFAULT_SCORE;
-      var lv = pickLevel(sc, rng);
-      // 이 topic의 subtopic 노출수만 추려 전달
-      var localSub = {};
-      for (var key in subCount) { var pr = key.split('|'); if (pr[0] === topic) localSub[pr[1]] = subCount[key]; }
-      var q = pickQuestion(pool, topic, lv, seen, rng, localSub);
-      if (!q) continue;
-      seen[q.id] = true;
-      items.push(q);
-      byTopic[q.topic] = (byTopic[q.topic] || 0) + 1;
-      byLevel[q.level] = (byLevel[q.level] || 0) + 1;
-      var sub = q.subtopic || '_';
-      subCount[topic + '|' + sub] = (subCount[topic + '|' + sub] || 0) + 1;
-      bySub[q.topic + '/' + sub] = (bySub[q.topic + '/' + sub] || 0) + 1;
-    }
-    return { items: items, byTopic: byTopic, byLevel: byLevel, bySub: bySub, exhausted: items.length < n };
-  }
-
-  var SEL = {
-    selectQuestions: selectQuestions,
-    pickTopic: pickTopic,
-    pickLevel: pickLevel,
-    scoreToLevel: scoreToLevel,
-    CFG: { DEFAULT_SCORE: DEFAULT_SCORE, SELF_LEVEL_RATIO: SELF_LEVEL_RATIO, TOPIC_FOCUS: TOPIC_FOCUS }
-  };
-  if (typeof module !== 'undefined' && module.exports) module.exports = SEL;
-  global.SEL = SEL;
-})(typeof window !== 'undefined' ? window : this);
-/* ===== 적응형 데이터 로더 (2-b) — Firestore adaptive 컬렉션 ===== */
-var AD_DATA = {};                       // "cert|sub" -> {map,diag,variants,lookup,variantsByTopic}
-var AD_TTL_MS = 6*60*60*1000;           // 6h, 뱅크 캐시와 동일
-function _adParse(d){                    // Firestore가 문자열로 저장된 경우(중첩배열 우회) 관용 파싱
-  if(typeof d==='string'){ try{ return JSON.parse(d); }catch(e){ return null; } }
-  if(d && typeof d.payload==='string'){ try{ return JSON.parse(d.payload); }catch(e){} }
-  return d;
-}
-/* ===== 계산형 자동생성 코어 (CALC_) — 결정론(같은 template,seed→동일 인스턴스). eval/Function 안 씀 =====
-   문항 id = "calc:<템플릿id>:<밴드>:<seed>" → _luFindQ가 id만으로 동일 인스턴스 재생성(이어풀기·기록 안전). */
-var CALC_PER_BAND=3;   // 풀빌드 시 템플릿×밴드당 생성 인스턴스 수
-function _calcRng(seed){ var s=(seed>>>0)||1; return function(){ s|=0; s=(s+0x6D2B79F5)|0; var t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
-function _calcEval(expr, vars){
-  var src=String(expr), i=0;
-  function ws(){ while(i<src.length && /\s/.test(src[i])) i++; }
-  function peek(){ ws(); return src[i]; }
-  function eat(c){ ws(); if(src[i]!==c) throw new Error('expected '+c); i++; }
-  function pExpr(){ var v=pTerm(); for(;;){ var c=peek(); if(c==='+'){i++; v+=pTerm();} else if(c==='-'){i++; v-=pTerm();} else break; } return v; }
-  function pTerm(){ var v=pUn(); for(;;){ var c=peek(); if(c==='*'){i++; v*=pUn();} else if(c==='/'){i++; var d=pUn(); if(d===0) throw new Error('div0'); v/=d;} else break; } return v; }
-  function pUn(){ var c=peek(); if(c==='-'){i++; return -pUn();} if(c==='+'){i++; return pUn();} return pPrim(); }
-  function pPrim(){ var c=peek();
-    if(c==='('){ i++; var v=pExpr(); eat(')'); return v; }
-    if(/[0-9.]/.test(c)){ var st=i; while(i<src.length && /[0-9.]/.test(src[i])) i++; var n=parseFloat(src.slice(st,i)); if(isNaN(n)) throw new Error('num'); return n; }
-    if(/[A-Za-z_]/.test(c)){ var st2=i; while(i<src.length && /[A-Za-z0-9_]/.test(src[i])) i++; var nm=src.slice(st2,i);
-      if(peek()==='('){ i++; var a=[]; if(peek()!==')'){ a.push(pExpr()); while(peek()===','){ i++; a.push(pExpr()); } } eat(')'); return _calcFn(nm,a); }
-      if(!(nm in vars)) throw new Error('var:'+nm); return Number(vars[nm]); }
-    throw new Error('unexpected'); }
-  var out=pExpr(); ws(); if(i!==src.length) throw new Error('trailing'); if(!isFinite(out)) throw new Error('nonfinite'); return out;
-}
-function _calcFn(name,a){ switch(name){
-  case 'round': { var d=a.length>1?a[1]:0, f=Math.pow(10,d); return Math.round(a[0]*f)/f; }
-  case 'abs': return Math.abs(a[0]); case 'floor': return Math.floor(a[0]); case 'ceil': return Math.ceil(a[0]);
-  case 'min': return Math.min.apply(null,a); case 'max': return Math.max.apply(null,a); case 'pow': return Math.pow(a[0],a[1]);
-  default: throw new Error('fn:'+name); } }
-function _calcFmt(n, round, unit){ var d=round||0, f=Math.pow(10,d), v=Math.round(n*f)/f; var s=v.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:d}); if(unit==='원') return '₩'+s; return s+(unit?(' '+unit):''); }
-function genCalc(tmpl, seed){
-  try{
-    var rng=_calcRng(seed), vars={};
-    var pk=Object.keys(tmpl.params||{});
-    for(var pi=0; pi<pk.length; pi++){ var p=tmpl.params[pk[pi]], step=p.step||1, span=Math.floor((p.max-p.min)/step); vars[pk[pi]]=p.min+step*Math.floor(rng()*(span+1)); }
-    /* [FIX 2026-07-13] derive를 키 순서가 아니라 의존성 순으로 해석 — 미해결(var:) 예외면 뒤로 미뤄 재시도(고정점). admin genCalc와 동일. */
-    var dk=Object.keys(tmpl.derive||{}), _pend=dk.slice(), _prog=true;
-    while(_pend.length && _prog){ _prog=false; var _next=[];
-      for(var di=0; di<_pend.length; di++){ try{ vars[_pend[di]]=_calcEval(tmpl.derive[_pend[di]], vars); _prog=true; }catch(_e){ if(String(_e.message||_e).indexOf('var:')===0) _next.push(_pend[di]); else throw _e; } }
-      _pend=_next; }
-    if(_pend.length) throw new Error('var:'+_pend[0]);
-    var answer=_calcEval(tmpl.answer, vars); vars.answer=answer;
-    var rnd=tmpl.round||0, fpow=Math.pow(10,rnd); function rd(x){ return Math.round(x*fpow)/fpow; }
-    var ansR=rd(answer), distVals=[];
-    (tmpl.distractors||[]).forEach(function(ds){ try{ distVals.push(rd(_calcEval(ds.expr, vars))); }catch(e){} });
-    var ok=true;
-    (tmpl.guard||[]).forEach(function(g){ try{ var m=String(g).match(/^(.*?)(<=|>=|==|!=|<|>)(.*)$/); if(m){ var l=_calcEval(m[1],vars), r=_calcEval(m[3],vars), op=m[2]; var res=op==='>'?l>r:op==='<'?l<r:op==='>='?l>=r:op==='<='?l<=r:op==='=='?l===r:l!==r; if(!res) ok=false; } }catch(e){ ok=false; } });
-    if(!ok) return null;
-    var optVals=[ansR], seen={}; seen[ansR]=1;
-    for(var k=0;k<distVals.length && optVals.length<5;k++){ var dv=distVals[k]; if(dv==null||!isFinite(dv)||seen[dv]) continue; seen[dv]=1; optVals.push(dv); }
-    if(optVals.length<5) return null;
-    var idx=[0,1,2,3,4];
-    for(var s2=idx.length-1;s2>0;s2--){ var j=Math.floor(rng()*(s2+1)); var t=idx[s2]; idx[s2]=idx[j]; idx[j]=t; }
-    var opts=idx.map(function(oi){ return _calcFmt(optVals[oi], rnd, tmpl.unit); });
-    var ansPos=idx.indexOf(0), ans1=ansPos+1;
-    function numFmt(key){ if(key==='answer') return _calcFmt(ansR, rnd, tmpl.unit); if(!(key in vars)) return '{'+key+'}'; var val=vars[key], isMoney=(tmpl.money||[]).indexOf(key)>=0, d=isMoney?0:(Number.isInteger(val)?0:rnd); return Number(val).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:d}); }
-    function subst(str){ return String(str).replace(/\{(\w+)\}/g, function(_,key){ return numFmt(key); }); }
-    var o=[]; for(var oi2=0;oi2<5;oi2++) o.push(oi2===ansPos ? subst(tmpl.concl||'정답: {answer}') : '');
-    return { id:'calc:'+tmpl.id+':'+(tmpl._diff||(Array.isArray(tmpl.diff)?tmpl.diff[0]:tmpl.diff))+':'+(seed>>>0),
-      q:subst(tmpl.stem), opts:opts, ans:ans1, topic:tmpl.topic, diff:(tmpl._diff||(Array.isArray(tmpl.diff)?tmpl.diff[0]:tmpl.diff)), subtopic:tmpl.subtopic||null,
-      exp:{ o:o, ex:(tmpl.exp_ex||[]).map(subst) }, _gen:true };
-  }catch(e){ return null; }
-}
-function genCalcValid(tmpl, baseSeed, maxTries){ var tries=maxTries||40; for(var t=0;t<tries;t++){ var seed=(baseSeed+t*2654435761)>>>0; var q=genCalc(tmpl, seed); if(q) return q; } return null; }
-function _calcFromId(cert, id){ try{ var p=String(id).split(':'); if(p.length<4) return null; var tmplid=p[1], band=+p[2], seed=(+p[3])>>>0;
-  var qb=qbOf(cert), tmpl=null;
-  Object.keys(qb).some(function(sub){ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub]; var ts=(b&&b.calcTemplates)||[]; return ts.some(function(tt){ if(tt&&tt.id===tmplid){ tmpl=tt; return true;} return false; }); });
-  if(!tmpl) return null;
-  return genCalc(Object.assign({}, tmpl, {_diff:band}), seed);
-}catch(e){ return null; } }
-
-async function loadAdaptiveSubject(cert, sub){
-  var key=cert+'|'+sub;
-  if(AD_DATA[key]) return AD_DATA[key];
-  if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
-  async function fetchDoc(kind){
-    var ck='ad:'+cert+':'+sub+':'+kind;
-    try{ var c=localStorage.getItem(ck); if(c){ var w=JSON.parse(c); if(!AD_TTL_MS||(Date.now()-w.__ts)<=AD_TTL_MS) return w.d; } }catch(e){}
-    var snap=await db.collection('adaptive').doc(cert+'__'+sub+'__'+kind).get();
-    if(!snap.exists) return null;
-    var d=_adParse(snap.data());
-    try{ localStorage.setItem(ck, JSON.stringify({__ts:Date.now(), d:d})); }catch(e){}
-    return d;
-  }
-  var res=await Promise.all([fetchDoc('map'), fetchDoc('diag'), fetchDoc('variants'), fetchDoc('variantq'), fetchDoc('calctmpl')]);
-  return AD_BUILD(key, res[0], res[1], res[2], res[3], res[4]);
-}
-// 룩업·인덱스 빌드(순수). 로드시뮬·테스트에서 재사용.
-function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc, calcDoc){
-  var lookup={}, variantsByTopic={};
-  ((mapDoc&&mapDoc.mapping)||[]).forEach(function(x){
-    lookup[x.id]={topic:x.topic, diff:x.diff, subtopic:x.subtopic||null};
-  });
-  ((varDoc&&varDoc.variants)||[]).forEach(function(r){
-    (variantsByTopic[r.topic]=variantsByTopic[r.topic]||[]).push(r);
-  });
-  var variantPool=(varqDoc&&varqDoc.questions)||[];   // 이론형 변형 문제 풀
-  // 변형 풀 문항도 룩업에 추가(Elo·출제에서 topic/diff 조회 가능하게)
-  variantPool.forEach(function(q){ if(q&&q.id) lookup[q.id]={topic:q.topic, diff:q.diff, subtopic:q.subtopic||null}; });
-  var calcTemplates=(calcDoc&&calcDoc.templates)||[];   // 계산형 자동생성 템플릿(앱이 즉석 인스턴스화)
-  var bundle={ map:mapDoc, diag:diagDoc, variants:varDoc, lookup:lookup, variantsByTopic:variantsByTopic, variantPool:variantPool, calcTemplates:calcTemplates };
-  AD_DATA[key]=bundle;
-  return bundle;
-}
-// 문항 id → {topic,diff,subtopic} (Elo 훅·출제에서 사용)
-function adLookup(cert, sub, qid){ var b=AD_DATA[cert+'|'+sub]; return (b&&b.lookup[qid])||null; }
-// ===== 적응형 Elo 트랙 (2-c) — 기존 srProgress/mcqVerdict와 분리 =====
-var eloState = {};   // "cert|sub" -> { topic: {score, attempts} }
-function adEloUpdate(q, correct){
-  try{
-    if(!q || !q.id || typeof AE==='undefined') return null;
-    var cs = (typeof MCQ_QID2CS!=='undefined') && MCQ_QID2CS[q.id];
-    var cert = (typeof mqCert!=='undefined' && mqCert) || (cs && cs.cert);
-    var sub  = (cs && cs.sub) || q._subj || q.subject;
-    var topic = q.topic, diff = q.diff;
-    if((!topic || !diff) && cert && sub){ var info=adLookup(cert, sub, q.id); if(info){ topic=topic||info.topic; diff=diff||info.diff; } }
-    if(!cert || !sub || !topic || !diff) return null;   // 식별 불가(맵에 없는 회차기출 등) → 스킵·무시
-    var k=cert+'|'+sub;
-    if(!eloState[k]) eloState[k]={};
-    var cur=eloState[k][topic] || {score:AE.CFG.DEFAULT_SCORE, attempts:0};
-    var base=(typeof _eloScoreOf==='function'&&_eloScoreOf(cur)!=null)?_eloScoreOf(cur):cur.score;   // 감가상각 반영된 점수에서 재수렴
-    var up=AE.updateScore(base, diff, !!correct, cur.attempts);
-    eloState[k][topic]={score:up.score, attempts:cur.attempts+1, ts:Date.now()};
-    return {cert:cert, sub:sub, topic:topic, diff:diff, delta:up.delta, score:up.score};
-  }catch(e){ return null; }
-}
-</script>
-<script src="community.js"></script>
-<script src="calc-render.js"></script>
-<script src="subjective.js?v=20260713"></script>
 </body>
 </html>
