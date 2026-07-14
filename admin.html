@@ -285,6 +285,7 @@ tr:hover td{background:#FAFAFA}
         <div class="cat-item" data-tab="grpmaster" onclick="switchTab('grpmaster')">📈 그래프 마스터</div>
         <div class="cat-item" data-tab="itvmaster" onclick="switchTab('itvmaster')">🎛 인터랙티브 마스터</div>
         <div class="cat-item" data-tab="ottag" onclick="switchTab('ottag')">🏷️ OX진술 태그</div>
+        <div class="cat-item" data-tab="cpatch" onclick="switchTab('cpatch')">🩹 콘텐츠 패치</div>
         <div class="cat-item" data-tab="imgup" onclick="switchTab('imgup')">이미지 업로드</div>
         <div class="cat-item" data-tab="imglib" onclick="switchTab('imglib')">🗑️ 이미지 삭제</div>
         <div class="cat-item" data-tab="imgbank" onclick="switchTab('imgbank')">🖼️ 이미지 라이브러리</div>
@@ -1133,6 +1134,24 @@ tr:hover td{background:#FAFAFA}
           <button class="btn-sm" id="ottagApplyBtn" onclick="ottagApply()" style="display:none;background:#15793F;color:#fff;padding:9px 18px;font-size:13px;font-weight:700;flex:0 0 auto">✅ 검증 통과분 병합 저장</button>
         </div>
         <div id="ottagReport" style="padding:6px 20px 24px;font-size:13px;color:#3C3C3A"></div>
+      </div>
+    </div>
+
+    <!-- 🩹 콘텐츠 패치 -->
+    <div class="tab-panel" id="panel-cpatch">
+      <div class="table-wrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 2px">
+          <h2 style="margin:0;font-size:16px">🩹 콘텐츠 패치 업로드</h2>
+        </div>
+        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">해설·예시·띄어쓰기 <b>부분 패치</b>를 문항에 <b>id로 콕 집어 병합</b>합니다(문서 통째 덮어쓰기·재샤딩 없음). 형식: <b>[{docId, id, o?, ex?, q?, opts?}, …]</b>(배열) 또는 <b>{edits:[…]}</b>. <b>o</b>→exp.o(선지 해설), <b>ex</b>→exp.ex(예시), <b>q·opts</b>→문두·보기. 검증: ①문항 id 존재 ②o 길이=현재 exp.o 길이 ③<b>q·opts는 띄어쓰기만 다를 때만 통과</b>(내용 바뀌면 자동 차단). 한 번에 파일 1개(콘텐츠 패치·띄어쓰기 패치 각각 드롭).</div>
+        <div id="cpatchStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px;align-items:center">
+          <span id="cpatchImpDrop" style="cursor:pointer;flex:1;min-width:220px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:10px 12px;color:#94A3B8;font-size:12px">📁 여기로 콘텐츠 패치 JSON 파일을 끌어다 놓기</span>
+          <input id="cpatchImpFile" type="file" accept=".json,application/json" style="display:none">
+          <button class="btn-sm" onclick="document.getElementById('cpatchImpFile').click()" style="background:#FAEEDA;color:#854F0B;flex:0 0 auto">⬆ 패치 파일 선택</button>
+          <button class="btn-sm" id="cpatchApplyBtn" onclick="cpatchApply()" style="display:none;background:#15793F;color:#fff;padding:9px 18px;font-size:13px;font-weight:700;flex:0 0 auto">✅ 검증 통과분 병합 저장</button>
+        </div>
+        <div id="cpatchReport" style="padding:6px 20px 24px;font-size:13px;color:#3C3C3A"></div>
       </div>
     </div>
 
@@ -2787,6 +2806,147 @@ async function ottagApply(){
 }
 
 
+// ===== 🩹 콘텐츠 패치 (해설·예시·띄어쓰기 부분 병합 · banks/변형 문항에 id로 콕 병합) =====
+var _cpatchData=null, _cpatchShard=null, _cpatchOk=null, _cpatchBound=false;
+function cpatchEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _cpNows(s){ return String(s==null?'':s).replace(/\s+/g,''); }   // 모든 공백 제거(띄어쓰기만 비교용)
+function cpatchBindImp(){
+  if(_cpatchBound) return; _cpatchBound=true;
+  var file=document.getElementById('cpatchImpFile'), drop=document.getElementById('cpatchImpDrop');
+  if(file) file.addEventListener('change', function(e){ cpatchHandle(e.target.files); });
+  if(drop){
+    ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#0C447C';}); });
+    ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){e.preventDefault();drop.style.borderColor='#CBD5E1';}); });
+    drop.addEventListener('drop', function(e){ cpatchHandle(e.dataTransfer.files); });
+  }
+}
+function cpatchHandle(fileList){
+  var f=[].slice.call(fileList).find(function(x){ return /\.json$/i.test(x.name)||x.type==='application/json'; });
+  var stt=document.getElementById('cpatchStatus');
+  if(!f){ if(stt){stt.style.color='#A32D2D';stt.textContent='JSON 파일이 아니에요.';} return; }
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var o=JSON.parse(rd.result);
+      var edits=Array.isArray(o) ? o : (Array.isArray(o.edits)?o.edits:(Array.isArray(o.patch)?o.patch:null));
+      if(!edits){ if(stt){stt.style.color='#A32D2D';stt.textContent='형식 오류: [{docId,id,o?,ex?,q?,opts?}] 배열 또는 {edits:[…]} 필요';} return; }
+      // docId별 묶기
+      var groups={};
+      edits.forEach(function(e){
+        if(!e||!e.docId||!e.id) return;
+        var p=String(e.docId).split('__'); var cert=p[0], subject=p[1];
+        if(!cert||!subject) return;
+        var key=e.docId; var g=groups[key]||(groups[key]={docId:e.docId, cert:cert, subject:subject, edits:[]});
+        g.edits.push(e);
+      });
+      var glist=Object.keys(groups).map(function(k){ return groups[k]; });
+      if(!glist.length){ if(stt){stt.style.color='#A32D2D';stt.textContent='유효한 {docId,id} 항목이 없습니다.';} return; }
+      _cpatchData={groups:glist, total:edits.length};
+      if(stt){ stt.style.color='#475569'; stt.innerHTML='인식: 문서 '+glist.length+'개 · 편집 '+edits.length+'건 — 검증 중…'; }
+      cpatchValidate();
+    }catch(e){ if(stt){stt.style.color='#A32D2D';stt.textContent='파싱 오류: '+e.message;} }
+  };
+  rd.readAsText(f);
+}
+async function cpatchValidate(){
+  var rep=document.getElementById('cpatchReport'), btn=document.getElementById('cpatchApplyBtn');
+  _cpatchShard=null; _cpatchOk=null; if(btn) btn.style.display='none';
+  var groups=(_cpatchData&&_cpatchData.groups)||[];
+  var allHomes={}, okMap={}, errN=0, okN=0, setStat={}, errRows=[], failSubs=[];
+  var cntO=0, cntEx=0, cntSp=0;
+  for(var gi=0; gi<groups.length; gi++){
+    var G=groups[gi];
+    var col=await _ottagCollect(G.cert, G.subject);
+    if(col.err){ failSubs.push(csKo(G.cert,G.subject)+': '+col.err); continue; }
+    Object.keys(col.homes).forEach(function(h){ allHomes[h]=col.homes[h]; });
+    var byId=col.byId;
+    G.edits.forEach(function(e){
+      var rec=byId[e.id], q=rec&&rec.q, errs=[], hasField=false;
+      if(!q){ errs.push('문항 없음'); }
+      else {
+        if(e.o!=null){ hasField=true;
+          if(!Array.isArray(e.o)) errs.push('o 배열 아님');
+          else { var oArr=(q.exp&&q.exp.o)||[];
+            if(oArr.length && e.o.length!==oArr.length) errs.push('o 길이 '+e.o.length+'≠exp.o '+oArr.length);
+            e.o.forEach(function(t,i){
+              var emptyNew=(typeof t!=='string'||!String(t).trim());
+              var origHad=(oArr[i]!=null && String(oArr[i]).replace(/<[^>]+>/g,'').trim()!=='');
+              if(emptyNew && origHad) errs.push('o['+i+'] 기존 해설을 빈값으로 덮음 — 차단');  // 계산형 빈 슬롯(원래도 빈칸)은 허용, 기존 해설 삭제만 차단
+            });
+          }
+        }
+        if(e.ex!=null){ hasField=true;
+          if(!Array.isArray(e.ex)) errs.push('ex 배열 아님');
+          else e.ex.forEach(function(t,i){ if(typeof t!=='string') errs.push('ex['+i+'] 문자열 아님'); });
+        }
+        if(e.q!=null){ hasField=true;
+          if(typeof e.q!=='string') errs.push('q 문자열 아님');
+          else if(_cpNows(e.q)!==_cpNows(q.q||'')) errs.push('q 띄어쓰기 외 변경 — 차단');
+        }
+        if(e.opts!=null){ hasField=true;
+          if(!Array.isArray(e.opts)) errs.push('opts 배열 아님');
+          else { var cur=q.opts||[];
+            if(e.opts.length!==cur.length) errs.push('opts 길이 '+e.opts.length+'≠현재 '+cur.length);
+            else e.opts.forEach(function(t,i){ if(_cpNows(String(t))!==_cpNows(String(cur[i]==null?'':cur[i]))) errs.push('opts['+(i+1)+'] 띄어쓰기 외 변경 — 차단'); });
+          }
+        }
+        if(!hasField) errs.push('수정 필드 없음(o·ex·q·opts 중 하나 필요)');
+      }
+      var setKey=G.subject+' · '+((q&&q.set)||'(미상)');
+      var ss=setStat[setKey]||(setStat[setKey]={ok:0,err:0});
+      if(errs.length){ errN++; ss.err++; errRows.push('<div style="color:#A32D2D">✗ '+cpatchEsc(G.docId+' / '+e.id)+' — '+cpatchEsc(errs.join(' · '))+'</div>'); }
+      else {
+        okN++; ss.ok++;
+        okMap[rec.home+'||'+e.id]={ rec:rec, o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null) };
+        if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++;
+      }
+    });
+  }
+  var head='<div style="margin-bottom:8px"><b>검증 결과:</b> 통과 '+okN+' · 오류 '+errN+' <span style="color:#64748B">(해설 '+cntO+' · 예시 '+cntEx+' · 띄어쓰기 '+cntSp+')</span></div>';
+  if(failSubs.length){ head+='<div style="color:#A32D2D;font-size:12px;margin-bottom:6px">읽기 실패: '+cpatchEsc(failSubs.join(' / '))+'</div>'; }
+  var setRows=Object.keys(setStat).sort().map(function(k){
+    var s=setStat[k]; var c=s.err?'#A32D2D':'#15793F';
+    return '<div style="color:'+c+'">'+(s.err?'✗':'✅')+' '+cpatchEsc(k)+' — '+s.ok+'/'+(s.ok+s.err)+'</div>';
+  });
+  head+='<div style="background:#F6F8FB;border:1px solid #E3E8EF;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12.5px"><b>과목·회차별</b>'+setRows.join('')+'</div>';
+  if(!okN && failSubs.length && !errRows.length){ rep.innerHTML='<span style="color:#A32D2D">⚠️ '+cpatchEsc(failSubs.join(' / '))+'. docId(cert__subject) 확인.</span>'; return; }
+  rep.innerHTML=head+(errRows.length?('<div style="margin-top:4px"><b>오류 상세</b>'+errRows.slice(0,300).join('')+(errRows.length>300?('<div style="color:#A89C8E">…외 '+(errRows.length-300)+'건</div>'):'')+'</div>'):'');
+  _cpatchShard={homes:allHomes}; _cpatchOk=okMap;
+  if(okN>0){ if(btn){ btn.style.display=''; btn.textContent='검증 통과 '+okN+'문항 병합 저장'; } }
+}
+async function cpatchApply(){
+  if(!_cpatchShard||!_cpatchOk){ return; }
+  var keys=Object.keys(_cpatchOk); if(!keys.length) return;
+  if(!confirm(keys.length+'개 문항에 해설·예시·띄어쓰기 패치를 병합 저장합니다. 계속할까요?\n\n※ 학생앱 배포는 저장 후 [기출 업로드] 탭의 version +1(또는 매니페스트 동기화)로 올려주세요.')) return;
+  var sh=_cpatchShard, rep=document.getElementById('cpatchReport');
+  var touched={};   // home docId → true
+  keys.forEach(function(k){
+    var it=_cpatchOk[k]; var rec=it&&it.rec; if(!rec||!rec.q) return;
+    var q=rec.q;
+    if(it.o!=null){ q.exp=q.exp||{}; q.exp.o=it.o; }
+    if(it.ex!=null){ q.exp=q.exp||{}; q.exp.ex=it.ex; }
+    if(it.q!=null){ q.q=it.q; }
+    if(it.opts!=null){ q.opts=it.opts; }
+    touched[rec.home]=true;
+  });
+  try{
+    var docs=0, homeIds=Object.keys(touched);
+    for(var i=0;i<homeIds.length;i++){
+      var hid=homeIds[i], h=sh.homes[hid];
+      if(!h) continue;
+      if(h.coll==='variantq'){
+        await db.collection('adaptive').doc(hid).set(Object.assign({}, h.data, {kind:'variantq', count:h.questions.length, questions:h.questions}));
+      } else {
+        await db.collection('banks').doc(hid).set(Object.assign({}, h.data, {questions:h.questions}));
+      }
+      docs++;
+    }
+    rep.innerHTML='<div style="color:#15793F;font-weight:700">✅ '+keys.length+'문항 병합 저장 완료 ('+docs+'개 문서).</div><div style="color:#A89C8E;font-size:12px;margin-top:4px">학생앱에 배포하려면 [기출 업로드] 탭의 version +1(또는 매니페스트 동기화)로 버전을 올리세요. 앱에서 Ctrl+Shift+R로 확인.</div>';
+    document.getElementById('cpatchApplyBtn').style.display='none';
+  }catch(e){ rep.innerHTML='<div style="color:#A32D2D">저장 실패: '+cpatchEsc(e.message)+'</div>'; }
+}
+
+
 // ===== 📈 그래프 마스터 (Firestore graphs CRUD · SVG 기본 + type/params 열어둠) =====
 var _grpmAll={}, _grpmLoaded=false, _grpmImpData=null, _grpmImpBound=false;
 function grpmEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -3710,6 +3870,7 @@ function switchTab(name) {
   if(name==='tblmaster') tblmInit();
   if(name==='cptmaster') cptmInit();
   if(name==='ottag'){ ottagBindImp(); if(!_cptmLoaded) cptmLoad(); }
+  if(name==='cpatch'){ cpatchBindImp(); }
   if(name==='levelup') lvupInit();
   if(name==='grpmaster') grpmInit();
   if(name==='itvmaster') itvmInit();
@@ -4377,7 +4538,9 @@ async function impHandleFiles(fileList){
     var _wrong='';
     if(parsed && typeof parsed==='object'){
       var _mk=(parsed&&parsed._meta&&String(parsed._meta.kind||''))||'';
-      if(/ottag/i.test(_mk) || (Array.isArray(parsed.subjects) && parsed.subjects[0] && parsed.subjects[0].ot)) _wrong='OX진술 태그 → 🏷️ OX진술 태그 탭';
+      var _pe=Array.isArray(parsed)?parsed[0]:(Array.isArray(parsed.edits)?parsed.edits[0]:(Array.isArray(parsed.patch)?parsed.patch[0]:null));
+      if(_pe && _pe.docId && _pe.id && (_pe.o!=null||_pe.ex!=null||_pe.q!=null||_pe.opts!=null) && !Array.isArray(_pe.questions)) _wrong='콘텐츠 패치 → 🩹 콘텐츠 패치 탭';
+      else if(/ottag/i.test(_mk) || (Array.isArray(parsed.subjects) && parsed.subjects[0] && parsed.subjects[0].ot)) _wrong='OX진술 태그 → 🏷️ OX진술 태그 탭';
       else if(/levelup|adaptive/i.test(_mk) || Array.isArray(parsed.mapping)||Array.isArray(parsed.variants)||Array.isArray(parsed.diagnostic)||Array.isArray(parsed.topics)||Array.isArray(parsed.subjects)) _wrong='레벨업 데이터 → ⚡ 레벨업 업로드 탭';
       else if(parsed.ot && typeof parsed.ot==='object' && !Array.isArray(parsed.questions)) _wrong='OX진술 태그 → 🏷️ OX진술 태그 탭';
       else if(parsed.concepts || parsed.cpt_new) _wrong='개념 마스터 → 📖 개념 마스터 탭';
