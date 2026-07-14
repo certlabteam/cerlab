@@ -127,7 +127,8 @@
       wrap.appendChild(c); });
     return wrap; }
   function openQ(exam,qi){ var host=_opts.host||document.getElementById(_opts.mountId)||document.body;
-    var q=exam.questions[qi]; var v=document.createElement('div'); v.className='subj-view';
+    var q=exam.questions[qi];
+    if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return; }   // 무료 한도 게이트(있으면 검사, 없으면 스킵) var v=document.createElement('div'); v.className='subj-view';
     var refHtml=(q.refs&&q.refs.length)?('<div class="subj-refbox"><div class="rt">〈참조 조문〉 — 답안에 인용하면 근거 점수</div>'
       +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</div>'):'';
     v.innerHTML='<div class="subj-back" data-back="1">‹ 목록</div>'
