@@ -230,6 +230,42 @@
   }
 
   /* ==========================================================================
+     3c) TRAIL_CONN — 문장이 연결어미로 끝나 미완결 (예: "…분할 횟수는 3회 이내로 맞지만.")
+     해설(o)·예시(ex) 원소의 마지막 줄이 지만/는데/인데/어서/아서/여서/해서/려면/거나/(하·되·이)며 등
+     이어지는 연결어미로 끝나면 뒷말이 잘려 문장이 미완성이다. 끝만 검사(문중 연결어는 정상).
+     표/조합(| 다수)·[dia] 관계도·산식은 제외. WARNING(비차단). */
+  var _TRAILCONN=/(지만|는데|은데|인데|어서|아서|여서|해서|려면|거나|으며|하며|되며|이며)$/;
+  function _qcTrailEnds(s){
+    var t=strip(s); if(!t) return null;
+    var lines=t.split(/\n/).map(function(x){return x.trim();}).filter(Boolean);
+    if(!lines.length) return null;
+    var last=lines[lines.length-1];
+    last=last.replace(/[)\]"'“”‘’」』〉》\s]+$/,'').replace(/[.。!?…]+$/,'').replace(/[)\]"'“”‘’」』〉》\s]+$/,'').trim();
+    var m=last.match(_TRAILCONN);
+    return m?m[1]:null;
+  }
+  function _qcTrailConn(q){
+    var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[];
+    if(!_on('gichul','TRAIL_CONN')) return v;
+    function scan(arr, field){
+      (arr||[]).forEach(function(t,i){
+        if(!(t&&String(t).trim())) return;
+        var s=String(t);
+        if(/\[dia\][\s\S]*?\[\/dia\]/.test(s)) return;              /* 관계도 제외 */
+        if((s.match(/\|/g)||[]).length>=2) return;                  /* 표/조합 통짜 제외 */
+        if(/[=×÷]|\d\s*[+\-*/]\s*\d/.test(strip(s))) return; /* 산식 제외 */
+        var hit=_qcTrailEnds(s);
+        if(hit)
+          v.push({ kind:'warn', field:field, idx:i, code:'TRAIL_CONN',
+            msg:(field==='o'?'해설(o)':'예시(ex)')+'이 연결어 "…'+hit+'"로 끝나 문장이 미완결 — 뒷말이 잘림. 문장을 끝까지 맺을 것', text:strip(s).slice(-40) });
+      });
+    }
+    scan(o,'o'); scan(ex,'ex');
+    _sev(v);
+    return v;
+  }
+
+  /* ==========================================================================
      4) VERDICT 오발동 예외 — 빈칸채우기·표/조문형 해설
      qc-core의 VERDICT(해설이 옳다/옳지 않다로 안 맺음)는 O/X 판정형 전제인데,
      "( )에 들어갈 …" 빈칸채우기형은 해설이 판정어가 아니라 답(ㄱ:500, ㄴ:…)으로,
@@ -260,6 +296,7 @@
       try{ v = v.concat(_qcExMissing(q)); }catch(e){}
       try{ v = v.concat(_qcOShort(q)); }catch(e){}
       try{ v = v.concat(_qcOCopy(q)); }catch(e){}
+      try{ v = v.concat(_qcTrailConn(q)); }catch(e){}
       return v;
     };
   }
@@ -268,7 +305,7 @@
   try{
     if (typeof _QC_SEV !== 'undefined'){
       _QC_SEV.MN_DUP='WARNING'; _QC_SEV.MN_DESC_EMPTY='WARNING'; _QC_SEV.MN_NO_K='WARNING';
-      _QC_SEV.MN_DESC_NO_RED='WARNING'; _QC_SEV.MN_DESC_REDUP='WARNING'; _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING';
+      _QC_SEV.MN_DESC_NO_RED='WARNING'; _QC_SEV.MN_DESC_REDUP='WARNING'; _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
     }
   }catch(e){}
 
@@ -276,5 +313,6 @@
   QC.mnemAudit = _qcMnemAudit;
   QC.exMissing = _qcExMissing;
   QC.oShort = _qcOShort;
+  QC.trailConn = _qcTrailConn;
   try{ if(typeof module!=='undefined'&&module.exports){ module.exports.mnemAudit=_qcMnemAudit; module.exports.exMissing=_qcExMissing; } }catch(e){}
 })();
