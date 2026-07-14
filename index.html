@@ -47,10 +47,11 @@ gtag('config', 'G-RPZRZQ779J');
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<link rel="stylesheet" href="style.css?v=20260713">
+<link rel="stylesheet" href="style.css?v=20260714">
 <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -75,6 +76,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
+<script src="subjective.js?v=20260714"></script>
 </head>
 <body>
 <!-- 인앱 브라우저 안내 팝업 -->
@@ -213,7 +215,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <button class="bar-btn" onclick="openPrintSheet()">🖨️ 인쇄</button>
 </div>
 </div>
-<div class="cert-view hidden" id="subjectiveView"><div id="subjMount"></div></div>
+<div class="cert-view hidden" id="subjectiveView"><div id="subjHeader"></div><div id="subjMount"></div></div>
+<!-- AI 첨삭 기록 모달 -->
+<div class="psucc-ov hidden" id="gradeLogOv"><div class="psucc-box" style="max-width:560px;text-align:left">
+  <button class="psucc-x" onclick="closeGradeLogs()" aria-label="닫기">✕</button>
+  <div style="font-size:16px;font-weight:800;color:#2C2C2A;margin-bottom:3px">📋 내 AI 첨삭 기록</div>
+  <div style="font-size:12px;color:#8A7D6E;margin-bottom:12px" id="gradeLogSub">최근 채점 내역을 다시 볼 수 있어요.</div>
+  <div id="gradeLogBody" style="max-height:60vh;overflow:auto"></div>
+</div></div>
 <div class="cert-view hidden" id="mcqView">
   <div class="mcq-wrap" id="mcqRoot"></div>
 </div>
@@ -314,6 +323,21 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       <div class="psucc-warn">⚠️ 입금자명을 신청자명과 동일하게 보내주세요.<br>입금이 확인되지 않으면 이용권이 취소될 수 있어요.</div>
     </div>
     <button class="psucc-ok" onclick="closePaySuccess()">확인했어요</button>
+  </div>
+</div>
+<!-- AI 크레딧 충전 모달 (회원권과 별도 · 횟수 충전제) -->
+<div class="psucc-ov hidden" id="aiBuyOv">
+  <div class="psucc-box">
+    <button class="psucc-x" onclick="closeAiGradeBuy()" aria-label="닫기">✕</button>
+    <div class="psucc-ic">🤖</div>
+    <div class="psucc-ti" id="aiBuyTitle">AI 충전</div>
+    <div class="psucc-sub" id="aiBuySub"></div>
+    <div id="aiBuyBal" style="font-size:12px;color:#6D28D9;font-weight:700;margin:6px 0 2px"></div>
+    <div id="aiBuyPacks" style="display:flex;flex-direction:column;gap:8px;margin:12px 0 6px"></div>
+    <div style="text-align:left;margin:8px 0 6px;font-size:12.5px;font-weight:700;color:#2C2C2A">입금자 이름 <span style="font-weight:500;color:#9A8E7E">· 입금 확인용</span></div>
+    <input id="aiBuyName" placeholder="입금하실 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
+    <div style="font-size:11.5px;color:#8A7D6E;line-height:1.5;margin-bottom:12px">‘충전 신청’을 누르면 입금 안내가 떠요. 입금 확인 후 <b>약 10분 뒤 승인</b>되며, 승인되면 잔액에 자동 반영됩니다(만료 없음). 입금이 확인되지 않으면 관리자가 취소할 수 있어요.</div>
+    <button class="psucc-ok" id="aiBuyBtn" onclick="submitAiBuy()">충전 신청</button>
   </div>
 </div>
 <!-- 포인트 적립/차감 안내 모달 -->
@@ -563,7 +587,7 @@ const firebaseConfig = {
   messagingSenderId: "698827699707",
   appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
-let auth = null, db = null, storage = null, googleProvider = null, firebaseReady = false;
+let auth = null, db = null, storage = null, googleProvider = null, firebaseReady = false, fbFunctions = null;
 try {
   firebase.initializeApp(firebaseConfig);
   firebase.appCheck().activate(
@@ -574,6 +598,7 @@ try {
   db = firebase.firestore();
   try{ db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }catch(e){ console.warn('firestore settings', e); }
   storage = firebase.storage();
+  try{ fbFunctions = (firebase.app().functions) ? firebase.app().functions('asia-northeast3') : null; }catch(e){ console.warn('functions init', e); fbFunctions=null; }
   googleProvider = new firebase.auth.GoogleAuthProvider();
   firebaseReady = true;
   // 첫 로드 때 goHome이 db 준비 전에 돌아 공지바가 빈 채 끝나는 경우 보강 — 준비되면 홈에서 한 번 더 로드
@@ -585,6 +610,14 @@ try {
 
 // ===== 사용자 상태 =====
 let currentUser = null;
+// ===== AI 크레딧 지갑(회원권과 별도, 횟수 충전제): users/{uid}.aiCredits =====
+// 첨삭(Sonnet)·개념설명(Haiku) 공용. 1회당 1 차감.
+// 첨삭(grade)·해설(explain) 지갑 분리
+window._aiCredits = { grade:0, explain:0 };
+function _walletBal(k){ var w=window._aiCredits; return (w && typeof w==='object' && +w[k]>0) ? +w[k] : 0; }
+function gradeBal(){ return _walletBal('grade'); }
+function explainBal(){ return _walletBal('explain'); }
+function _setWallet(k, n){ if(typeof n==='number' && n>=0){ if(!window._aiCredits||typeof window._aiCredits!=='object') window._aiCredits={grade:0,explain:0}; window._aiCredits[k]=n; try{ if(typeof _refreshAiCreditUI==='function') _refreshAiCreditUI(); }catch(_){} } }
 // ===== 추천/마일리지 =====
 const MILE_DAY = 86400000;
 // ===== 추천 대기정산 (추천인 본인 로그인 시 자기 문서에 적립) =====
@@ -795,6 +828,7 @@ async function loadUserPlan(user) {
         } catch(_){}
       }
       try { localStorage.removeItem('pendingRef'); } catch(_){}
+      window._aiCredits = { grade:0, explain:0 };
       userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
       if(typeof pwaSignupBanner==='function') pwaSignupBanner();
       return;
@@ -826,6 +860,7 @@ async function loadUserPlan(user) {
         }
       }
     }
+    window._aiCredits = (data.aiCredits && typeof data.aiCredits==='object') ? { grade:+(data.aiCredits.grade||0), explain:+(data.aiCredits.explain||0) } : { grade:0, explain:0 };
     userEnt = ent; syncPlanMirror(); updateAuthBar(); loadUserData();
     // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
     myReferralCode = data.referralCode || null;
@@ -1678,12 +1713,219 @@ async function submitPayment() {
   }
 }
 
+// ===== AI 심층첨삭(주관식 별도 애드온) =====
+// onCall 호출: 서버가 로그인·이용권·일일한도 확인 후 Claude(Sonnet) 채점 → {score,perNode,feedback,pt}
+async function callGradeSubjective(payload){
+  if(!fbFunctions){ var e=new Error('AI 채점 서버에 연결할 수 없어요.'); e.code='unavailable'; throw e; }
+  var fn = fbFunctions.httpsCallable('gradeSubjective');
+  var res = await fn(payload||{});
+  return res.data;   // { score, perNode:[{h,level,comment}], feedback, pt }
+}
+// 첨삭·해설은 지갑이 분리 → 각 1건당 각자 지갑에서 1회 차감
+function _aiCost(){ return 1; }
+// ===== AI 개념설명(객관식 해설 심화 · 같은 크레딧 지갑) =====
+async function callExplainConcept(payload){
+  if(!fbFunctions){ var e=new Error('AI 서버에 연결할 수 없어요.'); e.code='unavailable'; throw e; }
+  var fn = fbFunctions.httpsCallable('explainConcept');
+  var res = await fn(payload||{});
+  return res.data;   // { text, creditsLeft }
+}
+window._aiExpReg = {};   // qid → { subject, question, whole, cards:[{t,text}] }
+function aiExpRegister(qid, data){ if(qid) window._aiExpReg[String(qid)]=data; }
+function _aiEsc(s){ return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+function _aiMd(md){ var t=_aiEsc(md);
+  t=t.replace(/^\s*#{1,6}\s*(.+)$/gm,'<b>$1</b>');
+  t=t.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  t=t.replace(/^\s*[-*]\s+(.+)$/gm,'• $1');
+  t=t.replace(/\n{2,}/g,'<br><br>').replace(/\n/g,'<br>');
+  return t; }
+async function _aiRunExplain(payload, boxId, btn){
+  if(!currentUser){ if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  if(explainBal() < 1){ openAiBuy('explain'); return; }
+  var box=document.getElementById(boxId);
+  if(box){ box.style.display='block'; box.innerHTML='<div class="ai-exp-load">🤖 AI가 자세히 설명 중…</div>'; }
+  if(btn) btn.disabled=true;
+  try{
+    var out=await callExplainConcept(payload);
+    if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft);
+    if(box) box.innerHTML='<div class="ai-exp-hd">🤖 AI 설명 <span class="ai-exp-left">해설 남은 '+explainBal().toLocaleString()+'회</span></div><div class="ai-exp-body">'+_aiMd(out&&out.text||'')+'</div>';
+  }catch(err){ var e=String((err&&err.code)||'')+' '+String((err&&err.message)||'');
+    if(/permission-denied|충전/.test(e)){ if(box) box.style.display='none'; openAiBuy('explain'); }
+    else if(/unauthenticated|로그인/.test(e)){ if(box) box.style.display='none'; if(typeof showLoginPopup==='function') showLoginPopup(); }
+    else if(box) box.innerHTML='<div class="ai-exp-load">설명을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</div>';
+  } finally{ if(btn) btn.disabled=false; }
+}
+// 맨 아래 자유질문 위젯(객관식·주관식 공용 형식)
+function _aiAskWidget(qid){
+  return '<div class="ai-ask-wrap">'
+    +'<div class="ai-ask-hd">🤖 AI에게 더 물어보기</div>'
+    +'<div class="ai-ask-guide">더 알고 싶은 게 있으면 여기 적으세요. 위 <b>📋복사</b>를 누르면 그 항목이 여기로 들어와요. 문제 전체가 궁금하면 아래 <b>＋문제전체</b>를 누르거나 직접 <b>문제전체</b>라고 적으면 돼요.</div>'
+    +'<div class="ai-chip-row"><button type="button" class="ai-chip" onclick="aiAskInsertWhole(\''+qid+'\')">＋ 문제전체</button></div>'
+    +'<textarea class="ai-ask" id="aiask_'+qid+'" placeholder="예: 이 부분이 왜 그런지 더 자세히 설명해줘"></textarea>'
+    +'<button class="ai-exp-btn ai-exp-whole" id="aiaskbtn_'+qid+'" onclick="aiAskSubmit(\''+qid+'\')">🤖 AI에게 질문 <span class="ai-exp-cost">'+_aiCost('explain')+'회</span></button>'
+    +'<div class="ai-exp-box" id="aiexp_'+qid+'_ask" style="display:none"></div>'
+    +'</div>';
+}
+function aiAskInsert(qid, i){ var r=window._aiExpReg[String(qid)]; if(!r) return; var c=(r.cards||[])[i]; if(!c) return;
+  var ta=document.getElementById('aiask_'+qid); if(!ta) return;
+  ta.value=(ta.value?ta.value.replace(/\s+$/,'')+'\n':'')+c.text+'\n'; ta.focus();
+  try{ ta.scrollIntoView({block:'center',behavior:'smooth'}); }catch(_){}
+}
+function aiAskInsertWhole(qid){ var ta=document.getElementById('aiask_'+qid); if(!ta) return;
+  if(!/문제전체/.test(ta.value)) ta.value=(ta.value?ta.value.replace(/\s+$/,'')+'\n':'')+'문제전체'; ta.focus();
+}
+function aiAskSubmit(qid){ var r=window._aiExpReg[String(qid)]||{}; var ta=document.getElementById('aiask_'+qid); var t=(ta&&ta.value||'').trim();
+  if(!t){ alert('물어볼 내용을 적어주세요. (위 📋복사로 항목을 넣거나 직접 입력)'); return; }
+  var whole=/문제전체/.test(t);
+  _aiRunExplain({ subject:r.subject, question:r.question, ask:t, context:(r.whole||''), mode:(whole?'all':'ask') }, 'aiexp_'+qid+'_ask', document.getElementById('aiaskbtn_'+qid));
+}
+
+// AI 충전 팩(첨삭·해설 분리) — config/pricing.aiCredits = { grade:[{n,p}...], explain:[{n,p}...] }
+var AICREDIT_DEFAULT={ grade:[{n:10,p:29000},{n:30,p:79000},{n:50,p:120000},{n:100,p:220000}], explain:[{n:50,p:900},{n:100,p:1700},{n:300,p:4900},{n:500,p:7900}] };
+function _aiPacks(kind){ var c=(_pricingCfg&&_pricingCfg.aiCredits&&_pricingCfg.aiCredits[kind]); var a=Array.isArray(c)?c:AICREDIT_DEFAULT[kind]; a=a.filter(function(x){return x&&+x.n>0;}); return a.length?a:AICREDIT_DEFAULT[kind]; }
+var _aiBuyKind='grade', _aiBuyIdx=0;
+function openAiBuy(kind){
+  if(!currentUser){ if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  _aiBuyKind=(kind==='explain'?'explain':'grade'); _aiBuyIdx=0;
+  var isG=_aiBuyKind==='grade', packs=_aiPacks(_aiBuyKind);
+  var ti=document.getElementById('aiBuyTitle'); if(ti) ti.textContent=isG?'✍️ AI 첨삭 충전':'💡 AI 개념설명 충전';
+  var sub=document.getElementById('aiBuySub'); if(sub) sub.innerHTML=(isG?'주관식 답안을 채점위원 수준으로 첨삭받는 이용권이에요.':'객관식 해설을 AI가 더 자세히 설명해주는 이용권이에요.')+'<br><span style="display:inline-block;margin-top:5px;background:#F5F3FF;color:#6D28D9;font-weight:700;font-size:11.5px;padding:2px 9px;border-radius:8px">⚠️ 회원권과 별개 · 첨삭/해설 충전은 서로 따로예요</span>';
+  var bal=document.getElementById('aiBuyBal'); if(bal) bal.innerHTML='현재 '+(isG?'첨삭':'해설')+' 잔액: <b>'+(isG?gradeBal():explainBal()).toLocaleString()+'회</b>';
+  var wrap=document.getElementById('aiBuyPacks'); if(wrap){ wrap.innerHTML=packs.map(function(p,i){ var n=+p.n, pr=+p.p||0, per=n?Math.round(pr/n):0;
+    return '<label style="display:flex;align-items:center;gap:10px;border:1.5px solid '+(i===_aiBuyIdx?'#6D28D9':'#E8E8E8')+';background:'+(i===_aiBuyIdx?'#FAF7FF':'#fff')+';border-radius:11px;padding:11px 13px;cursor:pointer" onclick="_aiPickPack('+i+')">'
+      +'<input type="radio" name="aiPack" '+(i===_aiBuyIdx?'checked':'')+' style="accent-color:#6D28D9">'
+      +'<span style="flex:1;text-align:left"><b style="font-size:14px">'+n+'회</b> <span style="font-size:11px;color:#9A8AB8">회당 '+per.toLocaleString()+'원</span></span>'
+      +'<b style="font-size:14px;color:#6D28D9">'+pr.toLocaleString()+'원</b></label>';
+  }).join(''); }
+  var nm=document.getElementById('aiBuyName'); if(nm) nm.value=(currentUser&&currentUser.displayName)||'';
+  var ov=document.getElementById('aiBuyOv'); if(ov) ov.classList.remove('hidden');
+}
+function _aiPickPack(i){ _aiBuyIdx=i; openAiBuy(_aiBuyKind); }
+function closeAiGradeBuy(){ var ov=document.getElementById('aiBuyOv'); if(ov) ov.classList.add('hidden'); }
+async function submitAiBuy(){
+  if(!currentUser){ closeAiGradeBuy(); return; }
+  var packs=_aiPacks(_aiBuyKind); var pk=packs[_aiBuyIdx]||packs[0]||{n:0,p:0};
+  var packN=+pk.n||0, price=+pk.p||0, kind=_aiBuyKind;
+  var depositorName=(document.getElementById('aiBuyName').value||'').trim();
+  if(!depositorName){ alert('입금자 이름을 입력해 주세요.'); return; }
+  var btn=document.getElementById('aiBuyBtn'); if(btn){ btn.disabled=true; btn.textContent='처리 중…'; }
+  try{
+    if(!fbFunctions) throw new Error('서버에 연결할 수 없어요.');
+    var res=await fbFunctions.httpsCallable('buyAiCredits')({ kind:kind, packIndex:_aiBuyIdx, depositorName:depositorName });
+    var out=res.data||{};
+    var gotN=out.granted||packN, gotP=(out.price!=null?out.price:price);
+    var lb=(kind==='grade'?'AI 첨삭':'AI 개념설명')+' '+gotN+'회 충전 신청';
+    try{ clTrack('InitiateCheckout', { value:gotP, currency:'KRW', content_name:lb, content_category:'aigrade_'+kind, content_type:'product', contents:[{id:'aigrade_'+kind+'_'+gotN, quantity:1}], num_items:1 }); }catch(_){}
+    closeAiGradeBuy();
+    // 즉시 지급이 아니라 1시간 뒤 일괄 승인 → 잔액은 승인 후 반영
+    showPaySuccess({ certName: lb, planLabel:'입금 확인 후 약 10분 뒤 승인 → 잔액 반영', expireAt: null, payable: gotP, depositorName: depositorName, sub:'충전 신청이 접수됐어요. 입금 확인 후 약 10분 뒤 승인되며, 승인되면 잔액에 자동 반영됩니다.' });
+  }catch(e){ var m=(e&&e.message)||String(e); alert('충전 실패: '+m); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='충전 신청'; } }
+}
+// 주관식 시험 마운트(재사용 — 진입 시·구매 후 리마운트)
+// ===== 주관식 무료 한도 게이트 (A안) — 비로그인 1 / 로그인무료 3 / 유료 무제한 · 문제단위 · 재열람 무료 =====
+function _subjDayKey(cert){
+  var d=new Date(Date.now()+9*3600*1000).toISOString().slice(0,10);   // KST
+  var who=(typeof auth!=='undefined'&&auth&&auth.currentUser)?('u_'+auth.currentUser.uid):'guest';
+  return 'subjOpen:'+who+':'+cert+':'+d;
+}
+function _subjOpenedSet(cert){
+  try{ return new Set(JSON.parse(localStorage.getItem(_subjDayKey(cert))||'[]')); }catch(e){ return new Set(); }
+}
+function _subjMarkOpened(cert,qid){
+  if(!qid) return;
+  try{ var s=_subjOpenedSet(cert); s.add(qid); localStorage.setItem(_subjDayKey(cert), JSON.stringify([].slice.call(s))); }catch(e){}
+}
+function _subjGuestLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjGuestDaily)||1; }
+function _subjFreeLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjUserDaily)||3; }
+function canAccessSubjective(cert, qid){
+  cert = cert || (typeof activeCertId==='function'?activeCertId():cert);
+  var e=(userEnt&&userEnt[cert])||{plan:'GUEST'};
+  var plan=e.plan;
+  if(plan==='ACTIVE') return true;                     // 유료 = 무제한
+  var opened=_subjOpenedSet(cert);
+  if(qid && opened.has(qid)) return true;              // 재열람 무료
+  if(plan==='GUEST'){
+    if(opened.size >= _subjGuestLimit()){ showLoginPopup('guest_limit'); return false; }
+    return true;
+  }
+  if(plan==='EXPIRED'){ showPlanPopup(); return false; }
+  if(opened.size >= _subjFreeLimit()){ showPlanPopup(); return false; }
+  return true;
+}
+function mountSubjExam(id){
+  if(!window.CLSubj || !SUBJ_EXAMS[id]) return;
+  CLSubj.mount(document.getElementById('subjMount'), SUBJ_EXAMS[id], {
+    mountId:'subjMount',
+    canOpen:function(qid){ var ok=canAccessSubjective(id, qid); if(ok) _subjMarkOpened(id, qid); return ok; },
+    aiSell:(SUBJ_EXAMS[id].aiSell!==false),
+    aiCost:1, explainCost:1,
+    creditBalance:function(){ return gradeBal(); },
+    explainBalance:function(){ return explainBal(); },
+    hasEntitlement:function(){ return gradeBal() >= 1; },
+    gradeAi:function(payload){ return callGradeSubjective(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('grade', out.creditsLeft); return out; }); },
+    explainAi:function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); },
+    buyAi:function(){ openAiBuy('grade'); },
+    buyExplain:function(){ openAiBuy('explain'); },
+    needLogin:function(){ if(typeof showLoginPopup==='function') showLoginPopup(); },
+    onGraded:function(rec){ saveGradeLog(id, rec); },
+    onRate:function(qid,n,r){ try{ if(typeof srRateK==='function') srRateK(id, qid, r, false, false); }catch(_){} }
+  });
+  renderSubjHeader(id);
+}
+// 주관식 화면 상단: 크레딧 잔액 + 첨삭 기록 버튼
+var _subjHeaderCert=null;
+function renderSubjHeader(cert){ _subjHeaderCert=cert; var el=document.getElementById('subjHeader'); if(!el) return;
+  el.innerHTML='<div class="subj-hdrbar">'
+    +'<span class="subj-bal">🤖 첨삭 <b id="subjBalG">'+gradeBal().toLocaleString()+'</b>회 · 해설 <b id="subjBalE">'+explainBal().toLocaleString()+'</b>회</span>'
+    +'<span style="flex:1"></span>'
+    +'<button class="subj-hbtn" onclick="openAiBuy(\'grade\')">＋첨삭</button>'
+    +'<button class="subj-hbtn" onclick="openAiBuy(\'explain\')">＋해설</button>'
+    +'<button class="subj-hbtn primary" onclick="openGradeLogs(\''+cert+'\')">📋 기록</button>'
+    +'</div>'; }
+function _refreshAiCreditUI(){ var g=document.getElementById('subjBalG'); if(g) g.textContent=gradeBal().toLocaleString(); var e=document.getElementById('subjBalE'); if(e) e.textContent=explainBal().toLocaleString(); }
+async function saveGradeLog(cert, rec){ if(!currentUser||!db||!rec) return;
+  try{ await db.collection('users').doc(currentUser.uid).collection('gradeLogs').add({
+    cert:cert, qid:rec.qid||'', question:rec.question||'', answer:rec.answer||'',
+    score:(rec.score!=null?rec.score:null), pt:(rec.pt!=null?rec.pt:null),
+    perNode:Array.isArray(rec.perNode)?rec.perNode:[], feedback:rec.feedback||'',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp() }); }catch(e){ console.warn('gradeLog save', e); }
+}
+async function openGradeLogs(cert){ if(!currentUser){ if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  var ov=document.getElementById('gradeLogOv'), body=document.getElementById('gradeLogBody'); if(!ov||!body) return;
+  ov.classList.remove('hidden'); body.innerHTML='<div style="text-align:center;color:#8A7D6E;padding:20px">불러오는 중…</div>';
+  try{
+    var snap=await db.collection('users').doc(currentUser.uid).collection('gradeLogs').where('cert','==',cert).get();
+    var logs=snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    logs.sort(function(a,b){ var ta=a.createdAt&&a.createdAt.seconds||0, tb=b.createdAt&&b.createdAt.seconds||0; return tb-ta; });
+    if(!logs.length){ body.innerHTML='<div style="text-align:center;color:#8A7D6E;padding:24px">아직 채점 기록이 없어요.<br>답안을 쓰고 AI 심층채점을 받아보세요.</div>'; return; }
+    window._gradeLogsCache=logs;
+    body.innerHTML=logs.map(function(l,i){ var pct=(l.pt?Math.round((l.score/l.pt)*100):0); var col=pct>=70?'#0F6E56':pct>=40?'#B7791F':'#C0322F';
+      var dt=l.createdAt&&l.createdAt.seconds?new Date(l.createdAt.seconds*1000).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+      return '<div class="glog-item" onclick="openGradeLogDetail('+i+')">'
+        +'<div class="glog-score" style="color:'+col+'">'+(l.score!=null?l.score:'-')+'<span>/'+(l.pt||'-')+'</span></div>'
+        +'<div class="glog-mid"><div class="glog-q">'+cmEsc((l.question||'').slice(0,60))+'…</div><div class="glog-dt">'+dt+'</div></div>'
+        +'<span class="glog-arr">›</span></div>'; }).join('');
+  }catch(e){ body.innerHTML='<div style="text-align:center;color:#C0322F;padding:20px">불러오기 실패: '+cmEsc(e.message||String(e))+'</div>'; }
+}
+function openGradeLogDetail(i){ var l=(window._gradeLogsCache||[])[i]; if(!l) return; var body=document.getElementById('gradeLogBody'); if(!body) return;
+  var pct=(l.pt?Math.round((l.score/l.pt)*100):0), col=pct>=70?'#0F6E56':pct>=40?'#B7791F':'#C0322F';
+  var nodes=(l.perNode||[]).map(function(p){ var lv=p.level||0; var mk=lv>=2?'✓':lv===1?'△':'✕'; var cls=lv>=2?'hit':lv===1?'amb':'miss';
+    return '<div class="subj-chk '+cls+'"><span class="mk">'+mk+'</span><span>'+cmEsc(p.h||'')+'</span></div>'+(p.comment?'<div class="subj-why">'+cmEsc(p.comment)+'</div>':''); }).join('');
+  body.innerHTML='<button class="subj-hbtn" style="margin-bottom:10px" onclick="openGradeLogs(\''+cmEsc(l.cert||_subjHeaderCert||'')+'\')">‹ 목록</button>'
+    +'<div class="subj-scorebox"><div class="ring" style="background:#F6F6F4;color:'+col+'">'+(l.score!=null?l.score:'-')+'</div><div class="stx"><b>'+(l.score!=null?l.score:'-')+' / '+(l.pt||'-')+'점</b><br>'+cmEsc((l.question||'')).slice(0,80)+'</div></div>'
+    +(l.feedback?'<div class="subj-sect">채점 총평</div><div class="subj-feed">'+cmEsc(l.feedback)+'</div>':'')
+    +(l.answer?'<div class="subj-sect">내가 쓴 답안</div><div class="subj-feed" style="background:#F8FAFC;border-color:#E3EDF7;color:#334155">'+cmEsc(l.answer)+'</div>':'')
+    +(nodes?'<div class="subj-sect">논점별 채점 근거</div>'+nodes:'');
+}
+function closeGradeLogs(){ var ov=document.getElementById('gradeLogOv'); if(ov) ov.classList.add('hidden'); }
+
 // ===== 결제 완료 + 입금 안내 모달 =====
 function showPaySuccess(info){
   var ov=document.getElementById('paySuccessOv'); if(!ov) return;
   var pointOnly = !(info.payable>0);
-  document.getElementById('psuccSub').textContent = pointOnly ? '포인트로 결제 완료! 즉시 활성화되었습니다.' : '이용권이 즉시 활성화되었습니다.';
-  document.getElementById('psuccPlan').innerHTML = '<b>['+cmEsc(info.certName)+'] '+cmEsc(info.planLabel)+'</b><br>만료일: '+info.expireAt.toLocaleDateString('ko-KR');
+  document.getElementById('psuccSub').textContent = info.sub || (pointOnly ? '포인트로 결제 완료! 즉시 활성화되었습니다.' : '이용권이 즉시 활성화되었습니다.');
+  document.getElementById('psuccPlan').innerHTML = '<b>['+cmEsc(info.certName)+'] '+cmEsc(info.planLabel)+'</b>'+(info.expireAt?('<br>만료일: '+info.expireAt.toLocaleDateString('ko-KR')):'');
   var wrap=document.getElementById('psuccDepositWrap');
   if(pointOnly){ wrap.style.display='none'; }
   else {
@@ -5859,15 +6101,22 @@ function renderMcqExam(root){
       });
     }
     var _cc=_conceptCards(q); if(_cc.length){
-      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it){
+      var _aiCards=[];
+      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it,ci){
         if(!it||!it.t) return '';
         var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
         if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
+        // 🤖 이 개념 AI 심화설명 (같은 크레딧 지갑)
+        _aiCards.push({ t:String(it.t||''), text:[it.t,it.d,it.cx,it.ex].filter(function(x){return x&&String(x).trim();}).join('\n') });
+        row+='<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')">📋 복사</button>';
         return row;
-      }).join('')+'</div>';
+      }).join('')
+      + _aiAskWidget(q.id)
+      +'</div>';
+      aiExpRegister(q.id, { subject:(typeof certLabel==='function'?certLabel(mqCert):mqCert), question:(q.q||''), whole:((q.exp&&q.exp.s?String(q.exp.s)+'\n':'')+_aiCards.map(function(c){return c.text;}).join('\n\n')), cards:_aiCards });
     }
     body+=grpBlockHTML(q);   // 개념 뒤 → 그래프
     body+=itvBlockHTML(q);   // 개념 뒤 → 인터랙티브
@@ -6304,7 +6553,7 @@ async function enterCert(id, noGate){
     mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
     // (2026-07-02) 게스트 진입 시 _ltGuestGate 후킹/게이트로 콘텐츠 덮던 것 제거 — 시험 탭하면 기출/과목 대시보드 유지(레벨테스트는 대시보드 내 CTA로). 레벨테스트 결과 로그인 게이트는 LT 완료 시(renderMqResultScreen 5298)에만.
   }
-  if(_isSubjCert(id)){ try{ if(window.CLSubj) CLSubj.mount(document.getElementById('subjMount'), SUBJ_EXAMS[id], { mountId:'subjMount', endpoint:(window.SUBJ_GRADE_URL||null), onRate:function(qid,n,r){ try{ if(typeof srRateK==='function') srRateK(id, qid, r, false, false); }catch(_){} } }); }catch(e){ console.error('subj mount',e); } }
+  if(_isSubjCert(id)){ try{ mountSubjExam(id); }catch(e){ console.error('subj mount',e); } }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
   if(currentUser && userEnt[id] && userEnt[id].plan === 'EXPIRED'){ setTimeout(()=>showPlanPopup(), 600); }
@@ -7498,6 +7747,5 @@ function adEloUpdate(q, correct){
 </script>
 <script src="community.js"></script>
 <script src="calc-render.js"></script>
-<script src="subjective.js?v=20260713"></script>
 </body>
 </html>
