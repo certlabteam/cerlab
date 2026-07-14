@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="qc-core.js?v=20260713"></script>
+<script src="qc-gate-patch.js?v=20260714"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
@@ -1974,6 +1975,24 @@ async function mnemDelete(id){
     var st=document.getElementById('mnemStatus'); if(st){ st.style.color='#A32D2D'; st.textContent='삭제됨: '+id+' (총 '+Object.keys(_mnemAll).length+'개)'; }
   }catch(e){ alert('삭제 실패: '+e.message); }
 }
+/* 내보내기(백업) 직전 검수 게이트 — 마스터 배열을 auditFn으로 검사, 위반 있으면 확인받고 진행.
+   위반 목록은 콘솔에 상세 출력(검수 창과 동일 정보). 반환 true=진행, false=취소.
+   [2026-07-14] "내보내기엔 검수 버튼 없음" 구멍 메움 — 검수 창과 export가 같은 규칙을 공유하게. */
+function _qcMasterExportGate(kindLabel, arr, auditFn){
+  try{
+    if(typeof QC==='undefined' || typeof auditFn!=='function') return true;   // qc-core 없으면 그냥 통과
+    var vios=auditFn(arr)||[];
+    if(!vios.length) return true;
+    var byCode={}; vios.forEach(function(v){ byCode[v.code]=(byCode[v.code]||0)+1; });
+    var block=vios.filter(function(v){ return v.sev==='ERROR'||v.sev==='BLOCKER'; }).length;
+    try{ console.group('[검수] '+kindLabel+' 내보내기 — 위반 '+vios.length+'건 (차단급 '+block+')');
+      vios.forEach(function(v){ console.log('· ['+(v.sev||'')+'] '+v.code+' '+(v.id||'')+' — '+(v.msg||'')); });
+      console.groupEnd(); }catch(_){}
+    var summ=Object.keys(byCode).map(function(k){ return k+' '+byCode[k]; }).join(' · ');
+    return confirm('[검수] '+kindLabel+' 내보내기 전 위반 '+vios.length+'건'
+      +(block?(' (차단급 '+block+')'):'')+'\n'+summ+'\n\n상세는 콘솔(F12) 참고. 그래도 내보낼까요?');
+  }catch(e){ return true; }
+}
 async function mnemExport(){
   if(!Object.keys(_mnemAll).length){ try{ var _s=await db.collection('mnemonics').get(); _mnemAll={}; _s.forEach(function(d){ _mnemAll[d.id]=d.data()||{}; }); }catch(e){ alert('로드 실패: '+e.message); return; } }
   var ids=Object.keys(_mnemAll);
@@ -1981,6 +2000,7 @@ async function mnemExport(){
   if(!ids.length){ alert('등록된 코드가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _mnemAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
+  if(!_qcMasterExportGate('암기', arr, (QC&&QC.mnemAudit))) return;   // ← 내보내기 검수 게이트(MN_DUP 등)
   var bundle={ _meta:{ generatedAt:_xnow }, mnemonics:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
