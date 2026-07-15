@@ -165,14 +165,14 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},O_SHORT:{on:true,minChars:40}},
+  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:40},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
-  concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
-  mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true}},
-  table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true}},
-  interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true}}
+  concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:40},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true}},
+  mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true}},
+  table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
+  interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
 /* ===========================================================================
@@ -198,14 +198,29 @@ var _QC_SEV = {
   REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
-  EX_MISSING:'WARNING', O_SHORT:'INFO',   /* [신규 2026-07-15] 예시전무=경고 / 해설얇음=참고(소급 폭증 방지, 베이스라인 후 승격) */
+  EX_MISSING:'WARNING', EX_COVERAGE:'INFO', O_SHORT:'INFO',   /* [신규 2026-07-15] 예시전무=경고 / 예시일부·해설얇음=참고(소급 폭증 방지, 베이스라인 후 승격) */
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
   CALC_MECHANICAL:'INFO', CALC_REPEAT_LEAD:'INFO', TYPE_MISMATCH:'INFO',  /* 소급 폭증 방지: 신규 규칙은 INFO(비차단)로 도입, 베이스라인 정비 후 승격(qcDiff) */
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
   EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO', CALC_ARITH_MISMATCH:'WARNING', CALC_ANS_NO_MATCH:'WARNING', FACTOR_TABLE_PROSE:'WARNING',
   OX_STMT_MISMATCH:'WARNING', OX_DUP_PATTERN:'WARNING',
   /* INFO (NICE — 참고) */
-  EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR'
+  EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR',
+  /* [신규 2026-07-15] 계산풀이 가려짐·q 표 줄글 */
+  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING',
+  /* [신규 2026-07-15] 마스터 레코드 검수 — 레코드 날짜 */
+  REC_DATE:'BLOCKER',
+  /* 그래프 */
+  GRP_NO_SVG:'ERROR', GRP_SVG_MALFORMED:'ERROR', GRP_EXTERNAL:'ERROR', GRP_EMDASH:'ERROR', GRP_DUP:'ERROR',
+  GRP_PARAMS_OBJ:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING',
+  /* 암기 */
+  MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING',
+  /* 표 */
+  TBL_NO_HEADERS:'ERROR', TBL_NO_ROWS:'ERROR', TBL_RAGGED:'ERROR', TBL_DUP:'ERROR', TBL_NO_CAPTION:'WARNING', TBL_HTML_NO_TYPE:'WARNING',
+  /* 개념 */
+  CPT_NO_CARDS:'ERROR', CD_NO_D:'ERROR', CPT_DUP:'ERROR', CX_EMPTY:'WARNING', CX_ECHO_D:'WARNING', CX_SHORT:'WARNING', CX_NONAME:'WARNING', CX_DEICTIC:'WARNING', CD_D_NAMED:'WARNING', CD_OLD_FIELD:'WARNING',
+  /* 인터랙티브 */
+  ITV_NO_PARAMS:'ERROR', ITV_DUP:'ERROR', ITV_UNKNOWN:'WARNING'
 };
 function _qcSevOf(code, kind){
   if(_QC_SEV[code]) return _QC_SEV[code];
@@ -424,18 +439,47 @@ function _qcExtraRules(q){
   var _sSA=Array.isArray(q&&q.blanks)&&q.blanks.length;
   var _sMCQ=_sOpts.length&&oFilledArr.length>=1&&!_sSA;
   var _sTy=String((q&&q.type)||'').toUpperCase();
+  /* 계산형(CALC)은 접근·원리·요약풀이·상세풀이·최종정리·시험/암기 포인트 7단 구조가 별도라 이 두 검사에서 제외(§G). */
   var _sScene=_sMCQ && !_isCalcQ(q) && !_qcIsOXq(q) && _exemptTy.indexOf(_sTy)<0;
-  /* (n) 보기에 예시(exp.ex)가 하나도 없음 — 정답칸 등에 명명 인물의 실생활 장면 예시 최소 1개 필요(§A-7) */
-  if(_qcOn('gichul','EX_MISSING') && _sScene){
-    var _exN=(ex||[]).filter(function(x){return x&&String(x).trim();}).length;
-    if(_exN===0) v.push({kind:'warn',field:'ex',idx:0,code:'EX_MISSING',msg:'보기에 예시(장면)가 하나도 없음 — 정답칸 등에 명명 인물의 실생활 장면 예시(exp.ex) 최소 1개(§A-7)',text:''});
+  /* (n) 예시 커버리지 — 해설(o)이 달린 보기/진술마다 장면 예시(exp.ex) 100% 필요(§A-7).
+     o·ex는 같은 축(SC/NEG=보기, COMBO=진술)에 정렬되므로 opts가 아니라 '채워진 o 수' 대비 '채워진 ex 수'로 판정(정렬 안전).
+     예시 전무=EX_MISSING(경고), 일부만=EX_COVERAGE(참고). */
+  if(_sScene){
+    var _oF2=0; o.forEach(function(t){ if(t&&String(t).trim()) _oF2++; });
+    var _exF2=0; ex.forEach(function(t){ if(t&&String(t).trim()) _exF2++; });
+    if(_oF2>0){
+      if(_qcOn('gichul','EX_MISSING') && _exF2===0)
+        v.push({kind:'warn',field:'ex',idx:0,code:'EX_MISSING',msg:'보기에 예시(장면)가 하나도 없음 — 해설이 달린 모든 보기/진술에 명명 인물의 실생활 장면 예시(exp.ex) 필요(§A-7)',text:''});
+      else if(_qcOn('gichul','EX_COVERAGE') && _exF2>0 && _exF2<_oF2)
+        v.push({kind:'warn',field:'ex',idx:0,code:'EX_COVERAGE',msg:'예시가 일부 보기에만 있음('+_exF2+'/'+_oF2+') — 해설 달린 보기/진술 전부에 예시 100% 필요(§A-7)',text:''});
+    }
   }
-  /* (o) 해설(o)이 전부 얇음 — 채워진 해설의 최댓값이 minChars(기본 40자) 미만(=모든 보기 해설이 한 줄 요약뿐).
-     정의확인용 짧은 보기(길이<10)에 붙은 해설은 짧아도 정상이라 제외 → 실질 보기 해설만 길이 판정. */
+  /* (o) 해설(o) 얇음 — 채워진 해설 항목이 minChars(기본 40자) 미만이면 항목별로 지적("40자 미만 전부").
+     참고(INFO)로 도입 → 베이스라인 후 승격(qcDiff). */
   if(_qcOn('gichul','O_SHORT') && _sScene){
-    var _oMin=_qcN('gichul','O_SHORT','minChars',40), _oMax=0;
-    o.forEach(function(t,i){ var op=_sOpts[i]; if(!(t&&String(t).trim())) return; if(op&&String(op).trim().length<10) return; var _L=String(t).replace(/<[^>]+>/g,'').trim().length; if(_L>_oMax)_oMax=_L; });
-    if(_oMax>0 && _oMax<_oMin) v.push({kind:'warn',field:'o',idx:0,code:'O_SHORT',msg:'해설(o)이 전부 짧음(최장 '+_oMax+'자 < '+_oMin+'자) — 각 보기가 왜 옳은지/틀린지 사유를 한 문장 더(역할분리 §337)',text:''});
+    var _oMin=_qcN('gichul','O_SHORT','minChars',40);
+    o.forEach(function(t,i){ if(!(t&&String(t).trim())) return; var _L=String(t).replace(/<[^>]+>/g,'').trim().length; if(_L<_oMin) v.push({kind:'warn',field:'o',idx:i,code:'O_SHORT',msg:'해설(o)이 '+_L+'자(<'+_oMin+'자)로 얇음 — 왜 옳은지/틀린지 사유를 한 문장 더(역할분리 §337)',text:t}); });
+  }
+  /* (p) [신규 2026-07-15] 계산풀이가 있으나 특수 타입이라 앱 계산형 렌더에서 가려짐.
+     COUNT·PAIR·ORDER·CV·FILL 등은 자체 렌더를 써서 요약풀이(exSum)·상세풀이(ex) 패널을 안 띄운다.
+     계산형(q.calc/_isCalcQ)이고 풀이가 데이터에 있는데 이런 타입이면 상세풀이가 화면에서 사라진다(데이터엔 있음). */
+  if(_qcOn('gichul','CALC_HIDDEN_BY_TYPE')){
+    var _hbTy=String((q&&q.type)||'').toUpperCase();
+    var _hbSpecial=['COUNT','PAIR','ORDER','CV','FILL','MATCH','MATRIX','OX'];
+    var _hbSol=(Array.isArray(exp.exSum)&&exp.exSum.filter(Boolean).length)||(Array.isArray(exp.ex)&&exp.ex.filter(Boolean).length);
+    if((q.calc===true||_isCalcQ(q)) && _hbSol && _hbSpecial.indexOf(_hbTy)>=0)
+      v.push({kind:'warn',field:'type',idx:0,code:'CALC_HIDDEN_BY_TYPE',msg:'계산풀이(요약·상세풀이)가 데이터엔 있는데 type='+_hbTy+'(특수 렌더)라 앱 계산형 풀이 패널이 안 뜸 — 계산형 렌더 경로로 노출되게 타입/렌더 점검',text:_hbTy});
+  }
+  /* (q) [신규 2026-07-15] 표 데이터가 문항(q)에 줄글로 몰림 — 구분/지역/산업 등 헤더 + 숫자 다수인데 표 마크업 없음.
+     q는 불변이라 데이터 수정이 아니라 앱 표 렌더 개선 신호(FACTOR_TABLE_PROSE의 일반형; 계수표는 그쪽서 처리). */
+  if(_qcOn('gichul','Q_TABLE_PROSE')){
+    var _qtq=String(q.q||'');
+    var _qtFactor=/현가계수|현재가치계수|연금현가|할인계수|현가표|계수표|현가율/.test(_qtq);
+    if(!_qtFactor && !/<table|tbl:\/\//.test(_qtq) && /구분\s|지역\s|산업\s|연도별|월별|구간|계급/.test(_qtq)){
+      var _qtN=(_qtq.match(/(?:^|[^\d.])\d{1,6}(?![\d.])/g)||[]).length;
+      var _qtMin=_qcN('gichul','Q_TABLE_PROSE','minNums',8);
+      if(_qtN>=_qtMin) v.push({kind:'warn',field:'q',idx:0,code:'Q_TABLE_PROSE',msg:'표 데이터('+_qtN+'개 수치)가 본문에 줄글로 몰려 있음 — 행×열 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_qtq.slice(0,60)});
+    }
   }
   return v;
 }
@@ -741,12 +785,104 @@ try{
     L.counts={nNoCpt:nNoCpt,nDead:nDead,nChild:nChild,nMedia:nMedia,nCx:nCx,nNeed:nNeed,nNeed7:nNeed7};
     return L;
   }
+  /* ===========================================================================
+     [신규 2026-07-15] 마스터 레코드 품질 검수 — graph·mnem·table·concept·interactive.
+     각 함수는 마스터 배열(또는 단일 레코드)을 받아 위반 [{id,code,sev,kind,field,idx,msg}]을 반환한다.
+     admin의 내보내기 게이트(_qcMasterExportGate)·preview 검수창이 QC.<종류>Audit로 호출한다.
+     지금까지 config엔 코드만 있고 구현이 없어 그래프 등 마스터 검수가 비어 있던 구멍을 메운다.
+     =========================================================================== */
+  function _qcAsArr(a){ return Array.isArray(a)?a:(a?[a]:[]); }
+  function _qcRedLetters(s){ var out=[],m,re=/<span class="k">([\s\S]*?)<\/span>|<k>([\s\S]*?)<\/k>/g; while((m=re.exec(String(s||'')))){ out.push((m[1]!=null?m[1]:m[2]).replace(/\s/g,'')); } return out.join(''); }
+  function _qcDupChk(seen,id,sec,code,label,v){ if(seen[id]){ if(_qcOn(sec,code)) v.push({id:id,kind:'block',field:'id',idx:0,code:code,msg:label+' id 중복: '+id}); return true; } seen[id]=1; return false; }
+  function _qcRecDate(rec,id,v){ var rd=_qcRecordDate(rec); if(rd){ rd.id=id; v.push(rd); } }
+
+  // ---- 그래프(SVG) 마스터 검수 ----
+  function _qcGraphAudit(arr){ var v=[],seen={};
+    _qcAsArr(arr).forEach(function(g){ if(!g) return; var id=(g.id!=null)?String(g.id):'?';
+      if(_qcDupChk(seen,id,'graph','GRP_DUP','그래프',v)) return; _qcRecDate(g,id,v);
+      if(_qcOn('graph','GRP_TYPE') && String(g.type||'')!=='svg') v.push({id:id,kind:'warn',field:'type',idx:0,code:'GRP_TYPE',msg:'type이 "svg"가 아님(type="'+String(g.type||'')+'") — 그래프 마스터는 type:"svg"'});
+      if(_qcOn('graph','GRP_PARAMS_OBJ') && g.params!=null && typeof g.params==='object') v.push({id:id,kind:'warn',field:'params',idx:0,code:'GRP_PARAMS_OBJ',msg:'params가 객체 — SVG 그래프는 params:null 이어야 함(⚠️ {} 아님)'});
+      var svg=String(g.svg||'');
+      if(!svg.trim()){ if(_qcOn('graph','GRP_NO_SVG')) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_NO_SVG',msg:'svg 내용 없음'}); _qcApplySev(v); return; }
+      if(_qcOn('graph','GRP_SVG_MALFORMED')){ var opens=(svg.match(/<svg[\s>]/g)||[]).length, closes=(svg.match(/<\/svg>/g)||[]).length;
+        if(!/<svg[\s>]/.test(svg)||!/<\/svg>/.test(svg)||opens!==closes) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_SVG_MALFORMED',msg:'<svg>…</svg> 태그가 안 맞음/누락 — XML 파싱 깨짐 위험'}); }
+      if(_qcOn('graph','GRP_EXTERNAL') && /(<script|<image[\s>]|<foreignObject|(?:xlink:)?href\s*=\s*["']?\s*https?:)/i.test(svg)) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_EXTERNAL',msg:'외부 자원/스크립트(<script>·<image>·http href·foreignObject) 포함 — 순수 벡터만 허용'});
+      if(_qcOn('graph','GRP_NO_VIEWBOX') && !/viewBox\s*=/.test(svg)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_VIEWBOX',msg:'viewBox 없음 — viewBox="0 -28 360 H" 권장(상단 -28에 제목)'});
+      if(_qcOn('graph','GRP_FONT')){ var body=svg.replace(/<!--[\s\S]*?-->/g,''); if(/[가-힣]/.test(body) && !/Noto\s*Sans\s*CJK\s*KR/.test(body)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_FONT',msg:'한글이 있는데 font-family="Noto Sans CJK KR" 미지정 — 폰트 깨짐(□□) 위험'}); }
+      if(_qcOn('graph','GRP_NO_TEXT') && !/<text[\s>]/.test(svg)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_TEXT',msg:'<text> 라벨이 하나도 없음 — 제목·축·설명 텍스트 확인'});
+      if(_qcOn('graph','GRP_EMDASH') && /—/.test(svg)) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_EMDASH',msg:'svg에 em대시(—) — en대시(–)·쉼표로'});
+    }); _qcApplySev(v); return v; }
+
+  // ---- 암기(mnemonic) 마스터 검수 ----
+  function _qcMnemAudit(arr){ var v=[],seen={};
+    _qcAsArr(arr).forEach(function(mn){ if(!mn) return; var id=(mn.id!=null)?String(mn.id):'?';
+      if(_qcDupChk(seen,id,'mnem','MN_DUP','암기',v)) return; _qcRecDate(mn,id,v);
+      var code=String(mn.code||''), desc=String(mn.desc||''), cRed=_qcRedLetters(code), dRed=_qcRedLetters(desc);
+      if(_qcOn('mnem','MN_DESC_EMPTY') && !desc.trim()) v.push({id:id,kind:'block',field:'desc',idx:0,code:'MN_DESC_EMPTY',msg:'desc(뜻풀이) 비어 있음'});
+      if(_qcOn('mnem','MN_NO_K') && !cRed) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_NO_K',msg:'code에 빨강 두문자(<span class="k">) 없음'});
+      if(_qcOn('mnem','MN_DESC_NO_RED') && desc.trim() && !dRed) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_NO_RED',msg:'desc에 대응 빨강 글자(<span class="k">) 없음'});
+      if(_qcOn('mnem','MN_DESC_REDUP') && cRed && dRed && cRed.length!==dRed.length) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_REDUP',msg:'code 빨강 글자('+cRed.length+')와 desc 빨강 글자('+dRed.length+') 수 불일치 — 전수 일치 필요'});
+      if(_qcOn('mnem','MN_SLASH') && /\//.test(code.replace(/<[^>]+>/g,''))) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_SLASH',msg:'code 구분자에 / 사용 — 가운뎃점(·)으로'});
+      if(/—/.test(code+desc)) v.push({id:id,kind:'block',field:'desc',idx:0,code:'EMDASH',msg:'code/desc에 em대시(—) 금지'});
+    }); _qcApplySev(v); return v; }
+
+  // ---- 표(table) 마스터 검수 ----
+  function _qcTableAudit(arr){ var v=[],seen={};
+    _qcAsArr(arr).forEach(function(t){ if(!t) return; var id=(t.id!=null)?String(t.id):'?';
+      if(_qcDupChk(seen,id,'table','TBL_DUP','표',v)) return; _qcRecDate(t,id,v);
+      var H=Array.isArray(t.headers)?t.headers:[], R=Array.isArray(t.rows)?t.rows:[];
+      if(_qcOn('table','TBL_NO_HEADERS') && !H.length) v.push({id:id,kind:'block',field:'headers',idx:0,code:'TBL_NO_HEADERS',msg:'headers 없음'});
+      if(_qcOn('table','TBL_NO_ROWS') && !R.length) v.push({id:id,kind:'block',field:'rows',idx:0,code:'TBL_NO_ROWS',msg:'rows 없음'});
+      if(_qcOn('table','TBL_RAGGED') && H.length){ for(var i=0;i<R.length;i++){ if(Array.isArray(R[i]) && R[i].length!==H.length){ v.push({id:id,kind:'block',field:'rows',idx:i,code:'TBL_RAGGED',msg:'행 '+(i+1)+' 열 수('+R[i].length+') ≠ 헤더 열 수('+H.length+')'}); break; } } }
+      if(_qcOn('table','TBL_NO_CAPTION') && !(t.caption_chant&&String(t.caption_chant).trim())) v.push({id:id,kind:'warn',field:'caption_chant',idx:0,code:'TBL_NO_CAPTION',msg:'caption_chant(한 줄 요약) 없음'});
+      var cells=H.concat.apply(H, R.map(function(r){return Array.isArray(r)?r:[r];})).map(String).join(' ');
+      if(_qcOn('table','TBL_HTML_NO_TYPE') && /<span class="k"|<sup|<sub|<br/i.test(cells) && String(t.type||'')!=='html') v.push({id:id,kind:'warn',field:'type',idx:0,code:'TBL_HTML_NO_TYPE',msg:'셀에 태그(<span class="k">/<sup>/<br>)가 있는데 type:"html" 아님 — 태그가 그대로 노출됨'});
+      if(/—/.test(cells+String(t.caption_chant||''))) v.push({id:id,kind:'block',field:'rows',idx:0,code:'EMDASH',msg:'표 셀/캡션에 em대시(—) 금지'});
+    }); _qcApplySev(v); return v; }
+
+  // ---- 개념(concept) 마스터 검수 ----
+  function _qcConceptAudit(arr){ var v=[],seen={};
+    _qcAsArr(arr).forEach(function(c){ if(!c) return; var id=(c.id!=null)?String(c.id):'?';
+      if(_qcDupChk(seen,id,'concept','CPT_DUP','개념',v)) return; _qcRecDate(c,id,v);
+      var cards=Array.isArray(c.cards)?c.cards:[];
+      if(_qcOn('concept','CPT_NO_CARDS') && !cards.length) v.push({id:id,kind:'block',field:'cards',idx:0,code:'CPT_NO_CARDS',msg:'cards 없음(개념카드 0개)'});
+      cards.forEach(function(cd,j){ if(!cd) return; var d=String(cd.d||''), cx=String(cd.cx||''), t=String(cd.t||'');
+        if(_qcOn('concept','CD_OLD_FIELD')) Object.keys(cd).forEach(function(k){ if(k!=='t'&&k!=='d'&&k!=='cx') v.push({id:id,kind:'warn',field:'card',idx:j,code:'CD_OLD_FIELD',msg:'카드 '+(j+1)+'에 t·d·cx 외 필드("'+k+'") — 3필드만 허용'}); });
+        if(_qcOn('concept','CD_NO_D') && !d.trim()) v.push({id:id,kind:'block',field:'card',idx:j,code:'CD_NO_D',msg:'카드 '+(j+1)+' 정의(d) 비어 있음'});
+        if(_qcOn('concept','CX_EMPTY') && !cx.trim()) v.push({id:id,kind:'warn',field:'card',idx:j,code:'CX_EMPTY',msg:'카드 '+(j+1)+' 예시(cx) 비어 있음'});
+        if(cx.trim()){
+          if(_qcOn('concept','CX_ECHO_D') && d && _qgSim(d,cx)>=_qcN('concept','CX_ECHO_D','minSim',0.5)) v.push({id:id,kind:'warn',field:'card',idx:j,code:'CX_ECHO_D',msg:'카드 '+(j+1)+' 예시(cx)가 정의(d) 되풀이 — 다른 장면·수치로'});
+          if(_qcOn('concept','CX_SHORT')){ var L=cx.replace(/<[^>]+>/g,'').trim().length; if(L<_qcN('concept','CX_SHORT','minChars',40)) v.push({id:id,kind:'warn',field:'card',idx:j,code:'CX_SHORT',msg:'카드 '+(j+1)+' 예시(cx) '+L+'자로 짧음'}); }
+          if(_qcOn('concept','CX_NONAME') && _qgAction.test(cx) && !_qgNamed(cx)) v.push({id:id,kind:'warn',field:'card',idx:j,code:'CX_NONAME',msg:'카드 '+(j+1)+' 예시(cx)가 장면인데 명명 인물(甲乙…) 없음'});
+        }
+        if(_qcOn('concept','CX_DEICTIC') && (/^(이|그|위|해당)\s/.test(d.trim())||/^(이|그|위|해당)\s/.test(cx.trim()))) v.push({id:id,kind:'warn',field:'card',idx:j,code:'CX_DEICTIC',msg:'카드 '+(j+1)+' 정의/예시가 지시어(이/그/위/해당)로 시작'});
+        if(_qcOn('concept','CD_D_NAMED') && /[甲乙丙丁戊]/.test(d)) v.push({id:id,kind:'warn',field:'card',idx:j,code:'CD_D_NAMED',msg:'카드 '+(j+1)+' 정의(d)에 명명 인물(甲乙) — 정의는 일반 서술, 인물은 예시(cx)에'});
+        if(/—/.test(t+d+cx)) v.push({id:id,kind:'block',field:'card',idx:j,code:'EMDASH',msg:'카드 '+(j+1)+'에 em대시(—) 금지'});
+      });
+    }); _qcApplySev(v); return v; }
+
+  // ---- 인터랙티브(interactive) 마스터 검수 ----
+  function _qcInteractiveAudit(arr){ var v=[],seen={};
+    _qcAsArr(arr).forEach(function(it){ if(!it) return; var id=(it.id!=null)?String(it.id):'?';
+      if(_qcDupChk(seen,id,'interactive','ITV_DUP','인터랙티브',v)) return; _qcRecDate(it,id,v);
+      if(_qcOn('interactive','ITV_UNKNOWN') && !String(it.template||'').trim()) v.push({id:id,kind:'warn',field:'template',idx:0,code:'ITV_UNKNOWN',msg:'template 비어 있음/미지정'});
+      var p=it.params, empty=(p==null)||(Array.isArray(p)?!p.length:(typeof p==='object'?!Object.keys(p).length:!String(p).trim()));
+      if(_qcOn('interactive','ITV_NO_PARAMS') && empty) v.push({id:id,kind:'block',field:'params',idx:0,code:'ITV_NO_PARAMS',msg:'params 비어 있음'});
+    }); _qcApplySev(v); return v; }
+
+  // ---- 종류→검수함수 디스패처 ----
+  var _qcMasterAuditFns={ graph:_qcGraphAudit, mnem:_qcMnemAudit, mnemonic:_qcMnemAudit, table:_qcTableAudit, concept:_qcConceptAudit, cpt:_qcConceptAudit, interactive:_qcInteractiveAudit, itv:_qcInteractiveAudit };
+  function _qcMasterRecordAudit(kind, arr){ var f=_qcMasterAuditFns[String(kind||'').toLowerCase()]; return f?f(arr):[]; }
+
   window.QC = {
     violations:_qcViolations, gate:qualityGate, masterLink:_qcMasterLink, bundle:_qcBundle,
     levelup:_qcLevelup, applySev:_qcApplySev, sevOf:_qcSevOf, sevMeta:_QC_SEV_META,
     refs:_qcRefs, recordDate:_qcRecordDate, defaults:_QC_DEFAULTS,
     conceptSignals:_qcConceptSignals, CS:{grp:_CS_GRP, tbl:_CS_TBL, mn:_CS_MN, itv:_CS_ITV},
     visualSignals:_qcVisualSignals, VIS:{q:_VIS_Q, imgQ:_IMG_Q, imgArt:_IMG_ART, imgEx:_IMG_EX},
-    masterAudit:_qcMasterAudit, mlaRefs:_qcMlaRefs, cleanRef:_qcMlaClean
+    masterAudit:_qcMasterAudit, mlaRefs:_qcMlaRefs, cleanRef:_qcMlaClean,
+    graphAudit:_qcGraphAudit, mnemAudit:_qcMnemAudit, tableAudit:_qcTableAudit,
+    conceptAudit:_qcConceptAudit, interactiveAudit:_qcInteractiveAudit, masterRecordAudit:_qcMasterRecordAudit
   };
+  if(typeof module!=='undefined'&&module.exports){ module.exports.graphAudit=_qcGraphAudit; module.exports.mnemAudit=_qcMnemAudit; module.exports.tableAudit=_qcTableAudit; module.exports.conceptAudit=_qcConceptAudit; module.exports.interactiveAudit=_qcInteractiveAudit; module.exports.masterRecordAudit=_qcMasterRecordAudit; }
 }catch(e){}
