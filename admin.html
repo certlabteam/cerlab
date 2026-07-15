@@ -2273,6 +2273,7 @@ async function tblmExport(){
   if(!ids.length){ alert('등록된 표가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _tblmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
+  if(!_qcMasterExportGate('표', arr, (QC&&QC.tableAudit))) return;   // ← 내보내기 검수 게이트(TBL_RAGGED 등)
   var bundle={ _meta:{ generatedAt:_xnow }, tables:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
@@ -2533,6 +2534,7 @@ async function cptmExport(){
   if(!ids.length){ alert('등록된 개념이 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _cptmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
+  if(!_qcMasterExportGate('개념', arr, (QC&&QC.conceptAudit))) return;   // ← 내보내기 검수 게이트(CD_NO_D 등)
   var bundle={ _meta:{ generatedAt:_xnow }, concepts:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
@@ -3075,6 +3077,7 @@ async function grpmExport(){
   if(!ids.length){ alert('등록된 그래프가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _grpmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
+  if(!_qcMasterExportGate('그래프', arr, (QC&&QC.graphAudit))) return;   // ← 내보내기 검수 게이트(GRP_SVG_MALFORMED·GRP_FONT 등)
   var bundle={ _meta:{ generatedAt:_xnow }, graphs:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
@@ -3240,6 +3243,7 @@ async function itvmExport(){
   if(!ids.length){ alert('등록된 인터랙티브가 없어요.'); return; }
   var _xnow=_kstISO(new Date());
   var arr=ids.map(function(id){ var r=Object.assign({id:id}, _itvmAll[id]); r.updatedAt=_uaISO(r.updatedAt, new Date()); return r; });
+  if(!_qcMasterExportGate('인터랙티브', arr, (QC&&QC.interactiveAudit))) return;   // ← 내보내기 검수 게이트(ITV_NO_PARAMS 등)
   var bundle={ _meta:{ generatedAt:_xnow }, interactives:arr, exportedAt:_xnow, count:arr.length };
   var blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob); var a=document.createElement('a');
