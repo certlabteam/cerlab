@@ -165,7 +165,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4}},
+  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},O_SHORT:{on:true,minChars:40}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true}},
@@ -198,6 +198,7 @@ var _QC_SEV = {
   REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
+  EX_MISSING:'WARNING', O_SHORT:'INFO',   /* [신규 2026-07-15] 예시전무=경고 / 해설얇음=참고(소급 폭증 방지, 베이스라인 후 승격) */
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
   CALC_MECHANICAL:'INFO', CALC_REPEAT_LEAD:'INFO', TYPE_MISMATCH:'INFO',  /* 소급 폭증 방지: 신규 규칙은 INFO(비차단)로 도입, 베이스라인 정비 후 승격(qcDiff) */
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
@@ -414,6 +415,27 @@ function _qcExtraRules(q){
       if(!(_fillLike && q.calc===false && _autoCalc===true))
         v.push({kind:'warn',field:'calc',idx:0,code:'CALC_FLAG_MISMATCH',msg:'calc 플래그('+q.calc+')와 자동판별('+_autoCalc+') 불일치 — 계산형 태그 또는 exp.o/ex 구조 점검',text:''});
     }
+  }
+  /* ===== [신규 2026-07-15] 해설 얇음·예시 전무 검수 — 장면예시/사유가 학습 핵심인 이론 MCQ(SC·COMBO·NEG)만.
+     OX·단답(SA/blanks)·계산(CALC)·개수형(COUNT)·짝짓기(PAIR)·순서(ORDER) 등은 장면예시·장문사유 비대상이라 면제.
+     둘 다 warn 계열(EX_MISSING=WARNING, O_SHORT=INFO). O_SHORT는 소급 폭증 방지로 INFO 도입 → 베이스라인 정비 후 승격(qcDiff). */
+  var _exemptTy=['CALC','FILL','PAIR','SA','COUNT','ORDER','ORAL','MATRIX','CV','OX'];
+  var _sOpts=(q&&Array.isArray(q.opts))?q.opts:[];
+  var _sSA=Array.isArray(q&&q.blanks)&&q.blanks.length;
+  var _sMCQ=_sOpts.length&&oFilledArr.length>=1&&!_sSA;
+  var _sTy=String((q&&q.type)||'').toUpperCase();
+  var _sScene=_sMCQ && !_isCalcQ(q) && !_qcIsOXq(q) && _exemptTy.indexOf(_sTy)<0;
+  /* (n) 보기에 예시(exp.ex)가 하나도 없음 — 정답칸 등에 명명 인물의 실생활 장면 예시 최소 1개 필요(§A-7) */
+  if(_qcOn('gichul','EX_MISSING') && _sScene){
+    var _exN=(ex||[]).filter(function(x){return x&&String(x).trim();}).length;
+    if(_exN===0) v.push({kind:'warn',field:'ex',idx:0,code:'EX_MISSING',msg:'보기에 예시(장면)가 하나도 없음 — 정답칸 등에 명명 인물의 실생활 장면 예시(exp.ex) 최소 1개(§A-7)',text:''});
+  }
+  /* (o) 해설(o)이 전부 얇음 — 채워진 해설의 최댓값이 minChars(기본 40자) 미만(=모든 보기 해설이 한 줄 요약뿐).
+     정의확인용 짧은 보기(길이<10)에 붙은 해설은 짧아도 정상이라 제외 → 실질 보기 해설만 길이 판정. */
+  if(_qcOn('gichul','O_SHORT') && _sScene){
+    var _oMin=_qcN('gichul','O_SHORT','minChars',40), _oMax=0;
+    o.forEach(function(t,i){ var op=_sOpts[i]; if(!(t&&String(t).trim())) return; if(op&&String(op).trim().length<10) return; var _L=String(t).replace(/<[^>]+>/g,'').trim().length; if(_L>_oMax)_oMax=_L; });
+    if(_oMax>0 && _oMax<_oMin) v.push({kind:'warn',field:'o',idx:0,code:'O_SHORT',msg:'해설(o)이 전부 짧음(최장 '+_oMax+'자 < '+_oMin+'자) — 각 보기가 왜 옳은지/틀린지 사유를 한 문장 더(역할분리 §337)',text:''});
   }
   return v;
 }
