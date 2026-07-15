@@ -137,7 +137,7 @@
     (exam.questions||[]).forEach(function(q,qi){ if(setFilter!=null && _setOf(q)!==setFilter) return;
       var c=document.createElement('div'); c.className='subj-qc';
       c.innerHTML='<div class="subj-qh">📝 문제 '+_localNum(exam,qi)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
-        +'<div class="subj-qprev">'+esc((q.q||'').slice(0,90))+'…</div>';
+        +'<div class="subj-qprev">'+esc(((q.q&&String(q.q).trim())?q.q:((q.asks&&q.asks[0]&&q.asks[0].q)||'')).slice(0,90))+'…</div>';
       c.onclick=function(){ openQ(exam,qi); };
       wrap.appendChild(c); });
     return wrap; }
@@ -149,7 +149,7 @@
       +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</div>'):'';
     v.innerHTML='<div class="subj-back" data-back="1">‹ 목록</div>'
       +'<div class="subj-qc"><div class="subj-qh">📝 문제 '+_localNum(exam,qi)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
-      +'<div class="subj-jaryo">'+esc(q.q)+'</div>'+refHtml
+      +((q.q&&String(q.q).trim())?('<div class="subj-jaryo">'+esc(q.q)+'</div>'):'')+refHtml
       +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
       +conceptHtml(q)
       +'<div id="subj-asks"></div></div>';
