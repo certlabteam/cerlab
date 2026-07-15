@@ -165,11 +165,11 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:40},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8}},
+  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:40},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:40},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true}},
-  mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true}},
+  mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
   graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
@@ -207,14 +207,14 @@ var _QC_SEV = {
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR',
   /* [신규 2026-07-15] 계산풀이 가려짐·q 표 줄글 */
-  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING',
+  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING', CALC_FIELDS_ON_NONCALC:'WARNING', ALLANS_NO_NOTE:'WARNING',
   /* [신규 2026-07-15] 마스터 레코드 검수 — 레코드 날짜 */
   REC_DATE:'BLOCKER',
   /* 그래프 */
   GRP_NO_SVG:'ERROR', GRP_SVG_MALFORMED:'ERROR', GRP_EXTERNAL:'ERROR', GRP_EMDASH:'ERROR', GRP_DUP:'ERROR',
   GRP_PARAMS_OBJ:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING',
   /* 암기 */
-  MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING',
+  MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING', MN_SYMBOL:'WARNING', MN_DESC_SHORT:'WARNING',
   /* 표 */
   TBL_NO_HEADERS:'ERROR', TBL_NO_ROWS:'ERROR', TBL_RAGGED:'ERROR', TBL_DUP:'ERROR', TBL_NO_CAPTION:'WARNING', TBL_HTML_NO_TYPE:'WARNING',
   /* 개념 */
@@ -480,6 +480,22 @@ function _qcExtraRules(q){
       var _qtMin=_qcN('gichul','Q_TABLE_PROSE','minNums',8);
       if(_qtN>=_qtMin) v.push({kind:'warn',field:'q',idx:0,code:'Q_TABLE_PROSE',msg:'표 데이터('+_qtN+'개 수치)가 본문에 줄글로 몰려 있음 — 행×열 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_qtq.slice(0,60)});
     }
+  }
+  /* (r) [신규 2026-07-15] 계산형 아닌데 계산형 7단 필드가 붙음 — PAIR·COMBO·COUNT·ORDER·MATCH 짝짓기/목록형이
+     approach·principle·exSum을 달고 있으나 실제 산술이 없으면 계산형 렌더로 가 보기(ㄱ~)별 해설이 안 뜬다. 보기별 해설로 전환 권장. */
+  if(_qcOn('gichul','CALC_FIELDS_ON_NONCALC')){
+    var _cfTy=String((q&&q.type)||'').toUpperCase();
+    var _cfHasFld=(exp.approach&&String(exp.approach).trim())||(exp.principle&&String(exp.principle).trim())||(Array.isArray(exp.exSum)&&exp.exSum.filter(Boolean).length);
+    if(['PAIR','COMBO','COUNT','ORDER','MATCH','CV'].indexOf(_cfTy)>=0 && _cfHasFld){
+      var _cfBlob=[].concat(exp.exSum||[],exp.ex||[],[exp.s||'',exp.principle||'']).join(' ');
+      var _cfArith=/\d\s*[×÷*\/]\s*\d|=\s*[\d(]|\d\s*[+\-]\s*\d/.test(_cfBlob);
+      if(!_cfArith) v.push({kind:'warn',field:'type',idx:0,code:'CALC_FIELDS_ON_NONCALC',msg:'계산형 아님(type='+_cfTy+'·산술 없음)인데 계산형 7단 필드(접근·원리·요약풀이)가 붙음 — 보기(ㄱ~)별 해설로 전환',text:_cfTy});
+    }
+  }
+  /* (s) [신규 2026-07-15] 전항정답인데 사유 설명 없음 — ans가 모든 보기를 가리키면 왜 전부 정답인지 최종정리(s)에 명시. */
+  if(_qcOn('gichul','ALLANS_NO_NOTE') && Array.isArray(q.ans) && Array.isArray(q.opts) && q.ans.length>=q.opts.length && q.opts.length>=2){
+    var _anBlob=String(exp.s||'')+' '+((exp.o||[]).join(' '));
+    if(!/전항정답|모두\s*정답|전부\s*정답|전원정답|복수\s*정답|모두\s*옳/.test(_anBlob)) v.push({kind:'warn',field:'s',idx:0,code:'ALLANS_NO_NOTE',msg:'전항정답(모든 보기 정답)인데 왜 전부 정답 처리됐는지 설명이 없음 — 최종정리(s)에 사유 명시',text:''});
   }
   return v;
 }
@@ -823,6 +839,8 @@ try{
       if(_qcOn('mnem','MN_DESC_NO_RED') && desc.trim() && !dRed) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_NO_RED',msg:'desc에 대응 빨강 글자(<span class="k">) 없음'});
       if(_qcOn('mnem','MN_DESC_REDUP') && cRed && dRed && cRed.length!==dRed.length) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_REDUP',msg:'code 빨강 글자('+cRed.length+')와 desc 빨강 글자('+dRed.length+') 수 불일치 — 전수 일치 필요'});
       if(_qcOn('mnem','MN_SLASH') && /\//.test(code.replace(/<[^>]+>/g,''))) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_SLASH',msg:'code 구분자에 / 사용 — 가운뎃점(·)으로'});
+      if(_qcOn('mnem','MN_SYMBOL') && /[∞≥≤±√∑≠÷×²³½¼¾µΩ]/.test(code.replace(/<[^>]+>/g,''))) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_SYMBOL',msg:'code에 소리내어 못 읽는 기호(∞·≥·²·√ 등) — 읽히는 두문자·말로 풀어라(예: ∞→"수평/완전탄력")'});
+      if(_qcOn('mnem','MN_DESC_SHORT')){ var _dL=desc.replace(/<[^>]+>/g,'').trim().length; if(desc.trim() && _dL<_qcN('mnem','MN_DESC_SHORT','minChars',25)) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_SHORT',msg:'desc '+_dL+'자로 짧음 — 무엇에 대한 암기인지 맥락 한 문장 필요'}); }
       if(/—/.test(code+desc)) v.push({id:id,kind:'block',field:'desc',idx:0,code:'EMDASH',msg:'code/desc에 em대시(—) 금지'});
     }); _qcApplySev(v); return v; }
 
