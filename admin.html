@@ -4990,7 +4990,7 @@ function _mlaAuditLines(items, M){
     qs.forEach(function(q){
       var id=(q&&q.id)||'?', R=_mlaRefs(q);
       // 1) 개념 미연결
-      if(R.cpt.length===0){ noCptL.push('  [누락] '+it.docId+' · '+id+' 개념 연결 없음(exp.cpt 비어 있음)'); nNoCpt++; }
+      if(R.cpt.length===0 && (typeof _qcCptExemptCerts==='undefined' || _qcCptExemptCerts.indexOf(String(it.docId||'').split('__')[0])<0)){ noCptL.push('  [누락] '+it.docId+' · '+id+' 개념 연결 없음(exp.cpt 비어 있음)'); nNoCpt++; }  // 구술·실기(보디빌딩) 개념 미연결 예외
       // 2) 죽은 링크 + cx
       R.cpt.forEach(function(r){
         var c=M.concepts[r.id];
