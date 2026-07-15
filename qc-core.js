@@ -148,6 +148,8 @@ function _qcViolations(q){
  * 콘텐츠가 아직 검수를 못 통과하는 동안 업로드만 되게 하는 한시 조치. 정비 끝나면 false 로 되돌린다. */
 var _qcGateBypass = (typeof _qcGateBypass!=='undefined') ? _qcGateBypass : true;
 try{ if(_qcGateBypass && typeof console!=='undefined') console.warn('[QC] \u26a0\ufe0f _qcGateBypass=true \u2014 \uac80\uc218 \ud544\uc218\ud1b5\uacfc \uc5c6\uc774 \uc5c5\ub85c\ub4dc \uac15\ud589 \uc911. \uc815\ube44 \ud6c4 false \ubcf5\uad6c \ud544\uc694.'); }catch(e){}
+/* \uad6c\uc220\u00b7\uc2e4\uae30 \uacfc\ubaa9(\uac1c\ub150 \ub808\uc774\uc5b4 \uc5c6\uc774 \uc6b4\uc601)\uc740 '\uac1c\ub150 \ubbf8\uc5f0\uacb0(exp.cpt \ube44\uc5b4)' \uc608\uc678. \ud638\uc2a4\ud2b8\uac00 \uc804\uc5ed\uc73c\ub85c \ub36e\uc5b4\uc4f8 \uc218 \uc788\uc74c. */
+var _qcCptExemptCerts = (typeof _qcCptExemptCerts!=='undefined') ? _qcCptExemptCerts : ['bodybuilding'];
 
 function qualityGate(questions){
   var block=[], warn=[];
@@ -680,7 +682,7 @@ try{
     var noCptL=[],deadL=[],childL=[],mediaL=[],cxL=[],needL=[],need7L=[];
     var nNoCpt=0,nDead=0,nChild=0,nMedia=0,nCx=0,nNeed=0,nNeed7=0, seenCx={},seenChild={},_refCpt={};
     items.forEach(function(it){ ((it.data&&it.data.questions)||[]).forEach(function(q){ var id=(q&&q.id)||'?', R=_qcMlaRefs(q);
-      if(R.cpt.length===0){ noCptL.push('  [누락] '+it.docId+' · '+id+' 개념 연결 없음(exp.cpt 비어 있음)'); nNoCpt++; }
+      if(R.cpt.length===0 && (_qcCptExemptCerts||[]).indexOf(String(it.docId||'').split('__')[0])<0){ noCptL.push('  [누락] '+it.docId+' · '+id+' 개념 연결 없음(exp.cpt 비어 있음)'); nNoCpt++; }
       R.cpt.forEach(function(r){ var c=M.concepts[r.id];
         if(!c){ deadL.push('  [누락] '+it.docId+' · '+id+' '+r.where+' → 개념 '+r.id+' 마스터에 없음(죽은 링크)'); nDead++; return; }
         _refCpt[r.id]=1;
