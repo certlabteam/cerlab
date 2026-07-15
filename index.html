@@ -76,7 +76,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
-<script src="subjective.js?v=20260715"></script>
+<script src="subjective.js?v=20260715b"></script>
 </head>
 <body>
 <!-- 인앱 브라우저 안내 팝업 -->
@@ -3475,7 +3475,7 @@ const MCQ_EXAMS = {
 const MCQ_CERTS = Object.keys(MCQ_EXAMS);
 function isMcqCert(c){ return MCQ_CERTS.indexOf(c)!==-1; }
 let mqCert='appraiser';                 // 현재 보고 있는 객관식 시험
-function qbOf(cert){ return MCQ_EXAMS[cert].qb; }
+function qbOf(cert){ if(MCQ_EXAMS[cert]) return MCQ_EXAMS[cert].qb; if(typeof SUBJ_QB!=='undefined' && SUBJ_QB[cert]) return SUBJ_QB[cert]; return {}; }
 function curQB(){ return qbOf(mqCert); }
 var _sp2SubsMem=null;
 function _sp2Get(){ if(_sp2SubsMem && _sp2SubsMem.length===5) return _sp2SubsMem; try{ var raw=localStorage.getItem('certlab_sport2subs'); if(raw){ var a=JSON.parse(raw); if(Array.isArray(a)&&a.length===5){ _sp2SubsMem=a; return a; } } }catch(_){} return null; }
@@ -3642,6 +3642,7 @@ function renderMCQ(){
       localStorage.setItem('certlab_mcq_active', JSON.stringify({cert:mqCert,sub:mqSub,set:mqSet,ts:Date.now()}));
     } else { localStorage.removeItem('certlab_mcq_active'); }
   }catch(_){}
+  if(mqScreen==='subjexam') return renderSubjExam(root);
   if(mqScreen==='exam') return renderMcqExam(root);
   if(mqScreen==='oxlearn') return renderOxLearn(root);
   if(mqScreen==='luhist') return renderLuHist(root);
@@ -3649,7 +3650,7 @@ function renderMCQ(){
 }
 function renderMcqHome(root){
   let html='';
-  const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name)||'';
+  const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name) || (_isSubjCert(mqCert)?certLabel(mqCert):'') || '';
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
   if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:11px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:11px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:11px;padding:8px 6px;font-size:11px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
@@ -3676,12 +3677,14 @@ function renderMcqHome(root){
     }
     html+='</div>';
   }
-  // OX진술 학습 버튼 — 내가 틀린 OX진술 있을 때만
+  // OX진술 학습 버튼 — 내가 틀린 OX진술 있을 때만 (주관식은 O/X 체크가 없어 제외)
+  if(!_isSubjCert(mqCert)){
   var _oxN=oxLearnCount(mqCert);
   if(_oxN>0){
     html+='<div class="oxl-banner" onclick="oxLearnGo()"><div class="oxl-banner-l"><span class="oxl-banner-ico">🔴</span><div><b>OX개념 학습하기</b><span class="oxl-banner-sub">내가 틀린 OX진술 '+_oxN+'개 · 진술별 개념 복습</span></div></div><div class="oxl-banner-go">'+_oxN+'개 →</div></div>';
   } else {
     html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico">✅</span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
+  }
   }
   html+='<div class="sec-lbl">과목 선택</div>';
   curOrder().forEach(id=>{
@@ -3695,6 +3698,12 @@ function renderMcqHome(root){
       html+='<div class="scard-body">';
       if(s.sets.length===0){ html+='<div class="srow"><span class="swc" style="padding:4px 0">문제 준비 중입니다.</span></div>'; }
       s.sets.forEach((st,si)=>{
+        if(_isSubjCert(mqCert)){   // 주관식: 오답/미응답/선행학습 없음 — 풀기만, 상세는 subjective.js
+          html+='<div class="srow"><div class="srow-left"><span class="syr">'+st.label+'</span>'+
+            '<span class="swc">'+st.questions.length+'문제</span></div>'+
+            '<div class="sact"><button class="b-go" onclick="startSubjExam(\''+id+'\','+si+')">풀기</button></div></div>';
+          return;
+        }
         const setWrong=st.questions.filter(q=>appWrong[q.id]).length;
         const setUnans=st.questions.filter(q=>srMasteryK(mqCert,q.id)==='new').length;
         const showUnans=setUnans>0 && setUnans<st.questions.length;   // 일부만 안 푼 회차에만 노출
@@ -6524,11 +6533,13 @@ async function enterCert(id, noGate){
     document.getElementById('certSwitchName').textContent = '스포츠지도사 실기·구술';
     document.getElementById('modePill').style.display = '';
   } else if(_isSubjCert(id)){
-    document.getElementById('subjectiveView').classList.remove('hidden');
-    document.getElementById('mcqView').classList.add('hidden');
+    // [2026-07-15] 주관식도 객관식과 동일 화면(mcqView)에서 과목→회차 아코디언 공유. 상세만 subjective.js.
+    document.getElementById('mcqView').classList.remove('hidden');
     document.getElementById('bodybuildingView').classList.add('hidden');
+    document.getElementById('subjectiveView').classList.add('hidden');
     document.getElementById('certSwitchName').textContent = certLabel(id);
     document.getElementById('modePill').style.display = 'none';
+    mqCert = id;
   } else if(isMcqCert(id)){
     document.getElementById('mcqView').classList.remove('hidden');
     document.getElementById('bodybuildingView').classList.add('hidden');
@@ -6539,7 +6550,7 @@ async function enterCert(id, noGate){
   // (2026-07-02) 게스트 후킹 전체화면 강제 제거 — 시험 탭하면 바로 기출/과목 화면(레벨테스트는 대시보드 내 "무료 레벨테스트" 버튼으로). 무료 10문제 한도는 canAccess로 유지.
   // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
   if(!loadedExams[id]){
-    var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : (_isSubjCert(id) ? document.getElementById('subjMount') : document.getElementById('mcqRoot'));
+    var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
     if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px"><button onclick="goHome()" aria-label="홈" style="border:none;background:none;font-size:22px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1">←</button><span style="font-size:15px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
     try{ await loadExam(id); }
     catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
@@ -6549,11 +6560,11 @@ async function enterCert(id, noGate){
   if(id === 'bodybuilding'){
     if(typeof shuffleCards==='function' && cards.length){ shuffleCards(); current=0; isFlipped=false; learnOpen=false; }   // 진입 시 매번 새 순서
     refresh();
-  } else if(isMcqCert(id)){
+  } else if(isMcqCert(id) || _isSubjCert(id)){
+    if(_isSubjCert(id)){ try{ _subjBuildQB(id); }catch(e){ console.error('subj qb',e); } subjRun=null; }
     mqScreen = 'home'; mqOpen = {}; mqList = null; renderMCQ();
     // (2026-07-02) 게스트 진입 시 _ltGuestGate 후킹/게이트로 콘텐츠 덮던 것 제거 — 시험 탭하면 기출/과목 대시보드 유지(레벨테스트는 대시보드 내 CTA로). 레벨테스트 결과 로그인 게이트는 LT 완료 시(renderMqResultScreen 5298)에만.
   }
-  if(_isSubjCert(id)){ try{ mountSubjExam(id); }catch(e){ console.error('subj mount',e); } }
   syncPlanMirror(); updateAuthBar();
   // 만료된 시험 진입 시 결제 안내
   if(currentUser && userEnt[id] && userEnt[id].plan === 'EXPIRED'){ setTimeout(()=>showPlanPopup(), 600); }
@@ -6696,6 +6707,78 @@ async function loadManifest(){
 var _certRegBuilt={};
 var SUBJ_EXAMS={};   // [2026-07] 주관식(서술형) 시험 데이터: id → {name, questions:[문제]}
 function _isSubjCert(id){ return typeof SUBJ_EXAMS!=='undefined' && !!SUBJ_EXAMS[id]; }
+// ===== [2026-07-15] 주관식도 객관식과 동일한 과목→회차 아코디언을 쓰도록 qb 합성 =====
+// SUBJ_EXAMS[id].questions(플랫)를 과목(_subj)→회차(set)로 묶어 MCQ_EXAMS와 동일한 {code:{name,sets:[{label,questions}]}} 구조로.
+var SUBJ_QB={};
+function _subjBuildQB(id){
+  var se=SUBJ_EXAMS[id]; if(!se){ SUBJ_QB[id]={}; return SUBJ_QB[id]; }
+  var qb={}, order=[], nameToCode={};
+  (se.questions||[]).forEach(function(q){
+    var subName=(q&&q._subj)||se.name||'과목';
+    var code=nameToCode[subName];
+    if(!code){ code='sj'+order.length; nameToCode[subName]=code; qb[code]={name:subName, sets:[], _byset:{}, _order:[]}; order.push(code); }
+    var lab=(q&&(q.set||q.round))||'기출';
+    var g=qb[code];
+    if(!g._byset[lab]){ g._byset[lab]=[]; g._order.push(lab); }
+    g._byset[lab].push(q);
+  });
+  var setKey=function(lab){ var m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };
+  order.forEach(function(code){ var g=qb[code];
+    g.sets=g._order.map(function(lab){ return {label:lab, questions:g._byset[lab]}; });
+    g.sets.sort(function(a,b){ return setKey(b.label)-setKey(a.label); });
+    delete g._byset; delete g._order;
+  });
+  SUBJ_QB[id]=qb; return qb;
+}
+// ===== 주관식 러너: '풀기' → 상세 문제(자료·물음·답안작성). subjective.js가 상세만 그림 =====
+var subjRun=null;   // {cert, sub, si, list, idx}
+function _subjExamOpts(cert){ return {
+  canOpen:function(qid){ var ok=canAccessSubjective(cert, qid); if(ok) _subjMarkOpened(cert, qid); return ok; },
+  aiSell:(SUBJ_EXAMS[cert] && SUBJ_EXAMS[cert].aiSell!==false),
+  aiCost:1, explainCost:1,
+  creditBalance:function(){ return gradeBal(); },
+  explainBalance:function(){ return explainBal(); },
+  hasEntitlement:function(){ return gradeBal() >= 1; },
+  gradeAi:function(payload){ return callGradeSubjective(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('grade', out.creditsLeft); return out; }); },
+  explainAi:function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); },
+  buyAi:function(){ openAiBuy('grade'); },
+  buyExplain:function(){ openAiBuy('explain'); },
+  needLogin:function(){ if(typeof showLoginPopup==='function') showLoginPopup(); },
+  onGraded:function(rec){ saveGradeLog(cert, rec); },
+  onReport:function(q){ try{ openReport(q); }catch(e){} },
+  onRate:function(qid,n,r){ try{ if(typeof srRateK==='function') srRateK(cert, qid, r, false, false); }catch(_){} }
+}; }
+function startSubjExam(sub, si){
+  var qb=curQB(); var g=qb&&qb[sub]; if(!g || !g.sets || !g.sets[si]){ return; }
+  subjRun={ cert:mqCert, sub:sub, si:si, list:(g.sets[si].questions||[]), idx:0 };
+  if(!subjRun.list.length){ alert('문제 준비 중입니다.'); subjRun=null; return; }
+  mqScreen='subjexam'; renderMCQ(); window.scrollTo(0,0);
+}
+function subjGo(delta){ if(!subjRun) return; var ni=subjRun.idx+delta; if(ni<0||ni>=subjRun.list.length) return; subjRun.idx=ni; renderMCQ(); window.scrollTo(0,0); }
+function renderSubjExam(root){
+  if(!subjRun || subjRun.cert!==mqCert){ subjRun=null; mqScreen='home'; return renderMCQ(); }
+  var cert=subjRun.cert, g=(curQB()[subjRun.sub])||{};
+  var examName=g.name||certLabel(cert);
+  var examSet=(g.sets && g.sets[subjRun.si]) ? g.sets[subjRun.si].label : '';
+  var list=subjRun.list, idx=subjRun.idx; if(idx>=list.length)idx=list.length-1; if(idx<0)idx=0; subjRun.idx=idx;
+  var n=list.length, pct=Math.round((idx+1)/n*100);
+  root.innerHTML='<div class="exam-sticky">'+
+    '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="뒤로">'+BACK_ARROW+'</button>'+
+      '<div class="exam-ti"><div class="nm">'+mqEsc(examName)+'</div><div class="st">'+mqEsc(examSet)+'</div></div></div>'+
+    '<div class="mq-prog"><div class="row"><span>'+(idx+1)+' / '+n+' 문제</span><span class="subj-credit">🤖 첨삭 '+gradeBal().toLocaleString()+' · 해설 '+explainBal().toLocaleString()+'</span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '</div>'+
+    '<div id="subjRunMount"></div>'+
+    '<div class="mcq-foot" style="max-width:760px;margin:16px auto 40px">'+
+      '<button class="mbtn mbtn-prev" '+(idx===0?'disabled':'')+' onclick="subjGo(-1)">◀ 이전</button>'+
+      '<button class="mbtn mbtn-next" '+(idx>=n-1?'disabled':'')+' onclick="subjGo(1)">'+(idx>=n-1?'마지막 문제':'다음 ▶')+'</button>'+
+    '</div>';
+  var host=document.getElementById('subjRunMount');
+  var exam={ id:cert, name:examName, questions:list };
+  var opts=_subjExamOpts(cert); opts.host=host; opts.mountId='subjRunMount'; opts.replace=false;
+  var okOpen=(window.CLSubj && CLSubj.openOne) ? CLSubj.openOne(host, exam, idx, opts) : false;
+  if(okOpen===false){ mqBackHome(); return; }   // 무료 한도 게이트에 막힘 → 목록으로
+  window.scrollTo(0,0);
+}
 function buildCertRegistry(man){
   var exams=(man&&man.exams)||[];
   exams.forEach(function(ex){
@@ -6954,6 +7037,7 @@ function clHandleBack(){
       if(mqScreen==='luhist'){ if(typeof luHistBack==='function'){ luHistBack(); } else if(typeof mqBackHome==='function'){ mqBackHome(); } return true; }
       if(mqScreen==='lusummary'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
       if(mqScreen==='exam'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
+      if(mqScreen==='subjexam'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
       if(mqScreen==='home'){ showHome(); return true; }
     }
     showHome(); return true;   // 플래시카드 등 기타 과목 → 메인 홈
