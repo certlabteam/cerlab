@@ -670,11 +670,10 @@ tr:hover td{background:#FAFAFA}
           <div style="font-weight:800;font-size:13px;color:#334155;margin-bottom:4px">🔍 검수 (위 시험·과목 범위 · 라이브)<span id="expReviewCount"></span></div>
           <div style="font-size:11.5px;color:#A89C8E;margin-bottom:8px">내보낸 파일과 함께 이 검수 결과(지적서 TXT)를 데이터방에 넘기면 됩니다. 위에서 고른 시험·과목 범위를 그대로 검사합니다.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-            <button class="btn-sm" onclick="qcGichulLive()" style="background:#0C447C;color:#fff">🔍 라이브 검수 창</button>
-            <button class="btn-sm btn-extend" onclick="reviewGichulLive()">🔍 지적서 만들기 (일반+마스터)</button>
+            <button class="btn-sm btn-extend" onclick="reviewGichulLive()">🔍 라이브 검수</button>
             <button class="btn-sm" onclick="dlGichulReview()" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
           </div>
-          <textarea id="expReviewNote" style="width:100%;height:200px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="시험·과목을 고르고 '지적서 만들기'를 누르면, 현재 서비스 중인 그 범위의 검수 결과가 채워집니다."></textarea>
+          <textarea id="expReviewNote" style="width:100%;height:200px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="시험·과목을 고르고 '라이브 검수'를 누르면 그 범위의 검수 결과가 채워집니다. TXT로 받아 데이터방에 넘기세요."></textarea>
         </div>
 
           <div style="font-size:11px;color:#A89C8E;margin-top:10px;line-height:1.6">
@@ -729,12 +728,8 @@ tr:hover td{background:#FAFAFA}
           <div style="font-size:11.5px;color:#A89C8E;margin-bottom:8px">위에 로드한 기출 JSON을 게이트로 <b>전수 검사</b>한 위반 목록에, 직접 본 지적을 더해 복사·다운로드해서 데이터방에 넘깁니다. <b>지적된 항목만 수정</b>되고 통과 문항은 안 건드립니다.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
             <button class="btn-sm" onclick="qcOpenReview()" style="background:#0C447C;color:#fff">🔍 검수 창 열기<span id="qcBtnCount"></span></button>
-            <button class="btn-sm" onclick="qcOpenReviewAll()" style="background:#0F6E56;color:#fff">🔍 통합 검수 (올린 것 전부)</button>
-            <button class="btn-sm" onclick="qcCfgUpload('gichul')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
-            <button class="btn-sm" onclick="qcCfgExport('gichul')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
             <button class="btn-sm btn-extend" onclick="buildReviewNote()">🔍 지적서 만들기 (일반+마스터)</button>
             <button class="btn-sm" onclick="downloadReviewNote()" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
-            <button class="btn-sm" onclick="qcBaselinePick()" style="background:#EFF6FF;color:#1D4ED8" title="qcBaseline JSON을 불러오면 델타검수(새 위반만 표시)가 켜집니다">📌 베이스라인<span id="qcBaselineStat"></span></button>
             <input type="file" id="qcBaselineFile" accept=".json,application/json" multiple style="display:none" onchange="qcBaselineLoad(this.files)">
           </div>
           <textarea id="reviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'🔍 지적서 만들기'를 누르면 게이트 위반이 채워집니다. '■ 크리스 지적' 아래에 고칠 점을 자유롭게 적은 뒤 복사/다운로드하세요."></textarea>
@@ -954,12 +949,12 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('mnemImpFile').click()">⬆ 업로드</button>
             <button class="btn-sm" onclick="mstImpClear('mnem')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
-            <button class="btn-sm" onclick="qcOpenReviewMaster('mnem')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
-            <button class="btn-sm" onclick="qcCfgUpload('mnem')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
-            <button class="btn-sm" onclick="qcCfgExport('mnem')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
+            <button class="btn-sm btn-extend" onclick="qcMasterBuildReview('mnem')">🔍 라이브 검수</button>
+            <button class="btn-sm" onclick="qcMasterDlNote('mnem')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
             <button class="upbar-export" onclick="mnemExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
+        <textarea id="mNote_mnem" style="width:calc(100% - 40px);height:150px;margin:0 20px 12px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'지적서 만들기'를 누르면 암기 검수 결과가 채워집니다. '■ 크리스 지적' 아래에 자유 지적을 적고 TXT 다운로드하세요."></textarea>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
           <div style="flex:1;min-width:300px"><div style="font-size:11px;color:#A89C8E;margin-bottom:8px;display:flex;align-items:center;gap:8px">암기코드 관리 <button class="btn-sm" onclick="mnemNew()" style="background:#EEF;color:#4338CA;padding:2px 9px;font-size:11px">+ 새 코드</button></div><div id="mnemList"></div></div>
           <div style="flex:1;min-width:320px">
@@ -1008,12 +1003,12 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('tblmImpFile').click()">⬆ 업로드</button>
             <button class="btn-sm" onclick="mstImpClear('tbl')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
-            <button class="btn-sm" onclick="qcOpenReviewMaster('table')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
-            <button class="btn-sm" onclick="qcCfgUpload('table')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
-            <button class="btn-sm" onclick="qcCfgExport('table')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
+            <button class="btn-sm btn-extend" onclick="qcMasterBuildReview('table')">🔍 라이브 검수</button>
+            <button class="btn-sm" onclick="qcMasterDlNote('table')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
             <button class="upbar-export" onclick="tblmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
+        <textarea id="mNote_table" style="width:calc(100% - 40px);height:150px;margin:0 20px 12px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'지적서 만들기'를 누르면 표 검수 결과가 채워집니다. '■ 크리스 지적' 아래에 자유 지적을 적고 TXT 다운로드하세요."></textarea>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
           <div style="flex:1;min-width:300px"><div style="font-size:11px;color:#A89C8E;margin-bottom:8px;display:flex;align-items:center;gap:8px">표 관리 <button class="btn-sm" onclick="tblmNew()" style="background:#E0F2FE;color:#075985;padding:2px 9px;font-size:11px">+ 새 표</button></div><div id="tblmList"></div></div>
           <div style="flex:1;min-width:340px">
@@ -1072,15 +1067,15 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('cptmImpFile').click()">⬆ 업로드</button>
             <button class="btn-sm" onclick="mstImpClear('cpt')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
-            <button class="upbar-export" onclick="qcOpenReviewCpt()" style="background:#0C447C;color:#fff">🔍 검수 창</button>
-            <button class="btn-sm" onclick="qcCfgUpload('concept')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
-            <button class="btn-sm" onclick="qcCfgExport('concept')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
+            <button class="btn-sm btn-extend" onclick="qcMasterBuildReview('concept')">🔍 라이브 검수</button>
+            <button class="btn-sm" onclick="qcMasterDlNote('concept')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
             <button class="upbar-export" onclick="cptmExport()">⬇ 내보내기 (백업)</button>
             <select id="mexpCert" onchange="mexpFill()" onfocus="mexpInit()" style="padding:6px 10px;border-radius:8px;border:1.5px solid #E2E2E2;font-size:12px"><option value="__all">전체 (모든 시험)</option></select>
             <select id="mexpSub" style="padding:6px 10px;border-radius:8px;border:1.5px solid #E2E2E2;font-size:12px" disabled><option value="__all">전체 과목</option></select>
             <button class="upbar-export" onclick="masterExportScoped()">📦 마스터 내보내기</button>
           </div>
         </div>
+        <textarea id="mNote_concept" style="width:calc(100% - 40px);height:150px;margin:0 20px 12px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'라이브 검수'를 누르면 개념 검수 결과가 채워집니다."></textarea>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
           <div style="flex:1;min-width:300px"><div style="font-size:11px;color:#A89C8E;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">개념 관리 <button class="btn-sm" onclick="cptmNew()" style="background:#EAF2FB;color:#0C447C;padding:2px 9px;font-size:11px">+ 새 개념</button><input id="cptmSearch" oninput="mfSet(\'cptm\',\'q\',this.value)" placeholder="🔍 이름·id·키워드·내용 검색" style="flex:1;min-width:150px;padding:5px 10px;border-radius:8px;border:1.5px solid #E2E2E2;font-size:12px"><button class="btn-sm" onclick="cptmFindDupes()" style="background:#FBF0E0;color:#854F0B;padding:2px 9px;font-size:11px">중복 탐지</button></div><div id="cptmList"></div></div>
           <div style="flex:1;min-width:340px">
@@ -1172,12 +1167,12 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('grpmImpFile').click()">⬆ 업로드</button>
             <button class="btn-sm" onclick="mstImpClear('grp')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
-            <button class="btn-sm" onclick="qcOpenReviewMaster('graph')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
-            <button class="btn-sm" onclick="qcCfgUpload('graph')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
-            <button class="btn-sm" onclick="qcCfgExport('graph')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
+            <button class="btn-sm btn-extend" onclick="qcMasterBuildReview('graph')">🔍 라이브 검수</button>
+            <button class="btn-sm" onclick="qcMasterDlNote('graph')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
             <button class="upbar-export" onclick="grpmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
+        <textarea id="mNote_graph" style="width:calc(100% - 40px);height:150px;margin:0 20px 12px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'지적서 만들기'를 누르면 그래프 검수 결과가 채워집니다. '■ 크리스 지적' 아래에 자유 지적을 적고 TXT 다운로드하세요."></textarea>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
           <div style="flex:1;min-width:300px"><div style="font-size:11px;color:#A89C8E;margin-bottom:8px;display:flex;align-items:center;gap:8px">그래프 관리 <button class="btn-sm" onclick="grpmNew()" style="background:#EDE9FE;color:#5B21B6;padding:2px 9px;font-size:11px">+ 새 그래프</button></div><div id="grpmList"></div></div>
           <div style="flex:1;min-width:340px">
@@ -1231,12 +1226,12 @@ tr:hover td{background:#FAFAFA}
           <div class="upbar-actions">
             <button class="upbar-run" onclick="document.getElementById('itvmImpFile').click()">⬆ 업로드</button>
             <button class="btn-sm" onclick="mstImpClear('itv')" style="background:#FDE2E1;color:#A32D2D">🗑 비우기</button>
-            <button class="btn-sm" onclick="qcOpenReviewMaster('interactive')" style="background:#0C447C;color:#fff">🔍 검수 창</button>
-            <button class="btn-sm" onclick="qcCfgUpload('interactive')" style="background:#FBF0E0;color:#854F0B">⚙️ 검수조건</button>
-            <button class="btn-sm" onclick="qcCfgExport('interactive')" style="background:#EAF6EE;color:#15793F">⬇ 조건</button>
+            <button class="btn-sm btn-extend" onclick="qcMasterBuildReview('interactive')">🔍 라이브 검수</button>
+            <button class="btn-sm" onclick="qcMasterDlNote('interactive')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
             <button class="upbar-export" onclick="itvmExport()">⬇ 내보내기 (백업)</button>
           </div>
         </div>
+        <textarea id="mNote_interactive" style="width:calc(100% - 40px);height:150px;margin:0 20px 12px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'지적서 만들기'를 누르면 인터랙티브 검수 결과가 채워집니다. '■ 크리스 지적' 아래에 자유 지적을 적고 TXT 다운로드하세요."></textarea>
         <div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 20px 20px">
           <div style="flex:1;min-width:300px"><div style="font-size:11px;color:#A89C8E;margin-bottom:8px;display:flex;align-items:center;gap:8px">인터랙티브 관리 <button class="btn-sm" onclick="itvmNew()" style="background:#EDE9FE;color:#5B21B6;padding:2px 9px;font-size:11px">+ 새 인터랙티브</button></div><div id="itvmList"></div></div>
           <div style="flex:1;min-width:340px">
@@ -1331,14 +1326,10 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="font-size:11.5px;color:#A89C8E;margin:2px 4px 8px">올린 파일(지적서 만들기) 또는 내보내기 범위 라이브(라이브 지적서)를 게이트로 전수 검사 → TXT로 데이터방에 넘깁니다. 위 배지에 ⛔ 차단·⚠ 경고 개수 표시.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <button class="btn-sm" onclick="qcOpenReviewLvup()" style="background:#0C447C;color:#fff">🔍 검수 창 열기</button>
-          <button class="btn-sm" onclick="qcOpenReviewAll()" style="background:#0F6E56;color:#fff">🔍 통합 검수 (올린 것 전부)</button>
-          <button class="btn-sm btn-extend" onclick="buildReviewNote('lvup')">🔍 지적서 만들기 (올린 파일)</button>
-          <button class="btn-sm" onclick="reviewLvupLive()" style="background:#F1F5FB;color:#0C447C">🔍 라이브 지적서 (내보내기 범위)</button>
-          <button class="btn-sm" onclick="qcLvupLive()" style="background:#0C447C;color:#fff">🔍 라이브 검수 창</button>
+          <button class="btn-sm btn-extend" onclick="buildReviewNote('lvup')">🔍 라이브 검수</button>
           <button class="btn-sm" onclick="downloadReviewNote('lvup')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
         </div>
-        <textarea id="lvupReviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'지적서 만들기'(올린 파일) 또는 '라이브 지적서'(내보내기 범위)를 누르면 게이트 위반이 채워집니다."></textarea>
+        <textarea id="lvupReviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'라이브 검수'를 누르면 게이트 위반이 채워집니다. TXT로 받아 데이터방에 넘기세요."></textarea>
       </div>
     </div>
 
@@ -2053,19 +2044,53 @@ async function mnemDelete(id){
    위반 목록은 콘솔에 상세 출력(검수 창과 동일 정보). 반환 true=진행, false=취소.
    [2026-07-14] "내보내기엔 검수 버튼 없음" 구멍 메움 — 검수 창과 export가 같은 규칙을 공유하게. */
 function _qcMasterExportGate(kindLabel, arr, auditFn){
+  /* [2026-07-15] 내보내기는 막지도 팝업도 띄우지 않는다(비차단). 위반 요약만 콘솔에 남긴다.
+     지적서는 각 마스터 탭의 '⬇ 지적서 TXT' 버튼(qcMasterDlReview)으로 받는다. */
   try{
-    if(typeof QC==='undefined' || typeof auditFn!=='function') return true;   // qc-core 없으면 그냥 통과
-    var vios=auditFn(arr)||[];
-    if(!vios.length) return true;
-    var byCode={}; vios.forEach(function(v){ byCode[v.code]=(byCode[v.code]||0)+1; });
+    if(typeof QC==='undefined' || typeof auditFn!=='function') return true;
+    var vios=auditFn(arr)||[]; if(!vios.length) return true;
     var block=vios.filter(function(v){ return v.sev==='ERROR'||v.sev==='BLOCKER'; }).length;
-    try{ console.group('[검수] '+kindLabel+' 내보내기 — 위반 '+vios.length+'건 (차단급 '+block+')');
-      vios.forEach(function(v){ console.log('· ['+(v.sev||'')+'] '+v.code+' '+(v.id||'')+' — '+(v.msg||'')); });
-      console.groupEnd(); }catch(_){}
-    var summ=Object.keys(byCode).map(function(k){ return k+' '+byCode[k]; }).join(' · ');
-    return confirm('[검수] '+kindLabel+' 내보내기 전 위반 '+vios.length+'건'
-      +(block?(' (차단급 '+block+')'):'')+'\n'+summ+'\n\n상세는 콘솔(F12) 참고. 그래도 내보낼까요?');
+    try{ console.group('[검수] '+kindLabel+' 내보내기 — 위반 '+vios.length+'건 (차단급 '+block+') · 지적서는 "⬇ 지적서 TXT"로');
+      vios.forEach(function(v){ console.log('· ['+(v.sev||'')+'] '+v.code+' '+(v.id||'')+' — '+(v.msg||'')); }); console.groupEnd(); }catch(_){}
+    return true;
   }catch(e){ return true; }
+}
+/* [2026-07-15] 마스터 검수 지적서 — 기출과 동일한 2버튼 흐름: '지적서 만들기'(textarea 채움) + 'TXT 다운로드'. */
+var _qcMasterLabel={ mnem:'암기', table:'표', graph:'그래프', interactive:'인터랙티브', concept:'개념' };
+function _qcMasterItems(mtype){
+  var map={ mnem:(typeof _mnemImpData!=='undefined'?_mnemImpData:null), table:(typeof _tblmImpData!=='undefined'?_tblmImpData:null),
+            graph:(typeof _grpmImpData!=='undefined'?_grpmImpData:null), interactive:(typeof _itvmImpData!=='undefined'?_itvmImpData:null),
+            concept:(typeof _cptmImpData!=='undefined'?_cptmImpData:null) };
+  return map[mtype];
+}
+function _qcMasterAuditFn(mtype){
+  var fnmap={ mnem:(QC&&QC.mnemAudit), table:(QC&&QC.tableAudit), graph:(QC&&QC.graphAudit), interactive:(QC&&QC.interactiveAudit), concept:(QC&&QC.conceptAudit) };
+  return fnmap[mtype];
+}
+function qcMasterBuildReview(mtype){
+  var items=_qcMasterItems(mtype), auditFn=_qcMasterAuditFn(mtype), kindLabel=_qcMasterLabel[mtype]||mtype;
+  var ta=document.getElementById('mNote_'+mtype);
+  if(!items||!items.length){ alert('먼저 '+kindLabel+' 마스터 JSON을 로드하세요.'); return; }
+  if(typeof QC==='undefined' || typeof auditFn!=='function'){ alert('qc-core를 불러오지 못했습니다.'); return; }
+  var vios=auditFn(items)||[];
+  var byCode={}; vios.forEach(function(v){ byCode[v.code]=(byCode[v.code]||0)+1; });
+  var block=vios.filter(function(v){ return v.sev==='ERROR'||v.sev==='BLOCKER'; }).length;
+  var byId={}; vios.forEach(function(v){ var k=v.id||'?'; (byId[k]=byId[k]||[]).push(v); });
+  var L=['[CertLab 마스터 검수 지적서] '+kindLabel, '생성: '+new Date().toLocaleString(),
+         '대상 '+items.length+'개 · 위반 '+vios.length+'건 (차단급 '+block+')',
+         '요약: '+(Object.keys(byCode).map(function(k){ return k+' '+byCode[k]; }).join(' · ')||'(없음)'), ''];
+  if(!vios.length) L.push('(위반 없음 — 모두 통과)');
+  Object.keys(byId).forEach(function(id){ L.push('■ '+id);
+    byId[id].forEach(function(v){ L.push('  ['+(v.sev||'')+'] '+v.code+(v.field?(' ('+v.field+')'):'')+' — '+(v.msg||'')); }); });
+  L.push('', '■ 크리스 지적 (자유 입력)', '  ');
+  if(ta){ ta.value=L.join('\n'); } else { alert(L.join('\n').slice(0,1200)); }
+}
+function qcMasterDlNote(mtype){
+  var kindLabel=_qcMasterLabel[mtype]||mtype; var ta=document.getElementById('mNote_'+mtype);
+  if(!ta || !ta.value.trim()){ alert('먼저 "지적서 만들기"를 누르세요.'); return; }
+  var blob=new Blob([ta.value],{type:'text/plain;charset=utf-8'}); var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='검수지적서_'+kindLabel+'_'+new Date().toISOString().slice(0,10)+'.txt';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
 }
 async function mnemExport(){
   if(!Object.keys(_mnemAll).length){ try{ var _s=await db.collection('mnemonics').get(); _mnemAll={}; _s.forEach(function(d){ _mnemAll[d.id]=d.data()||{}; }); }catch(e){ alert('로드 실패: '+e.message); return; } }
