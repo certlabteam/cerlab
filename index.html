@@ -6713,10 +6713,14 @@ var SUBJ_QB={};
 function _subjBuildQB(id){
   var se=SUBJ_EXAMS[id]; if(!se){ SUBJ_QB[id]={}; return SUBJ_QB[id]; }
   var qb={}, order=[], nameToCode={};
+  function _ensureSub(name){ if(nameToCode[name]!=null) return nameToCode[name];
+    var code='sj'+order.length; nameToCode[name]=code; qb[code]={name:name, sets:[], _byset:{}, _order:[]}; order.push(code); return code; }
+  // 1) 매니페스트 과목 골격 먼저 — 데이터 없는 과목도 카드가 뜨고 '0회차·준비 중'으로 노출(객관식과 동일)
+  (se.subjects||[]).forEach(function(s){ if(s){ _ensureSub(s.name||s.code); } });
+  // 2) 실제 문항을 과목(_subj)→회차(set)로 채움
   (se.questions||[]).forEach(function(q){
     var subName=(q&&q._subj)||se.name||'과목';
-    var code=nameToCode[subName];
-    if(!code){ code='sj'+order.length; nameToCode[subName]=code; qb[code]={name:subName, sets:[], _byset:{}, _order:[]}; order.push(code); }
+    var code=_ensureSub(subName);
     var lab=(q&&(q.set||q.round))||'기출';
     var g=qb[code];
     if(!g._byset[lab]){ g._byset[lab]=[]; g._order.push(lab); }
@@ -6775,8 +6779,14 @@ function renderSubjExam(root){
   var host=document.getElementById('subjRunMount');
   var exam={ id:cert, name:examName, questions:list };
   var opts=_subjExamOpts(cert); opts.host=host; opts.mountId='subjRunMount'; opts.replace=false;
-  var okOpen=(window.CLSubj && CLSubj.openOne) ? CLSubj.openOne(host, exam, idx, opts) : false;
-  if(okOpen===false){ mqBackHome(); return; }   // 무료 한도 게이트에 막힘 → 목록으로
+  if(!(window.CLSubj && CLSubj.openOne)){   // 구버전 subjective.js(=openOne 없음) → 조용히 튕기지 말고 원인 표시
+    host.innerHTML='<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:13.5px;line-height:1.7">⚠️ subjective.js 최신본이 필요합니다 (openOne 없음).<br>압축 푼 <b>subjective.js</b>를 올리고 <b>Ctrl+Shift+R</b>로 새로고침해 주세요.</div>';
+    return;
+  }
+  var okOpen;
+  try{ okOpen=CLSubj.openOne(host, exam, idx, opts); }
+  catch(e){ console.error('subj openOne',e); host.innerHTML='<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:13px;line-height:1.7">문제를 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; return; }
+  if(okOpen===false){ mqBackHome(); return; }   // 무료 한도 게이트(로그인/결제 안내는 canAccessSubjective가 띄움) → 목록으로
   window.scrollTo(0,0);
 }
 function buildCertRegistry(man){
@@ -6790,7 +6800,8 @@ function buildCertRegistry(man){
     if(typeof PASS_RULE!=='undefined' && ex.pass && !PASS_RULE[id]) PASS_RULE[id]=ex.pass;       // 없으면 _default
     if(typeof PLAN_SETS!=='undefined' && ex.plan && !PLAN_SETS[id]) PLAN_SETS[id]=ex.plan;        // 없으면 _default
     if(type==='subjective'){
-      if(!SUBJ_EXAMS[id]) SUBJ_EXAMS[id]={name:ex.name||id, questions:[]};   // 주관식 컨테이너(applyBank가 채움)
+      if(!SUBJ_EXAMS[id]) SUBJ_EXAMS[id]={name:ex.name||id, subjects:(ex.subjects||[]).slice(), questions:[]};   // 주관식 컨테이너(applyBank가 채움) + 과목 골격(빈 과목도 '준비 중' 노출)
+      else if(!SUBJ_EXAMS[id].subjects) SUBJ_EXAMS[id].subjects=(ex.subjects||[]).slice();
     } else if(type!=='flashcard'){
       if(!MCQ_EXAMS[id]){
         var qb={}; (ex.subjects||[]).forEach(function(s){ if(s&&s.code) qb[s.code]={name:s.name||s.code, sets:[]}; });
