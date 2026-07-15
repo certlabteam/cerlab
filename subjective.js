@@ -125,21 +125,57 @@
   function _renderRoot(exam){ _rootEl.innerHTML='';
     if(_curSet==null && _sets(exam).length>1) _rootEl.appendChild(buildSetList(exam));
     else _rootEl.appendChild(buildList(exam,_curSet)); }
-  function buildSetList(exam){ var wrap=document.createElement('div'); wrap.className='subj-list';
+  // ── 1차(객관식)와 동일한 카드 스타일 주입 (style.css의 #mcqView 규칙을 #subjMount로 복제) ──
+  function _injectSkin(){ if(document.getElementById('subjSkin1cha')) return;
+    var st=document.createElement('style'); st.id='subjSkin1cha';
+    st.textContent=
+    '#subjMount .scard{border-radius:16px;border:1.5px solid #E2E8F0;overflow:hidden;background:#fff;margin-bottom:10px}'
+    +'#subjMount .scard-hd{display:flex;align-items:center;gap:10px;padding:14px 15px;cursor:pointer;user-select:none}'
+    +'#subjMount .sdot{width:6px;height:6px;border-radius:50%;background:#0C447C;flex-shrink:0}'
+    +'#subjMount .snm{font-size:14px;font-weight:800;flex:1;color:#0F172A}'
+    +'#subjMount .scard-set-label{font-size:11px;font-weight:600;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;padding:2px 9px;border-radius:20px;flex-shrink:0}'
+    +'#subjMount .scard-arrow{width:24px;height:24px;border-radius:50%;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94A3B8;transition:transform .2s;flex-shrink:0}'
+    +'#subjMount .scard-arrow.open{transform:rotate(180deg)}'
+    +'#subjMount .scard-body{border-top:1px solid #F1F5F9}'
+    +'#subjMount .srow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 15px;border-bottom:1px solid #F1F5F9;flex-wrap:wrap}'
+    +'#subjMount .srow:last-child{border-bottom:none}'
+    +'#subjMount .srow-left{display:flex;flex-direction:column;gap:2px}'
+    +'#subjMount .syr{font-size:13px;font-weight:700;color:#1E293B}'
+    +'#subjMount .swc{font-size:11px;color:#94A3B8;font-weight:500}'
+    +'#subjMount .b-go{background:#0C447C;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer}'
+    +'#subjMount .sec-lbl{font-size:12px;font-weight:700;color:#94A3B8;margin:2px 2px 10px}'
+    +'#subjMount .exam-back{background:#F1F5F9;border:none;color:#334155;cursor:pointer;width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0;font-size:18px;margin-bottom:12px}'
+    +'#subjMount .s-hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}#subjMount .s-hd .t{font-size:18px;font-weight:800;color:#0C447C}'
+    +'#subjMount .qstem{background:#fff;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}'
+    +'#subjMount .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px}'
+    +'#subjMount .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;min-width:25px;height:25px;padding:0 7px;border-radius:8px;display:flex;align-items:center;justify-content:center}'
+    +'#subjMount .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}'
+    +'#subjMount .qtext{font-size:13.5px;font-weight:500;line-height:1.62;color:#0F172A;white-space:pre-wrap}'
+    +'#subjMount .jaryo{font-size:13.5px;font-weight:500;line-height:1.6;color:#334155;white-space:pre-wrap;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:11px 13px;margin:0 0 14px}';
+    document.head.appendChild(st);
+  }
+  function buildSetList(exam){ _injectSkin(); var wrap=document.createElement('div');
+    wrap.innerHTML='<div class="sec-lbl">회차 선택</div>';
     _sets(exam).forEach(function(s){ var cnt=(exam.questions||[]).filter(function(q){return _setOf(q)===s;}).length;
-      var c=document.createElement('div'); c.className='subj-qc subj-setc';
-      c.innerHTML='<div class="subj-qh">📚 '+esc(String(s))+' <span class="subj-pt">'+cnt+'문제</span></div>';
-      c.onclick=function(){ _curSet=s; _renderRoot(exam); };
+      var c=document.createElement('div'); c.className='scard';
+      c.innerHTML='<div class="scard-hd"><span class="sdot"></span><span class="snm">'+esc(String(s))+'</span>'
+        +'<span class="scard-set-label">'+cnt+'문제</span><span class="scard-arrow">▸</span></div>';
+      c.querySelector('.scard-hd').onclick=function(){ _curSet=s; _renderRoot(exam); };
       wrap.appendChild(c); });
     return wrap; }
-  function buildList(exam, setFilter){ var wrap=document.createElement('div'); wrap.className='subj-list';
-    if(setFilter!=null && _sets(exam).length>1){ var b=document.createElement('div'); b.className='subj-back'; b.setAttribute('data-back','1'); b.textContent='‹ 회차 목록'; b.onclick=function(){ _curSet=null; _renderRoot(exam); }; wrap.appendChild(b); }
+  function buildList(exam, setFilter){ _injectSkin(); var wrap=document.createElement('div');
+    if(setFilter!=null && _sets(exam).length>1){ var b=document.createElement('button'); b.className='exam-back'; b.setAttribute('data-back','1'); b.textContent='‹'; b.title='회차 목록'; b.onclick=function(){ _curSet=null; _renderRoot(exam); }; wrap.appendChild(b); }
+    var card=document.createElement('div'); card.className='scard';
+    var hd='<div class="scard-hd"><span class="sdot"></span><span class="snm">'+esc(setFilter!=null?String(setFilter):(exam.name||'문제'))+'</span></div>';
+    var body='<div class="scard-body">';
     (exam.questions||[]).forEach(function(q,qi){ if(setFilter!=null && _setOf(q)!==setFilter) return;
-      var c=document.createElement('div'); c.className='subj-qc';
-      c.innerHTML='<div class="subj-qh">📝 문제 '+_localNum(exam,qi)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
-        +'<div class="subj-qprev">'+esc(((q.q&&String(q.q).trim())?q.q:((q.asks&&q.asks[0]&&q.asks[0].q)||'')).slice(0,90))+'…</div>';
-      c.onclick=function(){ openQ(exam,qi); };
-      wrap.appendChild(c); });
+      var prev=esc(((q.q&&String(q.q).trim())?q.q:((q.asks&&q.asks[0]&&q.asks[0].q)||'')).slice(0,42));
+      body+='<div class="srow" data-qi="'+qi+'"><div class="srow-left"><span class="syr">문제 '+_localNum(exam,qi)+'</span>'
+        +'<span class="swc">'+prev+'… · '+(q.pt||'')+'점</span></div>'
+        +'<div><button class="b-go">풀기</button></div></div>';
+    });
+    body+='</div>'; card.innerHTML=hd+body; wrap.appendChild(card);
+    card.querySelectorAll('.srow').forEach(function(r){ r.onclick=function(){ openQ(exam, +r.getAttribute('data-qi')); }; });
     return wrap; }
   function openQ(exam,qi){ var host=_opts.host||document.getElementById(_opts.mountId)||document.body;
     var q=exam.questions[qi];
@@ -147,12 +183,16 @@
     var v=document.createElement('div'); v.className='subj-view';
     var refHtml=(q.refs&&q.refs.length)?('<div class="subj-refbox"><div class="rt">〈참조 조문〉 — 답안에 인용하면 근거 점수</div>'
       +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</div>'):'';
-    v.innerHTML='<div class="subj-back" data-back="1">‹ 목록</div>'
-      +'<div class="subj-qc"><div class="subj-qh">📝 문제 '+_localNum(exam,qi)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
-      +((q.q&&String(q.q).trim())?('<div class="subj-jaryo">'+esc(q.q)+'</div>'):'')+refHtml
+    _injectSkin();
+    v.innerHTML='<button class="exam-back" data-back="1">‹</button>'
+      +'<div class="qstem"><div class="qhead"><span class="qnum">'+_localNum(exam,qi)+'</span>'
+      +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
+      +'<span class="scard-set-label">'+(q.pt||'')+'점</span></div>'
+      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+esc(q.q)+'</div>'):'')+refHtml
       +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
       +conceptHtml(q)
-      +'<div id="subj-asks"></div></div>';
+      +'</div>'
+      +'<div id="subj-asks"></div>';
     if(_opts.replace!==false){ host.innerHTML=''; }
     host.appendChild(v);
     v.querySelector('[data-back]').onclick=function(){ if(_rootEl){ _renderRoot(exam); } else { mount(host, exam, _opts); } };
