@@ -116,30 +116,46 @@
   function _errCode(err){ return String((err&&err.code)||'')+' '+String((err&&err.message)||''); }
 
   // ── 렌더 ──
-  var _opts={};
+  var _opts={}, _rootEl=null, _curSet=null;
+  function _setOf(q){ return (q&&(q.set||q.round||q._year||q._round))||null; }
+  function _sets(exam){ var out=[],seen={}; (exam.questions||[]).forEach(function(q){ var s=_setOf(q); if(s!=null&&!seen[s]){seen[s]=1;out.push(s);} }); return out; }
+  function _localNum(exam,qi){ var s=_setOf(exam.questions[qi]); if(s==null) return qi+1; var n=0; for(var i=0;i<=qi;i++){ if(_setOf(exam.questions[i])===s) n++; } return n; }
   function mount(el, exam, opts){ _opts=opts||{}; if(opts&&opts.endpoint) ENDPOINT=opts.endpoint;
-    el.innerHTML=''; el.appendChild(buildList(exam)); }
-  function buildList(exam){ var wrap=document.createElement('div'); wrap.className='subj-list';
-    (exam.questions||[]).forEach(function(q,qi){ var c=document.createElement('div'); c.className='subj-qc';
-      c.innerHTML='<div class="subj-qh">📝 문제 '+(qi+1)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
+    _rootEl=el; _curSet=null; _renderRoot(exam); }
+  function _renderRoot(exam){ _rootEl.innerHTML='';
+    if(_curSet==null && _sets(exam).length>1) _rootEl.appendChild(buildSetList(exam));
+    else _rootEl.appendChild(buildList(exam,_curSet)); }
+  function buildSetList(exam){ var wrap=document.createElement('div'); wrap.className='subj-list';
+    _sets(exam).forEach(function(s){ var cnt=(exam.questions||[]).filter(function(q){return _setOf(q)===s;}).length;
+      var c=document.createElement('div'); c.className='subj-qc subj-setc';
+      c.innerHTML='<div class="subj-qh">📚 '+esc(String(s))+' <span class="subj-pt">'+cnt+'문제</span></div>';
+      c.onclick=function(){ _curSet=s; _renderRoot(exam); };
+      wrap.appendChild(c); });
+    return wrap; }
+  function buildList(exam, setFilter){ var wrap=document.createElement('div'); wrap.className='subj-list';
+    if(setFilter!=null && _sets(exam).length>1){ var b=document.createElement('div'); b.className='subj-back'; b.setAttribute('data-back','1'); b.textContent='‹ 회차 목록'; b.onclick=function(){ _curSet=null; _renderRoot(exam); }; wrap.appendChild(b); }
+    (exam.questions||[]).forEach(function(q,qi){ if(setFilter!=null && _setOf(q)!==setFilter) return;
+      var c=document.createElement('div'); c.className='subj-qc';
+      c.innerHTML='<div class="subj-qh">📝 문제 '+_localNum(exam,qi)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
         +'<div class="subj-qprev">'+esc((q.q||'').slice(0,90))+'…</div>';
       c.onclick=function(){ openQ(exam,qi); };
       wrap.appendChild(c); });
     return wrap; }
   function openQ(exam,qi){ var host=_opts.host||document.getElementById(_opts.mountId)||document.body;
     var q=exam.questions[qi];
-    if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return; }   // 무료 한도 게이트(있으면 검사, 없으면 스킵) var v=document.createElement('div'); v.className='subj-view';
+    if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return; }   // 무료 한도 게이트(있으면 검사, 없으면 스킵)
+    var v=document.createElement('div'); v.className='subj-view';
     var refHtml=(q.refs&&q.refs.length)?('<div class="subj-refbox"><div class="rt">〈참조 조문〉 — 답안에 인용하면 근거 점수</div>'
       +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</div>'):'';
     v.innerHTML='<div class="subj-back" data-back="1">‹ 목록</div>'
-      +'<div class="subj-qc"><div class="subj-qh">📝 문제 '+(qi+1)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
+      +'<div class="subj-qc"><div class="subj-qh">📝 문제 '+_localNum(exam,qi)+' <span class="subj-pt">'+(q.pt||'')+'점</span></div>'
       +'<div class="subj-jaryo">'+esc(q.q)+'</div>'+refHtml
       +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
       +conceptHtml(q)
       +'<div id="subj-asks"></div></div>';
     if(_opts.replace!==false){ host.innerHTML=''; }
     host.appendChild(v);
-    v.querySelector('[data-back]').onclick=function(){ mount(host, exam, _opts); };
+    v.querySelector('[data-back]').onclick=function(){ if(_rootEl){ _renderRoot(exam); } else { mount(host, exam, _opts); } };
     bindConcepts(v, exam, qi);
     var asksEl=v.querySelector('#subj-asks');
     (q.asks||[]).forEach(function(ask,ai){ asksEl.appendChild(buildAsk(exam,qi,ai)); });
