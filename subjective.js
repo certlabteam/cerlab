@@ -151,7 +151,8 @@
     +'#subjMount .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;min-width:25px;height:25px;padding:0 7px;border-radius:8px;display:flex;align-items:center;justify-content:center}'
     +'#subjMount .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}'
     +'#subjMount .qtext{font-size:13.5px;font-weight:500;line-height:1.62;color:#0F172A;white-space:pre-wrap}'
-    +'#subjMount .jaryo{font-size:13.5px;font-weight:500;line-height:1.6;color:#334155;white-space:pre-wrap;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:11px 13px;margin:0 0 14px}';
+    +'#subjMount .jaryo{font-size:13.5px;font-weight:500;line-height:1.6;color:#334155;white-space:pre-wrap;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:8px;padding:11px 13px;margin:0 0 14px}'
+    +'#subjMount .mq-report{margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:700;color:#A86A2E;background:#FFF7EF;border:1.5px solid #F1D9A8;padding:4px 10px;border-radius:999px;cursor:pointer;flex-shrink:0}#subjMount .mq-report:active{transform:scale(.96)}';
     document.head.appendChild(st);
   }
   function buildSetList(exam){ _injectSkin(); var wrap=document.createElement('div');
@@ -199,6 +200,33 @@
     bindConcepts(v, exam, qi);
     var asksEl=v.querySelector('#subj-asks');
     (q.asks||[]).forEach(function(ask,ai){ asksEl.appendChild(buildAsk(exam,qi,ai)); });
+  }
+  // ── 상세 문제만 렌더(과목·회차 네비는 index의 객관식 코드가 담당) ──
+  // host는 #mcqView 안이라 #mcqView CSS가 그대로 먹음. 내부 '뒤로/목록' 없음 — 이전/다음은 index가 감쌈.
+  // 반환: false = 무료 한도 게이트에 막힘, true = 렌더됨.
+  function openOne(host, exam, qi, opts){ _opts=opts||{}; if(opts&&opts.endpoint) ENDPOINT=opts.endpoint; _rootEl=null;
+    var q=exam.questions[qi]; if(!q) return false;
+    if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return false; }
+    var _host=host||_opts.host||document.getElementById(_opts.mountId)||document.body;
+    var refHtml=(q.refs&&q.refs.length)?('<div class="subj-refbox"><div class="rt">〈참조 조문〉 — 답안에 인용하면 근거 점수</div>'
+      +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</div>'):'';
+    var v=document.createElement('div'); v.className='subj-view';
+    v.innerHTML='<div class="qstem"><div class="qhead"><div class="qnum">'+_localNum(exam,qi)+'</div>'
+      +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
+      +'<span class="scard-set-label">'+(q.pt||'')+'점</span>'
+      +(_opts.onReport?'<button class="mq-report" data-report="1">⚠️ 신고</button>':'')+'</div>'
+      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+esc(q.q)+'</div>'):'')+refHtml
+      +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
+      +conceptHtml(q)
+      +'</div>'
+      +'<div id="subj-asks"></div>';
+    if(_opts.replace!==false){ _host.innerHTML=''; }
+    _host.appendChild(v);
+    var _rb=v.querySelector('[data-report]'); if(_rb) _rb.onclick=function(){ try{ _opts.onReport(q); }catch(e){} };
+    bindConcepts(v, exam, qi);
+    var asksEl=v.querySelector('#subj-asks');
+    (q.asks||[]).forEach(function(ask,ai){ asksEl.appendChild(buildAsk(exam,qi,ai)); });
+    return true;
   }
   function rowHTML(){ return '<div class="subj-arow" data-lv="1"><div class="rh">'
     +'<button class="lvbtn out" title="내어쓰기(상위 목차)">‹</button><button class="lvbtn in" title="들여쓰기(하위 목차)">›</button>'
@@ -289,5 +317,5 @@
       R.querySelector('.subj-rated').textContent='복습 예약: '+['곧 다시','2일 뒤','5일 뒤'][r]+' (SR 연동)';
       if(_opts.onRate) try{ _opts.onRate(qid, ask.n||ai+1, r); }catch(e){} }; }); }
 
-  window.CLSubj={ mount:mount, gradeOffline:gradeOffline, setEndpoint:function(u){ENDPOINT=u;} };
+  window.CLSubj={ mount:mount, openOne:openOne, gradeOffline:gradeOffline, setEndpoint:function(u){ENDPOINT=u;} };
 })();
