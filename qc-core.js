@@ -31,10 +31,10 @@ function _qgLines(s){ var t=String(s||'').trim(); if(!t)return 0; var n=0; t.spl
 //  · 원문자 ①②…(뒤에 번/순/째 오면 제외) 서로 다른 것 2개+
 //  · 아라비아 "1. "과 "2. "가 같은 줄에 함께(연번 시작 확인 — 소수·조문 오탐 방지)
 function _qgCrammedSteps(t){
-  var lines=String(t||'').replace(/<br\s*\/?>/gi,'\n').split(/\n/);
+  var lines=String(t||'').replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/<br\s*\/?>/gi,'\n').split(/\n/); /* [FIX 2026-07-16] [dia] 도식 내 ①→② 표기·삽화는 단계 나열 아님 */
   for(var li=0; li<lines.length; li++){
     var L=lines[li]; if(!L.trim()) continue;
-    var mk=(L.match(/[\u2460-\u2473](?![\ubc88\uc21c\uc9f8])/g)||[]); var u={}; mk.forEach(function(m){u[m]=1;});
+    var mk=(L.match(/[\u2460-\u2473](?![\ubc88\uc21c\uc9f8\uac00-\ud7a3])/g)||[]); /* [FIX 2026-07-16] ③의·②보다 등 그래프곡선 참조(원문자+한글 직결)는 단계 아님 — 제외 */ var u={}; mk.forEach(function(m){u[m]=1;});
     if(Object.keys(u).length>=2) return L.trim();
     if(/(^|\s)1\.\s/.test(L) && /\s2\.\s/.test(L)) return L.trim();
   }
@@ -75,12 +75,13 @@ function _qcViolations(q){
   if(em(exp.tip)) v.push({kind:'block',field:'tip',idx:0,code:'EMDASH',msg:'tip\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.tip});
   if(em(exp.s))   v.push({kind:'block',field:'s',idx:0,code:'EMDASH',msg:'\uc694\uc57d(s)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.s});
   if(isMCQ && !isCalc && !Array.isArray(q.ans)){ /* 전항·복수정답(ans 배열)은 정오 축 무효 → 종결형 면제 */
-    o.forEach(function(t,i){ if(t&&String(t).trim()&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9ba\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
+    var _isCountQ=String((q&&q.type)||'').toUpperCase()==='COUNT'; /* [FIX 2026-07-16] COUNT(개수형)은 정답칸이 "N개라 정답이다"로 끝나 옳다/옳지않다 종결이 없음 — VERDICT 오탐 제외 */
+  o.forEach(function(t,i){ if(t&&String(t).trim()&&!_isCountQ&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9ba\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
   }
   if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
   var _cTot=cards.length+_lk.length; if(isMCQ && !isCalc && !_cptSkip && _cTot && _cTot<2) v.push({kind:(cards.length?'block':'warn'),field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c \ud3ec\ud568)'+(cards.length?'':' \u2192 \ub9c1\ud06c\ub41c \uac1c\ub150\uc5d0 \uce74\ub4dc \ubcf4\uac15'),text:''});
   if(_qcOn('gichul','O_PLACEHOLDER')){ var _PLACE=/\ud574\uc124\s*\ucd94\uac00|\uc218\uc815\s*\uc608\uc815|\uc791\uc131\s*\uc608\uc815|\ucd94\uac00\s*\uc608\uc815|\ubbf8\uc791\uc131|\ucc44\uc6b8\s*\uc608\uc815|\uc900\ube44\s*\uc911|TODO/; o.forEach(function(t,i){ if(_PLACE.test(String(t||''))) v.push({kind:'block',field:'o',idx:i,code:'O_PLACEHOLDER',msg:'\ud574\uc124(o)\uc5d0 \uc784\uc2dc \ubb38\uad6c \u2014 \ube48 \uce78\uc740 \ubc18\ub4dc\uc2dc \ube48 \ubb38\uc790\uc5f4("")\ub85c(\uc784\uc2dc\ubb38\uad6c\ub294 oFilled\ub85c \uc624\uacc4\uc0b0\ub418\uc5b4 \uc9c4\uc220\uc218 \uc5b4\uae4b\ub0a8)',text:t}); }); }
-  if(_qcOn('gichul','O_INCOMPLETE') && isMCQ && !isCalc && opts.length>=4){ var _mk=opts.some(function(op){return /^[\u3131-\u314e][\s,:\-]/.test(String(op).trim());}); if(!_mk){ var _emp=o.slice(0,opts.length).filter(function(x){return !(x&&String(x).trim());}).length; if(_emp>0) v.push({kind:'warn',field:'o',idx:0,code:'O_INCOMPLETE',msg:'\ubcf4\uae30 '+opts.length+'\uc9c0\uc778\ub370 \ud574\uc124(o) '+_emp+'\uce78 \ube44\uc5b4\uc788\uc74c \u2014 SC\ub294 \ubcf4\uae30 \uc804\ubd80 \ucc44\uc6c0(\uc815\uc758\ud655\uc778 \ubcf4\uae30\ub9cc \uc0dd\ub7b5)',text:''}); } }
+  if(_qcOn('gichul','O_INCOMPLETE') && isMCQ && !isCalc && opts.length>=4 && String((q&&q.type)||'').toUpperCase()!=='COUNT'){ /* [FIX 2026-07-16] COUNT형은 정답칸만 설명(개수 근거)하면 되므로 빈칸 정상 — O_INCOMPLETE 오탐 제외 */ var _mk=opts.some(function(op){return /^[\u3131-\u314e][\s,:\-]/.test(String(op).trim());}); if(!_mk){ var _emp=o.slice(0,opts.length).filter(function(x){return !(x&&String(x).trim());}).length; if(_emp>0) v.push({kind:'warn',field:'o',idx:0,code:'O_INCOMPLETE',msg:'\ubcf4\uae30 '+opts.length+'\uc9c0\uc778\ub370 \ud574\uc124(o) '+_emp+'\uce78 \ube44\uc5b4\uc788\uc74c \u2014 SC\ub294 \ubcf4\uae30 \uc804\ubd80 \ucc44\uc6c0(\uc815\uc758\ud655\uc778 \ubcf4\uae30\ub9cc \uc0dd\ub7b5)',text:''}); } }
   if(_qcOn('gichul','CALC_WRONG_SLOT') && _isCalcQ(q) && q.ans && !Array.isArray(q.ans)){ var _fi=-1; for(var _ci=0;_ci<o.length;_ci++){ if(o[_ci]&&String(o[_ci]).trim()){_fi=_ci;break;} } if(_fi>=0 && _fi!==(q.ans-1)) v.push({kind:'block',field:'o',idx:_fi,code:'CALC_WRONG_SLOT',msg:'\uacc4\uc0b0\ud615 \uacb0\ub860\uc774 \uc815\ub2f5\uce78(o['+(q.ans-1)+'])\uc774 \uc544\ub2cc o['+_fi+']\uc5d0 \uc788\uc74c \u2192 \uc5d4\uc9c4\uc774 '+(_fi+1)+'\ubc88\uc744 \uc815\ub2f5\uc73c\ub85c \uc624\ud45c\uc2dc(\uc815\ub2f5\uce78 o[ans-1]\uc5d0 \uacb0\ub860)',text:o[_fi]}); }
   try{ if(_qcOn('gichul','COMBO_STMT_MISMATCH') && typeof isComboQuestion==='function' && isComboQuestion(q.opts)){ var _st=comboStmtList(q); if(_st&&_st.length>=2 && oFilled>=2 && oFilled!==_st.length) v.push({kind:'warn',field:'o',idx:0,code:'COMBO_STMT_MISMATCH',msg:'\uc870\ud569\ud615 \uc9c4\uc220 '+_st.length+'\uac1c\uc778\ub370 \ud574\uc124(o) '+oFilled+'\uce78 \u2014 \uc9c4\uc220\uc218=\ucc44\uc6b4\uce78\uc218 \uc548 \ub9de\uc73c\uba74 \uc9c4\uc220\ubcc4\ub85c \uc548 \ud3bc\uccd0\uc9d0(\uc77c\ubc18\ud615 \ud3f4\ubc31)',text:''}); } }catch(_){}
   if(_qcOn('gichul','FILL_BLANK_MISMATCH') && Array.isArray(q.blanks) && q.blanks.length && oFilled!==q.blanks.length) v.push({kind:'block',field:'o',idx:0,code:'FILL_BLANK_MISMATCH',msg:'\ube48\uce78 '+q.blanks.length+'\uac1c\uc778\ub370 \ud574\uc124(o) '+oFilled+'\uce78 \u2014 blanks==oFilled\uc774\uc5b4\uc57c \ube48\uce78\ubcc4\ub85c \ud3bc\uce68(\uc548 \ub9de\uc73c\uba74 \uc5c9\ub69c\ud55c \uce78\uc5d0 \ubd99\uc74c)',text:''});
@@ -140,7 +141,7 @@ function _qcViolations(q){
     var _exArrLen=ex.length;
     if(_exArrLen>0 && _exArrLen!==o.length && !_isCalcQ(q)) v.push({kind:'warn',field:'ex',idx:0,code:'EX_LEN',msg:'\uc608\uc2dc \ubc30\uc5f4 \uae38\uc774('+_exArrLen+') \u2260 \ud574\uc124 \uae38\uc774('+o.length+') \u2192 \ubcf4\uae30 \uc218\ub9cc\ud07c \ub9de\ucda4(\uc5b5\uc9c0 \uc7a5\uba74\uc740 \ube48\uce78)',text:''});
   }
-  if(_qcOn('gichul','BARE_ACRONYM')){ var _allT=[].concat(o||[],ex||[]).map(function(x){return String(x||'');}).join('\n'); var _ACR=/(GDP|GNP|GNI|GDI|LTV|DTI|DSR|MRS|MRT|MRTS|IRR|NPV|ROE|ROA|EPS|PER|PBR)/g, _seen={}, _mm; while((_mm=_ACR.exec(_allT))){ var _ac=_mm[1]; if(_seen[_ac])continue; _seen[_ac]=1; var _re2=new RegExp(_ac+'\\s*[(\uff08]'); if(!_re2.test(_allT)) v.push({kind:'warn',field:'o',idx:0,code:'BARE_ACRONYM',msg:'\uc601\uc5b4\uc57d\uc790 '+_ac+' \ud480\uc774 \uc5c6\uc774 \ub178\ucd9c \u2014 \uccab \ub4f1\uc7a5 1\ud68c \ud480\uc5b4\uc4f0\uae30('+_ac+', \ud55c\uae00\ud480\uc774) \u00a72-1',text:_ac}); } }
+  if(_qcOn('gichul','BARE_ACRONYM')){ var _allT=[].concat(o||[],ex||[]).map(function(x){return String(x||'');}).join('\n'); var _ACR=/\b(GDP|GNP|GNI|GDI|LTV|DTI|DSR|MRTS|MRTP|MRT|MRS|IRR|NPV|ROE|ROA|EPS|PER|PBR)\b/g, _seen={}, _mm; while((_mm=_ACR.exec(_allT))){ var _ac=_mm[1]; if(_seen[_ac])continue; _seen[_ac]=1; var _re2=new RegExp(_ac+'\\s*[(\uff08]'); if(!_re2.test(_allT)) v.push({kind:'warn',field:'o',idx:0,code:'BARE_ACRONYM',msg:'\uc601\uc5b4\uc57d\uc790 '+_ac+' \ud480\uc774 \uc5c6\uc774 \ub178\ucd9c \u2014 \uccab \ub4f1\uc7a5 1\ud68c \ud480\uc5b4\uc4f0\uae30('+_ac+', \ud55c\uae00\ud480\uc774) \u00a72-1',text:_ac}); } }
   return v;
 }
 /* ⚠️⚠️ [임시] 검수 게이트 우회 스위치 — 정비 완료 후 반드시 false 로 복구! ⚠️⚠️
@@ -405,8 +406,12 @@ function _qcExtraRules(q){
       for(var _li=0;_li<_clines.length;_li++){ var _ln=String(_clines[_li]).replace(/<[^>]+>/g,''); var _p; do{ _p=_ln; _ln=_ln.replace(/(\d),(\d)/g,'$1$2'); }while(_ln!==_p);
         var _cls=_ln.split(/[,，;、。→]|(?:이고|이며|이다|한다|하면|또는|이므로|이라|라서|므로|따라서|에서|인데)/);
         var _hit=null;
-        for(var _ci=0;_ci<_cls.length;_ci++){ var _segs=_cls[_ci].split('='), _vals=[]; for(var _si=0;_si<_segs.length;_si++){ var _vv=_ceval(_segs[_si]); if(_vv!=null)_vals.push(_vv); }
-          if(_vals.length>=2){ var _mn=Math.min.apply(null,_vals), _mx=Math.max.apply(null,_vals); if(_mx-_mn>Math.max(1,Math.abs(_mx)*0.02)){ _hit=_cls[_ci].trim(); break; } } }
+        /* [FIX 2026-07-16] 인접한 두 계산가능 세그먼트만 비교(단위환산 "500 ppm = 0.0005"·다단계식 "24=…을 풀어 X=14" 오탐 제거: 사이에 단위/변수 세그먼트가 오면 _prev=null로 끊겨 비교 안 함) */
+        for(var _ci=0;_ci<_cls.length;_ci++){ var _segs=_cls[_ci].split('='), _prev=null;
+          for(var _si=0;_si<_segs.length;_si++){ var _vv=_ceval(_segs[_si]);
+            if(_vv!=null && _prev!=null && Math.abs(_vv-_prev)>Math.max(1,Math.abs(_vv)*0.02)){ _hit=_cls[_ci].trim(); break; }
+            _prev=_vv; }
+          if(_hit) break; }
         if(_hit){ v.push({kind:'warn',field:'exSum',idx:0,code:'CALC_ARITH_MISMATCH',msg:'계산형 풀이 줄의 등식이 실제 계산과 어긋남("'+_hit.slice(0,40)+'") — 좌우변 값 확인',text:_hit.slice(0,60)}); break; } }
     }
     if(_qcOn('gichul','CALC_ANS_NO_MATCH') && typeof q.ans==='number' && Array.isArray(q.opts)){
