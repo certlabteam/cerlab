@@ -43,7 +43,7 @@ function _qgCrammedSteps(t){
 
 /* ---- [추출] _isCalcQ · _qcViolations · qualityGate (admin__20 4263-4374) ---- */
 // 엔진 _isCalcQ 이식 — 계산형 = oFilled 1칸 & (그래프 or 풀이단계). 단순 oFilled===1 아님(COMBO 결론 오인 방지)
-function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.indexOf('calc:')===0) return true; if(q.calc===false) return false; /* [FIX 2026-07-12] 인간이 calc:false로 명시한 문항(SA 단답형 등) 존중 — oFilled=1+장면예시로 자동 계산형 오인되어 CALC_NO_FORMULA/CALC_OLD_FORMAT 등 오탐되던 문제 해결 */
+function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.indexOf('calc:')===0) return true; if(q.calc===false) return false; /* [FIX 2026-07-12] 인간이 calc:false로 명시한 문항(SA 단답형 등) 존중 — oFilled=1+장면예시로 자동 계산형 오인되어 CALC_NO_FORMULA/CALC_OLD_FORMAT 등 오탐되던 문제 해결 */ var _tyCalc=String((q&&q.type)||'').toUpperCase(); if(q.calc!==true && (_tyCalc==='PAIR'||_tyCalc==='MATCH'||_tyCalc==='ORDER')) return false; /* [FIX 2026-07-15] 짝짓기/매칭/순서형은 산술이 없어 계산형이 될 수 없음 — oFilled=1+단계형 ex로 계산형 렌더 오인되던 문제(intro23_3 등) 차단. COUNT/COMBO는 LQ 같은 진짜 계산형이 있어 제외 */
   var o=(q.exp&&q.exp.o)||[]; var oF=o.filter(function(x){return x&&String(x).trim();}).length; if(oF!==1) return false;
   var hg=q.exp&&q.exp.graph&&String(q.exp.graph).trim(); var ex=(q.exp&&q.exp.ex)||[]; var hs=ex.filter(function(x){return x&&String(x).trim();}).length>0;
   return !!(hg||hs); }
@@ -134,7 +134,7 @@ function _qcViolations(q){
     });
     var _fex=[]; ex.forEach(function(t,i){ if(t&&String(t).trim()) _fex.push([i,t]); });
     for(var a=0;a<_fex.length;a++) for(var b=a+1;b<_fex.length;b++){ if(!_qCalc && _qcOn('gichul','EX_EX_ECHO') && _qgSim(_fex[a][1],_fex[b][1])>=_qcN('gichul','EX_EX_ECHO','minSim',0.5)) v.push({kind:'warn',field:'ex',idx:_fex[b][0],code:'EX_EX_ECHO',msg:'\uc608\uc2dc '+_fex[a][0]+'\ubc88\uacfc \uc8fc\uc5b4\u00b7\uc0c1\ud669\uc774 \ubc18\ubcf5 \u2192 \uc11c\ub85c \ub2e4\ub978 \uc7a5\uba74\uc73c\ub85c',text:_fex[b][1]}); }
-    ex.forEach(function(t,i){ if(_qcOn('gichul','EX_MULTILINE') && String(t||'').split(/\n/).filter(function(l){return l.trim();}).length>=2) v.push({kind:'warn',field:'ex',idx:i,code:'EX_MULTILINE',msg:'예시/풀이(ex) 한 원소에 여러 줄 \u2014 줄은 배열 원소로 쪼갬(안 그러면 화면서 한 줄로 붙음)',text:t}); });
+    ex.forEach(function(t,i){ if(_qcOn('gichul','EX_MULTILINE') && String(t||'').replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').split(/\n/).filter(function(l){return l.trim();}).length>=2) v.push({kind:'warn',field:'ex',idx:i,code:'EX_MULTILINE',msg:'예시/풀이(ex) 한 원소에 여러 줄 \u2014 줄은 배열 원소로 쪼갬(안 그러면 화면서 한 줄로 붙음)',text:t}); });
     if(_qcOn('gichul','EX_STEPS_CRAMMED') && _isCalcQ(q)){ ex.forEach(function(t,i){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'ex',idx:i,code:'EX_STEPS_CRAMMED',msg:'\ud55c ex \uc6d0\uc18c\uc5d0 \uacc4\uc0b0 \ub2e8\uacc4(\u2460\u2461\u2462/1.2.3.) \uc5ec\ub7ec \uac1c \ub6ed\uce68 \u2192 \ub2e8\uacc4=\ubc30\uc5f4 \uc6d0\uc18c \ud558\ub098\ub85c \ucaa8\uac9c \u00a7367',text:_cl}); }); }
     if(_qcOn('gichul','EX_STEPS_NOBR') && !_isCalcQ(q)){ ex.forEach(function(t,i){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'ex',idx:i,code:'EX_STEPS_NOBR',msg:'예시(ex)에 단계(1.2.3./①②③) 나열이 한 덩어리로 붙음(화면에도 그대로 붙어 보임) → 계산 단계면 원문자 ①②③로, 일반 예시면 이어지는 문장·장면으로 재작성',text:_cl}); }); }
     var _exArrLen=ex.length;
@@ -165,7 +165,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:40},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true}},
+  gichul:{EX_SHORT:{on:true,minChars:50},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:40},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:40},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true}},
@@ -207,7 +207,7 @@ var _QC_SEV = {
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR',
   /* [신규 2026-07-15] 계산풀이 가려짐·q 표 줄글 */
-  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING', CALC_FIELDS_ON_NONCALC:'WARNING', ALLANS_NO_NOTE:'WARNING',
+  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING', CALC_FIELDS_ON_NONCALC:'WARNING', ALLANS_NO_NOTE:'WARNING', EX_NOUN_END:'WARNING',
   /* [신규 2026-07-15] 마스터 레코드 검수 — 레코드 날짜 */
   REC_DATE:'BLOCKER',
   /* 그래프 */
@@ -283,6 +283,14 @@ function _qcExtraRules(q){
     ex.forEach(function(t,i){ var s=String(t||''); if(!s.trim()) return;
       var hit=s.split(/\n/).some(function(ln){ return _EXVD.test(ln.trim()); });
       if(hit) v.push({kind:'block',field:'ex',idx:i,code:'EX_VERDICT',msg:'예시(ex)에 정오 판정(옳다/옳지 않다) 종결 — 예시는 명명 인물의 구체적 장면이어야 함. 정오 판정은 해설(o) 끝에만',text:s.slice(0,80)}); });
+  }
+  /* [신규 2026-07-15] 예시(ex)가 명사종결 조각(…장면./모습./경우./상황.)으로 끝남 — 문장이 아니라 조각이라 어색.
+     완결 평서문(~한다/~하고 있다/~된다)으로 끝내되 판정어(옳다/틀리다)는 EX_VERDICT로 여전히 금지. 계산형 단계풀이는 제외. */
+  if(_qcOn('gichul','EX_NOUN_END') && !_isCalcQ(q)){
+    var _NEND=/(장면|모습|경우|상황|모양|셈|편)[.。!?]*\s*$/;
+    ex.forEach(function(t,i){ var s=String(t||''); if(!s.trim()) return;
+      var _lastln=(s.split(/\n/).filter(function(ln){return ln.trim();}).pop()||'').trim();
+      if(_NEND.test(_lastln)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_NOUN_END',msg:'예시(ex)가 명사종결 조각(…장면/모습/경우/상황)으로 끝남 — 완결 평서문(~한다/~하고 있다)으로 맺기(판정어 옳다/틀리다는 여전히 금지)',text:_lastln.slice(-40)}); });
   }
   /* (a) ottag(exp.ot) 길이 == exp.o 길이  [10-levelup·OX진술 태그] */
   if(_qcOn('gichul','OTTAG_LEN') && Array.isArray(exp.ot) && exp.ot.length && exp.ot.length!==o.length){
