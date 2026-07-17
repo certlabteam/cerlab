@@ -43,16 +43,40 @@
       return null; }
     var html='', buf=[];
     function flush(){ if(buf.length>=2){ html+=_subjTableHTML(buf); } else if(buf.length===1){ html+='<div class="jline">'+esc(buf[0].join('  '))+'</div>'; } buf=[]; }
+    function lineHTML(l){ var t=l.trim(); if(!t) return '<div class="jgap"></div>';
+      // 대불릿(○ ● ▷ ㅇ) → 행잉 인덴트 불릿
+      var mb=t.match(/^[○●▷ㅇ]\s*(.*)$/); if(mb) return '<div class="jbul"><span class="jbul-m">•</span><span class="jbul-t">'+esc(mb[1])+'</span></div>';
+      // 소항목(①~⑮ · ㉠~㉥ · (1)/1)) → 들여쓴 소블럭(마커 유지)
+      var ms=t.match(/^([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮㉠㉡㉢㉣㉤㉥]|\(?\d{1,2}[).])\s*(.*)$/);
+      if(ms) return '<div class="jsub"><span class="jsub-m">'+esc(ms[1])+'</span><span class="jsub-t">'+esc(ms[2])+'</span></div>';
+      return '<div class="jline">'+esc(t)+'</div>'; }
     lines.forEach(function(l){ if(/\|/.test(l) && /^[\s|:\-]+$/.test(l)){ return; }   // 마크다운 구분선 스킵
-      var cells=splitRow(l); if(cells){ buf.push(cells); } else { flush(); html+='<div class="jline">'+esc(l)+'</div>'; } });
+      var cells=splitRow(l); if(cells){ buf.push(cells); } else { flush(); html+=lineHTML(l); } });
     flush(); return html; }
   // ── 글씨 크기 통일(.subj-view): 문제(자료·물음)만 크게, 나머지는 한 크기 ──
   function _injectSubjFont(){ if(document.getElementById('subjFontUnify')) return;
     var st=document.createElement('style'); st.id='subjFontUnify';
     st.textContent=
-     '.subj-view .jaryo{font-size:15px;line-height:1.8}'
-    +'.subj-view .jaryo .jline{white-space:pre-wrap;margin:0}'
-    +'.subj-view .jaryo .jline:empty{height:.6em}'
+     '.subj-view .jaryo{font-size:15px;line-height:1.78;padding:13px 15px;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:10px;color:#334155;margin:0 0 14px}'
+    +'.subj-view .qstem{background:#fff;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}'
+    +'.subj-view .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap}'
+    +'.subj-view .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;min-width:25px;height:25px;padding:0 7px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}'
+    +'.subj-view .scard-set-label{font-size:11px;font-weight:600;color:#64748B;background:#F1F5F9;border:1px solid #E2E8F0;padding:2px 9px;border-radius:20px}'
+    +'.subj-view .subj-q{background:#EEF4FB;border:1px solid #D6E4F5;border-radius:10px;padding:10px 12px;margin:14px 0 8px;font-weight:600}'
+    +'.subj-view .subj-q .num{font-weight:800;color:#0C447C;margin-right:5px}'
+    +'.subj-view .subj-pt{font-size:12px;font-weight:700;color:#185FA5;background:#DCE9F8;padding:1px 8px;border-radius:11px;margin-left:4px}'
+    +'.subj-view .subj-btns{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}'
+    +'.subj-view .subj-btns button{padding:8px 14px;border-radius:9px;border:1px solid #CBD5E1;background:#fff;font-weight:700;font-size:13px;cursor:pointer;color:#334155}'
+    +'.subj-view .subj-model{background:#0C447C!important;color:#fff!important;border-color:#0C447C!important}'
+    +'.subj-view .jaryo .jline{white-space:pre-wrap;margin:7px 0}'
+    +'.subj-view .jaryo .jline:first-child{margin-top:0}'
+    +'.subj-view .jaryo .jgap{height:8px}'
+    +'.subj-view .jaryo .jbul{display:flex;gap:8px;margin:7px 0;align-items:flex-start}'
+    +'.subj-view .jaryo .jbul-m{color:#0C447C;font-weight:800;flex-shrink:0;line-height:1.78}'
+    +'.subj-view .jaryo .jbul-t{white-space:pre-wrap;flex:1}'
+    +'.subj-view .jaryo .jsub{display:flex;gap:7px;margin:5px 0 5px 16px;align-items:flex-start}'
+    +'.subj-view .jaryo .jsub-m{color:#2A5B92;font-weight:700;flex-shrink:0;min-width:20px}'
+    +'.subj-view .jaryo .jsub-t{white-space:pre-wrap;flex:1}'
     +'.subj-view .subj-q{font-size:15px;line-height:1.7}'
     +'.subj-view .subj-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}'
     +'.subj-view .subj-tbl th,.subj-view .subj-tbl td{border:1px solid #D9E2EC;padding:6px 9px;text-align:left;vertical-align:top;line-height:1.55}'
