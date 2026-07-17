@@ -1071,7 +1071,18 @@ function _mountSubjHosts(){
   document.querySelectorAll('.subj-host').forEach(function(el){
     var i=parseInt(el.getAttribute('data-si')||'0',10);
     if(!(window.CLSubj && CLSubj.openOne)){ el.innerHTML='<div class="errx">주관식 렌더러(subjective.js)가 로드되지 않았습니다.</div>'; return; }
-    try{ CLSubj.openOne(el, exam, i, { replace:false, explainAi:false }); }
+    // 미리보기: AI 심층채점·AI 해설 위젯을 '잠금 표시'로 노출(실제 채점은 실행 안 됨)
+    try{ CLSubj.openOne(el, exam, i, {
+      replace:false,
+      demo:true,
+      aiSell:true,
+      hasEntitlement:function(){ return false; },
+      creditBalance:function(){ return 0; }, explainBalance:function(){ return 0; },
+      aiCost:1, explainCost:1,
+      explainAi:function(){ return Promise.resolve({ text:'(미리보기에서는 AI 채점·설명이 실행되지 않습니다. 실제 앱에서 동작합니다.)' }); },
+      buyAi:function(){ alert('미리보기 화면입니다. AI 첨삭은 실제 앱에서 충전 후 이용돼요.'); },
+      buyExplain:function(){ alert('미리보기 화면입니다. AI 설명은 실제 앱에서 이용돼요.'); }
+    }); }
     catch(e){ el.innerHTML='<div class="errx">주관식 렌더 오류: '+String(e&&e.message)+'</div>'; }
   });
 }
