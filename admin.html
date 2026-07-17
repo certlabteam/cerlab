@@ -1326,7 +1326,7 @@ tr:hover td{background:#FAFAFA}
         </div>
         <div style="font-size:11.5px;color:#A89C8E;margin:2px 4px 8px">올린 파일(지적서 만들기) 또는 내보내기 범위 라이브(라이브 지적서)를 게이트로 전수 검사 → TXT로 데이터방에 넘깁니다. 위 배지에 ⛔ 차단·⚠ 경고 개수 표시.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <button class="btn-sm btn-extend" onclick="buildReviewNote('lvup')">🔍 라이브 검수</button>
+          <button class="btn-sm btn-extend" onclick="reviewLvupLive()">🔍 라이브 검수</button>
           <button class="btn-sm" onclick="downloadReviewNote('lvup')" style="background:#E6F4EA;color:#166534">⬇ TXT 다운로드</button>
         </div>
         <textarea id="lvupReviewNote" style="width:100%;height:220px;font-size:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.55;border:1px solid #E2E8F0;border-radius:8px;padding:10px;box-sizing:border-box" placeholder="'라이브 검수'를 누르면 게이트 위반이 채워집니다. TXT로 받아 데이터방에 넘기세요."></textarea>
@@ -2067,11 +2067,16 @@ function _qcMasterAuditFn(mtype){
   var fnmap={ mnem:(QC&&QC.mnemAudit), table:(QC&&QC.tableAudit), graph:(QC&&QC.graphAudit), interactive:(QC&&QC.interactiveAudit), concept:(QC&&QC.conceptAudit) };
   return fnmap[mtype];
 }
-function qcMasterBuildReview(mtype){
-  var items=_qcMasterItems(mtype), auditFn=_qcMasterAuditFn(mtype), kindLabel=_qcMasterLabel[mtype]||mtype;
+async function qcMasterBuildReview(mtype){
+  var coll={mnem:'mnemonics',table:'tables',graph:'graphs',concept:'concepts',interactive:'interactives'}[mtype];
+  var auditFn=_qcMasterAuditFn(mtype), kindLabel=_qcMasterLabel[mtype]||mtype;
   var ta=document.getElementById('mNote_'+mtype);
-  if(!items||!items.length){ alert('먼저 '+kindLabel+' 마스터 JSON을 로드하세요.'); return; }
   if(typeof QC==='undefined' || typeof auditFn!=='function'){ alert('qc-core를 불러오지 못했습니다.'); return; }
+  if(ta) ta.value='현재 서비스 중인 '+kindLabel+' 마스터를 읽는 중…';
+  var items=[];
+  try{ var snap=await db.collection(coll).get(); snap.forEach(function(dd){ items.push(Object.assign({id:dd.id}, dd.data()||{})); }); }
+  catch(e){ if(ta) ta.value='라이브 데이터 로드 실패: '+((e&&e.message)||e); else alert('라이브 데이터 로드 실패'); return; }
+  if(!items.length){ if(ta) ta.value='('+kindLabel+' 라이브 데이터가 비어 있음)'; return; }
   var vios=auditFn(items)||[];
   var byCode={}; vios.forEach(function(v){ byCode[v.code]=(byCode[v.code]||0)+1; });
   var block=vios.filter(function(v){ return v.sev==='ERROR'||v.sev==='BLOCKER'; }).length;
