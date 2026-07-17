@@ -68,6 +68,8 @@
     +'.subj-view .subj-btns{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}'
     +'.subj-view .subj-btns button{padding:8px 14px;border-radius:9px;border:1px solid #CBD5E1;background:#fff;font-weight:700;font-size:13px;cursor:pointer;color:#334155}'
     +'.subj-view .subj-model{background:#0C447C!important;color:#fff!important;border-color:#0C447C!important}'
+    +'.subj-view .subj-ai{background:#F3ECFB!important;color:#5B3FA0!important;border-color:#D9CBF3!important}'
+    +'.subj-view .subj-demo{background:#EAF7F0!important;color:#137a52!important;border-color:#BfE7D4!important}'
     +'.subj-view .jaryo .jline{white-space:pre-wrap;margin:7px 0}'
     +'.subj-view .jaryo .jline:first-child{margin-top:0}'
     +'.subj-view .jaryo .jgap{height:8px}'
@@ -367,9 +369,10 @@
     d.innerHTML='<div class="subj-q"><span class="num">물음 '+(ask.n||ai+1)+')</span> '+esc(_brkMarkers(ask.q)).replace(/\n/g,'<br>')+' <span class="subj-pt">'+(ask.pt||'')+'점</span></div>'
       +'<div class="subj-rows">'+rowHTML()+rowHTML()+rowHTML()+'</div>'
       +'<div class="subj-btns"><button class="subj-grade">채점하기</button>'
-      +(_sellsAi()?('<button class="subj-ai">🤖 AI 심층채점'+(_hasEnt()?(' <span class="subj-lock">'+_cost()+'회 차감·잔액 '+_bal()+'</span>'):' <span class="subj-lock">🔒 '+_cost()+'회</span>')+'</button>'):'')
-      +'<button class="subj-model">모범답안</button></div>'
-      +((_sellsAi()&&!_hasEnt())?('<div class="subj-aihint">🔒 AI 심층채점(감평 채점위원 수준 서술 첨삭)은 <b>충전 횟수</b>로 이용해요. 회원권과 별도 · 1건당 <b>'+_cost()+'회</b> 차감. 버튼을 누르면 충전 안내가 떠요.</div>'):'')
+      +(_sellsAi()?('<button class="subj-ai">🤖 AI 채점(첨삭)'+(_hasEnt()?(' <span class="subj-lock">'+_cost()+'회 차감·잔액 '+_bal()+'</span>'):' <span class="subj-lock">🔒 '+_cost()+'회</span>')+'</button>'):'')
+      +'<button class="subj-model">모범답안</button>'
+      +(_opts.demo?'<button class="subj-demo">🎬 AI 첨삭 예시</button>':'')+'</div>'
+      +((_sellsAi()&&!_hasEnt())?('<div class="subj-aihint">🔒 AI 채점(첨삭)은 감평 채점위원 수준의 서술 첨삭으로, <b>충전 횟수</b>로 이용해요. 회원권과 별도 · 1건당 <b>'+_cost()+'회</b> 차감. 버튼을 누르면 충전 안내가 떠요.</div>'):'')
       +'<div class="subj-res"></div>';
     var box=d.querySelector('.subj-rows'); reindex(box);
     var _addBtn=d.querySelector('.subj-add'); if(_addBtn) _addBtn.onclick=function(){ box.insertAdjacentHTML('beforeend',rowHTML()); bindRow(box); reindex(box); };
@@ -392,7 +395,34 @@
           // 그 외(네트워크·서버 오류)만 오프라인 채점으로 폴백
           var res=gradeOffline(ask,t); res._fellback=true; showResult(d,res,exam,qi,ai); }); }; }
     d.querySelector('.subj-model').onclick=function(){ showResult(d, null, exam, qi, ai); };
+    var _demoBtn=d.querySelector('.subj-demo');
+    if(_demoBtn) _demoBtn.onclick=function(){
+      var nodes=ask.outline||[]; if(!nodes.length) return;
+      var half=Math.max(1,Math.ceil(nodes.length/2)); var written=nodes.slice(0,half);
+      // 절반 정도 쓴 예시답안을 입력행에 채움
+      box.innerHTML=''; written.forEach(function(n){ var tmp=document.createElement('div'); tmp.innerHTML=rowHTML();
+        var nr=tmp.firstChild; nr.setAttribute('data-lv',n.lv||1); nr.querySelector('.h').value=n.h||''; nr.querySelector('.d').value=String(n.body||'').slice(0,140); box.appendChild(nr); });
+      bindRow(box); reindex(box);
+      // 모의 AI 첨삭 결과 표시(실제 채점 아님 · 데모)
+      showResult(d, _demoAiResult(ask, half), exam, qi, ai);
+      d.querySelector('.subj-res').scrollIntoView({behavior:'smooth',block:'nearest'});
+    };
     return d;
+  }
+  // 데모용 모의 AI 첨삭 결과(절반 답안 기준) — 실제 채점 아님
+  function _demoAiResult(ask, writtenCount){
+    var nodes=ask.outline||[]; var pt=ask.pt||10;
+    var perNode=nodes.map(function(n,i){ var w=i<writtenCount;
+      var level = w ? (i<writtenCount-1?2:1) : 0;
+      var comment = level>=2 ? '논점을 정확히 서술했습니다. 근거와 결론의 연결이 자연스럽습니다.'
+        : level===1 ? '방향은 맞으나 근거·구체성이 부족합니다. 법조문·판례를 덧대면 좋습니다.'
+        : '이 논점이 답안에 빠졌습니다. 반드시 포함해야 감점을 피할 수 있습니다.';
+      return { h:n.h, level:level, comment:comment }; });
+    var got=perNode.reduce(function(s,p){ return s+(p.level>=2?1:p.level===1?0.5:0); },0);
+    var score=Math.round(pt*got/Math.max(1,nodes.length));
+    var nodeRes=nodes.map(function(n,i){ return { h:n.h, matched:i<writtenCount }; });
+    var feedback='서두에서 쟁점을 제시하고 앞부분 논점을 잘 전개했습니다. 다만 답안의 뒷부분(결론·일부 논점)이 빠져 있어 완성도가 떨어집니다. 누락된 논점을 채우고 각 논점마다 근거(법조문·판례)를 한 줄씩 명시하면 점수가 크게 오릅니다.';
+    return { mode:'llm', score:score, pt:pt, feedback:feedback, perNode:perNode, nodeRes:nodeRes };
   }
   function bindRow(box){ box.querySelectorAll('.subj-arow .del').forEach(function(btn){ btn.onclick=function(){
     if(box.querySelectorAll('.subj-arow').length<=1){ btn.closest('.subj-arow').querySelector('.h').value=''; btn.closest('.subj-arow').querySelector('.d').value=''; return; }
