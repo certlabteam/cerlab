@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <script src="qc-core.js?v=20260713"></script>
 <script src="qc-gate-patch.js?v=20260714"></script>
+<script src="subjective.js?v=20260717d"></script>
 <style>
 body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column;max-width:1600px;margin:0 auto}
 #mcqView .pv-oralcard{position:relative;transform:none;min-height:auto;width:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px 22px;border-radius:var(--radius);text-align:center;margin-bottom:12px}
@@ -1062,8 +1063,21 @@ function otChips(qid, i){
     return '<span class="ot-chip" title="'+id+'">\uD83C\uDFF7 '+nm+'</span>';
   }).join('');
 }
+var _subjQueue=[];   // [주관식 미리보기] 렌더 후 CLSubj로 마운트할 문항 큐
+function _isSubjQ(q){ return q && Array.isArray(q.asks) && q.asks.length>0; }
+function _mountSubjHosts(){
+  if(!_subjQueue.length) return;
+  var exam={ id:'pv', name:'미리보기', questions:_subjQueue.slice() };
+  document.querySelectorAll('.subj-host').forEach(function(el){
+    var i=parseInt(el.getAttribute('data-si')||'0',10);
+    if(!(window.CLSubj && CLSubj.openOne)){ el.innerHTML='<div class="errx">주관식 렌더러(subjective.js)가 로드되지 않았습니다.</div>'; return; }
+    try{ CLSubj.openOne(el, exam, i, { replace:false, explainAi:false }); }
+    catch(e){ el.innerHTML='<div class="errx">주관식 렌더 오류: '+String(e&&e.message)+'</div>'; }
+  });
+}
 function _renderQHTML(q, cert){
   try{
+    if(_isSubjQ(q)){ var si=_subjQueue.length; _subjQueue.push(q); return '<div class="subj-view subj-host" data-si="'+si+'"></div>'; }
     if(!q.exp && (q.a || q.learn)){ return renderOral(q, cert); }
     if(isSA(q)){ return renderSaPreview(q, cert); }
     var _learn='';
@@ -1081,7 +1095,9 @@ function renderOne(q){
   errBox.innerHTML='';
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   try{ showTypeBadge(q); }catch(_){}
+  _subjQueue=[];
   out.innerHTML = _renderQHTML(q, cert);
+  _mountSubjHosts();
 }
 function renderAll(){
   var errBox=document.getElementById('errBox'), out=document.getElementById('mcqView');
@@ -1089,6 +1105,7 @@ function renderAll(){
   errBox.innerHTML='';
   var tb=document.getElementById('typeBadge'); if(tb) tb.innerHTML='';
   if(!_items){ return; }
+  _subjQueue=[];
   var cells=_items.map(function(q,i){
     return '<div style="flex:1 1 420px;min-width:360px;border:2px solid #E2E8F0;border-radius:14px;padding:14px 14px 4px;background:#fff;box-sizing:border-box">'
       +'<div style="font-size:12px;font-weight:800;color:#0C447C;margin-bottom:10px;padding-bottom:6px;border-bottom:1px dashed #E2E8F0">'
@@ -1097,6 +1114,7 @@ function renderAll(){
   }).join('');
   // PC·태블릿 좌우 2단(min-width로 좁으면 자동 위아래). 컨테이너(body 1600px) 폭을 채움
   out.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">'+cells+'</div>';
+  _mountSubjHosts();
 }
 function drawNav(){
   var nav=document.getElementById('navBar'); if(!nav) return;
