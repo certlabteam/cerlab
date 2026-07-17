@@ -6103,9 +6103,9 @@ function renderMcqExam(root){
       }
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
-    // exp.graph: 유형 무관 공통 렌더(해설 최상단). SVG 그대로(renderMath 미적용).
+    // exp.graph: 유형 무관 공통 렌더 → 해설 본문(해설예시) 밑으로 이동(2026-07-17). SVG 그대로(renderMath 미적용).
     if(q.exp && q.exp.graph && String(q.exp.graph).trim() && body.indexOf('calc-graph')===-1)
-      body = '<div class="calc-graph">'+q.exp.graph+'</div>' + body;
+      body = body + '<div class="calc-graph">'+q.exp.graph+'</div>';
     body += oxCompareHTML(q, oArr);   // 1단계: 내 O/X vs 정답 (텍스트·이미지·일반 통합)
     body += tipBlockHTML(q);          // O/X 다음 → ⚡ 시험 포인트(함정 한 줄)
     body += certlabRecallHTML(q, rm);
@@ -6127,14 +6127,13 @@ function renderMcqExam(root){
       var _aiCards=[];
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it,ci){
         if(!it||!it.t) return '';
-        var row='<div class="concept-row"><div style="font-weight:500;color:#0C447C;margin-bottom:6px">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
+        var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span><button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:11px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button></div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
         if(it.ex && String(it.ex).trim()) row+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
-        // 🤖 이 개념 AI 심화설명 (같은 크레딧 지갑)
+        // 🤖 이 개념 AI 심화설명 (같은 크레딧 지갑) — 복사버튼은 타이틀 우측으로 이동(2026-07-17)
         _aiCards.push({ t:String(it.t||''), text:[it.t,it.d,it.cx,it.ex].filter(function(x){return x&&String(x).trim();}).join('\n') });
-        row+='<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')">📋 복사</button>';
         return row;
       }).join('')
       +'</div>';
