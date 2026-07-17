@@ -31,7 +31,13 @@
     var body=rows.map(function(r,ri){ var cells=''; for(var i=0;i<maxc;i++){ var c=esc(r[i]!=null?String(r[i]).trim():'');
         cells+= (ri===0 ? '<th>'+c+'</th>' : '<td>'+c+'</td>'); } return '<tr>'+cells+'</tr>'; }).join('');
     return '<table class="subj-tbl">'+body+'</table>'; }
-  function _subjJaryoHTML(raw){ var text=String(raw==null?'':raw).replace(/\r/g,''); var lines=text.split('\n');
+  // 지문 가독성: ①②③·㉠㉡·○ㅇ●·▷ 앞에 줄바꿈 삽입(이미 줄머리면 중복 안 됨), 3줄이상 개행은 2줄로
+  function _brkMarkers(s){ return String(s==null?'':s)
+    .replace(/\s*([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮])/g,'\n$1')
+    .replace(/\s*([㉠㉡㉢㉣㉤㉥])/g,'\n$1')
+    .replace(/\s*([○●▷])\s+/g,'\n$1 ')
+    .replace(/\n{3,}/g,'\n\n').replace(/^\n+/,''); }
+  function _subjJaryoHTML(raw){ var text=_brkMarkers(String(raw==null?'':raw).replace(/\r/g,'')); var lines=text.split('\n');
     function splitRow(l){ if(/\t/.test(l)) return l.split('\t').map(function(s){return s.trim();});
       if((l.match(/\|/g)||[]).length>=2){ return l.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(function(s){return s.trim();}); }
       return null; }
@@ -90,7 +96,9 @@
     +'.subj-view .concept-row{padding:7px 0;border-top:1px solid #EEF2F6}.subj-view .concept-row:first-of-type{border-top:none}'
     +'.subj-view .concept-row .crow-h{display:flex;align-items:center;gap:6px}'
     +'.subj-view .concept-row .tm{font-weight:700}'
-    +'.subj-view .concept-row .crow-d{color:#475569;line-height:1.7;margin-top:3px}'
+    +'.subj-view .concept-row .crow-d{color:#334155;line-height:1.75;margin-top:4px}'
+    +'.subj-view .concept-row .crow-ex{margin-top:6px;padding:7px 10px;background:#F5F8FC;border:1px solid #E4ECF5;border-radius:8px;color:#41546B;line-height:1.7;font-size:13.5px}'
+    +'.subj-view .concept-row .crow-ex .ex-lb{display:inline-block;font-weight:800;color:#2A5B92;font-size:11.5px;background:#E3EDF9;border-radius:5px;padding:0 6px;margin-right:5px}'
     +'.subj-view .concept-box .subj-copy{border:none;background:#EEF3F9;color:#64748B;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px}'
     // ⚡ 시험 포인트 박스
     +'.subj-view .subj-tip{margin:12px 0;border:1px solid #F1DFAE;background:linear-gradient(0deg,#FFFDF7,#FFF9EC);border-left:4px solid #E5A93C;border-radius:12px;padding:11px 13px}'
@@ -175,14 +183,16 @@
   }
   // ⚡ 시험포인트(exp.tip) — 출제위원 관점 답안 작성 전략. 물음 아래 강조 박스.
   function expTipHtml(q){ var t=q&&q.exp&&q.exp.tip; if(!t||!String(t).trim()) return '';
-    return '<div class="subj-tip"><div class="subj-tip-hd">⚡ 시험 포인트</div><div class="subj-tip-bd">'+esc(String(t))+'</div></div>'; }
+    return '<div class="subj-tip"><div class="subj-tip-hd">💡 힌트</div><div class="subj-tip-bd">'+esc(String(t))+'</div></div>'; }
   // 문제에 나온 핵심 개념 설명 박스 + 문제-level AI 질문 위젯
   // 객관식 .concept-box 형태 공유 + 주관식만 접고펴기(.cpt-col). 복사→AI 질문칸.
   function conceptHtml(q){ if(!(q.concepts&&q.concepts.length)) return '';
     var rows=q.concepts.map(function(c,i){ if(!c||!c.term) return '';
+      var exTxt=c.ex||c.example||c.eg||'';
       return '<div class="concept-row"><div class="crow-h" data-i="'+i+'"><b class="tm" style="color:#0C447C">'+esc(c.term)+'</b>'
         +(_opts.explainAi?'<button class="subj-copy" data-cpt="'+i+'" title="이 개념을 AI 질문칸에 복사">📋</button>':'')+'</div>'
-        +(c.def?'<div class="crow-d">'+esc(c.def)+'</div>':'')+'</div>'; }).join('');
+        +(c.def?'<div class="crow-d">'+esc(c.def)+'</div>':'')
+        +(exTxt?'<div class="crow-ex"><span class="ex-lb">예시</span> '+esc(exTxt)+'</div>':'')+'</div>'; }).join('');
     return '<div class="concept-box"><div class="concept-ti">핵심 개념</div>'+rows+'</div>'+_subjAskWidget();
   }
   function bindConcepts(v, exam, qi){ var q=exam.questions[qi]; if(!(q.concepts&&q.concepts.length)) return;
@@ -262,7 +272,7 @@
     var q=exam.questions[qi];
     if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return; }   // 무료 한도 게이트(있으면 검사, 없으면 스킵)
     var v=document.createElement('div'); v.className='subj-view';
-    var refHtml=(q.refs&&q.refs.length)?('<details class="subj-refbox"><summary class="rt" style="cursor:pointer;list-style:none;font-size:13px">💡 참조문헌 힌트 <span style="font-weight:400;color:#94A3B8">(실제 시험엔 안 나와요)</span></summary>'
+    var refHtml=(q.refs&&q.refs.length)?('<details class="subj-refbox" open><summary class="rt" style="cursor:pointer;list-style:none;font-size:13px">💡 참조문헌 힌트 <span style="font-weight:400;color:#94A3B8">(실제 시험엔 안 나와요)</span></summary>'
       +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</details>'):'';
     _injectSkin(); _injectSubjFont();
     v.innerHTML='<button class="exam-back" data-back="1">‹</button>'
@@ -291,7 +301,7 @@
     var q=exam.questions[qi]; if(!q) return false;
     if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return false; }
     var _host=host||_opts.host||document.getElementById(_opts.mountId)||document.body;
-    var refHtml=(q.refs&&q.refs.length)?('<details class="subj-refbox"><summary class="rt" style="cursor:pointer;list-style:none;font-size:13px">💡 참조문헌 힌트 <span style="font-weight:400;color:#94A3B8">(실제 시험엔 안 나와요)</span></summary>'
+    var refHtml=(q.refs&&q.refs.length)?('<details class="subj-refbox" open><summary class="rt" style="cursor:pointer;list-style:none;font-size:13px">💡 참조문헌 힌트 <span style="font-weight:400;color:#94A3B8">(실제 시험엔 안 나와요)</span></summary>'
       +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</details>'):'';
     var v=document.createElement('div'); v.className='subj-view';
     v.innerHTML='<div class="qstem"><div class="qhead"><div class="qnum">'+_localNum(exam,qi)+'</div>'
@@ -318,23 +328,27 @@
     +'<span class="idx"></span>'
     +'<input class="h" placeholder="목차 (예: 사업인정의 의의)"><button class="add" title="이 단계에 목차 추가" style="border:none;background:#E6F4EA;color:#166534;width:26px;height:26px;border-radius:7px;font-size:17px;font-weight:700;cursor:pointer;margin-left:4px">+</button><button class="del" title="삭제">−</button></div>'
     +'<textarea class="d" placeholder="상세내용 — 법조문은 「토지보상법 제20조」처럼"></textarea></div>'; }
-  // 대 Ⅰ · 중 1 · 소 (1) · 세 가 — 레벨별 자동번호 + 들여쓰기
+  // 레벨별 예시 placeholder (대 Ⅰ → 중 1 → 소 (1) → 세 가)
+  var _PH_H=['','대목차 (예: 서설)','중목차 (예: 사업인정의 의의)','소목차 (예: 법적 성질)','세목차 (예: 처분성)'];
+  var _PH_D=['','상세내용 (예: 이하 의의·성질·효과를 검토한다)','상세내용 — 근거 법조문은 「토지보상법 제20조」처럼','상세내용 — 학설·판례·검토 순으로','상세내용 — 판례 요지·사건번호'];
+  // 대 Ⅰ · 중 1 · 소 (1) · 세 가 — 레벨별 자동번호 + 들여쓰기 + 예시 placeholder
   function reindex(box){ var c=[0,0,0,0]; box.querySelectorAll('.subj-arow').forEach(function(r){
     var lv=parseInt(r.getAttribute('data-lv')||'1',10); if(lv<1)lv=1; if(lv>4)lv=4;
     r.querySelector('.idx').textContent=_mokchaNum(lv,c);
-    r.style.marginLeft=((lv-1)*18)+'px'; }); }
+    r.style.marginLeft=((lv-1)*18)+'px';
+    var hEl=r.querySelector('.h'), dEl=r.querySelector('.d');
+    if(hEl) hEl.setAttribute('placeholder',_PH_H[lv]); if(dEl) dEl.setAttribute('placeholder',_PH_D[lv]); }); }
   function buildAsk(exam,qi,ai){ var ask=exam.questions[qi].asks[ai];
     var d=document.createElement('div'); d.className='subj-ask';
-    d.innerHTML='<div class="subj-q"><span class="num">물음 '+(ask.n||ai+1)+')</span> '+esc(ask.q)+' <span class="subj-pt">'+(ask.pt||'')+'점</span></div>'
+    d.innerHTML='<div class="subj-q"><span class="num">물음 '+(ask.n||ai+1)+')</span> '+esc(_brkMarkers(ask.q)).replace(/\n/g,'<br>')+' <span class="subj-pt">'+(ask.pt||'')+'점</span></div>'
       +'<div class="subj-rows">'+rowHTML()+rowHTML()+rowHTML()+'</div>'
-      +'<button class="subj-add">+ 목차 추가</button>'
       +'<div class="subj-btns"><button class="subj-grade">채점하기</button>'
       +(_sellsAi()?('<button class="subj-ai">🤖 AI 심층채점'+(_hasEnt()?(' <span class="subj-lock">'+_cost()+'회 차감·잔액 '+_bal()+'</span>'):' <span class="subj-lock">🔒 '+_cost()+'회</span>')+'</button>'):'')
       +'<button class="subj-model">모범답안</button></div>'
       +((_sellsAi()&&!_hasEnt())?('<div class="subj-aihint">🔒 AI 심층채점(감평 채점위원 수준 서술 첨삭)은 <b>충전 횟수</b>로 이용해요. 회원권과 별도 · 1건당 <b>'+_cost()+'회</b> 차감. 버튼을 누르면 충전 안내가 떠요.</div>'):'')
       +'<div class="subj-res"></div>';
     var box=d.querySelector('.subj-rows'); reindex(box);
-    d.querySelector('.subj-add').onclick=function(){ box.insertAdjacentHTML('beforeend',rowHTML()); bindRow(box); reindex(box); };
+    var _addBtn=d.querySelector('.subj-add'); if(_addBtn) _addBtn.onclick=function(){ box.insertAdjacentHTML('beforeend',rowHTML()); bindRow(box); reindex(box); };
     bindRow(box);
     function rows(){ var out=[]; box.querySelectorAll('.subj-arow').forEach(function(r){ out.push({h:r.querySelector('.h').value, d:r.querySelector('.d').value}); }); return out; }
     function text(){ return rows().map(function(r){return r.h+' '+r.d;}).join('  '); }
