@@ -20,6 +20,83 @@
     c[3]++;return (HAN[c[3]]||c[3])+'.'; }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function norm(s){ return String(s||'').replace(/\s+/g,'').toLowerCase(); }
+  // ── 긴 법률명을 통용 약칭으로(표시용, 데이터 불변). 아는 이름만 치환, 나머지는 원문 유지 ──
+  var _LAWABBR=[['공익사업을 위한 토지 등의 취득 및 보상에 관한 법률','토지보상법'],
+    ['부동산 가격공시에 관한 법률','부동산공시법'],['부동산가격공시에 관한 법률','부동산공시법'],
+    ['국토의 계획 및 이용에 관한 법률','국토계획법'],['감정평가 및 감정평가사에 관한 법률','감정평가법'],
+    ['감정평가에 관한 규칙','감정평가규칙'],['행정소송법','행정소송법'],['행정심판법','행정심판법']];
+  function _abbrLaw(ref){ var s=String(ref==null?'':ref); for(var i=0;i<_LAWABBR.length;i++){ if(s.indexOf(_LAWABBR[i][0])>=0) s=s.split(_LAWABBR[i][0]).join(_LAWABBR[i][1]); } return s; }
+  // ── 문제(자료) 렌더: 탭/파이프 구분 표는 <table>로, 나머지는 개행 유지 ──
+  function _subjTableHTML(rows){ var maxc=0; rows.forEach(function(r){ if(r.length>maxc)maxc=r.length; });
+    var body=rows.map(function(r,ri){ var cells=''; for(var i=0;i<maxc;i++){ var c=esc(r[i]!=null?String(r[i]).trim():'');
+        cells+= (ri===0 ? '<th>'+c+'</th>' : '<td>'+c+'</td>'); } return '<tr>'+cells+'</tr>'; }).join('');
+    return '<table class="subj-tbl">'+body+'</table>'; }
+  function _subjJaryoHTML(raw){ var text=String(raw==null?'':raw).replace(/\r/g,''); var lines=text.split('\n');
+    function splitRow(l){ if(/\t/.test(l)) return l.split('\t').map(function(s){return s.trim();});
+      if((l.match(/\|/g)||[]).length>=2){ return l.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(function(s){return s.trim();}); }
+      return null; }
+    var html='', buf=[];
+    function flush(){ if(buf.length>=2){ html+=_subjTableHTML(buf); } else if(buf.length===1){ html+='<div class="jline">'+esc(buf[0].join('  '))+'</div>'; } buf=[]; }
+    lines.forEach(function(l){ if(/\|/.test(l) && /^[\s|:\-]+$/.test(l)){ return; }   // 마크다운 구분선 스킵
+      var cells=splitRow(l); if(cells){ buf.push(cells); } else { flush(); html+='<div class="jline">'+esc(l)+'</div>'; } });
+    flush(); return html; }
+  // ── 글씨 크기 통일(.subj-view): 문제(자료·물음)만 크게, 나머지는 한 크기 ──
+  function _injectSubjFont(){ if(document.getElementById('subjFontUnify')) return;
+    var st=document.createElement('style'); st.id='subjFontUnify';
+    st.textContent=
+     '.subj-view .jaryo{font-size:15px;line-height:1.8}'
+    +'.subj-view .jaryo .jline{white-space:pre-wrap;margin:0}'
+    +'.subj-view .jaryo .jline:empty{height:.6em}'
+    +'.subj-view .subj-q{font-size:15px;line-height:1.7}'
+    +'.subj-view .subj-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}'
+    +'.subj-view .subj-tbl th,.subj-view .subj-tbl td{border:1px solid #D9E2EC;padding:6px 9px;text-align:left;vertical-align:top;line-height:1.55}'
+    +'.subj-view .subj-tbl th{background:#EEF3F9;font-weight:700;color:#0F172A}'
+    +'.subj-view .subj-node .nt,.subj-view .subj-node .nb,'
+    +'.subj-view .concept-row,.subj-view .crow-h,.subj-view .crow-d,.subj-view .concept-ti,'
+    +'.subj-view .concept-box .tm,.subj-view .subj-refbox,.subj-view .subj-refbox .rt,'
+    +'.subj-view .subj-refbox .ri,.subj-view .subj-note,.subj-view .subj-sect,'
+    +'.subj-view input.h,.subj-view textarea.d,.subj-view .subj-chk,.subj-view .subj-feed{font-size:14px;line-height:1.7}'
+    // ── 모범답안 목차: 계층형 트리 + 배지 ──
+    +'.subj-view .subj-sect{font-weight:800;color:#0C447C;margin:16px 2px 8px;padding-left:9px;border-left:3px solid #0C447C}'
+    +'.subj-view .subj-node{position:relative;margin:2px 0}'
+    +'.subj-view .subj-node.lv1{margin:16px 0 4px}'
+    +'.subj-view .subj-node.lv1:first-child{margin-top:2px}'
+    +'.subj-view .subj-node.lv2{margin-left:12px;padding-left:12px;border-left:1.5px solid #E5EAF1}'
+    +'.subj-view .subj-node.lv3{margin-left:26px;padding-left:12px;border-left:1.5px solid #EAEEF3}'
+    +'.subj-view .subj-node.lv4{margin-left:40px;padding-left:12px;border-left:1.5px solid #EEF1F5}'
+    +'.subj-view .subj-node .nh{display:flex;flex-wrap:wrap;align-items:center;gap:5px 6px;cursor:pointer}'
+    +'.subj-view .subj-node .nnum{font-weight:800;color:#0C447C;flex-shrink:0}'
+    +'.subj-view .subj-node .nt{font-weight:700;color:#0F172A}'
+    +'.subj-view .subj-node.lv1 .nh{padding-bottom:5px;border-bottom:2px solid #E7EEF6;margin-bottom:3px}'
+    +'.subj-view .subj-node.lv1 .nt{font-size:15.5px;color:#0C447C}'
+    +'.subj-view .subj-node.lv1 .nnum{font-size:15.5px}'
+    +'.subj-view .subj-node.lv2 .nt{font-size:14.5px}'
+    +'.subj-view .subj-node .role{font-size:11px;font-weight:700;color:#2A5B92;background:#EAF1FA;border:1px solid #D4E3F5;padding:1px 8px;border-radius:11px;flex-shrink:0}'
+    +'.subj-view .subj-node .nref{font-size:11.5px;font-weight:600;color:#5A6B80;background:#F4F6F9;border:1px solid #E4E9F0;padding:1px 8px;border-radius:6px;line-height:1.5}'
+    +'.subj-view .subj-node .nref.pan{color:#7A5A2E;background:#FBF6EC;border-color:#EEDFC4}'
+    +'.subj-view .subj-node .nb{margin:5px 0 2px;color:#334155;line-height:1.74;white-space:pre-wrap}'
+    +'.subj-view .subj-node .subj-copy{border:none;background:#EEF3F9;color:#64748B;border-radius:6px;width:24px;height:24px;cursor:pointer;flex-shrink:0;font-size:12px}'
+    +'.subj-view .subj-node.hit{background:#F1FBF6;border-radius:8px;box-shadow:inset 3px 0 0 #57C08A;padding-left:12px;margin-left:0}'
+    +'.subj-view .subj-node.hit.lv2,.subj-view .subj-node.hit.lv3,.subj-view .subj-node.hit.lv4{margin-left:12px}'
+    +'.subj-view .subj-node.miss{background:#FEF6F5;border-radius:8px;box-shadow:inset 3px 0 0 #E58A82;padding-left:12px}'
+    // ── 채점 결과 카드/체크 ──
+    +'.subj-view .subj-chk{display:flex;align-items:flex-start;gap:7px;padding:6px 10px;border-radius:8px;margin:4px 0;background:#F8FAFC;border:1px solid #EEF2F6}'
+    +'.subj-view .subj-chk.hit{background:#F1FBF6;border-color:#D6F0E3}.subj-view .subj-chk.miss{background:#FEF6F5;border-color:#F6DDD9}'
+    +'.subj-view .subj-chk .mk{font-weight:800;flex-shrink:0}.subj-view .subj-chk.hit .mk{color:#1F9D6B}.subj-view .subj-chk.miss .mk{color:#C0503F}'
+    +'.subj-view .subj-feed{background:#F8FAFC;border:1px solid #EEF2F6;border-radius:8px;padding:9px 11px;color:#334155;line-height:1.7}'
+    // ── 핵심 개념(객관식 개념 박스 스타일) ──
+    +'.subj-view .concept-box{border:1px solid #E2E8F0;border-radius:12px;padding:12px 13px;margin:12px 0;background:#FBFCFE}'
+    +'.subj-view .concept-ti{font-weight:800;color:#0C447C;margin-bottom:8px}'
+    +'.subj-view .concept-row{padding:7px 0;border-top:1px solid #EEF2F6}.subj-view .concept-row:first-of-type{border-top:none}'
+    +'.subj-view .concept-row .crow-h{display:flex;align-items:center;gap:6px}'
+    +'.subj-view .concept-row .tm{font-weight:700}'
+    +'.subj-view .concept-row .crow-d{color:#475569;line-height:1.7;margin-top:3px}'
+    +'.subj-view .concept-box .subj-copy{border:none;background:#EEF3F9;color:#64748B;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px}'
+    // ⚡ 시험 포인트 박스
+    +'.subj-view .subj-tip{margin:12px 0;border:1px solid #F1DFAE;background:linear-gradient(0deg,#FFFDF7,#FFF9EC);border-left:4px solid #E5A93C;border-radius:12px;padding:11px 13px}'
+    +'.subj-view .subj-tip-hd{font-weight:800;color:#A8720F;margin-bottom:5px;font-size:13.5px}'
+    +'.subj-view .subj-tip-bd{color:#5B4A28;line-height:1.72;font-size:14px;white-space:pre-wrap}';
+    document.head.appendChild(st); }
   function isLawRef(ref){ return ref && /제\d+조/.test(ref); }
   function userCitesLaw(ansN, ref){ var arts=ref.match(/제\d+조(?:제\d+항)?/g)||[];
     var LAWS=['토지보상법','공익사업을위한','국토계획법','국토의계획','행정소송법','행정심판법','감칙','감정평가에관한규칙','실무기준','부동산가격공시법','부동산가격공시'];
@@ -96,14 +173,17 @@
       ta.value=(ta.value?ta.value.replace(/\s+$/,'')+'\n':'')+txt+'\n'; ta.focus(); }; });
     _wireAskGo(wrap, exam, qi, function(){ return (q.q||'')+'\n'+(ask.q||'')+'\n'+(ask.outline||[]).map(function(n){return n.h+' '+(n.body||'');}).join('\n'); }, (q.q||'')+' / '+(ask.q||''));
   }
+  // ⚡ 시험포인트(exp.tip) — 출제위원 관점 답안 작성 전략. 물음 아래 강조 박스.
+  function expTipHtml(q){ var t=q&&q.exp&&q.exp.tip; if(!t||!String(t).trim()) return '';
+    return '<div class="subj-tip"><div class="subj-tip-hd">⚡ 시험 포인트</div><div class="subj-tip-bd">'+esc(String(t))+'</div></div>'; }
   // 문제에 나온 핵심 개념 설명 박스 + 문제-level AI 질문 위젯
   // 객관식 .concept-box 형태 공유 + 주관식만 접고펴기(.cpt-col). 복사→AI 질문칸.
   function conceptHtml(q){ if(!(q.concepts&&q.concepts.length)) return '';
     var rows=q.concepts.map(function(c,i){ if(!c||!c.term) return '';
-      return '<div class="concept-row cpt-col"><div class="crow-h" data-i="'+i+'"><span class="arw">▶</span><b class="tm">'+esc(c.term)+'</b>'
+      return '<div class="concept-row"><div class="crow-h" data-i="'+i+'"><b class="tm" style="color:#0C447C">'+esc(c.term)+'</b>'
         +(_opts.explainAi?'<button class="subj-copy" data-cpt="'+i+'" title="이 개념을 AI 질문칸에 복사">📋</button>':'')+'</div>'
         +(c.def?'<div class="crow-d">'+esc(c.def)+'</div>':'')+'</div>'; }).join('');
-    return '<div class="concept-box"><div class="concept-ti">핵심 개념 <span class="cpt-hint">— 눌러서 펼치기</span></div>'+rows+'</div>'+_subjAskWidget();
+    return '<div class="concept-box"><div class="concept-ti">핵심 개념</div>'+rows+'</div>'+_subjAskWidget();
   }
   function bindConcepts(v, exam, qi){ var q=exam.questions[qi]; if(!(q.concepts&&q.concepts.length)) return;
     v.querySelectorAll('.concept-row.cpt-col .crow-h').forEach(function(h){ h.onclick=function(e){ if(e&&e.target&&e.target.closest&&e.target.closest('.subj-copy')) return; h.parentNode.classList.toggle('open'); }; });
@@ -182,18 +262,20 @@
     var q=exam.questions[qi];
     if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return; }   // 무료 한도 게이트(있으면 검사, 없으면 스킵)
     var v=document.createElement('div'); v.className='subj-view';
-    var refHtml=(q.refs&&q.refs.length)?('<div class="subj-refbox"><div class="rt">〈참조 조문〉 — 답안에 인용하면 근거 점수</div>'
-      +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</div>'):'';
-    _injectSkin();
+    var refHtml=(q.refs&&q.refs.length)?('<details class="subj-refbox"><summary class="rt" style="cursor:pointer;list-style:none;font-size:13px">💡 참조문헌 힌트 <span style="font-weight:400;color:#94A3B8">(실제 시험엔 안 나와요)</span></summary>'
+      +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</details>'):'';
+    _injectSkin(); _injectSubjFont();
     v.innerHTML='<button class="exam-back" data-back="1">‹</button>'
       +'<div class="qstem"><div class="qhead"><span class="qnum">'+_localNum(exam,qi)+'</span>'
       +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
       +'<span class="scard-set-label">'+(q.pt||'')+'점</span></div>'
-      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+esc(q.q)+'</div>'):'')+refHtml
-      +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
-      +conceptHtml(q)
+      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+_subjJaryoHTML(q.q)+'</div>'):'')
       +'</div>'
-      +'<div id="subj-asks"></div>';
+      +'<div id="subj-asks"></div>'
+      +expTipHtml(q)
+      +refHtml
+      +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
+      +conceptHtml(q);
     if(_opts.replace!==false){ host.innerHTML=''; }
     host.appendChild(v);
     v.querySelector('[data-back]').onclick=function(){ if(_rootEl){ _renderRoot(exam); } else { mount(host, exam, _opts); } };
@@ -205,21 +287,24 @@
   // host는 #mcqView 안이라 #mcqView CSS가 그대로 먹음. 내부 '뒤로/목록' 없음 — 이전/다음은 index가 감쌈.
   // 반환: false = 무료 한도 게이트에 막힘, true = 렌더됨.
   function openOne(host, exam, qi, opts){ _opts=opts||{}; if(opts&&opts.endpoint) ENDPOINT=opts.endpoint; _rootEl=null;
+    _injectSubjFont();
     var q=exam.questions[qi]; if(!q) return false;
     if(_opts.canOpen && !_opts.canOpen(q&&q.id)){ return false; }
     var _host=host||_opts.host||document.getElementById(_opts.mountId)||document.body;
-    var refHtml=(q.refs&&q.refs.length)?('<div class="subj-refbox"><div class="rt">〈참조 조문〉 — 답안에 인용하면 근거 점수</div>'
-      +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</div>'):'';
+    var refHtml=(q.refs&&q.refs.length)?('<details class="subj-refbox"><summary class="rt" style="cursor:pointer;list-style:none;font-size:13px">💡 참조문헌 힌트 <span style="font-weight:400;color:#94A3B8">(실제 시험엔 안 나와요)</span></summary>'
+      +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</details>'):'';
     var v=document.createElement('div'); v.className='subj-view';
     v.innerHTML='<div class="qstem"><div class="qhead"><div class="qnum">'+_localNum(exam,qi)+'</div>'
       +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
       +'<span class="scard-set-label">'+(q.pt||'')+'점</span>'
       +(_opts.onReport?'<button class="mq-report" data-report="1">⚠️ 신고</button>':'')+'</div>'
-      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+esc(q.q)+'</div>'):'')+refHtml
-      +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
-      +conceptHtml(q)
+      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+_subjJaryoHTML(q.q)+'</div>'):'')
       +'</div>'
-      +'<div id="subj-asks"></div>';
+      +'<div id="subj-asks"></div>'
+      +expTipHtml(q)
+      +refHtml
+      +(q.note?'<div class="subj-note">'+esc(q.note)+'</div>':'')
+      +conceptHtml(q);
     if(_opts.replace!==false){ _host.innerHTML=''; }
     _host.appendChild(v);
     var _rb=v.querySelector('[data-report]'); if(_rb) _rb.onclick=function(){ try{ _opts.onReport(q); }catch(e){} };
@@ -231,7 +316,7 @@
   function rowHTML(){ return '<div class="subj-arow" data-lv="1"><div class="rh">'
     +'<button class="lvbtn out" title="내어쓰기(상위 목차)">‹</button><button class="lvbtn in" title="들여쓰기(하위 목차)">›</button>'
     +'<span class="idx"></span>'
-    +'<input class="h" placeholder="목차 (예: 사업인정의 의의)"><button class="del" title="삭제">−</button></div>'
+    +'<input class="h" placeholder="목차 (예: 사업인정의 의의)"><button class="add" title="이 단계에 목차 추가" style="border:none;background:#E6F4EA;color:#166534;width:26px;height:26px;border-radius:7px;font-size:17px;font-weight:700;cursor:pointer;margin-left:4px">+</button><button class="del" title="삭제">−</button></div>'
     +'<textarea class="d" placeholder="상세내용 — 법조문은 「토지보상법 제20조」처럼"></textarea></div>'; }
   // 대 Ⅰ · 중 1 · 소 (1) · 세 가 — 레벨별 자동번호 + 들여쓰기
   function reindex(box){ var c=[0,0,0,0]; box.querySelectorAll('.subj-arow').forEach(function(r){
@@ -240,7 +325,7 @@
     r.style.marginLeft=((lv-1)*18)+'px'; }); }
   function buildAsk(exam,qi,ai){ var ask=exam.questions[qi].asks[ai];
     var d=document.createElement('div'); d.className='subj-ask';
-    d.innerHTML='<div class="subj-q"><span class="num">물음 '+(ask.n||ai+1)+')</span>'+esc(ask.q)+' <span class="subj-pt">'+(ask.pt||'')+'점</span></div>'
+    d.innerHTML='<div class="subj-q"><span class="num">물음 '+(ask.n||ai+1)+')</span> '+esc(ask.q)+' <span class="subj-pt">'+(ask.pt||'')+'점</span></div>'
       +'<div class="subj-rows">'+rowHTML()+rowHTML()+rowHTML()+'</div>'
       +'<button class="subj-add">+ 목차 추가</button>'
       +'<div class="subj-btns"><button class="subj-grade">채점하기</button>'
@@ -275,21 +360,26 @@
     if(box.querySelectorAll('.subj-arow').length<=1){ btn.closest('.subj-arow').querySelector('.h').value=''; btn.closest('.subj-arow').querySelector('.d').value=''; return; }
     btn.closest('.subj-arow').remove(); reindex(box); }; });
     box.querySelectorAll('.subj-arow .lvbtn').forEach(function(btn){ btn.onclick=function(){ var row=btn.closest('.subj-arow'); var lv=parseInt(row.getAttribute('data-lv')||'1',10);
-      lv = btn.classList.contains('in') ? Math.min(4,lv+1) : Math.max(1,lv-1); row.setAttribute('data-lv',lv); reindex(box); }; }); }
+      lv = btn.classList.contains('in') ? Math.min(4,lv+1) : Math.max(1,lv-1); row.setAttribute('data-lv',lv); reindex(box); }; });
+    box.querySelectorAll('.subj-arow .add').forEach(function(btn){ btn.onclick=function(){ var row=btn.closest('.subj-arow'); var lv=row.getAttribute('data-lv')||'1';
+      var tmp=document.createElement('div'); tmp.innerHTML=rowHTML(); var nr=tmp.firstChild; nr.setAttribute('data-lv',lv);   /* [ADD 2026-07-17] 이 단계 목차를 바로 아래 형제로 추가 */
+      row.parentNode.insertBefore(nr, row.nextSibling); bindRow(box); reindex(box); nr.querySelector('.h').focus(); }; }); }
 
   function modelHtml(ask, nodeRes){ var mm={}; (nodeRes||[]).forEach(function(r){ mm[r.h]=r.matched; });
     var c=[0,0,0,0];
     var showCopy=!!_opts.explainAi;
     return (ask.outline||[]).map(function(nd,idx){ var lv=nd.lv||1; if(lv<1)lv=1; if(lv>4)lv=4; var st=(mm[nd.h]===true)?'hit':(mm[nd.h]===false)?'miss':'';
       var num=_mokchaNum(lv,c);
+      var isPan=/판례|대법원/.test(String(nd.ref||''));
       return '<div class="subj-node lv'+lv+' '+st+'"><div class="nh"><span class="nnum">'+num+'</span>'
-        +(nd.role?'<span class="role role-'+esc(nd.role)+'">'+esc(nd.role)+'</span>':'')+'<span class="nt">'+esc(nd.h)+'</span>'
-        +(nd.ref?'<span class="nref">'+esc(nd.ref)+'</span>':'')
+        +'<span class="nt">'+esc(nd.h)+'</span>'
+        +(nd.role?'<span class="role role-'+esc(nd.role)+'">'+esc(nd.role)+'</span>':'')
+        +(nd.ref?'<span class="nref'+(isPan?' pan':'')+'">'+(isPan?'⚖️ ':'📖 ')+esc(_abbrLaw(nd.ref))+'</span>':'')
         +(showCopy?'<button class="subj-copy" data-i="'+idx+'" title="이 논점을 AI 질문칸에 복사">📋</button>':'')+'</div>'
         +(nd.body?'<div class="nb">'+esc(nd.body)+'</div>':'')+'</div>'; }).join(''); }
 
   function showResult(d, res, exam, qi, ai){ var ask=exam.questions[qi].asks[ai]; var R=d.querySelector('.subj-res'); R.className='subj-res on';
-    if(!res){ R.innerHTML='<div class="subj-sect">모범답안 목차</div>'+modelHtml(ask,null)+_subjAskWidget()+rateBar(exam,qi,ai); bindNodes(R); bindAsk(R,exam,qi,ai); bindRate(R,exam,qi,ai); return; }
+    if(!res){ R.innerHTML='<div class="subj-sect">모범답안 목차</div>'+modelHtml(ask,null)+rateBar(exam,qi,ai)+_subjAskWidget(); bindNodes(R); bindAsk(R,exam,qi,ai); bindRate(R,exam,qi,ai); return; }
     var pt=res.pt||ask.pt, pctT=pt?res.score/pt:0, col=pctT>=0.7?'#0F6E56':pctT>=0.4?'#B7791F':'#C0322F', bg=pctT>=0.7?'#E8F8F1':pctT>=0.4?'#FEF6E7':'#FCEBEB';
     var h='<div class="subj-scorebox"><div class="ring" style="background:'+bg+';color:'+col+'">'+res.score+'</div>'
       +'<div class="stx"><b>'+res.score+' / '+pt+'점</b>'+(res.mode==='llm'?' <span class="badge-ai">AI</span>':'')+(res._fellback?' <span class="badge-off">오프라인</span>':'')+'<br>';
@@ -304,7 +394,7 @@
       h+='<div class="subj-sect">논점 체크</div>'+res.nodeRes.map(function(r){ return '<div class="subj-chk '+(r.matched?'hit':'miss')+'"><span class="mk">'+(r.matched?'✓':'✕')+'</span><span>'+esc(r.h)+(r.matched?'':' <span class="cm">— 필요('+(r.kw||[]).slice(0,2).join('·')+')</span>')+'</span></div>'; }).join('');
       if(res.refRes.length){ h+='<div class="subj-sect">법조문 인용</div>'+res.refRes.map(function(r){ return '<div class="subj-chk '+(r.cited?'hit':'miss')+'"><span class="mk">'+(r.cited?'✓':'✕')+'</span><span>'+esc(r.h)+' <span class="nref">'+esc(r.ref)+'</span>'+(r.cited?'':' <span class="cm">— 이 조문 적으면 가점</span>')+'</span></div>'; }).join(''); }
     }
-    h+='<div class="subj-sect">모범답안 목차 대조</div>'+modelHtml(ask,res.nodeRes)+_subjAskWidget()+rateBar(exam,qi,ai);
+    h+='<div class="subj-sect">모범답안 목차 대조</div>'+modelHtml(ask,res.nodeRes)+rateBar(exam,qi,ai)+_subjAskWidget();
     R.innerHTML=h; bindNodes(R); bindAsk(R,exam,qi,ai); bindRate(R,exam,qi,ai);
   }
   function bindNodes(R){ R.querySelectorAll('.subj-node .nh').forEach(function(h){ h.onclick=function(){ h.parentNode.classList.toggle('open'); }; }); }
