@@ -62,9 +62,9 @@
     +'.subj-view .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap}'
     +'.subj-view .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;min-width:25px;height:25px;padding:0 7px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}'
     +'.subj-view .scard-set-label{font-size:11px;font-weight:600;color:#64748B;background:#F1F5F9;border:1px solid #E2E8F0;padding:2px 9px;border-radius:20px}'
-    +'.subj-view .subj-q{background:#EEF4FB;border:1px solid #D6E4F5;border-radius:10px;padding:10px 12px;margin:14px 0 8px;font-weight:600}'
-    +'.subj-view .subj-q .num{font-weight:800;color:#0C447C;margin-right:5px}'
-    +'.subj-view .subj-pt{font-size:12px;font-weight:700;color:#185FA5;background:#DCE9F8;padding:1px 8px;border-radius:11px;margin-left:4px}'
+    +'.subj-view .subj-q{background:#EEF4FB;border:1px solid #D6E4F5;border-radius:10px;padding:10px 12px;margin:14px 0 8px}'
+    +'.subj-view .subj-q .num{color:#0C447C;margin-right:5px}'
+    +'.subj-view .subj-pt{font-size:12px;font-weight:600;color:#185FA5;background:#DCE9F8;padding:1px 8px;border-radius:11px;margin-left:4px}'
     +'.subj-view .subj-btns{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}'
     +'.subj-view .subj-btns button{padding:8px 14px;border-radius:9px;border:1px solid #CBD5E1;background:#fff;font-weight:700;font-size:13px;cursor:pointer;color:#334155}'
     +'.subj-view .subj-model{background:#0C447C!important;color:#fff!important;border-color:#0C447C!important}'
@@ -79,7 +79,7 @@
     +'.subj-view .jsub{display:flex;gap:7px;margin:4px 0 4px 15px;align-items:flex-start}'
     +'.subj-view .jsub-m{color:#2A5B92;font-weight:700;flex-shrink:0;min-width:20px}'
     +'.subj-view .jsub-t{white-space:pre-wrap;flex:1}'
-    +'.subj-view .subj-q{font-size:15px;line-height:1.7}'
+    +'.subj-view .subj-q{font-size:14px;line-height:1.7}'
     +'.subj-view .subj-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}'
     +'.subj-view .subj-tbl th,.subj-view .subj-tbl td{border:1px solid #D9E2EC;padding:6px 9px;text-align:left;vertical-align:top;line-height:1.55}'
     +'.subj-view .subj-tbl th{background:#EEF3F9;font-weight:700;color:#0F172A}'
@@ -123,8 +123,8 @@
     +'.subj-view .concept-row .crow-h{display:flex;align-items:center;gap:6px}'
     +'.subj-view .concept-row .tm{font-weight:700}'
     +'.subj-view .concept-row .crow-d{color:#334155;line-height:1.75;margin-top:4px}'
-    +'.subj-view .concept-row .crow-ex{margin-top:6px;padding:7px 10px;background:#F5F8FC;border:1px solid #E4ECF5;border-radius:8px;color:#41546B;line-height:1.7;font-size:13.5px}'
-    +'.subj-view .concept-row .crow-ex .ex-lb{display:inline-block;font-weight:800;color:#2A5B92;font-size:11.5px;background:#E3EDF9;border-radius:5px;padding:0 6px;margin-right:5px}'
+    +'.subj-view .concept-row .crow-ex{margin-top:4px;color:#41546B;line-height:1.7;font-size:14px}'
+    +'.subj-view .concept-row .crow-ex .ex-lb{font-weight:700;color:#2A5B92;margin-right:4px}'
     +'.subj-view .concept-box .subj-copy{border:none;background:#EEF3F9;color:#64748B;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px}'
     // ⚡ 시험 포인트 박스
     +'.subj-view .subj-tip{margin:12px 0;border:1px solid #F1DFAE;background:linear-gradient(0deg,#FFFDF7,#FFF9EC);border-left:4px solid #E5A93C;border-radius:12px;padding:11px 13px}'
@@ -218,7 +218,7 @@
       return '<div class="concept-row"><div class="crow-h" data-i="'+i+'"><b class="tm" style="color:#0C447C">'+esc(c.term)+'</b>'
         +(_opts.explainAi?'<button class="subj-copy" data-cpt="'+i+'" title="이 개념을 AI 질문칸에 복사">📋</button>':'')+'</div>'
         +(c.def?'<div class="crow-d">'+esc(c.def)+'</div>':'')
-        +(exTxt?'<div class="crow-ex"><span class="ex-lb">예시</span> '+esc(exTxt)+'</div>':'')+'</div>'; }).join('');
+        +(exTxt?'<div class="crow-ex"><span class="ex-lb">예)</span> '+esc(exTxt)+'</div>':'')+'</div>'; }).join('');
     return '<div class="concept-box"><div class="concept-ti">핵심 개념</div>'+rows+'</div>'+_subjAskWidget();
   }
   function bindConcepts(v, exam, qi){ var q=exam.questions[qi]; if(!(q.concepts&&q.concepts.length)) return;
