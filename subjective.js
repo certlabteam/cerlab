@@ -70,15 +70,15 @@
     +'.subj-view .subj-model{background:#0C447C!important;color:#fff!important;border-color:#0C447C!important}'
     +'.subj-view .subj-ai{background:#F3ECFB!important;color:#5B3FA0!important;border-color:#D9CBF3!important}'
     +'.subj-view .subj-demo{background:#EAF7F0!important;color:#137a52!important;border-color:#BfE7D4!important}'
-    +'.subj-view .jaryo .jline{white-space:pre-wrap;margin:7px 0}'
-    +'.subj-view .jaryo .jline:first-child{margin-top:0}'
-    +'.subj-view .jaryo .jgap{height:8px}'
-    +'.subj-view .jaryo .jbul{display:flex;gap:8px;margin:7px 0;align-items:flex-start}'
-    +'.subj-view .jaryo .jbul-m{color:#0C447C;font-weight:800;flex-shrink:0;line-height:1.78}'
-    +'.subj-view .jaryo .jbul-t{white-space:pre-wrap;flex:1}'
-    +'.subj-view .jaryo .jsub{display:flex;gap:7px;margin:5px 0 5px 16px;align-items:flex-start}'
-    +'.subj-view .jaryo .jsub-m{color:#2A5B92;font-weight:700;flex-shrink:0;min-width:20px}'
-    +'.subj-view .jaryo .jsub-t{white-space:pre-wrap;flex:1}'
+    +'.subj-view .jline{white-space:pre-wrap;margin:6px 0}'
+    +'.subj-view .jline:first-child{margin-top:0}'
+    +'.subj-view .jgap{height:7px}'
+    +'.subj-view .jbul{display:flex;gap:8px;margin:6px 0;align-items:flex-start}'
+    +'.subj-view .jbul-m{color:#0C447C;font-weight:800;flex-shrink:0}'
+    +'.subj-view .jbul-t{white-space:pre-wrap;flex:1}'
+    +'.subj-view .jsub{display:flex;gap:7px;margin:4px 0 4px 15px;align-items:flex-start}'
+    +'.subj-view .jsub-m{color:#2A5B92;font-weight:700;flex-shrink:0;min-width:20px}'
+    +'.subj-view .jsub-t{white-space:pre-wrap;flex:1}'
     +'.subj-view .subj-q{font-size:15px;line-height:1.7}'
     +'.subj-view .subj-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}'
     +'.subj-view .subj-tbl th,.subj-view .subj-tbl td{border:1px solid #D9E2EC;padding:6px 9px;text-align:left;vertical-align:top;line-height:1.55}'
@@ -394,7 +394,11 @@
           if(/unauthenticated|로그인/.test(e)){ R.className='subj-res'; R.innerHTML=''; if(_opts.needLogin) _opts.needLogin(); else alert('로그인이 필요합니다.'); return; }
           // 그 외(네트워크·서버 오류)만 오프라인 채점으로 폴백
           var res=gradeOffline(ask,t); res._fellback=true; showResult(d,res,exam,qi,ai); }); }; }
-    d.querySelector('.subj-model').onclick=function(){ showResult(d, null, exam, qi, ai); };
+    var _mbtn=d.querySelector('.subj-model');
+    _mbtn.onclick=function(){ var R=d.querySelector('.subj-res');
+      if(_mbtn.getAttribute('data-open')==='1'){   // 열려 있으면 닫기
+        R.className='subj-res'; R.innerHTML=''; _mbtn.removeAttribute('data-open'); _mbtn.textContent='모범답안'; return; }
+      showResult(d, null, exam, qi, ai); _mbtn.setAttribute('data-open','1'); _mbtn.textContent='답안 닫기'; };
     var _demoBtn=d.querySelector('.subj-demo');
     if(_demoBtn) _demoBtn.onclick=function(){
       var nodes=ask.outline||[]; if(!nodes.length) return;
@@ -444,9 +448,10 @@
         +(nd.role?'<span class="role role-'+esc(nd.role)+'">'+esc(nd.role)+'</span>':'')
         +(nd.ref?'<span class="nref'+(isPan?' pan':'')+'">'+(isPan?'⚖️ ':'📖 ')+esc(_abbrLaw(nd.ref))+'</span>':'')
         +(showCopy?'<button class="subj-copy" data-i="'+idx+'" title="이 논점을 AI 질문칸에 복사">📋</button>':'')+'</div>'
-        +(nd.body?'<div class="nb">'+esc(nd.body)+'</div>':'')+'</div>'; }).join(''); }
+        +(nd.body?'<div class="nb">'+_subjJaryoHTML(nd.body)+'</div>':'')+'</div>'; }).join(''); }
 
   function showResult(d, res, exam, qi, ai){ var ask=exam.questions[qi].asks[ai]; var R=d.querySelector('.subj-res'); R.className='subj-res on';
+    if(res!=null){ var _mb=d.querySelector('.subj-model'); if(_mb){ _mb.removeAttribute('data-open'); _mb.textContent='모범답안'; } }   // 채점/AI 결과 표시 시 모범답안 버튼 원위치
     if(!res){ R.innerHTML='<div class="subj-sect">모범답안 목차</div>'+modelHtml(ask,null)+rateBar(exam,qi,ai)+_subjAskWidget(); bindNodes(R); bindAsk(R,exam,qi,ai); bindRate(R,exam,qi,ai); return; }
     var pt=res.pt||ask.pt, pctT=pt?res.score/pt:0, col=pctT>=0.7?'#0F6E56':pctT>=0.4?'#B7791F':'#C0322F', bg=pctT>=0.7?'#E8F8F1':pctT>=0.4?'#FEF6E7':'#FCEBEB';
     var h='<div class="subj-scorebox"><div class="ring" style="background:'+bg+';color:'+col+'">'+res.score+'</div>'
