@@ -129,7 +129,20 @@
     // ⚡ 시험 포인트 박스
     +'.subj-view .subj-tip{margin:12px 0;border:1px solid #F1DFAE;background:linear-gradient(0deg,#FFFDF7,#FFF9EC);border-left:4px solid #E5A93C;border-radius:12px;padding:11px 13px}'
     +'.subj-view .subj-tip-hd{font-weight:800;color:#A8720F;margin-bottom:5px;font-size:13.5px}'
-    +'.subj-view .subj-tip-bd{color:#5B4A28;line-height:1.72;font-size:14px;white-space:pre-wrap}';
+    +'.subj-view .subj-tip-bd{color:#5B4A28;line-height:1.72;font-size:14px;white-space:pre-wrap}'
+    +'.subj-view .subj-lecture{margin:12px 0 4px;border:1px solid #D9CBF3;border-radius:12px;background:#FBF9FF;overflow:hidden}'
+    +'.subj-view .subj-lec-hd{padding:11px 13px;font-weight:800;color:#5B3FA0;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:6px;background:#F3ECFB}'
+    +'.subj-view .subj-lec-tg{margin-left:auto;font-size:11px;font-weight:700;color:#8A73C0}'
+    +'.subj-view .subj-lec-bd{padding:12px 13px}'
+    +'.subj-view .lec-sec{margin:0 0 11px}'
+    +'.subj-view .lec-k{font-size:11.5px;font-weight:800;color:#6D28D9;margin-bottom:4px}'
+    +'.subj-view .lec-v{font-size:13.5px;color:#3C3550;line-height:1.72;white-space:pre-wrap}'
+    +'.subj-view .lec-steps{margin:2px 0 0;padding-left:20px}'
+    +'.subj-view .lec-steps li{font-size:13.5px;color:#3C3550;line-height:1.7;margin:3px 0}'
+    +'.subj-view .lec-detail{background:#fff;border:1px solid #ECE4F8;border-radius:8px;padding:9px 11px}'
+    +'.subj-view .lec-line{font-size:13px;color:#41386B;line-height:1.75;margin:2px 0;white-space:pre-wrap}'
+    +'.subj-view .lec-tip .lec-k{color:#A8720F}.subj-view .lec-tip{background:#FFFDF7;border:1px solid #F1DFAE;border-radius:8px;padding:8px 10px}'
+    +'.subj-view .lec-recall .lec-k{color:#137a52}.subj-view .lec-recall{background:#EAF7F0;border:1px solid #BfE7D4;border-radius:8px;padding:8px 10px}';
     document.head.appendChild(st); }
   function isLawRef(ref){ return ref && /제\d+조/.test(ref); }
   function userCitesLaw(ansN, ref){ var arts=ref.match(/제\d+조(?:제\d+항)?/g)||[];
@@ -379,6 +392,19 @@
     r.style.marginLeft=((lv-1)*18)+'px';
     var hEl=r.querySelector('.h'), dEl=r.querySelector('.d');
     if(hEl) hEl.setAttribute('placeholder',_PH_H[lv]); if(dEl) dEl.setAttribute('placeholder',_PH_D[lv]); }); }
+  // 📘 계산 풀이(7단계 강의) 블록 — 실무 계산 물음에서 모범답안 아래 접기/펼치기로 노출
+  function _lectureHtml(ask){
+    var L=ask&&ask.lecture; if(!L) return '';
+    var h='<div class="subj-lecture"><div class="subj-lec-hd" data-open="0">📘 계산 풀이 (7단계 강의) <span class="subj-lec-tg">펼치기 ▾</span></div><div class="subj-lec-bd" style="display:none">';
+    if(L.approach) h+='<div class="lec-sec"><div class="lec-k">접근</div><div class="lec-v">'+esc(L.approach)+'</div></div>';
+    if(L.principle) h+='<div class="lec-sec"><div class="lec-k">원리</div><div class="lec-v">'+esc(L.principle)+'</div></div>';
+    if(Array.isArray(L.exSum)&&L.exSum.length){ h+='<div class="lec-sec"><div class="lec-k">요약풀이</div><ol class="lec-steps">'; L.exSum.forEach(function(s){ h+='<li>'+esc(s)+'</li>'; }); h+='</ol></div>'; }
+    if(Array.isArray(L.ex)&&L.ex.length){ h+='<div class="lec-sec"><div class="lec-k">상세풀이</div><div class="lec-detail">'; L.ex.forEach(function(s){ h+='<div class="lec-line">'+esc(s).replace(/\n/g,'<br>')+'</div>'; }); h+='</div></div>'; }
+    if(L.s) h+='<div class="lec-sec"><div class="lec-k">최종정리</div><div class="lec-v">'+esc(L.s)+'</div></div>';
+    if(L.tip) h+='<div class="lec-sec lec-tip"><div class="lec-k">⚡ 시험 포인트</div><div class="lec-v">'+esc(L.tip)+'</div></div>';
+    if(L.recall) h+='<div class="lec-sec lec-recall"><div class="lec-k">🧠 암기 포인트</div><div class="lec-v">'+esc(L.recall)+'</div></div>';
+    return h+'</div></div>';
+  }
   function buildAsk(exam,qi,ai){ var ask=exam.questions[qi].asks[ai];
     var d=document.createElement('div'); d.className='subj-ask';
     d.innerHTML='<div class="subj-q"><span class="num">물음 '+(ask.n||ai+1)+')</span> '+esc(_brkMarkers(ask.q)).replace(/\n/g,'<br>')+' <span class="subj-pt">'+(ask.pt||'')+'점</span></div>'
@@ -388,7 +414,9 @@
       +'<button class="subj-model">모범답안</button>'
       +(_opts.demo?'<button class="subj-demo">🎬 AI 첨삭 예시</button>':'')+'</div>'
       +((_sellsAi()&&!_hasEnt())?('<div class="subj-aihint">🔒 AI 채점(첨삭)은 감평 채점위원 수준의 서술 첨삭으로, <b>충전 횟수</b>로 이용해요. 회원권과 별도 · 1건당 <b>'+_cost()+'회</b> 차감. 버튼을 누르면 충전 안내가 떠요.</div>'):'')
-      +'<div class="subj-res"></div>';
+      +'<div class="subj-res"></div>'
+      +_lectureHtml(ask);
+    var _lh=d.querySelector('.subj-lec-hd'); if(_lh) _lh.onclick=function(){ var bd=d.querySelector('.subj-lec-bd'), tg=d.querySelector('.subj-lec-tg'); var op=_lh.getAttribute('data-open')==='1'; if(op){ bd.style.display='none'; _lh.setAttribute('data-open','0'); if(tg)tg.textContent='펼치기 ▾'; } else { bd.style.display='block'; _lh.setAttribute('data-open','1'); if(tg)tg.textContent='접기 ▴'; } };
     var box=d.querySelector('.subj-rows'); reindex(box);
     var _addBtn=d.querySelector('.subj-add'); if(_addBtn) _addBtn.onclick=function(){ box.insertAdjacentHTML('beforeend',rowHTML()); bindRow(box); reindex(box); };
     bindRow(box);
