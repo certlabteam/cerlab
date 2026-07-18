@@ -141,14 +141,29 @@
   // ── 오프라인 채점(논점+법조문) ──
   function gradeOffline(ask, rowsText){
     var ansN=norm(rowsText); var nodes=ask.outline||[];
-    var hit=0, nodeRes=[]; nodes.forEach(function(n){ var m=(n.kw||[]).some(function(k){return ansN.indexOf(norm(k))>=0;}); if(m)hit++; nodeRes.push({h:n.h,matched:m,kw:n.kw||[]}); });
-    var ratio=nodes.length? hit/nodes.length : 0;
+    // 목차(논점) 맞춤 + 내용 충실도(키워드 커버리지)를 분리 채점.
+    // 예전엔 논점 키워드 1개만 스쳐도 만점(hit)이라 '목차만 적어도' 후했음 → 부분점수(cov)로 개선.
+    var breadthHit=0, depthSum=0, nodeRes=[];
+    nodes.forEach(function(n){
+      var kws=(n.kw||[]);
+      var mc=kws.filter(function(k){return ansN.indexOf(norm(k))>=0;}).length;
+      var cov=kws.length? mc/kws.length : 0;      // 그 논점 내용을 얼마나 채웠나(0~1)
+      var touched=cov>0;                           // 논점을 건드리긴 했나
+      if(touched) breadthHit++;
+      depthSum+=cov;
+      nodeRes.push({h:n.h,matched:touched,cov:cov,kw:kws});
+    });
+    var breadth=nodes.length? breadthHit/nodes.length : 0;   // 목차(논점) 맞춤 비율
+    var depth=nodes.length? depthSum/nodes.length : 0;       // 내용 충실도
     var refNodes=nodes.filter(function(n){return isLawRef(n.ref);}); var refHit=0, refRes=[];
     refNodes.forEach(function(n){ var c=userCitesLaw(ansN,n.ref); if(c)refHit++; refRes.push({h:n.h,ref:n.ref,cited:c}); });
-    var refRatio=refNodes.length? refHit/refNodes.length : 1;
-    var score=Math.round((ask.pt||10)*(ratio*0.7 + refRatio*0.3));
-    return { mode:'offline', score:score, pt:ask.pt||10, nodeHit:hit, nodeTot:nodes.length, refHit:refHit, refTot:refNodes.length,
-      ratio:ratio, refRatio:refRatio, nodeRes:nodeRes, refRes:refRes };
+    var refRatio=refNodes.length? refHit/refNodes.length : 1;   // 표시용(법조문 없으면 해당없음)
+    // 목차 맞춤은 일부만, 내용 충실이 주(主). 법조문 노드가 있을 때만 그 배점을 반영(없는데 공짜 점수 주던 버그 제거).
+    var base = refNodes.length ? (breadth*0.30 + depth*0.50 + (refHit/refNodes.length)*0.20)
+                               : (breadth*0.40 + depth*0.60);
+    var score=Math.round((ask.pt||10)*base);
+    return { mode:'offline', score:score, pt:ask.pt||10, nodeHit:breadthHit, nodeTot:nodes.length, refHit:refHit, refTot:refNodes.length,
+      ratio:breadth, refRatio:refRatio, nodeRes:nodeRes, refRes:refRes };
   }
   // ── AI 심층채점(유료 애드온) ──
   // Firebase는 index.html가 소유 → 채점 호출은 opts.gradeAi(payload)로 주입받아 씀(onCall callable 래핑).
