@@ -76,7 +76,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
-<script src="subjective.js?v=20260717d"></script>
+<script src="subjective.js?v=20260718a"></script>
 </head>
 <body>
 <!-- 인앱 브라우저 안내 팝업 -->
@@ -3650,6 +3650,7 @@ function renderMCQ(){
     } else { localStorage.removeItem('certlab_mcq_active'); }
   }catch(_){}
   if(mqScreen==='subjexam') return renderSubjExam(root);
+  if(mqScreen==='lt2') return renderLt2(root);
   if(mqScreen==='exam') return renderMcqExam(root);
   if(mqScreen==='oxlearn') return renderOxLearn(root);
   if(mqScreen==='luhist') return renderLuHist(root);
@@ -3795,7 +3796,68 @@ function _certHasAnsQ(cert){
   }catch(e){}
   return false;
 }
+
+var LT2_DATA={"appraiser2": {"name": "감정평가사2차", "questions": [{"id": "a2_lt_s2", "set": "레벨테스트", "ltSubject": "s2", "ltSubjectName": "감정평가이론", "pt": 10, "diff": 3, "q": "감정평가에서 지역분석과 개별분석에 관한 물음에 답하시오. (10점)", "refs": [], "note": "2차 레벨테스트 · 이론", "exp": {"tip": "지역분석(선행·표준적 이용)과 개별분석(후행·최유효이용)의 의의와 선후 관계를 균형 있게 서술하는지가 핵심."}, "concepts": [], "asks": [{"n": 1, "pt": 10, "q": "지역분석과 개별분석의 의의를 각각 설명하고, 두 분석의 관계(선후·전제)를 논하시오. (10점)", "outline": [{"lv": 1, "role": "의의", "h": "지역분석의 의의", "ref": "", "kw": ["지역분석", "표준적 이용", "가격수준", "인근지역"], "body": "대상부동산이 속한 지역의 표준적 이용과 그 지역의 가격수준을 판정하는 분석이다. 지역요인을 검토하여 그 지역 부동산의 표준적 사용과 장래 동향을 파악한다."}, {"lv": 1, "role": "의의", "h": "개별분석의 의의", "ref": "", "kw": ["개별분석", "최유효이용", "개별요인", "구체적 가격"], "body": "대상부동산의 개별적 요인을 분석하여 그 부동산의 최유효이용을 판정하고 구체적인 가격을 도출하는 분석이다."}, {"lv": 1, "role": "검토", "h": "양자의 관계", "ref": "", "kw": ["선행", "후행", "전제", "최유효이용", "표준적 이용"], "body": "지역분석은 전체적·표준적 분석으로 선행하고, 개별분석은 개별적·구체적 분석으로 후행한다. 지역분석에서 파악한 표준적 이용이 개별분석에서 최유효이용을 판정하는 전제가 된다."}]}]}, {"id": "a2_lt_s3", "set": "레벨테스트", "ltSubject": "s3", "ltSubjectName": "감정평가 및 보상법규", "pt": 10, "diff": 3, "q": "「공익사업을 위한 토지 등의 취득 및 보상에 관한 법률」상 사업인정에 관한 물음에 답하시오. (10점)", "refs": [], "note": "2차 레벨테스트 · 법규", "exp": {"tip": "사업인정의 법적 성질(형성행위·특허·재량행위)과 효과(수용권 설정·목적물 확정·보전의무)를 정확히 대응시키는지가 핵심."}, "concepts": [], "asks": [{"n": 1, "pt": 10, "q": "사업인정의 법적 성질과 그 효과를 설명하시오. (10점)", "outline": [{"lv": 1, "role": "학설", "h": "법적 성질", "ref": "", "kw": ["형성행위", "설권행위", "특허", "재량행위"], "body": "사업인정은 사업시행자에게 수용권을 설정해 주는 형성행위(설권행위)로서 특허에 해당하며, 공익성 판단을 요하므로 재량행위로 본다."}, {"lv": 1, "role": "검토", "h": "효과", "ref": "", "kw": ["수용권 설정", "목적물 확정", "관계인", "보전의무", "형질변경"], "body": "사업인정이 고시되면 수용권이 설정되고, 수용목적물과 관계인의 범위가 확정되며, 토지소유자 등에게 토지의 형질변경 등을 제한하는 토지보전의무가 발생한다."}]}]}, {"id": "a2_lt_s4", "set": "레벨테스트", "ltSubject": "s4", "ltSubjectName": "감정평가실무", "pt": 10, "diff": 2, "q": "다음 자료를 활용하여 공시지가기준법에 의한 대상토지의 감정평가액을 산정하는 물음에 답하시오. (10점)\n\n[자료]\n1. 비교표준지 공시지가: 1,000,000원/㎡\n2. 시점수정치: 1.050\n3. 지역요인 비교치: 1.000 (대등)\n4. 개별요인 비교치: 0.950 (대상/표준)\n5. 그 밖의 요인 보정치: 1.200", "refs": [], "note": "2차 레벨테스트 · 실무 (자체 구성 자료·자체 계산)", "exp": {"tip": "공시지가기준법 산식(공시지가×시점수정×지역요인×개별요인×그 밖의 요인)을 순서대로 적용하고 최종 단가를 정확히 계산하는지가 핵심."}, "concepts": [], "asks": [{"n": 1, "pt": 10, "q": "공시지가기준법에 의한 대상토지의 감정평가액(원/㎡)을 산식과 함께 산정하시오. (10점)", "outline": [{"lv": 1, "role": "검토", "h": "적용 산식", "ref": "", "kw": ["공시지가기준법", "시점수정", "지역요인", "개별요인", "그 밖의 요인"], "body": "감정평가액 = 비교표준지 공시지가 × 시점수정치 × 지역요인 비교치 × 개별요인 비교치 × 그 밖의 요인 보정치."}, {"lv": 1, "role": "포섭", "h": "수치 대입·계산", "ref": "", "kw": ["1,000,000", "1.050", "0.950", "1.200", "1,197,000"], "body": "1,000,000원/㎡ × 1.050 × 1.000 × 0.950 × 1.200 = 1,197,000원/㎡."}, {"lv": 1, "role": "소결", "h": "결론", "ref": "", "kw": ["1,197,000", "원/㎡"], "body": "대상토지의 감정평가액은 1,197,000원/㎡이다."}]}]}]}};
+/* ===== 2차 전용 레벨테스트 (주관식·AI채점 자동 버킷) — 2026-07-18 ===== */
+function lt2Has(cert){ try{ return !!(typeof LT2_DATA!=='undefined' && LT2_DATA[cert] && LT2_DATA[cert].questions && LT2_DATA[cert].questions.length); }catch(e){ return false; } }
+var lt2State=null;
+function startLt2(){ var cert=mqCert; if(!lt2Has(cert)) return; if(!currentUser){ if(typeof showLoginPopup==='function') showLoginPopup(); return; }
+  lt2State={ cert:cert, qs:LT2_DATA[cert].questions.slice(), idx:0, scores:{} };
+  try{ if(typeof mqStopTimer==='function') mqStopTimer(); if(typeof mqStopOverTimer==='function') mqStopOverTimer(); }catch(e){}
+  mqDiag=false; mqReview=false; mqInReview=false; mqConcept=false; mqLevelUp=false;
+  mqScreen='lt2'; renderMCQ(); window.scrollTo(0,0); }
+function _lt2Bucket(score,pt){ var r=pt?(score/pt):0; if(r>=0.8) return {tier:'right',pts:10}; if(r>=0.4) return {tier:'vague',pts:5}; return {tier:'wrong',pts:0}; }
+function _lt2SubScore(bucket,diff){ var base=(bucket==='right')?1.0:((bucket==='vague')?0.5:0.0); var r=Math.max(0,Math.min(1,base+((diff||3)-3)*0.05)); return Math.round(15+r*57); }
+function lt2OnGraded(rec){ if(!lt2State) return; var q=lt2State.qs[lt2State.idx]; if(!q) return; var pt=(rec&&rec.pt)||q.pt||10; var b=_lt2Bucket((rec&&rec.score)||0,pt);
+  lt2State.scores[q.ltSubject]={ score:(rec&&rec.score)||0, pt:pt, bucket:b.tier, pts:b.pts, diff:q.diff||3, name:q.ltSubjectName };
+  var nx=document.getElementById('lt2Next'); if(nx) nx.style.display='block'; }
+function lt2Next(){ if(!lt2State) return; if(lt2State.idx<lt2State.qs.length-1){ lt2State.idx++; renderMCQ(); window.scrollTo(0,0); } else { lt2Finalize(); } }
+function lt2Finalize(){ var cert=lt2State.cert;
+  try{ if(typeof eloState!=='undefined'){ if(!eloState._levelTest) eloState._levelTest={}; var summary={};
+    Object.keys(lt2State.scores).forEach(function(sub){ var s=lt2State.scores[sub]; var sc=_lt2SubScore(s.bucket,s.diff);
+      summary[sub]={ score:sc, level:(typeof AE!=='undefined'?AE.scoreToLevel(sc):3), bucket:s.bucket, pts:s.pts, raw:s.score, pt:s.pt, name:s.name }; });
+    eloState._levelTest[cert]={ at:Date.now(), summary:summary, subjective:true };
+    if(currentUser && typeof saveUserData==='function') saveUserData(); } }catch(e){}
+  lt2State=null; mqScreen='home'; if(typeof goHome==='function') goHome(); else renderMCQ(); }
+function lt2ResultCard(cert){ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; if(!rec||!rec.summary) return '';
+  var TIER={right:{t:'맞음',c:'#2E9B5E'},vague:{t:'애매',c:'#E0A52E'},wrong:{t:'틀림',c:'#E24B4A'}};
+  var rows=Object.keys(rec.summary).map(function(sub){ var s=rec.summary[sub]; var ti=TIER[s.bucket]||TIER.vague;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-top:1px solid #F1ECE4"><span style="font-weight:700;color:#3C3C3A">'+mqEsc(s.name||sub)+'</span><span><span style="font-size:12px;font-weight:800;color:'+ti.c+';margin-right:8px">'+ti.t+' '+(s.pts!=null?s.pts:'')+'점</span><span style="font-size:11px;color:#8A7D6E">Lv '+(s.level||'')+'</span></span></div>'; }).join('');
+  return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
+    +'<div style="padding:4px 4px 2px;font-size:12px;color:#6B7280">레벨 테스트 결과 · 과목별 채점(틀림0·애매5·맞음10)</div>'+rows
+    +'<div style="padding:8px 4px 2px;font-size:11px;color:#A89C8E">레벨은 시작점이에요. 문제를 풀면 조정됩니다.</div>'
+    +'<button class="anal-diag" onclick="startLt2()" style="margin-top:10px">🔁 다시 테스트</button></div>'; }
+function renderLt2(root){ if(!lt2State || lt2State.cert!==mqCert){ lt2State=null; mqScreen='home'; return renderMCQ(); }
+  var qs=lt2State.qs, idx=lt2State.idx, q=qs[idx]; var n=qs.length, pct=Math.round((idx+1)/n*100); var graded=lt2State.scores[q.ltSubject];
+  root.innerHTML='<div class="exam-sticky">'+
+    '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="뒤로">'+BACK_ARROW+'</button>'+
+      '<div class="exam-ti"><div class="nm">🎯 레벨 테스트</div><div class="st">'+mqEsc(q.ltSubjectName||'')+'</div></div></div>'+
+    '<div class="mq-prog"><div class="row"><span>'+(idx+1)+' / '+n+' 과목</span><span class="subj-credit">🤖 첨삭 '+gradeBal().toLocaleString()+'</span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+    '</div>'+
+    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EEF4FB;border:1px solid #D6E4F5;border-radius:10px;padding:10px 12px;font-size:13px;color:#334155;line-height:1.6">답안을 작성하고 <b>채점하기</b>를 누르면 자동 채점돼요(무료). 채점 후 아래 <b>다음</b>으로 넘어가세요. (과목당 1문항)</div></div>'+
+    '<div id="lt2Mount"></div>'+
+    '<div style="max-width:760px;margin:12px auto 40px;padding:0 14px"><button id="lt2Next" onclick="lt2Next()" style="display:'+(graded?'block':'none')+';width:100%;padding:13px;border:none;border-radius:12px;background:#0C447C;color:#fff;font-weight:800;font-size:15px;cursor:pointer">'+(idx>=n-1?'결과 보기 →':'다음 과목 →')+'</button></div>';
+  var host=document.getElementById('lt2Mount');
+  var exam={ id:mqCert, name:'레벨테스트', questions:qs };
+  var opts=_subjExamOpts(mqCert); opts.host=host; opts.mountId='lt2Mount'; opts.replace=false;
+  opts.canOpen=function(){ return true; };
+  opts.reportOffline=true;   // 무료 자동채점(채점하기)도 점수 캡처 — API 결제 없이 동작
+  opts.aiSell=false;   // AI 채점 버튼 잠깐 숨김(결제 뚫리면 이 줄만 제거)
+  opts.onGraded=function(rec){ lt2OnGraded(rec); };
+  if(!(window.CLSubj && CLSubj.openOne)){ host.innerHTML='<div style="margin:16px;padding:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700">subjective.js 최신본이 필요합니다 (openOne 없음).</div>'; return; }
+  try{ CLSubj.openOne(host, exam, idx, opts); }catch(e){ console.error('lt2 openOne',e); host.innerHTML='<div style="margin:16px">문제 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; }
+  window.scrollTo(0,0); }
+
 function mcqAnalysisCard(cert){
+  if(typeof lt2Has==='function' && lt2Has(cert)){
+    if(!ltDone(cert)){
+      return '<div class="anal-card" style="text-align:center">'
+        +'<div style="font-size:16px;font-weight:800;color:#0C447C;line-height:1.4;margin:2px 0 8px">지금 '+ltCertName(cert)+' 보면 몇 점?</div>'
+        +'<div style="font-size:12px;color:#6B7280;margin-bottom:14px">⚡ 과목별 10점 1문항 · 🤖 AI 자동 채점</div>'
+        +'<button class="anal-diag" onclick="startLt2()">🎯 레벨 테스트 시작</button></div>';
+    }
+    return lt2ResultCard(cert);
+  }
   if(!adHasData(cert) && !_certHasAnsQ(cert)){   // 적응형 없고 기출(정답)도 없을 때만 준비중
     return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
       +'<div class="anal-empty">이 시험은 <b>레벨업 데이터 준비 중</b>이에요. 곧 레벨 테스트로 약점을 측정할 수 있어요.</div>'
