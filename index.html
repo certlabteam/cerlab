@@ -76,7 +76,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
-<script src="subjective.js?v=20260718a"></script>
+<script src="subjective.js?v=20260718d"></script>
 </head>
 <body>
 <!-- 인앱 브라우저 안내 팝업 -->
@@ -1837,7 +1837,7 @@ function _subjMarkOpened(cert,qid){
   try{ var s=_subjOpenedSet(cert); s.add(qid); localStorage.setItem(_subjDayKey(cert), JSON.stringify([].slice.call(s))); }catch(e){}
 }
 function _subjGuestLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjGuestDaily)||1; }
-function _subjFreeLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjUserDaily)||3; }
+function _subjFreeLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjUserDaily)||2; }
 function canAccessSubjective(cert, qid){
   cert = cert || (typeof activeCertId==='function'?activeCertId():cert);
   var e=(userEnt&&userEnt[cert])||{plan:'GUEST'};
@@ -1858,13 +1858,13 @@ function mountSubjExam(id){
   CLSubj.mount(document.getElementById('subjMount'), SUBJ_EXAMS[id], {
     mountId:'subjMount',
     canOpen:function(qid){ var ok=canAccessSubjective(id, qid); if(ok) _subjMarkOpened(id, qid); return ok; },
-    aiSell:(SUBJ_EXAMS[id].aiSell!==false),
+    aiSell:(!AI_OFF && SUBJ_EXAMS[id].aiSell!==false),
     aiCost:1, explainCost:1,
     creditBalance:function(){ return gradeBal(); },
     explainBalance:function(){ return explainBal(); },
     hasEntitlement:function(){ return gradeBal() >= 1; },
     gradeAi:function(payload){ return callGradeSubjective(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('grade', out.creditsLeft); return out; }); },
-    explainAi:function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); },
+    explainAi:(AI_OFF? null : function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); }),
     buyAi:function(){ openAiBuy('grade'); },
     buyExplain:function(){ openAiBuy('explain'); },
     needLogin:function(){ if(typeof showLoginPopup==='function') showLoginPopup(); },
@@ -3651,6 +3651,7 @@ function renderMCQ(){
   }catch(_){}
   if(mqScreen==='subjexam') return renderSubjExam(root);
   if(mqScreen==='lt2') return renderLt2(root);
+  if(mqScreen==='lu2') return renderLu2(root);
   if(mqScreen==='exam') return renderMcqExam(root);
   if(mqScreen==='oxlearn') return renderOxLearn(root);
   if(mqScreen==='luhist') return renderLuHist(root);
@@ -3662,6 +3663,9 @@ function renderMcqHome(root){
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
   if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:11px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:11px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:11px;padding:8px 6px;font-size:11px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
+  if(typeof lt2Has==='function' && lt2Has(mqCert) && ltDone(mqCert)){
+    html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:11px;cursor:pointer" onclick="startLt2LevelUp()"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">\u26A1</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">\uB808\uBCA8\uC5C5 \uBB38\uC81C\uD480\uAE30</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">\uC57D\uD55C \uACFC\uBAA9\uBD80\uD130 \uC790\uB3D9\uC73C\uB85C \uC774\uC5B4\uC11C</div></div><div style="font-size:15px;color:#185FA5">\u2192</div></div>';
+  }
   const dueAll=srDueReviewable(mqCert);
   const due=Math.min(dueAll, REVIEW_MCQ_CAP);
   const _dueSub = dueAll>REVIEW_MCQ_CAP ? ('급한 순 '+REVIEW_MCQ_CAP+'개 먼저 · 나머지는 다음에') : '틀렸거나 복습일이 된 문제';
@@ -3818,15 +3822,14 @@ function lt2Finalize(){ var cert=lt2State.cert;
       summary[sub]={ score:sc, level:(typeof AE!=='undefined'?AE.scoreToLevel(sc):3), bucket:s.bucket, pts:s.pts, raw:s.score, pt:s.pt, name:s.name }; });
     eloState._levelTest[cert]={ at:Date.now(), summary:summary, subjective:true };
     if(currentUser && typeof saveUserData==='function') saveUserData(); } }catch(e){}
-  lt2State=null; mqScreen='home'; if(typeof goHome==='function') goHome(); else renderMCQ(); }
+  lt2State=null; mqScreen='home'; renderMCQ(); try{ window.scrollTo(0,0); }catch(e){} }   // 홈(시험목록) 말고 이 시험 대시보드로 → 결과 카드 노출
 function lt2ResultCard(cert){ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; if(!rec||!rec.summary) return '';
   var TIER={right:{t:'맞음',c:'#2E9B5E'},vague:{t:'애매',c:'#E0A52E'},wrong:{t:'틀림',c:'#E24B4A'}};
   var rows=Object.keys(rec.summary).map(function(sub){ var s=rec.summary[sub]; var ti=TIER[s.bucket]||TIER.vague;
     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-top:1px solid #F1ECE4"><span style="font-weight:700;color:#3C3C3A">'+mqEsc(s.name||sub)+'</span><span><span style="font-size:12px;font-weight:800;color:'+ti.c+';margin-right:8px">'+ti.t+' '+(s.pts!=null?s.pts:'')+'점</span><span style="font-size:11px;color:#8A7D6E">Lv '+(s.level||'')+'</span></span></div>'; }).join('');
   return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
     +'<div style="padding:4px 4px 2px;font-size:12px;color:#6B7280">레벨 테스트 결과 · 과목별 채점(틀림0·애매5·맞음10)</div>'+rows
-    +'<div style="padding:8px 4px 2px;font-size:11px;color:#A89C8E">레벨은 시작점이에요. 문제를 풀면 조정됩니다.</div>'
-    +'<button class="anal-diag" onclick="startLt2()" style="margin-top:10px">🔁 다시 테스트</button></div>'; }
+    +'<div style="padding:8px 4px 2px;font-size:11px;color:#A89C8E">레벨은 시작점이에요. 문제를 풀면 조정됩니다.</div></div>'; }
 function renderLt2(root){ if(!lt2State || lt2State.cert!==mqCert){ lt2State=null; mqScreen='home'; return renderMCQ(); }
   var qs=lt2State.qs, idx=lt2State.idx, q=qs[idx]; var n=qs.length, pct=Math.round((idx+1)/n*100); var graded=lt2State.scores[q.ltSubject];
   root.innerHTML='<div class="exam-sticky">'+
@@ -3843,9 +3846,53 @@ function renderLt2(root){ if(!lt2State || lt2State.cert!==mqCert){ lt2State=null
   opts.canOpen=function(){ return true; };
   opts.reportOffline=true;   // 무료 자동채점(채점하기)도 점수 캡처 — API 결제 없이 동작
   opts.aiSell=false;   // AI 채점 버튼 잠깐 숨김(결제 뚫리면 이 줄만 제거)
+  opts.explainAi=null;   // 'AI에게 더 물어보기' 위젯도 숨김
   opts.onGraded=function(rec){ lt2OnGraded(rec); };
   if(!(window.CLSubj && CLSubj.openOne)){ host.innerHTML='<div style="margin:16px;padding:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700">subjective.js 최신본이 필요합니다 (openOne 없음).</div>'; return; }
   try{ CLSubj.openOne(host, exam, idx, opts); }catch(e){ console.error('lt2 openOne',e); host.innerHTML='<div style="margin:16px">문제 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; }
+  window.scrollTo(0,0); }
+
+
+/* ===== 2차 레벨업 (레벨테스트 후 · 약한 과목 우선 자동출제) — 2026-07-18 ===== */
+var lu2State=null;
+function _lt2NameToKey(cert){ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; var m={}; if(rec&&rec.summary){ Object.keys(rec.summary).forEach(function(k){ var s=rec.summary[k]; if(s&&s.name) m[s.name]=k; }); } return m; }
+function _lt2SubLevels(cert){ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; var m={}; if(rec&&rec.summary){ Object.keys(rec.summary).forEach(function(k){ var s=rec.summary[k]; if(s&&s.name) m[s.name]=s.level||3; }); } return m; }
+function _lt2SubjPool(cert){ var qb=(typeof qbOf==='function'?qbOf(cert):{})||{}; var pool=[]; Object.keys(qb).forEach(function(code){ var g=qb[code]; (g.sets||[]).forEach(function(st){ (st.questions||[]).forEach(function(q){ if(q&&q.asks&&q.asks.length) pool.push({q:q, subName:g.name||code, diff:(q&&q.diff)||3}); }); }); }); return pool; }
+function startLt2LevelUp(){ var cert=mqCert; if(!lt2Has(cert)) return; if(!ltDone(cert)){ startLt2(); return; }
+  var pool=_lt2SubjPool(cert); if(!pool.length){ if(typeof _luToast==='function')_luToast('레벨업 문제가 아직 없어요.'); else alert('레벨업 문제가 아직 없어요.'); return; }
+  var lv=_lt2SubLevels(cert);
+  pool.sort(function(a,b){ var la=lv[a.subName]||3, lb=lv[b.subName]||3; if(la!==lb) return la-lb; return (a.diff||3)-(b.diff||3); });
+  lu2State={cert:cert, queue:pool, idx:0, done:0};
+  try{ if(typeof mqStopTimer==='function') mqStopTimer(); if(typeof mqStopOverTimer==='function') mqStopOverTimer(); }catch(e){}
+  mqDiag=false; mqReview=false; mqInReview=false; mqConcept=false; mqLevelUp=false;
+  mqScreen='lu2'; renderMCQ(); window.scrollTo(0,0); }
+function lu2OnGraded(rec){ if(!lu2State) return; var it=lu2State.queue[lu2State.idx]; if(!it) return;
+  var r=(rec&&rec.pt)? ((rec.score||0)/rec.pt) : 0; r=Math.max(0,Math.min(1,r));
+  try{ var key=_lt2NameToKey(lu2State.cert)[it.subName]; var sm=key&&eloState._levelTest[lu2State.cert].summary[key];
+    if(sm){ var target=15+r*57; sm.score=Math.round(sm.score*0.7+target*0.3); sm.level=(typeof AE!=='undefined'?AE.scoreToLevel(sm.score):sm.level); }
+    if(currentUser&&typeof saveUserData==='function') saveUserData();
+  }catch(e){}
+  lu2State.done++; var nx=document.getElementById('lu2Next'); if(nx) nx.style.display='block'; }
+function lu2Next(){ if(!lu2State) return; if(lu2State.idx<lu2State.queue.length-1){ lu2State.idx++; renderMCQ(); window.scrollTo(0,0); } else { if(typeof _luToast==='function')_luToast('이 과목 문제를 다 풀었어요!'); lu2State=null; mqScreen='home'; renderMCQ(); } }
+function renderLu2(root){ if(!lu2State||lu2State.cert!==mqCert){ lu2State=null; mqScreen='home'; return renderMCQ(); }
+  var q=lu2State.queue[lu2State.idx]; if(!q){ lu2State=null; mqScreen='home'; return renderMCQ(); }
+  var lv=_lt2SubLevels(mqCert); var curLv=lv[q.subName]||3;
+  root.innerHTML='<div class="exam-sticky">'+
+    '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="뒤로">'+BACK_ARROW+'</button>'+
+      '<div class="exam-ti"><div class="nm">⚡ 레벨업</div><div class="st">'+mqEsc(q.subName||'')+' · Lv '+curLv+'</div></div></div>'+
+    '<div class="mq-prog"><div class="row"><span>'+(lu2State.done+1)+'번째 · 약한 과목 우선</span><span class="subj-credit">'+mqEsc(q.subName||'')+'</span></div><div class="track"><div class="bar" style="width:100%"></div></div></div>'+
+    '</div>'+
+    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EAF2FC;border:1px solid #C7DBF2;border-radius:10px;padding:10px 12px;font-size:13px;color:#334155;line-height:1.6">약한 과목부터 자동으로 출제돼요. 답안 작성 후 <b>채점하기</b> → <b>다음</b>. 점수에 따라 과목 레벨이 조정됩니다.</div></div>'+
+    '<div id="lu2Mount"></div>'+
+    '<div style="max-width:760px;margin:12px auto 40px;padding:0 14px"><button id="lu2Next" onclick="lu2Next()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:#185FA5;color:#fff;font-weight:800;font-size:15px;cursor:pointer">다음 문제 →</button></div>';
+  var host=document.getElementById('lu2Mount');
+  var exam={ id:mqCert, name:'레벨업', questions:[q.q] };
+  var opts=_subjExamOpts(mqCert); opts.host=host; opts.mountId='lu2Mount'; opts.replace=false;
+  opts.reportOffline=true; opts.aiSell=false; opts.explainAi=null;   // canOpen은 기본값(canAccessSubjective) 유지 → 무료 한도 뒤 합격플랜 결제
+  opts.onGraded=function(rec){ lu2OnGraded(rec); };
+  if(!(window.CLSubj && CLSubj.openOne)){ host.innerHTML='<div style="margin:16px;padding:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700">subjective.js 최신본이 필요합니다 (openOne 없음).</div>'; return; }
+  var _ok; try{ _ok=CLSubj.openOne(host, exam, 0, opts); }catch(e){ console.error('lu2 openOne',e); host.innerHTML='<div style="margin:16px">문제 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; return; }
+  if(_ok===false){ lu2State=null; mqScreen='home'; if(typeof mqBackHome==='function') mqBackHome(); else renderMCQ(); return; }   // 무료 한도 초과 → 결제팝업(canAccessSubjective) 뜬 뒤 목록으로
   window.scrollTo(0,0); }
 
 function mcqAnalysisCard(cert){
@@ -3998,7 +4045,9 @@ function _planRoundCount(cert, sub){
 function _planTopicGo(sub, tcode){
   var cert=(typeof mqCert!=='undefined')?mqCert:null;
   if(!_planIsPaid(cert)){ _planUpsell(); return; }   // 무료 → 멤버십 유도 팝업(플랜 유지)
-  closePassPlan(); luStartTopic(sub, tcode);          // 유료 → 플랜 닫고 풀기
+  closePassPlan();
+  if(typeof lt2Has==='function' && lt2Has(cert)){ startLt2LevelUp(); return; }   // 주관식: 합격플랜 풀기 → 레벨업(약한 과목)
+  luStartTopic(sub, tcode);                           // 객관식: 유료 → 플랜 닫고 풀기
 }
 var _PLAN_LVC={1:'#E24B4A',2:'#E24B4A',3:'#E0A52E',4:'#2E9B5E',5:'#2E9B5E'};
 function _planTopicRow(cert, sub, t, paid){
@@ -6811,15 +6860,16 @@ function _subjBuildQB(id){
 }
 // ===== 주관식 러너: '풀기' → 상세 문제(자료·물음·답안작성). subjective.js가 상세만 그림 =====
 var subjRun=null;   // {cert, sub, si, list, idx}
+var AI_OFF=true;   // AI 결제(LLM) 막혀있는 동안 AI 채점/물어보기 숨김. 결제 뚫리면 false로 바꾸면 복구.
 function _subjExamOpts(cert){ return {
   canOpen:function(qid){ var ok=canAccessSubjective(cert, qid); if(ok) _subjMarkOpened(cert, qid); return ok; },
-  aiSell:(SUBJ_EXAMS[cert] && SUBJ_EXAMS[cert].aiSell!==false),
+  aiSell:(!AI_OFF && SUBJ_EXAMS[cert] && SUBJ_EXAMS[cert].aiSell!==false),
   aiCost:1, explainCost:1,
   creditBalance:function(){ return gradeBal(); },
   explainBalance:function(){ return explainBal(); },
   hasEntitlement:function(){ return gradeBal() >= 1; },
   gradeAi:function(payload){ return callGradeSubjective(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('grade', out.creditsLeft); return out; }); },
-  explainAi:function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); },
+  explainAi:(AI_OFF? null : function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); }),
   buyAi:function(){ openAiBuy('grade'); },
   buyExplain:function(){ openAiBuy('explain'); },
   needLogin:function(){ if(typeof showLoginPopup==='function') showLoginPopup(); },
