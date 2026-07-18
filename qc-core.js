@@ -166,7 +166,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:60},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true}},
+  gichul:{EX_SHORT:{on:true,minChars:60},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
@@ -208,7 +208,7 @@ var _QC_SEV = {
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR',
   /* [신규 2026-07-15] 계산풀이 가려짐·q 표 줄글 */
-  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING', CALC_FIELDS_ON_NONCALC:'WARNING', ALLANS_NO_NOTE:'WARNING', EX_NOUN_END:'WARNING',
+  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING', CALC_FIELDS_ON_NONCALC:'WARNING', ALLANS_NO_NOTE:'WARNING', EX_NOUN_END:'WARNING', CALC_EX_3X:'INFO',
   /* [신규 2026-07-15] 마스터 레코드 검수 — 레코드 날짜 */
   REC_DATE:'BLOCKER',
   /* 그래프 */
@@ -305,6 +305,14 @@ function _qcExtraRules(q){
     if(exJoin && !/\[\s*공식\s*\]/.test(exJoin) && !_newFmt)
       v.push({kind:'warn',field:'ex',idx:0,code:'CALC_NO_FORMULA',
         msg:'계산형 풀이(ex) 첫 줄에 [공식] 표기 없음 — 흐름은 [공식]→대입→계산→검산→최종답 권장',text:exJoin.slice(0,80)});
+  }
+  /* (b-2) 상세풀이(ex)는 요약풀이(exSum)의 N배 이상 상세하게 — 글자수(HTML·공백 제외) 기준 [2026-07-18] */
+  if(_qcOn('gichul','CALC_EX_3X') && _isCalcQ(q) && Array.isArray(exp.exSum) && exp.exSum.filter(Boolean).length){
+    var _stripLen=function(a){ return (a||[]).filter(Boolean).map(function(x){return String(x).replace(/<[^>]+>/g,'');}).join('').replace(/\s+/g,'').length; };
+    var _sumL=_stripLen(exp.exSum), _exL=_stripLen(ex), _ratio=_qcN('gichul','CALC_EX_3X','ratio',3);
+    if(_sumL>0 && _exL>0 && _exL < _sumL*_ratio)
+      v.push({kind:'warn',field:'ex',idx:0,code:'CALC_EX_3X',
+        msg:'상세풀이('+_exL+'자)가 요약풀이('+_sumL+'자)의 '+_ratio+'배('+(_sumL*_ratio)+'자) 미만 — 상세풀이는 요약의 '+_ratio+'배 이상으로 단계별 상세화',text:''});
   }
   /* (c) 상수·환산계수 근거(보수적·기본 OFF): 계산형 풀이에 매직상수가 근거어 없이 등장
      오탐 많은 영역이라 기본 비활성. 켜면 참고(INFO)로만. */
