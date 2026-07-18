@@ -57,7 +57,7 @@
   function _injectSubjFont(){ if(document.getElementById('subjFontUnify')) return;
     var st=document.createElement('style'); st.id='subjFontUnify';
     st.textContent=
-     '.subj-view .jaryo{font-size:15px;line-height:1.78;padding:13px 15px;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:10px;color:#334155;margin:0 0 14px}'
+     '.subj-view .jaryo{font-size:13.5px;line-height:1.7;padding:13px 15px;background:#F8FAFC;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;border-radius:10px;color:#334155;margin:0 0 14px}'
     +'.subj-view .qstem{background:#fff;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}'
     +'.subj-view .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap}'
     +'.subj-view .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;min-width:25px;height:25px;padding:0 7px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}'
@@ -100,9 +100,10 @@
     +'.subj-view .subj-node .nnum{font-weight:800;color:#0C447C;flex-shrink:0}'
     +'.subj-view .subj-node .nt{font-weight:700;color:#0F172A}'
     +'.subj-view .subj-node.lv1 .nh{padding-bottom:5px;border-bottom:2px solid #E7EEF6;margin-bottom:3px}'
-    +'.subj-view .subj-node.lv1 .nt{font-size:15.5px;color:#0C447C}'
-    +'.subj-view .subj-node.lv1 .nnum{font-size:15.5px}'
-    +'.subj-view .subj-node.lv2 .nt{font-size:14.5px}'
+    +'.subj-view .subj-node.lv1 .nt{font-size:13.5px;color:#0C447C}'
+    +'.subj-view .subj-node.lv1 .nnum{font-size:13.5px}'
+    +'.subj-view .subj-node.lv2 .nt{font-size:13px}'
+    +'.subj-view .rb.sel{background:#F1F5F9}.subj-view .rb-wrong.sel{background:#FDECEA}.subj-view .rb-vague.sel{background:#FEF6E4}.subj-view .rb-ok.sel{background:#EAF7EF}'
     +'.subj-view .subj-node .role{font-size:11px;font-weight:700;color:#2A5B92;background:#EAF1FA;border:1px solid #D4E3F5;padding:1px 8px;border-radius:11px;flex-shrink:0}'
     +'.subj-view .subj-node .nref{font-size:11.5px;font-weight:600;color:#5A6B80;background:#F4F6F9;border:1px solid #E4E9F0;padding:1px 8px;border-radius:6px;line-height:1.5}'
     +'.subj-view .subj-node .nref.pan{color:#7A5A2E;background:#FBF6EC;border-color:#EEDFC4}'
@@ -540,8 +541,11 @@
     R.innerHTML=h; bindNodes(R); bindAsk(R,exam,qi,ai); bindRate(R,exam,qi,ai);
   }
   function bindNodes(R){ R.querySelectorAll('.subj-node .nh').forEach(function(h){ h.onclick=function(){ h.parentNode.classList.toggle('open'); }; }); }
-  function rateBar(exam,qi,ai){ return '<div class="subj-rate"><span>스스로 채점 → 복습(SR):</span>'
-    +'<button data-r="0" class="r-no">틀림</button><button data-r="1" class="r-amb">애매</button><button data-r="2" class="r-ok">맞음</button></div><div class="subj-rated"></div>'; }
+  // 자가채점 — 생체 구술 .rate-row/.rb 아이콘 버튼 그대로 재사용(안내문구 없음). 스타일은 style.css 한 곳.
+  function rateBar(exam,qi,ai){ return '<div class="rate-row subj-rate">'
+    +'<button data-r="0" class="rb rb-wrong">❌<span>틀림</span></button>'
+    +'<button data-r="1" class="rb rb-vague">🤔<span>애매함</span></button>'
+    +'<button data-r="2" class="rb rb-ok">✅<span>맞음</span></button></div><div class="subj-rated"></div>'; }
   function bindRate(R,exam,qi,ai){ var wrap=R.querySelector('.subj-rate'); if(!wrap) return;
     wrap.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ var r=+b.getAttribute('data-r');
       wrap.querySelectorAll('button').forEach(function(x){x.classList.remove('sel');}); b.classList.add('sel');
