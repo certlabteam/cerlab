@@ -380,7 +380,10 @@
     function rows(){ var out=[]; box.querySelectorAll('.subj-arow').forEach(function(r){ out.push({h:r.querySelector('.h').value, d:r.querySelector('.d').value}); }); return out; }
     function text(){ return rows().map(function(r){return r.h+' '+r.d;}).join('  '); }
     d.querySelector('.subj-grade').onclick=function(){ var t=text(); if(norm(t).length<4){ alert('목차/내용을 먼저 적어주세요.'); return; }
-      showResult(d, gradeOffline(ask,t), exam, qi, ai); };
+      var _r=gradeOffline(ask,t); showResult(d, _r, exam, qi, ai);
+      // 레벨테스트 등에서 오프라인 채점 점수도 받도록(opts.reportOffline일 때만) onGraded 호출
+      try{ if(_opts.reportOffline && _opts.onGraded){ var q=exam.questions[qi], ak=q.asks[ai];
+        _opts.onGraded({ qid:(q.id||('q'+qi))+'#'+(ak.n||ai+1), question:(q.q||'')+' / '+(ak.q||''), answer:t, score:_r.score, pt:_r.pt||ak.pt, mode:'offline' }); } }catch(_e){} };
     if(_sellsAi()){ d.querySelector('.subj-ai').onclick=function(){
       // 크레딧 없으면 채점 안 하고 충전 안내부터
       if(!_hasEnt()){ if(_opts.buyAi){ _opts.buyAi(); } else { alert('AI 첨삭 충전이 필요합니다.'); } return; }
