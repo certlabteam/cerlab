@@ -458,14 +458,14 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mn-desc{font-size:13px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:5px}
 #mcqView .mn-code .k,#mcqView .mn-desc .k,#mcqView .mn-code k,#mcqView .mn-desc k{color:#C0392B;font-weight:800}
 #mcqView .mn-chant{margin-top:5px;margin-bottom:6px;font-size:14px;font-weight:800;color:#C0392B;letter-spacing:1px}
-#mcqView .concept-box,#subjectiveView .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
-#mcqView .concept-ti,#subjectiveView .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
-#mcqView .concept-row,#subjectiveView .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7}
-#mcqView .concept-box .cc-exd + .concept-row,#mcqView .concept-box .cc-ex + .concept-row,#mcqView .concept-box .concept-row + .concept-row,#subjectiveView .concept-box .concept-row + .concept-row{margin-top:12px;padding-top:11px;border-top:1px dashed #E2E8F0}
-#mcqView .concept-row b,#subjectiveView .concept-row b{color:#0C447C}
-#mcqView .cc-exd{margin:9px 0 0;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
-#mcqView .cc-ex{margin:9px 0 0;padding:8px 11px 8px 12px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.65;color:#28425E}
-#mcqView .cc-ex svg{display:block;width:100%;max-width:320px;height:auto;margin:10px auto 4px}
+#mcqView .concept-box,#subjectiveView .concept-box,.subj-view .concept-box{margin:14px 0 0;padding:12px 14px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:12px}
+#mcqView .concept-ti,#subjectiveView .concept-ti,.subj-view .concept-ti{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:9px}
+#mcqView .concept-row,#subjectiveView .concept-row,.subj-view .concept-row{font-size:13px;color:#3A4A5E;line-height:1.7}
+#mcqView .concept-box .cc-exd + .concept-row,#mcqView .concept-box .cc-ex + .concept-row,#mcqView .concept-box .concept-row + .concept-row,#subjectiveView .concept-box .concept-row + .concept-row,.subj-view .concept-box .cc-exd + .concept-row,.subj-view .concept-box .cc-ex + .concept-row,.subj-view .concept-box .concept-row + .concept-row{margin-top:12px;padding-top:11px;border-top:1px dashed #E2E8F0}
+#mcqView .concept-row b,#subjectiveView .concept-row b,.subj-view .concept-row b{color:#0C447C}
+#mcqView .cc-exd,.subj-view .cc-exd{margin:9px 0 0;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
+#mcqView .cc-ex,.subj-view .cc-ex{margin:9px 0 0;padding:8px 11px 8px 12px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.65;color:#28425E}
+#mcqView .cc-ex svg,.subj-view .cc-ex svg{display:block;width:100%;max-width:320px;height:auto;margin:10px auto 4px}
 #mcqView .mn-box + .mn-box{margin-top:8px}
 #mcqView .calc-graph{margin:0 0 10px;text-align:center}
 #mcqView .calc-graph svg{max-width:340px;width:100%;height:auto}
@@ -1005,9 +1005,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .cx-recall-flow{font-size:13px;line-height:1.9;color:#334155}
 
 /* 시험 포인트 — tipEnsureCSS(JS 주입) 박스를 #mcqView 특이도로 평면화 */
-#mcqView .tip-box{border:none;background:none;border-radius:0;padding:0;margin:14px 0 0}
-#mcqView .tip-box .tip-ti{color:#C0392B;margin-bottom:4px}
-#mcqView .tip-box .tip-body{color:#334155}
+#mcqView .tip-box,.subj-view .tip-box{border:none;background:none;border-radius:0;padding:0;margin:14px 0 0}
+#mcqView .tip-box .tip-ti,.subj-view .tip-box .tip-ti{color:#C0392B;margin-bottom:4px}
+#mcqView .tip-box .tip-body,.subj-view .tip-box .tip-body{color:#334155}
 
 
 /* ===== 주관식(subjective.js) ===== */
