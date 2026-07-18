@@ -116,15 +116,7 @@
     +'.subj-view .subj-chk.hit{background:#F1FBF6;border-color:#D6F0E3}.subj-view .subj-chk.miss{background:#FEF6F5;border-color:#F6DDD9}'
     +'.subj-view .subj-chk .mk{font-weight:800;flex-shrink:0}.subj-view .subj-chk.hit .mk{color:#1F9D6B}.subj-view .subj-chk.miss .mk{color:#C0503F}'
     +'.subj-view .subj-feed{background:#F8FAFC;border:1px solid #EEF2F6;border-radius:8px;padding:9px 11px;color:#334155;line-height:1.7}'
-    // ── 핵심 개념(객관식 개념 박스 스타일) ──
-    +'.subj-view .concept-box{border:1px solid #E2E8F0;border-radius:12px;padding:12px 13px;margin:12px 0;background:#FBFCFE}'
-    +'.subj-view .concept-ti{font-weight:800;color:#0C447C;margin-bottom:8px}'
-    +'.subj-view .concept-row{padding:7px 0;border-top:1px solid #EEF2F6}.subj-view .concept-row:first-of-type{border-top:none}'
-    +'.subj-view .concept-row .crow-h{display:flex;align-items:center;gap:6px}'
-    +'.subj-view .concept-row .tm{font-weight:700}'
-    +'.subj-view .concept-row .crow-d{color:#334155;line-height:1.75;margin-top:4px}'
-    +'.subj-view .concept-row .crow-ex{margin-top:4px;color:#41546B;line-height:1.7;font-size:14px}'
-    +'.subj-view .concept-row .crow-ex .ex-lb{font-weight:700;color:#2A5B92;margin-right:4px}'
+    // ── 개념설명: 객관식 .concept-box/.cc-ex 스타일을 style.css #mcqView 한 곳에서 공유(여기서 중복 정의 안 함). subj-copy만 유지 ──
     +'.subj-view .concept-box .subj-copy{border:none;background:#EEF3F9;color:#64748B;border-radius:6px;width:24px;height:24px;cursor:pointer;font-size:12px}'
     // ⚡ 시험 포인트 박스
     +'.subj-view .subj-tip{margin:12px 0;border:1px solid #F1DFAE;background:linear-gradient(0deg,#FFFDF7,#FFF9EC);border-left:4px solid #E5A93C;border-radius:12px;padding:11px 13px}'
@@ -242,18 +234,22 @@
     _wireAskGo(wrap, exam, qi, function(){ return (q.q||'')+'\n'+(ask.q||'')+'\n'+(ask.outline||[]).map(function(n){return n.h+' '+(n.body||'');}).join('\n'); }, (q.q||'')+' / '+(ask.q||''));
   }
   // ⚡ 시험포인트(exp.tip) — 출제위원 관점 답안 작성 전략. 물음 아래 강조 박스.
-  function expTipHtml(q){ var t=q&&q.exp&&q.exp.tip; if(!t||!String(t).trim()) return '';
-    return '<div class="subj-tip"><div class="subj-tip-hd">💡 힌트</div><div class="subj-tip-bd">'+esc(String(t))+'</div></div>'; }
+  // 문항 exp.tip → 객관식 tipBlockHTML 그대로 재사용(⚡ 시험 포인트, 빨간 타이틀). 미로드 시에만 자체 폴백.
+  function expTipHtml(q){ if(typeof window!=='undefined' && typeof window.tipBlockHTML==='function') return window.tipBlockHTML(q);
+    var t=q&&q.exp&&q.exp.tip; if(!t||!String(t).trim()) return '';
+    return '<div class="subj-tip"><div class="subj-tip-hd">⚡ 시험 포인트</div><div class="subj-tip-bd">'+esc(String(t))+'</div></div>'; }
   // 문제에 나온 핵심 개념 설명 박스 + 문제-level AI 질문 위젯
   // 객관식 .concept-box 형태 공유 + 주관식만 접고펴기(.cpt-col). 복사→AI 질문칸.
+  // 객관식(index.html) 개념설명 마크업/클래스를 그대로 사용 — .concept-box/.concept-ti/.concept-row + .cc-ex(좌측 파란 테두리 예시박스). CSS는 style.css #mcqView 한 곳에서만 관리.
   function conceptHtml(q){ if(!(q.concepts&&q.concepts.length)) return '';
     var rows=q.concepts.map(function(c,i){ if(!c||!c.term) return '';
       var exTxt=c.ex||c.example||c.eg||'';
-      return '<div class="concept-row"><div class="crow-h" data-i="'+i+'"><b class="tm" style="color:#0C447C">'+esc(c.term)+'</b>'
-        +(_opts.explainAi?'<button class="subj-copy" data-cpt="'+i+'" title="이 개념을 AI 질문칸에 복사">📋</button>':'')+'</div>'
-        +(c.def?'<div class="crow-d">'+esc(c.def)+'</div>':'')
-        +(exTxt?'<div class="crow-ex"><span class="ex-lb">예)</span> '+esc(exTxt)+'</div>':'')+'</div>'; }).join('');
-    return '<div class="concept-box"><div class="concept-ti">핵심 개념</div>'+rows+'</div>'+_subjAskWidget();
+      var copy=(_opts.explainAi?'<button class="subj-copy" data-cpt="'+i+'" title="이 개념을 AI 질문칸에 복사">📋</button>':'');
+      var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+esc(c.term)+'</span>'+copy+'</div>'
+        +(c.def?'<div>'+esc(c.def)+'</div>':'')+'</div>';
+      if(exTxt) row+='<div class="cc-ex">'+esc(exTxt)+'</div>';
+      return row; }).join('');
+    return '<div class="concept-box"><div class="concept-ti">개념설명</div>'+rows+'</div>'+_subjAskWidget();
   }
   function bindConcepts(v, exam, qi){ var q=exam.questions[qi]; if(!(q.concepts&&q.concepts.length)) return;
     v.querySelectorAll('.concept-row.cpt-col .crow-h').forEach(function(h){ h.onclick=function(e){ if(e&&e.target&&e.target.closest&&e.target.closest('.subj-copy')) return; h.parentNode.classList.toggle('open'); }; });
@@ -404,10 +400,12 @@
     var open='<div class="subj-lecture"><div class="subj-lec-hd" data-open="0">📘 계산 풀이 (7단계 강의) <span class="subj-lec-tg">펼치기 ▾</span></div><div class="subj-lec-bd" style="display:none">';
     // 객관식 계산형 렌더(calc-render.js) 그대로 재사용 — 있으면 사용(별도 CSS 없이 style.css 클래스 공유)
     if(typeof window!=='undefined' && typeof window.certlabCalcHTML==='function'){
-      var qLike={ id:'lt_'+String(uid||'x').replace(/[^a-zA-Z0-9_]/g,''), exp:{ approach:L.approach, principle:L.principle, exSum:L.exSum, s:L.s, recall:L.recall } };
+      var qLike={ id:'lt_'+String(uid||'x').replace(/[^a-zA-Z0-9_]/g,''), exp:{ approach:L.approach, principle:L.principle, exSum:L.exSum, s:L.s, tip:L.tip, recall:L.recall } };
       var rm=function(s){ return esc(String(s==null?'':s)).replace(/\n/g,'<br>'); };
       var inner=window.certlabCalcHTML(qLike, L.ex||[], rm);
-      if(L.tip) inner+='<div class="cx-sec"><div class="cx-h">시험 포인트</div><div class="cx-body">'+esc(L.tip)+'</div></div>';
+      // ⚡ 시험 포인트 — 객관식 tipBlockHTML 그대로 재사용(빨간 ⚡ 타이틀, style.css #mcqView 공유)
+      if(typeof window.tipBlockHTML==='function') inner+=window.tipBlockHTML(qLike);
+      else if(L.tip) inner+='<div class="cx-sec"><div class="cx-h">시험 포인트</div><div class="cx-body">'+esc(L.tip)+'</div></div>';
       if(typeof window.certlabRecallHTML==='function') inner+=window.certlabRecallHTML(qLike, rm);
       return open+inner+'</div></div>';
     }
