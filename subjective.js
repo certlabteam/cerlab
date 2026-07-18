@@ -139,8 +139,14 @@
     +'.subj-view .lec-v{font-size:13.5px;color:#3C3550;line-height:1.72;white-space:pre-wrap}'
     +'.subj-view .lec-steps{margin:2px 0 0;padding-left:20px}'
     +'.subj-view .lec-steps li{font-size:13.5px;color:#3C3550;line-height:1.7;margin:3px 0}'
-    +'.subj-view .lec-detail{background:#fff;border:1px solid #ECE4F8;border-radius:8px;padding:9px 11px}'
-    +'.subj-view .lec-line{font-size:13px;color:#41386B;line-height:1.75;margin:2px 0;white-space:pre-wrap}'
+    +'.subj-view .lec-more{margin:2px 0 0}'
+    +'.subj-view .lec-more-hd{font-size:13px;font-weight:800;color:#2563EB;cursor:pointer;padding:7px 0;user-select:none}'
+    +'.subj-view .lec-more-bd{margin-top:3px}'
+    +'.subj-view .lec-arrow{text-align:center;color:#C0B6DA;font-size:14px;margin:5px 0}'
+    +'.subj-view .lec-step{padding:5px 0}'
+    +'.subj-view .lec-step-h{font-size:13.5px;font-weight:800;color:#312B4A;line-height:1.6}'
+    +'.subj-view .lec-step-txt{font-size:13px;color:#4B4368;line-height:1.75;margin:5px 0 0}'
+    +'.subj-view .lec-step-calc{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:#0C447C;background:#F6F3FC;border:1px solid #ECE4F8;border-radius:7px;padding:6px 10px;margin:6px 0 0;white-space:pre-wrap;line-height:1.65;word-break:break-all}'
     +'.subj-view .lec-tip .lec-k{color:#A8720F}.subj-view .lec-tip{background:#FFFDF7;border:1px solid #F1DFAE;border-radius:8px;padding:8px 10px}'
     +'.subj-view .lec-recall .lec-k{color:#137a52}.subj-view .lec-recall{background:#EAF7F0;border:1px solid #BfE7D4;border-radius:8px;padding:8px 10px}';
     document.head.appendChild(st); }
@@ -393,13 +399,31 @@
     var hEl=r.querySelector('.h'), dEl=r.querySelector('.d');
     if(hEl) hEl.setAttribute('placeholder',_PH_H[lv]); if(dEl) dEl.setAttribute('placeholder',_PH_D[lv]); }); }
   // 📘 계산 풀이(7단계 강의) 블록 — 실무 계산 물음에서 모범답안 아래 접기/펼치기로 노출
-  function _lectureHtml(ask){
+  function _lectureHtml(ask, uid){
     var L=ask&&ask.lecture; if(!L) return '';
-    var h='<div class="subj-lecture"><div class="subj-lec-hd" data-open="0">📘 계산 풀이 (7단계 강의) <span class="subj-lec-tg">펼치기 ▾</span></div><div class="subj-lec-bd" style="display:none">';
+    var open='<div class="subj-lecture"><div class="subj-lec-hd" data-open="0">📘 계산 풀이 (7단계 강의) <span class="subj-lec-tg">펼치기 ▾</span></div><div class="subj-lec-bd" style="display:none">';
+    // 객관식 계산형 렌더(calc-render.js) 그대로 재사용 — 있으면 사용(별도 CSS 없이 style.css 클래스 공유)
+    if(typeof window!=='undefined' && typeof window.certlabCalcHTML==='function'){
+      var qLike={ id:'lt_'+String(uid||'x').replace(/[^a-zA-Z0-9_]/g,''), exp:{ approach:L.approach, principle:L.principle, exSum:L.exSum, s:L.s, recall:L.recall } };
+      var rm=function(s){ return esc(String(s==null?'':s)).replace(/\n/g,'<br>'); };
+      var inner=window.certlabCalcHTML(qLike, L.ex||[], rm);
+      if(L.tip) inner+='<div class="cx-sec"><div class="cx-h">시험 포인트</div><div class="cx-body">'+esc(L.tip)+'</div></div>';
+      if(typeof window.certlabRecallHTML==='function') inner+=window.certlabRecallHTML(qLike, rm);
+      return open+inner+'</div></div>';
+    }
+    // 폴백(calc-render.js 미로드 시) — 자체 렌더
+    var h=open;
     if(L.approach) h+='<div class="lec-sec"><div class="lec-k">접근</div><div class="lec-v">'+esc(L.approach)+'</div></div>';
     if(L.principle) h+='<div class="lec-sec"><div class="lec-k">원리</div><div class="lec-v">'+esc(L.principle)+'</div></div>';
     if(Array.isArray(L.exSum)&&L.exSum.length){ h+='<div class="lec-sec"><div class="lec-k">요약풀이</div><ol class="lec-steps">'; L.exSum.forEach(function(s){ h+='<li>'+esc(s)+'</li>'; }); h+='</ol></div>'; }
-    if(Array.isArray(L.ex)&&L.ex.length){ h+='<div class="lec-sec"><div class="lec-k">상세풀이</div><div class="lec-detail">'; L.ex.forEach(function(s){ h+='<div class="lec-line">'+esc(s).replace(/\n/g,'<br>')+'</div>'; }); h+='</div></div>'; }
+    if(Array.isArray(L.ex)&&L.ex.length){ h+='<div class="lec-more"><div class="lec-more-hd" data-open="0">▶ 상세풀이 보기</div><div class="lec-more-bd" style="display:none">';
+      L.ex.forEach(function(s,i){ if(i>0) h+='<div class="lec-arrow">↓</div>'; var lines=String(s==null?'':s).split('\n'); var head=(lines[0]||'').trim();
+        h+='<div class="lec-step"><div class="lec-step-h">'+(i+1)+'. '+esc(head)+'</div>';
+        lines.slice(1).forEach(function(ln){ ln=ln.trim(); if(!ln) return; var isCalc=/[=×÷≒]/.test(ln);
+          h+='<div class="lec-step-'+(isCalc?'calc':'txt')+'">'+esc(ln)+'</div>'; });
+        h+='</div>';
+      });
+      h+='</div></div>'; }
     if(L.s) h+='<div class="lec-sec"><div class="lec-k">최종정리</div><div class="lec-v">'+esc(L.s)+'</div></div>';
     if(L.tip) h+='<div class="lec-sec lec-tip"><div class="lec-k">⚡ 시험 포인트</div><div class="lec-v">'+esc(L.tip)+'</div></div>';
     if(L.recall) h+='<div class="lec-sec lec-recall"><div class="lec-k">🧠 암기 포인트</div><div class="lec-v">'+esc(L.recall)+'</div></div>';
@@ -415,8 +439,9 @@
       +(_opts.demo?'<button class="subj-demo">🎬 AI 첨삭 예시</button>':'')+'</div>'
       +((_sellsAi()&&!_hasEnt())?('<div class="subj-aihint">🔒 AI 채점(첨삭)은 감평 채점위원 수준의 서술 첨삭으로, <b>충전 횟수</b>로 이용해요. 회원권과 별도 · 1건당 <b>'+_cost()+'회</b> 차감. 버튼을 누르면 충전 안내가 떠요.</div>'):'')
       +'<div class="subj-res"></div>'
-      +_lectureHtml(ask);
+      +_lectureHtml(ask, (exam.questions[qi].id||('q'+qi))+'_'+(ask.n||ai));
     var _lh=d.querySelector('.subj-lec-hd'); if(_lh) _lh.onclick=function(){ var bd=d.querySelector('.subj-lec-bd'), tg=d.querySelector('.subj-lec-tg'); var op=_lh.getAttribute('data-open')==='1'; if(op){ bd.style.display='none'; _lh.setAttribute('data-open','0'); if(tg)tg.textContent='펼치기 ▾'; } else { bd.style.display='block'; _lh.setAttribute('data-open','1'); if(tg)tg.textContent='접기 ▴'; } };
+    var _lm=d.querySelector('.lec-more-hd'); if(_lm) _lm.onclick=function(){ var b=d.querySelector('.lec-more-bd'); var op=_lm.getAttribute('data-open')==='1'; b.style.display=op?'none':'block'; _lm.setAttribute('data-open',op?'0':'1'); _lm.textContent=op?'▶ 상세풀이 보기':'▼ 상세풀이 접기'; };
     var box=d.querySelector('.subj-rows'); reindex(box);
     var _addBtn=d.querySelector('.subj-add'); if(_addBtn) _addBtn.onclick=function(){ box.insertAdjacentHTML('beforeend',rowHTML()); bindRow(box); reindex(box); };
     bindRow(box);
