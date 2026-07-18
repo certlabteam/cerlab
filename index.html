@@ -76,7 +76,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
-<script src="subjective.js?v=20260718d"></script>
+<script src="subjective.js?v=20260718f"></script>
 </head>
 <body>
 <!-- 인앱 브라우저 안내 팝업 -->
@@ -1757,6 +1757,7 @@ async function _aiRunExplain(payload, boxId, btn){
 }
 // 맨 아래 자유질문 위젯(객관식·주관식 공용 형식)
 function _aiAskWidget(qid){
+  if(typeof AI_OFF!=='undefined' && AI_OFF) return '';   // AI 결제 막힌 동안 객관식 '더 물어보기'도 숨김
   return '<div class="ai-ask-wrap">'
     +'<div class="ai-ask-hd">🤖 AI에게 더 물어보기</div>'
     +'<div class="ai-ask-guide">더 알고 싶은 게 있으면 여기 적으세요. 위 <b>📋복사</b>를 누르면 그 항목이 여기로 들어와요. 문제 전체가 궁금하면 아래 <b>＋문제전체</b>를 누르거나 직접 <b>문제전체</b>라고 적으면 돼요.</div>'
@@ -1877,7 +1878,7 @@ function mountSubjExam(id){
 var _subjHeaderCert=null;
 function renderSubjHeader(cert){ _subjHeaderCert=cert; var el=document.getElementById('subjHeader'); if(!el) return;
   el.innerHTML='<div class="subj-hdrbar">'
-    +'<span class="subj-bal">🤖 첨삭 <b id="subjBalG">'+gradeBal().toLocaleString()+'</b>회 · 해설 <b id="subjBalE">'+explainBal().toLocaleString()+'</b>회</span>'
+    +((typeof AI_OFF!=='undefined'&&AI_OFF)?'':'<span class="subj-bal">🤖 첨삭 <b id="subjBalG">'+gradeBal().toLocaleString()+'</b>회 · 해설 <b id="subjBalE">'+explainBal().toLocaleString()+'</b>회</span>')
     +'<span style="flex:1"></span>'
     +'<button class="subj-hbtn" onclick="openAiBuy(\'grade\')">＋첨삭</button>'
     +'<button class="subj-hbtn" onclick="openAiBuy(\'explain\')">＋해설</button>'
@@ -6238,7 +6239,8 @@ function renderMcqExam(root){
       var _aiCards=[];
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it,ci){
         if(!it||!it.t) return '';
-        var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span><button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:11px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button></div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
+        var _aiOff=(typeof AI_OFF!=='undefined' && AI_OFF);
+        var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span>'+(_aiOff?'':'<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:11px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button>')+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
