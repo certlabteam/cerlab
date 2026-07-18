@@ -591,7 +591,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mn-code .k,#mcqView .mn-desc .k{color:#C0392B;font-weight:800}
 #mcqView .cc-ex,.subj-view .cc-ex{margin:9px 0 0;padding:8px 11px 8px 12px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.65;color:#28425E;word-break:keep-all;overflow-wrap:break-word}
 .cc-dia{white-space:pre;font-family:ui-monospace,'D2Coding','Menlo','Courier New',monospace;font-size:13px;line-height:1.55;margin:6px 0;overflow-x:auto;color:inherit}
-#mcqView .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em;word-break:keep-all;overflow-wrap:break-word}
+#mcqView .calc-steps .cs-line,.subj-view .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em;word-break:keep-all;overflow-wrap:break-word}
 #mcqView .sa-plist{display:flex;flex-direction:column;gap:10px;margin:4px 0 0}
 #mcqView .sa-prow{border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;background:#fff}
 #mcqView .sa-phd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -1077,7 +1077,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .exp-opts .eo-verdict.eo-grn{color:#0F6E56}
 #mcqView .exp-opts .eo-ex{margin-top:7px;padding:8px 11px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:13px;line-height:1.65;color:#5E4A2A}
 #mcqView .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:5px}
-#mcqView .calc-sol .calc-arrow{display:block;text-align:center;color:#185FA5;font-weight:900;font-size:17px;line-height:1;margin:8px 0 7px}
+#mcqView .calc-sol .calc-arrow,.subj-view .calc-sol .calc-arrow{display:block;text-align:center;color:#185FA5;font-weight:900;font-size:17px;line-height:1;margin:8px 0 7px}
 #mcqView .eo-badge{font-size:10.5px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle}
 #mcqView .cv-list{margin-top:9px;display:flex;flex-direction:column}
 #mcqView .cv-item{padding:8px 0;border-bottom:1px dashed #E2E8F0;line-height:1.65;font-size:13px}
@@ -1131,12 +1131,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .cc-ex,.subj-view .cc-ex{margin:9px 0 0;padding:8px 11px 8px 12px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.65;color:#28425E}
 #mcqView .cc-ex svg,.subj-view .cc-ex svg{display:block;width:100%;max-width:320px;height:auto;margin:10px auto 4px}
 #mcqView .mn-box + .mn-box{margin-top:8px}
-#mcqView .calc-graph{margin:0 0 10px;text-align:center}
-#mcqView .calc-graph svg{max-width:340px;width:100%;height:auto}
-#mcqView .calc-steps{margin:10px 0 0;padding:12px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px}
-#mcqView .calc-steps .cs-ti{font-size:13px;font-weight:800;color:#8A5A00;margin-bottom:9px}
-#mcqView .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em}
-#mcqView .calc-steps .cs-line:last-child{margin-bottom:0;font-weight:700;color:#7A4E00}
+#mcqView .calc-graph,.subj-view .calc-graph{margin:0 0 10px;text-align:center}
+#mcqView .calc-graph svg,.subj-view .calc-graph svg{max-width:340px;width:100%;height:auto}
+#mcqView .calc-steps,.subj-view .calc-steps{margin:10px 0 0;padding:12px 14px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:10px}
+#mcqView .calc-steps .cs-ti,.subj-view .calc-steps .cs-ti{font-size:13px;font-weight:800;color:#8A5A00;margin-bottom:9px}
+#mcqView .calc-steps .cs-line,.subj-view .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em}
+#mcqView .calc-steps .cs-line:last-child,.subj-view .calc-steps .cs-line:last-child{margin-bottom:0;font-weight:700;color:#7A4E00}
 /* ===== 주관식(SA) 단답형 빈칸 ===== */
 #mcqView .sa-list{display:flex;flex-direction:column;gap:12px;margin:2px 0 0}
 #mcqView .sa-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
@@ -1643,30 +1643,30 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 }
 
 /* ===== 계산형 해설 — 평면(flat): 타이틀(색 글자) + 바로 밑 텍스트, 박스/테두리/배경 없음 ===== */
-#mcqView .cx-sec{margin:14px 0 0}
-#mcqView .cx-h{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:4px}
-#mcqView .cx-h.cx-h-final{color:#0C447C}
-#mcqView .cx-body{font-size:13px;line-height:1.75;color:#334155}
-#mcqView .cx-final-body b{color:#0C447C}
+#mcqView .cx-sec,.subj-view .cx-sec{margin:14px 0 0}
+#mcqView .cx-h,.subj-view .cx-h{font-size:13px;font-weight:800;color:#185FA5;margin-bottom:4px}
+#mcqView .cx-h.cx-h-final,.subj-view .cx-h.cx-h-final{color:#0C447C}
+#mcqView .cx-body,.subj-view .cx-body{font-size:13px;line-height:1.75;color:#334155}
+#mcqView .cx-final-body b,.subj-view .cx-final-body b{color:#0C447C}
 
 /* 요약풀이/상세풀이 본문 — 박스 없이 텍스트만(화살표 중앙은 기존 .calc-sol .calc-arrow) */
-#mcqView .calc-sol{font-size:13px;line-height:1.8;color:#334155;word-break:keep-all;overflow-wrap:break-word}
-#mcqView .calc-sol .cs-step{font-weight:400}
-#mcqView .calc-sol .cs-step b{color:#0F172A}
-#mcqView .calc-sol .cs-key{font-weight:800;color:#0F172A}
+#mcqView .calc-sol,.subj-view .calc-sol{font-size:13px;line-height:1.8;color:#334155;word-break:keep-all;overflow-wrap:break-word}
+#mcqView .calc-sol .cs-step,.subj-view .calc-sol .cs-step{font-weight:400}
+#mcqView .calc-sol .cs-step b,.subj-view .calc-sol .cs-step b{color:#0F172A}
+#mcqView .calc-sol .cs-key,.subj-view .calc-sol .cs-key{font-weight:800;color:#0F172A}
 
 /* 상세풀이 토글 = 타이틀형(파란 글자 + 꺾쇠), 박스 없음 */
-#mcqView .detail-toggle{display:inline-flex;align-items:center;gap:8px;margin:14px 0 0;padding:0;background:none;border:none;cursor:pointer;font-size:13px;font-weight:800;color:#185FA5}
-#mcqView .detail-toggle .dt-label{text-decoration:underline;text-underline-offset:3px}
-#mcqView .detail-toggle .chev{display:inline-block;font-size:16px;line-height:1;transition:transform .2s}   /* ▶ 재생 버튼 크게 */
-#mcqView .detail-toggle.open .chev{transform:rotate(90deg)}   /* ▶ → ▼ */
-#mcqView .detail-wrap{overflow:hidden;transition:max-height .3s ease;max-height:0}
-#mcqView .detail-wrap.open{max-height:3000px}
+#mcqView .detail-toggle,.subj-view .detail-toggle{display:inline-flex;align-items:center;gap:8px;margin:14px 0 0;padding:0;background:none;border:none;cursor:pointer;font-size:13px;font-weight:800;color:#185FA5}
+#mcqView .detail-toggle .dt-label,.subj-view .detail-toggle .dt-label{text-decoration:underline;text-underline-offset:3px}
+#mcqView .detail-toggle .chev,.subj-view .detail-toggle .chev{display:inline-block;font-size:16px;line-height:1;transition:transform .2s}   /* ▶ 재생 버튼 크게 */
+#mcqView .detail-toggle.open .chev,.subj-view .detail-toggle.open .chev{transform:rotate(90deg)}   /* ▶ → ▼ */
+#mcqView .detail-wrap,.subj-view .detail-wrap{overflow:hidden;transition:max-height .3s ease;max-height:0}
+#mcqView .detail-wrap.open,.subj-view .detail-wrap.open{max-height:3000px}
 
 /* 암기 포인트 — 타이틀(앰버) + 흐름, 박스 없음 */
-#mcqView .cx-recall{margin:14px 0 0}
-#mcqView .cx-recall-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:4px}
-#mcqView .cx-recall-flow{font-size:13px;line-height:1.9;color:#334155}
+#mcqView .cx-recall,.subj-view .cx-recall{margin:14px 0 0}
+#mcqView .cx-recall-ti,.subj-view .cx-recall-ti{font-size:13px;font-weight:800;color:#B97A12;margin-bottom:4px}
+#mcqView .cx-recall-flow,.subj-view .cx-recall-flow{font-size:13px;line-height:1.9;color:#334155}
 
 /* 시험 포인트 — tipEnsureCSS(JS 주입) 박스를 #mcqView 특이도로 평면화 */
 #mcqView .tip-box,.subj-view .tip-box{border:none;background:none;border-radius:0;padding:0;margin:14px 0 0}
