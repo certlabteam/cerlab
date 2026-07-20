@@ -338,8 +338,8 @@ function stripRepeatedOpt(exp, opt){
 function isComboQuestion(opts){
   // 보기들이 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ·가/나/다/라/마 조합(+구분자)으로만 이루어진 문제인지
   if(!Array.isArray(opts) || opts.length<2) return false;
-  var markerOnly=/^[ㄱ-ㅎ가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자
-  var hasJamo=/[ㄱ-ㅎ]/, comboCnt=0, ok=0;
+  var markerOnly=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자 ([2026-07-20] 원문자 ㉠~㉩ 추가)
+  var hasJamo=/[ㄱ-ㅎ㉠-㉩]/, comboCnt=0, ok=0;
   for(var i=0;i<opts.length;i++){
     var o=String(opts[i]||'').trim();
     if(!o) return false;
@@ -759,8 +759,8 @@ function jaryoBlanksHTML(jaryoText, q){
 }
 // 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
 function comboLettersFromOpts(opts){
-  var order='ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ', seen={};
-  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ]/g)||[]).forEach(function(c){ seen[c]=1; }); });
+  var order='ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ㉠㉡㉢㉣㉤㉥㉦㉧㉨㉩', seen={};   // [2026-07-20] 원문자 순서 추가
+  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ㉠-㉩]/g)||[]).forEach(function(c){ seen[c]=1; }); });
   return order.split('').filter(function(c){ return seen[c]; });
 }
 // 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1
@@ -948,6 +948,7 @@ function imgComboOXRow(q){
   try{
     if(mqInReview) return '';
     if(!isComboQuestion(q.opts)) return '';
+    if(q && q.jaryo && /<table/i.test(String(q.jaryo))) return '';   // [2026-07-20] 문제보기가 표면 표 안 O/X 칸(injectTableOX)으로 처리 → 아래 줄 억제
     if(parseJaryoStmts(q.q).length) return '';     // 자료 텍스트에 지문 있으면 기존(지문별) 방식
     var letters=comboLettersFromOpts(q.opts);
     if(letters.length<2) return '';
@@ -958,6 +959,29 @@ function imgComboOXRow(q){
     }).join('');
     return '<div class="oximg"><div class="oximg-hd">내 O/X 체크</div>'+groups+'</div>';
   }catch(_){ return ''; }
+}
+// [2026-07-20] 조합형인데 문제보기가 표(jtbl)일 때: 표 오른쪽에 '테두리 없는 O/X 칸' 추가(표가 행 높이를 자동 정렬 → 항상 딱 맞음). 채점은 지문 순서(letters)대로 매칭.
+function injectTableOX(scope, q){
+  try{
+    if(mqInReview) return;
+    if(!q || !isComboQuestion(q.opts)) return;
+    var letters=comboLettersFromOpts(q.opts); if(letters.length<2) return;
+    (scope||document).querySelectorAll('#mcqView .jaryo table.jtbl').forEach(function(tbl){
+      if(tbl.dataset.oxcol) return;
+      var rows=[].slice.call(tbl.querySelectorAll('tr'));
+      var dataRows=rows.filter(function(r){ return r.querySelector('td'); });
+      var headRow=null;
+      for(var j=0;j<rows.length;j++){ if(rows[j].querySelector('th') && !rows[j].querySelector('td')){ headRow=rows[j]; break; } }
+      if(dataRows.length!==letters.length) return;   // 안전: 표 데이터행 수 = 보기 마커 수 일치할 때만
+      if(headRow){ var th=document.createElement('th'); th.className='jtbl-oxc'; headRow.appendChild(th); }
+      dataRows.forEach(function(r,i){
+        var td=document.createElement('td'); td.className='jtbl-oxc';
+        td.innerHTML='<span class="oxstack jr-ox" data-oxk="s'+letters[i]+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>';
+        r.appendChild(td);
+      });
+      tbl.dataset.oxcol=1;
+    });
+  }catch(_){}
 }
 function joxToggle(btn){
   var on=btn.classList.contains('on');
@@ -1388,7 +1412,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
-  resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts) || _tfAssign(q))); restoreOX(root);
+  resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
 }
