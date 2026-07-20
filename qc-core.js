@@ -41,6 +41,22 @@ function _qgCrammedSteps(t){
   return null;
 }
 
+/* [ADD 2026-07-20 크리스] 설명 문장과 계산식이 같은 줄에 붙은 경우 탐지(상세풀이 ex·해설 o). 설명 다음엔 개행하고 식을 별도 줄로. */
+function _qgProseCalc(t){
+  var lines=String(t||'').replace(/<br\s*\/?>/gi,'\n').split('\n');
+  var _ENDV=/(만든다|한다|된다|뺀다|더한다|가감해|가감하|산정한|구한다|계산한|더하고|빼고|곱하|나눈|같다고 두면|놓으면|풀면)/;
+  function _kl(s){ return (s.match(/[가-힣]/g)||[]).length; }
+  function _calc(s,eq){ if(eq && s.indexOf('=')<0) return false; var n=(s.match(/[0-9][0-9,\.]*/g)||[]).length, o=(s.match(/[+\-−×÷*=]/g)||[]).length; return n>=2 && o>=1; }
+  for(var i=0;i<lines.length;i++){
+    var s=lines[i].replace(/<[^>]+>/g,'').trim();
+    var ar=s.indexOf('→');   /* 화살표 → */
+    if(ar>=0){ var b=s.slice(0,ar), a=s.slice(ar+1); if(_kl(b)>=12 && _ENDV.test(b) && _calc(a,false)) return s.slice(0,90); }
+    var m=/[0-9][0-9,\.]*/.exec(s);
+    if(m){ var bb=s.slice(0,m.index); if(_kl(bb)>=18 && _ENDV.test(bb) && _calc(s.slice(m.index),true)) return s.slice(0,90); }
+  }
+  return null;
+}
+
 /* ---- [추출] _isCalcQ · _qcViolations · qualityGate (admin__20 4263-4374) ---- */
 // 엔진 _isCalcQ 이식 — 계산형 = oFilled 1칸 & (그래프 or 풀이단계). 단순 oFilled===1 아님(COMBO 결론 오인 방지)
 function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.indexOf('calc:')===0) return true; if(q.calc===false) return false; /* [FIX 2026-07-12] 인간이 calc:false로 명시한 문항(SA 단답형 등) 존중 — oFilled=1+장면예시로 자동 계산형 오인되어 CALC_NO_FORMULA/CALC_OLD_FORMAT 등 오탐되던 문제 해결 */ var _tyCalc=String((q&&q.type)||'').toUpperCase(); if(q.calc!==true && (_tyCalc==='PAIR'||_tyCalc==='MATCH'||_tyCalc==='ORDER')) return false; /* [FIX 2026-07-15] 짝짓기/매칭/순서형은 산술이 없어 계산형이 될 수 없음 — oFilled=1+단계형 ex로 계산형 렌더 오인되던 문제(intro23_3 등) 차단. COUNT/COMBO는 LQ 같은 진짜 계산형이 있어 제외 */
@@ -88,6 +104,7 @@ function _qcViolations(q){
   if(_qcOn('gichul','O_ECHO_D')){ var _cds=(typeof _conceptCards==='function'?_conceptCards(q):(exp.c||[])).map(function(c){return String(c&&c.d||'');}).filter(Boolean); if(_cds.length){ o.forEach(function(t,i){ if(t&&String(t).trim()){ for(var _di=0;_di<_cds.length;_di++){ if(_qgSim(_qgStripVerdict(t),_cds[_di])>=_qcN('gichul','O_ECHO_D','minSim',0.6)){ v.push({kind:'warn',field:'o',idx:i,code:'O_ECHO_D',msg:'\ud574\uc124(o)\uc774 \uac1c\ub150\uce74\ub4dc \uc815\uc758(d) \ub418\ud480\uc774 \u2192 o\ub294 \uadf8 \ubcf4\uae30\uac00 \uc65c \ub9de/\ud2c0\ub9ac\ub294\uc9c0 \uc0ac\uc720\ub85c(\uc5ed\ud560\ubd84\ub9ac \u00a7337)',text:t}); break; } } } }); } }
   if(_qcOn('gichul','O_NO_ACTOR')){ var _AC=/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/; o.forEach(function(t,i){ var op=opts[i]; if(op&&_AC.test(String(op)) && t&&String(t).trim() && !_AC.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_NO_ACTOR',msg:'\ubcf4\uae30\uc5d4 \uc778\ubb3c(\u7532\u4e59)\uc774 \uc788\ub294\ub370 \ud574\uc124(o)\uc5d0\uc11c \uc778\ubb3c \uc99d\ubc1c \u2192 \uc0ac\uc2e4\uad00\uacc4 \uadf8\ub300\ub85c \uc0b4\ub824 \uc801\uc6a9(\u00a7467)',text:t}); }); }
   if(_qcOn('gichul','O_STEPS_NOBR')){ o.forEach(function(t,i){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'o',idx:i,code:'O_STEPS_NOBR',msg:'해설(o)에 단계(①②③/1.2.3.) 나열이 줄바꿈 없이 한 덩어리 → 단계 사이 줄바꿈(\\n) 또는 문장으로 풀기',text:_cl}); }); }
+  if(_qcOn('gichul','EX_PROSE_CALC')){ o.forEach(function(t,i){ var _pco=_qgProseCalc(t); if(_pco) v.push({kind:'warn',field:'o',idx:i,code:'EX_PROSE_CALC',msg:'설명 문장과 계산식이 같은 줄에 붙음 — 설명 다음에서 개행해 식을 별도 줄로(긴 식도 중간에서 개행). 상세풀이·해설 가독성',text:_pco}); }); }
   if(_qcOn('gichul','IMG_MISSING') && _qcImgKeys){ var _reI=/img:\/\/([^\s"'\\<>\]},]+)/g, _refs={}, _mI, _blobQ=''; try{ _blobQ=JSON.stringify(q)||''; }catch(_){} while((_mI=_reI.exec(_blobQ))){ _refs[_mI[1]]=1; } for(var _rk in _refs){ if(!_qcImgKeys.has(_rk)) v.push({kind:'warn',field:'q',idx:0,code:'IMG_MISSING',msg:'img://'+_rk+' 참조하는데 이미지 라이브러리에 그 키 없음 → 이미지 업로드 또는 키 수정(앱에서 참조 문자열이 그대로 노출됨)',text:'img://'+_rk}); } }
   o.forEach(function(t,i){ if(t&&/\ubcf4\uae30\s*\d/.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_SELFREF',msg:'\ud574\uc124(o)\uc5d0 \ubcf4\uae30\ubc88\ud638\u00b7\uc790\uae30\ucc38\uc870(\ubcf4\uae30N/\uc774 \ubcf4\uae30/\u3131:) \u2192 \uc5d4\uc9c4 \uc790\ub3d9\uc774\ub77c \ub123\uc9c0 \uc54a\uc74c',text:t}); });
   if(isMCQ && !isCalc){
@@ -120,6 +137,9 @@ function _qcViolations(q){
       if(!(t&&String(t).trim())) return;
       var isScene=_qgAction.test(t)||_qgNamed(t);
       if(!_qCalc && _qcOn('gichul','EX_NONAME') && _qgAction.test(t) && !_qgNamed(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_NONAME',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74(\ud589\uc704)\uc778\ub370 \uba85\uba85 \uc778\ubb3c(\u7532\u4e59\u4e19\u2026) \uc5c6\uc74c',text:t});
+      if(!_qCalc && _qcOn('gichul','EX_GENERIC_NOUN') && isScene){ var _egn=String(t).replace(/<[^>]+>/g,'').match(/(\ub2f4\ubcf4\ubb3c(?!\uad8c)|\uc810\uc720\ubb3c|\ubaa9\uc801\ubb3c|\ubb3c\ud488|\uadf8 \ubb3c\uac74|\ud574\ub2f9 \ubb3c\uac74|\uc5b4\ub5a4 \ubb3c\uac74|\uadf8 \ub3d9\uc0b0)/); if(_egn) v.push({kind:'warn',field:'ex',idx:i,code:'EX_GENERIC_NOUN',msg:'\uc608\uc2dc\uc5d0 \ub300\ud45c\uba85\uc0ac('+_egn[1]+') \u2014 \uad6c\uccb4\uba85\uc0ac(\ud734\ub300\ud3f0\u00b7\uc2dc\uacc4\u00b7\uc790\uc804\uac70\u00b7\ub178\ud2b8\ubd81 \ub4f1)\ub85c \uad50\uccb4(\u00a7A-3 \uc608\uc2dc\uaddc\uce59)',text:t}); }
+      if(_qcOn('gichul','EX_PROSE_CALC')){ var _pcx=_qgProseCalc(t); if(_pcx) v.push({kind:'warn',field:'ex',idx:i,code:'EX_PROSE_CALC',msg:'\uc124\uba85 \ubb38\uc7a5\uacfc \uacc4\uc0b0\uc2dd\uc774 \uac19\uc740 \uc904\uc5d0 \ubd99\uc74c \u2014 \uc124\uba85 \ub2e4\uc74c\uc5d0\uc11c \uac1c\ud589\ud574 \uc2dd\uc744 \ubcc4\ub3c4 \uc904\ub85c(\uae34 \uc2dd\ub3c4 \uc911\uac04\uc5d0\uc11c \uac1c\ud589). \uc0c1\uc138\ud480\uc774\u00b7\ud574\uc124 \uac00\ub3c5\uc131',text:_pcx}); }
+      if(_qcOn('gichul','EX_REP_VERB')){ var _rvs=String(t).replace(/<[^>]+>/g,''); if(/(\uc18d\uc544\uc11c|\uc18d\uc544|\uc18d\uc5ec|\uc18d\uc740|\uc18d\uc778)/.test(_rvs) && !/(\uc9c4\ud488|\uc911\uace0|\uc2dc\uc138|\uac10\uc815|\ud5c8\uc704|\uac00\uc9dc|\uc704\uc870|\uacc4\uc57d\uc11c|\uac01\uc11c|\ubcf4\uc99d|"|\u201c|\uc704\uc7a5|\ud5c8\uc704\ub9e4\ubb3c|\ubc14\uafd4\uce58\uae30)/.test(_rvs)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_REP_VERB',msg:'\uc608\uc2dc\uac00 \ub300\ud45c\ub3d9\uc0ac(\uc18d\uc544\uc11c \ub4f1)\ub85c \uc0ac\uae30\ub97c \ubb49\ub6b1\uadf8\ub9bc \u2014 \ubb34\uc5c7\uc744 \uc5b4\ub5bb\uac8c \uc18d\uc600\ub294\uc9c0 \uad6c\uccb4 \uc815\ud669\uc73c\ub85c(\uc608: \uc911\uace0 \uc2dc\uacc4\ub97c \uc9c4\ud488\uc774\ub77c \uc18d\uc5ec \ud310\ub9e4)',text:t}); }
       if(/^\uc608\s*\)/.test(String(t).trim())) v.push({kind:'warn',field:'ex',idx:i,code:'EX_PREFIX',msg:"\uc608\uc2dc\uc5d0 '\uc608)' \uc811\ub450 \uae08\uc9c0(\uc571\uc774 \uc608\uc2dc \ub77c\ubca8 \uc790\ub3d9 \ubd80\ucc29)",text:t});
       if(/\uc81c\s*\d+\s*\uc870/.test(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_JOMUN',msg:'\uc608\uc2dc\uc5d0 \uc870\ubb38\ubc88\ud638(\uc81cN\uc870) \uae08\uc9c0 \u2014 \uc870\ubb38\uc740 \uac1c\ub150 d\uc5d0\ub9cc',text:t});
       if(/[甲乙丙丁戊己庚辛壬癸]/.test(String(t))){ var _pt=String(t).replace(/<[^>]+>/g,'').trim(); /* A-7 검사범위: 甲乙丙 등장 ex만 ①② 검사 */
@@ -166,7 +186,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:60},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3}},
+  gichul:{EX_SHORT:{on:true,minChars:60},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
@@ -196,7 +216,7 @@ var _QC_SEV = {
   O_INCOMPLETE:'WARNING', COMBO_STMT_MISMATCH:'WARNING', O_ECHO_D:'WARNING', O_NO_ACTOR:'WARNING',
   O_STEPS_NOBR:'WARNING', EX_STEPS_NOBR:'WARNING', EX_STEPS_CRAMMED:'WARNING', O_ECHO_OPT:'WARNING',
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',
-  REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
+  REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_GENERIC_NOUN:'WARNING', EX_PROSE_CALC:'WARNING', EX_REP_VERB:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
   EX_MISSING:'WARNING', EX_COVERAGE:'INFO', O_SHORT:'INFO',   /* [신규 2026-07-15] 예시전무=경고 / 예시일부·해설얇음=참고(소급 폭증 방지, 베이스라인 후 승격) */
