@@ -338,8 +338,8 @@ function stripRepeatedOpt(exp, opt){
 function isComboQuestion(opts){
   // 보기들이 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ·가/나/다/라/마 조합(+구분자)으로만 이루어진 문제인지
   if(!Array.isArray(opts) || opts.length<2) return false;
-  var markerOnly=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자 ([2026-07-20] 원문자 ㉠~㉩ 추가)
-  var hasJamo=/[ㄱ-ㅎ㉠-㉩]/, comboCnt=0, ok=0;
+  var markerOnly=/^[ㄱ-ㅎ가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자
+  var hasJamo=/[ㄱ-ㅎ]/, comboCnt=0, ok=0;
   for(var i=0;i<opts.length;i++){
     var o=String(opts[i]||'').trim();
     if(!o) return false;
@@ -702,8 +702,8 @@ function splitJaryo(qt, explicitJaryo){
 // ㄱ~ㅁ 지문 마커를 줄바꿈/인라인 모두 인식해 분리 → {intro, stmts:[{k,t}]}
 function splitStmtMarkers(text){
   var s=String(text||'').replace(/<br\s*\/?>/gi,'\n');
-  var re=/(^|\s)(?:([ㄱ-ㅎ])[.\u00B7)\]]|([㉠-㉩])\s*[-–.\u00B7)\]])/g, m, hits=[];  // [2026-07-20] 원문자 ㉠~㉩ 지문마커 추가
-  while((m=re.exec(s))){ hits.push({k:m[2]||m[3], mAt:m.index+m[1].length, tAt:re.lastIndex}); }
+  var re=/(^|\s)([ㄱ-ㅎ])[.\u00B7)\]]/g, m, hits=[];
+  while((m=re.exec(s))){ hits.push({k:m[2], mAt:m.index+m[1].length, tAt:re.lastIndex}); }
   if(!hits.length) return {intro:s.trim(), stmts:[]};
   var intro=s.slice(0, hits[0].mAt).trim();
   var stmts=[];
@@ -759,8 +759,8 @@ function jaryoBlanksHTML(jaryoText, q){
 }
 // 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
 function comboLettersFromOpts(opts){
-  var order='ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ㉠㉡㉢㉣㉤㉥㉦㉧㉨㉩', seen={};   // [2026-07-20] 원문자 순서 추가
-  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ㉠-㉩]/g)||[]).forEach(function(c){ seen[c]=1; }); });
+  var order='ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ', seen={};
+  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ]/g)||[]).forEach(function(c){ seen[c]=1; }); });
   return order.split('').filter(function(c){ return seen[c]; });
 }
 // 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1

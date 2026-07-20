@@ -250,6 +250,7 @@ let activeCert = null;
 function getLastCert(){ try{ return localStorage.getItem('certlab_lastCert'); }catch(e){ return null; } }
 function setLastCert(id){ try{ localStorage.setItem('certlab_lastCert', id); }catch(e){} }
 function showHome(){ if(typeof ttsStop==='function')ttsStop();
+  var _wasCertHome=(typeof activeCert!=='undefined')&&!!activeCert;   // [2026-07-20] 딥링크 부팅 시 해시 보존: 시험에 들어와 있다가 나갈 때만 해시 제거(부팅 showHome이 #appraiser 등 딥링크를 지우는 회귀 방지)
   // 객관식 시험 풀던 중 홈으로 나가도 오답노트·진행상황 반영 (검토·복습·진단 제외)
   if(typeof mqScreen!=='undefined' && mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag){
     if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
@@ -271,7 +272,7 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   document.getElementById('modePill').style.display = 'none';
   mqScreen='home';
   // [2026-07-20] 홈으로 나가면 시험 해시 제거. 단, 커뮤니티/계정삭제 라우트는 유지.
-  try{ var _h=location.hash||''; if(_h && _h.indexOf('#post/')!==0 && _h!=='#account-delete'){ history.replaceState(null, '', location.pathname+location.search); } }catch(_){}
+  try{ var _h=location.hash||''; if(_wasCertHome && _h && _h.indexOf('#post/')!==0 && _h!=='#account-delete'){ history.replaceState(null, '', location.pathname+location.search); } }catch(_){}
   if(typeof cmLoadNoticeBar==='function') cmLoadNoticeBar();
   if(typeof reorderCertCards==='function') reorderCertCards();                              // 홈 볼 때마다 현재 시험일로 재정렬
   if(typeof _examDateMs!=='undefined' && _examDateMs==null && typeof loadExamSchedules==='function') loadExamSchedules();   // 아직 못 읽었으면 로드
