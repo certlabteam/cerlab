@@ -309,6 +309,7 @@ function mcqSubjectStats(cert){
 }
 const PASS_RULE = {
   appraiser:    {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
+  appraiser2:   {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},   /* [2026-07-20] 2차도 1차와 동일 규칙 */
   realestate1:  {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
   realestate2:  {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
   housing:      {pass:60, floor:40, label:'평균 60점 · 과목별 40점'},
@@ -453,16 +454,15 @@ function renderLu2(root){ if(!lu2State||lu2State.cert!==mqCert){ lu2State=null; 
   window.scrollTo(0,0); }
 
 function mcqAnalysisCard(cert){
-  if(typeof lt2Has==='function' && lt2Has(cert)){
-    if(!ltDone(cert)){
-      return '<div class="anal-card" style="text-align:center">'
-        +'<div style="font-size:16px;font-weight:800;color:#0C447C;line-height:1.4;margin:2px 0 8px">지금 '+ltCertName(cert)+' 보면 몇 점?</div>'
-        +'<div style="font-size:12px;color:#6B7280;margin-bottom:14px">⚡ 과목별 10점 1문항 · 🤖 AI 자동 채점</div>'
-        +'<button class="anal-diag" onclick="startLt2()">🎯 레벨 테스트 시작</button></div>';
-    }
-    return lt2ResultCard(cert);
+  var _isLt2 = typeof lt2Has==='function' && lt2Has(cert);
+  if(_isLt2 && !ltDone(cert)){
+    return '<div class="anal-card" style="text-align:center">'
+      +'<div style="font-size:16px;font-weight:800;color:#0C447C;line-height:1.4;margin:2px 0 8px">지금 '+ltCertName(cert)+' 보면 몇 점?</div>'
+      +'<div style="font-size:12px;color:#6B7280;margin-bottom:14px">⚡ 과목별 10점 1문항 · 🤖 AI 자동 채점</div>'
+      +'<button class="anal-diag" onclick="startLt2()">🎯 레벨 테스트 시작</button></div>';
   }
-  if(!adHasData(cert) && !_certHasAnsQ(cert)){   // 적응형 없고 기출(정답)도 없을 때만 준비중
+  // [2026-07-20] lt2(주관식) 완료 후엔 별도 카드(lt2ResultCard) 대신 아래 1차와 동일한 예상점수·레벨·합격플랜 경로 사용
+  if(!_isLt2 && !adHasData(cert) && !_certHasAnsQ(cert)){   // 적응형 없고 기출(정답)도 없을 때만 준비중
     return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
       +'<div class="anal-empty">이 시험은 <b>레벨업 데이터 준비 중</b>이에요. 곧 레벨 테스트로 약점을 측정할 수 있어요.</div>'
       +'<button class="anal-diag" disabled style="opacity:.5;cursor:not-allowed">🎯 레벨 테스트 준비 중</button></div>';
@@ -487,7 +487,7 @@ function mcqAnalysisCard(cert){
     var lv=luSubjectLevel(cert,sub); if(lv==null) return '';
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, open=!!luCardOpen[sub];
     var pill='<span style="font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
-    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:11px;font-weight:600;color:#B4A99C;margin-left:5px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();luStartSub(\''+sub+'\')" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
+    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:11px;font-weight:600;color:#B4A99C;margin-left:5px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();'+(_isLt2?'startLt2LevelUp()':'luStartSub(\''+sub+'\')')+'" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
     var body='';
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
@@ -617,7 +617,20 @@ function _planTopicRow(cert, sub, t, paid){
 }
 function _planSubCard(cert, s, rule, paid){
   var tops=_planTopics(cert, s.code).slice(0,3);
-  if(!tops.length) return '';
+  if(!tops.length){
+    if(!(typeof lt2Has==='function' && lt2Has(cert))) return '';
+    // [2026-07-20] 주관식(2차): 단원 데이터가 없어 과목 단위 카드로 — 풀기=레벨업(약한 과목 자동출제)
+    var floor2=(rule&&rule.floor)||0; var isFail2=floor2>0 && s.score<floor2;
+    var pill2=isFail2
+      ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 '+s.score+'점</span>'
+      : (s.score<((rule&&rule.pass)||60)
+         ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 '+s.score+'점</span>'
+         : '<span style="font-size:11px;font-weight:800;color:#946200;background:#FBF0D8;padding:2px 8px;border-radius:999px">🟡 '+s.score+'점</span>');
+    var solve2='<span onclick="_planTopicGo(\''+s.code+'\',\'\')" style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px;cursor:pointer;flex:0 0 auto">풀기</span>';
+    return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+(isFail2?'#F0C9C9':'#E2D6CC')+';border-radius:14px;padding:12px 13px">'
+      +'<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:14px;font-weight:800;color:#3C3C3A">'+mqEsc(s.name)+'</span>'+pill2+solve2+'</div>'
+      +'<div style="font-size:11.5px;color:#A38C7A;margin-top:6px">레벨업으로 약한 과목부터 자동 출제 · 채점 결과로 점수가 조정돼요</div></div>';
+  }
   var floor=(rule&&rule.floor)||0;
   var isFail = floor>0 && s.score<floor;
   var pill = isFail
@@ -652,6 +665,8 @@ function passPlanHTML(cert, paid){
 
   var top=null;
   if(weak.length){ var tt=_planTopics(cert, weak[0].code); if(tt.length) top={sub:weak[0].code, subName:weak[0].name, t:tt[0]}; }
+  // [2026-07-20] 주관식(2차): 단원 데이터 없으면 가장 약한 '과목'을 오늘의 1순위로 (풀기=레벨업 자동출제)
+  if(!top && weak.length && typeof lt2Has==='function' && lt2Has(cert)) top={sub:weak[0].code, subName:weak[0].name, t:{tcode:'', name:'레벨업 자동출제', star:0}};
 
   var head='<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #EDE4D9;position:sticky;top:0;z-index:2">'
     +'<span onclick="closePassPlan()" style="font-size:17px;color:#8A7D6E;cursor:pointer">←</span>'
@@ -1389,7 +1404,10 @@ function luHistReview(gIdx){ var list=luHistList(mqCert); var rec=list[gIdx]; if
   mqScreen='result'; renderMqResultScreen(); window.scrollTo(0,0); }
 // 과목 레벨: 토픽 점수 핵심(exam) 2 : 일반 1 가중평균 → Lv
 // 과목 Elo 점수(핵심 2:1 가중) — 0~100, 데이터 없으면 null
-function adSubjectScoreRaw(cert,sub){ var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), wsum=0, w=0; for(var t in sc){ var weight=(tmap[t]&&tmap[t].mode==='exam')?2:1; wsum+=sc[t]*weight; w+=weight; } if(w) return wsum/w; try{ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; if(rec&&rec.summary&&rec.summary[sub]&&typeof rec.summary[sub].score==='number') return rec.summary[sub].score; }catch(e){} return null; }
+function adSubjectScoreRaw(cert,sub){ var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), wsum=0, w=0; for(var t in sc){ var weight=(tmap[t]&&tmap[t].mode==='exam')?2:1; wsum+=sc[t]*weight; w+=weight; } if(w) return wsum/w; try{ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; if(rec&&rec.summary){ var e=rec.summary[sub];
+  // [2026-07-20] 주관식(lt2): summary 키(ltSubject: s2·s3…)와 qb 코드(sj0·sj1…)가 달라 과목 '이름'으로 매칭
+  if(!e){ var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||null; if(nm){ for(var k in rec.summary){ if(rec.summary[k]&&rec.summary[k].name===nm){ e=rec.summary[k]; break; } } } }
+  if(e&&typeof e.score==='number') return e.score; } }catch(e){} return null; }
 function luSubjectLevel(cert,sub){ var raw=adSubjectScoreRaw(cert,sub); return raw==null?null:AE.scoreToLevel(raw); }
 // 환산표 자리(회차 실측 보정 전: 항등). 이후 회차 실점수로 보정 지점.
 function eloToExamScore(score){ if(score==null) return null; return Math.round(Math.max(0,Math.min(100,score))); }
