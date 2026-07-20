@@ -429,6 +429,8 @@ function startLt2LevelUp(subCode){ var cert=mqCert; if(!lt2Has(cert)) return; if
   mqDiag=false; mqReview=false; mqInReview=false; mqConcept=false; mqLevelUp=false;
   mqScreen='lu2'; renderMCQ(); window.scrollTo(0,0); }
 function lu2OnGraded(rec){ if(!lu2State) return; var it=lu2State.queue[lu2State.idx]; if(!it) return;
+  if(lu2State.gradedIdx===lu2State.idx) return;   // [2026-07-20] 한 문제당 채점 1회만 반영(자가채점·AI채점 중복 방지)
+  lu2State.gradedIdx=lu2State.idx;
   var r=(rec&&rec.pt)? ((rec.score||0)/rec.pt) : 0; r=Math.max(0,Math.min(1,r));
   try{ var key=_lt2NameToKey(lu2State.cert)[it.subName]; var sm=key&&eloState._levelTest[lu2State.cert].summary[key];
     if(sm){ var target=15+r*57; sm.score=Math.round(sm.score*0.7+target*0.3); sm.level=(typeof AE!=='undefined'?AE.scoreToLevel(sm.score):sm.level); }
@@ -436,6 +438,14 @@ function lu2OnGraded(rec){ if(!lu2State) return; var it=lu2State.queue[lu2State.
   }catch(e){}
   lu2State.done++; var nx=document.getElementById('lu2Next'); if(nx) nx.style.display='block'; }
 function lu2Next(){ if(!lu2State) return; if(lu2State.idx<lu2State.queue.length-1){ lu2State.idx++; renderMCQ(); window.scrollTo(0,0); } else { if(typeof _luToast==='function')_luToast('이 과목 문제를 다 풀었어요!'); lu2State=null; mqScreen='home'; renderMCQ(); } }
+// [2026-07-20] 자가채점: AI 채점 없이도 모범답안과 비교해 틀림·애매·맞음으로 직접 평가 → 레벨 반영·다음 진행
+function lu2SelfGrade(tier, btn){ if(!lu2State) return;
+  var it=lu2State.queue[lu2State.idx]; var pt=(it&&it.q&&it.q.pt)||10;
+  var r=(tier==='right')?1:(tier==='vague'?0.5:0);
+  lu2OnGraded({score:Math.round(pt*r), pt:pt});
+  var wrap=document.getElementById('lu2SelfWrap');
+  if(wrap){ wrap.querySelectorAll('button').forEach(function(b){ b.disabled=true; b.style.opacity=(b===btn)?'1':'.35'; }); }
+}
 function renderLu2(root){ if(!lu2State||lu2State.cert!==mqCert){ lu2State=null; mqScreen='home'; return renderMCQ(); }
   var q=lu2State.queue[lu2State.idx]; if(!q){ lu2State=null; mqScreen='home'; return renderMCQ(); }
   var lv=_lt2SubLevels(mqCert); var curLv=lv[q.subName]||3;
@@ -444,8 +454,15 @@ function renderLu2(root){ if(!lu2State||lu2State.cert!==mqCert){ lu2State=null; 
       '<div class="exam-ti"><div class="nm">⚡ 레벨업</div><div class="st">'+mqEsc(q.subName||'')+' · Lv '+curLv+'</div></div></div>'+
     '<div class="mq-prog"><div class="row"><span>'+(lu2State.done+1)+'번째 · 약한 과목 우선</span><span class="subj-credit">'+mqEsc(q.subName||'')+'</span></div><div class="track"><div class="bar" style="width:100%"></div></div></div>'+
     '</div>'+
-    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EAF2FC;border:1px solid #C7DBF2;border-radius:10px;padding:10px 12px;font-size:13px;color:#334155;line-height:1.6">약한 과목부터 자동으로 출제돼요. 답안 작성 후 <b>채점하기</b> → <b>다음</b>. 점수에 따라 과목 레벨이 조정됩니다.</div></div>'+
+    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EAF2FC;border:1px solid #C7DBF2;border-radius:10px;padding:10px 12px;font-size:13px;color:#334155;line-height:1.6">약한 과목부터 자동으로 출제돼요. 답안 작성 후 <b>채점하기</b>(AI) 또는 아래 <b>직접 채점</b> → <b>다음</b>. 점수에 따라 과목 레벨이 조정됩니다.</div></div>'+
     '<div id="lu2Mount"></div>'+
+    '<div style="max-width:760px;margin:10px auto 0;padding:0 14px" id="lu2SelfWrap"><div style="background:#fff;border:1px solid #E2D6CC;border-radius:12px;padding:12px 14px">'+
+      '<div style="font-size:12.5px;color:#6B7280;margin-bottom:9px;line-height:1.6">모범답안과 비교해 <b>직접 채점</b>할 수도 있어요 — 레벨에 똑같이 반영돼요.</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<button onclick="lu2SelfGrade(\'wrong\',this)" style="flex:1;padding:11px;border:1.5px solid #F3C1C0;border-radius:10px;background:#FDF1F1;color:#C0392B;font-weight:800;font-size:14px;cursor:pointer">틀림</button>'+
+        '<button onclick="lu2SelfGrade(\'vague\',this)" style="flex:1;padding:11px;border:1.5px solid #EBD6A4;border-radius:10px;background:#FCF6E8;color:#B7791F;font-weight:800;font-size:14px;cursor:pointer">애매</button>'+
+        '<button onclick="lu2SelfGrade(\'right\',this)" style="flex:1;padding:11px;border:1.5px solid #BCDFC9;border-radius:10px;background:#EFF8F2;color:#0F6E56;font-weight:800;font-size:14px;cursor:pointer">맞음</button>'+
+      '</div></div></div>'+
     '<div style="max-width:760px;margin:12px auto 40px;padding:0 14px"><button id="lu2Next" onclick="lu2Next()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:#185FA5;color:#fff;font-weight:800;font-size:15px;cursor:pointer">다음 문제 →</button></div>';
   var host=document.getElementById('lu2Mount');
   var exam={ id:mqCert, name:'레벨업', questions:[q.q] };
