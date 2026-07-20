@@ -779,7 +779,7 @@ function applyBank(ex,sub,doc){
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; /* [2026-07-20] 표(자료) 필드 보존 — hesm 인라인 표 렌더 누락 버그 수정 */ byset[lab].push(it); });
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; if(q.type && q.type!=='SA')it.type=q.type; if(q.calc!=null)it.calc=q.calc; if(q.set)it.set=q.set; /* [2026-07-20] 자료(표)·type(개수형 렌더)·calc(계산형)·set(오답노트 회차) 필드 보존. type='SA'는 제외(MCQ경로는 blanks 미보존 → SA로 오인돼 데이터오류화면 방지). pol·fig는 앱 엔진 미사용이라 제외 */ byset[lab].push(it); });
     qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
     // 최신 회차/연도가 위로 — 라벨 내 가장 큰 숫자 기준 내림차순
     const setKey=lab=>{ const m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };

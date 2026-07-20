@@ -702,8 +702,8 @@ function splitJaryo(qt, explicitJaryo){
 // ㄱ~ㅁ 지문 마커를 줄바꿈/인라인 모두 인식해 분리 → {intro, stmts:[{k,t}]}
 function splitStmtMarkers(text){
   var s=String(text||'').replace(/<br\s*\/?>/gi,'\n');
-  var re=/(^|\s)([ㄱ-ㅎ])[.\u00B7)\]]/g, m, hits=[];
-  while((m=re.exec(s))){ hits.push({k:m[2], mAt:m.index+m[1].length, tAt:re.lastIndex}); }
+  var re=/(^|\s)(?:([ㄱ-ㅎ])[.\u00B7)\]]|([㉠-㉩])\s*[-–.\u00B7)\]])/g, m, hits=[];  // [2026-07-20] 원문자 ㉠~㉩ 인라인 지문마커 인식
+  while((m=re.exec(s))){ hits.push({k:m[2]||m[3], mAt:m.index+m[1].length, tAt:re.lastIndex}); }
   if(!hits.length) return {intro:s.trim(), stmts:[]};
   var intro=s.slice(0, hits[0].mAt).trim();
   var stmts=[];
