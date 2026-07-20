@@ -270,6 +270,8 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   document.getElementById('certSwitch').classList.add('hidden');
   document.getElementById('modePill').style.display = 'none';
   mqScreen='home';
+  // [2026-07-20] 홈으로 나가면 시험 해시 제거. 단, 커뮤니티/계정삭제 라우트는 유지.
+  try{ var _h=location.hash||''; if(_h && _h.indexOf('#post/')!==0 && _h!=='#account-delete'){ history.replaceState(null, '', location.pathname+location.search); } }catch(_){}
   if(typeof cmLoadNoticeBar==='function') cmLoadNoticeBar();
   if(typeof reorderCertCards==='function') reorderCertCards();                              // 홈 볼 때마다 현재 시험일로 재정렬
   if(typeof _examDateMs!=='undefined' && _examDateMs==null && typeof loadExamSchedules==='function') loadExamSchedules();   // 아직 못 읽었으면 로드
@@ -288,6 +290,8 @@ async function enterCert(id, noGate){
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   setLastCert(id);
+  // [2026-07-20] 주소창에 현재 시험 해시 유지 (광고·공유용). 특수 라우트(#post/#account-delete)는 건드리지 않음.
+  try{ if(id) history.replaceState(null, '', location.pathname+location.search+'#'+id); }catch(_){}
   document.getElementById('homeView').classList.add('hidden');
   var _hd2=document.querySelector('.header'); if(_hd2) _hd2.classList.add('hidden');
   document.getElementById('certSwitch').classList.remove('hidden');
@@ -1057,10 +1061,7 @@ function clRouteFromHash(){
     if(!h || h==='#' || h.indexOf('#post/')===0 || h==='#account-delete') return null;
     try{ return decodeURIComponent(h.slice(1)); }catch(_){ return null; }
   }
-  function go(id){
-    try{ history.replaceState(null, '', location.pathname+location.search); }catch(_){ location.hash=''; }
-    enterCert(id);
-  }
+  function go(id){ enterCert(id); }
   function tryCert(n){
     var id=certWanted(); if(!id) return;
     var ready = typeof firebaseReady!=='undefined' && firebaseReady && typeof enterCert==='function';
