@@ -416,8 +416,12 @@ var lu2State=null;
 function _lt2NameToKey(cert){ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; var m={}; if(rec&&rec.summary){ Object.keys(rec.summary).forEach(function(k){ var s=rec.summary[k]; if(s&&s.name) m[s.name]=k; }); } return m; }
 function _lt2SubLevels(cert){ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; var m={}; if(rec&&rec.summary){ Object.keys(rec.summary).forEach(function(k){ var s=rec.summary[k]; if(s&&s.name) m[s.name]=s.level||3; }); } return m; }
 function _lt2SubjPool(cert){ var qb=(typeof qbOf==='function'?qbOf(cert):{})||{}; var pool=[]; Object.keys(qb).forEach(function(code){ var g=qb[code]; (g.sets||[]).forEach(function(st){ (st.questions||[]).forEach(function(q){ if(q&&q.asks&&q.asks.length) pool.push({q:q, subName:g.name||code, diff:(q&&q.diff)||3}); }); }); }); return pool; }
-function startLt2LevelUp(){ var cert=mqCert; if(!lt2Has(cert)) return; if(!ltDone(cert)){ startLt2(); return; }
-  var pool=_lt2SubjPool(cert); if(!pool.length){ if(typeof _luToast==='function')_luToast('레벨업 문제가 아직 없어요.'); else alert('레벨업 문제가 아직 없어요.'); return; }
+function startLt2LevelUp(subCode){ var cert=mqCert; if(!lt2Has(cert)) return; if(!ltDone(cert)){ startLt2(); return; }
+  var pool=_lt2SubjPool(cert);
+  // [2026-07-20] 과목 지정 레벨업: 과목별 '레벨업' 버튼·합격플랜 '풀기' → 그 과목 문항만 출제 (인자 없으면 기존대로 약한 과목 우선 자동)
+  if(subCode){ var _nm=(qbOf(cert)[subCode]&&qbOf(cert)[subCode].name)||subCode; pool=pool.filter(function(p){ return p.subName===_nm; });
+    if(!pool.length){ if(typeof _luToast==='function')_luToast(_nm+' 레벨업 문제가 아직 없어요. (모범답안 구조 문항 준비 중)'); else alert(_nm+' 레벨업 문제가 아직 없어요.'); return; } }
+  if(!pool.length){ if(typeof _luToast==='function')_luToast('레벨업 문제가 아직 없어요.'); else alert('레벨업 문제가 아직 없어요.'); return; }
   var lv=_lt2SubLevels(cert);
   pool.sort(function(a,b){ var la=lv[a.subName]||3, lb=lv[b.subName]||3; if(la!==lb) return la-lb; return (a.diff||3)-(b.diff||3); });
   lu2State={cert:cert, queue:pool, idx:0, done:0};
@@ -487,7 +491,7 @@ function mcqAnalysisCard(cert){
     var lv=luSubjectLevel(cert,sub); if(lv==null) return '';
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, open=!!luCardOpen[sub];
     var pill='<span style="font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
-    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:11px;font-weight:600;color:#B4A99C;margin-left:5px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();'+(_isLt2?'startLt2LevelUp()':'luStartSub(\''+sub+'\')')+'" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
+    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:11px;font-weight:600;color:#B4A99C;margin-left:5px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();'+(_isLt2?('startLt2LevelUp(\''+sub+'\')'):('luStartSub(\''+sub+'\')'))+'" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
     var body='';
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
@@ -603,7 +607,7 @@ function _planTopicGo(sub, tcode){
   var cert=(typeof mqCert!=='undefined')?mqCert:null;
   if(!_planIsPaid(cert)){ _planUpsell(); return; }   // 무료 → 멤버십 유도 팝업(플랜 유지)
   closePassPlan();
-  if(typeof lt2Has==='function' && lt2Has(cert)){ startLt2LevelUp(); return; }   // 주관식: 합격플랜 풀기 → 레벨업(약한 과목)
+  if(typeof lt2Has==='function' && lt2Has(cert)){ startLt2LevelUp(sub); return; }   // 주관식: 합격플랜 풀기 → 그 과목 레벨업 [2026-07-20 과목 전달]
   luStartTopic(sub, tcode);                           // 객관식: 유료 → 플랜 닫고 풀기
 }
 var _PLAN_LVC={1:'#E24B4A',2:'#E24B4A',3:'#E0A52E',4:'#2E9B5E',5:'#2E9B5E'};
