@@ -1,0 +1,30 @@
+/* ============================================================
+   subjective-responsive.css — 주관식 화면 반응형 (2026-07-20 신설)
+   index.html 주관식(#subjectiveView) 전용. index CSS(style.css)와 분리 관리.
+   subjective.js가 런타임에 <style>을 주입하므로, 여기서는 ID(#subjectiveView·#subjMount)를
+   붙여 특이도를 높여 덮어쓴다(로드 순서 무관하게 적용).
+   ============================================================ */
+
+/* ── 모바일(기본): 본문 글자를 조금 키워 읽기 편하게 ── */
+#subjMount .subj-view .jaryo{font-size:14px}
+#subjMount .subj-view .subj-q{font-size:14px}
+
+/* ── 태블릿(≥820px): 컨테이너를 넓혀 화면 활용 ── */
+@media (min-width:820px){
+  #subjectiveView{max-width:940px}
+  .subj-hdrbar{max-width:940px}
+  #subjMount .subj-view .jaryo{font-size:14.5px;line-height:1.75;padding:16px 18px}
+  #subjMount .subj-view .qstem{padding:18px 20px}
+}
+
+/* ── PC(≥1100px): 자료(왼쪽 고정) + 답안·해설(오른쪽) 2단 배치 ── */
+@media (min-width:1100px){
+  #subjectiveView{max-width:1180px}
+  .subj-hdrbar{max-width:1180px}
+  #subjMount .subj-view{display:grid;grid-template-columns:minmax(380px,470px) minmax(0,1fr);gap:0 28px;align-items:start}
+  #subjMount .subj-view>.exam-back{grid-column:1 / -1}
+  /* 자료·물음(qstem)은 왼쪽 컬럼에 고정(스크롤 시 따라옴) — 긴 답안 작성 중에도 자료가 보이게 */
+  #subjMount .subj-view>.qstem{grid-column:1;position:sticky;top:10px;max-height:calc(100vh - 30px);overflow-y:auto;margin-bottom:0}
+  /* 나머지(답안 작성·시험 포인트·참조·개념)는 전부 오른쪽 컬럼 */
+  #subjMount .subj-view>*:not(.qstem):not(.exam-back){grid-column:2}
+}

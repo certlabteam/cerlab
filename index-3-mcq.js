@@ -69,7 +69,7 @@ function _sp2OpenPicker(cb){
 }
 // qid → {cert, sub} 전역 인덱스 (네임스페이스 저장용). qid는 시험 간 고유하게 구성.
 const MCQ_QID2CS={};
-function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>{ if(Array.isArray(st.questions)) st.questions=st.questions.filter(function(q){return !(q&&q.hidden);}); st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub};}); })); }); }
+function rebuildQid(){ for(const k in MCQ_QID2CS) delete MCQ_QID2CS[k]; MCQ_CERTS.forEach(cert=>{ const qb=qbOf(cert); Object.keys(qb).forEach(sub=>qb[sub].sets.forEach(st=>{ if(Array.isArray(st.questions)) st.questions=st.questions.filter(function(q){return !(q&&q.hidden);}); st.questions.forEach(q=>{MCQ_QID2CS[q.id]={cert,sub,lab:st.label};}); })); }); }
 rebuildQid();
 let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={}, mqOX={}, mqCurId=null;
 let mqOXLearned={}, mqOXTs={};   // OX진술 학습: {qid:{진술키:1}} 완료표시 / {qid:ts} 최근순 정렬용
@@ -1029,6 +1029,7 @@ function _ltShowGateModal(cert){
 // ===== 4-b 레벨업 문제풀기 (연속 5문제 라운드 · 약점매칭 · 기출+변형) =====
 var mqLevelUp=false, luSubIdx=0, luSeen={}, luPreScores={}, luCurSub='', luLockSub='', luLockTopic='', LU_ROUND=5, luCardOpen={};
 var _luRelearn={};   // (C안) 이번 라운드 재출제(전에 푼 적 있는) 문항 id → 🔁 복습 뱃지
+var _qCtxTNM={};     // [2026-07-20] 문제 상단 컨텍스트용 topicNameMap 캐시 (cert|sub → map)
 function topicNameMap(cert,sub){
   var b=(typeof AD_DATA!=='undefined')&&AD_DATA[cert+'|'+sub], m={};
   if(!b) return m;

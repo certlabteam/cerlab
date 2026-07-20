@@ -806,12 +806,8 @@ function closeGuestFeatPopup(){
 var _cmReturn=null;   // 커뮤니티 진입 전 진행중 시험 상태(돌아올 때 이어풀기)
 function goGuestFeatNotice(){
   closeGuestFeatPopup();
-  if(typeof mqScreen!=='undefined' && mqScreen==='exam'){
-    _cmReturn={cert:mqCert, sub:mqSub, set:mqSet, idx:mqIdx, diag:!!mqDiag, lt:!!mqLevelTest};
-  } else { _cmReturn=null; }
-  cmBoard='notice';
-  if(typeof openCommunity==='function') openCommunity();
-  setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail('XSVOWwoSkxFanqOqbFJX'); }, 220);
+  // [2026-07-20] 안내 게시글은 새 탭으로 — 풀던 시험 상태를 그대로 두므로 _cmReturn 복원 불필요
+  window.open('/#post/XSVOWwoSkxFanqOqbFJX', '_blank');
 }
 function cmBack(){
   if(_cmReturn && _cmReturn.cert){
@@ -1381,11 +1377,8 @@ function closePtModal(){ var ov=document.getElementById('ptModalOv'); if(ov) ov.
 var POINT_GUIDE_POST='7fui5XC7CRKXLZqmlx9X';   // 💰 포인트 안내 공지글 (수정 기능으로 ID 유지)
 function ptGoGuide(){
   closePtModal();
-  if(POINT_GUIDE_POST){
-    location.hash='#post/'+POINT_GUIDE_POST;
-    if(typeof clRouteFromHash==='function') clRouteFromHash();
-    else if(typeof openCommunity==='function'){ openCommunity(); setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(POINT_GUIDE_POST); }, 220); }
-  }
+  // [2026-07-20] 안내 게시글은 새 탭으로 — 앱 내 이동 시 백버튼으로 시험→커뮤니티→메인으로 빠지는 문제 방지
+  if(POINT_GUIDE_POST) window.open('/#post/'+POINT_GUIDE_POST, '_blank');
 }
 function copyDepositAcc(){
   var txt='1000-2406-0293';

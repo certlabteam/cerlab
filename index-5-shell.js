@@ -1,4 +1,4 @@
-// ===== OX만 누르고 넘어가는 착각 방지 (레벨테스트 한정 · 매번 막고 7일 끄기) =====
+// ===== OX만 누르고 넘어가는 착각 방지 (매번 막고 7일 끄기) — [2026-07-20] 레벨테스트 한정 → 전체 풀이로 확장 =====
 var _oxWarnBypass=false;
 function _oxClickedOnly(qid){ try{ return !!(typeof mqOX!=='undefined' && mqOX && mqOX[qid] && Object.keys(mqOX[qid]).length); }catch(_){ return false; } }
 function _oxWarnSnoozed(){ try{ var v=parseInt(localStorage.getItem('certlab_ox_warn_snooze')||'0',10); return v>Date.now(); }catch(_){ return false; } }
@@ -39,7 +39,7 @@ function _oxWarnSkip(){ _oxWarnHide(); _oxWarnBypass=true; _oxAdvance(); }
 function _oxWarnSnooze(){ try{ localStorage.setItem('certlab_ox_warn_snooze', String(Date.now()+7*86400000)); }catch(_){} _oxWarnHide(); _oxWarnBypass=true; _oxAdvance(); }
 function _oxAdvance(){ try{ var qs=mqQuestions(); if(qs && qs.length && mqIdx<qs.length-1){ mqIdx++; if(typeof mqSaveProgress==='function') mqSaveProgress(); if(typeof mqDiag!=='undefined'&&mqDiag&&typeof saveDiagProgress==='function') saveDiagProgress(); window.scrollTo(0,0); if(typeof renderMCQ==='function') renderMCQ(); } else if(typeof mqNav==='function'){ mqNav(1); } }catch(_){ try{ if(typeof mqNav==='function') mqNav(1); }catch(__){} } _oxWarnBypass=false; }
 function mqNav(d){ const qs=mqQuestions();
-  if(d===1 && (mqLevelTest||mqDiag) && !mqInReview && !_oxWarnBypass){
+  if(d===1 && !mqInReview && !_oxWarnBypass){   // [2026-07-20] 모든 풀이 모드에서 OX만 누르고 정답 미선택 시 안내
     var _cq=qs[mqIdx];
     var _qid=_cq&&_cq.id;
     var _ansEmpty = !_qid || mqAns[_qid]===undefined;                      // 정답 미선택
@@ -1046,6 +1046,29 @@ function clRouteFromHash(){
   }
   window.addEventListener('load', function(){ if((location.hash||'').indexOf('#post/')===0) tryRoute(20); });
   window.addEventListener('hashchange', function(){ if((location.hash||'').indexOf('#post/')===0) clRouteFromHash(); });
+})();
+
+// ===== [2026-07-20] 시험 딥링크: /#{certId} → 해당 시험 바로 진입 (광고·안내용 고정 URL) =====
+// 예: /#appraiser(감평 1차), /#appraiser2(감평 2차), /#realestate1 … 카드가 있는 시험만(certCard-{id}) 유효.
+// #post/·#account-delete 등 기존 해시 라우팅은 건드리지 않는다. 진입 후 해시는 지워 백버튼 트랩과 충돌 방지.
+(function(){
+  function certWanted(){
+    var h=location.hash||'';
+    if(!h || h==='#' || h.indexOf('#post/')===0 || h==='#account-delete') return null;
+    try{ return decodeURIComponent(h.slice(1)); }catch(_){ return null; }
+  }
+  function go(id){
+    try{ history.replaceState(null, '', location.pathname+location.search); }catch(_){ location.hash=''; }
+    enterCert(id);
+  }
+  function tryCert(n){
+    var id=certWanted(); if(!id) return;
+    var ready = typeof firebaseReady!=='undefined' && firebaseReady && typeof enterCert==='function';
+    if(ready && document.getElementById('certCard-'+id)){ go(id); return; }
+    if(n>0) setTimeout(function(){ tryCert(n-1); }, 300);   // 매니페스트 카드·firebase 준비 대기 (최대 6초)
+  }
+  window.addEventListener('load', function(){ tryCert(20); });
+  window.addEventListener('hashchange', function(){ tryCert(6); });
 })();
 
 

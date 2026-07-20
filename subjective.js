@@ -364,7 +364,7 @@
     v.innerHTML='<div class="qstem"><div class="qhead"><div class="qnum">'+_localNum(exam,qi)+'</div>'
       +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
       +'<span class="scard-set-label">'+(q.pt||'')+'점</span>'
-      +(_opts.onReport?'<button class="mq-report" data-report="1">⚠️ 신고</button>':'')+'</div>'
+      +(_opts.onReport?'<button class="mq-report" data-report="1">⚠️ 신고 의견</button>':'')+'</div>'
       +((q.q&&String(q.q).trim())?('<div class="jaryo">'+_subjJaryoHTML(q.q)+'</div>'):'')
       +'</div>'
       +'<div id="subj-asks"></div>'

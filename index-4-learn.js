@@ -73,7 +73,21 @@ function startMcqReview(){
         || _mcqTopicLevel(mqCert,a._subCode,a)-_mcqTopicLevel(mqCert,b._subCode,b)
         || ((typeof _impStarOfQ==='function'?_impStarOfQ(b):(b.star||0))-(typeof _impStarOfQ==='function'?_impStarOfQ(a):(a.star||0)));
   });
-  if(due.length>REVIEW_MCQ_CAP) due=due.slice(0,REVIEW_MCQ_CAP);
+  if(due.length>REVIEW_MCQ_CAP){
+    // [2026-07-20] 과목 균일 출제: 우선순위(급한순→약한목차→중요도)를 과목 안에서 유지하되,
+    // 과목별로 돌아가며 뽑아 상한 40개가 한 과목에 쏠리지 않게 한다.
+    var _bySub={}, _subSeq=[];
+    due.forEach(function(q){ var k=q._subCode||''; if(!_bySub[k]){ _bySub[k]=[]; _subSeq.push(k); } _bySub[k].push(q); });
+    var _picked=[];
+    while(_picked.length<REVIEW_MCQ_CAP){
+      var _got=false;
+      for(var _i=0;_i<_subSeq.length && _picked.length<REVIEW_MCQ_CAP;_i++){
+        var _arr=_bySub[_subSeq[_i]]; if(_arr.length){ _picked.push(_arr.shift()); _got=true; }
+      }
+      if(!_got) break;
+    }
+    due=_picked;
+  }
   due.sort((a,b)=>((a._grp||0)-(b._grp||0)));   // 표시는 과목별로 묶어서(선정은 위 우선순위 유지)
   if(!due.length){
     const root=document.getElementById('mcqRoot');
@@ -530,7 +544,8 @@ function extractInlineComboGroup(qt){
 var OX_GUIDE_POST='p0dNwHXmeTus8NNPAxOM';
 function oxGuideOpen(){
   try{
-    if(OX_GUIDE_POST){ location.hash='#post/'+OX_GUIDE_POST; if(typeof clRouteFromHash==='function') clRouteFromHash(); else if(typeof openCommunity==='function') openCommunity(); }
+    // [2026-07-20] 안내 게시글은 새 탭으로 — 앱 내 이동 시 백버튼 꼬임 방지
+    if(OX_GUIDE_POST){ window.open('/#post/'+OX_GUIDE_POST, '_blank'); }
     else if(typeof openCommunity==='function') openCommunity();
   }catch(_){}
 }
@@ -1112,6 +1127,19 @@ function renderMcqExam(root){
   const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
   const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
   mqCurId=(q&&q.id)||null;
+  // [2026-07-20] 문제 상단 컨텍스트: 몇 회 기출(혼합 모드에서) + 단원명(과목 상세목차) → 헤더 .st 뒤에 덧붙임
+  const qCtx=(function(){ if(!q) return ''; var parts=[]; try{
+      var cs=(typeof MCQ_QID2CS!=='undefined')&&MCQ_QID2CS[q.id];
+      if(cs&&cs.lab&&cs.lab!==examSet) parts.push(cs.lab);                       // 복습·모아풀기 등 혼합 모드에서 원 회차 표시
+      var _sc=(q&&q._subj)?q._subj:mqSub;
+      var info=(typeof adLookup==='function')&&adLookup(mqCert,_sc,q.id);
+      if(info&&info.topic&&typeof topicNameMap==='function'){
+        var _k=mqCert+'|'+_sc, _tm=_qCtxTNM[_k];
+        if(!_tm||!Object.keys(_tm).length){ _tm=topicNameMap(mqCert,_sc); _qCtxTNM[_k]=_tm; }   // AD_DATA 늦게 로드돼도 다음 렌더에서 갱신
+        var _nm=(_tm[info.topic]||{}).name; if(_nm&&_nm!==info.topic) parts.push(_nm);
+      }
+    }catch(_){}
+    return parts.length?(' · '+parts.join(' · ')):''; })();
   // 개념학습 모드 - 개념 카드 단계
   if(mqConcept && mqConceptPhase==='learn'){
     root.innerHTML=
@@ -1126,7 +1154,7 @@ function renderMcqExam(root){
     resolveImages(root);
     return;
   }
-  if(isSA(q)){ renderSaExam(root,q,qs,pct,examName,examSet); return; }
+  if(isSA(q)){ renderSaExam(root,q,qs,pct,examName,examSet+qCtx); return; }
   if(q && q.type==='SA' && !isSA(q)){   // type=SA인데 blanks 유실 → 객관식 오인 방지, 데이터 오류 조기 경고
     root.innerHTML='<div class="exam-sticky"><div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="\uB4A4\uB85C">'+BACK_ARROW+'</button><div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div></div></div>'+
       '<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:14px;line-height:1.6">\u26A0\uFE0F \uC8FC\uAD00\uC2DD(SA) \uBB38\uD56D\uC778\uB370 blanks\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uB370\uC774\uD130 \uD655\uC778 \uD544\uC694 ('+(q.id||'')+')</div>';
@@ -1139,7 +1167,7 @@ function renderMcqExam(root){
     else if(sel===n)cls+=' sel';
     const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
     const oxBtns=(optOX && o && !showExp)?'<span class="opt-ox" data-oxk="o'+i+'" onclick="event.stopPropagation()"><button type="button" class="jox jox-o" onclick="event.stopPropagation();joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="event.stopPropagation();joxToggle(this)">X</button></span>':'';
-    const otxt=o?('<div class="otxt">'+rm(o,q)+oxBtns+'</div>'):'';
+    const otxt=o?('<div class="otxt">'+_jaryoDots(rm(o,q))+oxBtns+'</div>'):'';   // [2026-07-20] 보기 ○→· 일관 적용
     return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';
@@ -1345,15 +1373,15 @@ function renderMcqExam(root){
     ? (guessOn?'<span class="guess-tag-r">🎲 찍음</span>':'')
     : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+q.id+'\')"><span class="gdot"></span>🎲 찍었어요</button>';
   const guessHint = (!mqInReview && guessOn) ? '<div class="guess-hint">확신이 없거나 <b>찍었을 때</b> 켜세요. 맞아도 <b>복습에 다시 나와요.</b></div>' : '';
-  const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고">⚠️ 신고</button>';
+  const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고">⚠️ 신고 의견</button>';
   const conceptGoBtn = (!mqInReview && !mqDiag && !mqConcept && (mqLevelUp ? _qHasConcept(q) : setConceptReady(mqCert,mqSub,mqSet))) ? '<button class="go-concept" onclick="goConceptFromQuestion()">📖 선행학습</button>' : '';
   root.innerHTML=
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="뒤로">'+BACK_ARROW+'</button>'+
-      '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+(curSubj?' · '+curSubj:'')+'</div></div>'+
+      '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):examName)+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'전체 문항'):examSet)+(curSubj?' · '+curSubj:'')+qCtx+'</div></div>'+
       (mqInReview?'':('<button class="etim-pause'+(mqPaused?' on':'')+'" onclick="mqTogglePause()" title="'+(mqPaused?'계속하기':'일시정지')+'">'+(mqPaused?'▶':'⏸')+'</button><span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+(mqPaused?' paused':'')+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
-    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):tpSwap(stemHTML(rm(_stemQ,q)),q.id))+'</div>'+guessHint+'</div>'+
+    '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):tpSwap(_jaryoDots(stemHTML(rm(_stemQ,q))),q.id))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
     '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q))+'</div>'),q.id):'')+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
@@ -1375,7 +1403,11 @@ function mqPick(qid,n){
       var _corr = isCorr(q.ans,n);
       if(_sawExp){ srRateK(mqCert, q.id, 0, mqTimeUp, changed); }   // 해설 먼저 봄 = 틀림(복습 재출제)
       else if(mqGuess[qid]){ srRateK(mqCert, q.id, _corr?1:0, mqTimeUp, changed); }   // 찍음: 맞아도 애매(1), 틀리면 틀림(0)
-      else { srRateK(mqCert, q.id, _corr ? 2 : 0, mqTimeUp, changed); }   // 평소: 정답=정확(2)/오답=틀림(0)
+      else {
+        // [2026-07-20] OX 자가체크 오답 반영: 정답을 맞혔어도 OX 진술 판단이 틀렸으면 '애매(1)' → 복습에 다시 나옴
+        var _oxWrong=false; try{ var _ox=(typeof mqOX!=='undefined')&&mqOX[q.id]; _oxWrong=!!(_ox&&Object.keys(_ox).length&&typeof oxAllMatch==='function'&&!oxAllMatch(q)); }catch(_){}
+        srRateK(mqCert, q.id, _corr ? (_oxWrong?1:2) : 0, mqTimeUp, changed);
+      }   // 평소: 정답=정확(2)/오답=틀림(0) · OX 틀림 동반 정답=애매(1)
       var _preBlk = !mqLevelTest && !_eloCanApply(mqCert,q);   // 하루1회로 차단됐나(해설은 이제 차단 아님 → 오답 반영)
       if(!mqLevelTest && typeof adEloUpdate==='function' && _eloCanApply(mqCert,q)){ adEloUpdate(q, _sawExp ? false : _corr); _eloMarkApplied(mqCert,q); }   // 해설 먼저 봄 → Elo 강제 오답, 아니면 정답/오답 그대로
       if(_sawExp && _corr && !mqLevelTest && !localStorage.getItem('certlab_info_expElo')){   // 해설 보고 정답 누름 → 오답 처리 안내(최초1회)
