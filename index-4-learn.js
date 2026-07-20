@@ -1389,6 +1389,8 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts) || _tfAssign(q))); restoreOX(root);
+  // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
+  try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
 }
 function mqPick(qid,n){
   if(mqInReview) return;

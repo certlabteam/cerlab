@@ -1059,7 +1059,7 @@ function clRouteFromHash(){
 (function(){
   function certWanted(){
     var h=location.hash||'';
-    if(!h || h==='#' || h.indexOf('#post/')===0 || h==='#account-delete') return null;
+    if(!h || h==='#' || h.indexOf('#post/')===0 || h.indexOf('#q/')===0 || h==='#account-delete') return null;
     try{ return decodeURIComponent(h.slice(1)); }catch(_){ return null; }
   }
   function go(id){ enterCert(id); }
@@ -1071,6 +1071,37 @@ function clRouteFromHash(){
   }
   window.addEventListener('load', function(){ tryCert(20); });
   window.addEventListener('hashchange', function(){ tryCert(6); });
+})();
+
+// ===== [2026-07-20] 문제 딥링크: /#q/{cert}/{qid} → 해당 회차 진입 + 그 문제로 점프 (공유·광고·빠른 찾기용) =====
+(function(){
+  function qWanted(){
+    var h=location.hash||''; if(h.indexOf('#q/')!==0) return null;
+    var rest=h.slice(3), sl=rest.indexOf('/'); if(sl<1) return null;
+    try{ return {cert:decodeURIComponent(rest.slice(0,sl)), qid:decodeURIComponent(rest.slice(sl+1))}; }catch(_){ return null; }
+  }
+  async function openQ(cert, qid){
+    try{ if(typeof loadExam==='function') await loadExam(cert); }catch(_){}
+    var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null; if(!cs) return false;
+    try{ await enterCert(cs.cert); }catch(_){}
+    try{ if(typeof loadExam==='function') await loadExam(cs.cert); }catch(_){}
+    var qb=(typeof qbOf==='function')?qbOf(cs.cert):null, sub=qb&&qb[cs.sub]; if(!sub||!sub.sets) return false;
+    var si=sub.sets.findIndex(function(s){return s.label===cs.lab;}); if(si<0) return false;
+    var qi=sub.sets[si].questions.findIndex(function(x){return x&&x.id===qid;}); if(qi<0) return false;
+    if(typeof resumeMcqExam!=='function' || typeof renderMCQ!=='function') return false;
+    resumeMcqExam(cs.sub, si); mqIdx=qi; renderMCQ(); try{ window.scrollTo(0,0); }catch(_){}
+    return true;
+  }
+  var _done=false;
+  function tryQ(n){
+    var w=qWanted(); if(!w){ _done=false; return; }
+    if(_done) return;
+    var ready = typeof firebaseReady!=='undefined' && firebaseReady && typeof enterCert==='function' && typeof MCQ_QID2CS!=='undefined';
+    if(ready){ _done=true; openQ(w.cert, w.qid); return; }
+    if(n>0) setTimeout(function(){ tryQ(n-1); }, 300);   // firebase·뱅크 로드 대기
+  }
+  window.addEventListener('load', function(){ tryQ(30); });
+  window.addEventListener('hashchange', function(){ _done=false; tryQ(10); });
 })();
 
 
