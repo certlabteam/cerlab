@@ -1935,6 +1935,8 @@ function renderMath(text, allowBareFraction){
   var _stash=[];
   function _st(m){ _stash.push(m); return '\u0007'+(_stash.length-1)+'\u0008'; }
   s = s.replace(/<svg[\s\S]*?<\/svg>/gi, _st);
+  // dia relation-diagram -> fixed-width <pre class="cc-dia"> (arrow alignment). stashed whole.
+  s = s.replace(/\[dia\]\s*([\s\S]*?)\s*\[\/dia\]/g, function(_m, inner){ var body=String(inner).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>"); return _st('<pre class="cc-dia">'+body+'</pre>'); });
   s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return _st('<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'); });
   s = s.replace(/<\/?[A-Za-z][A-Za-z0-9]*(?:\s[^<>]*)?\/?>/g, _st);
   s = s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
