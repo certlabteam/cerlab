@@ -779,7 +779,7 @@ function applyBank(ex,sub,doc){
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; byset[lab].push(it); });
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; /* [2026-07-20] 표(자료) 필드 보존 — hesm 인라인 표 렌더 누락 버그 수정 */ byset[lab].push(it); });
     qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
     // 최신 회차/연도가 위로 — 라벨 내 가장 큰 숫자 기준 내림차순
     const setKey=lab=>{ const m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };
