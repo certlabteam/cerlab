@@ -433,6 +433,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .oxc-tbl tr.oxc-miss td{background:#FBF6F5}
 #mcqView .jaryo .jtbl, .jtbl-html{overflow-x:auto;margin:8px 0}
 .jtbl-html table{max-width:100%}
+/* [2026-07-20] 문제보기가 표일 때: 좌측 굵은선·좌우 여백 제거 → 표를 넓혀 오른쪽 O/X 열 자리 확보. 텍스트 지문(표 없음)은 기존 좌측선 유지 */
+#mcqView .jaryo:has(.jtbl-html), #mcqView .jaryo:has(.jtbl), #mcqView .jaryo:has(table){border-left:1px solid #E2E8F0;padding-left:2px;padding-right:2px}
 .jtbl{border-collapse:collapse;border:1px solid #E2E8F0;width:100%;margin:8px 0;font-size:13px;color:#334155}
 .jtbl th, .jtbl td{border:1px solid #E2E8F0;padding:6px 9px;text-align:center;vertical-align:middle;word-break:keep-all}
 .jtbl th{background:#EEF2F7;font-weight:600}
