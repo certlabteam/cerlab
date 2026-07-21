@@ -1,4 +1,6 @@
 const ADMIN_EMAIL = 'certlab.team@gmail.com';
+// 관리자 허용 목록(소문자) — makeshiness는 Claude 자동화용 관리자 계정
+const ADMIN_EMAILS = ['certlab.team@gmail.com','makeshiness@gmail.com'];
 // 집계·목록에서 제외할 테스트/관리자 계정 (소문자)
 const EXCLUDED_EMAILS = ['certlab.team@gmail.com','f45dodam@gmail.com','makeshiness@gmail.com'];
 function isExcludedMember(m){ return EXCLUDED_EMAILS.includes((m && m.email || '').toLowerCase()); }

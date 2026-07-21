@@ -27,6 +27,7 @@ h2{font-size:18px;margin-bottom:16px}
 </div>
 <script>
 const ADMIN_EMAIL = 'certlab.team@gmail.com';
+const ADMIN_EMAILS = ['certlab.team@gmail.com','makeshiness@gmail.com']; // 관리자 허용(소문자)
 const firebaseConfig = {
   apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
   authDomain: "certlab-c3bcb.firebaseapp.com",
@@ -40,7 +41,7 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 
 auth.onAuthStateChanged(user => {
-  if (user && user.email === ADMIN_EMAIL) {
+  if (user && ADMIN_EMAILS.includes((user.email||'').toLowerCase())) {
     log(`✅ ${user.email} 로그인 완료`);
     document.getElementById('btnInit').disabled = false;
     document.getElementById('btnLogin').disabled = true;

@@ -383,6 +383,7 @@ tr:hover td{background:#FAFAFA}
 
 <script>
 const ADMIN_EMAIL = 'certlab.team@gmail.com';
+const ADMIN_EMAILS = ['certlab.team@gmail.com','makeshiness@gmail.com']; // 관리자 허용(소문자)
 const firebaseConfig = {
   apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
   authDomain: "certlab-c3bcb.firebaseapp.com",
@@ -415,7 +416,7 @@ const certNameOf = p => p.certName || CERT_NAMES[p.certType] || p.certType || '�
 
 // ===== Auth =====
 auth.onAuthStateChanged(user => {
-  if (user && user.email === ADMIN_EMAIL) {
+  if (user && ADMIN_EMAILS.includes((user.email||'').toLowerCase())) {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminWrap').style.display = 'flex';
     document.getElementById('adminEmail').textContent = user.email;

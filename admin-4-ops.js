@@ -1141,7 +1141,7 @@ if (firebaseReady && auth) {
   auth.onAuthStateChanged(function(user){
     const loginEl = document.getElementById('loginScreen');
     const wrapEl  = document.getElementById('adminWrap');
-    if (user && (user.email||'').toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    if (user && ADMIN_EMAILS.includes((user.email||'').toLowerCase())) {
       if(loginEl) loginEl.style.display = 'none';
       if(wrapEl)  wrapEl.style.display  = 'flex';
       const em = document.getElementById('adminEmail');
