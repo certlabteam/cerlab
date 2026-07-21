@@ -203,7 +203,7 @@ function _impDateGate(label, fileObj, records, idKey, perRecord){
   return true;
 }
 
-/* ===== 마스터 → 문항 역링크 (레벨업 variantq 스캔) ===== */
+/* ===== 마스터 → 문항 역링크 (기출 banks + 레벨업 variantq 전수 스캔) ===== */
 var _mfQCache=null, _mfQLoading=false;
 async function _mfLoadAllQuestions(){
   if(_mfQCache) return _mfQCache;
@@ -217,6 +217,15 @@ async function _mfLoadAllQuestions(){
       var pref=doc.id.replace(/__variantq$/,''); var us=pref.split('__'); var cert=us[0]||'', sub=us[1]||'';
       qs.forEach(function(q){ if(q&&q.id) out.push({id:q.id, cert:cert, sub:sub, q:q}); });
     });
+    // 기출(banks)도 전수 스캔 — 문항이 exp.cpt 등으로 마스터를 참조하는 경우 포함(1회 로드 후 캐시)
+    var bsnap=await db.collection('banks').get();
+    bsnap.forEach(function(doc){
+      var bd=doc.data()||{}; var bqs=Array.isArray(bd.questions)?bd.questions:[];
+      if(!bqs.length) return;   // 샤드 부모 문서(questions 없음)는 건너뜀
+      var bcert=bd.cert||'', bsub=bd.subject||'';
+      if(!bcert||!bsub){ var bu=String(doc.id).split('__'); bcert=bcert||bu[0]||''; bsub=bsub||bu[1]||''; }  // 샤드 문서는 id에서 cert/과목 파싱
+      bqs.forEach(function(q){ if(q&&q.id) out.push({id:q.id, cert:bcert, sub:bsub, q:q, _bank:true}); });
+    });
   }catch(e){}
   _mfQCache=out; _mfQLoading=false; return out;
 }
@@ -224,7 +233,7 @@ async function _mfLoadAllQuestions(){
 function _mfRefMatch(q, refType, mid){
   var exp=(q&&q.exp)||{};
   if(refType==='mn'){ return (exp.mn||[]).some(function(x){ return String(x).replace('mn://','')===mid; }); }
-  if(refType==='cpt'){ return (exp.c||[]).some(function(c){ return c && (c._fromMaster===mid); }); }
+  if(refType==='cpt'){ if((exp.c||[]).some(function(c){ return c && (c._fromMaster===mid); })) return true; var cp=exp.cpt; if(cp!=null){ var arr=Array.isArray(cp)?cp:[cp]; if(arr.some(function(x){ return String(x).replace('cpt://','')===mid; })) return true; } return false; }
   if(refType==='tbl'){ return (exp.tbl||[]).some(function(x){ return String(x).replace('tbl://','')===mid; })
         || (exp.c||[]).some(function(c){ return c && Array.isArray(c.tbl) && c.tbl.some(function(x){return String(x).replace('tbl://','')===mid;}); }); }
   if(refType==='grp'){ return (exp.grp||[]).some(function(x){ return String(x).replace('grp://','')===mid; })
@@ -241,9 +250,9 @@ async function mfShowUsage(refType, mid){
   function _qnum(id){ var m=String(id||'').match(/(\d+)\s*$/); return m?parseInt(m[1],10):0; }
   hits.sort(function(a,b){ if(a.cert!==b.cert) return a.cert<b.cert?-1:1; if(a.sub!==b.sub) return a.sub<b.sub?-1:1; return _qnum(a.id)-_qnum(b.id); });  // 시험·과목·문제번호순
   var rows = hits.length? hits.map(function(r){
-    var url='https://certlab.ai.kr/?card='+encodeURIComponent(r.id)+'&cert='+encodeURIComponent(r.cert);
+    var url=r._bank?('https://certlab.ai.kr/#q/'+encodeURIComponent(r.cert)+'/'+encodeURIComponent(r.id)):('https://certlab.ai.kr/?card='+encodeURIComponent(r.id)+'&cert='+encodeURIComponent(r.cert));
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #F1F0EC"><div style="flex:1;font-size:13px;color:#3A352C"><b>'+mfEsc(r.id)+'</b><div style="font-size:11px;color:#A89C8E">'+mfEsc(r.cert)+' · '+mfEsc(r.sub)+'</div></div><a href="'+url+'" target="_blank" rel="noopener" style="flex:0 0 auto;background:#185FA5;color:#fff;text-decoration:none;font-size:12px;font-weight:700;border-radius:8px;padding:6px 10px">문항 열기 →</a></div>';
-  }).join('') : '<div style="color:#A89C8E;font-size:13px;padding:14px 0">이 마스터를 참조하는 문항이 없습니다. (레벨업 변형 기준)</div>';
+  }).join('') : '<div style="color:#A89C8E;font-size:13px;padding:14px 0">이 마스터를 참조하는 문항이 없습니다.</div>';
   box.innerHTML='<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:18px 20px"><div style="display:flex;align-items:center;margin-bottom:4px"><div style="font-weight:800;font-size:15px;flex:1">이 마스터를 쓰는 문항 <span style="color:#185FA5">'+hits.length+'</span></div><button onclick="document.getElementById(\'mfUsageModal\').remove()" style="background:#F1F5F9;border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px">닫기</button></div><div style="font-size:12px;color:#94A3B8;margin-bottom:6px">'+mfEsc(refType)+'://'+mfEsc(mid)+'</div>'+rows+'</div>';
 }
 function mfUsageBtn(refType, mid){
