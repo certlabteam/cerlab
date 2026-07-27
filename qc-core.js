@@ -880,7 +880,7 @@ try{
      지금까지 config엔 코드만 있고 구현이 없어 그래프 등 마스터 검수가 비어 있던 구멍을 메운다.
      =========================================================================== */
   function _qcAsArr(a){ return Array.isArray(a)?a:(a?[a]:[]); }
-  function _qcRedLetters(s){ var out=[],m,re=/<span class="k">([\s\S]*?)<\/span>|<k>([\s\S]*?)<\/k>/g; while((m=re.exec(String(s||'')))){ out.push((m[1]!=null?m[1]:m[2]).replace(/\s/g,'')); } return out.join(''); }
+  function _qcRedLetters(s){ var out=[],m,re=/<span\s+class\s*=\s*["']k["']\s*>([\s\S]*?)<\/span>|<k>([\s\S]*?)<\/k>/g; while((m=re.exec(String(s||'')))){ out.push((m[1]!=null?m[1]:m[2]).replace(/\s/g,'')); } return out.join(''); }
   function _qcDupChk(seen,id,sec,code,label,v){ if(seen[id]){ if(_qcOn(sec,code)) v.push({id:id,kind:'block',field:'id',idx:0,code:code,msg:label+' id 중복: '+id}); return true; } seen[id]=1; return false; }
   function _qcRecDate(rec,id,v){ var rd=_qcRecordDate(rec); if(rd){ rd.id=id; v.push(rd); } }
 
