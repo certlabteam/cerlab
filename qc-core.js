@@ -102,6 +102,27 @@ function _qcViolations(q){
   try{ if(_qcOn('gichul','COMBO_STMT_MISMATCH') && typeof isComboQuestion==='function' && isComboQuestion(q.opts)){ var _st=comboStmtList(q); if(_st&&_st.length>=2 && oFilled>=2 && oFilled!==_st.length) v.push({kind:'warn',field:'o',idx:0,code:'COMBO_STMT_MISMATCH',msg:'\uc870\ud569\ud615 \uc9c4\uc220 '+_st.length+'\uac1c\uc778\ub370 \ud574\uc124(o) '+oFilled+'\uce78 \u2014 \uc9c4\uc220\uc218=\ucc44\uc6b4\uce78\uc218 \uc548 \ub9de\uc73c\uba74 \uc9c4\uc220\ubcc4\ub85c \uc548 \ud3bc\uccd0\uc9d0(\uc77c\ubc18\ud615 \ud3f4\ubc31)',text:''}); } }catch(_){}
   if(_qcOn('gichul','FILL_BLANK_MISMATCH') && Array.isArray(q.blanks) && q.blanks.length && oFilled!==q.blanks.length) v.push({kind:'block',field:'o',idx:0,code:'FILL_BLANK_MISMATCH',msg:'\ube48\uce78 '+q.blanks.length+'\uac1c\uc778\ub370 \ud574\uc124(o) '+oFilled+'\uce78 \u2014 blanks==oFilled\uc774\uc5b4\uc57c \ube48\uce78\ubcc4\ub85c \ud3bc\uce68(\uc548 \ub9de\uc73c\uba74 \uc5c9\ub69c\ud55c \uce78\uc5d0 \ubd99\uc74c)',text:''});
   if(_qcOn('gichul','O_ECHO_D')){ var _cds=(typeof _conceptCards==='function'?_conceptCards(q):(exp.c||[])).map(function(c){return String(c&&c.d||'');}).filter(Boolean); if(_cds.length){ o.forEach(function(t,i){ if(t&&String(t).trim()){ for(var _di=0;_di<_cds.length;_di++){ if(_qgSim(_qgStripVerdict(t),_cds[_di])>=_qcN('gichul','O_ECHO_D','minSim',0.6)){ v.push({kind:'warn',field:'o',idx:i,code:'O_ECHO_D',msg:'\ud574\uc124(o)\uc774 \uac1c\ub150\uce74\ub4dc \uc815\uc758(d) \ub418\ud480\uc774 \u2192 o\ub294 \uadf8 \ubcf4\uae30\uac00 \uc65c \ub9de/\ud2c0\ub9ac\ub294\uc9c0 \uc0ac\uc720\ub85c(\uc5ed\ud560\ubd84\ub9ac \u00a7337)',text:t}); break; } } } }); } }
+  /* [신규] 정답칸 판정 정합성 — 문두(부정/긍정)와 정답칸 해설의 판정 방향이 어긋남.
+     앱은 exp.o 끝 판정어로 O/X 배지를 만들므로(index-4-learn.js), 어긋나면 정답 보기에 반대 배지가 뜬다. */
+  if(_qcOn('gichul','ANS_VERDICT_MISMATCH')){
+    var _avStem=String(q.q||''), _avAns=q.ans;
+    var _avNeg=/(옳지\s*않은|틀린|아닌|해당하지\s*않는|적절하지\s*않은|부적절한|가장\s*거리가\s*먼)\s*(것은|것을)/.test(_avStem);
+    var _avPos=/(옳은|맞는|적절한|해당하는)\s*(것은|것을)/.test(_avStem);
+    var _avCombo=(String(q.type||'').toUpperCase()==='COMBO')
+      || /(모두\s*고른|고른\s*것은|몇\s*개인가|모두\s*몇)/.test(_avStem)
+      || opts.some(function(x){ return /[\u3131-\u314e\u3260-\u327f]/.test(String(x)); });
+    if(typeof _avAns==='number' && _avAns>=1 && _avAns<=o.length && (_avNeg!==_avPos) && !_avCombo){
+      var _avT=o[_avAns-1];
+      var _avMeta=/('[^']{0,40}(아닌|않는|않은|없는)\s*것'|"[^"]{0,40}(아닌|않는|않은|없는)\s*것"|정답|문제가\s*(찾는|요구하는|고르라는)|물음의?\s*답|고르라는|골라야|답으로|이 ?선지는)/;
+      if(_avT && String(_avT).trim() && _qgVerdict(_avT) && !_avMeta.test(String(_avT))){
+        var _avL=String(_avT).trim().replace(/\.+$/,''); var _avP=_avL.split(/\.\s+/);
+        _avL=(_avP[_avP.length-1]||_avL).replace(/\s*\([^)]*\)\s*$/,'');
+        var _avIsNeg=/(옳지\s*않다|적절하지\s*않다|부적절하다|해당하지\s*않는다|틀리다|틀린다|아니다)$/.test(_avL);
+        if(_avNeg!==_avIsNeg) v.push({kind:'warn',field:'o',idx:_avAns-1,code:'ANS_VERDICT_MISMATCH',
+          msg:'문두는 '+(_avNeg?'부정형(옳지 않은 것)':'긍정형(옳은 것)')+'인데 정답칸 해설이 '+(_avIsNeg?'부정':'긍정')+' 판정으로 끝남 \u2014 앱 O/X 배지가 정답 보기에 거꾸로 붙는다',text:_avT});
+      }
+    }
+  }
   if(_qcOn('gichul','O_NO_ACTOR')){ var _AC=/[\u7532\u4e59\u4e19\u4e01\u620a\u5df1\u5e9a]/; o.forEach(function(t,i){ var op=opts[i]; if(op&&_AC.test(String(op)) && t&&String(t).trim() && !_AC.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_NO_ACTOR',msg:'\ubcf4\uae30\uc5d4 \uc778\ubb3c(\u7532\u4e59)\uc774 \uc788\ub294\ub370 \ud574\uc124(o)\uc5d0\uc11c \uc778\ubb3c \uc99d\ubc1c \u2192 \uc0ac\uc2e4\uad00\uacc4 \uadf8\ub300\ub85c \uc0b4\ub824 \uc801\uc6a9(\u00a7467)',text:t}); }); }
   if(_qcOn('gichul','O_STEPS_NOBR')){ o.forEach(function(t,i){ var _cl=_qgCrammedSteps(t); if(_cl) v.push({kind:'warn',field:'o',idx:i,code:'O_STEPS_NOBR',msg:'해설(o)에 단계(①②③/1.2.3.) 나열이 줄바꿈 없이 한 덩어리 → 단계 사이 줄바꿈(\\n) 또는 문장으로 풀기',text:_cl}); }); }
   if(_qcOn('gichul','EX_PROSE_CALC')){ o.forEach(function(t,i){ var _pco=_qgProseCalc(t); if(_pco) v.push({kind:'warn',field:'o',idx:i,code:'EX_PROSE_CALC',msg:'설명 문장과 계산식이 같은 줄에 붙음 — 설명 다음에서 개행해 식을 별도 줄로(긴 식도 중간에서 개행). 상세풀이·해설 가독성',text:_pco}); }); }
@@ -190,11 +211,11 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{EX_SHORT:{on:true,minChars:60},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
+  gichul:{ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
-  mnem:{MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25}},
+  mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
   graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
@@ -217,6 +238,7 @@ var _QC_SEV = {
   TBL_BROKEN:'ERROR', GRP_BROKEN:'ERROR', ITV_BROKEN:'ERROR', CHILD_MISSING:'ERROR',
   OTTAG_LEN:'ERROR', DUP_ID:'ERROR',
   /* WARNING (SHOULD — 권장 수정) */
+  ANS_VERDICT_MISMATCH:'WARNING',
   O_INCOMPLETE:'WARNING', COMBO_STMT_MISMATCH:'WARNING', O_ECHO_D:'WARNING', O_NO_ACTOR:'WARNING',
   O_STEPS_NOBR:'WARNING', EX_STEPS_NOBR:'WARNING', EX_STEPS_CRAMMED:'WARNING', O_ECHO_OPT:'WARNING',
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',
@@ -240,6 +262,7 @@ var _QC_SEV = {
   GRP_NO_SVG:'ERROR', GRP_SVG_MALFORMED:'ERROR', GRP_EXTERNAL:'ERROR', GRP_EMDASH:'ERROR', GRP_DUP:'ERROR',
   GRP_PARAMS_OBJ:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING',
   /* 암기 */
+  MN_LETTER_UNEXPLAINED:'WARNING', MN_QSPECIFIC_TRAP:'INFO',
   MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING', MN_SYMBOL:'WARNING', MN_DESC_SHORT:'WARNING',
   /* 표 */
   TBL_NO_HEADERS:'ERROR', TBL_NO_ROWS:'ERROR', TBL_RAGGED:'ERROR', TBL_DUP:'ERROR', TBL_NO_CAPTION:'WARNING', TBL_HTML_NO_TYPE:'WARNING',
@@ -884,6 +907,19 @@ try{
       if(_qcOn('mnem','MN_NO_K') && !cRed) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_NO_K',msg:'code에 빨강 두문자(<span class="k">) 없음'});
       if(_qcOn('mnem','MN_DESC_NO_RED') && desc.trim() && !dRed) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_NO_RED',msg:'desc에 대응 빨강 글자(<span class="k">) 없음'});
       if(_qcOn('mnem','MN_DESC_REDUP') && cRed && dRed && cRed.length!==dRed.length) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_REDUP',msg:'code 빨강 글자('+cRed.length+')와 desc 빨강 글자('+dRed.length+') 수 불일치 — 전수 일치 필요'});
+      if(_qcOn('mnem','MN_LETTER_UNEXPLAINED') && cRed && dRed){
+        var _mlHan=/[\uac00-\ud7a3]/, _mlCs=[], _mlDs=String(dRed).split('').filter(function(ch){ return _mlHan.test(ch); });
+        String(cRed).split('').forEach(function(ch){ if(_mlHan.test(ch) && _mlCs.indexOf(ch)<0) _mlCs.push(ch); });
+        var _mlMiss=_mlCs.filter(function(ch){ return _mlDs.indexOf(ch)<0; });
+        if(_mlCs.length && _mlDs.length && _mlMiss.length) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_LETTER_UNEXPLAINED',
+          msg:'code 빨강 글자 ['+_mlMiss.join('')+']가 desc에서 풀이되지 않음 \u2014 글자마다 무엇의 머리글자인지 desc에 빨강으로 대응시켜라'});
+      }
+      if(_qcOn('mnem','MN_QSPECIFIC_TRAP')){
+        var _tp=(code+' '+desc).replace(/<[^>]+>/g,'');
+        var _tm=_tp.match(/(\(함정\)|함정이다|함정으로)/);
+        if(_tm) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_QSPECIFIC_TRAP',
+          msg:'암기코드에 문제특화 함정 서술(\u0022'+_tm[1]+'\u0022) \u2014 암기코드는 여러 문항이 공유하는 전역 마스터라 특정 문항의 함정은 그 문항 해설(exp.o/tip)로 옮겨라'});
+      }
       if(_qcOn('mnem','MN_SLASH') && /\//.test(code.replace(/<[^>]+>/g,''))) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_SLASH',msg:'code 구분자에 / 사용 — 가운뎃점(·)으로'});
       if(_qcOn('mnem','MN_SYMBOL') && /[∞≥≤±√∑≠÷×²³½¼¾µΩ]/.test(code.replace(/<[^>]+>/g,''))) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_SYMBOL',msg:'code에 소리내어 못 읽는 기호(∞·≥·²·√ 등) — 읽히는 두문자·말로 풀어라(예: ∞→"수평/완전탄력")'});
       if(_qcOn('mnem','MN_DESC_SHORT')){ var _dL=desc.replace(/<[^>]+>/g,'').trim().length; if(desc.trim() && _dL<_qcN('mnem','MN_DESC_SHORT','minChars',25)) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_SHORT',msg:'desc '+_dL+'자로 짧음 — 무엇에 대한 암기인지 맥락 한 문장 필요'}); }
