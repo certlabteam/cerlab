@@ -106,14 +106,17 @@ function _qcViolations(q){
      앱은 exp.o 끝 판정어로 O/X 배지를 만들므로(index-4-learn.js), 어긋나면 정답 보기에 반대 배지가 뜬다. */
   if(_qcOn('gichul','ANS_VERDICT_MISMATCH')){
     var _avStem=String(q.q||''), _avAns=q.ans;
-    var _avNeg=/(옳지\s*않은|틀린|아닌|해당하지\s*않는|적절하지\s*않은|부적절한|가장\s*거리가\s*먼)\s*(것은|것을)/.test(_avStem);
-    var _avPos=/(옳은|맞는|적절한|해당하는)\s*(것은|것을)/.test(_avStem);
+    /* 극성은 괄호 단서(예: "(단, …아닌 것을 전제로 함)")를 뺀 본문으로만 판단한다 */
+    var _avBody=_avStem.replace(/\([^)]*\)/g,' ').replace(/\uff08[^\uff09]*\uff09/g,' ');
+    var _avNeg=/(옳지\s*않은|틀린|아닌|해당하지\s*않는|적절하지\s*않은|부적절한|가장\s*거리가\s*먼)\s*(것은|것을)/.test(_avBody);
+    var _avPos=/(옳은|맞는|적절한|해당하는)\s*(것은|것을)/.test(_avBody)
+      || /(옳게|올바르게|바르게)\s*[가-힣]{1,8}\s*(것은|것을)/.test(_avBody);   /* "옳게 연결한 것은?"\u00b7"바르게 짝지은 것은?" */
     var _avCombo=(String(q.type||'').toUpperCase()==='COMBO')
       || /(모두\s*고른|고른\s*것은|몇\s*개인가|모두\s*몇)/.test(_avStem)
       || opts.some(function(x){ return /[\u3131-\u314e\u3260-\u327f]/.test(String(x)); });
     if(typeof _avAns==='number' && _avAns>=1 && _avAns<=o.length && (_avNeg!==_avPos) && !_avCombo){
       var _avT=o[_avAns-1];
-      var _avMeta=/('[^']{0,40}(아닌|않는|않은|없는)\s*것'|"[^"]{0,40}(아닌|않는|않은|없는)\s*것"|정답|문제가\s*(찾는|요구하는|고르라는)|물음의?\s*답|고르라는|골라야|답으로|이 ?선지는)/;
+      var _avMeta=/('[^']{0,40}(아닌|않는|않은|없는)\s*것'|"[^"]{0,40}(아닌|않는|않은|없는)\s*것"|(아닌|않는|않은|없는)\s*것(은|이)\s*(바로\s*)?(이것|이 보기|이 선지|여기)|정답|문제가\s*(찾는|요구하는|고르라는)|물음의?\s*답|고르라는|골라야|답으로|이 ?선지는)/;
       if(_avT && String(_avT).trim() && _qgVerdict(_avT) && !_avMeta.test(String(_avT))){
         var _avL=String(_avT).trim().replace(/\.+$/,''); var _avP=_avL.split(/\.\s+/);
         _avL=(_avP[_avP.length-1]||_avL).replace(/\s*\([^)]*\)\s*$/,'');
