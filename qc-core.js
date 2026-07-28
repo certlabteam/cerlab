@@ -11,7 +11,7 @@ var _qcImgKeys=(typeof _qcImgKeys!=='undefined')?_qcImgKeys:null;
 var _qcCptCards=(typeof _qcCptCards!=='undefined')?_qcCptCards:null;
 
 /* ---- [추출] 공통 헬퍼·config·_qg* (admin__20 4218-4246) ---- */
-var _qgAction=/샀|팔았|팔아|팔|빌려|빌린|맡겨|맡긴|(?<!고)점유(?!율)|배상|청구|지급|처분|넘겨|넘긴|속여|속아|건네|매도|매수|양도|증여|담보|대여|변제|등기|(?<!짝|리\s?)지어|사들|잡아|되찾|취소|해지|(?<!일)반환|인도/;
+var _qgAction=/샀|팔았|팔아|(?<!위|아래|앞|뒷|윗|한)팔(?!꿉|꿈|씨름|다리|목|뚝|찌)|빌려|빌린|맡겨|맡긴|(?<!고)점유(?!율)|배상|청구|지급|처분|넘겨|넘긴|속여|속아|건네|매도|매수|양도|증여|담보|(?<![가-힣])대여|변제|등기|(?<!짝|리\s?)지어|사들|잡아|되찾|취소|(?<![가-힣])해지|(?<!일)반환|(?<![가-힣])인도/;
 function _qgNamed(s){ return /[甲乙丙丁戊己庚辛壬癸]|[XYZ](회사|법인|은행|토지|아파트|건물|상가|주택|기계|점포|공장)|매수인|매도인|임차인|임대인|채권자|채무자|수탁자|신탁자|양수인|양도인|저당권자|질권자|보증인|대리인|전득자|점유자/.test(s||''); }
 function _qgVerdict(t){ t=String(t||'').trim().replace(/\.+$/,''); var p=t.split(/\.\s+/); var last=(p[p.length-1]||t).replace(/\s*\([^)]*\)\s*$/,''); return /(옳지\s*않다|적절하지\s*않다|부적절하다|해당하지\s*않는다|틀리다|틀린다|옳다|적절하다|맞다|해당한다|아니다)$/.test(last); }
 function _qgBg(s){ s=String(s||'').replace(/\s/g,''); var b={}; for(var i=0;i<s.length-1;i++){ var g=s.substr(i,2); b[g]=(b[g]||0)+1; } return b; }
