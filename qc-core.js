@@ -385,7 +385,19 @@ function _qcExtraRules(q){
   if(_qcOn('gichul','CALC_REPEAT_LEAD') && _isCalcQ(q)){
     var _fx=ex.filter(function(x){return x&&String(x).trim();});
     var _lead=function(s){return String(s).replace(/^[\s①-⑩·\-\d.]+/,'').replace(/\s+/g,'').slice(0,6);};
-    for(var _k=1;_k<_fx.length;_k++){ var _a=_lead(_fx[_k-1]),_b=_lead(_fx[_k]); if(_b&&_b.length>=4&&_b===_a)
+    /* [제안 #8 2026-07-30] 면제 — 계산을 이어 쓴 줄·순수 식 줄·연차 병렬 나열은 반복이 아니다.
+       'N단계·N차·N째·N번' 같은 스텝헤더는 어느 조건에도 걸리지 않아 계속 검사된다. */
+    var _rlK=function(s){ return (String(s).match(/[가-힣]/g)||[]).length; };
+    var _rlEq=function(s){ return /[=≒≈≤≥<>]/.test(String(s)); };
+    var _rlTime=/^\s*\d+\s*(년|개월|분기|기)(?![가-힣])/;
+    var _rlExempt=function(a,b){
+      if(_rlK(a)<=2 && _rlK(b)<=2 && _rlEq(a) && _rlEq(b)) return true;   /* (a) 순수 식 줄 연속 */
+      if(/^\s*[=≒≈≤≥<>]/.test(String(b))) return true;                    /* (b) 연산자로 시작하는 이어 쓰기 */
+      if(_rlTime.test(String(a)) && _rlTime.test(String(b))) return true;  /* (c) 연차 병렬 나열 */
+      return false;
+    };
+    for(var _k=1;_k<_fx.length;_k++){ var _a=_lead(_fx[_k-1]),_b=_lead(_fx[_k]);
+      if(_b&&_b.length>=4&&_b===_a && !_rlExempt(_fx[_k-1],_fx[_k]))
       v.push({kind:'warn',field:'ex',idx:_k,code:'CALC_REPEAT_LEAD',
         msg:'풀이 줄이 앞줄과 같은 문두("'+_b+'…")로 시작 — 같은 문장 구조를 연속 반복하지 않음(강의형 가이드 §작성금지)',text:String(_fx[_k]).slice(0,60)}); }
   }
