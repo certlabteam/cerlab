@@ -253,12 +253,12 @@ var _QC_SEV = {
   MN_BROKEN:'WARNING', CPT_UNLINKED:'WARNING', CPT_CX_EMPTY:'WARNING', CALC_NO_FORMULA:'WARNING',
   CALC_MECHANICAL:'INFO', CALC_REPEAT_LEAD:'INFO', TYPE_MISMATCH:'INFO',  /* 소급 폭증 방지: 신규 규칙은 INFO(비차단)로 도입, 베이스라인 정비 후 승격(qcDiff) */
   LVUP_ANS_SKEW:'WARNING', LVUP_COUNT:'INFO',
-  EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO', CALC_ARITH_MISMATCH:'WARNING', CALC_ANS_NO_MATCH:'WARNING', FACTOR_TABLE_PROSE:'WARNING',
+  EX_SUM_CRAMMED:'WARNING', EX_SUM_MULTILINE:'WARNING', CALC_SUM_ANS:'WARNING', CALC_NEWFMT_PARTIAL:'INFO', CALC_NO_TIP:'INFO', CALC_FLAG_MISMATCH:'INFO', CALC_ARITH_MISMATCH:'WARNING', CALC_ANS_NO_MATCH:'WARNING', FACTOR_TABLE_PROSE:'INFO',   /* [C-1 2026-07-30] 렌더 백로그 — q 불변이라 데이터로 닫을 수 없다 */
   OX_STMT_MISMATCH:'WARNING', OX_DUP_PATTERN:'WARNING',
   /* INFO (NICE — 참고) */
   EX_PREFIX:'INFO', CONST_NO_BASIS:'INFO', CALC_NO_APPROACH:'INFO', LVUP_LV_BAND:'INFO', LVUP_DUP:'ERROR',
   /* [신규 2026-07-15] 계산풀이 가려짐·q 표 줄글 */
-  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'WARNING', CALC_FIELDS_ON_NONCALC:'WARNING', ALLANS_NO_NOTE:'WARNING', EX_NOUN_END:'WARNING', CALC_EX_3X:'INFO',
+  CALC_HIDDEN_BY_TYPE:'WARNING', Q_TABLE_PROSE:'INFO', CALC_FIELDS_ON_NONCALC:'WARNING', ALLANS_NO_NOTE:'WARNING', EX_NOUN_END:'WARNING', CALC_EX_3X:'INFO',   /* [C-1] Q_TABLE_PROSE 렌더 백로그 강등 */
   /* [신규 2026-07-15] 마스터 레코드 검수 — 레코드 날짜 */
   REC_DATE:'BLOCKER',
   /* 그래프 */
@@ -274,6 +274,10 @@ var _QC_SEV = {
   /* 인터랙티브 */
   ITV_NO_PARAMS:'ERROR', ITV_DUP:'ERROR', ITV_UNKNOWN:'WARNING'
 };
+/* [C-1 2026-07-30] 집계 트랙 — 'render' 는 앱 렌더 개선 대상이라 문항 지적 총계에서 빼고 따로 센다.
+   q 가 불변필드라 데이터로는 닫을 수 없는 신호이기 때문이다. kind 는 warn 그대로 두어 게이트 동작은 안 바뀐다. */
+var _QC_TRACK = { Q_TABLE_PROSE:'render', FACTOR_TABLE_PROSE:'render' };
+function _qcTrackOf(code){ return _QC_TRACK[code] || 'data'; }
 function _qcSevOf(code, kind){
   if(_QC_SEV[code]) return _QC_SEV[code];
   return (kind==='block') ? 'ERROR' : 'WARNING';   // 미등록은 kind로 폴백
@@ -282,6 +286,7 @@ function _qcSevOf(code, kind){
 function _qcApplySev(vios){
   (vios||[]).forEach(function(x){
     x.sev = _qcSevOf(x.code, x.kind);
+    x.track = _qcTrackOf(x.code);
     x.kind = (x.sev==='BLOCKER'||x.sev==='ERROR') ? 'block' : 'warn';
   });
   return vios;
@@ -495,9 +500,27 @@ function _qcExtraRules(q){
   }
   /* (l1) [신규 2026-07] 계수표 줄글 몰림 — 현가/연금 계수처럼 (기간×이자율) 2D 데이터가 본문(q.q)에 표 없이 줄글로 크램.
      q는 불변 필드라 데이터 수정 대상이 아니라 앱 렌더(표) 개선 신호. 4개 이상 소수 계수 + 계수 키워드 + 표 없음이면 WARNING. */
+  /* [제안 #11 2026-07-30] 목록 면제 — 마커 나열이면서 '표 줄' 이 하나도 없으면 표 줄글이 아니다.
+     조건 불릿 목록 + 표 한 줄이 섞인 문항이 많아 문항이 아니라 줄 단위로 가른다. */
+  var _tpMarker=/^\s*(?:[○●◦ㅇ·•▪□◇]|[Oo](?=\s)|[-−–](?=\s))/;
+  var _tpAxis=/20\s*[×x]\s*\d|\d+\s*년(?!도)|\d+\s*기간|\d+\s*월(?!일)|\d+\s*분기|\d+(?:\.\d+)?\s*%/g;
+  var _tpNums=function(l){ return (String(l).match(/(?:^|[^\d.])\d{1,6}(?![\d.])/g)||[]).length; };
+  var _tpTableLine=function(l){
+    if(/현가계수|현재가치계수|연금현가|할인계수|현가표|계수표|현가율/.test(l)) return true;
+    if((l.match(_tpAxis)||[]).length>=3) return true;
+    if(/구분\s|지역\s|산업\s|연도별|월별|구간|계급/.test(l) && _tpNums(l)>=4) return true;
+    return false;
+  };
+  var _tpListExempt=function(qq){
+    var _ls=String(qq||'').split(/\n/).map(function(x){return x.trim();}).filter(Boolean);
+    var _mk=_ls.filter(function(l){ return _tpMarker.test(l); });
+    if(_mk.length<2) return false;
+    if(_ls.some(_tpTableLine)) return false;
+    return true;
+  };
   if(_qcOn('gichul','FACTOR_TABLE_PROSE')){
     var _fq=String(q.q||'');
-    if(!/<table|tbl:\/\//.test(_fq) && /현가계수|현재가치계수|연금현가|할인계수|현가표|계수표|현가율/.test(_fq)){
+    if(!/<table|tbl:\/\//.test(_fq) && !_tpListExempt(_fq) && /현가계수|현재가치계수|연금현가|할인계수|현가표|계수표|현가율/.test(_fq)){
       var _fmin=(_QC_DEFAULTS.gichul.FACTOR_TABLE_PROSE&&_QC_DEFAULTS.gichul.FACTOR_TABLE_PROSE.minVals)||4;
       var _fnum=(_fq.match(/\d\.\d{3,4}/g)||[]).length;
       if(_fnum>=_fmin) v.push({kind:'warn',field:'q',idx:0,code:'FACTOR_TABLE_PROSE',msg:'현가/연금 계수표가 본문에 줄글로 몰려 있음('+_fnum+'개 계수) — 기간×이자율 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_fq.slice(0,60)});
@@ -585,7 +608,7 @@ function _qcExtraRules(q){
   if(_qcOn('gichul','Q_TABLE_PROSE')){
     var _qtq=String(q.q||'');
     var _qtFactor=/현가계수|현재가치계수|연금현가|할인계수|현가표|계수표|현가율/.test(_qtq);
-    if(!_qtFactor && !/<table|tbl:\/\//.test(_qtq) && /구분\s|지역\s|산업\s|연도별|월별|구간|계급/.test(_qtq)){
+    if(!_qtFactor && !/<table|tbl:\/\//.test(_qtq) && !_tpListExempt(_qtq) && /구분\s|지역\s|산업\s|연도별|월별|구간|계급/.test(_qtq)){
       var _qtN=(_qtq.match(/(?:^|[^\d.])\d{1,6}(?![\d.])/g)||[]).length;
       var _qtMin=_qcN('gichul','Q_TABLE_PROSE','minNums',8);
       if(_qtN>=_qtMin) v.push({kind:'warn',field:'q',idx:0,code:'Q_TABLE_PROSE',msg:'표 데이터('+_qtN+'개 수치)가 본문에 줄글로 몰려 있음 — 행×열 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_qtq.slice(0,60)});
