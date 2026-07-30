@@ -53,6 +53,17 @@
     lines.forEach(function(l){ if(/\|/.test(l) && /^[\s|:\-]+$/.test(l)){ return; }   // 마크다운 구분선 스킵
       var cells=splitRow(l); if(cells){ buf.push(cells); } else { flush(); html+=lineHTML(l); } });
     flush(); return html; }
+  // ── 주관식 자료 계수표 수동 맵(검증된 <table> 주입 · 런타임 파싱 없음 · q 무변경) ──
+  var SUBJ_TP_MAP={"a2_s1_2024_q1":[{"region":"· 자본환원표(연 5.0%) 기간(월)/일시불내가/연금내가/감채기금/일시불현가/연금현가/저당상수: 6월 1.025262/6.062848/0.164939/0.975361/5.913463/0.169106, 12월 1.051162/12.278855/0.081441/0.951328/11.681222/0.085607, 48월 1.220895/53.014885/0.018863/0.819071/43.422956/0.023029, 60월 1.283359/68.006083/0.014705/0.779205/52.990706/0.018871, 72월 1.349018/83.764259/0.011938/0.741280/62.092777/0.016105, 120월 1.647009/155.282279/0.006440/0.607161/94.281350/0.010607","html":"<table class=\"subj-tbl\"><caption>자본환원표 (연 5.0%)</caption><tr><th>기간(월)</th><th>일시불내가</th><th>연금내가</th><th>감채기금</th><th>일시불현가</th><th>연금현가</th><th>저당상수</th></tr><tr><td>6월</td><td>1.025262</td><td>6.062848</td><td>0.164939</td><td>0.975361</td><td>5.913463</td><td>0.169106</td></tr><tr><td>12월</td><td>1.051162</td><td>12.278855</td><td>0.081441</td><td>0.951328</td><td>11.681222</td><td>0.085607</td></tr><tr><td>48월</td><td>1.220895</td><td>53.014885</td><td>0.018863</td><td>0.819071</td><td>43.422956</td><td>0.023029</td></tr><tr><td>60월</td><td>1.283359</td><td>68.006083</td><td>0.014705</td><td>0.779205</td><td>52.990706</td><td>0.018871</td></tr><tr><td>72월</td><td>1.349018</td><td>83.764259</td><td>0.011938</td><td>0.741280</td><td>62.092777</td><td>0.016105</td></tr><tr><td>120월</td><td>1.647009</td><td>155.282279</td><td>0.006440</td><td>0.607161</td><td>94.281350</td><td>0.010607</td></tr></table>"},{"region":"· 자본환원표(연 6.0%): 6월 1.030378/6.075502/0.164595/0.970518/5.896384/0.169595, 12월 1.061678/12.335562/0.081066/0.941905/11.618932/0.086066, 48월 1.270489/54.097832/0.018485/0.787098/42.580318/0.023485, 60월 1.348850/69.770031/0.014333/0.741372/51.725561/0.019333, 72월 1.432044/86.408856/0.011573/0.698302/60.339514/0.016573, 120월 1.819397/163.879347/0.006102/0.549633/90.073453/0.011102","html":"<table class=\"subj-tbl\"><caption>자본환원표 (연 6.0%)</caption><tr><th>기간(월)</th><th>일시불내가</th><th>연금내가</th><th>감채기금</th><th>일시불현가</th><th>연금현가</th><th>저당상수</th></tr><tr><td>6월</td><td>1.030378</td><td>6.075502</td><td>0.164595</td><td>0.970518</td><td>5.896384</td><td>0.169595</td></tr><tr><td>12월</td><td>1.061678</td><td>12.335562</td><td>0.081066</td><td>0.941905</td><td>11.618932</td><td>0.086066</td></tr><tr><td>48월</td><td>1.270489</td><td>54.097832</td><td>0.018485</td><td>0.787098</td><td>42.580318</td><td>0.023485</td></tr><tr><td>60월</td><td>1.348850</td><td>69.770031</td><td>0.014333</td><td>0.741372</td><td>51.725561</td><td>0.019333</td></tr><tr><td>72월</td><td>1.432044</td><td>86.408856</td><td>0.011573</td><td>0.698302</td><td>60.339514</td><td>0.016573</td></tr><tr><td>120월</td><td>1.819397</td><td>163.879347</td><td>0.006102</td><td>0.549633</td><td>90.073453</td><td>0.011102</td></tr></table>"}],"a2_s1_2022_q2":[{"region":"[자료 4] 연복리표(20년): 이자율 10% 저당상수 0.1174·연금현가계수 8.5135, 이자율 12% 저당상수 0.1338·연금현가계수 7.4694","html":"<table class=\"subj-tbl\"><caption>[자료 4] 연복리표 (20년)</caption><tr><th>이자율</th><th>저당상수</th><th>연금현가계수</th></tr><tr><td>10%</td><td>0.1174</td><td>8.5135</td></tr><tr><td>12%</td><td>0.1338</td><td>7.4694</td></tr></table>"}],"a2_s1_2025_q1":[{"region":"7. 자본환원표: 이자율 4%(5년: 일시불내가 1.216653, 연금내가 5.416323, 감채기금 0.184627, 일시불현가 0.821927, 연금현가 4.451822, 저당상수 0.224627), 이자율 5%(5년: 일시불내가 1.276282, 연금내가 5.525631, 감채기금 0.180975, 일시불현가 0.783526, 연금현가 4.329477, 저당상수 0.230975)","html":"<table class=\"subj-tbl\"><caption>7. 자본환원표 (기간 5년)</caption><tr><th>이자율</th><th>일시불내가</th><th>연금내가</th><th>감채기금</th><th>일시불현가</th><th>연금현가</th><th>저당상수</th></tr><tr><td>4%</td><td>1.216653</td><td>5.416323</td><td>0.184627</td><td>0.821927</td><td>4.451822</td><td>0.224627</td></tr><tr><td>5%</td><td>1.276282</td><td>5.525631</td><td>0.180975</td><td>0.783526</td><td>4.329477</td><td>0.230975</td></tr></table>"}]};
+  function _stpSent(i){ return '\u2063\u2063STPTBL'+i+'\u2063\u2063'; }
+  function stpPrepQ(q){ try{ if(!q||!q.id||!SUBJ_TP_MAP[q.id]) return q&&q.q; var a=SUBJ_TP_MAP[q.id], s=(q.q==null?'':String(q.q));
+      for(var i=0;i<a.length;i++){ if(a[i].region && s.indexOf(a[i].region)>=0) s=s.replace(a[i].region,_stpSent(i)); }
+      return s; }catch(e){ return q&&q.q; } }
+  function stpSwap(html,qid){ try{ if(!qid||!SUBJ_TP_MAP[qid]) return html; var a=SUBJ_TP_MAP[qid], h=String(html==null?'':html);
+      for(var i=0;i<a.length;i++){ var t=_stpSent(i); if(h.indexOf(t)<0) continue;
+        var w='<div class="jline">'+t+'</div>';
+        h = (h.indexOf(w)>=0) ? h.split(w).join(a[i].html) : h.split(t).join(a[i].html); }
+      return h; }catch(e){ return html; } }
   // ── 글씨 크기 통일(.subj-view): 문제(자료·물음)만 크게, 나머지는 한 크기 ──
   function _injectSubjFont(){ if(document.getElementById('subjFontUnify')) return;
     var st=document.createElement('style'); st.id='subjFontUnify';
@@ -83,6 +94,7 @@
     +'.subj-view .subj-tbl{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}'
     +'.subj-view .subj-tbl th,.subj-view .subj-tbl td{border:1px solid #D9E2EC;padding:6px 9px;text-align:left;vertical-align:top;line-height:1.55}'
     +'.subj-view .subj-tbl th{background:#EEF3F9;font-weight:700;color:#0F172A}'
+    +'.subj-view .subj-tbl caption{caption-side:top;text-align:left;font-weight:700;color:#0F172A;font-size:13px;padding:0 0 4px}'
     +'.subj-view .subj-node .nt,.subj-view .subj-node .nb,'
     +'.subj-view .concept-row,.subj-view .crow-h,.subj-view .crow-d,.subj-view .concept-ti,'
     +'.subj-view .concept-box .tm,.subj-view .subj-refbox,.subj-view .subj-refbox .rt,'
@@ -336,7 +348,7 @@
       +'<div class="qstem"><div class="qhead"><span class="qnum">'+_localNum(exam,qi)+'</span>'
       +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
       +'<span class="scard-set-label">'+(q.pt||'')+'점</span></div>'
-      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+_subjJaryoHTML(q.q)+'</div>'):'')
+      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+stpSwap(_subjJaryoHTML(stpPrepQ(q)), q.id)+'</div>'):'')
       +'</div>'
       +'<div id="subj-asks"></div>'
       +expTipHtml(q)
@@ -365,7 +377,7 @@
       +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
       +'<span class="scard-set-label">'+(q.pt||'')+'점</span>'
       +(_opts.onReport?'<button class="mq-report" data-report="1">⚠️ 신고 의견</button>':'')+'</div>'
-      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+_subjJaryoHTML(q.q)+'</div>'):'')
+      +((q.q&&String(q.q).trim())?('<div class="jaryo">'+stpSwap(_subjJaryoHTML(stpPrepQ(q)), q.id)+'</div>'):'')
       +'</div>'
       +'<div id="subj-asks"></div>'
       +expTipHtml(q)
