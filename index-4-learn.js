@@ -765,6 +765,8 @@ function comboLettersFromOpts(opts){
 }
 // 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1
 // ===== 배정형(참거짓 ㄱㄴㄷㄹ / 매칭 ㉠㉡㉢㉣) =====
+/* ⚠ [#9 2026-07-30] qc-core.js 의 CALC_HIDDEN_BY_TYPE 규칙이 아래 _assignPairs·_splitExpByMarker 판정을
+   복제해 '계산 패널이 가려지는가'를 판정한다. 두 함수를 고치면 qc-core 의 그 블록도 함께 볼 것. */
 function _assignPairs(q){
   var opts=q.opts||[]; var ans=Array.isArray(q.ans)?q.ans[0]:q.ans; if(!ans) return null;
   var opt=opts[ans-1]; if(!opt) return null;

@@ -548,11 +548,37 @@ function _qcExtraRules(q){
      COUNT·PAIR·ORDER·CV·FILL 등은 자체 렌더를 써서 요약풀이(exSum)·상세풀이(ex) 패널을 안 띄운다.
      계산형(q.calc/_isCalcQ)이고 풀이가 데이터에 있는데 이런 타입이면 상세풀이가 화면에서 사라진다(데이터엔 있음). */
   if(_qcOn('gichul','CALC_HIDDEN_BY_TYPE')){
+    /* [제안 #9 2026-07-30] 조건3 교체 — 'type 8종 목록' → '실제로 계산 패널이 가려지는가'.
+       앱 해설 렌더(index-4-learn.js)는 type 을 보지 않고 else-if 체인으로 갈린다. 계산형(⑦)보다 먼저
+       배정형(정답 보기를 '/'로 나눈 마커 쌍 + 정답 해설칸에 같은 마커 2개 이상)이 걸릴 때만 패널이 가려진다.
+       ⚠ 아래 _hbKeys·_hbHits 는 index-4-learn.js 의 _assignPairs·_splitExpByMarker 판정을 복제한 것이다.
+          그 두 함수를 고치면 이 블록도 함께 봐야 한다(단일 출처 이원화 지점). */
     var _hbTy=String((q&&q.type)||'').toUpperCase();
-    var _hbSpecial=['COUNT','PAIR','ORDER','CV','FILL','MATCH','MATRIX','OX'];
     var _hbSol=(Array.isArray(exp.exSum)&&exp.exSum.filter(Boolean).length)||(Array.isArray(exp.ex)&&exp.ex.filter(Boolean).length);
-    if((q.calc===true||_isCalcQ(q)) && _hbSol && _hbSpecial.indexOf(_hbTy)>=0)
-      v.push({kind:'warn',field:'type',idx:0,code:'CALC_HIDDEN_BY_TYPE',msg:'계산풀이(요약·상세풀이)가 데이터엔 있는데 type='+_hbTy+'(특수 렌더)라 앱 계산형 풀이 패널이 안 뜸 — 계산형 렌더 경로로 노출되게 타입/렌더 점검',text:_hbTy});
+    var _hbKeys=function(qq){
+      var opts=qq.opts||[]; var an=Array.isArray(qq.ans)?qq.ans[0]:qq.ans; if(!an) return null;
+      var opt=opts[an-1]; if(!opt) return null;
+      var parts=String(opt).split('/'); if(parts.length<2) return null;
+      var out=[];
+      for(var i=0;i<parts.length;i++){ var m=parts[i].trim().match(/^([\u3131-\u314E\u3260-\u326D])\s*(.+)$/); if(!m) return null; out.push(m[1]); }
+      return out;
+    };
+    var _hbHits=function(text,order){
+      var s=String(text||''); if(!s||!order||order.length<2) return 0;
+      var hit=0, from=0;
+      for(var i=0;i<order.length;i++){
+        var re=new RegExp('(^|[\\s,(\\uFF08])('+order[i]+')(?=[\\s(\\uFF08])','g'); re.lastIndex=from;
+        var m=re.exec(s); if(m){ hit++; from=m.index+m[1].length+1; }
+      }
+      return hit;
+    };
+    var _hbHidden=function(qq){
+      var oo=(qq.exp&&qq.exp.o)||[]; var an=Array.isArray(qq.ans)?qq.ans[0]:qq.ans;
+      var ks=_hbKeys(qq); if(!ks) return false;
+      return _hbHits(oo[(an||1)-1]||'', ks)>=2;
+    };
+    if((q.calc===true||_isCalcQ(q)) && _hbSol && _hbHidden(q))
+      v.push({kind:'warn',field:'type',idx:0,code:'CALC_HIDDEN_BY_TYPE',msg:'계산풀이(요약·상세풀이)가 데이터엔 있는데 앱 해설이 배정형(마커별 분해) 렌더로 갈려 계산형 풀이 패널이 안 뜸 — 정답 보기 마커 구성 또는 렌더 우선순위 점검',text:_hbTy});
   }
   /* (q) [신규 2026-07-15] 표 데이터가 문항(q)에 줄글로 몰림 — 구분/지역/산업 등 헤더 + 숫자 다수인데 표 마크업 없음.
      q는 불변이라 데이터 수정이 아니라 앱 표 렌더 개선 신호(FACTOR_TABLE_PROSE의 일반형; 계수표는 그쪽서 처리). */
