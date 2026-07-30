@@ -40,7 +40,8 @@
   function _subjTableHTML(rows){ var maxc=0; rows.forEach(function(r){ if(r.length>maxc)maxc=r.length; });
     var body=rows.map(function(r,ri){ var cells=''; for(var i=0;i<maxc;i++){ var c=esc(r[i]!=null?String(r[i]).trim():'');
         cells+= (ri===0 ? '<th>'+c+'</th>' : '<td>'+c+'</td>'); } return '<tr>'+cells+'</tr>'; }).join('');
-    return '<table class="subj-tbl">'+body+'</table>'; }
+    // 넘칠 때 자료박스 안에서 가로 스크롤 — 표 마스터가 쓰는 기존 .tbl-wrap 재사용(새 CSS 없음)
+    return '<div class="tbl-wrap"><table class="subj-tbl">'+body+'</table></div>'; }
   // 지문 가독성: ①②③·㉠㉡·○ㅇ●·▷ 앞에 줄바꿈 삽입(이미 줄머리면 중복 안 됨), 3줄이상 개행은 2줄로
   function _brkMarkers(s){ return String(s==null?'':s)
     .replace(/\s*([①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮])/g,'\n$1')
@@ -72,7 +73,9 @@
   function stpSwap(html,qid){ try{ if(!qid||!SUBJ_TP_MAP[qid]) return html; var a=SUBJ_TP_MAP[qid], h=String(html==null?'':html);
       for(var i=0;i<a.length;i++){ var t=_stpSent(i); if(h.indexOf(t)<0) continue;
         var w='<div class="jline">'+t+'</div>';
-        h = (h.indexOf(w)>=0) ? h.split(w).join(a[i].html) : h.split(t).join(a[i].html); }
+        // 맵 문자열은 그대로 두고 감싸기만 한다 — 표 마스터가 쓰는 기존 .tbl-wrap 재사용
+        var tb='<div class="tbl-wrap">'+a[i].html+'</div>';
+        h = (h.indexOf(w)>=0) ? h.split(w).join(tb) : h.split(t).join(tb); }
       return h; }catch(e){ return html; } }
   // ── 글씨 크기 통일(.subj-view): 문제(자료·물음)만 크게, 나머지는 한 크기 ──
   function _injectSubjFont(){ if(document.getElementById('subjFontUnify')) return;
