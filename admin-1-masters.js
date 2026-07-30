@@ -1214,6 +1214,17 @@ async function ottagApply(){
 var _cpatchData=null, _cpatchShard=null, _cpatchOk=null, _cpatchBound=false;
 function cpatchEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _cpNows(s){ return String(s==null?'':s).replace(/\s+/g,''); }   // 모든 공백 제거(띄어쓰기만 비교용)
+// 불릿 마커 정규화 — 승인된 '마커 통일' 예외만 통과시키는 비교용(2026-07-30). q 비교에만 쓴다.
+//  · 줄머리 ○ ● ◦ ㅇ · 는 뒤에 무엇이 와도 통일(붙은 불릿). 단 바로 뒤에 또 마커면 손대지 않음(○○시 익명 보호).
+//  · 줄머리 라틴 O·o 는 뒤가 공백일 때만(OECD·O형 보호).  · 줄 중간은 공백 사이에 낀 것만(시·군·구 보호).
+//  · 마지막에 공백 제거 → 기존 _cpNows 동작을 그대로 포함(띄어쓰기 패치는 계속 통과).
+function _cpNormMarker(s){
+  var t=String(s==null?'':s).replace(/\r/g,'');
+  t=t.replace(/(^|\n)([ \t]*)[○●◦ㅇ·](?![○●◦ㅇ·])/g, '$1$2\u0001');
+  t=t.replace(/(^|\n)([ \t]*)[Oo](?=[ \t])/g, '$1$2\u0001');
+  t=t.replace(/(?<=[ \t])[○●◦ㅇ·Oo](?=[ \t])/g, '\u0001');
+  return t.replace(/\s+/g,'');
+}
 function cpatchBindImp(){
   if(_cpatchBound) return; _cpatchBound=true;
   var file=document.getElementById('cpatchImpFile'), drop=document.getElementById('cpatchImpDrop');
@@ -1285,7 +1296,7 @@ async function cpatchValidate(){
         }
         if(e.q!=null){ hasField=true;
           if(typeof e.q!=='string') errs.push('q 문자열 아님');
-          else if(_cpNows(e.q)!==_cpNows(q.q||'')) errs.push('q 띄어쓰기 외 변경 — 차단');
+          else if(_cpNormMarker(e.q)!==_cpNormMarker(q.q||'')) errs.push('q 마커·띄어쓰기 외 변경 — 차단');
         }
         if(e.opts!=null){ hasField=true;
           if(!Array.isArray(e.opts)) errs.push('opts 배열 아님');
