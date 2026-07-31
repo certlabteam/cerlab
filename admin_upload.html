@@ -110,6 +110,7 @@ th,td{border:1px solid #EFE9E2;padding:5px 8px;text-align:left}
       <div class="desc">기존 문항의 <code>exp.o / exp.ex / q(띄어쓰기) / opts(띄어쓰기)</code>만 병합. 검증 통과분만 저장 버튼이 뜹니다.</div>
       <input type="file" id="cpatchImpFile" accept=".json">
       <div id="cpatchStatus" class="status"></div>
+      <div id="cpatchConfirm"></div>
       <div id="cpatchReport" class="report"></div>
       <button id="cpatchApplyBtn" class="btn-run" style="display:none;margin-top:8px" onclick="cpatchApply()">검증 통과분 병합 저장</button>
     </div>
@@ -177,7 +178,7 @@ th,td{border:1px solid #EFE9E2;padding:5px 8px;text-align:left}
 </div>
 
 <!-- 업로드/검수 로직 — admin과 동일 파일 재사용 (admin-4-ops의 무거운 로더는 아래 부트에서 중화) -->
-<script src="admin-1-masters.js?v=20260730a"></script>
+<script src="admin-1-masters.js?v=20260731a"></script>
 <script src="admin-2-content.js?v=20260721"></script>
 <script src="admin-3-qc.js?v=20260721"></script>
 <script src="admin-4-ops.js?v=20260721"></script>

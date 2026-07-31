@@ -1211,7 +1211,7 @@ async function ottagApply(){
 
 
 // ===== 🩹 콘텐츠 패치 (해설·예시·띄어쓰기 부분 병합 · banks/변형 문항에 id로 콕 병합) =====
-var _cpatchData=null, _cpatchShard=null, _cpatchOk=null, _cpatchBound=false;
+var _cpatchData=null, _cpatchShard=null, _cpatchOk=null, _cpatchBound=false, _cpatchConfirmTok=null;
 function cpatchEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _cpNows(s){ return String(s==null?'':s).replace(/\s+/g,''); }   // 모든 공백 제거(띄어쓰기만 비교용)
 // 불릿 마커 정규화 — 승인된 '마커 통일' 예외만 통과시키는 비교용(2026-07-30). q 비교에만 쓴다.
@@ -1266,6 +1266,7 @@ function cpatchHandle(fileList){
 async function cpatchValidate(){
   var rep=document.getElementById('cpatchReport'), btn=document.getElementById('cpatchApplyBtn');
   _cpatchShard=null; _cpatchOk=null; if(btn) btn.style.display='none';
+  cpatchCancelConfirm();   // 재검증하면 이전 확인 토큰·배너는 무효
   var groups=(_cpatchData&&_cpatchData.groups)||[];
   var allHomes={}, okMap={}, errN=0, okN=0, setStat={}, errRows=[], failSubs=[];
   var cntO=0, cntEx=0, cntSp=0;
@@ -1329,10 +1330,30 @@ async function cpatchValidate(){
   _cpatchShard={homes:allHomes}; _cpatchOk=okMap;
   if(okN>0){ if(btn){ btn.style.display=''; btn.textContent='검증 통과 '+okN+'문항 병합 저장'; } }
 }
-async function cpatchApply(){
+/* 확인 절차 — 네이티브 confirm() 대신 화면 내 배너.
+   렌더러를 막지 않으므로 자동화가 DOM으로 [확인]을 누를 수 있다.
+   토큰은 배너를 띄울 때만 발급되는 1회용이라, 배너를 거치지 않고는 저장으로 못 들어간다. */
+function cpatchCancelConfirm(){
+  _cpatchConfirmTok=null;
+  var b=document.getElementById('cpatchConfirm'); if(b) b.innerHTML='';
+}
+function cpatchAskConfirm(n){
+  _cpatchConfirmTok='cp'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+  var b=document.getElementById('cpatchConfirm');
+  if(!b){ _cpatchConfirmTok=null; return; }
+  b.innerHTML='<div id="cpatchConfirmBox" style="margin:4px 0 2px;border:1.5px solid #15793F;border-radius:8px;background:#F1F8F3;padding:12px 14px">'
+    +'<div style="font-weight:700;color:#15793F;font-size:13px">'+n+'개 문항에 해설·예시·띄어쓰기 패치를 병합 저장합니다. 계속할까요?</div>'
+    +'<div style="color:#5B6B5F;font-size:12px;margin-top:4px">※ 학생앱 배포는 저장 후 [기출 업로드] 탭의 version +1(또는 매니페스트 동기화)로 올려주세요.</div>'
+    +'<div style="display:flex;gap:8px;margin-top:10px">'
+    +'<button class="btn-sm" id="cpatchConfirmYes" onclick="cpatchApply(\''+_cpatchConfirmTok+'\')" style="background:#15793F;color:#fff;font-weight:700;border:0;border-radius:7px;padding:9px 16px;font-size:13px;cursor:pointer">확인 · 병합 저장</button>'
+    +'<button class="btn-sm" id="cpatchConfirmNo" onclick="cpatchCancelConfirm()" style="background:#EEE9E1;color:#5B5348;border:0;border-radius:7px;padding:9px 16px;font-size:13px;cursor:pointer">취소</button>'
+    +'</div></div>';
+}
+async function cpatchApply(tok){
   if(!_cpatchShard||!_cpatchOk){ return; }
   var keys=Object.keys(_cpatchOk); if(!keys.length) return;
-  if(!confirm(keys.length+'개 문항에 해설·예시·띄어쓰기 패치를 병합 저장합니다. 계속할까요?\n\n※ 학생앱 배포는 저장 후 [기출 업로드] 탭의 version +1(또는 매니페스트 동기화)로 올려주세요.')) return;
+  if(!_cpatchConfirmTok || tok!==_cpatchConfirmTok){ cpatchAskConfirm(keys.length); return; }
+  cpatchCancelConfirm();   // 토큰 1회 소모 — 배너 닫고 재사용 차단
   var sh=_cpatchShard, rep=document.getElementById('cpatchReport');
   var touched={};   // home docId → true
   keys.forEach(function(k){
