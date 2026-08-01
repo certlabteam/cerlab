@@ -299,6 +299,13 @@
       try{ v = v.concat(_qcTrailConn(q)); }catch(e){}
       return v;
     };
+    /* [GATE-1 2026-08-01] 전역 _qcViolations 도 같이 갈아끼운다.
+       qualityGate(qc-core.js)와 지적서(admin-3-qc.js:440)는 QC.violations(프로퍼티)가 아니라
+       전역 자유변수 _qcViolations 를 부른다. 프로퍼티만 바꾸면 서로 다른 참조라
+       위 면제 3종과 추가규칙 4종(EX_MISSING·O_SHORT·O_COPY·TRAIL_CONN)이 게이트·지적서에 닿지 않았다.
+       실측(work/gate8/g1_measure.js · 7,250문항): 지적 156 → 434(O_COPY 275·TRAIL_CONN 2·O_SHORT 1),
+       없어지는 지적 0, **block 문항 0 → 0** — 새로 차단되는 문항은 없다(전부 WARNING). */
+    try{ if(typeof _qcViolations==='function') _qcViolations = QC.violations; }catch(e){}
   }
 
   /* ---- 치명도 등록(참고용) ---- */

@@ -83,7 +83,7 @@ function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.index
 function _qcViolations(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[], cards=exp.c||[];
   // exp.cpt(마스터 링크) 카드: 개수(CARD_LT2)·화살표(REL_NO_ARROW) 판정에만 반영.
-  // 카드 내용검사(CX_EMPTY 등)는 인라인 exp.c 전용 — 마스터 카드 품질은 masterLinkAudit 소관.
+  // 카드 내용검사(CARD_CX_EMPTY 등)는 인라인 exp.c 전용 — 마스터 카드 품질은 masterLinkAudit 소관.
   var _cptSkip=false, _lk=[];
   if(Array.isArray(exp.cpt) && exp.cpt.length){
     if(_qcCptCards){
@@ -111,7 +111,7 @@ function _qcViolations(q){
     var _isCountQ=String((q&&q.type)||'').toUpperCase()==='COUNT'; /* [FIX 2026-07-16] COUNT(개수형)은 정답칸이 "N개라 정답이다"로 끝나 옳다/옳지않다 종결이 없음 — VERDICT 오탐 제외 */
   o.forEach(function(t,i){ if(t&&String(t).trim()&&!_isCountQ&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9ba\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
   }
-  if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
+  if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CARD_CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
   var _cTot=cards.length+_lk.length; if(isMCQ && !isCalc && !_cptSkip && _cTot && _cTot<2) v.push({kind:(cards.length?'block':'warn'),field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c \ud3ec\ud568)'+(cards.length?'':' \u2192 \ub9c1\ud06c\ub41c \uac1c\ub150\uc5d0 \uce74\ub4dc \ubcf4\uac15'),text:''});
   if(_qcOn('gichul','O_PLACEHOLDER')){ var _PLACE=/\ud574\uc124\s*\ucd94\uac00|\uc218\uc815\s*\uc608\uc815|\uc791\uc131\s*\uc608\uc815|\ucd94\uac00\s*\uc608\uc815|\ubbf8\uc791\uc131|\ucc44\uc6b8\s*\uc608\uc815|\uc900\ube44\s*\uc911|TODO/; o.forEach(function(t,i){ if(_PLACE.test(String(t||''))) v.push({kind:'block',field:'o',idx:i,code:'O_PLACEHOLDER',msg:'\ud574\uc124(o)\uc5d0 \uc784\uc2dc \ubb38\uad6c \u2014 \ube48 \uce78\uc740 \ubc18\ub4dc\uc2dc \ube48 \ubb38\uc790\uc5f4("")\ub85c(\uc784\uc2dc\ubb38\uad6c\ub294 oFilled\ub85c \uc624\uacc4\uc0b0\ub418\uc5b4 \uc9c4\uc220\uc218 \uc5b4\uae4b\ub0a8)',text:t}); }); }
   if(_qcOn('gichul','O_INCOMPLETE') && isMCQ && !isCalc && opts.length>=4 && String((q&&q.type)||'').toUpperCase()!=='COUNT'){ /* [FIX 2026-07-16] COUNT형은 정답칸만 설명(개수 근거)하면 되므로 빈칸 정상 — O_INCOMPLETE 오탐 제외 */ var _mk=opts.some(function(op){return /^[\u3131-\u314e][\s,:\-]/.test(String(op).trim());}); if(!_mk){ var _emp=o.slice(0,opts.length).filter(function(x){return !(x&&String(x).trim());}).length; if(_emp>0) v.push({kind:'warn',field:'o',idx:0,code:'O_INCOMPLETE',msg:'\ubcf4\uae30 '+opts.length+'\uc9c0\uc778\ub370 \ud574\uc124(o) '+_emp+'\uce78 \ube44\uc5b4\uc788\uc74c \u2014 SC\ub294 \ubcf4\uae30 \uc804\ubd80 \ucc44\uc6c0(\uc815\uc758\ud655\uc778 \ubcf4\uae30\ub9cc \uc0dd\ub7b5)',text:''}); } }
@@ -253,7 +253,7 @@ var _QC_DEFAULTS={
    WARNING = SHOULD 위반(권장 수정) · INFO = NICE(참고). 미등록 코드는 kind로 폴백. */
 var _QC_SEV = {
   /* ERROR (MUST — 반송) */
-  EMDASH:'ERROR', VERDICT:'ERROR', EX_VERDICT:'ERROR', CX_EMPTY:'ERROR', CARD_LT2:'ERROR', O_PLACEHOLDER:'ERROR',
+  EMDASH:'ERROR', VERDICT:'ERROR', EX_VERDICT:'ERROR', CARD_CX_EMPTY:'ERROR', O_PLACEHOLDER:'ERROR',
   CALC_WRONG_SLOT:'ERROR', FILL_BLANK_MISMATCH:'ERROR', CPT_MISSING:'ERROR', CPT_BROKEN:'ERROR',
   TBL_BROKEN:'ERROR', GRP_BROKEN:'ERROR', ITV_BROKEN:'ERROR', CHILD_MISSING:'ERROR',
   OTTAG_LEN:'ERROR', DUP_ID:'ERROR',
@@ -262,7 +262,7 @@ var _QC_SEV = {
   O_INCOMPLETE:'WARNING', COMBO_STMT_MISMATCH:'WARNING', O_ECHO_D:'WARNING', O_NO_ACTOR:'WARNING',
   O_STEPS_NOBR:'WARNING', EX_STEPS_NOBR:'WARNING', EX_STEPS_CRAMMED:'WARNING', O_ECHO_OPT:'WARNING',
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',
-  REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_GENERIC_NOUN:'WARNING', EX_PROSE_CALC:'WARNING', EX_REP_VERB:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
+  CARD_LT2:'WARNING', REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_GENERIC_NOUN:'WARNING', EX_PROSE_CALC:'WARNING', EX_REP_VERB:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
   WORK_MEMO_LEFT:'WARNING', TBL_MENTION_NO_TABLE:'WARNING',   /* [ADD 2026-07-20] 미완성 메모 잔존·[표] 누락 */
