@@ -273,10 +273,25 @@
       /* 일상 비유 예시("쉽게 비유하면 …")는 甲乙丙 없이 휴대폰·마트 같은 일상 소재를 쓰므로
          甲乙丙 전제 규칙(EX_NONAME·EX_NO_SUBJECT_FIRST·EX_NOT_GAP_FIRST) 면제 */
       try{ v = v.filter(function(x){ if(x.code!=='EX_NONAME'&&x.code!=='EX_NO_SUBJECT_FIRST'&&x.code!=='EX_NOT_GAP_FIRST') return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/비유하(면|자면|건대)/.test(String(ex[x.idx]||'')); }); }catch(e){}
-      try{ v = v.concat(_qcExMissing(q)); }catch(e){}
-      try{ v = v.concat(_qcOShort(q)); }catch(e){}
-      try{ v = v.concat(_qcOCopy(q)); }catch(e){}
-      try{ v = v.concat(_qcTrailConn(q)); }catch(e){}
+      /* [엔진 #15 · 2026-08-01] 같은 자리에 같은 코드가 두 번 붙는 것을 막는다.
+         `EX_MISSING`·`O_SHORT` 는 **코어에도 같은 이름의 구현이 있다**(qc-core.js:586·593).
+         스코프가 서로 달라(코어는 _sScene 로 OX형·특정 type 을 빼고, 여기는 계산 신호 휴리스틱을 더 본다)
+         한쪽만 남기면 검출이 줄어드는데, 그냥 concat 하면 둘 다 걸리는 자리에서 **한 결함이 두 줄로 뜬다.**
+         실증(work/gate10/dup_measure.js · 인공 25자 해설 4칸): O_SHORT 가 **8줄** 발화했다.
+         라이브 7,250문항에서는 아직 겹치는 자리가 0이라 건수 변화는 없지만, 겹치는 순간
+         지적서 집계와 배치의 '성공 증거'(대상 코드가 사라졌는가) 수치가 조용히 두 배가 된다.
+         → (code|field|idx) 가 이미 있으면 더하지 않는다. 코어 쪽 줄이 남는다(진실의 원천은 코어).
+         GATE-3(CX_EMPTY)·#40(MN_DUP) 과 같은 이름충돌 계열의 세 번째·네 번째 건이다. */
+      function _qgAdd(cur, add){
+        if(!add || !add.length) return cur;
+        var seen={}; cur.forEach(function(x){ seen[x.code+'|'+x.field+'|'+x.idx]=1; });
+        add.forEach(function(x){ var k=x.code+'|'+x.field+'|'+x.idx; if(!seen[k]){ seen[k]=1; cur.push(x); } });
+        return cur;
+      }
+      try{ v = _qgAdd(v, _qcExMissing(q)); }catch(e){}
+      try{ v = _qgAdd(v, _qcOShort(q)); }catch(e){}
+      try{ v = _qgAdd(v, _qcOCopy(q)); }catch(e){}
+      try{ v = _qgAdd(v, _qcTrailConn(q)); }catch(e){}
       return v;
     };
     /* [GATE-1 2026-08-01] 전역 _qcViolations 도 같이 갈아끼운다.
@@ -296,6 +311,13 @@
          끌어내리고 있었다 — 특히 MN_DUP 은 코어에서 'id 중복'(레코드가 서로 덮어써 데이터가 사라지는
          상태)이라 강등해선 안 된다. 이제 이 파일이 정말 새로 만드는 이름만 등록한다. */
       _QC_SEV.MN_SAME_CODE_DESC='WARNING';
+      /* [엔진 #15] 아래 넷 중 EX_MISSING·O_SHORT 는 **코어에도 있는 이름**이다.
+         - EX_MISSING: 코어도 WARNING → 이 줄은 값을 바꾸지 않는다(무해).
+         - O_SHORT   : 코어는 **INFO**(qc-core.js:279 "소급 폭증 방지로 INFO 도입 → 베이스라인 후 승격").
+           이 줄이 그 INFO 를 WARNING 으로 **승격**시킨다. 코어가 예고한 승격 자체는 맞는 방향이고,
+           승격의 전제였던 '베이스라인'도 실측으로 충족된다 — 라이브 7,250문항에서 O_SHORT 발화는 **1건**뿐이라
+           승격해도 폭증이 없다(work/gate10/dup_measure.js). 그래서 되돌리지 않고 **근거를 여기 남긴다.**
+           되돌리려면 이 줄에서 O_SHORT 만 빼면 코어의 INFO 가 그대로 산다. */
       _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
     }
   }catch(e){}
