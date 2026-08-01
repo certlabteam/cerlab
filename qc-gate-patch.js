@@ -3,13 +3,12 @@
    qc-core.js 뒤에 <script src>로 추가 로드. window.QC 를 확장한다.
 
    담는 것 (지금까지 비어 있던 구멍 메움)
-   ┌── 마스터(암기) 콘텐츠 검수  ── _qcMnemAudit(mnems)
-   │   · MN_DUP        같은 코드(빨강 두문자)를 가진 레코드가 2개 이상  ← 신규 핵심
-   │   · MN_DESC_EMPTY 설명(desc) 빈칸
-   │   · MN_NO_K       코드에 빨강(<span class="k">) 없음
-   │   · MN_DESC_NO_RED 설명에 빨강 대응 글자 없음
-   │   · MN_DESC_REDUP 설명 빨강 글자가 코드 두문자와 불일치(누락/초과)
-   │   (위 4개는 _QC_DEFAULTS.mnem 에 이름만 있고 구현이 없던 것 — 여기서 구현)
+   ┌── 마스터(암기) 콘텐츠 검수  ── QC.mnemAudit = 코어판 _qcMnemAudit + 아래 1종 (체이닝)
+   │   · MN_SAME_CODE_DESC  코드'와' 설명이 둘 다 완전히 같은 레코드 (코어에 없는 규칙)
+   │   [엔진 #14 · 2026-08-01] 예전엔 이 파일이 코어판을 대체하면서 MN_DESC_EMPTY·MN_NO_K·
+   │   MN_DESC_NO_RED·MN_DESC_REDUP 을 같은 이름으로 다시 구현했다. 코어에 이미 있는 것들이라
+   │   지웠고(중복 발화 방지), 코어의 MN_DESC_SHORT·MN_LETTER_UNEXPLAINED·MN_SLASH·MN_SYMBOL·
+   │   MN_QSPECIFIC_TRAP·REC_DATE·id 중복이 다시 보이게 됐다.
    └── 문항 예시 검수        ── EX_MISSING (per-question)
        · 이론형 객관식인데 장면 예시(exp.ex)가 통째로 비어 있음
          "여과과정의 효과다"처럼 해설 한 줄로 끝나고 예시가 없는 문항을 잡는다.
@@ -24,28 +23,18 @@
   var _num = (typeof _qcN  === 'function')  ? _qcN   : function(s,c,p,d){ return d; };
   var _sev = (typeof _qcApplySev==='function') ? _qcApplySev : function(v){ return v; };
   var STRIP = /<[^>]+>/g;
-  /* 빨강 표기 두 관례 모두 지원: <span class="k">X</span> 와 축약형 <k>X</k> */
-  var RED = /<span\s+class=["']k["']\s*>([\s\S]*?)<\/span>|<k>([\s\S]*?)<\/k>/g;
-
   function strip(s){ return String(s||'').replace(STRIP,'').trim(); }
-  /* 빨강 글자 추출. code는 "<span class=k>영·투·재</span>"처럼 통짜 한 span에
-     가운뎃점으로 여러 글자가 들어오고, desc는 글자별 span으로 쪼개져 온다.
-     양쪽을 같은 기준으로 비교하려면 잡은 조각을 ·,·공백·중점으로 다시 분해해 평탄화한다. */
-  function redLetters(s){
-    var out=[], m; RED.lastIndex=0;
-    while((m=RED.exec(String(s||'')))){
-      var chunk = (m[1]!=null?m[1]:m[2]);   /* <span class=k> 또는 <k> 캡처 */
-      strip(chunk).split(/[·・,\s/]+/).forEach(function(t){ t=t.trim(); if(t) out.push(t); });
-    }
-    return out;
-  }
+  /* [엔진 #14] 빨강 글자 추출기(redLetters)는 지웠다 — 그것을 쓰던 mnem 규칙 4종이
+     코어와 겹쳐 제거됐고, 코어의 _qcRedLetters(qc-core.js:961)가 같은 두 관례
+     (<span class="k">·<k>)를 이미 지원한다. */
 
   /* ---- 설정 기본값 병합(있으면 유지) ---- */
   try{
     if (typeof _QC_DEFAULTS!=='undefined' && _QC_DEFAULTS){
       _QC_DEFAULTS.mnem = _QC_DEFAULTS.mnem || {};
-      var mdef={ MN_DUP:{on:true}, MN_DESC_EMPTY:{on:true}, MN_NO_K:{on:true}, MN_DESC_NO_RED:{on:true}, MN_DESC_REDUP:{on:true} };
-      for (var k in mdef){ if(!_QC_DEFAULTS.mnem[k]) _QC_DEFAULTS.mnem[k]=mdef[k]; }
+      /* [엔진 #14] 이 파일이 실제로 구현하는 mnem 규칙은 MN_SAME_CODE_DESC 하나다.
+         나머지 4종은 코어(qc-core.js)에 같은 이름으로 이미 있어 여기서 기본값을 또 심을 이유가 없다. */
+      if(!_QC_DEFAULTS.mnem.MN_SAME_CODE_DESC) _QC_DEFAULTS.mnem.MN_SAME_CODE_DESC={on:true};
       _QC_DEFAULTS.gichul = _QC_DEFAULTS.gichul || {};
       if(!_QC_DEFAULTS.gichul.EX_MISSING) _QC_DEFAULTS.gichul.EX_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.O_SHORT) _QC_DEFAULTS.gichul.O_SHORT={on:true,minChars:30};
@@ -59,71 +48,54 @@
      mnems: 배열([{id,code,desc,...}]) 또는 {mnemonics:[...]} 둘 다 허용.
      반환: 위반 배열([{kind,code,field,id,msg,text,sev}])
      ========================================================================== */
-  function _qcMnemAudit(mnems){
+  /* [엔진 #14 · 2026-08-01] 판정대기 #40 — 이 함수는 원래 코어판 _qcMnemAudit 을 **대체**했다.
+     그래서 코어만 가진 검사(MN_DESC_SHORT·MN_LETTER_UNEXPLAINED·MN_SLASH·MN_SYMBOL·
+     MN_QSPECIFIC_TRAP·REC_DATE·id 중복)가 admin·preview 검수창에서 통째로 사라졌다.
+     이제 **코어를 먼저 돌리고 그 위에 이 파일만 아는 규칙을 얹는다**(GATE-1 과 같은 방식).
+
+     겹치던 4종(MN_DESC_EMPTY·MN_NO_K·MN_DESC_NO_RED·MN_DESC_REDUP)은 코어에 같은 이름으로
+     이미 있으므로 여기서 지웠다 — 두 번 발화하는 소음이 될 뿐이고, 코어의 빨강 추출도
+     <span class="k">·<k> 두 관례를 모두 지원한다(qc-core.js:961). 한 글자씩 대응을 따지는
+     엄격판은 코어의 MN_LETTER_UNEXPLAINED 가 이미 한다.
+
+     남긴 것은 코어에 없는 규칙 하나 — '코드와 설명이 둘 다 완전히 같은 레코드'.
+     ⚠ 이름을 MN_DUP → MN_SAME_CODE_DESC 로 바꿨다. 코어의 MN_DUP 은 **id 중복**(ERROR·block)이라
+        뜻이 다른데 이름이 같아, 아래 _QC_SEV 등록이 코어의 차단급 id 중복 검사를 조용히
+        WARNING 으로 끌어내리고 있었다(GATE-3 에서 CX_EMPTY 를 가른 것과 같은 이름 충돌). */
+  function _qcMnemOwn(mnems){
     var list = Array.isArray(mnems) ? mnems : ((mnems&&mnems.mnemonics)||[]);
     var v = [];
 
-    /* (A) MN_DUP — 진짜 중복만. [2026-07-14 정정] '같은 코드'는 중복이 아니다:
+    /* MN_SAME_CODE_DESC — 진짜 중복만. [2026-07-14 정정] '같은 코드'는 중복이 아니다:
        같은 두문자(예: 직·간·이)를 서로 다른 개념(정책수단 vs 표준건축비)에 재사용하는 것은 정상.
        코드 '와' 설명(desc)이 '둘 다 완전 동일'할 때만 내용상 중복 후보로 본다. 그마저도 서로
        다른 개념에 걸렸으면 삭제가 아니라 '개념 통합 검토' 대상 → INFO성 경고로만 남긴다. */
-    if (_on('mnem','MN_DUP')){
+    if (_on('mnem','MN_SAME_CODE_DESC')){
       var byCD = {};
       list.forEach(function(m){ var c=strip(m&&m.code), dd=strip(m&&m.desc); if(!c) return; var k=c+''+dd; (byCD[k]=byCD[k]||[]).push(m); });
       Object.keys(byCD).forEach(function(k){
         var g = byCD[k]; if (g.length < 2) return;
-        var c = strip(g[0].code);
         var ids = g.map(function(m){ return m.id; });
         g.forEach(function(m, i){
           if (i === 0) return; /* 대표 1건 외 나머지에만 지적 */
-          v.push({ kind:'warn', field:'desc', idx:0, code:'MN_DUP', id:m.id,
+          v.push({ kind:'warn', field:'desc', idx:0, code:'MN_SAME_CODE_DESC', id:m.id,
             msg:'코드·설명이 완전히 같은 암기가 '+g.length+'건('+ids.join(' · ')+') — 서로 다른 개념에 걸렸는지 확인 후, 같은 개념이면 하나로 통합(참조 remap). 단순히 코드만 같은 것은 중복 아님',
             text:ids.join(' · ') });
         });
       });
     }
 
-    /* (B~E) 레코드별 콘텐츠 검수 */
-    list.forEach(function(m){
-      if(!m) return;
-      var code = String(m.code||''), desc = String(m.desc||'');
-      var codeRed = redLetters(code), descRed = redLetters(desc);
-
-      if (_on('mnem','MN_DESC_EMPTY') && !strip(desc))
-        v.push({ kind:'warn', field:'desc', idx:0, code:'MN_DESC_EMPTY', id:m.id,
-          msg:'암기 설명(desc)이 비어 있음 — 코드 두문자가 각각 무엇인지 desc로 풀어야 함', text:strip(code) });
-
-      if (_on('mnem','MN_NO_K') && !codeRed.length)
-        v.push({ kind:'warn', field:'code', idx:0, code:'MN_NO_K', id:m.id,
-          msg:'코드에 빨강(<span class="k">) 두문자 표시 없음 — 외울 글자를 <span class="k">글자</span>로', text:strip(code) });
-
-      if (strip(desc)){
-        if (_on('mnem','MN_DESC_NO_RED') && codeRed.length && !descRed.length)
-          v.push({ kind:'warn', field:'desc', idx:0, code:'MN_DESC_NO_RED', id:m.id,
-            msg:'설명(desc)에 빨강 대응 글자가 하나도 없음 — 코드 두문자에 해당하는 글자를 desc에서도 빨강 처리', text:strip(desc).slice(0,60) });
-
-        /* MN_DESC_REDUP: 코드 빨강 두문자가 desc에서도 빨강으로 대응되는지.
-           주의 — code는 "<span class=k>테성인IGF</span>"처럼 구분자 없이 한 span에 여러 글자를
-           넣기도 해서 토큰 경계가 불안정하다. 그래서 '한글 음절' 단위로만 비교한다
-           (영문 약자 IGF 등 ASCII는 경계 모호 → 검사 제외). 코드 한글 두문자 중 desc 빨강에
-           없는 것만 '누락'으로 잡는다. 한글이 없으면(순 ASCII 코드) 스킵. */
-        if (_on('mnem','MN_DESC_REDUP')){
-          var HAN=/[가-힣]/g;
-          var codeHan=(codeRed.join('').match(HAN)||[]);
-          var descHanSet={}; (descRed.join('').match(HAN)||[]).forEach(function(ch){ descHanSet[ch]=1; });
-          if (codeHan.length){
-            var missSet={}; codeHan.forEach(function(ch){ if(!descHanSet[ch]) missSet[ch]=1; });
-            var miss=Object.keys(missSet);
-            if (miss.length)
-              v.push({ kind:'warn', field:'desc', idx:0, code:'MN_DESC_REDUP', id:m.id,
-                msg:'코드 빨강 두문자 중 설명(desc)에서 빨강 처리 안 된 글자: '+miss.join(',')
-                    +' (코드 두문자 = 설명 빨강 전수 일치)', text:strip(desc).slice(0,60) });
-          }
-        }
-      }
-    });
-
     _sev(v);
+    return v;
+  }
+
+  /* 코어판 + 이 파일판을 합친 것이 유일한 mnem 검수 경로다(체이닝 · 대체 아님).
+     코어판 참조는 패치가 덮기 **전에** 잡아 둔다. */
+  var _mnemBase = (typeof _qcMnemAudit==='function') ? _qcMnemAudit : null;
+  function _qcMnemAuditAll(mnems){
+    var v = [];
+    if(_mnemBase){ try{ v = _mnemBase(mnems) || []; }catch(e){ v = []; } }
+    try{ v = v.concat(_qcMnemOwn(mnems)); }catch(e){}
     return v;
   }
 
@@ -271,15 +243,23 @@
      "( )에 들어갈 …" 빈칸채우기형은 해설이 판정어가 아니라 답(ㄱ:500, ㄴ:…)으로,
      표/조문 매칭형(| 구분)은 여러 진술을 한 칸에 담아 끝나는 게 정상이다.
      이런 형식에서 뜨는 VERDICT block은 콘텐츠 결함이 아니라 게이트 과발동 → 면제한다.
-     (좁은 예외: 빈칸형 문두 또는 표/여러줄 원소만. 일반 O/X 판정 누락은 그대로 잡음.) */
+     (좁은 예외: 빈칸형 문두 또는 표 마크업 원소만. 일반 O/X 판정 누락은 그대로 잡음.)
+
+     [엔진 #14 · 2026-08-01] '해설 원소가 두 줄 이상이면 면제' 조건을 뺐다(판정대기 #39 · 선택지 A).
+     줄 수는 "여러 진술을 한 칸에 담았다"의 대리지표가 못 된다 — 두 줄로 쓴 평범한 O/X 해설이
+     종결어를 빠뜨려도 조용히 통과했다. VERDICT 는 ERROR 라 D(_qcGateBypass=false) 전환 시
+     영향이 가장 큰 코드이므로, 구멍을 열어 둔 채 bypass 를 풀면 그 구멍만 커진다.
+     ⚠ 요구됐던 적용 전 라이브 전수 실측(work/gate9/v39_measure.js · 7,250문항):
+        지적 434 → 434 · 새로생김 0 · block 문항 0 → 0 — **지금 발화는 안 늘고 노출면만 닫힌다.**
+        노출면은 해설 칸 24,065 중 줄수>=2 가 146칸, 표 마크업이 아닌 것 128칸,
+        빈칸형 문두도 아닌 순수 '줄수만' 면제가 108칸이었다. */
   function _qcVerdictExempt(q, idx){
     if(!_on('gichul','VERDICT_FILL_EXEMPT')) return false;
     var qq=String((q&&q.q)||'');
     var fillStem = /\(\s*[ㄱ-ㅎ가-힣]?\s*\)/.test(qq) && /들어갈|알맞은|순서|나열|바르게/.test(qq);
     if(fillStem) return true;
     var o=(q&&q.exp&&q.exp.o)||[]; var el=String(o[idx]||'');
-    var tabley=(el.match(/\|/g)||[]).length>=2 || el.split(/\n/).filter(function(l){return l.trim();}).length>=2;
-    return tabley;
+    return (el.match(/\|/g)||[]).length>=2;   /* 표 마크업만 — 근거 있는 면제 */
   }
 
   /* ---- per-question 위반 래퍼: EX_MISSING·O_SHORT 합류 + VERDICT 예외 필터(본체 무수정) ---- */
@@ -311,15 +291,28 @@
   /* ---- 치명도 등록(참고용) ---- */
   try{
     if (typeof _QC_SEV !== 'undefined'){
-      _QC_SEV.MN_DUP='WARNING'; _QC_SEV.MN_DESC_EMPTY='WARNING'; _QC_SEV.MN_NO_K='WARNING';
-      _QC_SEV.MN_DESC_NO_RED='WARNING'; _QC_SEV.MN_DESC_REDUP='WARNING'; _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
+      /* [엔진 #14 · 판정대기 #40] 여기서 등록하던 mnem 5종은 **전부 코어에 이미 있는 이름**이었고,
+         그중 MN_DUP·MN_DESC_EMPTY 는 코어에서 ERROR(차단급)다. 이 줄이 그 둘을 조용히 WARNING 으로
+         끌어내리고 있었다 — 특히 MN_DUP 은 코어에서 'id 중복'(레코드가 서로 덮어써 데이터가 사라지는
+         상태)이라 강등해선 안 된다. 이제 이 파일이 정말 새로 만드는 이름만 등록한다. */
+      _QC_SEV.MN_SAME_CODE_DESC='WARNING';
+      _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
     }
   }catch(e){}
 
   /* ---- 전역 노출 ---- */
-  QC.mnemAudit = _qcMnemAudit;
+  QC.mnemAudit = _qcMnemAuditAll;
   QC.exMissing = _qcExMissing;
   QC.oShort = _qcOShort;
   QC.trailConn = _qcTrailConn;
-  try{ if(typeof module!=='undefined'&&module.exports){ module.exports.mnemAudit=_qcMnemAudit; module.exports.exMissing=_qcExMissing; } }catch(e){}
+  /* [GATE-1 과 같은 배선 · 엔진 #14 · 판정대기 #40]
+     QC.mnemAudit(프로퍼티)만 갈아끼우면 코어의 전역 자유변수 _qcMnemAudit 과
+     디스패처 _qcMasterAuditFns(=QC.masterRecordAudit 의 실제 경로)는 옛 함수를 계속 부른다.
+     그러면 같은 데이터를 두 경로가 서로 다르게 판정한다 — 실제로 라이브 암기 778건에서
+     QC.mnemAudit 은 {MN_DUP:5}, masterRecordAudit 은 {MN_DESC_SHORT:1} 로 서로를 놓치고 있었다.
+     세 참조를 하나로 모은다. */
+  try{ if(typeof _qcMnemAudit==='function') _qcMnemAudit = _qcMnemAuditAll; }catch(e){}
+  try{ if(typeof _qcMasterAuditFns!=='undefined' && _qcMasterAuditFns){
+    _qcMasterAuditFns.mnem = _qcMnemAuditAll; _qcMasterAuditFns.mnemonic = _qcMnemAuditAll; } }catch(e){}
+  try{ if(typeof module!=='undefined'&&module.exports){ module.exports.mnemAudit=_qcMnemAuditAll; module.exports.exMissing=_qcExMissing; } }catch(e){}
 })();

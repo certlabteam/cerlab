@@ -112,7 +112,17 @@ function _qcViolations(q){
   o.forEach(function(t,i){ if(t&&String(t).trim()&&!_isCountQ&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9ba\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
   }
   if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CARD_CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
-  var _cTot=cards.length+_lk.length; if(isMCQ && !isCalc && !_cptSkip && _cTot && _cTot<2) v.push({kind:(cards.length?'block':'warn'),field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c \ud3ec\ud568)'+(cards.length?'':' \u2192 \ub9c1\ud06c\ub41c \uac1c\ub150\uc5d0 \uce74\ub4dc \ubcf4\uac15'),text:''});
+  /* [엔진 #14 · 2026-08-01 · 판정대기 #41] 개념카드 1장 지적을 두 코드로 가른다.
+     원래 삼항(cards.length?'block':'warn')으로 두 경우를 구분하려 했는데, 평평한 _QC_SEV 가
+     한 이름에 한 치명도만 주고 _qcApplySev 가 kind 를 덮어써 늘 한쪽 가지만 살았다
+     (엔진 #13 이전엔 ERROR라 늘 block, 이후엔 WARNING이라 늘 warn).
+       · CARD_LT2      인라인 카드가 있는데 합계 1장 → 업로더가 카드 한 장 더 넣으면 닫힌다 → ERROR
+       · CARD_LT2_LINK 링크만 1장(인라인 0) → 고치는 길이 개념 마스터 쪽이라 업로더 손 밖 → WARNING */
+  var _cTot=cards.length+_lk.length;
+  if(isMCQ && !isCalc && !_cptSkip && _cTot && _cTot<2){
+    if(cards.length) v.push({kind:'block',field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c \ud3ec\ud568) \u2192 \uce74\ub4dc\ub97c \ud55c \uc7a5 \ub354 \ub123\uc5b4\ub77c',text:''});
+    else v.push({kind:'warn',field:'card',idx:0,code:'CARD_LT2_LINK',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c\ub9cc) \u2192 \ub9c1\ud06c\ub41c \uac1c\ub150\uc5d0 \uce74\ub4dc \ubcf4\uac15',text:''});
+  }
   if(_qcOn('gichul','O_PLACEHOLDER')){ var _PLACE=/\ud574\uc124\s*\ucd94\uac00|\uc218\uc815\s*\uc608\uc815|\uc791\uc131\s*\uc608\uc815|\ucd94\uac00\s*\uc608\uc815|\ubbf8\uc791\uc131|\ucc44\uc6b8\s*\uc608\uc815|\uc900\ube44\s*\uc911|TODO/; o.forEach(function(t,i){ if(_PLACE.test(String(t||''))) v.push({kind:'block',field:'o',idx:i,code:'O_PLACEHOLDER',msg:'\ud574\uc124(o)\uc5d0 \uc784\uc2dc \ubb38\uad6c \u2014 \ube48 \uce78\uc740 \ubc18\ub4dc\uc2dc \ube48 \ubb38\uc790\uc5f4("")\ub85c(\uc784\uc2dc\ubb38\uad6c\ub294 oFilled\ub85c \uc624\uacc4\uc0b0\ub418\uc5b4 \uc9c4\uc220\uc218 \uc5b4\uae4b\ub0a8)',text:t}); }); }
   if(_qcOn('gichul','O_INCOMPLETE') && isMCQ && !isCalc && opts.length>=4 && String((q&&q.type)||'').toUpperCase()!=='COUNT'){ /* [FIX 2026-07-16] COUNT형은 정답칸만 설명(개수 근거)하면 되므로 빈칸 정상 — O_INCOMPLETE 오탐 제외 */ var _mk=opts.some(function(op){return /^[\u3131-\u314e][\s,:\-]/.test(String(op).trim());}); if(!_mk){ var _emp=o.slice(0,opts.length).filter(function(x){return !(x&&String(x).trim());}).length; if(_emp>0) v.push({kind:'warn',field:'o',idx:0,code:'O_INCOMPLETE',msg:'\ubcf4\uae30 '+opts.length+'\uc9c0\uc778\ub370 \ud574\uc124(o) '+_emp+'\uce78 \ube44\uc5b4\uc788\uc74c \u2014 SC\ub294 \ubcf4\uae30 \uc804\ubd80 \ucc44\uc6c0(\uc815\uc758\ud655\uc778 \ubcf4\uae30\ub9cc \uc0dd\ub7b5)',text:''}); } }
   if(_qcOn('gichul','CALC_WRONG_SLOT') && _isCalcQ(q) && q.ans && !Array.isArray(q.ans)){ var _fi=-1; for(var _ci=0;_ci<o.length;_ci++){ if(o[_ci]&&String(o[_ci]).trim()){_fi=_ci;break;} } if(_fi>=0 && _fi!==(q.ans-1)) v.push({kind:'block',field:'o',idx:_fi,code:'CALC_WRONG_SLOT',msg:'\uacc4\uc0b0\ud615 \uacb0\ub860\uc774 \uc815\ub2f5\uce78(o['+(q.ans-1)+'])\uc774 \uc544\ub2cc o['+_fi+']\uc5d0 \uc788\uc74c \u2192 \uc5d4\uc9c4\uc774 '+(_fi+1)+'\ubc88\uc744 \uc815\ub2f5\uc73c\ub85c \uc624\ud45c\uc2dc(\uc815\ub2f5\uce78 o[ans-1]\uc5d0 \uacb0\ub860)',text:o[_fi]}); }
@@ -262,7 +272,7 @@ var _QC_SEV = {
   O_INCOMPLETE:'WARNING', COMBO_STMT_MISMATCH:'WARNING', O_ECHO_D:'WARNING', O_NO_ACTOR:'WARNING',
   O_STEPS_NOBR:'WARNING', EX_STEPS_NOBR:'WARNING', EX_STEPS_CRAMMED:'WARNING', O_ECHO_OPT:'WARNING',
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',
-  CARD_LT2:'WARNING', REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_GENERIC_NOUN:'WARNING', EX_PROSE_CALC:'WARNING', EX_REP_VERB:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
+  CARD_LT2:'ERROR', CARD_LT2_LINK:'WARNING', REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_GENERIC_NOUN:'WARNING', EX_PROSE_CALC:'WARNING', EX_REP_VERB:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
   WORK_MEMO_LEFT:'WARNING', TBL_MENTION_NO_TABLE:'WARNING',   /* [ADD 2026-07-20] 미완성 메모 잔존·[표] 누락 */
@@ -287,7 +297,7 @@ var _QC_SEV = {
   /* 표 */
   TBL_NO_HEADERS:'ERROR', TBL_NO_ROWS:'ERROR', TBL_RAGGED:'ERROR', TBL_DUP:'ERROR', TBL_NO_CAPTION:'WARNING', TBL_HTML_NO_TYPE:'WARNING',
   /* 개념 */
-  CPT_NO_CARDS:'ERROR', CD_NO_D:'ERROR', CPT_DUP:'ERROR', CX_EMPTY:'WARNING', CX_ECHO_D:'WARNING', CX_SHORT:'WARNING', CX_NONAME:'WARNING', CX_DEICTIC:'WARNING', CD_D_NAMED:'WARNING', CD_OLD_FIELD:'WARNING', D_SHORT:'WARNING',
+  CPT_NO_CARDS:'ERROR', CD_NO_D:'ERROR', CPT_DUP:'ERROR', CX_EMPTY:'WARNING', CX_SHORT:'WARNING', CX_NONAME:'WARNING', CX_DEICTIC:'WARNING', CD_D_NAMED:'WARNING', CD_OLD_FIELD:'WARNING', D_SHORT:'WARNING',
   /* 인터랙티브 */
   ITV_NO_PARAMS:'ERROR', ITV_DUP:'ERROR', ITV_UNKNOWN:'WARNING'
 };
