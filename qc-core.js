@@ -57,6 +57,23 @@ function _qgProseCalc(t){
   return null;
 }
 
+/* [엔진 #12] 인용 면제 판정 — '부호가 있다'가 아니라 '인용 안에 구체 발화가 있다'를 본다.
+   `甲은 "속아서" 계약했다` 처럼 부호만 두른 칸이 빠져나가던 구멍을 큰따옴표·작은따옴표 함께 좁힌다.
+   임계 2어절·8자(공백 제외)는 라이브 ex 인용 1,100개 실측 — 정당한 정황 인용의 최소가 4어절·10자였다(work/lvup/quotedist.js). */
+function _qgQuotedSpec(s,minW,minC){
+  var str=String(s||''), pairs=[['"','"'],['\u201c','\u201d'],["'","'"],['\u2018','\u2019']], p,m,re,inn,w,c;
+  for(p=0;p<pairs.length;p++){
+    re=new RegExp(pairs[p][0]+'([^'+pairs[p][1]+'\\n]{1,120})'+pairs[p][1],'g');
+    while((m=re.exec(str))){
+      inn=m[1];
+      w=inn.trim().split(/\s+/).filter(function(x){return x;}).length;
+      c=inn.replace(/\s/g,'').length;
+      if(w>=(minW||2) && c>=(minC||8)) return true;
+    }
+  }
+  return false;
+}
+
 /* ---- [추출] _isCalcQ · _qcViolations · qualityGate (admin__20 4263-4374) ---- */
 // 엔진 _isCalcQ 이식 — 계산형 = oFilled 1칸 & (그래프 or 풀이단계). 단순 oFilled===1 아님(COMBO 결론 오인 방지)
 function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.indexOf('calc:')===0) return true; if(q.calc===false) return false; /* [FIX 2026-07-12] 인간이 calc:false로 명시한 문항(SA 단답형 등) 존중 — oFilled=1+장면예시로 자동 계산형 오인되어 CALC_NO_FORMULA/CALC_OLD_FORMAT 등 오탐되던 문제 해결 */ var _tyCalc=String((q&&q.type)||'').toUpperCase(); if(q.calc!==true && (_tyCalc==='PAIR'||_tyCalc==='MATCH'||_tyCalc==='ORDER')) return false; /* [FIX 2026-07-15] 짝짓기/매칭/순서형은 산술이 없어 계산형이 될 수 없음 — oFilled=1+단계형 ex로 계산형 렌더 오인되던 문제(intro23_3 등) 차단. COUNT/COMBO는 LQ 같은 진짜 계산형이 있어 제외 */
@@ -165,9 +182,9 @@ function _qcViolations(q){
       if(!(t&&String(t).trim())) return;
       var isScene=_qgAction.test(t)||_qgNamed(t);
       if(!_qCalc && _qcOn('gichul','EX_NONAME') && _qgAction.test(t) && !_qgNamed(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_NONAME',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74(\ud589\uc704)\uc778\ub370 \uba85\uba85 \uc778\ubb3c(\u7532\u4e59\u4e19\u2026) \uc5c6\uc74c',text:t});
-      if(!_qCalc && _qcOn('gichul','EX_GENERIC_NOUN') && isScene){ var _egn=String(t).replace(/<[^>]+>/g,'').match(/(\ub2f4\ubcf4\ubb3c(?!\uad8c)|\uc810\uc720\ubb3c|\ubaa9\uc801\ubb3c|\ubb3c\ud488(?!\uc138|\ub300\uae08)|\uadf8 \ubb3c\uac74|\ud574\ub2f9 \ubb3c\uac74|\uc5b4\ub5a4 \ubb3c\uac74|\uadf8 \ub3d9\uc0b0)/); if(_egn) v.push({kind:'warn',field:'ex',idx:i,code:'EX_GENERIC_NOUN',msg:'\uc608\uc2dc\uc5d0 \ub300\ud45c\uba85\uc0ac('+_egn[1]+') \u2014 \uad6c\uccb4\uba85\uc0ac(\ud734\ub300\ud3f0\u00b7\uc2dc\uacc4\u00b7\uc790\uc804\uac70\u00b7\ub178\ud2b8\ubd81 \ub4f1)\ub85c \uad50\uccb4(\u00a7A-3 \uc608\uc2dc\uaddc\uce59)',text:t}); }
+      if(!_qCalc && _qcOn('gichul','EX_GENERIC_NOUN') && isScene){ var _egn=String(t).replace(/<[^>]+>/g,'').match(/(\ub2f4\ubcf4\ubb3c(?!\uad8c)|\uc810\uc720\ubb3c(?!\ubc18\ud658|\uc758\s*\ubc18\ud658)|\ubaa9\uc801\ubb3c|\ubb3c\ud488(?!\uc138|\ub300\uae08)|\uadf8 \ubb3c\uac74|\ud574\ub2f9 \ubb3c\uac74|\uc5b4\ub5a4 \ubb3c\uac74|\uadf8 \ub3d9\uc0b0)/); if(_egn && !(_egn[1]==='\ubaa9\uc801\ubb3c' && /(\uc800\ub2f9|\uc9c8\uad8c|\uc720\uce58\uad8c|\uc804\uc138\uad8c)/.test(_egn.input))) v.push({kind:'warn',field:'ex',idx:i,code:'EX_GENERIC_NOUN',msg:'\uc608\uc2dc\uc5d0 \ub300\ud45c\uba85\uc0ac('+_egn[1]+') \u2014 \uad6c\uccb4\uba85\uc0ac(\ud734\ub300\ud3f0\u00b7\uc2dc\uacc4\u00b7\uc790\uc804\uac70\u00b7\ub178\ud2b8\ubd81 \ub4f1)\ub85c \uad50\uccb4(\u00a7A-3 \uc608\uc2dc\uaddc\uce59)',text:t}); }
       if(_qcOn('gichul','EX_PROSE_CALC')){ var _pcx=_qgProseCalc(t); if(_pcx) v.push({kind:'warn',field:'ex',idx:i,code:'EX_PROSE_CALC',msg:'\uc124\uba85 \ubb38\uc7a5\uacfc \uacc4\uc0b0\uc2dd\uc774 \uac19\uc740 \uc904\uc5d0 \ubd99\uc74c \u2014 \uc124\uba85 \ub2e4\uc74c\uc5d0\uc11c \uac1c\ud589\ud574 \uc2dd\uc744 \ubcc4\ub3c4 \uc904\ub85c(\uae34 \uc2dd\ub3c4 \uc911\uac04\uc5d0\uc11c \uac1c\ud589). \uc0c1\uc138\ud480\uc774\u00b7\ud574\uc124 \uac00\ub3c5\uc131',text:_pcx}); }
-      if(_qcOn('gichul','EX_REP_VERB')){ var _rvs=String(t).replace(/<[^>]+>/g,''); if(/(?<![\uac00-\ud7a3])(\uc18d\uc544\uc11c|\uc18d\uc544|\uc18d\uc5ec|\uc18d\uc740|\uc18d\uc778)/.test(_rvs) && !/(\uc9c4\ud488|\uc911\uace0|\uc2dc\uc138|\uac10\uc815|\ud5c8\uc704|\uac00\uc9dc|\uc704\uc870|\uacc4\uc57d\uc11c|\uac01\uc11c|\ubcf4\uc99d|"|\u201c|\uc704\uc7a5|\ud5c8\uc704\ub9e4\ubb3c|\ubc14\uafd4\uce58\uae30)/.test(_rvs)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_REP_VERB',msg:'\uc608\uc2dc\uac00 \ub300\ud45c\ub3d9\uc0ac(\uc18d\uc544\uc11c \ub4f1)\ub85c \uc0ac\uae30\ub97c \ubb49\ub6b1\uadf8\ub9bc \u2014 \ubb34\uc5c7\uc744 \uc5b4\ub5bb\uac8c \uc18d\uc600\ub294\uc9c0 \uad6c\uccb4 \uc815\ud669\uc73c\ub85c(\uc608: \uc911\uace0 \uc2dc\uacc4\ub97c \uc9c4\ud488\uc774\ub77c \uc18d\uc5ec \ud310\ub9e4)',text:t}); }
+      if(_qcOn('gichul','EX_REP_VERB')){ var _rvs=String(t).replace(/<[^>]+>/g,''); if(/(?<![\uac00-\ud7a3])(\uc18d\uc544\uc11c|\uc18d\uc544|\uc18d\uc5ec|\uc18d\uc740|\uc18d\uc778)/.test(_rvs) && !/(\uc9c4\ud488|\uc911\uace0|\uc2dc\uc138|\uac10\uc815|\ud5c8\uc704|\uac00\uc9dc|\uc704\uc870|\uacc4\uc57d\uc11c|\uac01\uc11c|\ubcf4\uc99d|\uc704\uc7a5|\ud5c8\uc704\ub9e4\ubb3c|\ubc14\uafd4\uce58\uae30)/.test(_rvs) && !_qgQuotedSpec(_rvs,2,8)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_REP_VERB',msg:'\uc608\uc2dc\uac00 \ub300\ud45c\ub3d9\uc0ac(\uc18d\uc544\uc11c \ub4f1)\ub85c \uc0ac\uae30\ub97c \ubb49\ub6b1\uadf8\ub9bc \u2014 \ubb34\uc5c7\uc744 \uc5b4\ub5bb\uac8c \uc18d\uc600\ub294\uc9c0 \uad6c\uccb4 \uc815\ud669\uc73c\ub85c(\uc608: \uc911\uace0 \uc2dc\uacc4\ub97c \uc9c4\ud488\uc774\ub77c \uc18d\uc5ec \ud310\ub9e4)',text:t}); }
       if(/^\uc608\s*\)/.test(String(t).trim())) v.push({kind:'warn',field:'ex',idx:i,code:'EX_PREFIX',msg:"\uc608\uc2dc\uc5d0 '\uc608)' \uc811\ub450 \uae08\uc9c0(\uc571\uc774 \uc608\uc2dc \ub77c\ubca8 \uc790\ub3d9 \ubd80\ucc29)",text:t});
       if(/\uc81c\s*\d+\s*\uc870/.test(t)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_JOMUN',msg:'\uc608\uc2dc\uc5d0 \uc870\ubb38\ubc88\ud638(\uc81cN\uc870) \uae08\uc9c0 \u2014 \uc870\ubb38\uc740 \uac1c\ub150 d\uc5d0\ub9cc',text:t});
       if(/[甲乙丙丁戊己庚辛壬癸]/.test(String(t))){ var _pt=String(t).replace(/<[^>]+>/g,'').trim(); /* A-7 검사범위: 甲乙丙 등장 ex만 ①② 검사 */
