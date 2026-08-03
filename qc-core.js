@@ -219,10 +219,15 @@ function _qcViolations(q){
   if(_qcOn('gichul','BARE_ACRONYM')){ var _allT=[].concat(o||[],ex||[]).map(function(x){return String(x||'');}).join('\n'); var _ACR=/\b(GDP|GNP|GNI|GDI|LTV|DTI|DSR|MRTS|MRTP|MRT|MRS|IRR|NPV|ROE|ROA|EPS|PER|PBR)\b/g, _seen={}, _mm; while((_mm=_ACR.exec(_allT))){ var _ac=_mm[1]; if(_seen[_ac])continue; _seen[_ac]=1; var _re2=new RegExp('(?:'+_ac+'\\s*[(\uff08]|[(\uff08]\\s*'+_ac+'\\s*[)\uff09])'); /* [FIX 2026-07-16] 약자(한글)뿐 아니라 한글(약자) 병기도 인정 */ if(!_re2.test(_allT)) v.push({kind:'warn',field:'o',idx:0,code:'BARE_ACRONYM',msg:'\uc601\uc5b4\uc57d\uc790 '+_ac+' \ud480\uc774 \uc5c6\uc774 \ub178\ucd9c \u2014 \uccab \ub4f1\uc7a5 1\ud68c \ud480\uc5b4\uc4f0\uae30('+_ac+', \ud55c\uae00\ud480\uc774) \u00a72-1',text:_ac}); } }
   return v;
 }
-/* ⚠️⚠️ [임시] 검수 게이트 우회 스위치 — 정비 완료 후 반드시 false 로 복구! ⚠️⚠️
+/* 검수 게이트 우회 스위치 — [2026-08-03 판 16] 정비가 끝나 false 로 복구했다(판정대기 #37 닫음).
  * true면 qualityGate가 block(필수통과 위반)을 비워 업로드를 강행 허용한다(위반은 warn으로 여전히 표시).
- * 콘텐츠가 아직 검수를 못 통과하는 동안 업로드만 되게 하는 한시 조치. 정비 끝나면 false 로 되돌린다. */
-var _qcGateBypass = (typeof _qcGateBypass!=='undefined') ? _qcGateBypass : true;
+ * 복구 근거 ① GATE-1·2·3 이 판 8에서 닫혔다. ② 라이브 전량 9,822문항(기출 5,979 + 레벨업 3,843)을
+ *   이 엔진으로 재측정해 block 줄이 0 이다(warn 977은 그대로) → 켜도 막히는 것이 없다.
+ * ③ 음성테스트 7/7 — em대시·플레이스홀더를 심은 문항은 false 에서 실제로 막히고 true 에서는 안 막힌다.
+ * 참고: 서버 functions/qcUpload.js 의 structureGate 는 이 스위치를 보지 않고 늘 block 을 차단해 왔다.
+ *   즉 이 스위치는 관리자 화면 쪽 선이고, 이번 복구로 두 선의 기준이 같아진다.
+ * 측정 스크립트: certlab-autoqc/work/gate12/D_measure.js · 음성테스트 D_neg.js */
+var _qcGateBypass = (typeof _qcGateBypass!=='undefined') ? _qcGateBypass : false;
 try{ if(_qcGateBypass && typeof console!=='undefined') console.warn('[QC] \u26a0\ufe0f _qcGateBypass=true \u2014 \uac80\uc218 \ud544\uc218\ud1b5\uacfc \uc5c6\uc774 \uc5c5\ub85c\ub4dc \uac15\ud589 \uc911. \uc815\ube44 \ud6c4 false \ubcf5\uad6c \ud544\uc694.'); }catch(e){}
 /* \uad6c\uc220\u00b7\uc2e4\uae30 \uacfc\ubaa9(\uac1c\ub150 \ub808\uc774\uc5b4 \uc5c6\uc774 \uc6b4\uc601)\uc740 '\uac1c\ub150 \ubbf8\uc5f0\uacb0(exp.cpt \ube44\uc5b4)' \uc608\uc678. \ud638\uc2a4\ud2b8\uac00 \uc804\uc5ed\uc73c\ub85c \ub36e\uc5b4\uc4f8 \uc218 \uc788\uc74c. */
 var _qcCptExemptCerts = (typeof _qcCptExemptCerts!=='undefined') ? _qcCptExemptCerts : ['bodybuilding'];
