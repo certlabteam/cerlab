@@ -228,19 +228,32 @@ function _qcViolations(q){
  *   즉 이 스위치는 관리자 화면 쪽 선이고, 이번 복구로 두 선의 기준이 같아진다.
  * 측정 스크립트: certlab-autoqc/work/gate12/D_measure.js · 음성테스트 D_neg.js */
 var _qcGateBypass = (typeof _qcGateBypass!=='undefined') ? _qcGateBypass : false;
-try{ if(_qcGateBypass && typeof console!=='undefined') console.warn('[QC] \u26a0\ufe0f _qcGateBypass=true \u2014 \uac80\uc218 \ud544\uc218\ud1b5\uacfc \uc5c6\uc774 \uc5c5\ub85c\ub4dc \uac15\ud589 \uc911. \uc815\ube44 \ud6c4 false \ubcf5\uad6c \ud544\uc694.'); }catch(e){}
+/* [\uc5d4\uc9c4 #19 \u00b7 2026-08-03] \uc6b0\ud68c \uacbd\uace0\ub97c \ub85c\ub4dc\uc2dc\uc810 \u2192 \uac8c\uc774\ud2b8 \uc2e4\ud589\uc2dc\uc810\uc73c\ub85c \uc62e\uacbc\ub2e4.
+ * \uc61b \uc790\ub9ac(\uc774 \uc904)\uc5d0\uc11c\ub294 \ud654\uba74\uc5d0\uc11c \uc808\ub300 \uc548 \uc6b8\ub838\ub2e4 \u2014 \ube0c\ub77c\uc6b0\uc800\uc5d0\uc11c \uc774 \ud30c\uc77c\ubcf4\ub2e4 \uba3c\uc800 \uc2a4\uc704\uce58\ub97c \ucf1c\ub294 \uc2a4\ud06c\ub9bd\ud2b8\uac00
+ * \uc5c6\uc73c\ubbc0\ub85c \ub85c\ub4dc\uc2dc\uc810 \uac12\uc740 \ub298 false \uc600\uace0, \ucf58\uc194\uc5d0\uc11c \ub098\uc911\uc5d0 \ucf1c\uba74 \uc774 \uc904\uc740 \uc774\ubbf8 \uc9c0\ub098\uac04 \ub4a4\uc600\ub2e4.
+ * \uc774\uc81c qualityGate \uc548\uc5d0\uc11c \uc2e4\uc81c\ub85c \uc6b0\ud68c\uac00 \uc801\uc6a9\ub420 \ub54c 1\ud68c \uc6b8\ub9b0\ub2e4(_qcBypassWarned). */
+var _qcBypassWarned = false;
 /* \uad6c\uc220\u00b7\uc2e4\uae30 \uacfc\ubaa9(\uac1c\ub150 \ub808\uc774\uc5b4 \uc5c6\uc774 \uc6b4\uc601)\uc740 '\uac1c\ub150 \ubbf8\uc5f0\uacb0(exp.cpt \ube44\uc5b4)' \uc608\uc678. \ud638\uc2a4\ud2b8\uac00 \uc804\uc5ed\uc73c\ub85c \ub36e\uc5b4\uc4f8 \uc218 \uc788\uc74c. */
 var _qcCptExemptCerts = (typeof _qcCptExemptCerts!=='undefined') ? _qcCptExemptCerts : ['bodybuilding'];
 
 function qualityGate(questions){
   var block=[], warn=[];
+  if(_qcGateBypass && !_qcBypassWarned){ _qcBypassWarned=true;
+    try{ if(typeof console!=='undefined') console.warn('[QC] \u26a0\ufe0f _qcGateBypass=true \u2014 \uac80\uc218 \ud544\uc218\ud1b5\uacfc \uc5c6\uc774 \uc5c5\ub85c\ub4dc \uac15\ud589 \uc911. \uc815\ube44 \ud6c4 false \ubcf5\uad6c \ud544\uc694.'); }catch(e){}
+  }
+  function _push(id,x){
+    var line=id+' '+(x.field==='card'?('card'+x.idx):(x.field+'['+x.idx+']'))+' '+x.msg;
+    if(x.kind==='block' && !_qcGateBypass) block.push(line); else warn.push(line);  /* \uc6b0\ud68c ON\uc774\uba74 block\u2192warn(\uc5c5\ub85c\ub4dc \uac15\ud589) */
+  }
   (questions||[]).forEach(function(q){
     var id=(q&&q.id)||'?';
-    _qcViolations(q).forEach(function(x){
-      var line=id+' '+(x.field==='card'?('card'+x.idx):(x.field+'['+x.idx+']'))+' '+x.msg;
-      if(x.kind==='block' && !_qcGateBypass) block.push(line); else warn.push(line);  /* \uc6b0\ud68c ON\uc774\uba74 block\u2192warn(\uc5c5\ub85c\ub4dc \uac15\ud589) */
-    });
+    _qcViolations(q).forEach(function(x){ _push(id,x); });
   });
+  /* [\uc5d4\uc9c4 #18 \u00b7 2026-08-03] \ubc88\ub4e4 \uac80\uc0ac(\ubb38\ud56d \ud558\ub098\ub9cc \ubd10\uc11c\ub294 \ubabb \ubcf4\ub294 \uac83) \ud3b8\uc785 \u2014 \uc9c0\uae08\uc740 DUP_ID \ud558\ub098\ub2e4.
+   * \uadf8 \uc804\uc5d0\ub294 _qcBundle \uc774 QC.bundle \ub85c \ub0b4\ubcf4\ub0b4\uc9c0\uae30\ub9cc \ud558\uace0 \uc544\ubb34 \ub370\uc11c\ub3c4 \uc548 \ubd88\ub824, \ubc45\ud06c \uc548\uc5d0 id \uac00 \uacb9\uccd0\ub3c4
+   * \uad00\ub9ac\uc790 \ud654\uba74\u00b7\uc5c5\ub85c\ub4dc \uac8c\uc774\ud2b8\uc5d0 \ud55c \uc904\ub3c4 \uc548 \ub5b4\ub2e4(\uc5c5\uc11c\ud2b8\uc5d0\uc11c \uc11c\ub85c \ub36e\uc5b4\uc368 \ubb38\ud56d\uc774 \uc870\uc6a9\ud788 \uc0ac\ub77c\uc9c0\ub294 \uacb0\ud568).
+   * \u26a0 questions \ub294 '\ud55c \ubc45\ud06c' \ub2e8\uc704\ub85c \ub4e4\uc5b4\uc640\uc57c \ub73b\uc774 \ub9de\ub2e4(\ud638\ucd9c\ucc98 \uc804\ubd80 \ubc45\ud06c \ub2e8\uc704\uc784\uc744 \ud655\uc778). */
+  try{ _qcBundle(questions).forEach(function(x){ _push(x.qid||'?', x); }); }catch(e){}
   return {block:block, warn:warn};
 }
 
@@ -252,7 +265,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -295,7 +308,7 @@ var _QC_SEV = {
   REC_DATE:'BLOCKER',
   /* 그래프 */
   GRP_NO_SVG:'ERROR', GRP_SVG_MALFORMED:'ERROR', GRP_EXTERNAL:'ERROR', GRP_EMDASH:'ERROR', GRP_DUP:'ERROR',
-  GRP_PARAMS_OBJ:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING',
+  GRP_PARAMS_OBJ:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING', GRP_STRAY_SLASH:'WARNING',
   /* 암기 */
   MN_LETTER_UNEXPLAINED:'WARNING', MN_QSPECIFIC_TRAP:'INFO',
   MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING', MN_SYMBOL:'WARNING', MN_DESC_SHORT:'WARNING',
@@ -987,6 +1000,12 @@ try{
       if(!svg.trim()){ if(_qcOn('graph','GRP_NO_SVG')) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_NO_SVG',msg:'svg 내용 없음'}); _qcApplySev(v); return; }
       if(_qcOn('graph','GRP_SVG_MALFORMED')){ var opens=(svg.match(/<svg[\s>]/g)||[]).length, closes=(svg.match(/<\/svg>/g)||[]).length;
         if(!/<svg[\s>]/.test(svg)||!/<\/svg>/.test(svg)||opens!==closes) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_SVG_MALFORMED',msg:'<svg>…</svg> 태그가 안 맞음/누락 — XML 파싱 깨짐 위험'}); }
+      /* [엔진 #20 · 2026-08-03] 여는 태그 안 군더더기 '/' — <path … stroke-width="1.4"/ stroke-linejoin="round" …>
+       * 처럼 닫는 슬래시가 속성 목록 한가운데 낀 것(생성기 흔적). 학생앱은 innerHTML(HTML 파서)로 꽂아
+       * 무시하므로 화면은 정상이라 warn 이다. 독립 .svg 파일·image/svg+xml 서빙·DOMParser 로 가면 파싱이 깨진다.
+       * 라이브 실측 60/295 그래프 · 133곳(판정대기 #31 — 데이터 수리는 별도 결재). 측정: work/gate12/E_stray.js */
+      if(_qcOn('graph','GRP_STRAY_SLASH')){ var _stray=(svg.match(/<[a-zA-Z][^<>]*?\/\s+[^<>]*?>/g)||[]).length;
+        if(_stray) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_STRAY_SLASH',msg:'여는 태그 속성 사이에 군더더기 \'/\' '+_stray+'곳 — 지금 화면은 정상이나 XML 파서(독립 .svg·DOMParser)로는 파싱 실패. 태그 끝의 \'/>\' 하나만 남기고 제거'}); }
       if(_qcOn('graph','GRP_EXTERNAL') && /(<script|<image[\s>]|<foreignObject|(?:xlink:)?href\s*=\s*["']?\s*https?:)/i.test(svg)) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_EXTERNAL',msg:'외부 자원/스크립트(<script>·<image>·http href·foreignObject) 포함 — 순수 벡터만 허용'});
       if(_qcOn('graph','GRP_NO_VIEWBOX') && !/viewBox\s*=/.test(svg)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_VIEWBOX',msg:'viewBox 없음 — viewBox="0 -28 360 H" 권장(상단 -28에 제목)'});
       if(_qcOn('graph','GRP_FONT')){ var body=svg.replace(/<!--[\s\S]*?-->/g,''); if(/[가-힣]/.test(body) && !/Noto\s*Sans\s*CJK\s*KR/.test(body)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_FONT',msg:'한글이 있는데 font-family="Noto Sans CJK KR" 미지정 — 폰트 깨짐(□□) 위험'}); }

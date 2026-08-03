@@ -286,6 +286,17 @@ async function _qcLoadImgKeys(){
   try{ var snap=await db.collection('images').get(); var s=new Set(); snap.forEach(function(d){ s.add(d.id); }); _qcImgKeys=s; }catch(e){ _qcImgKeys=null; }
   return _qcImgKeys;
 }
+/* [엔진 #17 · 2026-08-03] 검수조건(config/qc) → 코어 _qcCfg 연결.
+   그 전에는 qcCfgUpload 가 Firestore 에 저장만 하고("다음 검수부터 적용됩니다" 안내까지 띄우면서)
+   admin 쪽 어디서도 _qcCfg 에 넣지 않아, 관리자 화면 게이트는 늘 _QC_DEFAULTS 로만 돌았다.
+   (preview.html 은 이미 같은 문서를 읽어 _qcCfg 에 넣는다 — 두 화면의 잣대가 달랐다.)
+   실패해도 조용히 기본값으로 간다(연결 실패가 검수를 막지는 않게). */
+var _qcCfgLoaded=false;
+async function _qcLoadCfg(force){
+  if(_qcCfgLoaded && !force) return _qcCfg;
+  try{ var d=await db.collection('config').doc('qc').get(); _qcCfg=(d&&d.exists&&d.data())||{}; }catch(e){ _qcCfg={}; }
+  _qcCfgLoaded=true; return _qcCfg;
+}
 // exp.cpt(참조 개념) 카드 검수용 — concepts 마스터 id → cards[] 맵 (실패 시 null: cpt 링크 문항의 카드 검사만 생략)
 var _qcCptCards=null;
 async function _qcLoadCptCards(){
@@ -325,6 +336,8 @@ function qcCfgUpload(section){
       if(!Object.keys(clean).length){ alert('인식된 규칙 없음. 형식: {"EX_SHORT":{"on":true,"minLines":4}, ...}'); return; }
       var payload={}; payload[section]=clean;
       db.collection('config').doc('qc').set(payload,{merge:true}).then(function(){
+        return _qcLoadCfg(true);   /* [엔진 #17] 저장 즉시 다시 읽어 _qcCfg 에 반영 — 안내문("다음 검수부터")대로 되게 */
+      }).then(function(){
         alert('✅ 검수조건 저장 — ['+section+'] 규칙 '+Object.keys(clean).length+'개. 다음 검수부터 적용됩니다.');
       }).catch(function(e){ alert('저장 실패: '+e.message); });
     }catch(e){ alert('파싱 오류: '+e.message); } };
@@ -426,7 +439,7 @@ function qcBaselineLoad(files){
   });
 }
 async function _buildReviewLines(items){
-  await _qcLoadImgKeys(); await _qcLoadCptCards();
+  await _qcLoadCfg(); await _qcLoadImgKeys(); await _qcLoadCptCards();
   var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'',
     '━━━━━ ① 일반 검수 (문항 게이트) ━━━━━'];
   if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — IMG_MISSING 검사 생략)');
@@ -658,6 +671,7 @@ async function impUpload(){
   const noDate=ready.filter(it=>_impFileDate(it.data)==null).map(it=>it.docId);
   if(noDate.length){ alert('❌ 업로드 차단 — 날짜 누락 [기출]\n\n규칙: 기출 파일에 _meta.generatedAt 필수.\n\n누락: '+noDate.join(', ')); impLog('날짜 누락으로 차단: '+noDate.join(', ')); return; }
   // 품질 게이트(전수): 구조 오류=하드 차단 / 품질 경고=확인 후 우회
+  await _qcLoadCfg();       // 검수조건(config/qc) 반영 — 실패 시 기본값(_QC_DEFAULTS)
   await _qcLoadImgKeys();   // img:// 참조 대조용(실패 시 IMG_MISSING만 생략)
   await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
   var _gBlock=[], _gWarn=[];
