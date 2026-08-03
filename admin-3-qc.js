@@ -297,6 +297,34 @@ async function _qcLoadCfg(force){
   try{ var d=await db.collection('config').doc('qc').get(); _qcCfg=(d&&d.exists&&d.data())||{}; }catch(e){ _qcCfg={}; }
   _qcCfgLoaded=true; return _qcCfg;
 }
+/* [엔진 #22 · 2026-08-03] 검수조건 재정의를 화면에 보이게 한다.
+   #17 로 config/qc 가 **진짜로** 잣대를 움직이게 됐는데 화면엔 아무 표시가 없어서,
+   눈앞의 "통과"가 기본값으로 받은 것인지 검사를 꺼 놓고 받은 것인지 구분할 수 없었다.
+   기본값(_QC_DEFAULTS)과 값이 다른 것만 재정의로 센다 — 같은 값을 다시 적어 둔 것은 재정의가 아니다.
+   반환 {n, off[], chg[], line} — line 은 지적서 머리글·업로드 대화상자에 그대로 쓴다. */
+function _qcCfgSummary(){
+  var off=[], chg=[];
+  try{
+    var D=(typeof _QC_DEFAULTS!=='undefined')?_QC_DEFAULTS:{};
+    for(var sec in _qcCfg){
+      var s=_qcCfg[sec]; if(!s||typeof s!=='object') continue;
+      for(var code in s){
+        var c=s[code]; if(!c||typeof c!=='object') continue;
+        var d=(D[sec]&&D[sec][code])||{}, diff=false;
+        for(var k in c){ if(JSON.stringify(c[k])!==JSON.stringify(d[k])) diff=true; }
+        if(!diff) continue;
+        if(c.on===false) off.push(code); else chg.push(code);
+      }
+    }
+  }catch(e){}
+  var n=off.length+chg.length, line;
+  if(!n) line='검수조건: 기본값 (config/qc 재정의 없음)';
+  else line='⚠️ 검수조건 재정의 '+n+'건 — '
+    +(off.length?('꺼짐 '+off.length+' ['+off.join(', ')+']'):'')
+    +((off.length&&chg.length)?' · ':'')
+    +(chg.length?('값 변경 '+chg.length+' ['+chg.join(', ')+']'):'');
+  return {n:n, off:off, chg:chg, line:line};
+}
 // exp.cpt(참조 개념) 카드 검수용 — concepts 마스터 id → cards[] 맵 (실패 시 null: cpt 링크 문항의 카드 검사만 생략)
 var _qcCptCards=null;
 async function _qcLoadCptCards(){
@@ -440,7 +468,9 @@ function qcBaselineLoad(files){
 }
 async function _buildReviewLines(items){
   await _qcLoadCfg(); await _qcLoadImgKeys(); await _qcLoadCptCards();
-  var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),'',
+  var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),
+    _qcCfgSummary().line,   /* [엔진 #22] 어떤 잣대로 잰 지적서인지 머리글에 남긴다 */
+    '',
     '━━━━━ ① 일반 검수 (문항 게이트) ━━━━━'];
   if(!_qcImgKeys) L.push('  (이미지 라이브러리 로드 실패 — IMG_MISSING 검사 생략)');
   var any=false;
@@ -682,8 +712,9 @@ async function impUpload(){
     alert('❌ 업로드 차단 — 구조 위반 '+_gBlock.length+'건\n\n검수 지적서가 자동 작성됐어요. 아래 "■ 크리스 지적"에 본 것을 더해 📋 복사 → 데이터방에 전달하세요.');
     impLog('업로드 차단(구조 '+_gBlock.length+'건) → 지적서 자동 작성'); return;
   }
+  var _cfgS=_qcCfgSummary();   /* [엔진 #22] 이 업로드를 어떤 잣대로 쟀는지 대화상자에 밝힌다 */
   if(_gWarn.length){
-    if(!confirm('⚠️ 품질 경고 '+_gWarn.length+'건 (ex 명명 인물 없음 / o 되풀이)\n\n[확인] 무시하고 업로드    /    [취소] 지적서 작성해서 데이터방에 전달')){
+    if(!confirm('⚠️ 품질 경고 '+_gWarn.length+'건 (ex 명명 인물 없음 / o 되풀이)\n\n'+_cfgS.line+'\n\n[확인] 무시하고 업로드    /    [취소] 지적서 작성해서 데이터방에 전달')){
       await buildReviewNote();
       var _rn2=document.getElementById('reviewNote'); if(_rn2) _rn2.scrollIntoView({behavior:'smooth',block:'center'});
       impLog('품질 경고 '+_gWarn.length+'건 → 지적서 자동 작성'); return;
@@ -697,7 +728,7 @@ async function impUpload(){
     if(typeof it.curVer==='number' && typeof it.version==='number' && it.version < it.curVer) warns.push('⚠️ '+it.docId+': 새 version('+it.version+')이 현재('+it.curVer+')보다 낮음 — 과거 파일일 수 있음');
   });
   const wtxt=warns.length?('\n\n'+warns.join('\n')):'';
-  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+wtxt+'\n\n업로드 후 manifest(번들에 새 시험·과목이 있으면 등록 + 버전 동기화)가 자동 반영됩니다.')){ impLog('업로드 취소됨.'); return; }
+  if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+wtxt+'\n\n'+_cfgS.line+'\n\n업로드 후 manifest(번들에 새 시험·과목이 있으면 등록 + 버전 동기화)가 자동 반영됩니다.')){ impLog('업로드 취소됨.'); return; }
   document.getElementById('impRun').disabled=true;
   for(const it of ready){
     try{

@@ -226,6 +226,8 @@ function _qcViolations(q){
  * ③ 음성테스트 7/7 — em대시·플레이스홀더를 심은 문항은 false 에서 실제로 막히고 true 에서는 안 막힌다.
  * 참고: 서버 functions/qcUpload.js 의 structureGate 는 이 스위치를 보지 않고 늘 block 을 차단해 왔다.
  *   즉 이 스위치는 관리자 화면 쪽 선이고, 이번 복구로 두 선의 기준이 같아진다.
+ * [엔진 #24 · 2026-08-03] 그 structureGate 가 이제 qualityGate 를 부르므로 스위치를 **보기는 한다.**
+ *   다만 서버(node)에는 이 값을 true 로 바꾸는 코드가 없어 늘 false → 실질은 예전처럼 엄격한 쪽 그대로다.
  * 측정 스크립트: certlab-autoqc/work/gate12/D_measure.js · 음성테스트 D_neg.js */
 var _qcGateBypass = (typeof _qcGateBypass!=='undefined') ? _qcGateBypass : false;
 /* [\uc5d4\uc9c4 #19 \u00b7 2026-08-03] \uc6b0\ud68c \uacbd\uace0\ub97c \ub85c\ub4dc\uc2dc\uc810 \u2192 \uac8c\uc774\ud2b8 \uc2e4\ud589\uc2dc\uc810\uc73c\ub85c \uc62e\uacbc\ub2e4.
@@ -265,7 +267,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -307,8 +309,8 @@ var _QC_SEV = {
   /* [신규 2026-07-15] 마스터 레코드 검수 — 레코드 날짜 */
   REC_DATE:'BLOCKER',
   /* 그래프 */
-  GRP_NO_SVG:'ERROR', GRP_SVG_MALFORMED:'ERROR', GRP_EXTERNAL:'ERROR', GRP_EMDASH:'ERROR', GRP_DUP:'ERROR',
-  GRP_PARAMS_OBJ:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING', GRP_STRAY_SLASH:'WARNING',
+  GRP_NO_SVG:'ERROR', GRP_SVG_MALFORMED:'ERROR', GRP_EXTERNAL:'ERROR', GRP_EMDASH:'ERROR', GRP_DUP:'ERROR', GRP_RAW_LT:'ERROR',
+  GRP_PARAMS_OBJ:'WARNING', GRP_RAW_LT_ATTR:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING', GRP_STRAY_SLASH:'WARNING',
   /* 암기 */
   MN_LETTER_UNEXPLAINED:'WARNING', MN_QSPECIFIC_TRAP:'INFO',
   MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING', MN_SYMBOL:'WARNING', MN_DESC_SHORT:'WARNING',
@@ -806,7 +808,11 @@ function qcRefRemap(questions, renameMap){
   return {changed:details.length, details:details};
 }
 
-if(typeof module!=='undefined'&&module.exports){ module.exports.qcBaseline=qcBaseline; module.exports.qcDiff=qcDiff; module.exports._qcViolations=_qcViolations; module.exports.qcRefScan=qcRefScan; module.exports.qcRefGate=qcRefGate; module.exports.qcRefRemap=qcRefRemap; }
+/* [엔진 #24 · 2026-08-03] qualityGate·_qcBundle 도 내보낸다. 그동안 이 둘이 export 에 없어서
+   서버(certlab-functions/qcUpload.js)가 qualityGate 를 **부를 수가 없었고**, 문항별 _qcViolations 를
+   직접 도는 별도 구현(structureGate)을 쓸 수밖에 없었다 → #18 이 qualityGate 안에 넣은 번들 검사
+   (DUP_ID)가 서버 경로에는 안 걸렸다. 내보내기만 늘리는 것이라 브라우저 쪽 동작은 그대로다. */
+if(typeof module!=='undefined'&&module.exports){ module.exports.qcBaseline=qcBaseline; module.exports.qcDiff=qcDiff; module.exports._qcViolations=_qcViolations; module.exports.qcRefScan=qcRefScan; module.exports.qcRefGate=qcRefGate; module.exports.qcRefRemap=qcRefRemap; module.exports.qualityGate=qualityGate; module.exports._qcBundle=_qcBundle; }
 
 /* ---- 2) 마스터 연결 편입: _qcMasterLink(q, M) ----
    M = {concepts, tables, mnems, graphs, images, interactives} 각각 {id:...} 맵(없으면 null=그 타입 스킵).
@@ -990,6 +996,18 @@ try{
   function _qcDupChk(seen,id,sec,code,label,v){ if(seen[id]){ if(_qcOn(sec,code)) v.push({id:id,kind:'block',field:'id',idx:0,code:code,msg:label+' id 중복: '+id}); return true; } seen[id]=1; return false; }
   function _qcRecDate(rec,id,v){ var rd=_qcRecordDate(rec); if(rd){ rd.id=id; v.push(rd); } }
 
+  /* [엔진 #23] SVG 원소 이름 화이트리스트 — GRP_RAW_LT 가 '<' 뒤 이름을 이걸로 대조한다.
+     대소문자는 무시한다(HTML 파서가 <clipPath> 류의 대소문자를 보정하므로, 여기서 엄격히 굴면 오탐이 난다).
+     [검수 지적 반영] 필터 프리미티브(feGaussianBlur·feDropShadow…)를 통째로 빠뜨려 정상 SVG 가 ERROR 로
+     잡히던 구멍을 메웠다 — 'fe' 로 시작하는 이름은 접두로 면제하고, SMIL(animateMotion·mpath·set)과
+     hatch·solidcolor 계열을 목록에 더했다. script 는 GRP_EXTERNAL 이 따로 block 하므로 여기선 원소로 인정한다
+     (안 그러면 "글자 자리의 날것 '<'" 라는 엉뚱한 문구로 이중 보고된다). */
+  var _QC_SVG_EL={}; ('svg g path line rect circle ellipse polygon polyline text tspan textPath defs marker '+
+    'linearGradient radialGradient stop clipPath mask pattern use symbol title desc style filter animate '+
+    'animateTransform animateMotion mpath set script hatch hatchpath solidcolor '+
+    'image foreignObject switch a tref metadata view').split(' ').forEach(function(n){ _QC_SVG_EL[n.toLowerCase()]=1; });
+  function _qcIsSvgEl(name){ var n=String(name||'').toLowerCase(); return !!_QC_SVG_EL[n] || /^fe[a-z]/.test(n); }
+
   // ---- 그래프(SVG) 마스터 검수 ----
   function _qcGraphAudit(arr){ var v=[],seen={};
     _qcAsArr(arr).forEach(function(g){ if(!g) return; var id=(g.id!=null)?String(g.id):'?';
@@ -1000,6 +1018,41 @@ try{
       if(!svg.trim()){ if(_qcOn('graph','GRP_NO_SVG')) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_NO_SVG',msg:'svg 내용 없음'}); _qcApplySev(v); return; }
       if(_qcOn('graph','GRP_SVG_MALFORMED')){ var opens=(svg.match(/<svg[\s>]/g)||[]).length, closes=(svg.match(/<\/svg>/g)||[]).length;
         if(!/<svg[\s>]/.test(svg)||!/<\/svg>/.test(svg)||opens!==closes) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_SVG_MALFORMED',msg:'<svg>…</svg> 태그가 안 맞음/누락 — XML 파싱 깨짐 위험'}); }
+      /* [엔진 #23 · 2026-08-03] 글자 자리의 날것 '<' — <text>P<Pe → Y↓</text> 처럼 '&lt;' 로 안 감싼 부등호.
+       * ⚠ 군더더기 '/'(#20)와 급이 다르다. '/' 는 HTML 파서가 무시해 학생 화면이 멀쩡했지만, 날것 '<' 는
+       * HTML 파서도 태그 시작으로 읽어 **뒤 글자를 통째로 삼킨다.** 실측 grp_las5_c8aae7ade 는 지금
+       * 학생 화면에 라벨이 'P' 한 글자만 나온다(헤드리스 크롬 실물 확인 · work/gate12/_zz51_broken.png).
+       * 그래서 warn 이 아니라 block(ERROR)이다. 마스터 검수는 보고 전용이라 업로드를 막지는 않는다.
+       * 판정: '<' 뒤 이름이 SVG 원소 화이트리스트(_QC_SVG_EL)에 없으면 날것. 주석(<!--…-->)·선언(<! <?)은 면제.
+       * 라이브 실측 1건·1곳(데이터 수리는 판정대기 #51). 측정·음성 9/9: work/gate12/F_rawlt.js */
+      if(_qcOn('graph','GRP_RAW_LT')){
+        /* [검수 지적 반영] 태그 **밖 본문**의 '<' 와 **속성값 안**의 '<' 를 갈라 센다. 크롬 실측 결과
+         * 따옴표 안의 '<' 는 HTML 파서가 그냥 글자로 읽어 화면이 안 깨진다(aria-label="P<Pe" → 본문 멀쩡).
+         * 즉 후자는 XML 에서만 위법이라 #20 군더더기 '/' 와 같은 처지 → 별도 코드로 WARNING.
+         * 하나로 묶으면 지적서가 "학생 화면에서 사라짐"이라고 거짓말을 하게 된다.
+         * ⚠ 한계: 본문 'x<a b' 처럼 '<' 뒤가 진짜 원소 이름(a·g)이면 못 잡는다. 화이트리스트 방식의
+         *   구조적 한계이고, 한 글자 원소가 a·g 둘뿐이라 실무 위험은 낮다고 보고 남겨 둔다. */
+        var _rawBody=0, _rawAttr=0, _i=0;
+        while(_i<svg.length){
+          if(svg.charAt(_i)!=='<'){ _i++; continue; }
+          if(svg.substr(_i,4)==='<!--'){ var _e=svg.indexOf('-->',_i); _i=(_e<0?svg.length:_e+3); continue; }
+          var _c=svg.charAt(_i+1);
+          if(_c==='!'||_c==='?'){ var _e2=svg.indexOf('>',_i); _i=(_e2<0?svg.length:_e2+1); continue; }
+          var _m=/^<\/?([a-zA-Z][a-zA-Z0-9]*)/.exec(svg.substr(_i,40));
+          if(!_m || !_qcIsSvgEl(_m[1])){ _rawBody++; _i++; continue; }
+          var _j=_i+_m[0].length, _q='';            /* 진짜 태그 — 여는 '>' 까지 넘기며 따옴표 안 '<' 를 센다 */
+          while(_j<svg.length){
+            var _cj=svg.charAt(_j);
+            if(_q){ if(_cj===_q) _q=''; else if(_cj==='<') _rawAttr++; }
+            else if(_cj==='"'||_cj==="'") _q=_cj;
+            else if(_cj==='>'){ _j++; break; }
+            _j++;
+          }
+          _i=_j;
+        }
+        if(_rawBody) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_RAW_LT',msg:'글자 자리에 날것 \'<\' '+_rawBody+'곳 — HTML 파서가 태그로 읽어 그 뒤 글자가 학생 화면에서 사라짐. \'&lt;\' 로 바꿀 것'});
+        if(_rawAttr) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_RAW_LT_ATTR',msg:'속성값 안에 날것 \'<\' '+_rawAttr+'곳 — 지금 화면은 정상(HTML 파서는 글자로 읽음)이나 XML 파서로는 위법. \'&lt;\' 로 바꿀 것'});
+      }
       /* [엔진 #20 · 2026-08-03] 여는 태그 안 군더더기 '/' — <path … stroke-width="1.4"/ stroke-linejoin="round" …>
        * 처럼 닫는 슬래시가 속성 목록 한가운데 낀 것(생성기 흔적). 학생앱은 innerHTML(HTML 파서)로 꽂아
        * 무시하므로 화면은 정상이라 warn 이다. 독립 .svg 파일·image/svg+xml 서빙·DOMParser 로 가면 파싱이 깨진다.

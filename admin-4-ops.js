@@ -1149,6 +1149,11 @@ if (firebaseReady && auth) {
       loadAll();
       _loadSubjNames();
       startPolling();
+      /* [엔진 #22 · 2026-08-03] 검수조건(config/qc)을 부팅 때 미리 읽는다. 그 전에는 파일을 얹자마자 뜨는
+         배지(⛔/⚠)와 그때 도는 qualityGate 가 늘 _QC_DEFAULTS 로 셌고, _qcLoadCfg 를 부르는 화면
+         (지적서·업로드)에 들어가야 비로소 재정의가 반영돼 같은 파일의 숫자가 화면마다 달랐다.
+         읽고 나면 이미 그려 둔 배지를 다시 센다. 실패해도 조용히 기본값으로 간다. */
+      try{ if(typeof _qcLoadCfg==='function') _qcLoadCfg().then(function(){ try{ qcRefreshBtn(); }catch(_){} }); }catch(_){}
     } else if (user) {
       alert('관리자 권한이 없는 계정입니다: ' + user.email);
       auth.signOut();
