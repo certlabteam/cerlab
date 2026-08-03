@@ -233,6 +233,8 @@ async function loadUserPlan(user) {
       });
       // 신규 가입 확정 시점(로그인 경로 무관) → Meta CompleteRegistration
       try { clTrack('CompleteRegistration', { content_name:'signup', content_category:(typeof activeCert!=='undefined'?(activeCert||''):''), status:true }); } catch(_){}
+      // 같은 지점 → Google Ads 전환(회원가입). 신규 가입에만 1회 발화
+      try { if (typeof gtag === 'function') gtag('event','conversion',{ 'send_to':'AW-18199166773/5qIECPuRk9scELX-hOZD', 'value':1.0, 'currency':'KRW' }); } catch(_){}
       myReferralCode = refCode; myMileageLots = lots;
       // 추천받아 가입했으면 환영 모달로 보너스 안내
       if (referredBy && typeof showPtModal==='function') { setTimeout(function(){ showPtModal('referral', 1000); }, 1200); }
