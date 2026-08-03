@@ -1003,8 +1003,16 @@ try{
       /* [엔진 #20 · 2026-08-03] 여는 태그 안 군더더기 '/' — <path … stroke-width="1.4"/ stroke-linejoin="round" …>
        * 처럼 닫는 슬래시가 속성 목록 한가운데 낀 것(생성기 흔적). 학생앱은 innerHTML(HTML 파서)로 꽂아
        * 무시하므로 화면은 정상이라 warn 이다. 독립 .svg 파일·image/svg+xml 서빙·DOMParser 로 가면 파싱이 깨진다.
-       * 라이브 실측 60/295 그래프 · 133곳(판정대기 #31 — 데이터 수리는 별도 결재). 측정: work/gate12/E_stray.js */
-      if(_qcOn('graph','GRP_STRAY_SLASH')){ var _stray=(svg.match(/<[a-zA-Z][^<>]*?\/\s+[^<>]*?>/g)||[]).length;
+       * 라이브 실측 60/295 그래프 · 133곳(판정대기 #31 — 데이터 수리는 별도 결재). 측정: work/gate12/E_stray.js
+       * [엔진 #21 · 검수 지적 반영] 여는 태그를 통째로 잡고 **따옴표 안 속성값을 지운 뒤** '/'+공백을 센다.
+       *   옛 식(<[a-zA-Z][^<>]*?\/\s+[^<>]*?>)은 ① 속성값 안의 '/ '(style="font: 12px/ 1.5" ·
+       *   aria-label="수요/ 공급" · href="…/ y")를 오탐하고 ② lazy 라 한 태그에 여러 곳이어도 1로 셌다.
+       *   라이브 판정은 그대로다(60/295 · 133곳, 갈리는 그래프 0건). 대조: work/gate12/zz_alt.js */
+      if(_qcOn('graph','GRP_STRAY_SLASH')){ var _stray=0;
+        (svg.match(/<[a-zA-Z][^<>]*>/g)||[]).forEach(function(_tag){
+          var _bare=_tag.replace(/"[^"]*"/g,'""').replace(/'[^']*'/g,"''");   /* 속성값 제거 — 그 안의 '/'는 군더더기가 아니다 */
+          _stray += (_bare.match(/\/\s/g)||[]).length;                        /* 태그 끝 '/>' 는 뒤가 '>' 라 안 걸린다 */
+        });
         if(_stray) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_STRAY_SLASH',msg:'여는 태그 속성 사이에 군더더기 \'/\' '+_stray+'곳 — 지금 화면은 정상이나 XML 파서(독립 .svg·DOMParser)로는 파싱 실패. 태그 끝의 \'/>\' 하나만 남기고 제거'}); }
       if(_qcOn('graph','GRP_EXTERNAL') && /(<script|<image[\s>]|<foreignObject|(?:xlink:)?href\s*=\s*["']?\s*https?:)/i.test(svg)) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_EXTERNAL',msg:'외부 자원/스크립트(<script>·<image>·http href·foreignObject) 포함 — 순수 벡터만 허용'});
       if(_qcOn('graph','GRP_NO_VIEWBOX') && !/viewBox\s*=/.test(svg)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_VIEWBOX',msg:'viewBox 없음 — viewBox="0 -28 360 H" 권장(상단 -28에 제목)'});
