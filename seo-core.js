@@ -6,9 +6,9 @@
      브라우저: seoReadAllBanks(db) / Node: compat SDK로 만든 db 전달.
    =========================================================================== */
 
-const SEO_CERT_NAME={appraiser:'감정평가사',appraiser2:'감정평가사 2차',realestate1:'공인중개사 1차',realestate2:'공인중개사 2차',housing:'주택관리사보',housing2:'주택관리사 2차',koreanhistory:'한국사능력검정시험(심화)',bodybuilding:'보디빌딩',sport2:'스포츠지도사 2급 필기',laborattorney1:'공인노무사 1차',firemanager1:'소방시설관리사 1차',hesm:'건강운동관리사 1차'};
+const SEO_CERT_NAME={appraiser:'감정평가사',appraiser2:'감정평가사 2차',realestate1:'공인중개사 1차',realestate2:'공인중개사 2차',housing:'주택관리사보',housing2:'주택관리사 2차',koreanhistory:'한국사능력검정시험(심화)',bodybuilding:'보디빌딩',sport2:'스포츠지도사 2급 필기',laborattorney1:'공인노무사 1차',firemanager1:'소방시설관리사 1차',hesm:'건강운동관리사 1차',franchise:'가맹거래사 1차'};
 const SEO_SUBJ_OVERRIDE={civil:'민법'};
-const SEO_CERT_ORDER=['appraiser','appraiser2','realestate1','realestate2','housing','housing2','koreanhistory','bodybuilding','sport2','laborattorney1','firemanager1','hesm'];
+const SEO_CERT_ORDER=['appraiser','appraiser2','realestate1','realestate2','housing','housing2','koreanhistory','bodybuilding','sport2','laborattorney1','franchise','firemanager1','hesm'];
 const SEO_STOP=new Set('관한 관하여 대한 대하여 설명으로 설명 옳은 옳지 않은 않는 것은 것을 것이 모두 고른 고르면 따름 경우 및 또는 모든 가장 바르게 틀린 맞는 해당하는 아닌 무엇 어느'.split(' '));
 const SEO_STYLE=`
 body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#FDF8F5;color:#1e293b;max-width:760px;margin:0 auto;padding:20px 16px;line-height:1.6}
