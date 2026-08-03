@@ -1,0 +1,12 @@
+{
+  "name": "certlab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CertLab 엔진 저장소 — 빌드 없는 정적 PWA. npm은 SEO CLI 생성기 전용.",
+  "scripts": {
+    "seo:gen": "node scripts/seo-gen.mjs"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0"
+  }
+}
