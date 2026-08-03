@@ -158,7 +158,22 @@ function _qcViolations(q){
   if(_qcOn('gichul','EX_PROSE_CALC')){ o.forEach(function(t,i){ var _pco=_qgProseCalc(t); if(_pco) v.push({kind:'warn',field:'o',idx:i,code:'EX_PROSE_CALC',msg:'설명 문장과 계산식이 같은 줄에 붙음 — 설명 다음에서 개행해 식을 별도 줄로(긴 식도 중간에서 개행). 상세풀이·해설 가독성',text:_pco}); }); }
   if(_qcOn('gichul','IMG_MISSING') && _qcImgKeys){ var _reI=/img:\/\/([^\s"'\\<>\]},]+)/g, _refs={}, _mI, _blobQ=''; try{ _blobQ=JSON.stringify(q)||''; }catch(_){} while((_mI=_reI.exec(_blobQ))){ _refs[_mI[1]]=1; } for(var _rk in _refs){ if(!_qcImgKeys.has(_rk)) v.push({kind:'warn',field:'q',idx:0,code:'IMG_MISSING',msg:'img://'+_rk+' 참조하는데 이미지 라이브러리에 그 키 없음 → 이미지 업로드 또는 키 수정(앱에서 참조 문자열이 그대로 노출됨)',text:'img://'+_rk}); } }
   /* [ADD 2026-07-20] 작업 중 메모 잔존 — '~~~~'·'데이터방 검수' 류가 화면에 그대로 노출되는 미완성 표기 감지 */
-  if(_qcOn('gichul','WORK_MEMO_LEFT')){ var _blobW=''; try{ _blobW=JSON.stringify(q)||''; }catch(_){} var _mW=_blobW.match(/(~{3,}|데이터방\s*검수|검수\s*필요|작성\s*예정|채워\s*넣기)/); if(_mW) v.push({kind:'warn',field:'q',idx:0,code:'WORK_MEMO_LEFT',msg:"작업 중 메모 흔적('"+_mW[1]+"') 잔존 — 미완성 표기 확정·정리(사용자 화면에 그대로 노출됨)",text:_mW[1]}); }
+  /* [FIX 2026-08-03 엔진 #27] '채워 넣기' 는 본문 자연어로도 쓰인다("…ATP와 크레아틴인산을 다시 채워 넣기 위해").
+     면제는 **'-기 위해/위한/위하여' 목적절 하나만** 열어 준다. 그 밖은 기본적으로 메모로 센다.
+     근거: 라이브 9,822문항 전량에서 이 말이 나온 곳이 2곳뿐이고 **둘 다 뒤따르는 말이 "위해"** 였다
+     (나머지 메모패턴 4종은 0곳). 면제해야 할 자연어의 실측 모집단이 '위해' 하나라는 뜻이다.
+     ⚠ 처음엔 "뒤에 한글이 오면 면제(단 지시어미 11개는 예외)"로 짰다가 **검수 반려**됐다 —
+     '채워 넣기 바랍니다'(바람≠바랍)·'채워 넣기 요청'이 목록 밖이라 그대로 샜고, 무엇보다
+     기본값이 *봐주는* 쪽이라 목록 밖 표현이 전부 조용히 통과했다. 이 검사기의 존재 이유와 반대다.
+     대가: "채워 넣기 시작했다" 류에 경고가 뜬다 — 라이브 0건이고 WARN(비차단)이라 감수한다.
+     ⚠ 좁힌 것은 '채워 넣기' 하나뿐 — 나머지 4패턴은 손대지 않았다. */
+  if(_qcOn('gichul','WORK_MEMO_LEFT')){ var _blobW=''; try{ _blobW=JSON.stringify(q)||''; }catch(_){}
+    var _reW=/(~{3,}|데이터방\s*검수|검수\s*필요|작성\s*예정|채워\s*넣기)/g, _mW=null, _hitW=null;
+    while((_mW=_reW.exec(_blobW))){
+      if(_mW[1].indexOf('채워')>=0 && /^\s*위(해|한|하)/.test(_blobW.slice(_reW.lastIndex, _reW.lastIndex+12))) continue;
+      _hitW=_mW[1]; break;
+    }
+    if(_hitW) v.push({kind:'warn',field:'q',idx:0,code:'WORK_MEMO_LEFT',msg:"작업 중 메모 흔적('"+_hitW+"') 잔존 — 미완성 표기 확정·정리(사용자 화면에 그대로 노출됨)",text:_hitW}); }
   /* [ADD 2026-07-20] '[표]' 언급인데 표 데이터 없음 — exp.tbl 필드·tbl:// 참조 둘 다 없으면 표 누락 의심 */
   if(_qcOn('gichul','TBL_MENTION_NO_TABLE')){ var _blobT=''; try{ _blobT=JSON.stringify(q)||''; }catch(_){} if(_blobT.indexOf('[표]')!==-1 && _blobT.indexOf('tbl://')===-1 && !(q&&q.exp&&q.exp.tbl)) v.push({kind:'warn',field:'q',idx:0,code:'TBL_MENTION_NO_TABLE',msg:"'[표]' 언급인데 표 데이터 없음(exp.tbl·tbl:// 모두 부재) — 표 누락(데이터방 확인) 또는 문구 정리",text:'[표]'}); }
   o.forEach(function(t,i){ if(t&&/\ubcf4\uae30\s*\d/.test(String(t))) v.push({kind:'warn',field:'o',idx:i,code:'O_SELFREF',msg:'\ud574\uc124(o)\uc5d0 \ubcf4\uae30\ubc88\ud638\u00b7\uc790\uae30\ucc38\uc870(\ubcf4\uae30N/\uc774 \ubcf4\uae30/\u3131:) \u2192 \uc5d4\uc9c4 \uc790\ub3d9\uc774\ub77c \ub123\uc9c0 \uc54a\uc74c',text:t}); });
@@ -521,7 +536,15 @@ function _qcExtraRules(q){
   /* (l0) [신규 2026-07] 계산형 산술 정합성 — 풀이 줄 등식이 실제 계산과 맞는지(A) · 정답값이 풀이에 등장하는지(B).
      calc_audit 이식. 오탐 방지: 천단위콤마 제거·절 분리·%/²/HTML 정규화·단위(%)세그먼트 제외·2% 여유·2부분답 분리. WARNING(비차단). */
   if((_qcOn('gichul','CALC_ARITH_MISMATCH')||_qcOn('gichul','CALC_ANS_NO_MATCH')) && _isCalcQ(q)){
-    var _cnorm=function(seg){ var s=String(seg).replace(/<[^>]+>/g,'').replace(/₩|원|,/g,''); s=s.replace(/[×·]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-').replace(/²/g,'**2').replace(/³/g,'**3'); s=s.replace(/(\d+(?:\.\d+)?)\s*%/g,'($1/100)'); return s.replace(/\s/g,''); };
+    var _cnorm=function(seg){ var s=String(seg).replace(/<[^>]+>/g,'').replace(/₩|원|,/g,''); s=s.replace(/[×·]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-').replace(/²/g,'**2').replace(/³/g,'**3'); s=s.replace(/(\d+(?:\.\d+)?)\s*%/g,'($1/100)');
+      /* [FIX 2026-08-03 엔진 #26] 문장 끝 마침표가 다음 절 앞에 남아 숫자에 붙는 오탐 제거.
+         "…배분한다. 500,000 ÷ 10 = 50,000" 은 절이 ". 500000 ÷ 10" 로 끊기는데 공백을 지우면
+         ".500000/10" = 0.05 가 되어 맞는 식이 틀렸다고 잡혔다(라이브 3건 전부 이 원인).
+         소수점은 뒤에 숫자가 붙으므로("0.5") 안 건드린다 — **세그먼트 맨 앞**의 마침표만 지운다.
+         ⚠ 끝 마침표까지 지우면 안 된다: "80%." 가 평가 가능해져 (80/100)=0.8 로 읽히고
+         % 세그먼트 제외 장치가 뚫린다(그렇게 했다가 새 오탐 3건이 생겨 되돌렸다). */
+      s=s.replace(/^\s*\.(?=\s)/,' ');
+      return s.replace(/\s/g,''); };
     var _cpure=function(s){ return /^[\d.+\-*\/()]+$/.test(s) && /\d/.test(s); };
     var _ceval=function(seg){ if(/%\s*$/.test(String(seg).trim())) return null; var s=_cnorm(seg); if(!_cpure(s)) return null; try{ var v=Function('"use strict";return('+s+')')(); return (v!=null&&isFinite(v))?v:null; }catch(e){ return null; } };
     var _clines=[].concat(exp.exSum||[], exp.ex||[]).map(String);
@@ -1151,7 +1174,9 @@ try{
   var _qcMasterAuditFns={ graph:_qcGraphAudit, mnem:_qcMnemAudit, mnemonic:_qcMnemAudit, table:_qcTableAudit, concept:_qcConceptAudit, cpt:_qcConceptAudit, interactive:_qcInteractiveAudit, itv:_qcInteractiveAudit };
   function _qcMasterRecordAudit(kind, arr){ var f=_qcMasterAuditFns[String(kind||'').toLowerCase()]; return f?f(arr):[]; }
 
-  window.QC = {
+  // ⚠ node(서버)엔 window 가 없다. 감싸지 않으면 여기서 튕기고 바깥 catch 가 삼켜
+  //    바로 아랫줄 module.exports 가 영영 안 돌아간다(마스터 검수 함수가 undefined → 지적 0건으로 조용히 통과).
+  if(typeof window!=='undefined') window.QC = {
     violations:_qcViolations, gate:qualityGate, masterLink:_qcMasterLink, bundle:_qcBundle,
     levelup:_qcLevelup, applySev:_qcApplySev, sevOf:_qcSevOf, sevMeta:_QC_SEV_META,
     refs:_qcRefs, recordDate:_qcRecordDate, defaults:_QC_DEFAULTS,
@@ -1162,4 +1187,5 @@ try{
     conceptAudit:_qcConceptAudit, interactiveAudit:_qcInteractiveAudit, masterRecordAudit:_qcMasterRecordAudit
   };
   if(typeof module!=='undefined'&&module.exports){ module.exports.graphAudit=_qcGraphAudit; module.exports.mnemAudit=_qcMnemAudit; module.exports.tableAudit=_qcTableAudit; module.exports.conceptAudit=_qcConceptAudit; module.exports.interactiveAudit=_qcInteractiveAudit; module.exports.masterRecordAudit=_qcMasterRecordAudit; }
-}catch(e){}
+// 조용히 물러서면 검수가 소리 없이 사라진다(판 19·20 교훈) — 삼키더라도 흔적은 남긴다
+}catch(e){ try{ console.warn('[qc-core] 마스터 검수 블록 초기화 실패 — 검수 함수가 안 실릴 수 있음:', e && e.message); }catch(_){} }
