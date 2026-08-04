@@ -1082,7 +1082,17 @@ function clRouteFromHash(){
   }
   async function openQ(cert, qid){
     try{ if(typeof loadExam==='function') await loadExam(cert); }catch(_){}
-    var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null; if(!cs) return false;
+    var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
+    // [2026-08-04] 레벨업(variantq)도 #q/ 로 열리게 — 기출 색인에 없으면 goToCard 로 넘긴다.
+    //  레벨업은 회차(set)가 없어 기존 '회차 진입 + 번호 점프' 경로를 못 탄다. goToCard 는 그 자격증의
+    //  과목을 전수로 훑어(캐시 없으면 Firestore 직독 폴백) 찾으면 단독 1문항 리뷰로 띄운다 —
+    //  mqInReview 라 채점·레벨 변동·해설열람 기록이 남지 않는다. URL 에 과목을 안 넣어도 되는 이유다.
+    if(!cs){
+      if(typeof goToCard!=='function') return false;
+      try{ await goToCard(qid, cert); }catch(_){ return false; }
+      var _q=(typeof mqQuestions==='function')?mqQuestions():[];
+      return !!(_q && _q.length===1 && _q[0] && _q[0].id===qid);
+    }
     try{ await enterCert(cs.cert); }catch(_){}
     try{ if(typeof loadExam==='function') await loadExam(cs.cert); }catch(_){}
     var qb=(typeof qbOf==='function')?qbOf(cs.cert):null, sub=qb&&qb[cs.sub]; if(!sub||!sub.sets) return false;
