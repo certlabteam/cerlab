@@ -391,7 +391,10 @@ function renderMath(text, allowBareFraction){
   // (00) <svg>…</svg> 보호
   s = s.replace(/<svg[\s\S]*?<\/svg>/gi, _st);
   // dia relation-diagram -> fixed-width <pre class="cc-dia"> (arrow alignment). stashed whole.
-  s = s.replace(/\[dia\]\s*([\s\S]*?)\s*\[\/dia\]/g, function(_m, inner){ var body=String(inner).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>"); return _st('<pre class="cc-dia">'+body+'</pre>'); });
+  // [2026-08-04] \s* 는 첫 줄의 들여쓰기까지 먹는다(전각 공백 U+3000 도 \s 에 걸린다).
+  //   그래서 라벨을 화살표 위 가운데로 맞춘 패딩이 통째로 사라져 첫 줄만 왼쪽으로 밀렸다(기존 68건 중 7건).
+  //   여는/닫는 태그 옆의 줄바꿈 하나만 걷어내고 들여쓰기는 그대로 둔다.
+  s = s.replace(/\[dia\][ \t]*\r?\n?([\s\S]*?)\r?\n?[ \t]*\[\/dia\]/g, function(_m, inner){ var body=String(inner).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>"); return _st('<pre class="cc-dia">'+body+'</pre>'); });
   // (0) 절댓값 |…/…| → nowrap span(내부 / 는 \u0004). 통째로 보호(태그 슬래시가 분수로 오인되는 것 방지)
   s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return _st('<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'); });
   // (00b) 남은 정상 HTML 태그(표·div·br·b 등) 보호 → 태그 내부 / 가 분수로 안 잡힘
