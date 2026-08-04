@@ -1213,6 +1213,34 @@ async function ottagApply(){
 // ===== 🩹 콘텐츠 패치 (해설·예시·띄어쓰기 부분 병합 · banks/변형 문항에 id로 콕 병합) =====
 var _cpatchData=null, _cpatchShard=null, _cpatchOk=null, _cpatchBound=false, _cpatchConfirmTok=null;
 function cpatchEsc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* [정답 안전 정정] q.ans 는 불변필드다. 이 좁은 문 하나로만 열고, 아래 다섯을 전부 통과해야 한다.
+   ① ans 가 1..opts 범위의 정수 ② 지금 값과 다름 ③ 해설 결론(o) 동반 — ans 만 바꾸면 화면이 자기모순
+   ④ 근거(기출=공식 답안표 판독 / 레벨업=자체 증명) ⑤ 변경 로그. 하나라도 없으면 그 편집은 거부한다.
+   기출 근거는 '판독값'이 실제 적용할 ans 와 같아야 한다 — 근거와 적용값이 어긋나는 것을 막는 핵심 잣대. */
+function _cpAnsErrs(e, q){
+  var errs=[], ans=e.ans, opts=(q&&q.opts)||[];
+  if(typeof ans!=='number' || !isFinite(ans) || Math.floor(ans)!==ans) { errs.push('ans 정수 아님'); return errs; }
+  if(ans<1 || ans>opts.length) errs.push('ans 범위 밖('+ans+' — 보기 '+opts.length+'개)');
+  if(ans===q.ans) errs.push('ans 가 현재 값('+q.ans+')과 같음 — 바꿀 것이 없음');
+  if(e.o==null) errs.push('ans 변경엔 해설(o) 동반 필수 — 결론을 함께 안 뒤집으면 화면이 자기모순');
+  var b=e['근거']||e.basis||null;
+  if(!b || typeof b!=='object') errs.push('근거 없음 — ans 변경은 근거 필수');
+  else {
+    var kind=String(b['종류']||b.kind||'');
+    if(kind==='기출'){
+      if(!String(b['출처']||b.source||'').trim()) errs.push('근거.출처 없음(공식 답안표 파일·URL)');
+      if(!String(b['확인일']||b.checkedAt||'').trim()) errs.push('근거.확인일 없음');
+      var rd=(b['판독값']!=null)?b['판독값']:b.read;
+      if(typeof rd!=='number') errs.push('근거.판독값 없음(답안표에서 읽은 정답)');
+      else if(rd!==ans) errs.push('근거.판독값('+rd+')과 적용할 ans('+ans+')가 다름 — 차단');
+    } else if(kind==='레벨업'){
+      if(String(b['증명']||b.proof||'').trim().length<30) errs.push('근거.증명이 너무 짧음(레벨업은 자체 증명 30자 이상)');
+      if(!String(b['확인일']||b.checkedAt||'').trim()) errs.push('근거.확인일 없음');
+    } else errs.push("근거.종류는 '기출' 또는 '레벨업'");
+  }
+  if(String(e['로그']||e.log||'').trim().length<10) errs.push('변경 로그 없음(사유 10자 이상)');
+  return errs;
+}
 function _cpNows(s){ return String(s==null?'':s).replace(/\s+/g,''); }   // 모든 공백 제거(띄어쓰기만 비교용)
 // 불릿 마커 정규화 — 승인된 '마커 통일' 예외만 통과시키는 비교용(2026-07-30). q 비교에만 쓴다.
 //  · 줄머리 ○ ● ◦ ㅇ · 는 뒤에 무엇이 와도 통일(붙은 불릿). 단 바로 뒤에 또 마커면 손대지 않음(○○시 익명 보호).
@@ -1269,7 +1297,7 @@ async function cpatchValidate(){
   cpatchCancelConfirm();   // 재검증하면 이전 확인 토큰·배너는 무효
   var groups=(_cpatchData&&_cpatchData.groups)||[];
   var allHomes={}, okMap={}, errN=0, okN=0, setStat={}, errRows=[], failSubs=[];
-  var cntO=0, cntEx=0, cntSp=0;
+  var cntO=0, cntEx=0, cntSp=0, cntAns=0;
   for(var gi=0; gi<groups.length; gi++){
     var G=groups[gi];
     var col=await _ottagCollect(G.cert, G.subject);
@@ -1306,19 +1334,22 @@ async function cpatchValidate(){
             else e.opts.forEach(function(t,i){ if(_cpNows(String(t))!==_cpNows(String(cur[i]==null?'':cur[i]))) errs.push('opts['+(i+1)+'] 띄어쓰기 외 변경 — 차단'); });
           }
         }
-        if(!hasField) errs.push('수정 필드 없음(o·ex·q·opts 중 하나 필요)');
+        if(e.ans!=null){ hasField=true; _cpAnsErrs(e,q).forEach(function(m){ errs.push(m); }); }
+        if(!hasField) errs.push('수정 필드 없음(o·ex·q·opts·ans 중 하나 필요)');
       }
       var setKey=G.subject+' · '+((q&&q.set)||'(미상)');
       var ss=setStat[setKey]||(setStat[setKey]={ok:0,err:0});
       if(errs.length){ errN++; ss.err++; errRows.push('<div style="color:#A32D2D">✗ '+cpatchEsc(G.docId+' / '+e.id)+' — '+cpatchEsc(errs.join(' · '))+'</div>'); }
       else {
         okN++; ss.ok++;
-        okMap[rec.home+'||'+e.id]={ rec:rec, o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null) };
-        if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++;
+        okMap[rec.home+'||'+e.id]={ rec:rec, o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null),
+          ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
+          basis:(e.ans!=null?(e['근거']||e.basis||null):null), log:(e.ans!=null?String(e['로그']||e.log||''):null) };
+        if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++; if(e.ans!=null) cntAns++;
       }
     });
   }
-  var head='<div style="margin-bottom:8px"><b>검증 결과:</b> 통과 '+okN+' · 오류 '+errN+' <span style="color:#64748B">(해설 '+cntO+' · 예시 '+cntEx+' · 띄어쓰기 '+cntSp+')</span></div>';
+  var head='<div style="margin-bottom:8px"><b>검증 결과:</b> 통과 '+okN+' · 오류 '+errN+' <span style="color:#64748B">(해설 '+cntO+' · 예시 '+cntEx+' · 띄어쓰기 '+cntSp+(cntAns?(' · <b style="color:#A32D2D">정답 '+cntAns+'</b>'):'')+')</span></div>';
   if(failSubs.length){ head+='<div style="color:#A32D2D;font-size:12px;margin-bottom:6px">읽기 실패: '+cpatchEsc(failSubs.join(' / '))+'</div>'; }
   var setRows=Object.keys(setStat).sort().map(function(k){
     var s=setStat[k]; var c=s.err?'#A32D2D':'#15793F';
@@ -1343,6 +1374,8 @@ function cpatchAskConfirm(n){
   if(!b){ _cpatchConfirmTok=null; return; }
   b.innerHTML='<div id="cpatchConfirmBox" style="margin:4px 0 2px;border:1.5px solid #15793F;border-radius:8px;background:#F1F8F3;padding:12px 14px">'
     +'<div style="font-weight:700;color:#15793F;font-size:13px">'+n+'개 문항에 해설·예시·띄어쓰기 패치를 병합 저장합니다. 계속할까요?</div>'
+    +(function(){ var a=[]; try{ Object.keys(_cpatchOk||{}).forEach(function(k){ var it=_cpatchOk[k]; if(it&&it.ans!=null) a.push(it.id+': 정답 '+it.ansFrom+' → '+it.ans); }); }catch(_){}
+        return a.length?('<div style="margin-top:8px;border:1.5px solid #A32D2D;border-radius:7px;background:#FEF2F2;padding:8px 10px;color:#A32D2D;font-size:12.5px"><b>⚠️ 정답(ans) 변경 '+a.length+'건이 들어 있습니다</b><div style="margin-top:3px;color:#7F1D1D">'+a.map(cpatchEsc).join('<br>')+'</div><div style="margin-top:4px;color:#7F1D1D">정답은 불변필드입니다. 근거·로그를 확인하고 눌러 주세요.</div></div>'):''; })()
     +'<div style="color:#5B6B5F;font-size:12px;margin-top:4px">※ 학생앱 배포는 저장 후 [기출 업로드] 탭의 version +1(또는 매니페스트 동기화)로 올려주세요.</div>'
     +'<div style="display:flex;gap:8px;margin-top:10px">'
     +'<button class="btn-sm" id="cpatchConfirmYes" onclick="cpatchApply(\''+_cpatchConfirmTok+'\')" style="background:#15793F;color:#fff;font-weight:700;border:0;border-radius:7px;padding:9px 16px;font-size:13px;cursor:pointer">확인 · 병합 저장</button>'
@@ -1356,6 +1389,7 @@ async function cpatchApply(tok){
   cpatchCancelConfirm();   // 토큰 1회 소모 — 배너 닫고 재사용 차단
   var sh=_cpatchShard, rep=document.getElementById('cpatchReport');
   var touched={};   // home docId → true
+  var _cpAnsAudit=[];   // 정답 변경 감사 로그 — 저장 성공 뒤 ans_audit 컬렉션에 남긴다
   keys.forEach(function(k){
     var it=_cpatchOk[k]; var rec=it&&it.rec; if(!rec||!rec.q) return;
     var q=rec.q;
@@ -1363,6 +1397,7 @@ async function cpatchApply(tok){
     if(it.ex!=null){ q.exp=q.exp||{}; q.exp.ex=it.ex; }
     if(it.q!=null){ q.q=it.q; }
     if(it.opts!=null){ q.opts=it.opts; }
+    if(it.ans!=null){ q.ans=it.ans; _cpAnsAudit.push({docId:it.docId, home:rec.home, id:it.id, before:it.ansFrom, after:it.ans, 근거:it.basis, 로그:it.log}); }
     touched[rec.home]=true;
   });
   try{
@@ -1377,7 +1412,35 @@ async function cpatchApply(tok){
       }
       docs++;
     }
-    rep.innerHTML='<div style="color:#15793F;font-weight:700">✅ '+keys.length+'문항 병합 저장 완료 ('+docs+'개 문서).</div><div style="color:#A89C8E;font-size:12px;margin-top:4px">학생앱에 배포하려면 [기출 업로드] 탭의 version +1(또는 매니페스트 동기화)로 버전을 올리세요. 앱에서 Ctrl+Shift+R로 확인.</div>';
+    // [정답 안전 정정] 감사 로그 — 누가·무엇을·왜 바꿨는지 남긴다(저장 성공 뒤에만)
+    var _auditMsg='';
+    if(_cpAnsAudit.length){
+      var _who=''; try{ _who=(firebase.auth().currentUser||{}).email||''; }catch(_){}
+      for(var ai=0; ai<_cpAnsAudit.length; ai++){
+        var _a=_cpAnsAudit[ai];
+        try{ await db.collection('ans_audit').add(Object.assign({}, _a, {at:firebase.firestore.FieldValue.serverTimestamp(), by:_who})); }
+        catch(_e){ _auditMsg+='<div style="color:#A32D2D">⚠️ 감사 로그 기록 실패('+cpatchEsc(_a.id)+'): '+cpatchEsc(_e.message)+' — 데이터는 저장됨</div>'; }
+      }
+    }
+    // [정답 안전 정정] 저장 후 재검수 — 바뀐 문항이 게이트에 걸리는지 그 자리에서 다시 잰다
+    var _gateMsg='';
+    if(_cpAnsAudit.length){
+      try{
+        var _ids={}; _cpAnsAudit.forEach(function(a){ _ids[a.id]=1; });
+        var _hb=0,_hw=0,_lines=[];
+        Object.keys(touched).forEach(function(hid){
+          var h=sh.homes[hid]; if(!h) return;
+          var g=qualityGate(h.questions||[]);
+          (g.block||[]).forEach(function(m){ if(Object.keys(_ids).some(function(x){return String(m).indexOf(x)>=0;})){ _hb++; _lines.push('⛔ '+m); } });
+          (g.warn||[]).forEach(function(m){ if(Object.keys(_ids).some(function(x){return String(m).indexOf(x)>=0;})){ _hw++; _lines.push('⚠ '+m); } });
+        });
+        _gateMsg='<div style="margin-top:8px;border:1px solid #E3E8EF;border-radius:7px;background:#F6F8FB;padding:8px 10px;font-size:12.5px">'
+          +'<b>정답 변경 '+_cpAnsAudit.length+'건 재검수</b> — 차단 '+_hb+' · 경고 '+_hw
+          +(_lines.length?('<div style="margin-top:4px;color:#7A6A58">'+_lines.slice(0,20).map(cpatchEsc).join('<br>')+'</div>'):'<div style="margin-top:4px;color:#15793F">해당 문항 지적 없음 — 정답·해설 정합 확인</div>')
+          +'</div>';
+      }catch(_e2){ _gateMsg='<div style="color:#A32D2D;margin-top:6px">재검수 실행 실패: '+cpatchEsc(_e2.message)+'</div>'; }
+    }
+    rep.innerHTML='<div style="color:#15793F;font-weight:700">✅ '+keys.length+'문항 병합 저장 완료 ('+docs+'개 문서).</div>'+_auditMsg+_gateMsg+'<div style="color:#A89C8E;font-size:12px;margin-top:4px">학생앱에 배포하려면 [기출 업로드] 탭의 version +1(또는 매니페스트 동기화)로 버전을 올리세요. 앱에서 Ctrl+Shift+R로 확인.</div>';
     document.getElementById('cpatchApplyBtn').style.display='none';
   }catch(e){ rep.innerHTML='<div style="color:#A32D2D">저장 실패: '+cpatchEsc(e.message)+'</div>'; }
 }
