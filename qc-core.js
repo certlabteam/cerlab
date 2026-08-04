@@ -222,6 +222,24 @@ function _qcViolations(q){
         if(!_qCalc && _qcOn('gichul','EX_ECHO') && (sim>=_qcN('gichul','EX_ECHO','minSim',0.5) || run>=_qcN('gichul','EX_ECHO','minRun',6))){ echo=true; v.push({kind:'warn',field:'ex',idx:i,code:'EX_ECHO',msg:'\uc608\uc2dc\uac00 \ud574\uc124(o) \ub418\ud480\uc774(\uc720\uc0ac\ub3c4 '+Math.round(sim*100)+'%\u00b7\uc5f0\uc18d\uc77c\uce58 '+run+'\uc5b4\uc808) \u2192 \ub2e4\ub978 \uc7a5\uba74\u00b7\uc218\uce58\ub85c',text:t}); }
       }
       if(!_qCalc && _qcOn('gichul','EX_SHORT') && isScene && !echo){ var _L=String(t).replace(/<[^>]+>/g,"").trim().length; if(_L<_qcN('gichul','EX_SHORT','minChars',60)) v.push({kind:'warn',field:'ex',idx:i,code:'EX_SHORT',msg:'\uc608\uc2dc\uac00 \uc7a5\uba74\uc778\ub370 '+_L+'\uc790(60\uc790 \ubbf8\ub9cc) \u2014 \ub2e8\uc21c\ubc18\ubcf5 \uc758\uc2ec, \uc2e4\uc0dd\ud65c \uc7a5\uba74\uc73c\ub85c \uc0b4 \ubd99\uc774\uae30',text:t}); }
+      /* [2026-08-05] EX_STUB — 토막 예시 차단.
+         위 EX_SHORT 는 isScene(행위 동사·등장인물)이 있어야 길이를 재서,
+         정작 가장 짧은 '동일 채권·여러 부동산.' 같은 토막은 장면으로 안 보여
+         검사를 통째로 건너뛰었다(라이브 실측: 25자 이하 1,224칸 중 EX_SHORT 가 잡은 건 1칸).
+         짧을수록 빠져나가는 구조였다 → isScene 과 무관하게 재고 block 처리.
+         [dia] 관계도는 본문이 아니므로 떼고 센다. */
+      if(!_qCalc && _qcOn('gichul','EX_STUB')){
+        var _sb=String(t).replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/<[^>]+>/g,'').trim();
+        var _SL=_sb.length;
+        /* 끝의 괄호 보충설명·마침표를 떼고 평서형 '…다' 로 끝나는지 본다.
+           토막은 '불가분성.' '현명 필요.' '계약=합치.' 처럼 체언으로 끝나고,
+           짧지만 온전한 설명은 '…한다.' 로 끝난다 — 이 차이가 가장 잘 갈라낸다.
+           실측: 감정평가사 레벨업 987칸을 잡고, 다른 자격증에서는 2칸만 걸렸다(둘 다 진짜 결함). */
+        var _decl=/다$/.test(_sb.replace(/\([^)]*\)\s*\.?\s*$/,'').replace(/[\s.]+$/,''));
+        if(_SL>0 && (_SL<_qcN('gichul','EX_STUB','minChars',15)
+                     || (!_decl && _SL<_qcN('gichul','EX_STUB','minDeclChars',25))))
+          v.push({kind:'warn',field:'ex',idx:i,code:'EX_STUB',msg:'예시(ex)가 '+_SL+'자 토막'+(_decl?'':'·문장 미완성')+' — 개념 요약이지 예시가 아니다. 누가·무엇을·어떻게 가 드러나는 장면으로 다시 쓸 것',text:t});
+      }
     });
     var _fex=[]; ex.forEach(function(t,i){ if(t&&String(t).trim()) _fex.push([i,t]); });
     for(var a=0;a<_fex.length;a++) for(var b=a+1;b<_fex.length;b++){ if(!_qCalc && _qcOn('gichul','EX_EX_ECHO') && _qgSim(_fex[a][1],_fex[b][1])>=_qcN('gichul','EX_EX_ECHO','minSim',0.5)) v.push({kind:'warn',field:'ex',idx:_fex[b][0],code:'EX_EX_ECHO',msg:'\uc608\uc2dc '+_fex[a][0]+'\ubc88\uacfc \uc8fc\uc5b4\u00b7\uc0c1\ud669\uc774 \ubc18\ubcf5 \u2192 \uc11c\ub85c \ub2e4\ub978 \uc7a5\uba74\uc73c\ub85c',text:_fex[b][1]}); }
@@ -276,7 +294,7 @@ function qualityGate(questions){
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
+  gichul:{ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
@@ -309,6 +327,10 @@ var _QC_SEV = {
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',
   CARD_LT2:'ERROR', CARD_LT2_LINK:'WARNING', REL_NO_ARROW:'WARNING', EX_NONAME:'WARNING', EX_GENERIC_NOUN:'WARNING', EX_PROSE_CALC:'WARNING', EX_REP_VERB:'WARNING', EX_JOMUN:'WARNING', EX_NO_SUBJECT_FIRST:'WARNING',
   EX_NOT_GAP_FIRST:'WARNING', EX_ECHO:'WARNING', EX_SHORT:'WARNING', EX_EX_ECHO:'WARNING',
+  /* [2026-08-05] EX_STUB — 경고로만 둔다(크리스 방침).
+     차단을 걸어도 결국 같은 사람이 풀고 올리므로 문지기만 된다 — 경고를 보고 제대로 고치는 것이 목적.
+     도입 시점 라이브 잔존 989칸/467문항(감정평가사 레벨업 987 + 그 밖 2). */
+  EX_STUB:'WARNING',
   EX_MULTILINE:'WARNING', EX_LEN:'WARNING', BARE_ACRONYM:'WARNING', IMG_MISSING:'WARNING',
   WORK_MEMO_LEFT:'WARNING', TBL_MENTION_NO_TABLE:'WARNING',   /* [ADD 2026-07-20] 미완성 메모 잔존·[표] 누락 */
   EX_MISSING:'WARNING', EX_COVERAGE:'INFO', O_SHORT:'INFO',   /* [신규 2026-07-15] 예시전무=경고 / 예시일부·해설얇음=참고(소급 폭증 방지, 베이스라인 후 승격) */
