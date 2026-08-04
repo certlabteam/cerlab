@@ -1334,8 +1334,13 @@ async function cpatchValidate(){
             else e.opts.forEach(function(t,i){ if(_cpNows(String(t))!==_cpNows(String(cur[i]==null?'':cur[i]))) errs.push('opts['+(i+1)+'] 띄어쓰기 외 변경 — 차단'); });
           }
         }
+        // exp.s(요약 결론)도 해설칸이다. ans 를 뒤집으면 여기 결론도 같이 뒤집어야 화면이 안 어긋난다.
+        if(e.s!=null){ hasField=true;
+          if(typeof e.s!=='string') errs.push('s 문자열 아님');
+          else if(!e.s.trim() && String((q.exp&&q.exp.s)||'').trim()) errs.push('s 기존 요약을 빈값으로 덮음 — 차단');
+        }
         if(e.ans!=null){ hasField=true; _cpAnsErrs(e,q).forEach(function(m){ errs.push(m); }); }
-        if(!hasField) errs.push('수정 필드 없음(o·ex·q·opts·ans 중 하나 필요)');
+        if(!hasField) errs.push('수정 필드 없음(o·ex·q·opts·s·ans 중 하나 필요)');
       }
       var setKey=G.subject+' · '+((q&&q.set)||'(미상)');
       var ss=setStat[setKey]||(setStat[setKey]={ok:0,err:0});
@@ -1343,7 +1348,7 @@ async function cpatchValidate(){
       else {
         okN++; ss.ok++;
         okMap[rec.home+'||'+e.id]={ rec:rec, o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null),
-          ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
+          s:(e.s!=null?e.s:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
           basis:(e.ans!=null?(e['근거']||e.basis||null):null), log:(e.ans!=null?String(e['로그']||e.log||''):null) };
         if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++; if(e.ans!=null) cntAns++;
       }
@@ -1397,6 +1402,7 @@ async function cpatchApply(tok){
     if(it.ex!=null){ q.exp=q.exp||{}; q.exp.ex=it.ex; }
     if(it.q!=null){ q.q=it.q; }
     if(it.opts!=null){ q.opts=it.opts; }
+    if(it.s!=null){ q.exp=q.exp||{}; q.exp.s=it.s; }
     if(it.ans!=null){ q.ans=it.ans; _cpAnsAudit.push({docId:it.docId, home:rec.home, id:it.id, before:it.ansFrom, after:it.ans, 근거:it.basis, 로그:it.log}); }
     touched[rec.home]=true;
   });
