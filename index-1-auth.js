@@ -103,6 +103,19 @@ function _userDaily(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_
 function _guestDayGet(){ try{ var o=JSON.parse(localStorage.getItem('certlab_guest_daily')||'{}'); if(o&&o.date===_todayKST()&&o.counts) return o; }catch(_){} return {date:_todayKST(),counts:{}}; }
 function _guestDayCount(cert){ return (_guestDayGet().counts||{})[cert]||0; }
 function _guestDayBump(cert){ var o=_guestDayGet(); o.counts=o.counts||{}; o.counts[cert]=(o.counts[cert]||0)+1; o.date=_todayKST(); try{ localStorage.setItem('certlab_guest_daily',JSON.stringify(o)); }catch(_){} }
+/* [2026-08-05] 관리자 계정은 이용권을 코드에서 열어 둔다.
+ * users 문서의 entitlements 가 어떻게 되어 있든(만료·누락·새 자격증 추가) 링크로 바로 들어가면 다 풀리게 하려는 것.
+ * 데이터를 고치는 게 아니라 메모리에서만 올려보므로 users 문서는 건드리지 않는다. */
+var CL_UNLOCK_EMAILS = ['makeshiness@gmail.com'];
+function clUnlockAll(){ try{ return !!(currentUser && CL_UNLOCK_EMAILS.indexOf(String(currentUser.email||'').toLowerCase())>=0); }catch(_){ return false; } }
+function clApplyUnlock(ent){
+  if(!clUnlockAll() || !ent) return ent;
+  (typeof ALL_CERTS!=='undefined'?ALL_CERTS:Object.keys(ent)).forEach(function(c){
+    if(!ent[c]) ent[c]={trialCount:0,planDays:null};
+    ent[c].plan='ACTIVE'; ent[c].expireAt=null;
+  });
+  return ent;
+}
 function _userDayCount(cert){ var e=userEnt[cert]||{}; return (e.dayDate===_todayKST())?(e.dayCount||0):0; }
 function _userDayBump(cert){ var e=userEnt[cert]; if(!e) return; if(e.dayDate!==_todayKST()){ e.dayDate=_todayKST(); e.dayCount=0; } e.dayCount=(e.dayCount||0)+1; saveDailyCount(cert); }
 async function saveDailyCount(cert){ if(!currentUser||!userEnt[cert]) return; try{ await db.collection('users').doc(currentUser.uid).update({ ['entitlements.'+cert+'.dayDate']:userEnt[cert].dayDate, ['entitlements.'+cert+'.dayCount']:userEnt[cert].dayCount }); }catch(e){ console.error('일일카운트 저장 오류:', e); } }
@@ -283,7 +296,7 @@ async function loadUserPlan(user) {
       }
     }
     window._aiCredits = (data.aiCredits && typeof data.aiCredits==='object') ? { grade:+(data.aiCredits.grade||0), explain:+(data.aiCredits.explain||0) } : { grade:0, explain:0 };
-    userEnt = ent; syncPlanMirror(); updateAuthBar(); loadUserData();
+    userEnt = clApplyUnlock(ent); syncPlanMirror(); updateAuthBar(); loadUserData();
     // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
     myReferralCode = data.referralCode || null;
     myMileageLots = Array.isArray(data.mileageLots) ? data.mileageLots : [];
@@ -296,6 +309,7 @@ async function loadUserPlan(user) {
   } catch(e) {
     console.error('플랜 로드 오류:', e);
     userEnt = blankEnt(); userEnt.bodybuilding.plan='FREE_TRIAL'; userEnt.appraiser.plan='FREE_TRIAL';
+    clApplyUnlock(userEnt);   /* 로드가 실패해도 관리자는 막히지 않게 */
     syncPlanMirror(); updateAuthBar();
   }
 }
