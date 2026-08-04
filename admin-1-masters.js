@@ -1253,6 +1253,23 @@ function _cpNormMarker(s){
   t=t.replace(/(?<=[ \t])[○●◦ㅇ·Oo](?=[ \t])/g, '\u0001');
   return t.replace(/\s+/g,'');
 }
+/* [2026-08-05] 문제(q)·보기(opts) — 내용은 그대로, 형식만 바꾸는 건 허용한다(크리스 지시).
+ * 형식으로 보는 것: 공백·줄바꿈(<br>)·서식 태그·불릿(○●◦ㅇ·Oo)·전각↔반각.
+ * 그대로 비교하는 것: 글자·숫자와 단위·기호(%, ㎡, ~, ± 등),
+ *   그리고 보기 라벨(ㄱㄴㄷ, ①②③) — 이걸 허용하면 진술이 조용히 바뀐다.
+ * 검증: 라이브 9,822문항·40,500보기에서 보기끼리 구분이 사라지는 문항 0건. */
+function _cpNormFmt(s){
+  var t=String(s==null?'':s).replace(/\r/g,'');
+  t=t.replace(/<br\s*\/?>/gi,'\n');
+  t=t.replace(/<\/?(?:b|strong|em|i|u|span|p|div|small|sub|sup)(?:\s[^>]*)?>/gi,'');
+  t=t.replace(/[\uFF01-\uFF5E]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); });
+  t=t.replace(/\u3000/g,' ');
+  t=t.replace(/(^|\n)([ \t]*)[○●◦ㅇ·](?![○●◦ㅇ·])/g,'$1$2');
+  t=t.replace(/(^|\n)([ \t]*)[Oo](?=[ \t])/g,'$1$2');
+  t=t.replace(/(?<=[ \t])[○●◦ㅇ·Oo](?=[ \t])/g,'');
+  return t.replace(/\s+/g,'');
+}
+
 function cpatchBindImp(){
   if(_cpatchBound) return; _cpatchBound=true;
   var file=document.getElementById('cpatchImpFile'), drop=document.getElementById('cpatchImpDrop');
@@ -1325,13 +1342,13 @@ async function cpatchValidate(){
         }
         if(e.q!=null){ hasField=true;
           if(typeof e.q!=='string') errs.push('q 문자열 아님');
-          else if(_cpNormMarker(e.q)!==_cpNormMarker(q.q||'')) errs.push('q 마커·띄어쓰기 외 변경 — 차단');
+          else if(_cpNormFmt(e.q)!==_cpNormFmt(q.q||'')) errs.push('q 형식 외 변경(글자·숫자·라벨이 달라졌다) — 차단');
         }
         if(e.opts!=null){ hasField=true;
           if(!Array.isArray(e.opts)) errs.push('opts 배열 아님');
           else { var cur=q.opts||[];
             if(e.opts.length!==cur.length) errs.push('opts 길이 '+e.opts.length+'≠현재 '+cur.length);
-            else e.opts.forEach(function(t,i){ if(_cpNows(String(t))!==_cpNows(String(cur[i]==null?'':cur[i]))) errs.push('opts['+(i+1)+'] 띄어쓰기 외 변경 — 차단'); });
+            else e.opts.forEach(function(t,i){ if(_cpNormFmt(String(t))!==_cpNormFmt(String(cur[i]==null?'':cur[i]))) errs.push('opts['+(i+1)+'] 형식 외 변경(글자·숫자·라벨이 달라졌다) — 차단'); });
           }
         }
         // exp.s(요약 결론)도 해설칸이다. ans 를 뒤집으면 여기 결론도 같이 뒤집어야 화면이 안 어긋난다.
