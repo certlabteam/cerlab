@@ -1351,6 +1351,13 @@ function renderMcqExam(root){
       var _mn=q.mn||q.exp.mn; 
       var mnList=Array.isArray(_mn)?_mn:(_mn&&(typeof _mn==='object'||typeof _mn==='string')?[_mn]:[]);
       _mnCh.forEach(function(r){ mnList.push(r); });
+      // [2026-08-05] 문항 exp.mn 과 개념(cpt)의 mn 이 같은 "mn://id" 를 가리키면 암기코드가 두 번 그려졌다.
+      // 문자열 참조만 걸러 낸다(인라인 객체는 id 가 없어 그대로 둔다).
+      (function(){ var seen={}, out=[];
+        mnList.forEach(function(m){
+          if(typeof m==='string'){ if(seen[m]) return; seen[m]=1; }
+          out.push(m); });
+        mnList=out; })();
       var _cards=[];
       mnList.forEach(function(mn){ _cards=_cards.concat(mnBoxCards(mnResolve(mn))); });
       _cards.forEach(function(cd,i){
