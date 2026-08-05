@@ -292,7 +292,17 @@ async function enterCert(id, noGate){
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   setLastCert(id);
   // [2026-07-20] 주소창에 현재 시험 해시 유지 (광고·공유용). 특수 라우트(#post/#account-delete)는 건드리지 않음.
-  try{ if(id) history.replaceState(null, '', location.pathname+location.search+'#'+id); }catch(_){}
+  // [2026-08-05] 단, 문항 딥링크(#q/{cert}/{qid})로 들어온 경우는 덮어쓰지 않는다.
+  //   딥링크는 goToCard → enterCert 순으로 도는데, 여기서 해시를 '#'+cert 로 갈아치우면
+  //   문항이 뜨기도 전에 주소에서 문항 정보가 사라져 새로고침·재클릭 때 홈으로 떨어졌다.
+  //   같은 시험의 #q/ 해시일 때만 남긴다(다른 시험으로 전환하는 경우는 종전대로 갈아끼움).
+  try{
+    if(id){
+      var _ch=location.hash||'';
+      var _keepQ=/^#q\//.test(_ch) && _ch.split('/')[1]===id;
+      if(!_keepQ) history.replaceState(null, '', location.pathname+location.search+'#'+id);
+    }
+  }catch(_){}
   document.getElementById('homeView').classList.add('hidden');
   var _hd2=document.querySelector('.header'); if(_hd2) _hd2.classList.add('hidden');
   document.getElementById('certSwitch').classList.remove('hidden');
@@ -378,7 +388,27 @@ async function goToCard(qid, certHint){
       }
       // variantPool 전 과목에서 문항 찾기
       var _found=null, _foundSub=null, _poolInfo=[];
-      if(typeof AD_DATA!=='undefined'){
+      // [2026-08-05] 딥링크는 '검수·공유용'이라 항상 최신을 보여 준다.
+      //   레벨업 문항은 localStorage 의 ad:{cert}:{sub}:variantq 에 6시간 캐시되는데,
+      //   내용을 고친 직후 이 링크로 확인하면 옛 문항이 떠서 "안 고쳐졌다"는 오해가 반복됐다.
+      //   딥링크는 드물게 열리므로 Firestore 를 먼저 읽고, 실패하면 아래 캐시 경로로 내려간다.
+      if(typeof db!=='undefined' && db){
+        for(var pf=0; pf<_subs.length && !_found; pf++){
+          try{
+            var _ps=await db.collection('adaptive').doc(certHint+'__'+_subs[pf]+'__variantq').get();
+            if(_ps && _ps.exists){
+              var _pd=(typeof _adParse==='function')?_adParse(_ps.data()):(_ps.data());
+              var _pq=((_pd&&_pd.questions)||[]).find(function(q){ return q && q.id===qid; });
+              if(_pq){
+                _found=_pq; _foundSub=_subs[pf];
+                try{ if(typeof AD_DATA!=='undefined' && AD_DATA[certHint+'|'+_subs[pf]]) AD_DATA[certHint+'|'+_subs[pf]].variantPool=(_pd.questions||[]); }catch(_){}
+                try{ console.info('[레벨업 딥링크] 최신본 직독 qid='+qid+' sub='+_subs[pf]); }catch(_){}
+              }
+            }
+          }catch(_){}
+        }
+      }
+      if(!_found && typeof AD_DATA!=='undefined'){
         for(var vi=0; vi<_subs.length; vi++){
           var _b=AD_DATA[certHint+'|'+_subs[vi]];
           var _plen=(_b&&Array.isArray(_b.variantPool))?_b.variantPool.length:'(pool없음)';
