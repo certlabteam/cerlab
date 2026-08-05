@@ -74,6 +74,15 @@ function itvEnsureCSS(){
     '.itv-cmp tbody tr.rfifo td:first-child{box-shadow:inset 3px 0 0 #3B82F6;padding-left:8px}',
     '.itv-cmp tbody tr.rwavg td:first-child{box-shadow:inset 3px 0 0 #10A37F;padding-left:8px}',
     '.itv-cmp .diff td{color:#C0392B;font-weight:700;border-bottom:none;font-size:11.5px}',
+    /* [2026-08-05] 표(qtbl) CSS — 학생앱에서는 이 #itv-css 블록에만 있다.
+       index.html 이 이 파일을 뒤에 읽으면서 itvEnsureCSS 가 덮이므로 여기에도 있어야 표가 안 깨진다. */
+    '.qtbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0}',
+    '.qtbl{border-collapse:collapse;width:100%;font-size:13px;background:#fff;margin:6px 0}',
+    '.qtbl caption{caption-side:top;text-align:left;font-size:12px;font-weight:700;color:#475569;padding:4px 2px}',
+    '.qtbl th,.qtbl td{border:1px solid #D9E2EC;padding:6px 9px;text-align:center;vertical-align:top;line-height:1.5;word-break:keep-all}',
+    '.qtbl th{background:#EEF3F9;font-weight:700;color:#0F172A;white-space:nowrap}',
+    '.qtbl td:first-child,.qtbl th:first-child{text-align:left}',
+    '.qtbl-wrap .qtbl+.qtbl{margin-top:10px}',
     '.itv-mlegend{font-size:11px;color:#64748B;text-align:center;margin:4px 0 0}',
     '.itv-tl-era{font-size:12px;font-weight:700;color:#334155;margin:2px 0 6px}',
     '.itv-tl-scroll{display:block;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;border:1px solid #F1F5F9;border-radius:8px;background:#fff}',
