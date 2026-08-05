@@ -298,7 +298,7 @@ var _QC_DEFAULTS={
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
-  mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25}},
+  mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
   graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
@@ -350,7 +350,7 @@ var _QC_SEV = {
   GRP_PARAMS_OBJ:'WARNING', GRP_RAW_LT_ATTR:'WARNING', GRP_TYPE:'WARNING', GRP_NO_VIEWBOX:'WARNING', GRP_FONT:'WARNING', GRP_NO_TEXT:'WARNING', GRP_STRAY_SLASH:'WARNING',
   /* 암기 */
   MN_LETTER_UNEXPLAINED:'WARNING', MN_QSPECIFIC_TRAP:'INFO',
-  MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING', MN_SYMBOL:'WARNING', MN_DESC_SHORT:'WARNING',
+  MN_DESC_EMPTY:'ERROR', MN_DUP:'ERROR', MN_NO_K:'WARNING', MN_DESC_NO_RED:'WARNING', MN_DESC_REDUP:'WARNING', MN_SLASH:'WARNING', MN_SYMBOL:'WARNING', MN_DESC_SHORT:'WARNING', MN_DESC_LIST_ONLY:'WARNING', MN_DESC_NO_TOPIC:'WARNING',
   /* 표 */
   TBL_NO_HEADERS:'ERROR', TBL_NO_ROWS:'ERROR', TBL_RAGGED:'ERROR', TBL_DUP:'ERROR', TBL_NO_CAPTION:'WARNING', TBL_HTML_NO_TYPE:'WARNING',
   /* 개념 */
@@ -1144,6 +1144,28 @@ try{
       if(_qcOn('mnem','MN_SLASH') && /\//.test(code.replace(/<[^>]+>/g,''))) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_SLASH',msg:'code 구분자에 / 사용 — 가운뎃점(·)으로'});
       if(_qcOn('mnem','MN_SYMBOL') && /[∞≥≤±√∑≠÷×²³½¼¾µΩ]/.test(code.replace(/<[^>]+>/g,''))) v.push({id:id,kind:'warn',field:'code',idx:0,code:'MN_SYMBOL',msg:'code에 소리내어 못 읽는 기호(∞·≥·²·√ 등) — 읽히는 두문자·말로 풀어라(예: ∞→"수평/완전탄력")'});
       if(_qcOn('mnem','MN_DESC_SHORT')){ var _dL=desc.replace(/<[^>]+>/g,'').trim().length; if(desc.trim() && _dL<_qcN('mnem','MN_DESC_SHORT','minChars',25)) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_SHORT',msg:'desc '+_dL+'자로 짧음 — 무엇에 대한 암기인지 맥락 한 문장 필요'}); }
+      /* [2026-08-05] 화면에는 code 와 desc 만 나온다(name 은 안 보인다).
+         그래서 desc 가 "무엇에 대한 암기인지"를 스스로 밝히지 않으면 학습자는 뭘 외우는지 모른다.
+         예) code '단·기·전·사·애' + desc '단순구조, 기계적 관료제, … 5가지이며 매트릭스는 아니다.'
+             → 민츠버그의 '조직구조' 라는 말이 어디에도 없다. */
+      var _mdPlain=desc.replace(/<[^>]+>/g,'').trim();
+      if(_mdPlain){
+        // ① 서술어 없이 항목만 나열
+        if(_qcOn('mnem','MN_DESC_LIST_ONLY')){
+          var _mdPred=/(다|요)[.!?]?$/.test(_mdPlain) || /(한다|이다|된다|본다|따른다|말한다|나눈다|뜻한다|의미한다)/.test(_mdPlain);
+          if(!_mdPred) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_LIST_ONLY',
+            msg:'desc가 서술어 없이 항목 나열로만 끝남 — 무엇을 무엇으로 나눈 것인지 한 문장으로 밝힐 것'});
+        }
+        // ② name 의 주제어가 desc 에 없음(조사 영향을 없애려고 3자 이상 n-gram 으로 대조)
+        if(_qcOn('mnem','MN_DESC_NO_TOPIC')){
+          var _mdNm=String(mn.name||'').replace(/<[^>]+>/g,'').replace(/\([^)]*\)/g,'').replace(/[^가-힣A-Za-z0-9]/g,'');
+          var _mdDz=_mdPlain.replace(/[^가-힣A-Za-z0-9]/g,''), _mdHit=false;
+          for(var _L=Math.min(4,_mdNm.length); _L>=3 && !_mdHit; _L--)
+            for(var _i=0; _i+_L<=_mdNm.length; _i++) if(_mdDz.indexOf(_mdNm.slice(_i,_i+_L))>=0){ _mdHit=true; break; }
+          if(_mdNm.length>=3 && !_mdHit) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_NO_TOPIC',
+            msg:'desc에 주제("'+String(mn.name||'').replace(/\([^)]*\)/g,'').trim()+'")가 나오지 않음 — 화면에는 name이 안 보이므로 desc 첫 문장이 주제를 말해야 한다'});
+        }
+      }
       if(/—/.test(code+desc)) v.push({id:id,kind:'block',field:'desc',idx:0,code:'EMDASH',msg:'code/desc에 em대시(—) 금지'});
     }); _qcApplySev(v); return v; }
 
