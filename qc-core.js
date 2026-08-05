@@ -1158,8 +1158,10 @@ try{
         }
         // ② name 의 주제어가 desc 에 없음(조사 영향을 없애려고 3자 이상 n-gram 으로 대조)
         if(_qcOn('mnem','MN_DESC_NO_TOPIC')){
-          var _mdNm=String(mn.name||'').replace(/<[^>]+>/g,'').replace(/\([^)]*\)/g,'').replace(/[^가-힣A-Za-z0-9]/g,'');
-          var _mdDz=_mdPlain.replace(/[^가-힣A-Za-z0-9]/g,''), _mdHit=false;
+          /* 데이터는 숫자·영문을 전각(２０·ＡＩＤＡ)으로 쓰는 관례가 있어 반각으로 맞춘 뒤 대조한다. */
+          var _mdHw=function(s){ return String(s).replace(/[！-～]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); }); };
+          var _mdNm=_mdHw(String(mn.name||'').replace(/<[^>]+>/g,'').replace(/\([^)]*\)/g,'')).replace(/[^가-힣A-Za-z0-9]/g,'');
+          var _mdDz=_mdHw(_mdPlain).replace(/[^가-힣A-Za-z0-9]/g,''), _mdHit=false;
           for(var _L=Math.min(4,_mdNm.length); _L>=3 && !_mdHit; _L--)
             for(var _i=0; _i+_L<=_mdNm.length; _i++) if(_mdDz.indexOf(_mdNm.slice(_i,_i+_L))>=0){ _mdHit=true; break; }
           if(_mdNm.length>=3 && !_mdHit) v.push({id:id,kind:'warn',field:'desc',idx:0,code:'MN_DESC_NO_TOPIC',
