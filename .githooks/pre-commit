@@ -1,0 +1,15 @@
+#!/bin/sh
+# ?v= 자동 갱신 — 자산이 바뀌면 HTML 의 버전 쿼리를 내용 해시로 다시 쓰고 함께 스테이지한다.
+# 이걸 사람이 손으로 올리다가 "고쳤는데 안 나감"을 두 번 겪었다(2026-08-06).
+#
+# 켜기(한 번만):  git config core.hooksPath .githooks
+
+changed=$(node scripts/bump-assets.mjs --print-changed 2>/dev/null)
+if [ -n "$changed" ]; then
+  echo "$changed" | while IFS= read -r f; do
+    [ -n "$f" ] && git add -- "$f"
+  done
+  echo "[pre-commit] ?v= 갱신해 함께 커밋합니다:"
+  echo "$changed" | sed 's/^/  /'
+fi
+exit 0
