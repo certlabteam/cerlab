@@ -308,7 +308,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1302,6 +1302,23 @@ try{
           v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨을 곡선이 '+Math.round(seg)+'px 파고듦 — 빈 자리로 옮기거나 화살표가 글자 밖에서 끝나게 할 것'});
       });
     });
+
+    /* [2026-08-07] 글자끼리 겹침. 읽는 법을 축 아래에 붙이다가 원래 있던 설명 줄 위에 얹어
+       두 문장이 포개진 적이 있다(grp_econ_indifference_curve). 선만 보던 게이트는 못 잡았다. */
+    if(_qcOn('graph','GRP_TEXT_OVERLAP')){
+      for(var ti=0; ti<texts.length; ti++){
+        for(var tj=ti+1; tj<texts.length; tj++){
+          var a=texts[ti], b=texts[tj];
+          if(a.x==null||b.x==null||!String(a.s).trim()||!String(b.s).trim()) continue;
+          var sa=xspan(a), sb=xspan(b);
+          var ay1=a.y-a.fs*0.8, ay2=a.y+a.fs*0.15, by1=b.y-b.fs*0.8, by2=b.y+b.fs*0.15;
+          var ox=Math.min(sa[1],sb[1])-Math.max(sa[0],sb[0]);
+          var oy=Math.min(ay2,by2)-Math.max(ay1,by1);
+          if(ox>3 && oy>2)
+            v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_TEXT_OVERLAP',msg:'글자끼리 겹침: "'+String(a.s).slice(0,14)+'" ↔ "'+String(b.s).slice(0,14)+'" (가로 '+Math.round(ox)+'px·세로 '+Math.round(oy)+'px)'});
+        }
+      }
+    }
 
     // ⑥ 읽는 법이 축 폭을 못 채움(짧게 끊어 씀)
     if(_qcOn('graph','GRP_GUIDE_NARROW') && hasGuide){
