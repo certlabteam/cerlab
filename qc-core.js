@@ -1132,6 +1132,16 @@ try{
       _qcGraphRules(id, svg, v);
     }); _qcApplySev(v); return v; }
 
+  /* 선분이 글자 상자 안을 지나는 길이(px). 0이면 안 닿음. 가장자리를 스치는 정도는 작게 나온다. */
+  function _qcSegInBox(l, bx1, by1, bx2, by2){
+    if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return 0;
+    var dx=l.x2-l.x1, dy=l.y2-l.y1, len=Math.sqrt(dx*dx+dy*dy); if(!len) return 0;
+    var N=Math.max(24, Math.ceil(len/2)), inN=0;
+    for(var i=0;i<=N;i++){ var x=l.x1+dx*i/N, y=l.y1+dy*i/N;
+      if(x>=bx1&&x<=bx2&&y>=by1&&y<=by2) inN++; }
+    return len*inN/N;
+  }
+
   /* 그래프 읽기 규칙 6종. 좌표를 실제로 재서 판정한다(직선만 — 곡선 path 는 판정보류). */
   function _qcGraphRules(id, svg, v){
     function attr(tag,k){ var m=tag.match(new RegExp(k+'\\s*=\\s*"([^"]*)"')); return m?m[1]:null; }
@@ -1202,17 +1212,15 @@ try{
     if(_qcOn('graph','GRP_LABEL_ON_LINE')) texts.forEach(function(t){
       if(t.x==null||t.y==null||!String(t.s).trim()) return;
       var _sp=xspan(t), x1=_sp[0], x2=_sp[1], yT=t.y-t.fs*0.8, yB=t.y+t.fs*0.15;
+      /* [2026-08-06 정정] 처음엔 "라벨과 같은 색 선은 자기 지시선이니 예외"로 두었는데,
+         그 예외가 화살표가 글자를 **관통**하는 경우까지 통과시켰다(η=1 라벨을 파란 화살표가 뚫음).
+         지시선이 라벨 가장자리에 닿는 것은 정상이고 **상자 안을 가로지르는 것**이 결함이므로,
+         색을 보지 말고 "글자 상자를 3px 넘게 파고드는가"로 판정한다. 점선(좌표 안내선)만 제외. */
       lines.forEach(function(l){
-        if(l.dash||l.arrow) return;
-        if(Math.abs(l.x2-l.x1)<1) return;                          // 세로선은 제외(좌표 눈금)
-        /* 라벨과 같은 색 선은 그 라벨의 표시선(지시선·범위 표시)이라 만나는 게 정상 — 위반 아님 */
-        if(t.fill && l.c && String(t.fill).toLowerCase()===String(l.c).toLowerCase()) return;
-        var a=Math.min(l.x1,l.x2), b=Math.max(l.x1,l.x2);
-        var lo=Math.max(x1,a), hi=Math.min(x2,b); if(lo>=hi) return;
-        var f=function(x){ return l.y1+(l.y2-l.y1)*(x-l.x1)/(l.x2-l.x1); };
-        var ys=[f(lo),f(hi)], mn=Math.min(ys[0],ys[1]), mx=Math.max(ys[0],ys[1]);
-        if(mx>=yT && mn<=yB)
-          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨이 선과 겹침 — 같은 구간의 빈 자리로 옮기거나 화살표로 가리킬 것'});
+        if(l.dash) return;
+        var seg=_qcSegInBox(l, x1, yT, x2, yB);
+        if(seg>3)
+          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨을 선이 '+Math.round(seg)+'px 파고듦 — 빈 자리로 옮기거나 화살표가 글자 밖에서 끝나게 할 것'});
       });
     });
 
