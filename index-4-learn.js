@@ -905,7 +905,9 @@ function countStemHTML(rawStem, q, withOX){
   var head=sp.head ? '<div class="qpara">'+rm(sp.head,q)+'</div>' : '';
   var rows=sp.stmts.map(function(t,i){
     var oxb=withOX?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
-    return '<div class="qbul"><span class="qbul-m" style="color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle">●</span><span class="qbul-t">'+rm(t,q)+oxb+'</span></div>';
+    // [2026-08-06] 인라인 style(line-height:1·vertical-align:middle)이 CSS를 눌러, 두 줄 진술에서
+    //   점이 첫 줄이 아니라 진술 세로 가운데(≈둘째 줄)에 붙었다. 정렬은 style.css 의 .qbul/.qbul-m 에서만 잡는다.
+    return '<div class="qbul"><span class="qbul-m">●</span><span class="qbul-t">'+rm(t,q)+oxb+'</span></div>';
   }).join('');
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
