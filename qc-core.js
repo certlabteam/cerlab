@@ -1132,6 +1132,60 @@ try{
       _qcGraphRules(id, svg, v);
     }); _qcApplySev(v); return v; }
 
+  /* [2026-08-07] path(곡선)를 점으로 풀어 샘플링한다. 브라우저 getPointAtLength 를 못 쓰므로
+     M·L·H·V·C·S·Q·T·Z 를 직접 계산한다(A 호는 드물어 건너뜀 — 만나면 그 구간만 직선으로 잇는다).
+     곡선이 글자를 뚫어도 게이트가 "통과"를 내주던 구멍을 막기 위한 것. */
+  function _qcPathPts(d, n){
+    n=n||300; var pts=[], cx=0, cy=0, sx=0, sy=0, px=0, py=0, prevC=null;
+    var toks=String(d||'').match(/[MmLlHhVvCcSsQqTtAaZz]|[-+]?\d*\.?\d+(?:e[-+]?\d+)?/gi)||[];
+    var i=0, cmd=null;
+    function num(){ return parseFloat(toks[i++]); }
+    function push(x,y){ pts.push([x,y]); }
+    function bez3(x0,y0,x1,y1,x2,y2,x3,y3){ for(var t=1;t<=8;t++){ var u=t/8, m=1-u;
+      push(m*m*m*x0+3*m*m*u*x1+3*m*u*u*x2+u*u*u*x3, m*m*m*y0+3*m*m*u*y1+3*m*u*u*y2+u*u*u*y3); } }
+    function bez2(x0,y0,x1,y1,x2,y2){ for(var t=1;t<=8;t++){ var u=t/8, m=1-u;
+      push(m*m*x0+2*m*u*x1+u*u*x2, m*m*y0+2*m*u*y1+u*u*y2); } }
+    while(i<toks.length){
+      var t0=toks[i];
+      if(/^[MmLlHhVvCcSsQqTtAaZz]$/.test(t0)){ cmd=t0; i++; }
+      else if(cmd==='M') cmd='L'; else if(cmd==='m') cmd='l';
+      var rel=(cmd===cmd.toLowerCase()), C=cmd.toUpperCase();
+      if(C==='Z'){ push(sx,sy); cx=sx; cy=sy; prevC=null; continue; }
+      if(C==='M'){ var x=num(), y=num(); if(rel){x+=cx;y+=cy;} cx=x; cy=y; sx=x; sy=y; push(x,y); prevC=null; }
+      else if(C==='L'){ var x2=num(), y2=num(); if(rel){x2+=cx;y2+=cy;} push(x2,y2); cx=x2; cy=y2; prevC=null; }
+      else if(C==='H'){ var xh=num(); if(rel) xh+=cx; push(xh,cy); cx=xh; prevC=null; }
+      else if(C==='V'){ var yv=num(); if(rel) yv+=cy; push(cx,yv); cy=yv; prevC=null; }
+      else if(C==='C'){ var a1=num(),b1=num(),a2=num(),b2=num(),a3=num(),b3=num();
+        if(rel){a1+=cx;b1+=cy;a2+=cx;b2+=cy;a3+=cx;b3+=cy;}
+        bez3(cx,cy,a1,b1,a2,b2,a3,b3); prevC=[a2,b2]; cx=a3; cy=b3; }
+      else if(C==='S'){ var s2=num(),t2=num(),s3=num(),t3=num(); if(rel){s2+=cx;t2+=cy;s3+=cx;t3+=cy;}
+        var r1=prevC?[2*cx-prevC[0],2*cy-prevC[1]]:[cx,cy];
+        bez3(cx,cy,r1[0],r1[1],s2,t2,s3,t3); prevC=[s2,t2]; cx=s3; cy=t3; }
+      else if(C==='Q'){ var q1=num(),q2=num(),q3=num(),q4=num(); if(rel){q1+=cx;q2+=cy;q3+=cx;q4+=cy;}
+        bez2(cx,cy,q1,q2,q3,q4); prevC=[q1,q2]; cx=q3; cy=q4; }
+      else if(C==='T'){ var u3=num(),u4=num(); if(rel){u3+=cx;u4+=cy;}
+        var rq=prevC?[2*cx-prevC[0],2*cy-prevC[1]]:[cx,cy];
+        bez2(cx,cy,rq[0],rq[1],u3,u4); prevC=rq; cx=u3; cy=u4; }
+      else if(C==='A'){ num();num();num();num();num(); var ax=num(), ay=num(); if(rel){ax+=cx;ay+=cy;}
+        push(ax,ay); cx=ax; cy=ay; prevC=null; }                    /* 호는 끝점만 — 근사 */
+      else { i++; }
+      if(pts.length>4000) break;
+    }
+    return pts;
+  }
+  /* 점 목록이 글자 상자 안을 지나는 길이(px) */
+  function _qcPolyInBox(pts, bx1, by1, bx2, by2){
+    var len=0;
+    for(var i=1;i<pts.length;i++){
+      var a=pts[i-1], b=pts[i];
+      var inA=(a[0]>=bx1&&a[0]<=bx2&&a[1]>=by1&&a[1]<=by2);
+      var inB=(b[0]>=bx1&&b[0]<=bx2&&b[1]>=by1&&b[1]<=by2);
+      if(inA||inB){ var f=(inA&&inB)?1:0.5;
+        len+=f*Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2)); }
+    }
+    return len;
+  }
+
   /* 선분이 글자 상자 안을 지나는 길이(px). 0이면 안 닿음. 가장자리를 스치는 정도는 작게 나온다. */
   function _qcSegInBox(l, bx1, by1, bx2, by2){
     if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return 0;
@@ -1159,6 +1213,15 @@ try{
     (svg.match(/<line[^>]*\/>/g)||[]).forEach(function(t){
       lines.push({x1:num(t,'x1'),y1:num(t,'y1'),x2:num(t,'x2'),y2:num(t,'y2'),
         w:parseFloat(attr(t,'stroke-width')||'1'), c:attr(t,'stroke'), dash:!!attr(t,'stroke-dasharray'), arrow:/marker-end/.test(t)});
+    });
+    /* 곡선 — <defs>(화살촉 marker) 안은 좌표계가 달라 제외하고, 면으로 칠한 것(fill 있음)도 제외한다.
+       칠한 면 위에 글자가 얹히는 건 겹침이 아니라 의도된 배치일 수 있다. */
+    var curves=[], _body=String(svg).replace(/<defs[\s\S]*?<\/defs>/gi,'');
+    (_body.match(/<path[^>]*\/>/g)||[]).forEach(function(t){
+      if(attr(t,'stroke-dasharray')) return;
+      var f=attr(t,'fill'); if(f && !/^none$/i.test(f)) return;
+      var d=attr(t,'d'); if(!d) return;
+      var pts=_qcPathPts(d); if(pts.length>1) curves.push({pts:pts, c:attr(t,'stroke')});
     });
     /* 글자 폭 어림 — Noto Sans CJK KR 실측 계수(2026-08-06 캔버스 측정):
        한글/전각 0.92em · 대문자 0.62em · 그 밖 ASCII 0.53em · 공백 0.28em. */
@@ -1232,6 +1295,11 @@ try{
         var seg=_qcSegInBox(l, x1, yT, x2, yB);
         if(seg>3)
           v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨을 선이 '+Math.round(seg)+'px 파고듦 — 빈 자리로 옮기거나 화살표가 글자 밖에서 끝나게 할 것'});
+      });
+      curves.forEach(function(c){
+        var seg=_qcPolyInBox(c.pts, x1, yT, x2, yB);
+        if(seg>3)
+          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨을 곡선이 '+Math.round(seg)+'px 파고듦 — 빈 자리로 옮기거나 화살표가 글자 밖에서 끝나게 할 것'});
       });
     });
 
