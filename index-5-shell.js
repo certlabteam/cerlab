@@ -907,7 +907,10 @@ loadManifest().then(async ()=>{
   if(typeof refresh==='function') refresh();
   if(typeof mqOXLoad==='function') mqOXLoad();   // 저장된 O/X 복원(새로고침·오답노트용)
   var _resumed=false; try{ if(typeof mqAutoResume==='function') _resumed=mqAutoResume(); }catch(_){}
-  if(!_resumed && typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
+  // [2026-08-06] 딥링크(#q/)로 들어왔으면 여기서 renderMCQ 를 부르지 않는다.
+  //   mqAutoResume 이 딥링크일 때 false 를 돌려주도록 바뀌면서, 이 폴백이 켜져 딥링크가 띄운 문항을
+  //   과목 홈 화면으로 덮어썼다(문항은 잡혔는데 화면만 홈). 그리는 쪽은 openQ 하나로 둔다.
+  if(!_resumed && !qDeepPending() && typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
   // ?card= 딥링크 실행 (데이터 로드 완료 후 1회)
   if(typeof pendingLt!=='undefined' && pendingLt && typeof _ltEnterHooking==='function'){ var _lt2=pendingLt; pendingLt=null; pendingCard=null; pendingCardCert=null; setTimeout(function(){ try{ _ltEnterHooking(_lt2); }catch(_){} }, 200); }
   else if(typeof pendingCard!=='undefined' && pendingCard && typeof goToCard==='function'){ var _pc=pendingCard, _cc=(typeof pendingCardCert!=='undefined')?pendingCardCert:null; pendingCard=null; setTimeout(function(){ goToCard(_pc,_cc); }, 200); }
@@ -1148,7 +1151,10 @@ function clRouteFromHash(){
     _latch=w;
     if(_done) return;
     var ready = typeof firebaseReady!=='undefined' && firebaseReady && typeof enterCert==='function' && typeof MCQ_QID2CS!=='undefined';
-    if(ready){ _done=true; openQ(w.cert, w.qid); return; }
+    // 딥링크가 문항을 못 찾으면 아무것도 안 그려진 채로 남으므로, 그때만 평소 화면으로 되돌린다.
+    if(ready){ _done=true; openQ(w.cert, w.qid).then(function(ok){
+      if(!ok && typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
+    }).catch(function(){}); return; }
     if(n>0) setTimeout(function(){ tryQ(n-1); }, 300);   // firebase·뱅크 로드 대기
   }
   window.addEventListener('load', function(){ tryQ(30); });
