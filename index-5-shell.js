@@ -464,7 +464,15 @@ async function goToCard(qid, certHint){
     if(idx!==-1){ current=idx; isFlipped=false; learnOpen=false; refresh(); window.scrollTo(0,0); }
   }catch(_){}
 }
+/* [2026-08-06] 문항 딥링크(#q/{cert}/{qid})는 진입 자동라우팅보다 우선한다.
+   부팅이 '마지막 본 시험'을 되살리면 enterCert 가 해시를 '#cert' 로 갈아치우고,
+   그러면 딥링크 핸들러의 qWanted() 가 null 이 되어 스스로 취소됐다.
+   (감평사를 보다가 #q/sport2/... 를 열면 감평사 홈으로 떨어지고 한 번 더 눌러야 열렸다.)
+   진입 시점의 해시로 한 번만 판정하고 이후엔 안 바꾼다 — 그 페이지 수명 동안 자동복귀를 막는다. */
+var _qDeepEntry = (function(){ try{ return (location.hash||'').indexOf('#q/')===0; }catch(_){ return false; } })();
+function qDeepPending(){ return _qDeepEntry; }
 function routeAfterAuth(){
+  if(qDeepPending()) return;   // 딥링크로 들어왔으면 마지막 시험 자동복귀 안 함
   if(currentUser && !activeCert){
     const last = getLastCert();
     if(last === 'bodybuilding' || last === 'appraiser') enterCert(last);
@@ -472,6 +480,7 @@ function routeAfterAuth(){
 }
 // 새로고침 시 풀던 문항 화면으로 자동 복귀 (포인터 + 저장된 진행상황이 있을 때만)
 function mqAutoResume(){
+  if(qDeepPending()) return false;   // [2026-08-06] 딥링크로 들어왔으면 이어풀기 복귀가 문항을 덮지 않게
   try{
     var raw=localStorage.getItem('certlab_mcq_active'); if(!raw) return false;
     var a=JSON.parse(raw); if(!a||!a.cert||a.sub==null||a.set==null) return false;
@@ -1132,16 +1141,19 @@ function clRouteFromHash(){
     resumeMcqExam(cs.sub, si); mqIdx=qi; renderMCQ(); try{ window.scrollTo(0,0); }catch(_){}
     return true;
   }
-  var _done=false;
+  var _done=false, _latch=null;
   function tryQ(n){
-    var w=qWanted(); if(!w){ _done=false; return; }
+    // [2026-08-06] 한 번 잡은 목표는 붙잡아 둔다 — 여는 도중 다른 코드가 해시를 갈아치워도 취소되지 않게.
+    var w=_latch||qWanted(); if(!w){ _done=false; return; }
+    _latch=w;
     if(_done) return;
     var ready = typeof firebaseReady!=='undefined' && firebaseReady && typeof enterCert==='function' && typeof MCQ_QID2CS!=='undefined';
     if(ready){ _done=true; openQ(w.cert, w.qid); return; }
     if(n>0) setTimeout(function(){ tryQ(n-1); }, 300);   // firebase·뱅크 로드 대기
   }
   window.addEventListener('load', function(){ tryQ(30); });
-  window.addEventListener('hashchange', function(){ _done=false; tryQ(10); });
+  // 해시가 #q/ 가 아닌 것으로 바뀐 것은 무시한다(위 갈아치움이 그 경우다). 새 문항 딥링크일 때만 다시 연다.
+  window.addEventListener('hashchange', function(){ var w=qWanted(); if(w){ _latch=w; _done=false; tryQ(10); } });
 })();
 
 
