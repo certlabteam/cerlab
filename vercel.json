@@ -2,7 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": false,
   "trailingSlash": false,
-  "//rewrites": "Firebase 인증 경유 — firebase 설정의 authDomain 이 certlab.ai.kr 이라 /__/auth/* 요청이 우리 도메인으로 온다. 실제 처리는 certlab-c3bcb.firebaseapp.com 이 하므로 그대로 넘긴다. Cloudflare Worker(certlab-auth-proxy)가 하던 일을 여기서 대신한다.",
   "rewrites": [
     { "source": "/__/auth/:path*", "destination": "https://certlab-c3bcb.firebaseapp.com/__/auth/:path*" }
   ],
