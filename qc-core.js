@@ -1323,8 +1323,15 @@ try{
     // ⑥ 읽는 법이 축 폭을 못 채움(짧게 끊어 씀)
     if(_qcOn('graph','GRP_GUIDE_NARROW') && hasGuide){
       var gi=-1; texts.forEach(function(t,i){ if(gi<0 && /^읽는\s*법$/.test(String(t.s).trim())) gi=i; });
-      var xs=lines.filter(function(l){ return Math.abs(l.y2-l.y1)<1 && Math.abs(l.x2-l.x1)>150; });
-      var axisW=xs.length?Math.abs(xs[0].x2-xs[0].x1):260;
+      /* [2026-08-07] 패널이 여러 개인 그래프(가로축이 2~3개)는 **왼쪽 끝 축부터 오른쪽 끝 축까지**가
+         쓸 수 있는 폭이다. 축 하나만 재면 3분의 1만 쓰고도 통과가 나온다(grp_econ_good_types_ic 에서 났다). */
+      var xs=lines.filter(function(l){ return Math.abs(l.y2-l.y1)<1 && Math.abs(l.x2-l.x1)>50; });
+      var axisW=260;
+      if(xs.length){
+        var lo=Math.min.apply(null, xs.map(function(l){ return Math.min(l.x1,l.x2); }));
+        var hi=Math.max.apply(null, xs.map(function(l){ return Math.max(l.x1,l.x2); }));
+        axisW=hi-lo;
+      }
       var body=texts.slice(gi+1).filter(function(t){ return String(t.s).trim(); });
       var narrow=body.slice(0,body.length-1).filter(function(t){ return tw(t.s,t.fs) < axisW*_qcN('graph','GRP_GUIDE_NARROW','ratio',0.72); });
       if(narrow.length)
