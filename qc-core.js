@@ -1144,7 +1144,12 @@ try{
 
   /* 그래프 읽기 규칙 6종. 좌표를 실제로 재서 판정한다(직선만 — 곡선 path 는 판정보류). */
   function _qcGraphRules(id, svg, v){
-    function attr(tag,k){ var m=tag.match(new RegExp(k+'\\s*=\\s*"([^"]*)"')); return m?m[1]:null; }
+    /* [2026-08-07] 속성이 홑따옴표인 SVG 가 16개 있다(viewBox='0 -28 360 300' 꼴).
+       쌍따옴표만 보던 정규식 탓에 그 16개는 text·line 을 하나도 못 읽어
+       라벨 겹침·색·잘림 검사가 통째로 건너뛰어졌고, 결과가 "읽는 법만 없음"으로 보였다.
+       **게이트를 새로 만들면 데이터가 한 가지 표기만 쓴다고 가정하지 말 것.** */
+    function attr(tag,k){ var m=tag.match(new RegExp(k+'\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\')'));
+      return m?(m[1]!=null?m[1]:m[2]):null; }
     function num(tag,k){ var s=attr(tag,k); return s==null?null:parseFloat(s); }
     var isDark=function(c){ return !c || /^#(0f172a|000|000000|1e293b|334155|475569|64748b|94a3b8|e[0-9a-f]{5}|f[0-9a-f]{5})$/i.test(String(c).replace(/\s/g,'')); };
     var texts=[], lines=[];
@@ -1173,7 +1178,8 @@ try{
       v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_GUIDE',msg:'축 아래 "읽는 법" 없음 — 축·선·약어 뜻을 그래프 밑에 적어야 함'});
 
     // ② viewBox 밖으로 잘리는 텍스트
-    var vb=(svg.match(/viewBox\s*=\s*"([^"]*)"/)||[])[1];
+    var _vbm=svg.match(/viewBox\s*=\s*(?:"([^"]*)"|'([^']*)')/);
+    var vb=_vbm?(_vbm[1]!=null?_vbm[1]:_vbm[2]):undefined;
     if(_qcOn('graph','GRP_TEXT_CLIP') && vb){
       var p=vb.trim().split(/[\s,]+/).map(parseFloat);
       if(p.length===4){ var top=p[1], bot=p[1]+p[3], left=p[0], right=p[0]+p[2], TOL=8;
