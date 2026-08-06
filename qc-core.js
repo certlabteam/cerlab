@@ -308,7 +308,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1125,7 +1125,108 @@ try{
       if(_qcOn('graph','GRP_FONT')){ var body=svg.replace(/<!--[\s\S]*?-->/g,''); if(/[가-힣]/.test(body) && !/Noto\s*Sans\s*CJK\s*KR/.test(body)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_FONT',msg:'한글이 있는데 font-family="Noto Sans CJK KR" 미지정 — 폰트 깨짐(□□) 위험'}); }
       if(_qcOn('graph','GRP_NO_TEXT') && !/<text[\s>]/.test(svg)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_TEXT',msg:'<text> 라벨이 하나도 없음 — 제목·축·설명 텍스트 확인'});
       if(_qcOn('graph','GRP_EMDASH') && /—/.test(svg)) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_EMDASH',msg:'svg에 em대시(—) — en대시(–)·쉼표로'});
+      /* [2026-08-06 · 크리스 그래프 규칙] 아래 6개는 "표만 덜렁 있으면 모른다"에서 나온 것.
+         기준본: grp_econ_negative_externality. 규칙 — 실선과 그 끝 라벨은 검정,
+         색은 점·영역·특별표시에만, 한 덩어리는 한 색, 범위는 빗금, 가리킬 땐 끝에 화살촉,
+         읽는 법은 축 폭을 채우고 단어를 안 끊는다. */
+      _qcGraphRules(id, svg, v);
     }); _qcApplySev(v); return v; }
+
+  /* 그래프 읽기 규칙 6종. 좌표를 실제로 재서 판정한다(직선만 — 곡선 path 는 판정보류). */
+  function _qcGraphRules(id, svg, v){
+    function attr(tag,k){ var m=tag.match(new RegExp(k+'\\s*=\\s*"([^"]*)"')); return m?m[1]:null; }
+    function num(tag,k){ var s=attr(tag,k); return s==null?null:parseFloat(s); }
+    var isDark=function(c){ return !c || /^#(0f172a|000|000000|1e293b|334155|475569|64748b|94a3b8|e[0-9a-f]{5}|f[0-9a-f]{5})$/i.test(String(c).replace(/\s/g,'')); };
+    var texts=[], lines=[];
+    (svg.match(/<text[^>]*>[^<]*<\/text>/g)||[]).forEach(function(t){
+      texts.push({x:num(t,'x'), y:num(t,'y'), fs:parseFloat(attr(t,'font-size')||'10'), fill:attr(t,'fill'), anchor:attr(t,'text-anchor'), s:(t.match(/>([^<]*)</)||[])[1]||''});
+    });
+    (svg.match(/<line[^>]*\/>/g)||[]).forEach(function(t){
+      lines.push({x1:num(t,'x1'),y1:num(t,'y1'),x2:num(t,'x2'),y2:num(t,'y2'),
+        w:parseFloat(attr(t,'stroke-width')||'1'), c:attr(t,'stroke'), dash:!!attr(t,'stroke-dasharray'), arrow:/marker-end/.test(t)});
+    });
+    /* 글자 폭 어림 — Noto Sans CJK KR 실측 계수(2026-08-06 캔버스 측정):
+       한글/전각 0.92em · 대문자 0.62em · 그 밖 ASCII 0.53em · 공백 0.28em. */
+    function tw(s,fs){ var w=0; s=String(s);
+      for(var i=0;i<s.length;i++){ var c=s[i];
+        w+=fs*(/[가-힣ㄱ-ㅎ㉠-㉭ㆍ－-｝]/.test(c)?0.92:(c===' '?0.28:(/[A-Z]/.test(c)?0.62:0.53))); }
+      return w; }
+    /* text-anchor 를 반영한 좌우 끝 — middle·end 를 왼쪽정렬로 오판하면 폭이 두 배로 잡힌다. */
+    function xspan(t){ var w=tw(t.s,t.fs), a=t.anchor;
+      if(a==='middle') return [t.x-w/2, t.x+w/2];
+      if(a==='end') return [t.x-w, t.x];
+      return [t.x, t.x+w]; }
+
+    // ① 읽는 법 블록
+    var hasGuide=texts.some(function(t){ return /^읽는\s*법$/.test(String(t.s).trim()); });
+    if(_qcOn('graph','GRP_NO_GUIDE') && !hasGuide)
+      v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_GUIDE',msg:'축 아래 "읽는 법" 없음 — 축·선·약어 뜻을 그래프 밑에 적어야 함'});
+
+    // ② viewBox 밖으로 잘리는 텍스트
+    var vb=(svg.match(/viewBox\s*=\s*"([^"]*)"/)||[])[1];
+    if(_qcOn('graph','GRP_TEXT_CLIP') && vb){
+      var p=vb.trim().split(/[\s,]+/).map(parseFloat);
+      if(p.length===4){ var top=p[1], bot=p[1]+p[3], left=p[0], right=p[0]+p[2], TOL=8;
+        texts.forEach(function(t){ if(t.y==null||t.x==null||!String(t.s).trim()) return;
+          var sp=xspan(t), why='';
+          if(t.y>bot-1) why='아래로 '+Math.round(t.y-bot+1)+'px';
+          else if(t.y-t.fs*0.8<top-1) why='위로';
+          else if(sp[1]>right+TOL) why='오른쪽으로 '+Math.round(sp[1]-right)+'px';
+          else if(sp[0]<left-TOL) why='왼쪽으로 '+Math.round(left-sp[0])+'px';
+          if(why) v.push({id:id,kind:'block',field:'svg',idx:0,code:'GRP_TEXT_CLIP',msg:'텍스트가 viewBox 밖으로 '+why+' 벗어남: "'+String(t.s).slice(0,20)+'"'});
+        });
+      }
+    }
+
+    /* ③ 본선(굵은 실선)은 검정 계열. 단 같은 색 라벨을 가진 선은 '특별 표시선'(외부비용 같은 것)이라
+       색이 허용된다 — 본선은 라벨이 검정이므로 짝이 안 생긴다. */
+    var labelColors={}; texts.forEach(function(t){ if(t.fill && !isDark(t.fill)) labelColors[String(t.fill).toLowerCase()]=1; });
+    if(_qcOn('graph','GRP_LINE_COLORED')) lines.forEach(function(l){
+      if(l.dash || l.w<1.8 || l.arrow) return;
+      if(l.c && labelColors[String(l.c).toLowerCase()]) return;
+      var len=Math.abs(l.x2-l.x1)+Math.abs(l.y2-l.y1); if(len<60) return;
+      if(!isDark(l.c)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LINE_COLORED',msg:'본선에 색을 씀(stroke='+l.c+') — 실선은 검정 계열, 색은 점·영역·특별표시에만'});
+    });
+
+    // ④ 색 짝 없음 — 라벨 색이 선·점·영역 어디에도 안 쓰임
+    if(_qcOn('graph','GRP_COLOR_ORPHAN')){
+      var nonText=svg.replace(/<text[^>]*>[^<]*<\/text>/g,'');
+      texts.forEach(function(t){
+        if(!t.fill || isDark(t.fill)) return;
+        if(nonText.indexOf(t.fill)<0)
+          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_COLOR_ORPHAN',msg:'"'+String(t.s).slice(0,14)+'" 글자색 '+t.fill+' 과 같은 색의 선·점·영역이 없음 — 한 덩어리는 한 색'});
+      });
+    }
+
+    // ⑤ 라벨이 직선 위에 얹힘
+    if(_qcOn('graph','GRP_LABEL_ON_LINE')) texts.forEach(function(t){
+      if(t.x==null||t.y==null||!String(t.s).trim()) return;
+      var _sp=xspan(t), x1=_sp[0], x2=_sp[1], yT=t.y-t.fs*0.8, yB=t.y+t.fs*0.15;
+      lines.forEach(function(l){
+        if(l.dash||l.arrow) return;
+        if(Math.abs(l.x2-l.x1)<1) return;                          // 세로선은 제외(좌표 눈금)
+        /* 라벨과 같은 색 선은 그 라벨의 표시선(지시선·범위 표시)이라 만나는 게 정상 — 위반 아님 */
+        if(t.fill && l.c && String(t.fill).toLowerCase()===String(l.c).toLowerCase()) return;
+        var a=Math.min(l.x1,l.x2), b=Math.max(l.x1,l.x2);
+        var lo=Math.max(x1,a), hi=Math.min(x2,b); if(lo>=hi) return;
+        var f=function(x){ return l.y1+(l.y2-l.y1)*(x-l.x1)/(l.x2-l.x1); };
+        var ys=[f(lo),f(hi)], mn=Math.min(ys[0],ys[1]), mx=Math.max(ys[0],ys[1]);
+        if(mx>=yT && mn<=yB)
+          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨이 선과 겹침 — 같은 구간의 빈 자리로 옮기거나 화살표로 가리킬 것'});
+      });
+    });
+
+    // ⑥ 읽는 법이 축 폭을 못 채움(짧게 끊어 씀)
+    if(_qcOn('graph','GRP_GUIDE_NARROW') && hasGuide){
+      var gi=-1; texts.forEach(function(t,i){ if(gi<0 && /^읽는\s*법$/.test(String(t.s).trim())) gi=i; });
+      var xs=lines.filter(function(l){ return Math.abs(l.y2-l.y1)<1 && Math.abs(l.x2-l.x1)>150; });
+      var axisW=xs.length?Math.abs(xs[0].x2-xs[0].x1):260;
+      var body=texts.slice(gi+1).filter(function(t){ return String(t.s).trim(); });
+      var narrow=body.slice(0,body.length-1).filter(function(t){ return tw(t.s,t.fs) < axisW*_qcN('graph','GRP_GUIDE_NARROW','ratio',0.72); });
+      if(narrow.length)
+        v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_GUIDE_NARROW',msg:'읽는 법 '+narrow.length+'줄이 축 폭('+Math.round(axisW)+')을 못 채움 — 단어를 안 끊는 선에서 한 줄을 꽉 채워 줄 수를 줄일 것'});
+    }
+  }
 
   // ---- 암기(mnemonic) 마스터 검수 ----
   function _qcMnemAudit(arr){ var v=[],seen={};
