@@ -308,7 +308,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1193,9 +1193,14 @@ try{
     var labelColors={}; texts.forEach(function(t){ if(t.fill && !isDark(t.fill)) labelColors[String(t.fill).toLowerCase()]=1; });
     if(_qcOn('graph','GRP_LINE_COLORED')) lines.forEach(function(l){
       if(l.dash || l.w<1.8 || l.arrow) return;
-      if(l.c && labelColors[String(l.c).toLowerCase()]) return;
-      var len=Math.abs(l.x2-l.x1)+Math.abs(l.y2-l.y1); if(len<60) return;
-      if(!isDark(l.c)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LINE_COLORED',msg:'본선에 색을 씀(stroke='+l.c+') — 실선은 검정 계열, 색은 점·영역·특별표시에만'});
+      if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return;
+      var len=Math.sqrt(Math.pow(l.x2-l.x1,2)+Math.pow(l.y2-l.y1,2));
+      if(len<60) return;
+      /* 같은 색 라벨이 있으면 '특별 표시선'으로 봐주되, **짧은 것만**.
+         길게 뻗은 것은 본선이라 라벨 색이 맞아도 검정이어야 한다
+         (이 길이 조건이 없으면 색 실선 141개가 통째로 빠져나간다 — 2026-08-06 실측). */
+      if(len<_qcN('graph','GRP_LINE_COLORED','markerLen',120) && l.c && labelColors[String(l.c).toLowerCase()]) return;
+      if(!isDark(l.c)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LINE_COLORED',msg:'본선에 색을 씀(stroke='+l.c+', 길이 '+Math.round(len)+') — 실선은 검정 계열, 색은 점·영역·짧은 특별표시에만'});
     });
 
     // ④ 색 짝 없음 — 라벨 색이 선·점·영역 어디에도 안 쓰임
