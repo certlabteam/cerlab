@@ -1204,6 +1204,13 @@ try{
      kind 가 비었으면(애매 16개·신규 업로드) 지금까지대로 chart 규칙 — 기본값을 바꾸지 않는다. */
   function _qcGraphRules(id, svg, v, kind, layout){
     var isFlow=(String(kind||'')==='flow');
+    /* [2026-08-07] 'diagram' — 축도 순서도 없는 도해. 296개 중 5개.
+       공간·입지 모형(베버 입지삼각형·레일리 상권분기점·허프 확률모형) · 눈금 띠(축척과 정밀도) ·
+       수식(장기수선충당금 산정식). 축이 없으니 "축·선·약어 뜻"을 적으라는 요구가 성립하지 않는다.
+       flow 와 달리 읽는 법을 **금지하지는 않는다**(GRP_FLOW_GUIDE 는 flow 전용) — 필요하면 붙여도 된다.
+       화살표·정렬 규칙도 flow 전용이라 걸리지 않는다. */
+    var isDiagram=(String(kind||'')==='diagram');
+    var _noAxis=(isFlow||isDiagram);          /* 축이 없어 읽는 법·축 폭 규칙이 성립하지 않는 갈래 */
     /* [2026-08-07] layout — flow 안의 생김새 갈래. 정렬 규칙이 여기서 갈린다.
        'vstack'(세로로 쌓인 단순 전개도) · 'table'(박스 안이 2단 이상, 표 성격) ·
        'timeline'(가로 시간축) · 'row'(한 줄 배치·병렬·트리).
@@ -1248,7 +1255,7 @@ try{
 
     // ① 읽는 법 블록
     var hasGuide=texts.some(function(t){ return /^읽는\s*법$/.test(String(t.s).trim()); });
-    if(_qcOn('graph','GRP_NO_GUIDE') && !hasGuide && !isFlow)
+    if(_qcOn('graph','GRP_NO_GUIDE') && !hasGuide && !_noAxis)
       v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_GUIDE',msg:'축 아래 "읽는 법" 없음 — 축·선·약어 뜻을 그래프 밑에 적어야 함'});
     /* [2026-08-07] flow 는 면제가 아니라 **있으면 안 된다.** 크리스: "전개도 이런건 읽는 법 필요 없다고!"
        박스 글자가 이미 설명이라 밑에 또 풀어 쓰면 같은 말을 두 번 읽힌다.
@@ -1337,7 +1344,7 @@ try{
     }
 
     // ⑥ 읽는 법이 축 폭을 못 채움(짧게 끊어 씀)
-    if(_qcOn('graph','GRP_GUIDE_NARROW') && hasGuide && !isFlow){
+    if(_qcOn('graph','GRP_GUIDE_NARROW') && hasGuide && !_noAxis){
       var gi=-1; texts.forEach(function(t,i){ if(gi<0 && /^읽는\s*법$/.test(String(t.s).trim())) gi=i; });
       /* [2026-08-07] 패널이 여러 개인 그래프(가로축이 2~3개)는 **왼쪽 끝 축부터 오른쪽 끝 축까지**가
          쓸 수 있는 폭이다. 축 하나만 재면 3분의 1만 쓰고도 통과가 나온다(grp_econ_good_types_ic 에서 났다). */
