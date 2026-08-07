@@ -308,7 +308,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true,minX:0,minY:0},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1341,9 +1341,17 @@ try{
       /* [2026-08-06 정정] 처음엔 "라벨과 같은 색 선은 자기 지시선이니 예외"로 두었는데,
          그 예외가 화살표가 글자를 **관통**하는 경우까지 통과시켰다(η=1 라벨을 파란 화살표가 뚫음).
          지시선이 라벨 가장자리에 닿는 것은 정상이고 **상자 안을 가로지르는 것**이 결함이므로,
-         색을 보지 말고 "글자 상자를 3px 넘게 파고드는가"로 판정한다. 점선(좌표 안내선)만 제외. */
+         색을 보지 말고 "글자 상자를 3px 넘게 파고드는가"로 판정한다.
+         [2026-08-07 2차] 점선을 통째로 빼던 것을 **가로·세로 안내선만** 빼는 것으로 좁혔다.
+         원래 뜻은 "축에서 점까지 긋는 좌표 안내선은 라벨 옆을 지나도 정상"이었는데,
+         **점선으로 그린 이동 곡선**(수요1·공급1·AS′ 같은 것)까지 통째로 빠져나갔다.
+         부동산시장의 균형 변화에서 점선이 라벨을 7.9px·15px 파고드는데 게이트는 0건이었다.
+         안내선은 축과 나란하므로 dx 또는 dy 가 0에 가까운 것만 면제한다. */
       lines.forEach(function(l){
-        if(l.dash) return;
+        if(l.dash){
+          if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return;
+          if(Math.abs(l.x2-l.x1)<1 || Math.abs(l.y2-l.y1)<1) return;   /* 가로·세로 안내선 */
+        }
         var seg=_qcSegInBox(l, x1, yT, x2, yB);
         if(seg>3)
           v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨을 선이 '+Math.round(seg)+'px 파고듦 — 빈 자리로 옮기거나 화살표가 글자 밖에서 끝나게 할 것'});
@@ -1356,8 +1364,14 @@ try{
     });
 
     /* [2026-08-07] 글자끼리 겹침. 읽는 법을 축 아래에 붙이다가 원래 있던 설명 줄 위에 얹어
-       두 문장이 포개진 적이 있다(grp_econ_indifference_curve). 선만 보던 게이트는 못 잡았다. */
+       두 문장이 포개진 적이 있다(grp_econ_indifference_curve). 선만 보던 게이트는 못 잡았다.
+       [2026-08-07 2차] 임계를 가로 3px·세로 2px → **0** 으로 내렸다.
+       세로 0.1px 만 겹쳐도 글자는 실제로 붙어 보이는데 그게 통과였다. 라이브 실측 25건 → 46건.
+       ⚠ 이 임계는 **자동 수리기가 노리는 과녁**이기도 하다. 2px 로 두었더니 수리기가 딱 그 아래까지만
+       밀고 멈춰 "게이트는 0인데 눈에는 붙어 있는" 것들이 생겼다(크리스가 4건을 찍어 냈다).
+       고칠 때는 임계가 아니라 **여백**을 목표로 할 것 — 지금 데이터는 3px 여백 기준으로 맞춰 두었다. */
     if(_qcOn('graph','GRP_TEXT_OVERLAP')){
+      var _toX=_qcN('graph','GRP_TEXT_OVERLAP','minX',0), _toY=_qcN('graph','GRP_TEXT_OVERLAP','minY',0);
       for(var ti=0; ti<texts.length; ti++){
         for(var tj=ti+1; tj<texts.length; tj++){
           var a=texts[ti], b=texts[tj];
@@ -1366,7 +1380,7 @@ try{
           var ay1=a.y-a.fs*0.8, ay2=a.y+a.fs*0.15, by1=b.y-b.fs*0.8, by2=b.y+b.fs*0.15;
           var ox=Math.min(sa[1],sb[1])-Math.max(sa[0],sb[0]);
           var oy=Math.min(ay2,by2)-Math.max(ay1,by1);
-          if(ox>3 && oy>2)
+          if(ox>_toX && oy>_toY)
             v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_TEXT_OVERLAP',msg:'글자끼리 겹침: "'+String(a.s).slice(0,14)+'" ↔ "'+String(b.s).slice(0,14)+'" (가로 '+Math.round(ox)+'px·세로 '+Math.round(oy)+'px)'});
         }
       }
