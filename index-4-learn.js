@@ -395,6 +395,24 @@ function renderMath(text, allowBareFraction){
   //   그래서 라벨을 화살표 위 가운데로 맞춘 패딩이 통째로 사라져 첫 줄만 왼쪽으로 밀렸다(기존 68건 중 7건).
   //   여는/닫는 태그 옆의 줄바꿈 하나만 걷어내고 들여쓰기는 그대로 둔다.
   s = s.replace(/\[dia\][ \t]*\r?\n?([\s\S]*?)\r?\n?[ \t]*\[\/dia\]/g, function(_m, inner){ var body=String(inner).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>"); return _st('<pre class="cc-dia">'+body+'</pre>'); });
+  /* [2026-08-07] 수식 블록 [eq]…[/eq] → 가운데 정렬 <div class="cc-eq">.
+     왜 태그가 필요한가: 분수 렌더는 이미 아래에 있지만 (변수/한글단위)·맨분수는 **경제 전용**이다
+     (전 과목에 풀면 1/3000 축척·회계 콤마숫자·날짜가 분수로 깨진다 — allowBareFraction 주석 참조).
+     그래서 한글 분모 수식은 지금껏 SVG 그래프로 그려야 했다.
+     [eq] 안에서만 allowBareFraction 을 켜면 밖은 그대로 두고 수식만 제대로 나온다.
+     관계도 [dia] 와 같은 방식 — 새 컬렉션·마스터 없이 본문 텍스트 안에 산다.
+     ⚠ 통째로 stash 한다. 안 그러면 만들어 낸 <span class="frac"> 을 아래 태그 보호 규칙이 다시 훑는다. */
+  /* 분수는 **{분자 / 분모}** 로 적는다. 기존 괄호분수 (a/b) 도 블록 안에서는 그대로 먹지만,
+     분모에 괄호가 또 있으면(계획기간(년)) 괄호 규칙이 못 읽는다 — 중괄호는 그걸 확실히 가른다.
+     분자·분모는 따로 renderMath 를 돌려 첨자·중첩분수까지 살리고, 자리표시자로 빼 둬
+     바깥 렌더가 이미 만든 태그를 다시 훑지 않게 한다. */
+  s = s.replace(/\[eq\][ \t]*\r?\n?([\s\S]*?)\r?\n?[ \t]*\[\/eq\]/g, function(_m, inner){
+    var _fr=[];
+    var body=String(inner).replace(/\{([^{}]*?)\s*\/\s*([^{}]*?)\}/g, function(_x,a,b){ _fr.push([a,b]); return '@@FR'+(_fr.length-1)+'@@'; });
+    var out=renderMath(body, true).replace(/@@FR(\d+)@@/g, function(_x,i){
+      return '<span class="frac"><span class="fn">'+renderMath(_fr[+i][0],true)+'</span><span class="fd">'+renderMath(_fr[+i][1],true)+'</span></span>'; });
+    return _st('<div class="cc-eq">'+out+'</div>');
+  });
   // (0) 절댓값 |…/…| → nowrap span(내부 / 는 \u0004). 통째로 보호(태그 슬래시가 분수로 오인되는 것 방지)
   s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return _st('<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'); });
   // (00b) 남은 정상 HTML 태그(표·div·br·b 등) 보호 → 태그 내부 / 가 분수로 안 잡힘

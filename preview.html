@@ -5,8 +5,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
-<script src="qc-core.js?v=f2c94437"></script>
-<script src="qc-gate-patch.js?v=2fabd5f9"></script>
+<script src="qc-core.js?v=393fe3bb"></script>
+<script src="qc-gate-patch.js?v=d33af15e"></script>
 <script>
 /* ============================================================
    CertLab 주관식(서술형) 학습·자동채점 모듈 — index.html 별도 로드(calcrender·itvrender와 동일 패턴)
@@ -608,6 +608,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .mn-code .k,#mcqView .mn-desc .k{color:#C0392B;font-weight:800}
 #mcqView .cc-ex,.subj-view .cc-ex{margin:9px 0 0;padding:8px 11px 8px 12px;background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;font-size:13px;line-height:1.65;color:#28425E;word-break:keep-all;overflow-wrap:break-word}
 .cc-dia{white-space:pre;font-family:ui-monospace,'D2Coding','Menlo','Courier New',monospace;font-size:13px;line-height:1.55;margin:6px 0;overflow-x:auto;color:inherit}
+.cc-eq{text-align:center;font-size:13px;line-height:2;margin:10px 0;overflow-x:auto;color:inherit}
 #mcqView .calc-steps .cs-line,.subj-view .calc-steps .cs-line{font-size:13px;line-height:1.75;color:#5E4A2A;margin-bottom:9px;padding-left:1.45em;text-indent:-1.45em;word-break:keep-all;overflow-wrap:break-word}
 #mcqView .sa-plist{display:flex;flex-direction:column;gap:10px;margin:4px 0 0}
 #mcqView .sa-prow{border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;background:#fff}
@@ -1962,6 +1963,15 @@ function renderMath(text, allowBareFraction){
   s = s.replace(/<svg[\s\S]*?<\/svg>/gi, _st);
   // dia relation-diagram -> fixed-width <pre class="cc-dia"> (arrow alignment). stashed whole.
   s = s.replace(/\[dia\]\s*([\s\S]*?)\s*\[\/dia\]/g, function(_m, inner){ var body=String(inner).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>"); return _st('<pre class="cc-dia">'+body+'</pre>'); });
+  // [2026-08-07] 수식 블록 [eq]…[/eq] → 가운데 정렬 <div class="cc-eq">. 분수는 {분자 / 분모}.
+  // index-4-learn.js 에서 verbatim 이식 — 고칠 땐 두 곳을 같이 고칠 것.
+  s = s.replace(/\[eq\][ \t]*\r?\n?([\s\S]*?)\r?\n?[ \t]*\[\/eq\]/g, function(_m, inner){
+    var _fr=[];
+    var body=String(inner).replace(/\{([^{}]*?)\s*\/\s*([^{}]*?)\}/g, function(_x,a,b){ _fr.push([a,b]); return '@@FR'+(_fr.length-1)+'@@'; });
+    var out=renderMath(body, true).replace(/@@FR(\d+)@@/g, function(_x,i){
+      return '<span class="frac"><span class="fn">'+renderMath(_fr[+i][0],true)+'</span><span class="fd">'+renderMath(_fr[+i][1],true)+'</span></span>'; });
+    return _st('<div class="cc-eq">'+out+'</div>');
+  });
   s = s.replace(/\|([^|]*\/[^|]*)\|/g, function(m, inner){ return _st('<span style="white-space:nowrap">|'+inner.replace(/\//g,'\u0004')+'|</span>'); });
   s = s.replace(/<\/?[A-Za-z][A-Za-z0-9]*(?:\s[^<>]*)?\/?>/g, _st);
   s = s.replace(/</g,'&lt;').replace(/>/g,'&gt;');

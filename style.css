@@ -487,6 +487,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
    좌우 -10px 음수 여백으로 부모 안쪽 여백까지 써서 폭을 넓혔다(396→416px) — 복잡한 관계도가
    가로로 넘칠 여지를 줄이려는 것이고, 넘치면 여전히 이 블록 안에서만 스크롤된다. */
 #mcqView .cc-dia,.subj-view .cc-dia{margin:8px -10px 2px;padding:0 10px;background:transparent;border:0;font-size:12px;line-height:1.6;color:inherit;overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* [2026-08-07] 수식 블록 [eq]…[/eq] → renderMath 가 <div class="cc-eq"> 로 바꾼다.
+   블록 + 가운데 정렬(크리스 지정). 관계도(.cc-dia)와 같이 배경·테두리 없이 어느 부모에도 녹는다.
+   분수(.frac)가 위아래로 쌓이므로 line-height 를 넉넉히 준다. 길면 이 블록 안에서만 가로 스크롤. */
+#mcqView .cc-eq,.subj-view .cc-eq{margin:10px -10px;padding:2px 10px;background:transparent;border:0;text-align:center;font-size:13px;line-height:2;color:inherit;overflow-x:auto;-webkit-overflow-scrolling:touch}
 #mcqView .mn-box + .mn-box{margin-top:8px}
 #mcqView .calc-graph,.subj-view .calc-graph{margin:0 0 10px;text-align:center}
 #mcqView .calc-graph svg,.subj-view .calc-graph svg{max-width:340px;width:100%;height:auto}

@@ -269,7 +269,7 @@
       var v = _base(q) || [];
       try{ v = v.filter(function(x){ return !(x.code==='VERDICT' && _qcVerdictExempt(q, x.idx)); }); }catch(e){}
       /* [dia]…[/dia] 관계도는 여러 줄이 정상 → 그 예시 원소의 EX_MULTILINE·EX_STEPS_NOBR 면제 */
-      try{ v = v.filter(function(x){ if(x.code!=='EX_MULTILINE'&&x.code!=='EX_STEPS_NOBR') return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/\[dia\][\s\S]*?\[\/dia\]/.test(String(ex[x.idx]||'')); }); }catch(e){}
+      try{ v = v.filter(function(x){ if(x.code!=='EX_MULTILINE'&&x.code!=='EX_STEPS_NOBR') return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/(\[dia\][\s\S]*?\[\/dia\]|\[eq\][\s\S]*?\[\/eq\])/.test(String(ex[x.idx]||'')); }); }catch(e){}
       /* 일상 비유 예시("쉽게 비유하면 …")는 甲乙丙 없이 휴대폰·마트 같은 일상 소재를 쓰므로
          甲乙丙 전제 규칙(EX_NONAME·EX_NO_SUBJECT_FIRST·EX_NOT_GAP_FIRST) 면제 */
       try{ v = v.filter(function(x){ if(x.code!=='EX_NONAME'&&x.code!=='EX_NO_SUBJECT_FIRST'&&x.code!=='EX_NOT_GAP_FIRST') return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/비유하(면|자면|건대)/.test(String(ex[x.idx]||'')); }); }catch(e){}

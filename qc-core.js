@@ -31,7 +31,7 @@ function _qgLines(s){ var t=String(s||'').trim(); if(!t)return 0; var n=0; t.spl
 //  · 원문자 ①②…(뒤에 번/순/째 오면 제외) 서로 다른 것 2개+
 //  · 아라비아 "1. "과 "2. "가 같은 줄에 함께(연번 시작 확인 — 소수·조문 오탐 방지)
 function _qgCrammedSteps(t){
-  var lines=String(t||'').replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/<br\s*\/?>/gi,'\n').split(/\n/); /* [FIX 2026-07-16] [dia] 도식 내 ①→② 표기·삽화는 단계 나열 아님 */
+  var lines=String(t||'').replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/\[eq\][\s\S]*?\[\/eq\]/g,'').replace(/<br\s*\/?>/gi,'\n').split(/\n/); /* [FIX 2026-07-16] [dia] 도식 내 ①→② 표기·삽화는 단계 나열 아님 */
   for(var li=0; li<lines.length; li++){
     var L=lines[li]; if(!L.trim()) continue;
     var mk=(L.match(/[\u2460-\u2473](?![\ubc88\uc21c\uc9f8\uac00-\ud7a3])/g)||[]); /* [FIX 2026-07-16] ③의·②보다 등 그래프곡선 참조(원문자+한글 직결)는 단계 아님 — 제외 */ var u={}; mk.forEach(function(m){u[m]=1;});
@@ -237,7 +237,7 @@ function _qcViolations(q){
          짧을수록 빠져나가는 구조였다 → isScene 과 무관하게 재고 block 처리.
          [dia] 관계도는 본문이 아니므로 떼고 센다. */
       if(!_qCalc && _qcOn('gichul','EX_STUB')){
-        var _sb=String(t).replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/<[^>]+>/g,'').trim();
+        var _sb=String(t).replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/\[eq\][\s\S]*?\[\/eq\]/g,'').replace(/<[^>]+>/g,'').trim();
         var _SL=_sb.length;
         /* 끝의 괄호 보충설명·마침표를 떼고 평서형 '…다' 로 끝나는지 본다.
            토막은 '불가분성.' '현명 필요.' '계약=합치.' 처럼 체언으로 끝나고,
