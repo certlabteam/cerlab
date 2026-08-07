@@ -1241,6 +1241,35 @@ try{
       var d=attr(t,'d'); if(!d) return;
       var pts=_qcPathPts(d); if(pts.length>1) curves.push({pts:pts, c:attr(t,'stroke')});
     });
+    /* [2026-08-07] 테두리 도형도 글자를 뚫는다 — <circle>·<ellipse>·<polyline>·<polygon>.
+       지금껏 <line> 과 fill:none <path> 만 봐서 이것들은 글자를 관통해도 통과였다.
+       라이브에 circle/ellipse 369개·polyline 10개가 있다.
+       ⚠ **칠해진 것은 뺀다.** r=4 짜리 색 점은 자료 표시(마커)이고, 라벨 옆에 붙는 게 정상이다.
+       테두리만 있는 것(fill 없음/none + stroke)만 윤곽을 점으로 풀어 검사한다.
+       라벨을 **감싸는** 강조 타원은 윤곽이 글자 바깥을 지나므로 자연히 안 걸린다. */
+    function _qcOutlinePts(cx,cy,rx,ry){
+      var p=[]; for(var i=0;i<=72;i++){ var a=i/72*Math.PI*2; p.push([cx+rx*Math.cos(a), cy+ry*Math.sin(a)]); }
+      return p;
+    }
+    (_body.match(/<(?:circle|ellipse)[^>]*\/?>/g)||[]).forEach(function(t){
+      if(attr(t,'stroke-dasharray')) return;
+      var f=attr(t,'fill'); if(f && !/^none$/i.test(f)) return;      /* 칠한 점 = 마커 */
+      if(!attr(t,'stroke')) return;                                   /* 선이 없으면 그릴 게 없다 */
+      var cx=num(t,'cx'), cy=num(t,'cy');
+      var r=num(t,'r'), rx=(r!=null?r:num(t,'rx')), ry=(r!=null?r:num(t,'ry'));
+      if([cx,cy,rx,ry].some(function(n){ return n==null||isNaN(n); })) return;
+      curves.push({pts:_qcOutlinePts(cx,cy,rx,ry), c:attr(t,'stroke')});
+    });
+    (_body.match(/<(?:polyline|polygon)[^>]*\/?>/g)||[]).forEach(function(t){
+      if(attr(t,'stroke-dasharray')) return;
+      var f=attr(t,'fill'); if(f && !/^none$/i.test(f)) return;
+      if(!attr(t,'stroke')) return;
+      var ns=(String(attr(t,'points')||'').match(/-?[\d.]+/g)||[]).map(parseFloat);
+      if(ns.length<6) return;                                          /* 점 3개 미만은 도형이 아니다 */
+      var pts=[]; for(var i=0;i+1<ns.length;i+=2) pts.push([ns[i],ns[i+1]]);
+      if(/<polygon/.test(t)) pts.push(pts[0]);                         /* 다각형은 닫는다 */
+      curves.push({pts:pts, c:attr(t,'stroke')});
+    });
     /* 글자 폭 어림 — Noto Sans CJK KR 실측 계수(2026-08-06 캔버스 측정):
        한글/전각 0.92em · 대문자 0.62em · 그 밖 ASCII 0.53em · 공백 0.28em. */
     function tw(s,fs){ var w=0; s=String(s);
