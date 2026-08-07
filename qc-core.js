@@ -308,7 +308,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1129,7 +1129,9 @@ try{
          기준본: grp_econ_negative_externality. 규칙 — 실선과 그 끝 라벨은 검정,
          색은 점·영역·특별표시에만, 한 덩어리는 한 색, 범위는 빗금, 가리킬 땐 끝에 화살촉,
          읽는 법은 축 폭을 채우고 단어를 안 끊는다. */
-      _qcGraphRules(id, svg, v);
+      /* [2026-08-07] kind — 'chart'(축 있는 그래프) / 'flow'(축 없는 전개도·흐름도) / 없음(=애매, chart 규칙).
+         296개 중 flow 43개는 박스 글자가 이미 설명이라 "읽는 법"이 군더더기다. 분류·근거는 인계 문서. */
+      _qcGraphRules(id, svg, v, g.kind, g.layout);
     }); _qcApplySev(v); return v; }
 
   /* [2026-08-07] path(곡선)를 점으로 풀어 샘플링한다. 브라우저 getPointAtLength 를 못 쓰므로
@@ -1196,8 +1198,17 @@ try{
     return len*inN/N;
   }
 
-  /* 그래프 읽기 규칙 6종. 좌표를 실제로 재서 판정한다(직선만 — 곡선 path 는 판정보류). */
-  function _qcGraphRules(id, svg, v){
+  /* 그래프 읽기 규칙 6종. 좌표를 실제로 재서 판정한다(직선만 — 곡선 path 는 판정보류).
+     [2026-08-07] kind 인자 추가. 'flow' 는 축이 없는 전개도·흐름도라
+     읽는 법(GRP_NO_GUIDE)·축 폭(GRP_GUIDE_NARROW)을 면제하고 대신 GRP_FLOW_ARROW 를 본다.
+     kind 가 비었으면(애매 16개·신규 업로드) 지금까지대로 chart 규칙 — 기본값을 바꾸지 않는다. */
+  function _qcGraphRules(id, svg, v, kind, layout){
+    var isFlow=(String(kind||'')==='flow');
+    /* [2026-08-07] layout — flow 안의 생김새 갈래. 정렬 규칙이 여기서 갈린다.
+       'vstack'(세로로 쌓인 단순 전개도) · 'table'(박스 안이 2단 이상, 표 성격) ·
+       'timeline'(가로 시간축) · 'row'(한 줄 배치·병렬·트리).
+       크리스: "단순 시간흐름 전개도 세로형태는 다 가운데 정렬로 가고 나머지는 좌측 정렬 그대로." */
+    var _lay=String(layout||'');
     /* [2026-08-07] 속성이 홑따옴표인 SVG 가 16개 있다(viewBox='0 -28 360 300' 꼴).
        쌍따옴표만 보던 정규식 탓에 그 16개는 text·line 을 하나도 못 읽어
        라벨 겹침·색·잘림 검사가 통째로 건너뛰어졌고, 결과가 "읽는 법만 없음"으로 보였다.
@@ -1237,8 +1248,13 @@ try{
 
     // ① 읽는 법 블록
     var hasGuide=texts.some(function(t){ return /^읽는\s*법$/.test(String(t.s).trim()); });
-    if(_qcOn('graph','GRP_NO_GUIDE') && !hasGuide)
+    if(_qcOn('graph','GRP_NO_GUIDE') && !hasGuide && !isFlow)
       v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_NO_GUIDE',msg:'축 아래 "읽는 법" 없음 — 축·선·약어 뜻을 그래프 밑에 적어야 함'});
+    /* [2026-08-07] flow 는 면제가 아니라 **있으면 안 된다.** 크리스: "전개도 이런건 읽는 법 필요 없다고!"
+       박스 글자가 이미 설명이라 밑에 또 풀어 쓰면 같은 말을 두 번 읽힌다.
+       면제로만 두었더니 이미 붙어 있던 3개(고려의 대외 항쟁 등)가 그대로 남았다 — 그래서 경고로 잡는다. */
+    if(_qcOn('graph','GRP_FLOW_GUIDE') && hasGuide && isFlow)
+      v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_FLOW_GUIDE',msg:'전개도(kind:"flow")에 "읽는 법"이 있음 — 박스 글자가 이미 설명이라 군더더기다. 읽는 법 블록을 지우고 viewBox 높이를 줄일 것'});
 
     // ② viewBox 밖으로 잘리는 텍스트
     var _vbm=svg.match(/viewBox\s*=\s*(?:"([^"]*)"|'([^']*)')/);
@@ -1321,7 +1337,7 @@ try{
     }
 
     // ⑥ 읽는 법이 축 폭을 못 채움(짧게 끊어 씀)
-    if(_qcOn('graph','GRP_GUIDE_NARROW') && hasGuide){
+    if(_qcOn('graph','GRP_GUIDE_NARROW') && hasGuide && !isFlow){
       var gi=-1; texts.forEach(function(t,i){ if(gi<0 && /^읽는\s*법$/.test(String(t.s).trim())) gi=i; });
       /* [2026-08-07] 패널이 여러 개인 그래프(가로축이 2~3개)는 **왼쪽 끝 축부터 오른쪽 끝 축까지**가
          쓸 수 있는 폭이다. 축 하나만 재면 3분의 1만 쓰고도 통과가 나온다(grp_econ_good_types_ic 에서 났다). */
@@ -1336,6 +1352,133 @@ try{
       var narrow=body.slice(0,body.length-1).filter(function(t){ return tw(t.s,t.fs) < axisW*_qcN('graph','GRP_GUIDE_NARROW','ratio',0.72); });
       if(narrow.length)
         v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_GUIDE_NARROW',msg:'읽는 법 '+narrow.length+'줄이 축 폭('+Math.round(axisW)+')을 못 채움 — 단어를 안 끊는 선에서 한 줄을 꽉 채워 줄 수를 줄일 것'});
+    }
+
+    /* ⑦ [2026-08-07 · flow 전용] 세로 흐름 화살표.
+       크리스 지적: "동학 농민 운동의 전개, 밑으로 화살표가 중앙에 있으면 좋겠다. 고려의 대외 항쟁 이것처럼."
+       기준본 grp_hist_goryeo_defense — 위 박스 아래변에서 아래 박스 위변으로, **두 박스 중심 x 의 평균**에
+       맞춘 세로선 + 끝에 화살촉. 박스 폭이 다를 때 한쪽 중심에만 맞추면 어긋나 보여 평균으로 잡는다.
+       화살촉은 marker-end 든 삼각형 path(기준본이 쓰는 방식)든 둘 다 인정한다 —
+       한 쪽만 인정하면 기준본 자신이 위반으로 잡힌다. */
+    if(isFlow && _qcOn('graph','GRP_FLOW_ARROW')){
+      var _faTol=_qcN('graph','GRP_FLOW_ARROW','tolPx',3);
+      /* 박스 — 바탕칠 rect(캔버스를 거의 다 덮는 것)는 뺀다 */
+      var _vbp=vb?vb.trim().split(/[\s,]+/).map(parseFloat):null;
+      var _vbW=(_vbp&&_vbp.length===4)?_vbp[2]:360, _vbH=(_vbp&&_vbp.length===4)?_vbp[3]:0;
+      var boxes=[];
+      (svg.match(/<rect[^>]*\/?>/g)||[]).forEach(function(t){
+        var x=num(t,'x'), y=num(t,'y'), w=num(t,'width'), h=num(t,'height');
+        if([x,y,w,h].some(function(n){ return n==null||isNaN(n); })) return;
+        if(w>=_vbW*0.98 && _vbH && h>=_vbH*0.5) return;      /* 바탕칠 */
+        boxes.push({x:x,y:y,w:w,h:h,cx:x+w/2,top:y,bot:y+h});
+      });
+      /* 세로 연결선 — <line> 과 <path d="M x y V y2"> 둘 다. 화살촉 삼각형 자신은 뺀다(fill 있고 Z 로 닫힘). */
+      var conns=[];
+      lines.forEach(function(l){
+        if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return;
+        if(Math.abs(l.x2-l.x1)>1) return;
+        var t0=Math.min(l.y1,l.y2), b0=Math.max(l.y1,l.y2);
+        if(b0-t0<3 || b0-t0>90) return;
+        conns.push({x:l.x1, top:t0, bot:b0, arrow:l.arrow});
+      });
+      (String(svg).replace(/<defs[\s\S]*?<\/defs>/gi,'').match(/<path[^>]*\/?>/g)||[]).forEach(function(t){
+        var f=attr(t,'fill'); if(f && !/^none$/i.test(f)) return;      /* 칠한 것은 화살촉 삼각형 */
+        var d=attr(t,'d')||''; var m=d.match(/^\s*M\s*(-?[\d.]+)[\s,]+(-?[\d.]+)\s*V\s*(-?[\d.]+)\s*$/i);
+        if(!m) return;
+        var x=parseFloat(m[1]), y1=parseFloat(m[2]), y2=parseFloat(m[3]);
+        var t0=Math.min(y1,y2), b0=Math.max(y1,y2);
+        if(b0-t0<3 || b0-t0>90) return;
+        conns.push({x:x, top:t0, bot:b0, arrow:/marker-end/.test(t)});
+      });
+      /* 화살촉 — 작은 삼각형의 (중심x, 위·아래 y).
+         ⚠ **표기가 세 가지다.** 기준본 grp_hist_goryeo_defense 는 <path d="… Z" fill>,
+         감평·정비구역 그래프들은 <polygon points fill>, 그 밖에 marker-end 도 있다.
+         path 만 보다가 polygon 화살촉 6건을 "화살촉 없음"으로 잘못 잡았다(2026-08-07 실측).
+         게이트를 새로 만들 때 데이터가 한 표기만 쓴다고 가정하지 말 것 — 홑따옴표 때와 같은 실수다. */
+      var heads=[], _faBody=String(svg).replace(/<defs[\s\S]*?<\/defs>/gi,'');
+      function _faHead(xs,ys){
+        if(xs.length<3) return;
+        var xlo=Math.min.apply(null,xs), xhi=Math.max.apply(null,xs);
+        var ylo=Math.min.apply(null,ys), yhi=Math.max.apply(null,ys);
+        if(xhi-xlo>26 || yhi-ylo>26) return;                            /* 화살촉치고 너무 큼 */
+        heads.push({cx:(xlo+xhi)/2, top:ylo, bot:yhi});
+      }
+      function _faPts(ns){ var xs=[], ys=[]; for(var i=0;i+1<ns.length;i+=2){ xs.push(ns[i]); ys.push(ns[i+1]); }
+        _faHead(xs,ys); }
+      (_faBody.match(/<path[^>]*\/?>/g)||[]).forEach(function(t){
+        var f=attr(t,'fill'); if(!f || /^none$/i.test(f)) return;
+        var d=attr(t,'d')||''; if(!/z\s*$/i.test(d)) return;
+        var ns=(d.match(/-?[\d.]+/g)||[]).map(parseFloat); if(ns.length<6) return;
+        _faPts(ns);
+      });
+      (_faBody.match(/<polygon[^>]*\/?>/g)||[]).forEach(function(t){
+        var f=attr(t,'fill'); if(!f || /^none$/i.test(f)) return;
+        var ns=(String(attr(t,'points')||'').match(/-?[\d.]+/g)||[]).map(parseFloat); if(ns.length<6) return;
+        _faPts(ns);
+      });
+      /* 연결선마다 위·아래 박스를 붙인다 */
+      /* 위·아래 박스는 **세로로 맞닿고 가로로도 그 박스 안**이어야 짝이다.
+         y 만 보면 엉뚱하게 물린다 — 붕당의 분화(grp_hist_joseon_factions)는 부모 '사림'이 x 130~230 인데
+         세로선은 x 110·250 이라 박스 밖이다. 거기 화살표를 다는 건 허공에 그리는 것이고,
+         그 그림의 진짜 연결은 대각선이다(세로선은 다른 배치의 잔재). */
+      conns.forEach(function(c){
+        var above=null, below=null;
+        boxes.forEach(function(b){
+          if(!(c.x>=b.x-2 && c.x<=b.x+b.w+2)) return;
+          if(Math.abs(b.bot-c.top)<=14 && (above==null||Math.abs(b.bot-c.top)<Math.abs(above.bot-c.top))) above=b;
+          if(b.top-c.bot>=-4 && b.top-c.bot<=18 && (below==null||(b.top-c.bot)<(below.top-c.bot))) below=b;
+        });
+        c.above=above; c.below=below;
+      });
+      /* 갈래(한 박스가 둘로 갈라지거나 둘이 하나로 모이는 것)는 **중심 정렬을 안 본다.**
+         붕당의 분화(grp_hist_joseon_factions)처럼 옆 가지로 뻗는 화살표는 중앙에서 벗어나는 게 맞다.
+         화살촉은 갈래에도 그대로 요구한다. */
+      function _faCnt(pick){ var m={}; conns.forEach(function(c){ var b=pick(c); if(!b) return;
+        var k=b.x+'/'+b.y; m[k]=(m[k]||0)+1; }); return m; }
+      var _faOut=_faCnt(function(c){ return c.above; }), _faIn=_faCnt(function(c){ return c.below; });
+      conns.forEach(function(c){
+        if(!c.above||!c.below) return;                                  /* 박스 사이 연결선이 아니면 판정 안 함 */
+        var branch=(_faOut[c.above.x+'/'+c.above.y]>1) || (_faIn[c.below.x+'/'+c.below.y]>1);
+        if(!branch){
+          var want=(c.above.cx+c.below.cx)/2, off=Math.abs(c.x-want);
+          if(off>_faTol)
+            v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_FLOW_ARROW',msg:'세로 흐름 화살표 x='+Math.round(c.x*10)/10+' 가 두 박스 중심 평균('+Math.round(want*10)/10+')에서 '+Math.round(off*10)/10+'px 어긋남 — 허용 '+_faTol+'px'});
+        }
+        var hasHead=c.arrow || heads.some(function(h){ return Math.abs(h.cx-c.x)<=6 && h.bot>=c.bot-6 && h.top<=c.bot+12; });
+        if(!hasHead)
+          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_FLOW_ARROW',msg:'세로 흐름 연결선(y '+Math.round(c.top)+'→'+Math.round(c.bot)+')에 화살촉이 없음 — 끝에 ">" 삼각형(marker-end 또는 삼각형 path)을 붙일 것'});
+      });
+    }
+
+    /* ⑧ [2026-08-07 · layout:"vstack" 전용] 박스 안 글자는 가운데.
+       크리스: "네모박스안에 텍스트는 중앙정열해야지" + "단순 시간흐름 전개도 세로형태는 다 가운데 정렬로
+       가고 나머지 애들은 좌측 정렬 그대로." 그래서 **vstack 에만** 건다 —
+       'table'(왼쪽 이름 / 오른쪽 설명)에 걸면 두 칸을 한 점으로 몰아 글자가 포개진다.
+       ⚠ 문서 단위로 재지 말고 **박스 하나씩** 볼 것. 2단 문서 안에 섞인 1단 박스를 놓친 적이 있다. */
+    if(isFlow && _lay==='vstack' && _qcOn('graph','GRP_FLOW_ALIGN')){
+      var _vbA=vb?vb.trim().split(/[\s,]+/).map(parseFloat):null;
+      var _awW=(_vbA&&_vbA.length===4)?_vbA[2]:360, _awH=(_vbA&&_vbA.length===4)?_vbA[3]:0;
+      var abox=[];
+      (svg.match(/<rect[^>]*\/?>/g)||[]).forEach(function(t){
+        var x=num(t,'x'), y=num(t,'y'), w=num(t,'width'), h=num(t,'height');
+        if([x,y,w,h].some(function(n){ return n==null||isNaN(n); })) return;
+        if(w>=_awW*0.98 && _awH && h>=_awH*0.5) return;
+        abox.push({x:x,y:y,w:w,bot:y+h,cx:x+w/2});
+      });
+      var atag=svg.match(/<text[^>]*>/g)||[], off=[];
+      abox.forEach(function(b){
+        var mine=[];
+        atag.forEach(function(t){ var x=num(t,'x'), y=num(t,'y'); if(x==null||y==null) return;
+          if(x>=b.x && x<=b.x+b.w && y>b.y && y<=b.bot+2) mine.push({t:t,x:x}); });
+        var xs={}; mine.forEach(function(m){ xs[m.x]=1; });
+        if(Object.keys(xs).length>=2) return;                 /* 이 박스만 2단 — 건너뛴다 */
+        mine.forEach(function(m){
+          var an=attr(m.t,'text-anchor');
+          if(an!=='middle' || Math.abs(m.x-b.cx)>0.5) off.push((m.t.match(/>?$/)?'':'')+Math.round(m.x));
+        });
+      });
+      if(off.length)
+        v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_FLOW_ALIGN',msg:'세로 전개도(layout:"vstack") 박스 안 글자 '+off.length+'개가 가운데가 아님 — x를 박스 중심으로, text-anchor="middle"로. (표처럼 2단인 박스는 이 규칙에서 빠진다)'});
     }
   }
 
