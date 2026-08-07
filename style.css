@@ -1,5 +1,11 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto}
+/* [2026-08-07] 줄바꿈은 **어절 단위**로 — 전역. 크리스: "단어 다 안들어가면 단어 전체개행은 어디든 공통"
+   기본값(word-break:normal)은 한글을 글자 아무 데서나 끊는다("세대당" → "세대" / "당").
+   지금껏 #mcqView·.oxl-* 등 일부에만 keep-all 이 걸려 있어 뷰마다 다르게 동작했다 —
+   주관식·개념카드·학습 화면은 그대로 글자에서 끊겼다. body 에 걸어 전부 물려받게 한다.
+   overflow-wrap:break-word 는 도피구다 — 한 어절이 통째로 폭보다 길면(긴 URL·영문 한 덩어리)
+   그때만 쪼개서 넘침을 막는다. keep-all 만 두면 그런 것이 박스를 뚫고 나간다. */
+body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;word-break:keep-all;overflow-wrap:break-word}
 :root{--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#888780;--text:#2C2C2A;--text2:#5F5E5A;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:20px;--radius-sm:12px}
 .header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
 .event-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:10px;padding:4px 9px;line-height:1.2;flex-shrink:0;animation:ebPulse 2.2s ease-in-out infinite}
@@ -877,7 +883,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .cm-dtitle{font-size:17px;font-weight:800;line-height:1.45;margin-bottom:8px}
 .cm-dmeta{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#888780;padding-bottom:12px;border-bottom:1px solid #E6EEF8;margin-bottom:14px}
 .cm-dmeta .nick{font-weight:700;color:#185FA5}
-.cm-dtext{font-size:14px;line-height:1.8;color:#2C2C2A;margin-bottom:14px;word-break:break-word}
+.cm-dtext{font-size:14px;line-height:1.8;color:#2C2C2A;margin-bottom:14px;overflow-wrap:break-word}
 .cm-dimg{width:100%;border-radius:10px;margin-bottom:12px}
 .cm-vote-row{display:flex;gap:10px;justify-content:center;margin:6px 0 22px}
 .cm-vote{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:30px;border:1.5px solid #B5D4F4;background:#fff;color:#5F5E5A;font-size:13px;font-weight:700;cursor:pointer}
@@ -890,7 +896,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .cm-cmt-top{display:flex;align-items:center;gap:7px;margin-bottom:3px;font-size:11px;color:#888780}
 .cm-cmt-top .nick{font-weight:700;color:#185FA5}
 .cm-cmt-del{margin-left:auto;color:#bbb;cursor:pointer}
-.cm-cmt-b{font-size:13px;line-height:1.6;color:#2C2C2A;word-break:break-word}
+.cm-cmt-b{font-size:13px;line-height:1.6;color:#2C2C2A;overflow-wrap:break-word}
 .cm-cmt-input{display:flex;gap:7px;margin-top:14px}
 .cm-cmt-input input{flex:1;border:1.5px solid #B5D4F4;border-radius:10px;padding:9px 12px;font-size:13px;outline:none}
 .cm-cmt-input button{padding:0 16px;border:none;border-radius:10px;background:#185FA5;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
