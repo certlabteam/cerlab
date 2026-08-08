@@ -300,6 +300,20 @@ function qualityGate(questions){
   return {block:block, warn:warn};
 }
 
+/* ---- [2026-08-08] 그래프 색 등록부 ----
+   색 실선을 허용하는 대신(GRP_LINE_COLORED 개정) 쓸 수 있는 색을 여기 적힌 것으로 묶는다.
+   개수를 정해 두는 게 아니라 **목록**이다 — 새 색이 필요하면 여기 한 줄 더하면 된다.
+   그래야 색이 늘어도 "같은 역할에 미묘하게 다른 색"(빨강 두 값·초록 다섯 값)이 안 생긴다. */
+var _QC_PALETTE=[
+  '#2563EB',                                   /* 파랑 — 수요·주곡선 1 */
+  '#C0392B',                                   /* 빨강 — 공급·주곡선 2 */
+  '#059669',                                   /* 초록 — 제3곡선 */
+  '#7C3AED',                                   /* 보라 — 제4곡선 */
+  '#CA8A04',                                   /* 노랑 — 강조·영역 */
+  '#0F172A','#1E293B','#334155','#475569','#64748B','#94A3B8','#CBD5E1','#E2E8F0',  /* 회색 계열 */
+  '#FFFFFF','#FFF','#NONE'                     /* 흰 채움 */
+];
+
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
   gichul:{ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
@@ -308,7 +322,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,markerLen:120},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true,minX:0,minY:0},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,endPx:30,darkLabelChars:8},GRP_PALETTE:{on:true},GRP_ARROW_OVERLAP:{on:true,minPx:3},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true,minX:0,minY:0},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1309,20 +1323,109 @@ try{
       }
     }
 
-    /* ③ 본선(굵은 실선)은 검정 계열. 단 같은 색 라벨을 가진 선은 '특별 표시선'(외부비용 같은 것)이라
-       색이 허용된다 — 본선은 라벨이 검정이므로 짝이 안 생긴다. */
+    /* ③ [2026-08-08 · 규칙 개정] 색선은 **이름표를 달면** 된다.
+       옛 규칙은 "본선은 무조건 검정"이었고, 같은 색 라벨 예외를 길이 120px 미만으로 잘라 두었다.
+       그 길이 조건을 넣은 근거는 "안 그러면 색 실선 141개가 통째로 빠져나간다"는 **숫자**였지,
+       그 141개가 실제로 결함이냐가 아니었다. 실측해 보니 141개 중 88개는 이미
+       선 끝에 이름표가 붙어 있어 **색을 못 봐도 읽힌다**(중복 부호화 — 접근성에서 권장되는 방식이다).
+       진짜 결함은 색이 유일한 단서인 53개다. 그래서 재는 것을 "색을 썼는가"에서
+       **"색 말고 다른 단서가 있는가"** 로 바꾼다.
+       판정: 굵고 긴 실선에 색이 있으면, 그 선의 **양 끝 중 한 곳 가까이에 이름표**가 있어야 한다.
+       크리스: "색 4개면 적을수도 있어 색은 더 늘수도 있다" → 색 가짓수는 GRP_PALETTE 가 따로 본다. */
     var labelColors={}; texts.forEach(function(t){ if(t.fill && !isDark(t.fill)) labelColors[String(t.fill).toLowerCase()]=1; });
+    /* 선 끝에 **이름표**가 붙어 있나. 캡션이 우연히 선 끝 가까이 있는 것과 갈라야 한다 —
+       처음 짰을 때 "대체재 많고 지출비중 클수록 탄력적" 같은 설명문이 선 끝 5px 에 있다고
+       이름표로 쳐줘서 12개가 헛통과했다.
+       이름표로 인정하는 조건: ① 선과 같은 색이거나(코퍼스 관례 — 226/243)
+       ② 검정 계열이면서 8자 이하(고정비·총수익 같은 짧은 이름). 문장은 어느 쪽도 아니다. */
+    function _namedEnd(l, near){
+      var maxLab=_qcN('graph','GRP_LINE_COLORED','darkLabelChars',8);
+      return texts.some(function(t){
+        if(t.x==null||t.y==null||!String(t.s).trim()) return false;
+        var same = l.c && String(t.fill||'').toLowerCase()===String(l.c).toLowerCase();
+        if(!(same || (isDark(t.fill) && String(t.s).trim().length<=maxLab))) return false;
+        var sp=xspan(t), cx=(sp[0]+sp[1])/2, cy=t.y-t.fs*0.35;
+        return Math.min(Math.hypot(cx-l.x1, cy-l.y1), Math.hypot(cx-l.x2, cy-l.y2)) <= near
+            || Math.min(Math.hypot(sp[0]-l.x1, t.y-l.y1), Math.hypot(sp[0]-l.x2, t.y-l.y2)) <= near
+            || Math.min(Math.hypot(sp[1]-l.x1, t.y-l.y1), Math.hypot(sp[1]-l.x2, t.y-l.y2)) <= near;
+      });
+    }
     if(_qcOn('graph','GRP_LINE_COLORED')) lines.forEach(function(l){
       if(l.dash || l.w<1.8 || l.arrow) return;
       if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return;
       var len=Math.sqrt(Math.pow(l.x2-l.x1,2)+Math.pow(l.y2-l.y1,2));
       if(len<60) return;
-      /* 같은 색 라벨이 있으면 '특별 표시선'으로 봐주되, **짧은 것만**.
-         길게 뻗은 것은 본선이라 라벨 색이 맞아도 검정이어야 한다
-         (이 길이 조건이 없으면 색 실선 141개가 통째로 빠져나간다 — 2026-08-06 실측). */
-      if(len<_qcN('graph','GRP_LINE_COLORED','markerLen',120) && l.c && labelColors[String(l.c).toLowerCase()]) return;
-      if(!isDark(l.c)) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LINE_COLORED',msg:'본선에 색을 씀(stroke='+l.c+', 길이 '+Math.round(len)+') — 실선은 검정 계열, 색은 점·영역·짧은 특별표시에만'});
+      if(isDark(l.c)) return;
+      if(_namedEnd(l, _qcN('graph','GRP_LINE_COLORED','endPx',30))) return;   /* 이름표가 있으면 통과 */
+      v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LINE_COLORED',msg:'색선(stroke='+l.c+', 길이 '+Math.round(len)+')에 이름표가 없음 — 색이 유일한 단서다. 선 끝에 그 선 이름을 같은 색으로 달 것'});
     });
+
+    /* ③-2 [2026-08-08 신설] 팔레트 등록제.
+       색 실선을 허용하기로 하면서(위 ③) 색이 제멋대로 굴러가는 것을 막는다. 실측하니
+       빨강이 #C0392B·#DC2626 두 값, 초록이 다섯 값이었다 — 같은 역할에 미묘하게 다른 색.
+       크리스: "색 4개면 적을수도 있어 색은 더 늘수도 있다" → 개수를 묶지 말고 **목록**으로 둔다.
+       색을 늘릴 일이 생기면 _QC_PALETTE 에 한 줄 더한다(그때 한 번 의식적으로 고르게 된다). */
+    if(_qcOn('graph','GRP_PALETTE')){
+      var _pal=(typeof _QC_PALETTE!=='undefined')?_QC_PALETTE:null;
+      if(_pal){
+        /* 잡는 것은 **선 색과 글자 색**뿐이다. 영역 채움(연한 하늘·분홍 같은 tint)까지 묶으면
+           음영 색이 다 걸린다 — 그건 GRP_COLOR_ORPHAN 이 "한 덩어리는 한 색"으로 따로 본다. */
+        var seen={}, _hits=[];
+        (svg.match(/stroke\s*=\s*"(#[0-9a-fA-F]{3,8})"/g)||[]).forEach(function(m){ _hits.push(m); });
+        (svg.match(/<text[^>]*fill\s*=\s*"(#[0-9a-fA-F]{3,8})"/g)||[]).forEach(function(m){ _hits.push(m); });
+        _hits.forEach(function(m){
+          var c=(m.match(/#[0-9a-fA-F]{3,8}(?=")/)||m.match(/#[0-9a-fA-F]{3,8}/)||[])[0].toUpperCase();
+          if(_pal.indexOf(c)>=0 || seen[c]) return; seen[c]=1;
+          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_PALETTE',msg:'팔레트 밖 색 '+c+' — 등록된 색만 쓸 것(파랑 #2563EB · 빨강 #C0392B · 초록 #059669 · 보라 #7C3AED · 노랑 #CA8A04 · 회색 계열). 새 색이 필요하면 qc-core 의 _QC_PALETTE 에 등록'});
+        });
+      }
+    }
+
+    /* ③-3 [2026-08-08 신설] 화살표끼리 겹치지 않게.
+       크리스: "화살표 끼리도 겹치지 않게 해". 라이브 296개를 재 보니 실제 겹침은 **0건**이라
+       고칠 것은 없었다 — 이건 앞으로 새로 그릴 때를 위한 문지기다.
+       ⚠ 처음 짠 검출기는 "끝점 가까이 삼각형이 있으면 화살표"로 봤다가 축과
+       그 옆을 지나는 예산선까지 화살표로 세어 헛지적 4건을 냈다.
+       촉이 **그 선이 뻗은 방향**을 향할 때만 그 선의 촉으로 인정한다. */
+    if(_qcOn('graph','GRP_ARROW_OVERLAP')){
+      var _hd=[];
+      (svg.match(/<polygon[^>]*\/?>/g)||[]).forEach(function(t){
+        var p=String(attr(t,'points')||'').trim().split(/\s+/).map(function(s){ return s.split(',').map(parseFloat); }).filter(function(q){ return q.length===2 && !isNaN(q[0]) && !isNaN(q[1]); });
+        if(p.length!==3) return;
+        var tip=0, best=-1;
+        for(var i=0;i<3;i++){ var o=[0,1,2].filter(function(k){return k!==i;});
+          var d=Math.sqrt(Math.pow(p[i][0]-(p[o[0]][0]+p[o[1]][0])/2,2)+Math.pow(p[i][1]-(p[o[0]][1]+p[o[1]][1])/2,2));
+          if(d>best){ best=d; tip=i; } }
+        var oo=[0,1,2].filter(function(k){return k!==tip;});
+        var bx=(p[oo[0]][0]+p[oo[1]][0])/2, by=(p[oo[0]][1]+p[oo[1]][1])/2;
+        _hd.push({bx:bx, by:by, dx:p[tip][0]-bx, dy:p[tip][1]-by});
+      });
+      var _claims=function(ex,ey,dx,dy){ return _hd.some(function(h){
+        if(Math.sqrt(Math.pow(h.bx-ex,2)+Math.pow(h.by-ey,2))>6) return false;
+        var a=Math.sqrt(dx*dx+dy*dy), b=Math.sqrt(h.dx*h.dx+h.dy*h.dy); if(!a||!b) return false;
+        return (dx*h.dx+dy*h.dy)/(a*b) > 0.94; }); };
+      var _ar=lines.filter(function(l){
+        if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return false;
+        if(Math.sqrt(Math.pow(l.x2-l.x1,2)+Math.pow(l.y2-l.y1,2))<=4) return false;
+        return l.arrow || _claims(l.x2,l.y2,l.x2-l.x1,l.y2-l.y1) || _claims(l.x1,l.y1,l.x1-l.x2,l.y1-l.y2); });
+      var _p2s=function(px,py,l){ var dx=l.x2-l.x1, dy=l.y2-l.y1, L2=dx*dx+dy*dy;
+        var t=L2?((px-l.x1)*dx+(py-l.y1)*dy)/L2:0; t=Math.max(0,Math.min(1,t));
+        return Math.sqrt(Math.pow(px-(l.x1+t*dx),2)+Math.pow(py-(l.y1+t*dy),2)); };
+      var _cross=function(a,b){ var s=function(px,py,qx,qy,rx,ry){ return (qx-px)*(ry-py)-(qy-py)*(rx-px); };
+        var d1=s(a.x1,a.y1,a.x2,a.y2,b.x1,b.y1), d2=s(a.x1,a.y1,a.x2,a.y2,b.x2,b.y2),
+            d3=s(b.x1,b.y1,b.x2,b.y2,a.x1,a.y1), d4=s(b.x1,b.y1,b.x2,b.y2,a.x2,a.y2);
+        return ((d1>0)!==(d2>0)) && ((d3>0)!==(d4>0)); };
+      var _tol=_qcN('graph','GRP_ARROW_OVERLAP','minPx',3);
+      for(var ai=0; ai<_ar.length; ai++) for(var aj=ai+1; aj<_ar.length; aj++){
+        var A=_ar[ai], B=_ar[aj];
+        /* 한 점에서 갈라져 나가는 것은 정상 */
+        var shared=[[A.x1,A.y1],[A.x2,A.y2]].some(function(p){ return [[B.x1,B.y1],[B.x2,B.y2]].some(function(q){
+          return Math.sqrt(Math.pow(p[0]-q[0],2)+Math.pow(p[1]-q[1],2))<10; }); });
+        if(shared) continue;
+        var gap=_cross(A,B)?0:Math.min(_p2s(A.x1,A.y1,B),_p2s(A.x2,A.y2,B),_p2s(B.x1,B.y1,A),_p2s(B.x2,B.y2,A));
+        if(gap<_tol) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_ARROW_OVERLAP',msg:'화살표끼리 '+(gap<0.5?'겹침':Math.round(gap)+'px까지 붙음')+' ('+Math.round(A.x1)+','+Math.round(A.y1)+')→('+Math.round(A.x2)+','+Math.round(A.y2)+') ↔ ('+Math.round(B.x1)+','+Math.round(B.y1)+')→('+Math.round(B.x2)+','+Math.round(B.y2)+') — 한쪽을 옮겨 3px 이상 띄울 것'});
+      }
+    }
 
     // ④ 색 짝 없음 — 라벨 색이 선·점·영역 어디에도 안 쓰임
     if(_qcOn('graph','GRP_COLOR_ORPHAN')){
