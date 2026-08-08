@@ -1398,10 +1398,25 @@ try{
         var hi=Math.max.apply(null, xs.map(function(l){ return Math.max(l.x1,l.x2); }));
         axisW=hi-lo;
       }
+      /* [2026-08-08] 읽는 법 밑에 "예시" 블록을 붙이기 시작했다(grp_econ_giffen_effect 가 1호).
+         한 덩어리로 재면 머리말 "예시" 두 글자가 축 폭을 못 채운다고 잡힌다.
+         이 규칙이 재려는 것은 **접어 쓴 문장이 짧게 끊겼는가**이지 머리말 길이가 아니다.
+         그래서 머리말에서 블록을 끊고, 블록마다 마지막 줄을 뺀 나머지를 잰다. */
+      var _isHead=function(t){ return /^(읽는\s*법|예시)$/.test(String(t.s).trim()); };
       var body=texts.slice(gi+1).filter(function(t){ return String(t.s).trim(); });
-      var narrow=body.slice(0,body.length-1).filter(function(t){ return tw(t.s,t.fs) < axisW*_qcN('graph','GRP_GUIDE_NARROW','ratio',0.72); });
+      var _blocks=[[]];
+      body.forEach(function(t){ if(_isHead(t)) _blocks.push([]); else _blocks[_blocks.length-1].push(t); });
+      /* [2026-08-08] 예시 블록에 작은 표를 넣기 시작했다. 표의 칸은 원래 짧고, 칸마다 x 가 다르다.
+         이 규칙이 잡으려는 것은 **왼쪽 여백에서 시작해 접어 내려쓴 산문 줄**이므로
+         머리말과 같은 x 에서 시작하는 줄만 잰다. 칸은 들여쓴 자리에 있어 자연히 빠진다. */
+      var _gx=texts[gi]?xspan(texts[gi])[0]:null;
+      var _isProse=function(t){ return _gx==null || Math.abs(xspan(t)[0]-_gx)<=2; };
+      var _ratio=_qcN('graph','GRP_GUIDE_NARROW','ratio',0.72), narrow=[];
+      _blocks.forEach(function(bk){ var pr=bk.filter(_isProse);
+        pr.slice(0,pr.length-1).forEach(function(t){
+          if(tw(t.s,t.fs) < axisW*_ratio) narrow.push(t); }); });
       if(narrow.length)
-        v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_GUIDE_NARROW',msg:'읽는 법 '+narrow.length+'줄이 축 폭('+Math.round(axisW)+')을 못 채움 — 단어를 안 끊는 선에서 한 줄을 꽉 채워 줄 수를 줄일 것'});
+        v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_GUIDE_NARROW',msg:'읽는 법·예시 '+narrow.length+'줄이 축 폭('+Math.round(axisW)+')을 못 채움 — 단어를 안 끊는 선에서 한 줄을 꽉 채워 줄 수를 줄일 것'});
     }
 
     /* ⑦ [2026-08-07 · flow 전용] 세로 흐름 화살표.
