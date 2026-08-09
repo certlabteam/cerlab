@@ -1285,6 +1285,13 @@ try{
       var ns=(String(attr(t,'points')||'').match(/-?[\d.]+/g)||[]).map(parseFloat);
       if(ns.length<6) return;                                          /* 점 3개 미만은 도형이 아니다 */
       var pts=[]; for(var i=0;i+1<ns.length;i+=2) pts.push([ns[i],ns[i+1]]);
+      /* [2026-08-09] **작은 것은 화살촉이지 곡선이 아니다.**
+         화살촉을 속 채운 삼각형에서 열린 꺾쇠(<polyline fill=none stroke>)로 바꾸자
+         축 끝 촉이 곡선으로 세어져 바로 옆 "가격(P)" 같은 축 이름표를 파고든다고 34건이 났다.
+         테두리 도형은 라벨을 감싸거나 가로지르는 큰 것이라, 16×16 미만은 촉으로 보고 뺀다. */
+      var _pxs=pts.map(function(q){return q[0];}), _pys=pts.map(function(q){return q[1];});
+      if(Math.max.apply(null,_pxs)-Math.min.apply(null,_pxs)<16 &&
+         Math.max.apply(null,_pys)-Math.min.apply(null,_pys)<16) return;
       if(/<polygon/.test(t)) pts.push(pts[0]);                         /* 다각형은 닫는다 */
       curves.push({pts:pts, c:attr(t,'stroke')});
     });
@@ -1354,8 +1361,12 @@ try{
             || Math.min(Math.hypot(sp[1]-l.x1, t.y-l.y1), Math.hypot(sp[1]-l.x2, t.y-l.y2)) <= near;
       });
     }
+    /* [2026-08-09] 굵기 문턱 1.8 → 1.5.
+       크리스가 "곡선 굵기 좀 얇게 해 다" 라고 해서 데이터 곡선을 전부 1.6 으로 내렸는데,
+       이 규칙이 1.8 이상만 보고 있어 **색선 28건을 통째로 못 보게 됐다**(게이트가 눈을 감았다).
+       축(1.5)은 색이 #94A3B8 이라 isDark 로 걸러지고, 화살대(1.1~1.4)와 짧은 선은 원래 빠진다. */
     if(_qcOn('graph','GRP_LINE_COLORED')) lines.forEach(function(l){
-      if(l.dash || l.w<1.8 || l.arrow) return;
+      if(l.dash || l.w<1.5 || l.arrow) return;
       if([l.x1,l.y1,l.x2,l.y2].some(function(n){ return n==null||isNaN(n); })) return;
       var len=Math.sqrt(Math.pow(l.x2-l.x1,2)+Math.pow(l.y2-l.y1,2));
       if(len<60) return;
@@ -1393,7 +1404,10 @@ try{
        촉이 **그 선이 뻗은 방향**을 향할 때만 그 선의 촉으로 인정한다. */
     if(_qcOn('graph','GRP_ARROW_OVERLAP')){
       var _hd=[];
-      (svg.match(/<polygon[^>]*\/?>/g)||[]).forEach(function(t){
+      /* [2026-08-09] 화살촉을 **속 채운 삼각형에서 열린 꺾쇠로** 바꾸면서(크리스: "안에 다 채우지
+         말고 ---> 이렇게만") <polygon> 만 보던 이 검출기가 눈을 감게 됐다. 점 3개짜리
+         <polyline> 도 같이 본다. 둘 다 "촉이 선이 뻗은 방향을 향하는가"로 걸러진다. */
+      (svg.match(/<(?:polygon|polyline)[^>]*\/?>/g)||[]).forEach(function(t){
         var p=String(attr(t,'points')||'').trim().split(/\s+/).map(function(s){ return s.split(',').map(parseFloat); }).filter(function(q){ return q.length===2 && !isNaN(q[0]) && !isNaN(q[1]); });
         if(p.length!==3) return;
         var tip=0, best=-1;
@@ -1702,14 +1716,20 @@ try{
       }
       function _faPts(ns){ var xs=[], ys=[]; for(var i=0;i+1<ns.length;i+=2){ xs.push(ns[i]); ys.push(ns[i+1]); }
         _faHead(xs,ys); }
+      /* [2026-08-09] 네 번째 표기가 늘었다 — **열린 꺾쇠**(fill=none + stroke).
+         크리스: "화살표 생김새 안에 다 채우지 말고 ---> 이렇게만." 채운 것만 보다가
+         전개도 6건을 "화살촉 없음"으로 잘못 잡았다. 채운 것과 열린 것을 다 본다. */
       (_faBody.match(/<path[^>]*\/?>/g)||[]).forEach(function(t){
-        var f=attr(t,'fill'); if(!f || /^none$/i.test(f)) return;
-        var d=attr(t,'d')||''; if(!/z\s*$/i.test(d)) return;
+        var f=attr(t,'fill'), open=(!f || /^none$/i.test(f));
+        if(open && !attr(t,'stroke')) return;
+        var d=attr(t,'d')||'';
+        if(!open && !/z\s*$/i.test(d)) return;                          /* 채운 것은 닫혀 있어야 촉 */
         var ns=(d.match(/-?[\d.]+/g)||[]).map(parseFloat); if(ns.length<6) return;
         _faPts(ns);
       });
-      (_faBody.match(/<polygon[^>]*\/?>/g)||[]).forEach(function(t){
-        var f=attr(t,'fill'); if(!f || /^none$/i.test(f)) return;
+      (_faBody.match(/<(?:polygon|polyline)[^>]*\/?>/g)||[]).forEach(function(t){
+        var f=attr(t,'fill'), open=(!f || /^none$/i.test(f));
+        if(open && !attr(t,'stroke')) return;
         var ns=(String(attr(t,'points')||'').match(/-?[\d.]+/g)||[]).map(parseFloat); if(ns.length<6) return;
         _faPts(ns);
       });
