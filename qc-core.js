@@ -1439,6 +1439,12 @@ try{
         /* 한 점에서 갈라져 나가는 것은 정상 */
         var shared=[[A.x1,A.y1],[A.x2,A.y2]].some(function(p){ return [[B.x1,B.y1],[B.x2,B.y2]].some(function(q){
           return Math.sqrt(Math.pow(p[0]-q[0],2)+Math.pow(p[1]-q[1],2))<10; }); });
+        /* [2026-08-09] **ㅜ 자로 얹힌 것도 정상.** 끝점끼리 맞닿는 경우만 빼 주고 있었는데,
+           x축 왼끝이 y축 **중간에** 붙는 그래프(0선이 가로축인 순수출·공공재 등)가 그렇지 않다.
+           축 끝 촉을 열린 꺾쇠로 바꾸자 게이트가 두 축을 화살표로 알아보면서 헛지적 4건이 났다.
+           한쪽 끝이 다른 선 위에 얹혀 있으면(2px 안) 갈라져 나가는 것으로 본다. */
+        if(!shared) shared=[[A.x1,A.y1],[A.x2,A.y2]].some(function(p){ return _p2s(p[0],p[1],B)<2; })
+                         || [[B.x1,B.y1],[B.x2,B.y2]].some(function(q){ return _p2s(q[0],q[1],A)<2; });
         if(shared) continue;
         var gap=_cross(A,B)?0:Math.min(_p2s(A.x1,A.y1,B),_p2s(A.x2,A.y2,B),_p2s(B.x1,B.y1,A),_p2s(B.x2,B.y2,A));
         if(gap<_tol) v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_ARROW_OVERLAP',msg:'화살표끼리 '+(gap<0.5?'겹침':Math.round(gap)+'px까지 붙음')+' ('+Math.round(A.x1)+','+Math.round(A.y1)+')→('+Math.round(A.x2)+','+Math.round(A.y2)+') ↔ ('+Math.round(B.x1)+','+Math.round(B.y1)+')→('+Math.round(B.x2)+','+Math.round(B.y2)+') — 한쪽을 옮겨 3px 이상 띄울 것'});
