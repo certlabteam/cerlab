@@ -322,7 +322,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,endPx:30,darkLabelChars:8},GRP_PALETTE:{on:true},GRP_ARROW_OVERLAP:{on:true,minPx:3},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true,minX:0,minY:0},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,endPx:30,darkLabelChars:8},GRP_PALETTE:{on:true},GRP_ARROW_OVERLAP:{on:true,minPx:3},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_ONE_AXIS:{on:true},GRP_DOT_OFF_CURVE:{on:true},GRP_GUIDE_OVER_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true,minX:0,minY:0},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1469,6 +1469,131 @@ try{
           v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_LABEL_ON_LINE',msg:'"'+String(t.s).slice(0,14)+'" 라벨을 곡선이 '+Math.round(seg)+'px 파고듦 — 빈 자리로 옮기거나 화살표가 글자 밖에서 끝나게 할 것'});
       });
     });
+
+    /* ⑤-2 [2026-08-09] 안내선이 한쪽 축으로만 감 — GRP_GUIDE_ONE_AXIS.
+       크리스: "항상 선 연결되는 점선은 y x 축 다 표시해."
+       점을 찍는 까닭은 그 좌표를 읽으라는 것인데 한쪽 축만 이으면 절반만 읽힌다.
+       오탐을 없애려고 세 가지를 챙긴다 —
+         ㉠ **칸마다 축을 따로 찾는다.** 다단 그래프는 아래에 예시 표 괘선이 있어서
+            맨 아래 가로선을 x축으로 삼으면 엉뚱한 데까지 재게 된다.
+            점보다 아래에 있는 **가장 가까운** 가로 실선, 왼쪽의 가장 가까운 세로 실선을 쓴다.
+         ㉡ **데이터 선도 안내선 노릇을 한다.** 가로로 누운 기본임대료 선이 이미 세로축까지
+            닿아 있으면 그 위에 점선을 또 그을 일이 아니다.
+         ㉢ **토막이 이어 붙는 경우**를 본다. 데이터 선(45~205)과 안내선(205~210)이
+            맞물려 축까지 가는 그림이 있다. 같은 줄의 토막을 합쳐 3px 넘는 틈이 없는지 잰다.
+       안내선을 아예 안 쓴 점은 건드리지 않는다(그런 그림은 좌표를 읽히려는 뜻이 아니다). */
+    if(_qcOn('graph','GRP_GUIDE_ONE_AXIS') && !_noAxis){
+      var _gl=lines.filter(function(l){ return [l.x1,l.y1,l.x2,l.y2].every(function(n){ return n!=null&&!isNaN(n); }); });
+      var _hz=_gl.filter(function(l){ return !l.dash && Math.abs(l.y1-l.y2)<1 && Math.abs(l.x2-l.x1)>120; });
+      var _vt=_gl.filter(function(l){ return !l.dash && Math.abs(l.x1-l.x2)<1 && Math.abs(l.y2-l.y1)>80; });
+      var _gd=_gl.filter(function(l){ return l.dash && l.w<=1.2; });
+      var _da=_gl.filter(function(l){ return l.w>=1.5; });
+      if(_hz.length && _vt.length && _gd.length){
+        (svg.match(/<circle[^>]*\/?>/g)||[]).forEach(function(t){
+          var cx=num(t,'cx'), cy=num(t,'cy');
+          if(cx==null||cy==null||isNaN(cx)||isNaN(cy)) return;
+          var ax=_hz.filter(function(l){ return l.y1>=cy-1 && Math.min(l.x1,l.x2)-2<=cx && cx<=Math.max(l.x1,l.x2)+2; })
+                    .sort(function(a,b){ return a.y1-b.y1; })[0];
+          var ay=_vt.filter(function(l){ return l.x1<=cx+1 && Math.min(l.y1,l.y2)-2<=cy && cy<=Math.max(l.y1,l.y2)+2; })
+                    .sort(function(a,b){ return b.x1-a.x1; })[0];
+          if(!ax||!ay) return;                                   /* 칸 밖의 점(범례 등) */
+          function reach(vert){
+            var segs=[];
+            _gd.concat(_da).forEach(function(l){
+              if(vert){ if(!(Math.abs(l.x1-l.x2)<1 && Math.abs(l.x1-cx)<3.5)) return;
+                segs.push([Math.min(l.y1,l.y2), Math.max(l.y1,l.y2)]); }
+              else { if(!(Math.abs(l.y1-l.y2)<1 && Math.abs(l.y1-cy)<3.5)) return;
+                segs.push([Math.min(l.x1,l.x2), Math.max(l.x1,l.x2)]); }
+            });
+            if(!segs.length) return false;
+            var from=vert?cy:ay.x1, to=vert?ax.y1:cx;
+            var lo=Math.min(from,to), hi=Math.max(from,to), cur=lo;
+            segs.sort(function(a,b){ return a[0]-b[0]; });
+            for(var i=0;i<segs.length;i++){ if(segs[i][0]>cur+3) break; if(segs[i][1]>cur) cur=segs[i][1]; }
+            return cur>=hi-3;
+          }
+          var any=false;
+          _gd.forEach(function(l){
+            if((Math.abs(l.y1-l.y2)<1 && Math.abs(l.y1-cy)<3.5 && Math.min(l.x1,l.x2)-2<=cx && cx<=Math.max(l.x1,l.x2)+2)
+             ||(Math.abs(l.x1-l.x2)<1 && Math.abs(l.x1-cx)<3.5 && Math.min(l.y1,l.y2)-2<=cy && cy<=Math.max(l.y1,l.y2)+2)) any=true;
+          });
+          if(!any) return;
+          var toX=reach(true), toY=reach(false);
+          if(toX&&toY) return;
+          v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_GUIDE_ONE_AXIS',
+            msg:'점 ('+Math.round(cx)+','+Math.round(cy)+') 의 안내선이 '+(toY?'세로(x축)':'가로(y축)')+' 쪽만 없음 — 점을 찍었으면 두 축 다 이어 좌표를 읽게 할 것'});
+        });
+      }
+    }
+
+    /* ⑤-3 [2026-08-09] 점이 교점에서 어긋남 — GRP_DOT_OFF_CURVE.
+       균형점을 눈대중으로 찍어 실제 교점에서 10~25px 벗어난 그림이 13개 있었다.
+       그림이 제 말을 어길 뿐 아니라, 점 색 3단 규칙("교점은 검정")도 같이 어긋난다
+       — 교점을 벗어난 점은 "곡선 하나 위"로 읽혀 엉뚱한 색이 입혀진다.
+       판정: 곡선 두 개가 실제로 만나는 자리 12px 안에 있으면서, 정작 어느 곡선에도
+       2.5px 안으로 붙어 있지 않은 점. 값이 싼 **직선끼리의 교차만** 본다
+       (곡선 path 는 표본을 떠야 해서 게이트에서는 보류 — 그건 눈으로 본다). */
+    if(_qcOn('graph','GRP_DOT_OFF_CURVE') && !_noAxis){
+      var _dl=lines.filter(function(l){
+        if(![l.x1,l.y1,l.x2,l.y2].every(function(n){ return n!=null&&!isNaN(n); })) return false;
+        if(l.w<1.5) return false;
+        return Math.abs(l.x2-l.x1)>=2 && Math.abs(l.y2-l.y1)>=2;      /* 기울어진 관계선만 */
+      });
+      if(_dl.length>=2){
+        var _xs=[];
+        for(var a=0;a<_dl.length;a++) for(var b=a+1;b<_dl.length;b++){
+          var A=_dl[a], B=_dl[b];
+          var d=(A.x2-A.x1)*(B.y2-B.y1)-(A.y2-A.y1)*(B.x2-B.x1);
+          if(Math.abs(d)<1e-6) continue;
+          var t=((B.x1-A.x1)*(B.y2-B.y1)-(B.y1-A.y1)*(B.x2-B.x1))/d;
+          var u=((B.x1-A.x1)*(A.y2-A.y1)-(B.y1-A.y1)*(A.x2-A.x1))/d;
+          if(t<0||t>1||u<0||u>1) continue;                            /* 그려진 구간 밖의 만남은 안 본다 */
+          _xs.push([A.x1+t*(A.x2-A.x1), A.y1+t*(A.y2-A.y1)]);
+        }
+        if(_xs.length){
+          function _distSeg(l,px,py){
+            var dx=l.x2-l.x1, dy=l.y2-l.y1, L2=dx*dx+dy*dy; if(!L2) return 1e9;
+            var q=((px-l.x1)*dx+(py-l.y1)*dy)/L2; q=Math.max(0,Math.min(1,q));
+            return Math.sqrt(Math.pow(l.x1+q*dx-px,2)+Math.pow(l.y1+q*dy-py,2));
+          }
+          (svg.match(/<circle[^>]*\/?>/g)||[]).forEach(function(t){
+            var cx=num(t,'cx'), cy=num(t,'cy');
+            if(cx==null||cy==null||isNaN(cx)||isNaN(cy)) return;
+            var on=_dl.filter(function(l){ return _distSeg(l,cx,cy)<2.5; }).length;
+            if(on>=2) return;                                          /* 이미 교점 위 */
+            var best=null, bd=1e9;
+            _xs.forEach(function(z){ var dd=Math.sqrt(Math.pow(z[0]-cx,2)+Math.pow(z[1]-cy,2));
+              if(dd<bd){ bd=dd; best=z; } });
+            if(best==null || bd<2.5 || bd>12) return;
+            v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_DOT_OFF_CURVE',
+              msg:'점 ('+Math.round(cx)+','+Math.round(cy)+') 이 실제 교점 ('+Math.round(best[0])+','+Math.round(best[1])+') 에서 '+bd.toFixed(1)+'px 어긋남 — 교점으로 옮길 것(점 색도 따라 바뀐다)'});
+          });
+        }
+      }
+    }
+
+    /* ⑤-4 [2026-08-09] 안내 점선이 데이터 선 위에 겹침 — GRP_GUIDE_OVER_LINE.
+       가로·세로로 놓인 데이터 선(LRAS·LRPC·기본임대료 같은)이 이미 축까지 닿아 있으면
+       그 선이 곧 안내선이다. 그 위에 회색 점선을 또 그으면 굵은 색선 위에 점선이 얹혀 보인다.
+       내가 "안내선 두 축" 배치를 돌리다 21군데를 그렇게 만들었다. 겹치는 길이 10px 초과만 본다. */
+    if(_qcOn('graph','GRP_GUIDE_OVER_LINE')){
+      var _og=lines.filter(function(l){ return l.dash && l.w<=1.2 && [l.x1,l.y1,l.x2,l.y2].every(function(n){ return n!=null&&!isNaN(n); }); });
+      var _od=lines.filter(function(l){ return !l.dash && l.w>=1.5 && [l.x1,l.y1,l.x2,l.y2].every(function(n){ return n!=null&&!isNaN(n); }); });
+      _og.forEach(function(gd){
+        var gHz=Math.abs(gd.y1-gd.y2)<1, gVt=Math.abs(gd.x1-gd.x2)<1;
+        if(!gHz&&!gVt) return;
+        _od.forEach(function(d){
+          var ov=0;
+          if(gHz && Math.abs(d.y1-d.y2)<1 && Math.abs(gd.y1-d.y1)<1.5)
+            ov=Math.min(Math.max(gd.x1,gd.x2),Math.max(d.x1,d.x2))-Math.max(Math.min(gd.x1,gd.x2),Math.min(d.x1,d.x2));
+          else if(gVt && Math.abs(d.x1-d.x2)<1 && Math.abs(gd.x1-d.x1)<1.5)
+            ov=Math.min(Math.max(gd.y1,gd.y2),Math.max(d.y1,d.y2))-Math.max(Math.min(gd.y1,gd.y2),Math.min(d.y1,d.y2));
+          if(ov>10)
+            v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_GUIDE_OVER_LINE',
+              msg:(gHz?'가로':'세로')+' 안내 점선이 데이터 선 위에 '+Math.round(ov)+'px 겹침 — 그 선이 이미 축까지 닿으면 점선은 지우고, 모자라는 토막만 남길 것'});
+        });
+      });
+    }
 
     /* [2026-08-07] 글자끼리 겹침. 읽는 법을 축 아래에 붙이다가 원래 있던 설명 줄 위에 얹어
        두 문장이 포개진 적이 있다(grp_econ_indifference_curve). 선만 보던 게이트는 못 잡았다.
