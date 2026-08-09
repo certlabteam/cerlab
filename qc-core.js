@@ -1190,14 +1190,18 @@ try{
     return pts;
   }
   /* 점 목록이 글자 상자 안을 지나는 길이(px) */
+  /* [2026-08-09 고침] 곡선이 글자를 **관통**하면 0 이 나오던 버그.
+     _qcPathPts 는 베지에 한 토막을 8점으로만 뜬다(표본 사이가 20~40px 벌어진다).
+     그런데 여기서는 "양 끝점 중 하나가 상자 안일 때"만 길이를 세었다. 작은 글자 상자를
+     한 표본구간이 가로지르면 두 끝이 다 바깥이라 한 푼도 안 세어졌다.
+     라이브 실측: 3px 넘게 파고드는 곡선 12건 중 게이트가 잡던 것은 2건뿐이었다.
+     직선용 _qcSegInBox 는 이미 잘게 쪼개 재고 있으니 그것을 그대로 쓴다. */
   function _qcPolyInBox(pts, bx1, by1, bx2, by2){
     var len=0;
     for(var i=1;i<pts.length;i++){
       var a=pts[i-1], b=pts[i];
-      var inA=(a[0]>=bx1&&a[0]<=bx2&&a[1]>=by1&&a[1]<=by2);
-      var inB=(b[0]>=bx1&&b[0]<=bx2&&b[1]>=by1&&b[1]<=by2);
-      if(inA||inB){ var f=(inA&&inB)?1:0.5;
-        len+=f*Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2)); }
+      if(a[0]==null||b[0]==null||isNaN(a[0])||isNaN(b[0])||isNaN(a[1])||isNaN(b[1])) continue;
+      len+=_qcSegInBox({x1:a[0],y1:a[1],x2:b[0],y2:b[1]}, bx1, by1, bx2, by2);
     }
     return len;
   }
