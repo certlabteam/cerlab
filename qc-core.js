@@ -1241,7 +1241,10 @@ try{
     function attr(tag,k){ var m=tag.match(new RegExp(k+'\\s*=\\s*(?:"([^"]*)"|\'([^\']*)\')'));
       return m?(m[1]!=null?m[1]:m[2]):null; }
     function num(tag,k){ var s=attr(tag,k); return s==null?null:parseFloat(s); }
-    var isDark=function(c){ return !c || /^#(0f172a|000|000000|1e293b|334155|475569|64748b|94a3b8|e[0-9a-f]{5}|f[0-9a-f]{5})$/i.test(String(c).replace(/\s/g,'')); };
+    /* [2026-08-09] cbd5e1 추가 — 중립 슬레이트 사다리(#0F172A~#F8FAFC)에서 이것만 빠져 있었다.
+       그 탓에 IS-LM 의 연회색 IS선·해제 전개도의 기한 괄호선이 "색선인데 이름표 없음"으로
+       걸렸다. 회색은 색 부호가 아니므로 "색이 유일한 단서" 전제가 성립하지 않는다. */
+    var isDark=function(c){ return !c || /^#(0f172a|000|000000|1e293b|334155|475569|64748b|94a3b8|cbd5e1|e[0-9a-f]{5}|f[0-9a-f]{5})$/i.test(String(c).replace(/\s/g,'')); };
     var texts=[], lines=[];
     (svg.match(/<text[^>]*>[^<]*<\/text>/g)||[]).forEach(function(t){
       texts.push({x:num(t,'x'), y:num(t,'y'), fs:parseFloat(attr(t,'font-size')||'10'), fill:attr(t,'fill'), anchor:attr(t,'text-anchor'), s:(t.match(/>([^<]*)</)||[])[1]||''});
