@@ -322,7 +322,7 @@ var _QC_DEFAULTS={
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
   mnem:{MN_LETTER_UNEXPLAINED:{on:true},MN_QSPECIFIC_TRAP:{on:true},MN_DESC_EMPTY:{on:true},MN_NO_K:{on:true},MN_DESC_NO_RED:{on:true},MN_DESC_REDUP:{on:true},MN_SLASH:{on:true},MN_DUP:{on:true},MN_SYMBOL:{on:true},MN_DESC_SHORT:{on:true,minChars:25},MN_DESC_LIST_ONLY:{on:true},MN_DESC_NO_TOPIC:{on:true}},
   table:{TBL_RAGGED:{on:true},TBL_NO_CAPTION:{on:true},TBL_NO_HEADERS:{on:true},TBL_NO_ROWS:{on:true},TBL_HTML_NO_TYPE:{on:true},TBL_DUP:{on:true}},
-  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,endPx:30,darkLabelChars:8},GRP_PALETTE:{on:true},GRP_ARROW_OVERLAP:{on:true,minPx:3},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_ONE_AXIS:{on:true},GRP_DOT_OFF_CURVE:{on:true},GRP_GUIDE_OVER_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true,minX:0,minY:0},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
+  graph:{GRP_PARAMS_OBJ:{on:true},GRP_TYPE:{on:true},GRP_NO_SVG:{on:true},GRP_SVG_MALFORMED:{on:true},GRP_RAW_LT:{on:true},GRP_RAW_LT_ATTR:{on:true},GRP_STRAY_SLASH:{on:true},GRP_EXTERNAL:{on:true},GRP_NO_VIEWBOX:{on:true},GRP_FONT:{on:true},GRP_NO_TEXT:{on:true},GRP_EMDASH:{on:true},GRP_DUP:{on:true},GRP_SAME_DRAW:{on:true},GRP_NO_GUIDE:{on:true},GRP_TEXT_CLIP:{on:true},GRP_LINE_COLORED:{on:true,endPx:30,darkLabelChars:8},GRP_PALETTE:{on:true},GRP_ARROW_OVERLAP:{on:true,minPx:3},GRP_COLOR_ORPHAN:{on:true},GRP_LABEL_ON_LINE:{on:true},GRP_GUIDE_ONE_AXIS:{on:true},GRP_DOT_OFF_CURVE:{on:true},GRP_GUIDE_OVER_LINE:{on:true},GRP_GUIDE_NARROW:{on:true,ratio:0.72},GRP_TEXT_OVERLAP:{on:true,minX:0,minY:0},GRP_FLOW_ARROW:{on:true,tolPx:3},GRP_FLOW_GUIDE:{on:true},GRP_FLOW_ALIGN:{on:true}},
   interactive:{ITV_UNKNOWN:{on:true},ITV_NO_PARAMS:{on:true},ITV_DUP:{on:true}}
 };
 
@@ -1076,6 +1076,14 @@ try{
   function _qcIsSvgEl(name){ var n=String(name||'').toLowerCase(); return !!_QC_SVG_EL[n] || /^fe[a-z]/.test(n); }
 
   // ---- 그래프(SVG) 마스터 검수 ----
+  /* 그림 몸통 지문 — 읽는 법 블록(9.5px 회색 글)과 viewBox 는 나중에 붙거나 늘어나므로 뺀다 */
+  var _qcSameDraw={};
+  function _qcDrawKey(svg){
+    var b=String(svg||'').replace(/<text[^>]*font-size=["']9\.5["'][^>]*>[\s\S]*?<\/text>/g,'')
+      .replace(/viewBox=["'][^"']*["']/,'').replace(/\s+/g,' ').trim();
+    var h=0; for(var i=0;i<b.length;i++){ h=((h<<5)-h+b.charCodeAt(i))|0; }
+    return b.length+':'+(h>>>0).toString(36);
+  }
   function _qcGraphAudit(arr){ var v=[],seen={};
     _qcAsArr(arr).forEach(function(g){ if(!g) return; var id=(g.id!=null)?String(g.id):'?';
       if(_qcDupChk(seen,id,'graph','GRP_DUP','그래프',v)) return; _qcRecDate(g,id,v);
@@ -1146,7 +1154,27 @@ try{
       /* [2026-08-07] kind — 'chart'(축 있는 그래프) / 'flow'(축 없는 전개도·흐름도) / 없음(=애매, chart 규칙).
          296개 중 flow 43개는 박스 글자가 이미 설명이라 "읽는 법"이 군더더기다. 분류·근거는 인계 문서. */
       _qcGraphRules(id, svg, v, g.kind, g.layout);
-    }); _qcApplySev(v); return v; }
+      if(_qcOn('graph','GRP_SAME_DRAW')) _qcSameDraw[id]=_qcDrawKey(svg);
+    });
+    /* [2026-08-10] 같은 그림을 두 문서로 갖고 있는 것 (GRP_SAME_DRAW).
+       크리스: "만든거 또만드는게 많다 확인해". 실제로 25쌍 50문서가 몸통까지 똑같았고,
+       그림은 같은데 개념 문서는 서로 달라서 각각 따로 손보고 있었다. 한 판을 고치면
+       나머지는 그대로 남아 어긋난다.
+       읽는 법 블록은 나중에 붙는 것이라 빼고 몸통만 견준다. 문서를 한 장씩 넘길 때는
+       비교할 짝이 없으므로 두 장 이상 넘겼을 때만 잰다. */
+    if(_qcOn('graph','GRP_SAME_DRAW')){
+      var _sdIds=Object.keys(_qcSameDraw);
+      if(_sdIds.length>1){
+        var _sdBy={}; _sdIds.forEach(function(k){ (_sdBy[_qcSameDraw[k]]=_sdBy[_qcSameDraw[k]]||[]).push(k); });
+        Object.keys(_sdBy).forEach(function(k){ var a=_sdBy[k]; if(a.length<2) return;
+          a.forEach(function(id){ v.push({id:id,kind:'warn',field:'svg',idx:0,code:'GRP_SAME_DRAW',
+            msg:'그림이 똑같은 문서가 '+a.length+'개 — '+a.filter(function(x){return x!==id;}).join(', ')+
+                ' · 한 장만 남기고 참조를 옮길 것'}); });
+        });
+      }
+      _qcSameDraw={};
+    }
+    _qcApplySev(v); return v; }
 
   /* [2026-08-07] path(곡선)를 점으로 풀어 샘플링한다. 브라우저 getPointAtLength 를 못 쓰므로
      M·L·H·V·C·S·Q·T·Z 를 직접 계산한다(A 호는 드물어 건너뜀 — 만나면 그 구간만 직선으로 잇는다).
