@@ -1080,7 +1080,13 @@ try{
   var _qcSameDraw={};
   function _qcDrawKey(svg){
     var b=String(svg||'').replace(/<text[^>]*font-size=["']9\.5["'][^>]*>[\s\S]*?<\/text>/g,'')
-      .replace(/viewBox=["'][^"']*["']/,'').replace(/\s+/g,' ').trim();
+      .replace(/viewBox=["'][^"']*["']/,'')
+      /* [2026-08-10] 제목도 뺀다. 크리스: "조세의 전가와 귀착 이거 중복인데".
+         c2cfdfd41·c6c42dd11·cd6bc3205 는 156자째 제목 글자만 다르고 그 뒤로는
+         한 글자도 안 달랐는데, 몸통을 통째로 견주다 보니 남남으로 봤다.
+         제목은 관례상 맨 앞 <text> 하나다. */
+      .replace(/<text[\s\S]*?<\/text>/,'')
+      .replace(/\s+/g,' ').trim();
     var h=0; for(var i=0;i<b.length;i++){ h=((h<<5)-h+b.charCodeAt(i))|0; }
     return b.length+':'+(h>>>0).toString(36);
   }
