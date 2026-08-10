@@ -935,7 +935,7 @@ function _pushMaybePrompt(){
   try{
     if(_pushBannerShown) return;
     if(typeof currentUser==='undefined' || !currentUser) return;          // 토큰 대상 uid 필요
-    if(typeof totalSolve==='function' && totalSolve()<30) return;          // 누적 30문제(전 시험 통합)
+    if(typeof totalSolve==='function' && totalSolve()<10) return;          // 누적 10문제(전 시험 통합). 30이면 로그인 하루한도(20)를 못 넘어 이틀차에나 뜨는데, 그 전에 이탈해 토큰이 0이었다
     if(!('Notification' in window) || Notification.permission!=='default') return;
     if(_pushIsIOS() || _pushSnoozed()) return;
     var busy=['loginPopup','planPopup','inappPopup','guestFeatPopup','refundPopup','conceptOfferPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
