@@ -974,7 +974,7 @@ function imgComboOXRow(q){
     if(mqInReview) return '';
     if(!isComboQuestion(q.opts)) return '';
     if(q && q.jaryo && /<table/i.test(String(q.jaryo))) return '';   // [2026-07-20] 문제보기가 표면 표 안 O/X 칸(injectTableOX)으로 처리 → 아래 줄 억제
-    if(parseJaryoStmts(q.q).length) return '';     // 자료 텍스트에 지문 있으면 기존(지문별) 방식
+    if(parseJaryoStmts(q.q, q.jaryo).length) return '';     // 자료 텍스트에 지문 있으면 기존(지문별) 방식 ([2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 0으로 읽혀 O/X 줄이 중복 렌더됐다)
     var letters=comboLettersFromOpts(q.opts);
     if(letters.length<2) return '';
     var groups=letters.map(function(k){
@@ -1231,7 +1231,7 @@ function renderMcqExam(root){
     var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false) ? false : (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
     if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
     var isCombo=isComboQuestion(q.opts);
-    var stmts = isCombo ? parseJaryoStmts(q.q) : [];
+    var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
