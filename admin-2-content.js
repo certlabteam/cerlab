@@ -644,7 +644,11 @@ async function eaEditSave(id){
     if(e.type==='subjective'){ var _as=document.getElementById(pid+'_aisell'); e.aiGrade={ enabled: _as? !!_as.checked : true }; }
     var idx=_eaExams.findIndex(function(x){return x.id===id;});
     _eaExams[idx]=e;
-    await db.collection('manifest').doc('exams').update({ exams: _eaExams });
+    // 매니페스트는 트랜잭션으로 쓴다 — 이 시험 블록만 바꾸므로 다른 시험은 안 건드린다
+    await manifestUpdate(function(live){
+      var i=live.findIndex(function(x){return x&&x.id===id;});
+      if(i<0) live.push(e); else live[i]=e;
+    });
     var gid=(g('gid')||'').trim(), qmsg='';
     if(gid){
       var qtab=parseInt(g('qtab')||'0',10)||0;
@@ -707,7 +711,11 @@ async function eaSave(){
     var idx=exams.findIndex(function(e){return e.id===b.id;});
     if(idx>=0){ if(!confirm('이미 있는 시험 ID "'+b.id+'" ('+(exams[idx].name||'')+')\n\n이 블록을 새 내용으로 덮어쓸까요? (기존 과목·버전이 바뀔 수 있음)')){ st.textContent='취소됨.'; return; } exams[idx]=b; }
     else { exams.push(b); }
-    await db.collection('manifest').doc('exams').update({ exams: exams });
+    // 매니페스트는 트랜잭션으로 쓴다 — 이 시험 블록만 넣거나 바꾼다
+    await manifestUpdate(function(live){
+      var i=live.findIndex(function(e){return e&&e.id===b.id;});
+      if(i>=0) live[i]=b; else live.push(b);
+    });
     // 큐넷 자동수집 등록: gId 있으면 examSchedules에 source:'qnet' 시드 → 크롤러가 매주 시험일 자동수집
     var _gid=(_eaVal('eaGid')||'').trim(); var _qnetMsg='';
     if(_gid){

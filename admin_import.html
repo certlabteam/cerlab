@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
+<script src="manifest-tx.js?v=d0b27757"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
@@ -960,7 +961,7 @@ async function impSyncManifestVersions(done){
     const snap=await ref.get();
     if(!snap.exists){ impLog('⚠ manifest/exams 문서가 없어 버전 동기화 건너뜀.','#C2410C'); return; }
     const exams=(snap.data().exams||[]).map(e=>Object.assign({},e));
-    let changed=0; const missing=[];
+    let changed=0; const missing=[], setVers=[];
     for(const it of done){
       const ex=exams.find(e=>e.id===it.cert);
       if(!ex){ missing.push(it.cert+'/'+it.subject+'(cert 미등록)'); continue; }
@@ -969,10 +970,17 @@ async function impSyncManifestVersions(done){
       const nv=(typeof it.curVer==='number')?it.curVer:Number(it.curVer);
       if(!isFinite(nv)){ missing.push(it.cert+'/'+it.subject+'(버전 불명)'); continue; }
       const cur=(ex.versions&&ex.versions[it.subject]);
-      if(cur!==nv){ ex.versions=Object.assign({},ex.versions,{[it.subject]:nv}); changed++; impLog('  manifest '+it.cert+'.'+it.subject+' ver '+(cur==null?'(없음)':cur)+' → '+nv,'#15793F'); }
+      if(cur!==nv){ ex.versions=Object.assign({},ex.versions,{[it.subject]:nv}); changed++; setVers.push({id:it.cert, code:it.subject, to:nv}); impLog('  manifest '+it.cert+'.'+it.subject+' ver '+(cur==null?'(없음)':cur)+' → '+nv,'#15793F'); }
     }
     if(changed){
-      await ref.update({ exams });
+      // 매니페스트는 트랜잭션으로 쓴다 — 바뀐 versions 만 최신 배열에 얹는다(다른 방 변경 보존)
+      await manifestUpdate(function(live){
+        setVers.forEach(function(v){
+          const e=live.find(function(x){return x&&x.id===v.id;});
+          if(!e) return;
+          e.versions=Object.assign({}, e.versions||{}, {[v.code]: v.to});
+        });
+      });
       impLog('✓ manifest 버전 동기화 완료 — '+changed+'개 과목. 전원 즉시 새 데이터 수신.','#15793F');
     } else {
       impLog('manifest 버전 변경 없음(이미 동일).','#5B50C0');

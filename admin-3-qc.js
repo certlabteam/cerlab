@@ -224,12 +224,13 @@ async function _impAutoManifest(uploadedCerts){
     let exams=(mSnap.exists && Array.isArray(mSnap.data().exams))?mSnap.data().exams.slice():[];
     const byId=new Map(exams.map(e=>[e&&e.id,e]));
     let regNew=0, regSubj=0, synced=0;
+    const addExams=[], addSubjs=[], setVers=[];   // 트랜잭션에서 반영할 결과만 모은다
     // (A) 번들에 manifest 블록이 있으면 신규 시험·과목만 병합(기존 무수정)
     if(impBundleManifest && Array.isArray(impBundleManifest.exams)){
       for(const e of impBundleManifest.exams){
         if(!e||!e.id) continue;
         const exist=byId.get(e.id);
-        if(!exist){ exams.push(e); byId.set(e.id,e); regNew++; continue; }
+        if(!exist){ exams.push(e); byId.set(e.id,e); addExams.push(e); regNew++; continue; }
         exist.subjects=Array.isArray(exist.subjects)?exist.subjects:[];
         exist.versions=exist.versions||{};
         const have=new Set(exist.subjects.map(s=>s&&s.code));
@@ -237,7 +238,8 @@ async function _impAutoManifest(uploadedCerts){
           if(!s||!s.code||have.has(s.code)) continue;
           let bv=(e.versions&&typeof e.versions[s.code]==='number')?e.versions[s.code]:1;
           try{ const bd=await db.collection('banks').doc(e.id+'__'+s.code).get(); if(bd.exists&&typeof bd.data().version==='number') bv=bd.data().version; }catch(_){}
-          exist.subjects.push({code:s.code,name:s.name||s.code}); exist.versions[s.code]=bv; regSubj++;
+          exist.subjects.push({code:s.code,name:s.name||s.code}); exist.versions[s.code]=bv;
+          addSubjs.push({id:e.id, code:s.code, name:s.name||s.code, ver:bv}); regSubj++;
         }
       }
     }
@@ -252,13 +254,27 @@ async function _impAutoManifest(uploadedCerts){
           const bd=await db.collection('banks').doc(ex.id+'__'+sub.code).get();
           if(!bd.exists) continue;
           const bv=bd.data().version;
-          if(typeof bv==='number' && ex.versions[sub.code]!==bv){ ex.versions[sub.code]=bv; synced++; }
+          if(typeof bv==='number' && ex.versions[sub.code]!==bv){ ex.versions[sub.code]=bv; setVers.push({id:ex.id, code:sub.code, to:bv}); synced++; }
         }catch(_){}
       }
     }
     if(regNew||regSubj||synced){
-      if(mSnap.exists) await db.collection('manifest').doc('exams').update({exams});
-      else await db.collection('manifest').doc('exams').set({exams});
+      // 매니페스트는 트랜잭션으로 쓴다 — 새 시험·새 과목·바뀐 버전만 최신 배열에 얹는다
+      await manifestUpdate(function(live){
+        const byLive=new Map(live.map(e=>[e&&e.id, e]));
+        for(const e of addExams){ if(!byLive.has(e.id)){ live.push(e); byLive.set(e.id,e); } }
+        for(const a of addSubjs){
+          const ex=byLive.get(a.id); if(!ex) continue;
+          ex.subjects=Array.isArray(ex.subjects)?ex.subjects:[];
+          ex.versions=ex.versions||{};
+          if(ex.subjects.some(s=>s&&s.code===a.code)) continue;
+          ex.subjects.push({code:a.code,name:a.name}); ex.versions[a.code]=a.ver;
+        }
+        for(const v of setVers){
+          const ex=byLive.get(v.id); if(!ex) continue;
+          ex.versions=ex.versions||{}; ex.versions[v.code]=v.to;
+        }
+      });
       impLog('✓ manifest 자동 반영 — 새 시험 '+regNew+' · 새 과목 '+regSubj+' · 버전 동기화 '+synced+'건','#15793F');
     } else {
       impLog('· manifest 변경 없음(이미 최신)','#8A7D6E');
@@ -823,7 +839,13 @@ async function forceBump(){
     if(!confirm('['+(ex.name||cert)+'] version +1 (bank·manifest 동시):\n\n'+plan.map(p=>'  '+p.code+': '+p.from+' → '+p.to).join('\n')+'\n\n전체 사용자가 새로 받게 됩니다. 적용할까요?')){ st.textContent='취소됨.'; return; }
     // bank version +1
     for(const p of plan){ if(p.exists){ await db.collection('banks').doc(cert+'__'+p.code).update({version:p.to}); } ex.versions[p.code]=p.to; }
-    await db.collection('manifest').doc('exams').update({ exams: exams });
+    // 매니페스트는 트랜잭션으로 쓴다 — 해당 시험의 versions 만 손대므로 다른 시험은 안 건드린다
+    await manifestUpdate(function(live){
+      var e=live.find(function(x){return x&&x.id===cert;});
+      if(!e) throw new Error('manifest 에서 '+cert+' 를 못 찾았습니다');
+      e.versions=e.versions||{};
+      plan.forEach(function(p){ e.versions[p.code]=p.to; });
+    });
     st.innerHTML='✅ 완료 — '+plan.length+'과목 version +1.<br><span style="font-size:11px;color:#A89C8E">'+plan.map(p=>p.code+': '+p.from+'→'+p.to).join('<br>')+'</span><br>이제 모든 사용자가 새 데이터를 받습니다.';
   }catch(e){ st.textContent='오류: '+e.message; }
 }
@@ -835,7 +857,7 @@ async function syncManifest(){
     if(!mSnap.exists){ st.textContent='manifest/exams 문서가 없습니다.'; return; }
     const manifest=mSnap.data();
     const exams=manifest.exams||[];
-    let changes=[]; 
+    let changes=[]; const plan=[];   // plan: 트랜잭션 안에서 그대로 반영할 결과만 모은다
     for(const ex of exams){
       ex.versions = ex.versions || {};
       for(const sub of (ex.subjects||[])){
@@ -845,6 +867,7 @@ async function syncManifest(){
           const bankVer = bd.data().version;
           if(typeof bankVer==='number' && ex.versions[sub.code]!==bankVer){
             changes.push(ex.id+'/'+sub.code+': '+(ex.versions[sub.code]??'-')+' → '+bankVer);
+            plan.push({id:ex.id, code:sub.code, to:bankVer});
             ex.versions[sub.code]=bankVer;
           }
         }catch(_){}
@@ -852,7 +875,15 @@ async function syncManifest(){
     }
     if(!changes.length){ st.innerHTML='✅ 이미 모두 일치합니다. 변경 없음.'; return; }
     if(!confirm('manifest version을 bank와 일치시킵니다 ('+changes.length+'건):\n\n'+changes.join('\n')+'\n\n적용할까요?')){ st.textContent='취소됨.'; return; }
-    await db.collection('manifest').doc('exams').update({ exams: exams });
+    // 매니페스트는 트랜잭션으로 쓴다 — 바꿀 versions 만 최신 배열에 얹는다
+    await manifestUpdate(function(live){
+      plan.forEach(function(p){
+        var e=live.find(function(x){return x&&x.id===p.id;});
+        if(!e) return;
+        e.versions=e.versions||{};
+        e.versions[p.code]=p.to;
+      });
+    });
     st.innerHTML='✅ 동기화 완료 — '+changes.length+'건 갱신.<br><span style="font-size:11px;color:#A89C8E">'+changes.join('<br>')+'</span><br>앱에서 Ctrl+Shift+R 하면 새 데이터가 보입니다.';
   }catch(e){ st.textContent='오류: '+e.message; }
 }
@@ -868,7 +899,7 @@ async function registerManifestExams(){
     const cur=(mSnap.exists && mSnap.data())||{};
     const exams=Array.isArray(cur.exams)?cur.exams.slice():[];
     const byId=new Map(exams.map(e=>[e&&e.id, e]));
-    const toAdd=[], skip=[], subjAdds=[];
+    const toAdd=[], skip=[], subjAdds=[], subjPlan=[];   // subjPlan: 트랜잭션에서 반영할 새 과목
     for(const e of impBundleManifest.exams){
       if(!e||!e.id) continue;
       const exist=byId.get(e.id);
@@ -884,6 +915,7 @@ async function registerManifestExams(){
         try{ const bd=await db.collection('banks').doc(e.id+'__'+s.code).get(); if(bd.exists && typeof bd.data().version==='number') bv=bd.data().version; }catch(_){}
         exist.subjects.push({code:s.code, name:s.name||s.code});
         exist.versions[s.code]=bv; added++;
+        subjPlan.push({id:e.id, code:s.code, name:s.name||s.code, ver:bv});
         subjAdds.push(e.id+' / '+s.code+' ('+(s.name||'')+') v'+bv);
       }
       if(!added) skip.push(e.id);
@@ -897,9 +929,19 @@ async function registerManifestExams(){
       subjAdds.map(x=>'  + 새 과목 '+x)
     );
     if(!confirm('아래를 매니페스트에 추가합니다.\n기존 시험·과목은 그대로 유지(삭제·덮어쓰기 없음).\n\n'+lines.join('\n')+'\n\n계속할까요?')){ st.textContent='취소됨.'; return; }
-    const merged=exams.concat(toAdd);
-    if(mSnap.exists) await db.collection('manifest').doc('exams').update({ exams: merged });
-    else await db.collection('manifest').doc('exams').set({ exams: merged });
+    // 매니페스트는 트랜잭션으로 쓴다 — 새 시험 추가와 새 과목 추가만 최신 배열에 얹는다
+    await manifestUpdate(function(live){
+      const byLive=new Map(live.map(e=>[e&&e.id, e]));
+      for(const e of toAdd){ if(!byLive.has(e.id)){ live.push(e); byLive.set(e.id,e); } }
+      for(const a of subjPlan){
+        const ex=byLive.get(a.id); if(!ex) continue;
+        ex.subjects=Array.isArray(ex.subjects)?ex.subjects:[];
+        ex.versions=ex.versions||{};
+        if(ex.subjects.some(s=>s&&s.code===a.code)) continue;   // 그새 누가 넣었으면 건너뛴다
+        ex.subjects.push({code:a.code, name:a.name});
+        ex.versions[a.code]=a.ver;
+      }
+    });
     st.innerHTML='✅ 등록 완료 — 새 시험 <b>'+toAdd.length+'</b>개, 새 과목 <b>'+subjAdds.length+'</b>개.<br>'
       +'<span style="font-size:11px;color:#A89C8E">앱에서 Ctrl+Shift+R(또는 ?v=숫자) 후 노출됩니다. 안 보이면 위 "⬆ 업로드 실행"으로 banks도 올렸는지 확인하세요.</span>'
       +(subjAdds.length?('<br><span style="font-size:11px;color:#0C447C">새 과목: '+subjAdds.join(' · ')+'</span>'):'');
@@ -937,7 +979,12 @@ async function renameExam(){
     if(old===nm){ st.textContent='이름이 같습니다. 변경 없음.'; return; }
     if(!confirm('시험 이름을 바꿉니다:\n\n'+id+'\n"'+old+'" → "'+nm+'"\n\n계속할까요?')){ st.textContent='취소됨.'; return; }
     exams[idx]=Object.assign({},exams[idx],{name:nm});
-    await db.collection('manifest').doc('exams').update({ exams: exams });
+    // 매니페스트는 트랜잭션으로 쓴다(다른 방이 동시에 써도 안 지워지게)
+    await manifestUpdate(function(live){
+      var i=live.findIndex(function(x){return x&&x.id===id;});
+      if(i<0) throw new Error('manifest 에서 '+id+' 를 못 찾았습니다');
+      live[i]=Object.assign({},live[i],{name:nm});
+    });
     _renameExams=exams; _expExams=null;
     const sel=document.getElementById('renameExamSel');
     sel.innerHTML='<option value="">— 시험 선택 —</option>'+exams.map(e=>'<option value="'+_esc(e.id)+'"'+(e.id===id?' selected':'')+'>'+_esc((e.name||e.id)+' ('+e.id+')')+'</option>').join('');
