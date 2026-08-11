@@ -588,6 +588,14 @@ function renderSubjExam(root){
   try{ okOpen=CLSubj.openOne(host, exam, idx, opts); }
   catch(e){ console.error('subj openOne',e); host.innerHTML='<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:13px;line-height:1.7">문제를 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; return; }
   if(okOpen===false){ mqBackHome(); return; }   // 무료 한도 게이트(로그인/결제 안내는 canAccessSubjective가 띄움) → 목록으로
+  // [2026-08-11] 주관식도 문제별 단독 URL — 객관식은 index-4-learn.js 에서 하는데 그 코드는
+  //   mqScreen==='exam' 조건이라 주관식('subjexam')은 여태 안 걸려 주소창이 안 바뀌었다.
+  //   레벨업('lu2')·레벨테스트 화면은 mqScreen 이 달라 여기 안 들어온다.
+  try{
+    var _cq=list[idx];
+    if(mqScreen==='subjexam' && _cq && _cq.id)
+      history.replaceState(null,'',location.pathname+location.search+'#q/'+cert+'/'+_cq.id);
+  }catch(_){}
   window.scrollTo(0,0);
 }
 function buildCertRegistry(man){
@@ -1128,6 +1136,15 @@ function clRouteFromHash(){
     var qb=(typeof qbOf==='function')?qbOf(cs.cert):null, sub=qb&&qb[cs.sub]; if(!sub||!sub.sets) return false;
     var si=sub.sets.findIndex(function(s){return s.label===cs.lab;}); if(si<0) return false;
     var qi=sub.sets[si].questions.findIndex(function(x){return x&&x.id===qid;}); if(qi<0) return false;
+    // [2026-08-11] 주관식(2차)은 객관식 렌더러로 열면 안 된다 — resumeMcqExam 은 보기·정답 기준이라
+    //   asks/outline 문항에서 화면이 깨진다. 주관식 시험이면 startSubjExam 으로 회차에 들어가 그 문제로 옮긴다.
+    if(typeof _isSubjCert==='function' && _isSubjCert(cs.cert)){
+      if(typeof startSubjExam!=='function' || typeof renderMCQ!=='function') return false;
+      startSubjExam(cs.sub, si);
+      if(!subjRun) return false;
+      subjRun.idx=qi; renderMCQ(); try{ window.scrollTo(0,0); }catch(_){}
+      return true;
+    }
     if(typeof resumeMcqExam!=='function' || typeof renderMCQ!=='function') return false;
     resumeMcqExam(cs.sub, si); mqIdx=qi; renderMCQ(); try{ window.scrollTo(0,0); }catch(_){}
     return true;

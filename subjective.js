@@ -13,10 +13,12 @@
   var ROMAN=['','Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ','Ⅷ','Ⅸ','Ⅹ'];
   var HAN=['','가','나','다','라','마','바','사','아','자','차'];
   // 감평 2차 실제 목차 체계: 대 Ⅰ · 중 1 · 소 (1) · 세 가  (박문각 목차집 확인)
+  // [2026-08-11] 소목차를 '(1)' 괄호에서 '1)' 로 바꿨다 — 괄호로 감싸면 작아 보여 잘 안 읽힌다는 지적.
+  //   번호는 여기서만 만든다. 데이터 h 에는 번호를 넣지 않는다(넣으면 두 번 찍힘).
   function _mokchaNum(lv, c){ lv=lv<1?1:(lv>4?4:lv);
     if(lv===1){c[0]++;c[1]=0;c[2]=0;c[3]=0;return (ROMAN[c[0]]||c[0])+'.';}
     if(lv===2){c[1]++;c[2]=0;c[3]=0;return c[1]+'.';}
-    if(lv===3){c[2]++;c[3]=0;return '('+c[2]+')';}
+    if(lv===3){c[2]++;c[3]=0;return c[2]+')';}
     c[3]++;return (HAN[c[3]]||c[3])+'.'; }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function norm(s){ return String(s||'').replace(/\s+/g,'').toLowerCase(); }
@@ -114,7 +116,7 @@
     +'.subj-view .subj-node.lv3{margin-left:26px;padding-left:12px;border-left:1.5px solid #EAEEF3}'
     +'.subj-view .subj-node.lv4{margin-left:40px;padding-left:12px;border-left:1.5px solid #EEF1F5}'
     +'.subj-view .subj-node .nh{display:flex;flex-wrap:wrap;align-items:center;gap:5px 6px;cursor:pointer}'
-    +'.subj-view .subj-node .nnum{font-weight:800;color:#0C447C;flex-shrink:0}'
+    +'.subj-view .subj-node .nnum{font-weight:800;color:#0C447C;flex-shrink:0;font-size:13px;font-variant-numeric:tabular-nums}'   /* [2026-08-11] 번호가 작아 안 보인다는 지적 — 하위 레벨도 13px 유지 */
     +'.subj-view .subj-node .nt{font-weight:700;color:#0F172A}'
     +'.subj-view .subj-node.lv1 .nh{padding-bottom:5px;border-bottom:2px solid #E7EEF6;margin-bottom:3px}'
     +'.subj-view .subj-node.lv1 .nt{font-size:13.5px;color:#0C447C}'

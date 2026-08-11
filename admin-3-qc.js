@@ -706,6 +706,17 @@ async function impUpload(){
   await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
   var _gBlock=[], _gWarn=[];
   ready.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]); g.block.forEach(function(m){ _gBlock.push(it.docId+' · '+m); }); g.warn.forEach(function(m){ _gWarn.push(it.docId+' · '+m); }); });
+  // [2026-08-11] 2차 주관식 전용 게이트 — qc-core 는 opts/exp.o 기준이라 asks·outline 을 아예 안 본다.
+  //   asks 있는 문항이 하나라도 있으면 qc-subjective 로 따로 검수한다.
+  if(typeof subjectiveGate==='function'){
+    ready.forEach(function(it){
+      var qs=(it.data&&it.data.questions)||[];
+      if(!qs.some(function(q){ return q&&q.asks&&q.asks.length; })) return;
+      var s=subjectiveGate(qs);
+      s.block.forEach(function(m){ _gBlock.push(it.docId+' · [2차] '+m); });
+      s.warn.forEach(function(m){ _gWarn.push(it.docId+' · [2차] '+m); });
+    });
+  }
   if(_gBlock.length){
     await buildReviewNote();
     var _rn=document.getElementById('reviewNote'); if(_rn) _rn.scrollIntoView({behavior:'smooth',block:'center'});
@@ -730,10 +741,28 @@ async function impUpload(){
   const wtxt=warns.length?('\n\n'+warns.join('\n')):'';
   if(!confirm('다음 '+ready.length+'개 문서를 덮어씁니다. 계속할까요?\n\n'+lines+wtxt+'\n\n'+_cfgS.line+'\n\n업로드 후 manifest(번들에 새 시험·과목이 있으면 등록 + 버전 동기화)가 자동 반영됩니다.')){ impLog('업로드 취소됨.'); return; }
   document.getElementById('impRun').disabled=true;
+  // [2026-08-11] 출처표시 보존 — .set()은 문서를 통째로 갈아끼우므로 qsrc/docRole/srcNote가 날아간다.
+  //   업로드 파일에 없으면 기존 문서 값을 그대로 물려준다. 둘 다 없으면 경고만(차단 아님).
+  async function _impKeepSrc(docId, base){
+    var out=Object.assign({}, base);
+    try{
+      var sn=await db.collection('banks').doc(docId).get();
+      var old=sn.exists?sn.data():null;
+      ['qsrc','docRole','srcNote'].forEach(function(k){ if(out[k]==null && old && old[k]!=null) out[k]=old[k]; });
+    }catch(_){}
+    if(out.qsrc==null) impLog('⚠️ '+docId+' — 기출/레벨업 표시(qsrc) 없음. 업로드는 되지만 관리자에서 채워 주세요.','#d29922');
+    return out;
+  }
   for(const it of ready){
     try{
       const nv=impNewVer(it);
       const data=it.data;
+      // 주관식(2차)인데 답안 출처(asrc)가 없는 문항 — 어디서 온 답인지 나중에 못 가린다
+      try{
+        var _sq=(Array.isArray(data.questions)?data.questions:[]).filter(function(q){ return q&&q.asks&&q.asks.length; });
+        var _noA=_sq.filter(function(q){ return !q.asrc; }).length;
+        if(_noA) impLog('⚠️ '+it.docId+' — 서술형 '+_noA+'문항에 답안 출처(asrc: 외부/자체/미상) 없음','#d29922');
+      }catch(_){}
       const qs=Array.isArray(data.questions)?data.questions:[];
       // 회차 키 = q.set 우선, 없으면 id 앞부분(예: c26_1 → c26). 등장 순서 보존.
       const order=[], map={}; let allKey=qs.length>0;
@@ -745,7 +774,7 @@ async function impUpload(){
       });
       if(allKey && order.length){
         for(const s of order){
-          await db.collection('banks').doc(it.docId+'__'+s).set({ set:s, version:nv, questions:map[s] });
+          await db.collection('banks').doc(it.docId+'__'+s).set(await _impKeepSrc(it.docId+'__'+s, { set:s, version:nv, questions:map[s] }));
         }
         await db.collection('banks').doc(it.docId).set({ version:nv, cert:data.cert, subject:data.subject, name:data.name||'', shards:order.slice(), count:qs.length });
         it.status='done'; it.curVer=nv;
@@ -758,7 +787,7 @@ async function impUpload(){
           impLog('✗ '+it.docId+' 업로드 중단 — 샤딩 불가 + 1MB 초과('+approxBytes.toLocaleString()+'B). 문항 set/id 회차정보 필요','#f85149');
           impRender(); continue;
         }
-        await db.collection('banks').doc(it.docId).set(payload);
+        await db.collection('banks').doc(it.docId).set(await _impKeepSrc(it.docId, payload));
         it.status='done'; it.curVer=nv;
         impLog('✓ '+it.docId+' 업로드 완료(단일) — ver '+nv+', 문항 '+qs.length,'#15793F');
       }

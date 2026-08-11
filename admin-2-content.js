@@ -346,12 +346,16 @@ async function lvupImport(){
         existing.forEach(_push); arr.forEach(_push);   // 신규가 같은 id 덮어씀
         var merged=order.map(function(k){ return byId[k]; });
         var _rec={ subject:it.sub, kind:it.kind, count:merged.length, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }; _rec[field]=merged;
+        // [2026-08-11] 출처표시 보존 — .set()이 문서를 갈아끼우므로 기존 qsrc/docRole/srcNote를 물려준다
+        try{ var _o=cur&&cur.exists?cur.data():null; if(_o){ ['qsrc','docRole','srcNote'].forEach(function(k){ if(_o[k]!=null) _rec[k]=_o[k]; }); } }catch(_){}
         var _bytes=null; try{ _bytes=new Blob([JSON.stringify(_rec)]).size; }catch(_){}
         if(_bytes!==null && _bytes>1000000){ throw new Error('\ubb38\uc11c \ud06c\uae30 '+Math.round(_bytes/1024)+'KB\uac00 Firestore 1MB \ud55c\ub3c4 \ucd08\uacfc \u2014 \uacfc\ubaa9\uc744 \ub098\ub220 \uc62c\ub9ac\uc138\uc694'); }
         await db.collection('adaptive').doc(docId).set(_rec);
         done.push(it.sub+'/'+it.kind+'('+existing.length+'+'+arr.length+'\u2192'+merged.length+')');
       } else {
-        await db.collection('adaptive').doc(docId).set(it.data);
+        var _d2=Object.assign({}, it.data);   // [2026-08-11] 출처표시 보존
+        try{ var _c2=await db.collection('adaptive').doc(docId).get(); if(_c2.exists){ var _o2=_c2.data(); ['qsrc','docRole','srcNote'].forEach(function(k){ if(_d2[k]==null && _o2[k]!=null) _d2[k]=_o2[k]; }); } }catch(_){}
+        await db.collection('adaptive').doc(docId).set(_d2);
         done.push(it.sub+'/'+it.kind+'('+it.data.count+')');
       }
     }catch(e){ var _m=(it.sub||'?')+'/'+it.kind+' \uc2e4\ud328: '+e.message; done.push(_m); fails.push(_m); }
