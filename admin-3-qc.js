@@ -721,18 +721,35 @@ async function impUpload(){
   await _qcLoadImgKeys();   // img:// 참조 대조용(실패 시 IMG_MISSING만 생략)
   await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
   var _gBlock=[], _gWarn=[];
-  ready.forEach(function(it){ var g=qualityGate((it.data&&it.data.questions)||[]); g.block.forEach(function(m){ _gBlock.push(it.docId+' · '+m); }); g.warn.forEach(function(m){ _gWarn.push(it.docId+' · '+m); }); });
-  // [2026-08-11] 2차 주관식 전용 게이트 — qc-core 는 opts/exp.o 기준이라 asks·outline 을 아예 안 본다.
-  //   asks 있는 문항이 하나라도 있으면 qc-subjective 로 따로 검수한다.
-  if(typeof subjectiveGate==='function'){
-    ready.forEach(function(it){
-      var qs=(it.data&&it.data.questions)||[];
-      if(!qs.some(function(q){ return q&&q.asks&&q.asks.length; })) return;
-      var s=subjectiveGate(qs);
+  /* [2026-08-11] 검수기를 시험 type 으로 가른다.
+   *   subjective → qc-subjective 만 (qc-core 는 opts/exp.o 기준이라 asks·outline 을 아예 안 본다)
+   *   그 밖(mcq·flashcard) → qc-core 만
+   *   ⚠ 이름이 「2차」라고 주관식이 아니다. 공인중개사 2차(realestate2)·주택관리사 2차(housing2)는
+   *      type:'mcq' 라 1차와 똑같이 qc-core 로 봐야 한다. 판정은 언제나 type 으로 한다.
+   *   매니페스트에서 type 을 못 읽으면 asks 유무로 떨어진다(안전망). */
+  var _typeOf={};
+  try{
+    var _mf=await db.collection('manifest').doc('exams').get();
+    ((_mf.exists&&_mf.data().exams)||[]).forEach(function(e){ if(e&&e.id) _typeOf[e.id]=e.type||'mcq'; });
+  }catch(_){ impLog('⚠ manifest type 을 못 읽어 asks 유무로 검수기를 고릅니다.','#C2410C'); }
+  ready.forEach(function(it){
+    var qs=(it.data&&it.data.questions)||[];
+    var examId=(window.CLSubjQC&&CLSubjQC.examIdOf)?CLSubjQC.examIdOf(it.docId):String(it.docId||'').split('__')[0];
+    var t=_typeOf[examId];
+    var isSubj=(t!=null) ? (t==='subjective')
+                         : qs.some(function(q){ return q&&q.asks&&q.asks.length; });
+    if(isSubj){
+      if(typeof subjectiveGate!=='function'){ _gBlock.push(it.docId+' · 2차 검수기(qc-subjective.js)가 안 실려 있습니다'); return; }
+      var s=subjectiveGate(qs,{exam:examId});
       s.block.forEach(function(m){ _gBlock.push(it.docId+' · [2차] '+m); });
       s.warn.forEach(function(m){ _gWarn.push(it.docId+' · [2차] '+m); });
-    });
-  }
+      impLog('· '+it.docId+' — 2차 주관식 검수기(프로파일 '+examId+')','#5B50C0');
+    } else {
+      var g=qualityGate(qs);
+      g.block.forEach(function(m){ _gBlock.push(it.docId+' · '+m); });
+      g.warn.forEach(function(m){ _gWarn.push(it.docId+' · '+m); });
+    }
+  });
   if(_gBlock.length){
     await buildReviewNote();
     var _rn=document.getElementById('reviewNote'); if(_rn) _rn.scrollIntoView({behavior:'smooth',block:'center'});

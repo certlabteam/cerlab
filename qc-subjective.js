@@ -36,6 +36,12 @@
   var LAW_REF = /제\s?\d+\s?조/;
   var MONEY = /\d{1,3}(,\d{3})+|\d+(\.\d+)?\s*%/;
 
+  /* [2026-08-11] 작업 흔적이 본문에 그대로 남은 것. 사진에서 옮기다 끊긴 자리를 표시해 둔 말들이
+   *   학생 화면에 그대로 나간다(제8회 이론 1번 「이후 답안은 이미지 경계에서 잘림」).
+   *   ⚠ 「미상」·「채워야」 같은 흔한 말은 넣지 말 것 — 정상본 문장에 그대로 쓰인다.
+   *   좁힌 표현으로 정상본 95문항 오탐 0 확인. */
+  var WORK_NOTE = /(잘림|잘려|이미지\s*경계|판독\s*불가|원문\s*확인|추후\s*보완|TODO)/;
+
   function norm(s) { return String(s == null ? '' : s).replace(/\s+/g, ''); }
 
   /* 목차 제목에 박힌 수동 번호. 「2013.07.01 기준 기초가액」 같은 날짜를 번호로 오인하면 안 되므로
@@ -81,6 +87,10 @@
     S_NO_ASRC:       { sev: 'warn',  msg: '답안 출처(asrc: 외부·자체·미상) 표시가 없다' },
     S_HIDDEN_NO_WHY: { sev: 'warn',  msg: '숨김인데 이유(hidWhy)가 없다' },
 
+    // [2026-08-11] 눈으로만 잡히던 두 가지. 정상본 95문항(노출 실무40+이론55) 실측으로 눈금을 맞췄다.
+    S_WORK_NOTE:     { sev: 'block', msg: '본문에 작업 흔적이 남아 있다 — 학생 화면에 그대로 나간다' },
+    S_THIN_BLOCK:    { sev: 'warn',  msg: '목차만 벌려 놓고 본문이 얇다 — 블록당 글자수가 정상본 최저 미만' },
+
     // AI 채점이 정본이라 아래 넷은 기본 info — {kw:true} 로 켠다
     S_NO_KW:         { sev: 'info',  msg: '채점 키워드(kw)가 없는 블록 (오프라인 채점 기준)' },
     S_KW_ABSENT:     { sev: 'info',  msg: 'kw 가 모범답안 본문에 없다 (오프라인 채점 기준)' },
@@ -102,6 +112,11 @@
       needRole: true,      // 실측 role 누락 0
       needPt: true,        // 실측 pt 누락 0
       ptSum: true,         // 실측 배점 불일치 0
+      // [2026-08-11] 블록당 본문 글자수 하한. 정상본 95문항 실측 최소 51.9 · 5% 88.7 · 중앙 170.1.
+      //   자/점으로는 못 가른다 — 정상본 최저가 21.2자/점인데 뼈대만 남은 답안이 22.4자/점이었다.
+      //   같은 배점·비슷한 글자수여도 목차를 두 배로 벌리면 블록당 글자수에서 드러난다.
+      //   정상본 최소 51.9 를 그대로 쓰면 그 문항(제2회 이론 3번)이 자기 자신에 걸린다 → 45 로 내렸다.
+      perBlock: 45,        // 미만이면 S_THIN_BLOCK (정상본 오탐 0 · 숨김본 4문항 적발)
       sev: {}              // 기본 등급 그대로
     },
     // 새 주관식 시험은 정상본을 프로파일링한 뒤 위 형식으로 한 칸 추가한다.
@@ -109,7 +124,7 @@
       name: '(프로파일 없음 — 느슨한 기본값)',
       기준: '실측 전. 구조 결함만 본다.',
       asks: [1, 20], blocks: [1, 60], body: [1, 3000], lv: [1, 4],
-      needRole: false, needPt: false, ptSum: false,
+      needRole: false, needPt: false, ptSum: false, perBlock: 0,
       sev: { S_SHORT_BODY: 'info', S_ASKS_RANGE: 'info', S_BLOCKS_RANGE: 'info', S_LV_RANGE: 'info' }
     }
   };
@@ -183,6 +198,8 @@
           if (!OK_END.test(L) && TRUNC.test(L)) add('S_TRUNC_BODY', where, '…' + L.slice(-16));
           if (body.length < P.body[0]) add('S_SHORT_BODY', where, body.length + '자');
           else if (body.length > P.body[1]) add('S_SHORT_BODY', where, body.length + '자 (너무 김)');
+          var wn = body.match(WORK_NOTE);
+          if (wn) add('S_WORK_NOTE', where, '「' + wn[0] + '」');
         }
 
         var kws = n.kw || [];
@@ -201,6 +218,20 @@
 
     if (P.ptSum && q.pt != null && ptSum && +q.pt !== ptSum)
       add('S_PT_SUM', '', q.pt + '점 vs 물음합 ' + ptSum + '점');
+
+    /* 목차만 벌려 놓고 각 칸을 얇게 채운 답안 — 문항 단위로 본다.
+     * 블록별 S_SHORT_BODY(20자)로는 안 걸린다. 45자짜리 블록이 열 개면 블록마다는 통과하지만
+     * 20점 답안으로는 뼈대뿐이다. 이걸 잡으려고 문항 전체의 블록당 평균으로 잰다. */
+    if (P.perBlock) {
+      var tb = 0, tc = 0;
+      asks.forEach(function (a) {
+        (a.outline || []).forEach(function (n) {
+          tb++; tc += String(n.body == null ? '' : n.body).trim().length;
+        });
+      });
+      if (tb && tc / tb < P.perBlock)
+        add('S_THIN_BLOCK', '', tb + '블록 ' + tc + '자 → 블록당 ' + (tc / tb).toFixed(1) + '자 (기준 ' + P.perBlock + '자)');
+    }
     return v;
   }
 
