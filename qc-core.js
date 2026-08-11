@@ -632,11 +632,28 @@ function _qcExtraRules(q){
     if(_ls.some(_tpTableLine)) return false;
     return true;
   };
+  /* [2026-08-11] 진짜 표인가 — '같은 칸 수의 행이 3줄 이상 이어지는가'로 본다.
+     숫자 개수만 세던 옛 방식은 항목 나열(「- 벌과금 20,000 / - 접대비 15,000」)이나
+     수식(「QD1=120-2P」)을 표로 오인했다. 라이브 80건 중 72건이 그런 오탐이었다. */
+  var _tpRepeatedRows=function(t){
+    var ls=String(t||'').split(/\n/), best=0, run=0, prev=-1, i, c;
+    for(i=0;i<ls.length;i++){
+      var L=ls[i].trim(); if(!L){ run=0; prev=-1; continue; }
+      var parts=L.split(/\s{2,}|\t|\s*\|\s*/).filter(Boolean);
+      c=0; for(var j=0;j<parts.length;j++) if(/\d/.test(parts[j])) c++;
+      if(c>=2 && c===prev) run++; else run=(c>=2?1:0);
+      prev=(c>=2?c:-1);
+      if(run>best) best=run;
+    }
+    return best>=3;
+  };
   if(_qcOn('gichul','FACTOR_TABLE_PROSE')){
     var _fq=String(q.q||'');
     if(!/<table|tbl:\/\//.test(_fq) && !_tpListExempt(_fq) && /현가계수|현재가치계수|연금현가|할인계수|현가표|계수표|현가율/.test(_fq)){
       var _fmin=(_QC_DEFAULTS.gichul.FACTOR_TABLE_PROSE&&_QC_DEFAULTS.gichul.FACTOR_TABLE_PROSE.minVals)||4;
-      var _fnum=(_fq.match(/\d\.\d{3,4}/g)||[]).length;
+      // [2026-08-11] 이자율·기간 같은 잡수치가 아니라 '계수값'만 센다 — 0.xxxx 꼴 4자리 이상.
+      //   전에는 \d\.\d{3,4} 라 106.49 같은 것도 계수로 셌다.
+      var _fnum=(_fq.match(/\b0\.\d{4,6}\b/g)||[]).length;
       if(_fnum>=_fmin) v.push({kind:'warn',field:'q',idx:0,code:'FACTOR_TABLE_PROSE',msg:'현가/연금 계수표가 본문에 줄글로 몰려 있음('+_fnum+'개 계수) — 기간×이자율 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_fq.slice(0,60)});
     }
   }
@@ -725,7 +742,10 @@ function _qcExtraRules(q){
     if(!_qtFactor && !/<table|tbl:\/\//.test(_qtq) && !_tpListExempt(_qtq) && /구분\s|지역\s|산업\s|연도별|월별|구간|계급/.test(_qtq)){
       var _qtN=(_qtq.match(/(?:^|[^\d.])\d{1,6}(?![\d.])/g)||[]).length;
       var _qtMin=_qcN('gichul','Q_TABLE_PROSE','minNums',8);
-      if(_qtN>=_qtMin) v.push({kind:'warn',field:'q',idx:0,code:'Q_TABLE_PROSE',msg:'표 데이터('+_qtN+'개 수치)가 본문에 줄글로 몰려 있음 — 행×열 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_qtq.slice(0,60)});
+      // [2026-08-11] 숫자 개수만 세면 나열형·수식형을 표로 오인한다. 라이브 80건을 재 보니 72건이 오탐이었다
+      //   (「20×1년 세무조정 사항 / - 벌과금 20,000 / - 접대비 15,000」 같은 항목 나열, 「QD1=120-2P」 같은 수식).
+      //   진짜 표는 '같은 칸 수의 행이 3줄 이상 이어진다'. 그걸로 한 번 더 거른다.
+      if(_qtN>=_qtMin && _tpRepeatedRows(_qtq)) v.push({kind:'warn',field:'q',idx:0,code:'Q_TABLE_PROSE',msg:'표 데이터('+_qtN+'개 수치)가 본문에 줄글로 몰려 있음 — 행×열 표로 렌더 권장(가독성). q는 불변이라 앱 렌더 개선 대상',text:_qtq.slice(0,60)});
     }
   }
   /* (r) [신규 2026-07-15] 계산형 아닌데 계산형 7단 필드가 붙음 — PAIR·COMBO·COUNT·ORDER·MATCH 짝짓기/목록형이
