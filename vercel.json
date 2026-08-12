@@ -3,7 +3,8 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/__/auth/:path*", "destination": "https://certlab-c3bcb.firebaseapp.com/__/auth/:path*" }
+    { "source": "/__/auth/:path*", "destination": "https://certlab-c3bcb.firebaseapp.com/__/auth/:path*" },
+    { "source": "/admin", "destination": "/admin.html" }
   ],
   "headers": [
     {
