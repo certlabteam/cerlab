@@ -619,7 +619,8 @@ function buildCertRegistry(man){
       }
     }
     if(ALL_CERTS.indexOf(id)<0) ALL_CERTS.push(id);
-    try{ if(typeof userEnt!=='undefined' && userEnt && !userEnt[id]) userEnt[id]={plan:'GUEST',trialCount:0,expireAt:null,planDays:null}; }catch(_){}
+    // 로그인 상태면 FREE_TRIAL(loadUserPlan의 기본값과 동일). GUEST로 박으면 로그인했는데도 게스트 한도 팝업이 뜬다
+    try{ if(typeof userEnt!=='undefined' && userEnt && !userEnt[id]) userEnt[id]={plan:(typeof currentUser!=='undefined'&&currentUser)?'FREE_TRIAL':'GUEST',trialCount:0,expireAt:null,planDays:null}; }catch(_){}
     try{ if(typeof guestCounts!=='undefined' && guestCounts && guestCounts[id]==null) guestCounts[id]=0; }catch(_){}
     _addCertCard(ex, type);
     _certRegBuilt[id]=1;
