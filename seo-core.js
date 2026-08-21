@@ -11,7 +11,7 @@
  * '한국사' 도 두 번 들어갔다 - 네이버가 제목을 잘라 보여 주는데 앞이 죄다
  * 자격증 이름으로 먹혀 정작 회차가 안 보였다. 노출 1,573에 클릭 58(3.7%).
  */
-const SEO_CERT_NAME={appraiser:'감정평가사',appraiser2:'감정평가사 2차',realestate1:'공인중개사 1차',realestate2:'공인중개사 2차',housing:'주택관리사보',housing2:'주택관리사 2차',koreanhistory:'한국사능력검정시험',bodybuilding:'보디빌딩',sport2:'생활스포츠지도사 2급 필기',laborattorney1:'공인노무사 1차',firemanager1:'소방시설관리사 1차',hesm:'건강운동관리사 1차',franchise:'가맹거래사 1차'};
+const SEO_CERT_NAME={appraiser:'감정평가사',appraiser2:'감정평가사 2차',realestate1:'공인중개사 1차',realestate2:'공인중개사 2차',housing:'주택관리사보',housing2:'주택관리사 2차',koreanhistory:'한국사능력검정시험',bodybuilding:'보디빌딩',sport2:'생활스포츠지도사 2급 필기',laborattorney1:'공인노무사 1차',firemanager1:'소방시설관리사 1차',hesm:'건강운동관리사 1차',franchise:'가맹거래사 1차',consultant:'경영지도사 1차',tourguide:'국내여행안내사',hotelmgr:'호텔관리사'};
 /*
  * 사람들이 실제로 검색창에 치는 줄임말. 정식 이름에 없는 것만 적는다.
  *
@@ -32,7 +32,7 @@ const SEO_SUBJ_OVERRIDE={civil:'민법'};
 function seoSubjTrim(cname,subjName){return String(subjName||'').split(/\s+/).filter(w=>w&&String(cname||'').indexOf(w)<0).join(' ');}
 /** 정식 이름·과목에 이미 든 줄임말은 넣지 않는다. */
 function seoAlias(cert,head){const a=SEO_CERT_ALIAS[cert];return (a&&head.indexOf(a)<0)?a:'';}
-const SEO_CERT_ORDER=['appraiser','appraiser2','realestate1','realestate2','housing','housing2','koreanhistory','bodybuilding','sport2','laborattorney1','franchise','firemanager1','hesm'];
+const SEO_CERT_ORDER=['appraiser','appraiser2','realestate1','realestate2','housing','housing2','koreanhistory','bodybuilding','sport2','laborattorney1','franchise','consultant','firemanager1','hesm','tourguide','hotelmgr'];
 const SEO_STOP=new Set('관한 관하여 대한 대하여 설명으로 설명 옳은 옳지 않은 않는 것은 것을 것이 모두 고른 고르면 따름 경우 및 또는 모든 가장 바르게 틀린 맞는 해당하는 아닌 무엇 어느'.split(' '));
 const SEO_STYLE=`
 body{font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#FDF8F5;color:#1e293b;max-width:760px;margin:0 auto;padding:20px 16px;line-height:1.6}
