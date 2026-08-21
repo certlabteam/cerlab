@@ -99,7 +99,33 @@ const TRIAL_LIMIT = 50;
 const GUEST_DAILY_DEFAULT = 10, USER_DAILY_DEFAULT = 20;
 function _todayKST(){ return new Date(Date.now()+9*3600*1000).toISOString().slice(0,10); }
 function _guestDaily(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.guestDaily)||GUEST_DAILY_DEFAULT; }
-function _userDaily(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.userDaily)||USER_DAILY_DEFAULT; }
+/*
+ * 가입 첫날은 하루치를 몰아 준다.
+ *
+ * 비가입 5문제를 다 쓰고 가입했는데 그날 5문제만 더 주면 "속았네" 가 된다.
+ * 가입한 보람이 없으면 다음 날 다시 오지 않고, 그러면 결제까지 갈 일이 없다.
+ * 첫날은 실컷 풀게 해서 해설이 좋다는 걸 알게 만들고, 막히는 것은 그다음부터다.
+ *
+ * 값은 config/pricing 의 firstDayDaily 로 바꾼다(관리자 › 요금설정).
+ */
+const FIRST_DAY_DAILY_DEFAULT = 50;
+/** 가입 시각(users 문서 createdAt). 로그인할 때 채운다. 비로그인·옛 회원은 null. */
+let userJoinedAt = null;
+function _firstDayDaily(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.firstDayDaily)||FIRST_DAY_DAILY_DEFAULT; }
+/** 가입한 날인가. 가입일을 모르면(옛 회원) 첫날로 보지 않는다. */
+function _isFirstDay(){
+  try{
+    var c=(typeof userJoinedAt!=='undefined'&&userJoinedAt)?userJoinedAt:null;
+    if(!c) return false;
+    var ms=(c.seconds? c.seconds*1000 : (c.toMillis? c.toMillis() : +c));
+    if(!ms) return false;
+    return new Date(ms+9*3600*1000).toISOString().slice(0,10)===_todayKST();
+  }catch(_){ return false; }
+}
+function _userDaily(){
+  var base=(typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.userDaily)||USER_DAILY_DEFAULT;
+  return _isFirstDay() ? Math.max(base,_firstDayDaily()) : base;
+}
 function _guestDayGet(){ try{ var o=JSON.parse(localStorage.getItem('certlab_guest_daily')||'{}'); if(o&&o.date===_todayKST()&&o.counts) return o; }catch(_){} return {date:_todayKST(),counts:{}}; }
 function _guestDayCount(cert){ return (_guestDayGet().counts||{})[cert]||0; }
 function _guestDayBump(cert){ var o=_guestDayGet(); o.counts=o.counts||{}; o.counts[cert]=(o.counts[cert]||0)+1; o.date=_todayKST(); try{ localStorage.setItem('certlab_guest_daily',JSON.stringify(o)); }catch(_){} }
@@ -264,11 +290,13 @@ async function loadUserPlan(user) {
       }
       try { localStorage.removeItem('pendingRef'); } catch(_){}
       window._aiCredits = { grade:0, explain:0 };
+      userJoinedAt = { seconds: Math.floor(Date.now()/1000) };   // 방금 만든 문서 = 오늘 가입 → 첫날 몰아주기
       userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
       if(typeof pwaSignupBanner==='function') pwaSignupBanner();
       return;
     }
     const data = doc.data();
+    userJoinedAt = data.createdAt || null;   // 첫날 몰아주기 판정용
     let ent = data.entitlements;
     if (!ent) {
       // 지연 마이그레이션: 기존 평면 plan → entitlements.bodybuilding (레거시 필드는 보존)
@@ -633,6 +661,25 @@ function copyReferralLink(e){
 document.addEventListener('click',function(e){ const m=document.getElementById('userMenu'); const d=document.getElementById('userDropdown'); if(d&&m&&!m.contains(e.target)) d.classList.add('hidden'); });
 
 // ===== 팝업 =====
+/**
+ * 한도에 막혔을 때 붙일 한 줄. '시험까지 며칠 · 남은 문항 · 이 속도면 며칠'.
+ *
+ * 시험일을 모르거나 이미 지났으면 셈을 생략하고 뒷말만 돌려준다 -
+ * 틀린 숫자를 보여 주느니 안 보여 주는 것이 낫다.
+ */
+function _limitMsg(tail){
+  try{
+    var cert=(typeof activeCertId==='function')?activeCertId():null;
+    if(!cert) return tail;
+    var dl=(typeof _planDaysLeft==='function')?_planDaysLeft(cert):null;
+    var n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
+    if(dl==null||dl<=0||!n) return tail;
+    var per=(typeof _guestDaily==='function')?_guestDaily():5;
+    var days=Math.ceil(n/Math.max(1,per));
+    if(days<=dl) return tail;   // 이 속도로도 끝난다 → 겁줄 것이 없다
+    return '시험까지 '+dl+'일인데, 하루 '+per+'문제로는 '+n.toLocaleString()+'문항을 다 보려면 '+days+'일이 걸려요. '+tail;
+  }catch(_){ return tail; }
+}
 function showLoginPopup(mode='default') {
   // 게스트가 방금 푼 문제가 4초 디바운스로 아직 localStorage에 안 써졌을 수 있음 → 로그인 직전 즉시 flush(게스트 분기=localStorage 기록)
   try{ if(typeof currentUser!=='undefined' && !currentUser && typeof srDirtyCount!=='undefined' && srDirtyCount>0 && typeof srFlush==='function') srFlush(); }catch(_){}
@@ -640,8 +687,15 @@ function showLoginPopup(mode='default') {
   const title = document.getElementById('loginTitle');
   const sub = document.getElementById('loginSub');
   if (mode === 'guest_limit') {
-    title.textContent = '🎯 로그인하면 하루 2배!';
-    sub.textContent = '오늘 무료 문제를 다 푸셨어요. 구글 로그인하면 하루 '+(typeof _userDaily==='function'?_userDaily():20)+'문제로 늘고, 학습 기록도 저장돼요!';
+    /*
+     * '내일 오세요' 로 끝내지 않는다.
+     *
+     * 막혔을 때 다음에 오라고 하면 그냥 나가고 안 돌아온다. 수험생이 움직이는
+     * 것은 부족함이 아니라 '이 속도로는 시험날까지 못 끝난다' 는 계산이다.
+     * 시험일을 알면 그 셈을 대신 해서 보여 준다.
+     */
+    title.textContent = '🎁 가입하면 오늘 몰아서 풀 수 있어요';
+    sub.textContent = _limitMsg('가입하면 오늘 '+(typeof _firstDayDaily==='function'?_firstDayDaily():50)+'문제까지 이어서 풀 수 있고, 학습 기록도 남아요.');
   } else {
     title.textContent = '📚 CertLab';
     sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
@@ -907,7 +961,7 @@ function showAppWebPay(){
 function showAppDailyDone(){
   _togglePayUI(false);
   var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🌙 오늘 무료 학습 완료!';
-  var sub=document.getElementById('planSub'); if(sub) sub.textContent='오늘 준비한 무료 문제를 다 푸셨어요. 내일 다시 오면 새 문제로 이어서 학습할 수 있어요!';
+  var sub=document.getElementById('planSub'); if(sub) sub.textContent=_limitMsg('내일 다시 오면 새 문제로 이어서 풀 수 있어요.');
   var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div><button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
   _planPopupShow();
 }
@@ -921,7 +975,16 @@ function showPlanPopup(membership) {
   const titleEl = document.getElementById('planSheetTitle');
   if (titleEl) titleEl.textContent = membership ? `🎯 멤버십 이용권` : `⏰ 오늘 무료 학습 완료!`;
   const subEl = document.getElementById('planSub');
-  if (subEl) subEl.textContent = membership ? `이용권을 시작하면 맞춤 합격플랜과 무제한 문제풀이를 이용할 수 있어요.` : `오늘의 무료 문제를 다 푸셨어요. 이용권을 시작하면 문제 수 제한 없이 전체 기출·해설·학습 기록을 이용할 수 있어요.`;
+  /*
+   * 무료 한도로 막힌 쪽은 기능을 늘어놓지 않는다.
+   *
+   * 예전 문구는 '전체 기출·해설·학습 기록을 이용할 수 있어요' 처럼 다 담으려다
+   * 빽빽해져서 아무것도 안 읽힌다. 막힌 사람에게 필요한 것은 목록이 아니라
+   * '이대로면 시험날까지 못 끝난다' 는 셈 하나다.
+   */
+  if (subEl) subEl.textContent = membership
+    ? `맞춤 합격플랜과 무제한 풀이를 열어 드려요.`
+    : _limitMsg('이용권을 시작하면 문제 수 제한이 없어져요.');
   const n = certQuestionCount(cert);
   const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
   const allN = totalQuestionCountAll();

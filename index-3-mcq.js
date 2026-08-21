@@ -838,10 +838,15 @@ function _ltRenderResultGate(M){
       +'<div class="ltg-sc">'+_totN+'문제 · '+subs.length+'과목 채점 완료</div></div>'
     +'<div class="ltg-blurwrap"><div class="ltg-blur">'+blurCards+'</div>'
       +'<div class="ltg-gate"><div class="ltg-lock">🔒</div>'
-        +'<div class="ltg-gt">로그인하면 결과 공개</div>'
-        +'<div class="ltg-gs">'+metric+'를 확인하고,<br>맞춤 레벨업 학습을 무료로 시작하세요.</div>'
+        /*
+         * 다 풀고 나서 막는 자리다. '로그인하면 공개' 만 적으면 낚였다는 소리가
+         * 나온다. 이미 채점이 끝났다는 것과, 지금 바로 볼 수 있다는 것을 앞에
+         * 둔다 - 기다리라는 말이 아니라 한 번만 누르면 된다는 말이어야 한다.
+         */
+        +'<div class="ltg-gt">채점 끝났어요. 지금 바로 확인</div>'
+        +'<div class="ltg-gs">내 '+metric+'와 약한 과목이 나왔어요.<br>구글 로그인 한 번이면 바로 열립니다.</div>'
         +'<button class="ltg-btn" onclick="_ltGateLogin()"><span class="ltg-g">G</span> 구글로 1초 로그인하고 결과 보기</button>'
-        +'<div class="ltg-note">가입하면 약점 집중 문제까지 무료로 풀 수 있어요</div>'
+        +'<div class="ltg-note">가입하면 오늘 하루는 문제 수 제한 없이 풀 수 있어요</div>'
       +'</div></div>'
   +'</div>';
   if(box){ box.innerHTML=html; box.classList.remove('hidden'); }

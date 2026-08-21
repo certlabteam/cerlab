@@ -1450,7 +1450,14 @@ function renderMcqExam(root){
 }
 function mqPick(qid,n){
   if(mqInReview) return;
-  if(!canAccess(mqCert)) return;   // 레벨테스트 포함 게스트10/체험50 한도 적용(10에서 로그인 유도)
+  /*
+   * 레벨테스트는 한도에서 뺀다.
+   *
+   * 이것이 우리가 가진 제일 좋은 미끼다 - '지금 몇 점인지' 가 궁금해 들어온
+   * 사람에게 그 답을 주는 화면인데, 여기서 막으면 아무것도 못 보고 나간다.
+   * 대신 결과를 볼 때 가입을 받는다(ltGate). 기출 풀이만 하루 한도를 건다.
+   */
+  if(!mqLevelTest && !canAccess(mqCert)) return;   // 기출·복습만 한도 적용(레벨테스트 제외)
   const firstTime = mqAns[qid]===undefined;
   const changed = !firstTime && mqAns[qid]!==n;   // 답을 다른 보기로 바꾼 경우
   mqAns[qid]=n; mqShow[qid]=false;
