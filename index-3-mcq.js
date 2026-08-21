@@ -700,7 +700,13 @@ function passPlanHTML(cert, paid){
   } else {
     ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:11.5px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 11px;border-radius:999px;cursor:pointer">📅 시험일 등록 →</span>';
   }
-  var schedLine = (dl!=null && dl>0) ? '시험까지 '+dl+'일 · 하루 20문제씩 합격플랜대로 풀면 <b style="color:#1E6B41">안전권 도달</b> 예상' : '하루 20문제씩 합격플랜대로 풀면 <b style="color:#1E6B41">안전권 도달</b> 예상';
+  /*
+   * '하루 20문제' 가 박혀 있었다. 시험이 열흘 남았든 석 달 남았든 같은 숫자라
+   * 믿을 말이 못 됐다. 남은 문항을 남은 날로 나눠 그 시험에 맞는 수를 낸다
+   * (_planPerDay — 결제 팝업도 같은 값을 쓴다. 두 화면이 다른 말을 하면 안 된다).
+   */
+  var perDay = (typeof _planPerDay==='function') ? _planPerDay(cert) : 20;
+  var schedLine = (dl!=null && dl>0) ? '시험까지 '+dl+'일 · 하루 '+perDay+'문제씩 합격플랜대로 풀면 <b style="color:#1E6B41">안전권 도달</b> 예상' : '하루 '+perDay+'문제씩 합격플랜대로 풀면 <b style="color:#1E6B41">안전권 도달</b> 예상';
   var summary='<div style="margin:14px 14px 0;background:#fff;border:1px solid #E2D6CC;border-radius:14px;padding:13px 15px">'
     +'<div style="display:flex;align-items:baseline;gap:9px">'
     +'<span style="font-size:30px;font-weight:800;color:#185FA5;line-height:1">'+(ap.predicted!=null?ap.predicted:'--')+'<span style="font-size:14px">점</span></span>'

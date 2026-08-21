@@ -674,11 +674,35 @@ function _limitMsg(tail){
     var dl=(typeof _planDaysLeft==='function')?_planDaysLeft(cert):null;
     var n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
     if(dl==null||dl<=0||!n) return tail;
-    var per=(typeof _guestDaily==='function')?_guestDaily():5;
+    var per=_curDaily();
     var days=Math.ceil(n/Math.max(1,per));
     if(days<=dl) return tail;   // 이 속도로도 끝난다 → 겁줄 것이 없다
-    return '시험까지 '+dl+'일인데, 하루 '+per+'문제로는 '+n.toLocaleString()+'문항을 다 보려면 '+days+'일이 걸려요. '+tail;
+    /*
+     * 겁만 주고 끝내지 않는다.
+     *
+     * '64일 걸려요' 는 문제만 던지는 말이다. 사람은 문제가 아니라 답을 보고
+     * 움직인다 - 하루 몇 문제면 시험 전에 끝나는지를 숫자로 찍어 주면
+     * '할 만하네' 가 되고, 그 숫자가 무료 한도보다 크니 살 까닭이 생긴다.
+     */
+    return '시험까지 '+dl+'일. 하루 '+per+'문제로는 '+days+'일 걸려요. 하루 '+_planPerDay(cert)+'문제씩 풀면 시험 전에 다 끝납니다.';
   }catch(_){ return tail; }
+}
+/** 지금 내 하루 한도(비로그인/무료회원). 유료는 이 말을 볼 일이 없다. */
+function _curDaily(){
+  try{
+    var cert=(typeof activeCertId==='function')?activeCertId():null;
+    var e=(cert&&typeof userEnt!=='undefined'&&userEnt&&userEnt[cert])||null;
+    return (e&&e.plan==='GUEST') ? _guestDaily() : _userDaily();
+  }catch(_){ return _guestDaily(); }
+}
+/** 시험 전에 다 보려면 하루 몇 문제. 합격플랜과 결제 팝업이 같은 값을 쓴다. */
+function _planPerDay(cert){
+  try{
+    var dl=(typeof _planDaysLeft==='function')?_planDaysLeft(cert):null;
+    var n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
+    if(dl==null||dl<=0||!n) return 20;
+    return Math.max(1,Math.ceil(n/dl));
+  }catch(_){ return 20; }
 }
 function showLoginPopup(mode='default') {
   // 게스트가 방금 푼 문제가 4초 디바운스로 아직 localStorage에 안 써졌을 수 있음 → 로그인 직전 즉시 flush(게스트 분기=localStorage 기록)
@@ -973,7 +997,7 @@ function showPlanPopup(membership) {
   }
   _togglePayUI(true);
   const titleEl = document.getElementById('planSheetTitle');
-  if (titleEl) titleEl.textContent = membership ? `🎯 멤버십 이용권` : `⏰ 오늘 무료 학습 완료!`;
+  if (titleEl) titleEl.textContent = membership ? `🎯 멤버십 이용권` : `🎯 합격까지 가는 가장 빠른 길`;
   const subEl = document.getElementById('planSub');
   /*
    * 무료 한도로 막힌 쪽은 기능을 늘어놓지 않는다.
@@ -983,7 +1007,7 @@ function showPlanPopup(membership) {
    * '이대로면 시험날까지 못 끝난다' 는 셈 하나다.
    */
   if (subEl) subEl.textContent = membership
-    ? `맞춤 합격플랜과 무제한 풀이를 열어 드려요.`
+    ? `어느 과목을 며칠씩 잡아야 하는지 합격플랜이 짜 드려요.`
     : _limitMsg('이용권을 시작하면 문제 수 제한이 없어져요.');
   const n = certQuestionCount(cert);
   const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
