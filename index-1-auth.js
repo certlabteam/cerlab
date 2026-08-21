@@ -1385,8 +1385,15 @@ function _subjMarkOpened(cert,qid){
   if(!qid) return;
   try{ var s=_subjOpenedSet(cert); s.add(qid); localStorage.setItem(_subjDayKey(cert), JSON.stringify([].slice.call(s))); }catch(e){}
 }
-function _subjGuestLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjGuestDaily)||1; }
-function _subjFreeLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjUserDaily)||2; }
+/*
+ * 주관식도 객관식과 같은 하루 한도를 쓴다.
+ *
+ * 게스트 1개·회원 2개로 따로 놀고 있었다. 그러면 '하루 5문제' 라고 안내해 놓고
+ * 실제로는 1개에서 막히는 일이 생긴다 - 말과 화면이 다르면 속았다고 느낀다.
+ * config/pricing 에 subjGuestDaily·subjUserDaily 를 따로 넣으면 그 값이 이긴다.
+ */
+function _subjGuestLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjGuestDaily)||_guestDaily(); }
+function _subjFreeLimit(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.subjUserDaily)||_userDaily(); }
 function canAccessSubjective(cert, qid){
   cert = cert || (typeof activeCertId==='function'?activeCertId():cert);
   var e=(userEnt&&userEnt[cert])||{plan:'GUEST'};
