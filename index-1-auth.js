@@ -674,17 +674,17 @@ function _limitMsg(tail){
     var dl=(typeof _planDaysLeft==='function')?_planDaysLeft(cert):null;
     var n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
     if(dl==null||dl<=0||!n) return tail;
-    var per=_curDaily();
-    var days=Math.ceil(n/Math.max(1,per));
-    if(days<=dl) return tail;   // 이 속도로도 끝난다 → 겁줄 것이 없다
     /*
-     * 겁만 주고 끝내지 않는다.
+     * 겁만 주고 끝내지 않는다. 그리고 회독으로 잰다.
      *
-     * '64일 걸려요' 는 문제만 던지는 말이다. 사람은 문제가 아니라 답을 보고
-     * 움직인다 - 하루 몇 문제면 시험 전에 끝나는지를 숫자로 찍어 주면
-     * '할 만하네' 가 되고, 그 숫자가 무료 한도보다 크니 살 까닭이 생긴다.
+     * 1회독으로 재면 시험이 멀 때 '이 속도로도 다 볼 수 있다' 가 되어 할 말이
+     * 없어진다. 수험생은 기출을 한 번만 보고 시험장에 가지 않는다.
+     * 필요한 하루치(_planPerDay)를 먼저 말하고, 지금 한도로는 그 절반도 안
+     * 된다는 것을 뒤에 붙인다 - 답을 먼저, 문제를 나중에.
      */
-    return '시험까지 '+dl+'일. 하루 '+per+'문제로는 '+days+'일 걸려요. 하루 '+_planPerDay(cert)+'문제씩 풀면 시험 전에 다 끝납니다.';
+    var per=_curDaily(), need=_planPerDay(cert), rounds=_planRounds();
+    if(need<=per) return tail;   // 지금 한도로도 회독이 된다 → 겁줄 것이 없다
+    return '시험까지 '+dl+'일. '+rounds+'회독 하려면 하루 '+need+'문제는 풀어야 해요. 지금은 하루 '+per+'문제까지만 됩니다.';
   }catch(_){ return tail; }
 }
 /** 지금 내 하루 한도(비로그인/무료회원). 유료는 이 말을 볼 일이 없다. */
@@ -696,12 +696,22 @@ function _curDaily(){
   }catch(_){ return _guestDaily(); }
 }
 /** 시험 전에 다 보려면 하루 몇 문제. 합격플랜과 결제 팝업이 같은 값을 쓴다. */
+/*
+ * 몇 회독을 기준으로 잴 것인가.
+ *
+ * 처음엔 1회독으로 쟀는데, 그러면 시험이 멀 때 '이 속도로도 다 볼 수 있다' 가
+ * 되어 할 말이 없어졌다. 실제로 공인중개사(D-70)에는 아무 말도 못 했다.
+ * 수험생은 기출을 한 번만 보고 시험장에 가지 않는다 - 2회독은 하고, 오답은
+ * 더 본다. 2회독을 기준으로 삼는다. config/pricing 의 planRounds 로 바꾼다.
+ */
+const PLAN_ROUNDS_DEFAULT = 2;
+function _planRounds(){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&+_pricingCfg.planRounds)||PLAN_ROUNDS_DEFAULT; }
 function _planPerDay(cert){
   try{
     var dl=(typeof _planDaysLeft==='function')?_planDaysLeft(cert):null;
     var n=(typeof certQuestionCount==='function')?certQuestionCount(cert):0;
     if(dl==null||dl<=0||!n) return 20;
-    return Math.max(1,Math.ceil(n/dl));
+    return Math.max(1,Math.ceil(n*_planRounds()/dl));
   }catch(_){ return 20; }
 }
 /**
