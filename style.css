@@ -223,7 +223,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .plan-guest{background:#E9F2FB;color:#0C447C}
 
 /* 로그인 팝업 */
-.auth-popup{position:fixed;inset:0;background:rgba(44,44,42,.6);display:flex;align-items:flex-end;justify-content:center;z-index:300;animation:fadeIn .2s}
+/* 가입·결제 팝업은 다른 안내보다 위에 둔다.
+   z=300 이라 개념 권유(.inapp-popup z=500)가 그 위를 덮었고, 정작 눌러야 할
+   가입 단추가 뒤로 깔려 X 만 보였다. 돈이 걸린 것이 맨 앞이어야 한다. */
+.auth-popup{position:fixed;inset:0;background:rgba(44,44,42,.6);display:flex;align-items:flex-end;justify-content:center;z-index:700;animation:fadeIn .2s}
 .auth-popup.hidden{display:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .auth-sheet{background:#fff;border-radius:24px 24px 0 0;padding:20px 24px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);position:relative}
@@ -236,7 +239,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .refund-banner .rb-more{background:none;border:none;color:#B5730C;font-size:12px;font-weight:700;cursor:pointer;padding:7px 0 0;text-decoration:underline}
 .refund-banner .rb-detail{font-size:12px;color:#7A5A1C;line-height:1.7;margin-top:8px;padding-top:8px;border-top:1px dashed #E6C68A}
 .refund-banner .rb-detail.hidden{display:none}
-.auth-sheet-title{font-size:22px;font-weight:700;color:#2C2C2A;margin-bottom:6px;text-align:center}
+/* 닫기(.popup-x)가 float+음수 margin 으로 이 줄 위에 겹쳐 올라온다.
+   제목이 길면 글자를 덮으므로 양옆을 X 지름만큼 비워 둔다. */
+.auth-sheet-title{font-size:22px;font-weight:700;color:#2C2C2A;margin-bottom:6px;text-align:center;padding:0 44px}
 .auth-sheet-sub{font-size:14px;color:#888780;text-align:center;margin-bottom:24px;line-height:1.6}
 .auth-features{background:#F4F9FE;border-radius:16px;padding:16px 20px;margin-bottom:24px}
 .auth-feature-item{display:flex;align-items:center;gap:10px;font-size:13px;color:#3C3C3A;padding:5px 0}

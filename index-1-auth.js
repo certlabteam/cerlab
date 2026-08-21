@@ -704,6 +704,33 @@ function _planPerDay(cert){
     return Math.max(1,Math.ceil(n/dl));
   }catch(_){ return 20; }
 }
+/**
+ * 지금 가입·결제 팝업이 떠 있나.
+ *
+ * 이 둘이 떠 있는데 다른 안내가 위에 겹치면, 정작 눌러야 할 것이 뒤로 깔려
+ * 사람은 무엇을 하라는 건지 모른 채 나간다. 실제로 한도 팝업 위에 '연속 3문제를
+ * 틀렸어요' 와 '복습 알림 받을까요' 가 연달아 덮여 X 단추만 보였다.
+ * 다른 안내는 이 값을 보고 스스로 물러난다.
+ */
+/**
+ * 가입·결제 팝업을 띄우기 직전에, 이미 떠 있는 잔소리들을 치운다.
+ *
+ * _pushMaybePrompt 는 배너를 '띄우기 전' 에만 다른 팝업을 살핀다. 먼저 떠 있던
+ * 배너는 그대로 남아 결제 팝업 위를 덮는다. 뜨는 쪽에서 한 번 더 치운다.
+ */
+function _hideNudges(){
+  try{
+    var w=document.getElementById('pushBannerWrap'); if(w&&w.parentNode) w.parentNode.removeChild(w);
+    var c=document.getElementById('conceptOfferPopup'); if(c) c.classList.add('hidden');
+  }catch(_){}
+}
+function _payPopupOpen(){
+  try{
+    var a=document.getElementById('loginPopup'), b=document.getElementById('planPopup');
+    var on=function(e){ return e && !e.classList.contains('hidden') && getComputedStyle(e).display!=='none'; };
+    return on(a)||on(b);
+  }catch(_){ return false; }
+}
 function showLoginPopup(mode='default') {
   // 게스트가 방금 푼 문제가 4초 디바운스로 아직 localStorage에 안 써졌을 수 있음 → 로그인 직전 즉시 flush(게스트 분기=localStorage 기록)
   try{ if(typeof currentUser!=='undefined' && !currentUser && typeof srDirtyCount!=='undefined' && srDirtyCount>0 && typeof srFlush==='function') srFlush(); }catch(_){}
@@ -725,6 +752,7 @@ function showLoginPopup(mode='default') {
     sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
   }
   if(typeof updateEventBanner==='function') updateEventBanner();
+  _hideNudges();   // 떠 있는 잔소리 배너를 치우고 이 팝업만 남긴다
   popup.classList.remove('hidden');
   // 기능 안내: 현재 시험명+문제수(위) / 전체 시험·문제수(아래)
   try{
@@ -1032,7 +1060,7 @@ function showPlanPopup(membership) {
   renderPlanCards(cert);
   mileApplyOn=false; renderMileUse();
 }
-function _planPopupShow(){ var pp=document.getElementById('planPopup'); if(!pp) return; var ov=document.getElementById('passPlanOverlay'); pp.style.zIndex=(ov && ov.style.display==='block')?'9300':''; pp.classList.remove('hidden'); }  /* [FIX 2026-07] 합격플랜 전체화면(z9000) 위로 결제팝업을 올려 가려짐 방지 */
+function _planPopupShow(){ var pp=document.getElementById('planPopup'); if(!pp) return; _hideNudges(); var ov=document.getElementById('passPlanOverlay'); pp.style.zIndex=(ov && ov.style.display==='block')?'9300':''; pp.classList.remove('hidden'); }  /* [FIX 2026-07] 합격플랜 전체화면(z9000) 위로 결제팝업을 올려 가려짐 방지 */
 function hidePlanPopup() { var pp=document.getElementById('planPopup'); if(pp){ pp.classList.add('hidden'); pp.style.zIndex=''; } }
 
 function showWelcomePopup() {
@@ -1053,6 +1081,7 @@ function showWelcomePopup() {
   document.querySelector('.auth-sheet-close').style.background='linear-gradient(135deg,#185FA5,#0C447C)';
   document.querySelector('.auth-sheet-close').style.color='#fff';
   if(typeof updateEventBanner==='function') updateEventBanner();
+  _hideNudges();   // 떠 있는 잔소리 배너를 치우고 이 팝업만 남긴다
   popup.classList.remove('hidden');
 }
 

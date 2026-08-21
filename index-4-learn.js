@@ -175,6 +175,8 @@ function setConceptReady(cert,sub,si){
 // 일반 풀이 모드(생체·오답재풀이·진단·복습·개념학습 제외)에서 연속 3오답 시 권유. 세트당 1회.
 function maybeOfferConcept(q,n,firstTime){
   if(!firstTime) return false;
+  /* 가입·결제 팝업이 떠 있으면 그 위에 겹치지 않는다. 그쪽이 먼저다. */
+  if(typeof _payPopupOpen==='function' && _payPopupOpen()) return false;
   if(mqInReview||mqDiag||mqConcept) return false;
   if(mqMode==='wrong') return false;
   if(mqCert==='bodybuilding') return false;
