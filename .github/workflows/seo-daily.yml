@@ -40,18 +40,18 @@ jobs:
       - name: SEO 쪽 생성
         run: npm run seo:gen
 
-      # ?v= 갱신은 로컬 pre-commit 훅이 하던 일이다. 훅은 여기서 안 도니 직접 부른다.
-      - name: 자산 버전(?v=) 갱신
-        run: npm run bump
+      # ?v= 는 건드리지 않는다. 이 워크플로가 만드는 것은 seo/ 와 sitemap 뿐이고
+      # css·js 는 손대지 않으므로 버전 쿼리를 올릴 까닭이 없다. 한 번 넣어 봤다가
+      # 자산이 그대로인데 해시만 26군데 뒤집혔다(윈도우 CRLF ↔ 러너 LF).
 
       - name: 바뀐 것이 있으면 커밋
         run: |
-          if git diff --quiet; then
+          git add -A seo sitemap.xml robots.txt llms.txt
+          if git diff --cached --quiet; then
             echo "바뀐 것이 없습니다. 넘어갑니다."
             exit 0
           fi
           git config user.name  'certlab-bot'
           git config user.email 'certlab.team@gmail.com'
-          git add -A seo sitemap.xml robots.txt llms.txt *.html
           git commit -m "SEO 쪽 자동 갱신 ($(TZ=Asia/Seoul date '+%Y-%m-%d'))"
           git push

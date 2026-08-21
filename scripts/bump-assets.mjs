@@ -27,11 +27,25 @@ const checkOnly = process.argv.includes('--check');
 const printChanged = process.argv.includes('--print-changed');
 const hashes = new Map();
 
+/*
+ * 줄 끝을 LF 로 골라 놓고 센다.
+ *
+ * 윈도우 작업복사본은 CRLF, 리눅스(깃허브 러너)는 LF 라 같은 파일이 다른 해시가
+ * 나왔다. 자동 갱신을 걸었더니 자산은 그대로인데 ?v= 만 26군데 뒤집혔고, 그대로
+ * 두면 날마다 오락가락하면서 이용자가 css·js 를 매일 새로 받게 된다.
+ *
+ * 바이트가 아니라 '내용' 이 바뀌었을 때만 해시가 바뀌어야 맞다.
+ */
 function assetHash(rel) {
   if (hashes.has(rel)) return hashes.get(rel);
   const p = join(ROOT, rel);
   if (!existsSync(p) || !statSync(p).isFile()) { hashes.set(rel, null); return null; }
-  const h = createHash('sha1').update(readFileSync(p)).digest('hex').slice(0, 8);
+  /* 그림·글꼴은 바이트 그대로 센다. 글자로 읽으면 깨져서 서로 다른 파일이 같아 보인다. */
+  const buf = readFileSync(p);
+  const isText = /\.(css|js|mjs|json|svg|txt|html|xml)$/i.test(rel);
+  const h = createHash('sha1')
+    .update(isText ? buf.toString('utf8').replace(/\r\n/g, '\n') : buf)
+    .digest('hex').slice(0, 8);
   hashes.set(rel, h);
   return h;
 }
