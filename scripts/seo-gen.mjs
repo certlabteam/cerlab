@@ -22,7 +22,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /* seo-core.js — admin.html과 공유하는 생성 로직 단일 출처 */
 const {
-  SEO_SUBJ_OVERRIDE, seoRound, seoPage, seoHub, seoSitemap, seoRobots, seoLlms, seoReadAllBanks
+  SEO_SUBJ_OVERRIDE, seoRound, seoPage, seoHub, seoSitemap, seoRobots, seoLlms, seoReadAllBanks,
+  seoCertOfFname, seoAddNav, seoCertHub
 } = require(path.join(ROOT, 'seo-core.js'));
 
 /* index.html / admin-1-masters.js 와 동일한 공개 웹 config */
@@ -57,6 +58,11 @@ async function main() {
   const SEO_LABELS = {};
 
   /* --- admin-3-qc.js seoGenerate() 와 동일한 순회 --- */
+  /*
+   * 먼저 다 만들어 들고 있다가 나중에 쓴다. 쪽 아래에 붙일 '이웃 쪽 링크' 는
+   * 그 자격증에 어떤 쪽들이 있는지 다 알아야 만들 수 있어서다.
+   */
+  const pages = new Map();   // fname → html
   for (const b of banks) {
     const data = b.data;
     const cert = data.cert, sid = data.subject;
@@ -67,21 +73,36 @@ async function main() {
     for (const r in groups) {
       const rr = (r === '__none') ? null : r;
       const pg = seoPage(cert, subjName, rr, sid, groups[r]);
-      write('seo/' + pg.fname, pg.html);
+      pages.set(pg.fname, pg.html);
       files.push(pg.fname);
       SEO_LABELS[pg.fname] = subjName;
     }
   }
 
-  const urls = ['https://certlab.ai.kr/seo/index.html'].concat(files.map(f => 'https://certlab.ai.kr/seo/' + f));
-  write('seo/index.html', seoHub(urls, SEO_LABELS));
+  /* 자격증별로 묶어 이웃 링크를 끼우고, 자격증 허브를 만든다. */
+  const byCert = {};
+  for (const f of files) (byCert[seoCertOfFname(f)] = byCert[seoCertOfFname(f)] || []).push(f);
+  const hubFiles = [];
+  for (const cert of Object.keys(byCert)) {
+    const list = byCert[cert];
+    for (const f of list) write('seo/' + f, seoAddNav(pages.get(f), cert, f, list, SEO_LABELS));
+    const ch = seoCertHub(cert, list, SEO_LABELS);
+    write('seo/' + ch.fname, ch.html);
+    hubFiles.push(ch.fname);
+  }
+
+  const urls = ['https://certlab.ai.kr/seo/index.html']
+    .concat(hubFiles.map(f => 'https://certlab.ai.kr/seo/' + f))
+    .concat(files.map(f => 'https://certlab.ai.kr/seo/' + f));
+  /* 허브는 쪽 목록만 보고 자격증을 센다. 자격증 허브 주소는 빼고 넘긴다. */
+  write('seo/index.html', seoHub(['https://certlab.ai.kr/seo/index.html'].concat(files.map(f => 'https://certlab.ai.kr/seo/' + f)), SEO_LABELS));
   write('sitemap.xml', seoSitemap(urls, today));
   write('robots.txt', seoRobots());
   write('llms.txt', seoLlms(urls));
 
   console.log('');
   console.log('✅ 완료');
-  console.log('  seo/*.html  : ' + files.length + '장 (+ 허브 index.html = ' + (files.length + 1) + ')');
+  console.log('  seo/*.html  : ' + files.length + '장 (+ 자격증 허브 ' + hubFiles.length + ' + 메인 허브 1)');
   console.log('  문항        : ' + qtot.toLocaleString() + '개');
   console.log('  sitemap URL : ' + urls.length + '개 (lastmod ' + today + ')');
   console.log('  robots.txt · llms.txt 갱신');
