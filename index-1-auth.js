@@ -1135,10 +1135,13 @@ const _LEGACY_PLAN_NAMES={7:'1주 이용권',14:'2주 이용권',28:'4주 이용
 function _certTier(cert){ return (_pricingCfg&&_pricingCfg.certTier&&_pricingCfg.certTier[cert]) || 'standard'; }
 function _tierPlans(tier){
   var t=(_pricingCfg&&_pricingCfg.tiers&&_pricingCfg.tiers[tier])||null; if(!t) return null;
-  return [ {d:30,p:+t.m1||0,name:'1개월 이용권',desc:'30일 전체 이용'},
+  /* [2026-08-22] 기본 선택을 1개월로 내렸다.
+   * 처음 막힌 사람에게 먼저 보이는 숫자가 1년치(49,000~119,000원)라 그 자리에서 나갔다.
+   * '가장 경제적' 배지는 1년에 그대로 두고, 고르는 자리만 1개월로 옮긴다. */
+  return [ {d:30,p:+t.m1||0,name:'1개월 이용권',desc:'30일 전체 이용',sel:1},
            {d:90,p:+t.m3||0,name:'3개월 이용권',desc:'90일 전체 이용'},
            {d:180,p:+t.m6||0,name:'6개월 이용권',desc:'180일 전체 이용'},
-           {d:365,p:+t.m12||0,name:'1년 이용권',desc:'365일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1} ];
+           {d:365,p:+t.m12||0,name:'1년 이용권',desc:'365일 전체 이용',pop:'⭐ 가장 경제적',green:1} ];
 }
 function plansFor(cert){ if(_pricingCfg){ var tp=_tierPlans(_certTier(cert)); if(tp) return tp; } return PLAN_SETS[cert]||PLAN_SETS._default; }
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
