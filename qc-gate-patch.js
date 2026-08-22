@@ -50,7 +50,7 @@
       if(!_QC_DEFAULTS.gichul.EX_UNDER90)   _QC_DEFAULTS.gichul.EX_UNDER90={on:true,minChars:90};
       if(!_QC_DEFAULTS.gichul.CPT_MISSING)  _QC_DEFAULTS.gichul.CPT_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.O_NO_ANSMARK) _QC_DEFAULTS.gichul.O_NO_ANSMARK={on:true};
-      if(!_QC_DEFAULTS.gichul.OT_HANDMADE)  _QC_DEFAULTS.gichul.OT_HANDMADE={on:true};
+      if(!_QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED) _QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED={on:true};
       if(!_QC_DEFAULTS.gichul.CALC7_LACK)   _QC_DEFAULTS.gichul.CALC7_LACK={on:true};
     }
   }catch(e){}
@@ -295,7 +295,7 @@
                     코드를 따로 두어 EX_SHORT 와 섞이지 않게 한다.
        CPT_MISSING  §6-2 개념은 모든 시험이 같이 쓰는 광역 자산. exp.cpt 가 비면 연결이 없는 것.
        O_NO_ANSMARK §2-3 정답 칸에는 (정답). 계산형·전항정답·단일해설은 뺀다.
-       OT_HANDMADE  §1 ot 는 엔진이 채운다. 사람이 skip 을 넣어 두면 잡는다.
+       OT_SKIP_ON_FILLED  해설이 있는 칸에 ot skip 이 남아 오답노트가 그 보기를 건너뛰는 것.
        CALC7_LACK   §4-4 계산형 7단(접근·원리·요약풀이·상세풀이·최종정리·시험포인트·암기포인트).
                     코어의 CALC_NO_APPROACH·CALC_NO_TIP 는 기본 OFF 라 침묵하고 있었다.  */
   var _CALC7 = ['approach','principle','exSum','ex','s','tip','recall'];
@@ -340,11 +340,16 @@
       }
     }
 
-    /* ④ ot 는 엔진이 채운다 */
-    if(_on('gichul','OT_HANDMADE') && Object.prototype.toString.call(exp.ot)==='[object Array]' && exp.ot.length){
+    /* ④ ot 의 skip 이 해설 있는 칸에 붙어 있는가
+       ⚠ 처음엔 「skip 이 있으면 사람이 넣은 것」으로 잡았다가 되물렸다.
+          계산형은 `ot:[{skip:'empty'}…{skip:'calc'}]` 가 정착된 방식이고 라이브에 2,347자리 있다.
+          실제 결함은 **해설이 있는 칸에 skip 이 남아 있는 것**뿐이다(라이브 816자리). */
+    if(_on('gichul','OT_SKIP_ON_FILLED') && Object.prototype.toString.call(exp.ot)==='[object Array]' && exp.ot.length){
       for(var b=0;b<exp.ot.length;b++){
-        if(exp.ot[b] && exp.ot[b].skip){ v.push({kind:'warn',field:'o',idx:0,code:'OT_HANDMADE',
-          msg:'exp.ot 에 사람이 넣은 skip 이 있음 — ot 는 엔진이 채우는 자리다(§1). 손대지 말 것',text:''}); break; }
+        if(exp.ot[b] && exp.ot[b].skip && o[b] && String(o[b]).trim()){
+          v.push({kind:'warn',field:'o',idx:b,code:'OT_SKIP_ON_FILLED',
+            msg:'해설이 있는 칸인데 exp.ot 에 skip 이 붙어 있음 — 오답노트가 그 보기를 건너뛴다',text:String(o[b]).slice(0,40)});
+        }
       }
     }
 
@@ -446,7 +451,7 @@
       _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
       _QC_SEV.O_WRONG_SLOT='WARNING';
       _QC_SEV.EX_UNDER90='WARNING'; _QC_SEV.CPT_MISSING='WARNING'; _QC_SEV.O_NO_ANSMARK='WARNING';
-      _QC_SEV.OT_HANDMADE='WARNING'; _QC_SEV.CALC7_LACK='WARNING';
+      _QC_SEV.OT_SKIP_ON_FILLED='WARNING'; _QC_SEV.CALC7_LACK='WARNING';
     }
   }catch(e){}
 
