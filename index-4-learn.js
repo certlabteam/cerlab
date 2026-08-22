@@ -1473,7 +1473,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):tpSwap(_jaryoDots(stemHTML(rm(_stemQ,q))),q.id))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q))+'</div>'),q.id):'')+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q).replace(/ \/ /g,'<br>'))+'</div>'),q.id):'')+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+

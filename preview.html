@@ -2434,7 +2434,7 @@ function renderQuestionBlock(q){
     } else if(parseBlankStmts(jr.jaryo).length>=2){
       jaryoHTML=jaryoBlanksHTML(jr.jaryo,q);
     } else {
-      jaryoHTML='<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q))+'</div>';
+      jaryoHTML='<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q).replace(/ \/ /g,'<br>'))+'</div>';
     }
   }
   return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,true):tpSwap(stemHTML(rm(_stemQ,q)),q.id))+'</div></div>'+
