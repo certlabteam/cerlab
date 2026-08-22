@@ -46,6 +46,12 @@
       if(!_QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT) _QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT={on:true};
       if(!_QC_DEFAULTS.gichul.O_COPY) _QC_DEFAULTS.gichul.O_COPY={on:true,minRun:6};
       if(!_QC_DEFAULTS.gichul.O_WRONG_SLOT) _QC_DEFAULTS.gichul.O_WRONG_SLOT={on:true};
+      /* [2026-08-23] 규칙 문서엔 있는데 게이트가 안 보던 것들 — 아래 _qcRuleDoc 참고 */
+      if(!_QC_DEFAULTS.gichul.EX_UNDER90)   _QC_DEFAULTS.gichul.EX_UNDER90={on:true,minChars:90};
+      if(!_QC_DEFAULTS.gichul.CPT_MISSING)  _QC_DEFAULTS.gichul.CPT_MISSING={on:true};
+      if(!_QC_DEFAULTS.gichul.O_NO_ANSMARK) _QC_DEFAULTS.gichul.O_NO_ANSMARK={on:true};
+      if(!_QC_DEFAULTS.gichul.OT_HANDMADE)  _QC_DEFAULTS.gichul.OT_HANDMADE={on:true};
+      if(!_QC_DEFAULTS.gichul.CALC7_LACK)   _QC_DEFAULTS.gichul.CALC7_LACK={on:true};
     }
   }catch(e){}
 
@@ -277,6 +283,84 @@
   }
 
   /* ==========================================================================
+     3-B) 규칙 문서(_해설_마스터_공용.md)에는 있는데 게이트가 안 보던 것들 — 2026-08-23
+
+     원인: 규칙 문서를 안 읽고 게이트 통과만으로 완성을 판정하면 아래가 통째로 새어 나간다.
+     실제로 산업보건지도사 150 · 국내여행안내사 48 · 호텔관리사 74 문항이
+     개념 미연결·예시 60자·정답표기 없음으로 올라갔고 게이트는 0을 냈다.
+     전부 WARNING 이라 새로 차단되는 문항은 없다(배치 판정은 「신규 위반 0」 기준).
+
+       EX_UNDER90   §3-2 예시는 90자 이상의 장면. EX_SHORT(60)는 바닥선이지 기준이 아니다.
+                    라이브 실측 28,919칸 중 90자 미만 20,101칸(69.5%) — 기존 부채가 크므로
+                    코드를 따로 두어 EX_SHORT 와 섞이지 않게 한다.
+       CPT_MISSING  §6-2 개념은 모든 시험이 같이 쓰는 광역 자산. exp.cpt 가 비면 연결이 없는 것.
+       O_NO_ANSMARK §2-3 정답 칸에는 (정답). 계산형·전항정답·단일해설은 뺀다.
+       OT_HANDMADE  §1 ot 는 엔진이 채운다. 사람이 skip 을 넣어 두면 잡는다.
+       CALC7_LACK   §4-4 계산형 7단(접근·원리·요약풀이·상세풀이·최종정리·시험포인트·암기포인트).
+                    코어의 CALC_NO_APPROACH·CALC_NO_TIP 는 기본 OFF 라 침묵하고 있었다.  */
+  var _CALC7 = ['approach','principle','exSum','ex','s','tip','recall'];
+  function _qgFilled(v){ if(!v) return false; return Object.prototype.toString.call(v)==='[object Array]' ? v.filter(Boolean).length>0 : String(v).trim().length>0; }
+  function _qgIsCalcQ(q){ return (q&&q.calc===true) || String((q&&q.type)||'').toUpperCase()==='CALC'; }
+
+  function _qcRuleDoc(q){
+    var v=[]; var exp=(q&&q.exp)||{};
+    var o=(exp.o&&exp.o.length)?exp.o:[], ex=(exp.ex&&exp.ex.length)?exp.ex:[];
+    var opts=(q&&q.opts)||[];
+    var isCalc=_qgIsCalcQ(q);
+
+    /* ① 예시 90자 — 서술형만. 계산형 ex 는 풀이 단계라 잣대가 다르다. */
+    if(!isCalc && _on('gichul','EX_UNDER90')){
+      var _min90=_num('gichul','EX_UNDER90','minChars',90);
+      for(var i=0;i<ex.length;i++){
+        var t=ex[i]; if(!t) continue;
+        var L=String(t).replace(/<[^>]+>/g,'').trim().length;
+        if(L<_min90) v.push({kind:'warn',field:'ex',idx:i,code:'EX_UNDER90',
+          msg:'예시가 '+L+'자 — 규칙은 90자 이상의 장면(§3-2). 정의를 되풀이하지 말고 누가 무엇을 했고 그래서 어떻게 됐는지를 넣을 것',text:String(t).slice(0,60)});
+      }
+    }
+
+    /* ② 개념 마스터 연결 */
+    if(_on('gichul','CPT_MISSING') && !_qgFilled(exp.cpt)){
+      v.push({kind:'warn',field:'cpt',idx:0,code:'CPT_MISSING',
+        msg:'개념카드(exp.cpt) 연결 없음 — 개념은 모든 시험이 같이 쓰는 광역 자산(§6-2). 있는 카드를 찾아 걸고, 없으면 만들고 나서 해설을 쓴다',text:''});
+    }
+
+    /* ③ 정답 칸에 (정답) */
+    if(_on('gichul','O_NO_ANSMARK') && !isCalc && opts.length){
+      var oFilled=0; for(var k=0;k<o.length;k++){ if(o[k]&&String(o[k]).trim()) oFilled++; }
+      var ansArr = Object.prototype.toString.call(q&&q.ans)==='[object Array]' ? q.ans : [(q&&q.ans)];
+      var allAns = Object.prototype.toString.call(q&&q.ans)==='[object Array]' && q.ans.length>=opts.length;
+      if(oFilled>1 && !allAns){
+        for(var a=0;a<ansArr.length;a++){
+          var n=ansArr[a]; if(typeof n!=='number'||n<1||n>o.length) continue;
+          var tt=o[n-1]; if(!tt||!String(tt).trim()) continue;
+          if(!/\(정답\)/.test(String(tt))) v.push({kind:'warn',field:'o',idx:n-1,code:'O_NO_ANSMARK',
+            msg:'정답 칸에 (정답) 표기 없음(§2-3) — 판정어 뒤에 (정답)을 붙인다',text:String(tt).slice(-40)});
+        }
+      }
+    }
+
+    /* ④ ot 는 엔진이 채운다 */
+    if(_on('gichul','OT_HANDMADE') && Object.prototype.toString.call(exp.ot)==='[object Array]' && exp.ot.length){
+      for(var b=0;b<exp.ot.length;b++){
+        if(exp.ot[b] && exp.ot[b].skip){ v.push({kind:'warn',field:'o',idx:0,code:'OT_HANDMADE',
+          msg:'exp.ot 에 사람이 넣은 skip 이 있음 — ot 는 엔진이 채우는 자리다(§1). 손대지 말 것',text:''}); break; }
+      }
+    }
+
+    /* ⑤ 계산형 7단 */
+    if(_on('gichul','CALC7_LACK') && isCalc){
+      var lack=[];
+      for(var c=0;c<_CALC7.length;c++){ if(!_qgFilled(exp[_CALC7[c]])) lack.push(_CALC7[c]); }
+      if(lack.length) v.push({kind:'warn',field:'ex',idx:0,code:'CALC7_LACK',
+        msg:'계산형 7단 가운데 빈 칸: '+lack.join('·')+' (§4-4) — 접근·원리·요약풀이·상세풀이·최종정리·시험포인트·암기포인트',text:''});
+    }
+
+    _sev(v);
+    return v;
+  }
+
+  /* ==========================================================================
      4) VERDICT 오발동 예외 — 빈칸채우기·표/조문형 해설
      qc-core의 VERDICT(해설이 옳다/옳지 않다로 안 맺음)는 O/X 판정형 전제인데,
      "( )에 들어갈 …" 빈칸채우기형은 해설이 판정어가 아니라 답(ㄱ:500, ㄴ:…)으로,
@@ -332,6 +416,7 @@
       try{ v = _qgAdd(v, _qcOCopy(q)); }catch(e){}
       try{ v = _qgAdd(v, _qcTrailConn(q)); }catch(e){}
       try{ v = _qgAdd(v, _qcOSlot(q)); }catch(e){}
+      try{ v = _qgAdd(v, _qcRuleDoc(q)); }catch(e){}
       return v;
     };
     /* [GATE-1 2026-08-01] 전역 _qcViolations 도 같이 갈아끼운다.
@@ -360,6 +445,8 @@
            되돌리려면 이 줄에서 O_SHORT 만 빼면 코어의 INFO 가 그대로 산다. */
       _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
       _QC_SEV.O_WRONG_SLOT='WARNING';
+      _QC_SEV.EX_UNDER90='WARNING'; _QC_SEV.CPT_MISSING='WARNING'; _QC_SEV.O_NO_ANSMARK='WARNING';
+      _QC_SEV.OT_HANDMADE='WARNING'; _QC_SEV.CALC7_LACK='WARNING';
     }
   }catch(e){}
 
