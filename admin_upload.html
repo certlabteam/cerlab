@@ -178,6 +178,9 @@ th,td{border:1px solid #EFE9E2;padding:5px 8px;text-align:left}
 </div>
 
 <!-- 업로드/검수 로직 — admin과 동일 파일 재사용 (admin-4-ops의 무거운 로더는 아래 부트에서 중화) -->
+<!-- manifest-tx.js 가 없으면 업로드 뒤 _impAutoManifest·registerManifestExams 가
+     manifestUpdate is not defined 로 죽는다(은행만 올라가고 시험이 목록에 안 뜸). admin.html 과 같은 자리. -->
+<script src="manifest-tx.js?v=d0b27757"></script>
 <script src="admin-1-masters.js?v=972284e9"></script>
 <script src="admin-2-content.js?v=55d14662"></script>
 <script src="admin-3-qc.js?v=2d98957f"></script>
