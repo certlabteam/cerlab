@@ -602,6 +602,10 @@ function buildCertRegistry(man){
   var exams=(man&&man.exams)||[];
   exams.forEach(function(ex){
     var id=ex&&ex.id; if(!id || _certRegBuilt[id]) return;
+    /* [2026-08-23] hidden:true 인 시험은 데이터를 그대로 둔 채 화면에서만 숨긴다.
+       카드를 안 만드니 딥링크(/#{certId})도 막힌다 — 그 라우팅이 certCard-{id} 존재를 본다.
+       ⚠ 하드코딩 7개(ALL_CERTS)는 아래 isNew 로 빠지므로 이 플래그가 안 먹는다. */
+    if(ex.hidden){ _certRegBuilt[id]=1; return; }
     var isNew = !MCQ_EXAMS[id] && ALL_CERTS.indexOf(id)<0;   // 기존 7개면 isNew=false → 손 안 댐
     if(!isNew){ _certRegBuilt[id]=1; return; }
     var type=ex.type||'mcq';
