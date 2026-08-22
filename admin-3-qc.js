@@ -98,7 +98,8 @@ async function iuUpload(){
     }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); iuLog('✗ '+it.key+' 실패: '+(e.message||e),'#f85149'); }
     iuRender();
   }
-  iuLog('— 작업 종료 — 문항 JSON에 img://키 로 연결하세요.','#5B50C0');
+  iuLog('— 작업 종료 — 문항의 q.img(발문) 또는 q.optImg[](보기별) 필드에 "img://키" 로 넣으세요.','#5B50C0');
+  iuLog('   ⚠ q 본문(발문 글) 안에 img://키 를 적으면 그림이 안 나오고 글자로 그대로 보입니다.','#B45309');
 }
 let impItems=[]; let _impInited=false; let impBundleManifest=null;
 function impLog(msg,color){ const el=document.getElementById('impLog'); if(!el) return; const t=new Date().toLocaleTimeString('ko-KR'); const line=color?('<span style="color:'+color+'">'+msg+'</span>'):msg; el.innerHTML += (el.innerHTML && el.innerHTML!=='대기 중…'?'\n':'')+'['+t+'] '+line; el.scrollTop=el.scrollHeight; }
@@ -661,6 +662,11 @@ function _mlaAuditLines(items, M){
       R.tbl.forEach(function(r){ if(!M.tables[r.id]){ childL.push('  [누락] '+it.docId+' · '+id+' '+r.where+' → 표 '+r.id+' 마스터에 없음'); nChild++; } });
       // 5) img/itv
       R.img.forEach(function(r){ if(!M.images[r.id]){ mediaL.push('  [누락] '+it.docId+' · '+id+' 이미지 img://'+r.id+' 없음'); nMedia++; } });
+      /* [2026-08-23] q 본문에 img:// 를 쓰면 그림이 안 나오고 글자로 노출된다.
+         imgInner 는 값 전체가 img:// 로 시작할 때만 렌더한다(index-4-learn.js 238줄).
+         지금까지는 아래 _hasImg 가 문항 전체(_qb)에서 찾아 '이미지 있음'으로 세어 이 깨짐이 안 잡혔다.
+         감정평가사 7문항이 이 상태였다(2026-08-23 발견·정정). */
+      if(/img:\/\//.test(String((q&&q.q)||''))){ mediaL.push('  [깨짐] '+it.docId+' · '+id+' q 본문에 img:// 가 있음 → q.img 필드로 옮길 것(지금은 화면에 글자로 뜸)'); nMedia++; }
       R.itv.forEach(function(r){ if(!M.interactives[r.id]){ mediaL.push('  [누락] '+it.docId+' · '+id+' 인터랙티브 itv://'+r.id+' 없음'); nMedia++; } });
       // 7) 문항 자체 시각자료 필요 (과목 무관 — 그 문항 풀이에 그래프/이미지가 필요한데 아무 데도 없음)
       var _qb=''; try{ _qb=JSON.stringify(q); }catch(_){}
