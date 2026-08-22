@@ -799,9 +799,18 @@ function blankPairTerms(opt){
 function jaryoBlanksHTML(jaryoText, q){
   var bs=parseBlankStmts(jaryoText);
   if(bs.length<2) return null;
-  return '<div class="jaryo">'+bs.map(function(st){
-    return '<div class="jr-stmt"><span class="jr-stmt-t">( '+st.k+' ) '+rm(st.t,q)+'</span></div>';
-  }).join('')+'</div>';
+  /* [2026-08-22] 두 가지를 고친다.
+     ① 첫 빈칸 앞 도입부가 통째로 사라졌다. parseBlankStmts 는 ( ㄱ ) 뒤부터만 잘라 주므로
+        그 앞 글("사업주는 사업장에 … 사업주 또는")이 화면에서 없어져 문항이 성립하지 않았다.
+     ② 줄 구분자 ' / ' 가 글자 그대로 보였다. 일반 자료 렌더처럼 <br> 로 바꾼다. */
+  var s=String(jaryoText||''), m=s.match(/\(\s*[ㄱ-ㅎ]\s*\)/);
+  var lead=m?s.slice(0,m.index).trim():'';
+  var br=function(t){ return String(t).replace(/ \/ /g,'<br>'); };
+  return '<div class="jaryo">'
+    +(lead?'<div class="jr-lead">'+br(rm(lead,q))+'</div>':'')
+    +bs.map(function(st){
+      return '<div class="jr-stmt"><span class="jr-stmt-t">( '+st.k+' ) '+br(rm(st.t,q))+'</span></div>';
+    }).join('')+'</div>';
 }
 // 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
 function comboLettersFromOpts(opts){

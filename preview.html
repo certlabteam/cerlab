@@ -594,7 +594,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .plan-card-desc{font-size:12px;color:#888780;margin-top:3px}
 #mcqView .qtext{font-size:15px;font-weight:500;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}
 #mcqView .qstem .qtext{margin-bottom:0;max-height:34vh;overflow-y:auto}
-#mcqView .jaryo .jr-stmt{display:flow-root;line-height:1.85;margin-bottom:9px}
+#mcqView .jaryo .jr-lead{line-height:1.85;margin-bottom:9px}#mcqView .jaryo .jr-stmt{display:flow-root;line-height:1.85;margin-bottom:9px}
 #mcqView .jaryo .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
 #mcqView .jaryo .jr-stmt{padding-left:1.7em;text-indent:-1.7em}
 #mcqView .exp{margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:14px;padding:15px 15px;word-break:keep-all;overflow-wrap:break-word}
@@ -2226,9 +2226,15 @@ function blankPairTerms(opt){
 function jaryoBlanksHTML(jaryoText, q){
   var bs=parseBlankStmts(jaryoText);
   if(bs.length<2) return null;
-  return '<div class="jaryo">'+bs.map(function(st){
-    return '<div class="jr-stmt"><span class="jr-stmt-t">( '+st.k+' ) '+rm(st.t,q)+'</span></div>';
-  }).join('')+'</div>';
+  /* [2026-08-22] index-4-learn.js 와 같은 수정 — 첫 빈칸 앞 도입부 살리기 + ' / ' 를 <br> 로. */
+  var s=String(jaryoText||''), m=s.match(/\(\s*[ㄱ-ㅎ]\s*\)/);
+  var lead=m?s.slice(0,m.index).trim():'';
+  var br=function(t){ return String(t).replace(/ \/ /g,'<br>'); };
+  return '<div class="jaryo">'
+    +(lead?'<div class="jr-lead">'+br(rm(lead,q))+'</div>':'')
+    +bs.map(function(st){
+      return '<div class="jr-stmt"><span class="jr-stmt-t">( '+st.k+' ) '+br(rm(st.t,q))+'</span></div>';
+    }).join('')+'</div>';
 }
 // 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
 
