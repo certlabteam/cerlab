@@ -12,6 +12,11 @@
    └── 문항 예시 검수        ── EX_MISSING (per-question)
        · 이론형 객관식인데 장면 예시(exp.ex)가 통째로 비어 있음
          "여과과정의 효과다"처럼 해설 한 줄로 끝나고 예시가 없는 문항을 잡는다.
+   └── 해설 자리 검수        ── O_WRONG_SLOT (per-question) [2026-08-22 추가]
+       · 해설을 한 칸만 채웠는데 그 칸이 정답칸(o[ans-1])이 아님.
+         앱은 exp.o[i] 를 i+1 번 보기 아래에 붙이므로(index-4-learn.js) 엉뚱한 보기에 정답 풀이가 뜬다.
+         코어에는 계산형용 CALC_WRONG_SLOT 만 있어 CV·ORDER 유형이 통째로 새어 나갔다
+         (라이브에서 11문항 발견 — sport2 10 · hesm 1).
 
    설계 원칙: 기존 qc-core 규약 그대로 — _qcOn/_qcN 설정 훅, {kind,code,field,msg},
    _qcApplySev 로 치명도 부여. 소급 폭증 방지 위해 전부 WARNING(비차단)으로 도입.
@@ -40,6 +45,7 @@
       if(!_QC_DEFAULTS.gichul.O_SHORT) _QC_DEFAULTS.gichul.O_SHORT={on:true,minChars:30};
       if(!_QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT) _QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT={on:true};
       if(!_QC_DEFAULTS.gichul.O_COPY) _QC_DEFAULTS.gichul.O_COPY={on:true,minRun:6};
+      if(!_QC_DEFAULTS.gichul.O_WRONG_SLOT) _QC_DEFAULTS.gichul.O_WRONG_SLOT={on:true};
     }
   }catch(e){}
 
@@ -127,6 +133,39 @@
         msg:'이론형 객관식인데 장면 예시(exp.ex)가 통째로 비어 있음 — 예시는 예외 없이 모두 넣는다(개념을 실생활 장면으로 1개)'
             +(cert?(' ['+cert+']'):''), text:'' });
     }
+    _sev(v);
+    return v;
+  }
+
+  /* ==========================================================================
+     2-2) 해설이 정답칸이 아닌 자리에 있음 — O_WRONG_SLOT (per-question) [2026-08-22]
+     앱은 exp.o[i] 를 **i+1 번 보기 아래**에 붙인다(index-4-learn.js 일반형 렌더).
+     그러니 해설을 한 칸만 채울 거면 반드시 정답칸 o[ans-1] 에 넣어야 한다.
+     코어의 CALC_WRONG_SLOT 은 _isCalcQ 인 문항만 보므로 CV·ORDER 처럼
+     '정답 보기 하나만 풀어 주는' 유형이 통째로 새어 나갔다.
+     ⚠ 조합형(o 칸이 보기 수가 아니라 지문 수)은 정답칸 개념이 달라 제외한다.
+        복수정답(ans 배열)·전항정답(oFilled 0)·빈칸형(blanks)도 제외.
+     ========================================================================== */
+  function _qcOSlot(q){
+    var v=[]; if(!_on('gichul','O_WRONG_SLOT')) return v;
+    var exp=(q&&q.exp)||{}, o=exp.o||[];
+    var opts=(q&&Array.isArray(q.opts))?q.opts:[];
+    if(!opts.length || !o.length) return v;
+    if(o.length!==opts.length) return v;                 /* 조합형 지문별 해설 등 */
+    if(Array.isArray(q&&q.blanks) && q.blanks.length) return v;
+    var ans=(q&&typeof q.ans==='number')?q.ans:0;        /* 복수정답 배열은 제외 */
+    if(!ans || ans<1 || ans>o.length) return v;
+    var at=-1, cnt=0;
+    for(var i=0;i<o.length;i++){ if(o[i]&&String(o[i]).trim()){ cnt++; at=i; } }
+    if(cnt!==1) return v;                                /* 여러 칸 = 보기별 해설(정상) */
+    if(at===ans-1) return v;
+    /* 계산형은 코어의 CALC_WRONG_SLOT 이 같은 자리를 이미 잡는다 — 두 줄로 뜨지 않게 넘긴다 */
+    try{ if(typeof _isCalcQ==='function' && _isCalcQ(q)) return v; }catch(e){}
+    if(q&&q.calc===true) return v;
+    v.push({ kind:'warn', field:'o', idx:at, code:'O_WRONG_SLOT',
+      msg:'해설을 한 칸만 채웠는데 정답칸이 아닌 o['+at+']에 있음(정답은 '+ans+'번) → '
+          +'앱이 '+(at+1)+'번 보기 아래에 붙여 엉뚱한 보기에 정답 풀이가 뜬다. o['+(ans-1)+']로 옮길 것',
+      text:String(o[at]||'').slice(0,120) });
     _sev(v);
     return v;
   }
@@ -292,6 +331,7 @@
       try{ v = _qgAdd(v, _qcOShort(q)); }catch(e){}
       try{ v = _qgAdd(v, _qcOCopy(q)); }catch(e){}
       try{ v = _qgAdd(v, _qcTrailConn(q)); }catch(e){}
+      try{ v = _qgAdd(v, _qcOSlot(q)); }catch(e){}
       return v;
     };
     /* [GATE-1 2026-08-01] 전역 _qcViolations 도 같이 갈아끼운다.
@@ -319,6 +359,7 @@
            승격해도 폭증이 없다(work/gate10/dup_measure.js). 그래서 되돌리지 않고 **근거를 여기 남긴다.**
            되돌리려면 이 줄에서 O_SHORT 만 빼면 코어의 INFO 가 그대로 산다. */
       _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
+      _QC_SEV.O_WRONG_SLOT='WARNING';
     }
   }catch(e){}
 
