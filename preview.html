@@ -2483,7 +2483,9 @@ function renderExpFull(q, mqCertVal){
     const ansN=ansArr(q.ans);
     const statusTxt = okk?'정답':(sel?'오답':'미응답');
     const statusCol = okk?'#0F6E56':'#A32D2D';
-    const multiTxt = isMulti?(ansN.length===5?' (전항정답)':' (복수정답)'):'';
+    /* [2026-08-23] 전항정답 판정을 보기 수로 본다 (4지선다 대응) — index-4-learn.js 와 같은 수정. */
+    const _optN = (q.opts||[]).length || 5;
+    const multiTxt = isMulti?(ansN.length>=_optN?' (전항정답)':' (복수정답)'):'';
     let body='';
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;

@@ -1258,7 +1258,10 @@ function renderMcqExam(root){
     const ansN=ansArr(q.ans);
     const statusTxt = okk?'정답':(sel?'오답':'미응답');
     const statusCol = okk?'#0F6E56':'#A32D2D';
-    const multiTxt = isMulti?(ansN.length===5?' (전항정답)':' (복수정답)'):'';
+    /* [2026-08-23] 전항정답 판정을 보기 수로 본다. 5지선다만 있다고 보고 5 로 박아 두었던 탓에
+       국내여행안내사·호텔관리사 같은 4지선다는 전항정답인데도 '복수정답'으로 떴다. */
+    const _optN = (q.opts||[]).length || 5;
+    const multiTxt = isMulti?(ansN.length>=_optN?' (전항정답)':' (복수정답)'):'';
     let body='';
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
