@@ -359,12 +359,17 @@
        라이브 실측 684문항 중 셋을 다 갖춘 것은 263뿐이었다(감평사 230·공인중개사1차 32).
        ↓ 는 단계가 둘 이상일 때만 센다(한 단계짜리 풀이는 사이줄이 없는 게 맞다). */
     if(_on('gichul','CALC_EX_NOSTEP') && isCalc && ex.length){
+      /* 단계 표시는 시험마다 갈린다 — ①②③ 과 「1단계」 두 관례가 모두 쓰인다.
+         ⚠ 처음엔 ①②③ 만 보다가 경영지도사 100 · 소방 · 건강운동을 통째로 오탐했다.
+            <b>1단계</b> 처럼 마크업이 붙은 것도 있어 태그를 걷고 센다. */
       var _blob=ex.join('\n');
-      var _steps=(_blob.match(/[①②③④⑤⑥⑦⑧⑨]/g)||[]).length;
+      var _bare=_blob.replace(/<[^>]+>/g,'');
+      var _steps=(_bare.match(/[①②③④⑤⑥⑦⑧⑨]/g)||[]).length
+               + (_bare.match(/(^|\s)\d+\s*단계/g)||[]).length;
       var _hasDown=/(^|\n)\s*↓\s*(\n|$)/.test(_blob);
-      var _hasArrow=/→/.test(_blob);
+      var _hasArrow=/→/.test(_bare);
       var _lack=[];
-      if(!_steps) _lack.push('단계번호 ①');
+      if(!_steps) _lack.push('단계 표시(① 또는 1단계)');
       if(_steps>1 && !_hasDown) _lack.push('사이줄 ↓');
       if(!_hasArrow) _lack.push('계산줄 →');
       if(_lack.length) v.push({kind:'warn',field:'ex',idx:0,code:'CALC_EX_NOSTEP',
