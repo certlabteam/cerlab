@@ -52,6 +52,7 @@
       if(!_QC_DEFAULTS.gichul.O_NO_ANSMARK) _QC_DEFAULTS.gichul.O_NO_ANSMARK={on:true};
       if(!_QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED) _QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED={on:true};
       if(!_QC_DEFAULTS.gichul.CALC7_LACK)   _QC_DEFAULTS.gichul.CALC7_LACK={on:true};
+      if(!_QC_DEFAULTS.gichul.CALC_EX_NOSTEP) _QC_DEFAULTS.gichul.CALC_EX_NOSTEP={on:true};
     }
   }catch(e){}
 
@@ -353,6 +354,23 @@
       }
     }
 
+    /* ⑤-B 계산형 상세풀이(ex)가 §4-2 꼴인가 — 단계번호 ①·사이줄 ↓·계산줄 →
+       필드가 차 있어도 본문이 줄글이면 학생은 어디서 무엇이 바뀌는지 못 짚는다.
+       라이브 실측 684문항 중 셋을 다 갖춘 것은 263뿐이었다(감평사 230·공인중개사1차 32).
+       ↓ 는 단계가 둘 이상일 때만 센다(한 단계짜리 풀이는 사이줄이 없는 게 맞다). */
+    if(_on('gichul','CALC_EX_NOSTEP') && isCalc && ex.length){
+      var _blob=ex.join('\n');
+      var _steps=(_blob.match(/[①②③④⑤⑥⑦⑧⑨]/g)||[]).length;
+      var _hasDown=/(^|\n)\s*↓\s*(\n|$)/.test(_blob);
+      var _hasArrow=/→/.test(_blob);
+      var _lack=[];
+      if(!_steps) _lack.push('단계번호 ①');
+      if(_steps>1 && !_hasDown) _lack.push('사이줄 ↓');
+      if(!_hasArrow) _lack.push('계산줄 →');
+      if(_lack.length) v.push({kind:'warn',field:'ex',idx:0,code:'CALC_EX_NOSTEP',
+        msg:'계산형 상세풀이가 단계 꼴이 아님 — 빠진 것: '+_lack.join('·')+' (§4-2). 단계 제목은 ①②③, 계산 줄은 → 로 시작, 단계 사이에 ↓ 한 줄',text:String(ex[0]||'').slice(0,50)});
+    }
+
     /* ⑤ 계산형 7단 */
     if(_on('gichul','CALC7_LACK') && isCalc){
       var lack=[];
@@ -451,7 +469,7 @@
       _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
       _QC_SEV.O_WRONG_SLOT='WARNING';
       _QC_SEV.EX_UNDER90='WARNING'; _QC_SEV.CPT_MISSING='WARNING'; _QC_SEV.O_NO_ANSMARK='WARNING';
-      _QC_SEV.OT_SKIP_ON_FILLED='WARNING'; _QC_SEV.CALC7_LACK='WARNING';
+      _QC_SEV.OT_SKIP_ON_FILLED='WARNING'; _QC_SEV.CALC7_LACK='WARNING'; _QC_SEV.CALC_EX_NOSTEP='WARNING';
     }
   }catch(e){}
 
