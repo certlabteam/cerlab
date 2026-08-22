@@ -1114,10 +1114,23 @@ function clRouteFromHash(){
 
 // ===== [2026-07-20] 문제 딥링크: /#q/{cert}/{qid} → 해당 회차 진입 + 그 문제로 점프 (공유·광고·빠른 찾기용) =====
 (function(){
-  function qWanted(){
-    var h=location.hash||''; if(h.indexOf('#q/')!==0) return null;
-    var rest=h.slice(3), sl=rest.indexOf('/'); if(sl<1) return null;
+  function _split(rest){
+    var sl=rest.indexOf('/'); if(sl<1) return null;
     try{ return {cert:decodeURIComponent(rest.slice(0,sl)), qid:decodeURIComponent(rest.slice(sl+1))}; }catch(_){ return null; }
+  }
+  /* [2026-08-23] 쿼리 형태(?q=시험/문항id)도 받는다.
+     안드로이드 앱(TWA)이 이미 떠 있는 상태에서 해시만 다른 주소를 누르면 **이동이 일어나지 않아**
+     앱이 앞으로 나오기만 하고 화면은 홈 그대로였다(해시 변경은 재로드를 부르지 않는다).
+     쿼리는 주소의 앞부분이라 진짜 이동이 일어나 딥링크가 산다.
+     공유·광고에는 ?q= 를 쓰고, #q/ 는 종전대로 계속 받는다. */
+  function qWanted(){
+    var h=location.hash||'';
+    if(h.indexOf('#q/')===0) return _split(h.slice(3));
+    try{
+      var qs=new URLSearchParams(location.search||''), v=qs.get('q');
+      if(v) return _split(v);
+    }catch(_){}
+    return null;
   }
   async function openQ(cert, qid){
     try{ if(typeof loadExam==='function') await loadExam(cert); }catch(_){}
@@ -1155,11 +1168,23 @@ function clRouteFromHash(){
     var w=qWanted(); if(!w){ _done=false; return; }
     if(_done) return;
     var ready = typeof firebaseReady!=='undefined' && firebaseReady && typeof enterCert==='function' && typeof MCQ_QID2CS!=='undefined';
-    if(ready){ _done=true; openQ(w.cert, w.qid); return; }
+    if(ready){
+      _done=true;
+      var _viaQuery = (location.hash||'').indexOf('#q/')!==0;
+      Promise.resolve(openQ(w.cert, w.qid)).then(function(ok){
+        /* 쿼리로 들어왔으면 열린 뒤 주소를 해시 형태로 정리한다 —
+           ?q= 가 남아 있으면 앱이 앞으로 나올 때마다 이 문항으로 되돌아간다. */
+        if(ok && _viaQuery){ try{ history.replaceState(null,'',location.pathname+'#q/'+encodeURIComponent(w.cert)+'/'+encodeURIComponent(w.qid)); }catch(_){} }
+      }).catch(function(){});
+      return;
+    }
     if(n>0) setTimeout(function(){ tryQ(n-1); }, 300);   // firebase·뱅크 로드 대기
   }
-  window.addEventListener('load', function(){ tryQ(30); });
+  window.addEventListener('load', function(){ tryQ(60); });   /* [2026-08-23] 9초 → 18초. 모바일 콜드 스타트가 9초를 넘겨 그냥 홈에 머무는 일이 있었다 */
   window.addEventListener('hashchange', function(){ _done=false; tryQ(10); });
+  /* 앱이 뒤에 떠 있다가 앞으로 나오는 경우에도 한 번 더 본다(안드로이드 TWA) */
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden && qWanted()) tryQ(10); });
+  try{ if(document.readyState==='complete') tryQ(60); }catch(_){}   /* 이미 로드가 끝난 뒤 스크립트가 붙는 경우 */
 })();
 
 
