@@ -352,6 +352,133 @@ _itvTemplates.T2_timeline=function(it, instId){
 };
 _itvUpdaters.T2_timeline=function(instId, rawVal, P){ setActiveT2(instId, P, parseInt(rawVal,10)||0, true); };
 
+
+/* ---- T6 수요·공급(supply-demand) : 세금·보조금·가격상한·최저임금을 슬라이더 하나로 ----
+   왜 새 템플릿인가: T1_curve_slider 는 현금흐름·NPV 전용(IRR·교차점 계산이 박혀 있다)이라
+   선형 수요·공급을 그릴 수가 없다. 이 틀 하나로 사중손실·잉여·초과수요를 함께 다룬다.
+   선은 검정, 색은 점과 영역에만 — 그래프 규약과 같게 간다.
+   params: {demand:{a,b}, supply:{c,d}, policy:{type,label,min,max,step,default,unit}, axis:{q,p,unit,punit}}
+   수요 Qd = a - bP,  공급 Qs = c + dP  (문항이 주는 꼴 그대로) */
+function _sdPd(P,Q){ return (P.a-Q)/P.b; }          // 수요가격(그 수량을 사려는 최대 지불용의)
+function _sdPs(P,Q){ return (Q-P.c)/P.d; }          // 공급가격(그 수량을 팔려는 최소 요구액)
+function _sdSolve(P, v){
+  var a=P.a,b=P.b,c=P.c,d=P.d, t=P.type;
+  var Pe=(a-c)/(b+d), Qe=a-b*Pe, o={Pe:Pe,Qe:Qe,type:t};
+  if(t==='tax'||t==='subsidy'){
+    var w=(t==='subsidy')?-v:v;                     // 보조금은 음(-)의 세금
+    o.w=w; o.Pb=(a-c+d*w)/(b+d); o.Ps=o.Pb-w; o.Qt=a-b*o.Pb;
+    o.govt=Math.abs(w)*o.Qt;                        // 세수 또는 보조금 지급액
+  } else {                                          // ceiling(상한) / floor(하한)
+    o.Pp=v; o.Qd=a-b*v; o.Qs=c+d*v; o.Qt=Math.min(o.Qd,o.Qs);
+    o.gap=o.Qd-o.Qs;                                // +면 초과수요(부족), -면 초과공급(남음)
+    o.Pb=_sdPd(P,o.Qt); o.Ps=_sdPs(P,o.Qt);
+  }
+  o.dwl=0.5*Math.abs(Qe-o.Qt)*Math.abs(_sdPd(P,o.Qt)-_sdPs(P,o.Qt));
+  return o;
+}
+function _sdNum(v){ if(!isFinite(v)) return '-'; var r=Math.round(v*100)/100; return (Math.abs(r)>=1000?r.toLocaleString('ko-KR'):String(r)); }
+
+_itvTemplates.T6_supply_demand=function(it, instId){
+  var p=it.params||{}, D=p.demand||{a:200,b:1}, S=p.supply||{c:0,d:1}, pol=p.policy||{type:'tax'};
+  var ax=p.axis||{}, uq=ax.unit||'', up=ax.punit||uq;
+  var P={a:+D.a,b:+D.b,c:+S.c,d:+S.d,type:pol.type||'tax'};
+  var dv=(pol.default!=null?+pol.default:0);
+  var base=_sdSolve(P,0), Qmax=Math.max(P.a, base.Qe*1.6)*1.05, Pmax=Math.max(P.a/P.b, base.Pe*1.9)*1.02;
+  var W=520,H=330,L=52,Rr=64,T=16,Bm=40, pw=W-L-Rr, ph=H-T-Bm;
+  function X(q){ return L+Math.max(0,Math.min(1,q/Qmax))*pw; }
+  function Y(pr){ return T+ph-Math.max(0,Math.min(1,pr/Pmax))*ph; }
+  window._itvReg[instId]={template:'T6_supply_demand', P:P, pol:pol, geo:{X:X,Y:Y}, ax:ax, defaultVal:dv, base:base};
+
+  /* 축 — #334155, 끝에 열린 꺾쇠(그래프 규약과 같게) */
+  function tip(x,y,dir){ return dir==='up'
+    ? '<path d="M'+(x-3.2)+' '+(y+6)+' L'+x+' '+y+' L'+(x+3.2)+' '+(y+6)+'" fill="none" stroke="#334155" stroke-width="1.3" stroke-linecap="round"/>'
+    : '<path d="M'+(x-6)+' '+(y-3.2)+' L'+x+' '+y+' L'+(x-6)+' '+(y+3.2)+'" fill="none" stroke="#334155" stroke-width="1.3" stroke-linecap="round"/>'; }
+  var axis='<line x1="'+L+'" y1="'+(T+ph)+'" x2="'+(W-Rr+22)+'" y2="'+(T+ph)+'" stroke="#334155" stroke-width="1.3"/>'
+    +'<line x1="'+L+'" y1="'+(T+ph)+'" x2="'+L+'" y2="'+(T-6)+'" stroke="#334155" stroke-width="1.3"/>'
+    +tip(W-Rr+22,T+ph,'right')+tip(L,T-6,'up')
+    +'<text x="'+(W-Rr+26)+'" y="'+(T+ph+16)+'" font-size="11" fill="#334155">'+_itvEsc(ax.q||'수량 Q')+'</text>'
+    +'<text x="'+(L-8)+'" y="'+(T-8)+'" text-anchor="end" font-size="11" fill="#334155">'+_itvEsc(ax.p||'가격 P')+'</text>';
+
+  /* 수요·공급선 — 둘 다 검정 실선, 이름표로 가른다 */
+  var dQ0=P.a, dP0=P.a/P.b;                                   // 수요: (0, a/b) ~ (a, 0)
+  var sQ0=Math.max(0,P.c), sP0=(P.c<0? -P.c/P.d : 0);         // 공급이 시작되는 점
+  var sQ1=Math.min(Qmax, P.c+P.d*Pmax), sP1=_sdPs(P,sQ1);
+  var lines='<line x1="'+X(0)+'" y1="'+Y(dP0)+'" x2="'+X(dQ0)+'" y2="'+Y(0)+'" stroke="#0F172A" stroke-width="1.8"/>'
+    +'<line x1="'+X(sQ0)+'" y1="'+Y(sP0)+'" x2="'+X(sQ1)+'" y2="'+Y(sP1)+'" stroke="#0F172A" stroke-width="1.8"/>'
+    +'<text x="'+(X(dQ0*0.86))+'" y="'+(Y(_sdPd(P,dQ0*0.86))-7)+'" font-size="11" fill="#0F172A">수요</text>'
+    +'<text x="'+(X(sQ1)-4)+'" y="'+(Y(sP1)-7)+'" text-anchor="end" font-size="11" fill="#0F172A">공급</text>';
+
+  var dyn='<g id="'+instId+'_dyn"></g>';
+  var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
+  var defHTML=''; if(p.intro) defHTML+='<div class="itv-def">'+p.intro+'</div>';
+  if(Array.isArray(p.terms)&&p.terms.length) defHTML+='<div class="itv-def">'+p.terms.map(function(t){return '<span class="term"><b>'+_itvEsc(t.t)+'</b> — '+_itvEsc(t.d)+'</span>';}).join('')+'</div>';
+  var ctrl='<div class="itv-ctrl"><label>'+_itvEsc(pol.label||'정책 크기')+'</label>'
+    +'<input type="range" min="'+(pol.min!=null?pol.min:0)+'" max="'+(pol.max!=null?pol.max:10)+'" step="'+(pol.step||1)+'" value="'+dv+'" oninput="itvUpdate(\''+instId+'\',this.value)">'
+    +'<div class="itv-rate"><span id="'+instId+'_pv">'+dv+'</span>'+_itvEsc(pol.unit||up)+'</div></div>';
+  var hint=pol.hint?'<p class="itv-hint">'+_itvEsc(pol.hint)+'</p>':'';
+  var say='<div class="itv-say"><div class="h" id="'+instId+'_say">—</div><div class="w" id="'+instId+'_why">—</div></div>';
+  var tip2='<div class="itv-tip" id="'+instId+'_tip">—</div>';
+  return '<div class="itv-box" id="'+instId+'">'+ti+defHTML
+    +'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'+axis+lines+dyn+'</svg>'
+    +ctrl+hint+say+tip2+'</div>';
+};
+
+_itvUpdaters.T6_supply_demand=function(instId, rawVal, R){
+  var d=document.getElementById(instId); if(!d) return;
+  var P=R.P, g=R.geo, pol=R.pol, ax=R.ax||{}, uq=ax.unit||'', up=ax.punit||uq;
+  var v=parseFloat(rawVal); if(!isFinite(v)) v=0;
+  var pv=d.querySelector('#'+instId+'_pv'); if(pv) pv.textContent=(pol.step&&pol.step<1)?v.toFixed(1):v;
+  var o=_sdSolve(P,v), X=g.X, Y=g.Y, isPrice=(P.type==='ceiling'||P.type==='floor');
+  var s='';
+  /* 사중손실 삼각형 — 색은 영역에만 */
+  if(Math.abs(o.Qe-o.Qt)>1e-9)
+    s+='<polygon points="'+X(o.Qt)+','+Y(o.Pb)+' '+X(o.Qt)+','+Y(o.Ps)+' '+X(o.Qe)+','+Y(o.Pe)+'" fill="#C0392B" fill-opacity="0.22" stroke="#C0392B" stroke-width="1"/>';
+  /* 안내 점선은 두 축 다 */
+  s+='<line x1="'+X(o.Qt)+'" y1="'+Y(0)+'" x2="'+X(o.Qt)+'" y2="'+Y(Math.max(o.Pb,o.Ps))+'" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4 3"/>';
+  s+='<line x1="'+X(0)+'" y1="'+Y(o.Pb)+'" x2="'+X(o.Qt)+'" y2="'+Y(o.Pb)+'" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4 3"/>';
+  if(Math.abs(o.Pb-o.Ps)>1e-9)
+    s+='<line x1="'+X(0)+'" y1="'+Y(o.Ps)+'" x2="'+X(o.Qt)+'" y2="'+Y(o.Ps)+'" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4 3"/>';
+  /* 점 — 원래 균형(검정), 사는 값(파랑), 받는 값(초록) */
+  s+='<circle cx="'+X(o.Qe)+'" cy="'+Y(o.Pe)+'" r="4" fill="#0F172A"/>'
+    +'<text x="'+(X(o.Qe)+7)+'" y="'+(Y(o.Pe)-6)+'" font-size="10" fill="#0F172A">원래 균형</text>';
+  if(Math.abs(o.Pb-o.Ps)>1e-9 || Math.abs(o.Qe-o.Qt)>1e-9)
+    s+='<circle cx="'+X(o.Qt)+'" cy="'+Y(o.Pb)+'" r="4" fill="#2563EB"/>'
+      +'<circle cx="'+X(o.Qt)+'" cy="'+Y(o.Ps)+'" r="4" fill="#1F9D57"/>'
+      +'<text x="'+(X(0)-6)+'" y="'+(Y(o.Pb)+4)+'" text-anchor="end" font-size="10" fill="#2563EB">'+_sdNum(o.Pb)+'</text>'
+      +'<text x="'+(X(0)-6)+'" y="'+(Y(o.Ps)+4)+'" text-anchor="end" font-size="10" fill="#1F9D57">'+_sdNum(o.Ps)+'</text>';
+  var dynEl=d.querySelector('#'+instId+'_dyn'); if(dynEl) dynEl.innerHTML=s;
+
+  var say=d.querySelector('#'+instId+'_say'), why=d.querySelector('#'+instId+'_why'), tp=d.querySelector('#'+instId+'_tip');
+  if(v===0 && !isPrice){
+    if(say) say.innerHTML='지금은 <b>아무 정책도 없는 균형</b>';
+    if(why) why.textContent='가격 '+_sdNum(o.Pe)+up+'에서 '+_sdNum(o.Qe)+uq+'이 거래됩니다. 슬라이더를 올려 보세요.';
+    if(tp) tp.innerHTML='사중손실 <b>0</b> — 팔려는 사람과 사려는 사람이 남김없이 만납니다.';
+    return;
+  }
+  var lostQ=Math.abs(o.Qe-o.Qt);
+  if(P.type==='tax'||P.type==='subsidy'){
+    var isTax=(P.type==='tax');
+    if(say) say.innerHTML=(isTax?'단위당 <b>'+_sdNum(v)+up+'의 세금</b>':'단위당 <b>'+_sdNum(v)+up+'의 보조금</b>')
+      +' — 거래량 '+_sdNum(o.Qe)+' → <b>'+_sdNum(o.Qt)+'</b>'+uq;
+    if(why) why.innerHTML='사는 쪽은 <b style="color:#2563EB">'+_sdNum(o.Pb)+up+'</b>를 내고 파는 쪽은 <b style="color:#1F9D57">'+_sdNum(o.Ps)+up+'</b>를 받습니다. '
+      +(isTax?'그 차이 '+_sdNum(Math.abs(o.Pb-o.Ps))+up+'이 세금이고, 양쪽이 나눠 집니다.'
+             :'파는 쪽이 더 받고 사는 쪽이 덜 내는 만큼을 정부가 메웁니다.');
+    if(tp) tp.innerHTML='<b>'+(isTax?'세수':'보조금 지급액')+'</b> '+_sdNum(o.govt)+' &nbsp;·&nbsp; <b>사중손실</b> '+_sdNum(o.dwl)
+      +' = ½ × '+_sdNum(Math.abs(v))+' × '+_sdNum(lostQ)+' (붉은 삼각형)';
+  } else {
+    var isCeil=(P.type==='ceiling'), binding=isCeil?(v<o.Pe):(v>o.Pe);
+    if(say) say.innerHTML=(isCeil?'<b>가격상한 '+_sdNum(v)+up+'</b>':'<b>가격하한 '+_sdNum(v)+up+'</b>')
+      +(binding?' — 거래량 '+_sdNum(o.Qe)+' → <b>'+_sdNum(o.Qt)+'</b>'+uq:' — 균형('+_sdNum(o.Pe)+up+')에 걸리지 않아 아무 일도 없습니다');
+    if(why) why.textContent=binding
+      ? (isCeil? '사려는 양 '+_sdNum(o.Qd)+', 내놓는 양 '+_sdNum(o.Qs)+' — '+_sdNum(Math.abs(o.gap))+uq+'만큼 모자랍니다(초과수요).'
+               : '내놓는 양 '+_sdNum(o.Qs)+', 사려는 양 '+_sdNum(o.Qd)+' — '+_sdNum(Math.abs(o.gap))+uq+'만큼 남습니다(초과공급).')
+      : (isCeil? '상한이 균형보다 높으면 시장이 알아서 균형에 맞춥니다.' : '하한이 균형보다 낮으면 시장이 알아서 균형에 맞춥니다.');
+    if(tp) tp.innerHTML=binding
+      ? '<b>'+(isCeil?'부족분':'남는 양')+'</b> '+_sdNum(Math.abs(o.gap))+uq+' &nbsp;·&nbsp; <b>사중손실</b> '+_sdNum(o.dwl)+' (붉은 삼각형)'
+      : '<b>사중손실 0</b> — 구속력이 없는 규제입니다.';
+  }
+};
+
 /* ---- 렌더 1건 ---- */
 function itvRenderOne(it){
   if(!it||typeof it!=='object') return '';

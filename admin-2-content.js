@@ -1,6 +1,6 @@
 // ===== 🎛 인터랙티브 마스터 (Firestore interactives CRUD · template+params) =====
 var _itvmAll={}, _itvmLoaded=false, _itvmImpBound=false, _itvmImpData=null;
-var _ITV_TEMPLATES=['T1_curve_slider','T5_inventory_flow','T2_timeline','T_risk_return','T_duration','T_cvp','T_eup','T_lcnrv','T_eps','T_eva','T_capint','T_fvpl','T_moving_avg','T_price_index','T_pred_value','T_weighted_mean'];
+var _ITV_TEMPLATES=['T1_curve_slider','T5_inventory_flow','T6_supply_demand','T2_timeline','T_risk_return','T_duration','T_cvp','T_eup','T_lcnrv','T_eps','T_eva','T_capint','T_fvpl','T_moving_avg','T_price_index','T_pred_value','T_weighted_mean'];
 function itvmEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function itvmInit(){
   if(!_itvmLoaded) itvmLoad();
