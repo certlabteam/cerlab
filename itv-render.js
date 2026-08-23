@@ -387,7 +387,7 @@ _itvTemplates.T6_supply_demand=function(it, instId){
   var W=520,H=330,L=52,Rr=64,T=16,Bm=40, pw=W-L-Rr, ph=H-T-Bm;
   function X(q){ return L+Math.max(0,Math.min(1,q/Qmax))*pw; }
   function Y(pr){ return T+ph-Math.max(0,Math.min(1,pr/Pmax))*ph; }
-  window._itvReg[instId]={template:'T6_supply_demand', P:P, pol:pol, geo:{X:X,Y:Y}, ax:ax, defaultVal:dv, base:base};
+  window._itvReg[instId]={template:'T6_supply_demand', P:P, pol:pol, geo:{X:X,Y:Y}, ax:ax, defaultVal:dv, base:base, px:{L:L,T:T,pw:pw,ph:ph}};
 
   /* 축 — #334155, 끝에 열린 꺾쇠(그래프 규약과 같게) */
   function tip(x,y,dir){ return dir==='up'
@@ -403,10 +403,15 @@ _itvTemplates.T6_supply_demand=function(it, instId){
   var dQ0=P.a, dP0=P.a/P.b;                                   // 수요: (0, a/b) ~ (a, 0)
   var sQ0=Math.max(0,P.c), sP0=(P.c<0? -P.c/P.d : 0);         // 공급이 시작되는 점
   var sQ1=Math.min(Qmax, P.c+P.d*Pmax), sP1=_sdPs(P,sQ1);
+  /* [2026-08-23] 이름표를 선 위에 얹지 않는다.
+     선 끝 바로 옆(오른쪽 여백)에 세워 두면 어떤 기울기에서도 선이 글자를 지나지 않는다.
+     선 위에 8px 띄워 붙였더니 기울기가 가파른 공급선이 그대로 글자를 관통했다. */
+  var dEx=X(dQ0), dEy=Y(0)-8;          // 수요선은 오른쪽 아래에서 끝난다
+  var sEx=X(sQ1), sEy=Y(sP1)+4;        // 공급선은 오른쪽 위에서 끝난다
   var lines='<line x1="'+X(0)+'" y1="'+Y(dP0)+'" x2="'+X(dQ0)+'" y2="'+Y(0)+'" stroke="#0F172A" stroke-width="1.8"/>'
     +'<line x1="'+X(sQ0)+'" y1="'+Y(sP0)+'" x2="'+X(sQ1)+'" y2="'+Y(sP1)+'" stroke="#0F172A" stroke-width="1.8"/>'
-    +'<text x="'+(X(dQ0*0.86))+'" y="'+(Y(_sdPd(P,dQ0*0.86))-7)+'" font-size="11" fill="#0F172A">수요</text>'
-    +'<text x="'+(X(sQ1)-4)+'" y="'+(Y(sP1)-7)+'" text-anchor="end" font-size="11" fill="#0F172A">공급</text>';
+    +'<text x="'+(dEx+6)+'" y="'+dEy+'" font-size="11" fill="#0F172A">수요</text>'
+    +'<text x="'+(sEx+6)+'" y="'+Math.max(T+11, sEy)+'" font-size="11" fill="#0F172A">공급</text>';
 
   var dyn='<g id="'+instId+'_dyn"></g>';
   var ti=(it.title||it.name)?'<div class="itv-ti">'+_itvEsc(it.title||it.name)+'</div>':'';
@@ -439,13 +444,29 @@ _itvUpdaters.T6_supply_demand=function(instId, rawVal, R){
   if(Math.abs(o.Pb-o.Ps)>1e-9)
     s+='<line x1="'+X(0)+'" y1="'+Y(o.Ps)+'" x2="'+X(o.Qt)+'" y2="'+Y(o.Ps)+'" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4 3"/>';
   /* 점 — 원래 균형(검정), 사는 값(파랑), 받는 값(초록) */
-  s+='<circle cx="'+X(o.Qe)+'" cy="'+Y(o.Pe)+'" r="4" fill="#0F172A"/>'
-    +'<text x="'+(X(o.Qe)+7)+'" y="'+(Y(o.Pe)-6)+'" font-size="10" fill="#0F172A">원래 균형</text>';
-  if(Math.abs(o.Pb-o.Ps)>1e-9 || Math.abs(o.Qe-o.Qt)>1e-9)
-    s+='<circle cx="'+X(o.Qt)+'" cy="'+Y(o.Pb)+'" r="4" fill="#2563EB"/>'
-      +'<circle cx="'+X(o.Qt)+'" cy="'+Y(o.Ps)+'" r="4" fill="#1F9D57"/>'
-      +'<text x="'+(X(0)-6)+'" y="'+(Y(o.Pb)+4)+'" text-anchor="end" font-size="10" fill="#2563EB">'+_sdNum(o.Pb)+'</text>'
-      +'<text x="'+(X(0)-6)+'" y="'+(Y(o.Ps)+4)+'" text-anchor="end" font-size="10" fill="#1F9D57">'+_sdNum(o.Ps)+'</text>';
+  /* 원래 균형 이름표 — 두 선이 벌어지는 쐐기 안, 균형점과 같은 높이에 둔다.
+     위나 아래로 올리면 곧바로 수요선이나 공급선을 밟는다(균형점은 두 선이 만나는 자리다).
+     사중손실 삼각형이 있는 쪽은 피해 반대편에 세운다. */
+  var px=R.px||{L:52,T:16,pw:404,ph:274};
+  var ex0=X(o.Qe), ey0=Y(o.Pe);
+  var side=(o.Qt<=o.Qe)?1:-1;
+  if(side>0 && ex0 > px.L+px.pw*0.72) side=-1;
+  /* 얼마나 띄울지는 눈대중이 아니라 두 선의 화면 기울기로 잰다.
+     글자 높이의 절반(6px)에 여유 1px 을 더한 만큼 벌어지는 자리까지 밀어 낸다. */
+  var _q1=o.Qe + Math.max(1e-6, P.a*0.02), _dx=Math.abs(X(_q1)-ex0) || 1;
+  var _sd=Math.abs((Y(_sdPd(P,_q1))-ey0)/_dx), _ss=Math.abs((Y(_sdPs(P,_q1))-ey0)/_dx);
+  var _mn=Math.max(0.12, Math.min(_sd,_ss)), _off=Math.min(34, Math.max(10, Math.ceil(7/_mn)+2));
+  s+='<circle cx="'+ex0+'" cy="'+ey0+'" r="4" fill="#0F172A"/>'
+    +'<text x="'+(ex0+side*_off)+'" y="'+(ey0+4)+'" text-anchor="'+(side>0?'start':'end')+'" font-size="10" fill="#0F172A">원래 균형</text>';
+  if(Math.abs(o.Pb-o.Ps)>1e-9 || Math.abs(o.Qe-o.Qt)>1e-9){
+    /* 왼쪽 눈금 두 개가 붙으면 글자가 겹친다 — 11px 안으로 들어오면 위아래로 6px씩 벌린다. */
+    var yb=Y(o.Pb), ys=Y(o.Ps), tb=yb+4, ts=ys+4;
+    if(Math.abs(yb-ys)<11){ var mid=(yb+ys)/2; if(yb<=ys){ tb=mid-3; ts=mid+13; } else { tb=mid+13; ts=mid-3; } }
+    s+='<circle cx="'+X(o.Qt)+'" cy="'+yb+'" r="4" fill="#2563EB"/>'
+      +'<circle cx="'+X(o.Qt)+'" cy="'+ys+'" r="4" fill="#1F9D57"/>'
+      +'<text x="'+(X(0)-6)+'" y="'+tb+'" text-anchor="end" font-size="10" fill="#2563EB">'+_sdNum(o.Pb)+'</text>'
+      +'<text x="'+(X(0)-6)+'" y="'+ts+'" text-anchor="end" font-size="10" fill="#1F9D57">'+_sdNum(o.Ps)+'</text>';
+  }
   var dynEl=d.querySelector('#'+instId+'_dyn'); if(dynEl) dynEl.innerHTML=s;
 
   var say=d.querySelector('#'+instId+'_say'), why=d.querySelector('#'+instId+'_why'), tp=d.querySelector('#'+instId+'_tip');
