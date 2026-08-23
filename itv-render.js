@@ -508,10 +508,18 @@ function itvInitPending(){
     try{ if(P.template==='T2_timeline'){ setActiveT2(el.id,P,P.defaultVal||0,false); itvTlWire(el.id); } else { itvUpdate(el.id, P.defaultVal); } }catch(e){}
   }
 }
+/* [2026-08-23] 인터렉티브도 개념에서 물려받는다.
+   지금까지는 문항 exp.itv 만 읽어서, 같은 그림을 문항마다 따로 만들어 붙여야 했다.
+   암기코드(mn)처럼 개념(cpt)의 itv 까지 모아 그린다 — 마스터 하나를 모든 시험이 같이 쓴다.
+   문자열 참조는 id 로 중복을 걷어낸다(문항과 개념이 같은 걸 가리킬 수 있다). */
 function itvBlockHTML(q){
-  var iv=q&&q.exp&&q.exp.itv; if(!iv) return '';
-  var list=Array.isArray(iv)?iv:[iv];
-  var html=list.map(itvResolve).filter(Boolean).join('');
+  var iv=(q&&q.exp&&q.exp.itv)||null;
+  var list=iv?(Array.isArray(iv)?iv.slice():[iv]):[];
+  try{ if(typeof _conceptChain==='function') _conceptChain(q,'itv').forEach(function(x){ list.push(x); }); }catch(e){}
+  if(!list.length) return '';
+  var seen={}, out=[];
+  list.forEach(function(x){ if(typeof x==='string'){ if(seen[x]) return; seen[x]=1; } out.push(x); });
+  var html=out.map(itvResolve).filter(Boolean).join('');
   if(html) setTimeout(itvInitPending,0);
   return html;
 }
