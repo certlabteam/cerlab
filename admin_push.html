@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CertLab 해설 밀어넣기 (경량)</title>
+<!--
+  admin_upload.html 은 방들이 같이 쓰는 탭이라, 한 방이 무거운 전수 스캔(개념 13,912건 등)을
+  돌리면 렌더러가 멈춰 다른 방의 호출까지 45초 타임아웃으로 죽는다.
+  이 페이지는 그 목록·검수 UI 를 하나도 싣지 않는다 — firebase 와 검수 엔진뿐이다.
+  얼릴 만한 코드가 없으니 다른 방이 무엇을 하든 이 탭은 살아 있다.
+  주소가 달라 탭이 겹치지도 않는다.
+-->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
+<script src="qc-core.js"></script>
+<script src="qc-gate-patch.js"></script>
+<style>
+  body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI','Malgun Gothic',sans-serif;font-size:14px;line-height:1.6;margin:0;padding:22px}
+  .box{max-width:680px;margin:0 auto;background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 4px 18px rgba(0,0,0,.06)}
+  h1{font-size:17px;color:#185FA5;margin:0 0 6px}
+  p{margin:0 0 12px;color:#555;font-size:13px}
+  code{background:#EEF2F7;border-radius:5px;padding:1px 5px;font-size:12px}
+  #log{margin-top:14px;border-top:1px solid #E8E8E8;padding-top:12px;font-size:12.5px;white-space:pre-wrap;min-height:40px}
+  .btn{border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;background:#185FA5;color:#fff}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>해설 밀어넣기 (경량 페이지)</h1>
+  <p>목록·전수검수 UI 를 싣지 않은 자동화 전용 페이지입니다. 무거운 작업이 없어 얼지 않습니다.<br>
+     <code>__P2(파일, 샤드, 시험, 과목, 버전)</code> 로 밀어넣고 <code>__R</code> 로 결과를 봅니다.</p>
+  <button class="btn" id="signin">구글 로그인</button>
+  <div id="log">준비 중…</div>
+</div>
+<script>
+(function(){
+  var cfg = {
+    apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+    authDomain: "certlab-c3bcb.firebaseapp.com",
+    projectId: "certlab-c3bcb",
+    storageBucket: "certlab-c3bcb.firebasestorage.app",
+    messagingSenderId: "698827699707",
+    appId: "1:698827699707:web:b08d492f408ac444fa875e"
+  };
+  firebase.initializeApp(cfg);
+  try{
+    firebase.appCheck().activate(
+      new firebase.appCheck.ReCaptchaV3Provider('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2'), true);
+  }catch(e){}
+  var db = firebase.firestore();
+  window.db = db;
+  function log(m){ var el=document.getElementById('log'); if(el) el.textContent = new Date().toLocaleTimeString()+'  '+m; }
+
+  document.getElementById('signin').onclick = function(){
+    firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+      .then(function(r){ log('로그인: '+(r.user&&r.user.email)); })
+      .catch(function(e){ log('로그인 실패: '+e.message); });
+  };
+  firebase.auth().onAuthStateChanged(function(u){
+    log(u ? ('준비됨 · '+u.email) : '로그인이 필요합니다');
+  });
+
+  /* 초안 서버(127.0.0.1:8899)에서 패치를 받아 샤드에 얹는다.
+     올리기 전에 문항마다 게이트를 전/후로 돌려 새 위반이 하나라도 늘면 멈춘다. */
+  window.__P2 = function(file, shard, cert, sub, ver){
+    window.__R = 'running';
+    (async function(){
+      try{
+        var D = await (await fetch('http://127.0.0.1:8899/'+file)).json();
+        var ref = db.collection('banks').doc(shard);
+        var snap = await ref.get();
+        if(!snap.exists) throw new Error('샤드 없음: '+shard);
+        var qs = (snap.data().questions)||[], touched=0, grew=0;
+        for(var i=0;i<qs.length;i++){
+          var q=qs[i]; if(!D[q.id]) continue;
+          var v0=[]; try{ v0=_qcViolations(q,{sub:sub,cert:cert})||[]; }catch(e){}
+          qs[i]=Object.assign({}, q, {exp: Object.assign({}, q.exp||{}, D[q.id])});
+          var v1=[]; try{ v1=_qcViolations(qs[i],{sub:sub,cert:cert})||[]; }catch(e){}
+          var s0={}; v0.forEach(function(x){ s0[x.code]=(s0[x.code]||0)+1; });
+          var s1={}; v1.forEach(function(x){ s1[x.code]=(s1[x.code]||0)+1; });
+          for(var c in s1){ if((s1[c]||0)>(s0[c]||0)) grew += s1[c]-(s0[c]||0); }
+          touched++;
+        }
+        if(grew>0){ window.__R='ABORT 신규위반 '+grew; log(window.__R); return; }
+        var TS = firebase.firestore.FieldValue.serverTimestamp();
+        await ref.update({questions:qs, version:ver, updatedAt:TS});
+        await db.collection('banks').doc(cert+'__'+sub).update({version:ver, updatedAt:TS});
+        var mref = db.collection('manifest').doc('exams');
+        var ex = ((await mref.get()).data().exams)||[];
+        for(var j=0;j<ex.length;j++){
+          if((ex[j].id||ex[j].cert)===cert){ ex[j].versions=ex[j].versions||{}; ex[j].versions[sub]=ver; }
+        }
+        await mref.update({exams:ex});
+        window.__R = 'done touched='+touched;
+        log(shard+' → v'+ver+' · '+touched+'문항');
+      }catch(e){ window.__R='ERR '+((e&&e.message)||e); log(window.__R); }
+    })();
+    return 'kicked';
+  };
+})();
+</script>
+</body>
+</html>
