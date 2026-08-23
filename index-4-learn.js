@@ -321,7 +321,11 @@ function stripRepeatedOpt(exp, opt){
   if(!exp) return '';
   if(!opt) return exp.trim();
   // 공백 정규화 후, 해설이 보기 문장으로 시작하면 그 반복분을 제거
-  var norm=function(s){ return String(s).replace(/\s+/g,' ').trim(); };
+  /* [2026-08-23] 
+ 은 살려 둔다. 예전엔 \s+ 를 통째로 공백 하나로 바꿔
+     해설에 있던 단계 줄바꿈이 여기서 사라졌다(계산형 해설이 한 문단으로 뻗친 진짜 이유).
+     보기 문장과 앞맞춤만 하면 되므로 줄바꿈은 그대로 둔다. */
+  var norm=function(s){ return String(s).replace(/[^\S\n]+/g,' ').replace(/[ \t]*\n[ \t]*/g,'\n').trim(); };
   var e=norm(exp), o=norm(opt);
   var orig=e;   // 잘라내기 취소용 원본
   // 보기 끝의 마침표 유무 차이를 흡수
@@ -462,7 +466,12 @@ function rm(text, q){ return renderMath(text, isEconQ(q)); }
    데이터에는 ①②③ 단계마다 
  이 들어 있는데 rm 은 그대로 흘려 버려 한 문단으로 뭉쳤다.
    단계가 여럿인 계산형 해설이 통째로 붙어 읽기 어려웠다. */
-function rmML(text, q){ return expNoteHTML(text, q); }
+function rmML(text, q){
+  /* 줄바꿈이 있으면 그대로 살리고, 없더라도 **번호별로는** 끊는다.
+     예전 해설은 줄바꿈 없이 `…이다. 2. LM곡선…` 처럼 이어 쓴 것이 많다.
+     마침표 뒤의 `숫자. ` 앞에서만 끊어 소수점(0.8)·천단위(1,500)는 건드리지 않는다. */
+  return expNoteHTML(text, q).replace(/([.\u3002])(?:<br>|\s)+(?=\d+\.\s)/g, '$1<br>');
+}
 function expNoteHTML(text, q){
   return rm(text, q)
     .replace(/\r\n?/g, '\n')

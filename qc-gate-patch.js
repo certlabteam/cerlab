@@ -53,6 +53,7 @@
       if(!_QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED) _QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED={on:true};
       if(!_QC_DEFAULTS.gichul.CALC7_LACK)   _QC_DEFAULTS.gichul.CALC7_LACK={on:true};
       if(!_QC_DEFAULTS.gichul.CALC_EX_NOSTEP) _QC_DEFAULTS.gichul.CALC_EX_NOSTEP={on:true};
+      if(!_QC_DEFAULTS.gichul.MASTER_ON_Q) _QC_DEFAULTS.gichul.MASTER_ON_Q={on:true};
     }
   }catch(e){}
 
@@ -384,6 +385,27 @@
         msg:'계산형 7단 가운데 빈 칸: '+lack.join('·')+' (§4-4) — 접근·원리·요약풀이·상세풀이·최종정리·시험포인트·암기포인트',text:''});
     }
 
+    /* ⑥ 마스터를 문항에 직접 물렸다
+       그래프·표·인터렉티브·암기코드는 개념(exp.cpt)에 걸어야 모든 시험이 같이 쓴다(§6-2).
+       문항에 직접 물리면 그 문항만 쓰고, 같은 그림을 문항마다 다시 만들게 된다.
+       렌더는 개념에서 물려받는 통로가 이미 있다(grp·tbl·mn·itv 모두).
+       문항 전용 그림이 꼭 필요하면 exp.graph(인라인 SVG)를 쓴다 — 그쪽은 안 걸린다. */
+    if(_on('gichul','MASTER_ON_Q')){
+      var _MF=['grp','tbl','itv','mn'];
+      for(var mi=0; mi<_MF.length; mi++){
+        var _f=_MF[mi], _mv=exp[_f]; if(!_mv) continue;
+        var _arr=(Object.prototype.toString.call(_mv)==='[object Array]')?_mv:[_mv];
+        var _ids=[], _inline=0;
+        for(var mj=0; mj<_arr.length; mj++){ var _x=_arr[mj]; if(_x==null) continue;
+          if(typeof _x==='string') _ids.push(String(_x).split('://').pop()); else _inline++; }
+        if(!_ids.length && !_inline) continue;
+        v.push({kind:'warn',field:_f,idx:0,code:'MASTER_ON_Q',
+          msg:'마스터('+_f+')를 문항에 직접 물렸다'+(_inline?' (그중 인라인 '+_inline+'건 — 마스터로 빼내야 한다)':'')
+            +' — 개념(exp.cpt)에 걸어 모든 시험이 같이 쓰게 한다(§6-2). 문항 전용 그림은 exp.graph 로',
+          text:_ids.join(', ').slice(0,60)});
+      }
+    }
+
     _sev(v);
     return v;
   }
@@ -475,6 +497,7 @@
       _QC_SEV.O_WRONG_SLOT='WARNING';
       _QC_SEV.EX_UNDER90='WARNING'; _QC_SEV.CPT_MISSING='WARNING'; _QC_SEV.O_NO_ANSMARK='WARNING';
       _QC_SEV.OT_SKIP_ON_FILLED='WARNING'; _QC_SEV.CALC7_LACK='WARNING'; _QC_SEV.CALC_EX_NOSTEP='WARNING';
+      _QC_SEV.MASTER_ON_Q='WARNING';
     }
   }catch(e){}
 
