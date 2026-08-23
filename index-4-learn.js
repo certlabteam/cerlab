@@ -439,6 +439,12 @@ function renderMath(text, allowBareFraction){
   // (5) 분수 플레이스홀더 → HTML
   s = s.replace(/\u0001([^\u0002]+)\u0002([^\u0003]+)\u0003/g, '<span class="frac"><span class="fn">$1</span><span class="fd">$2</span></span>');
   // 복원: 보호분(태그·svg·절댓값), \u0004→/
+  /* [2026-08-23] 수식이 줄 끝에서 잘리는 문제.
+     `Y = 2,200 + 5G −` 에서 줄이 끊기고 다음 줄이 `100r이다` 로 시작하면 식이 두 동강 난다.
+     연산자와 뒤따르는 항을 붙여 두면(공백 → nbsp) 줄바꿈이 연산자 앞에서만 일어나,
+     끊겨도 `+ 0.8(Y−200)` 처럼 온전한 조각으로 넘어간다.
+     복원 직전에서 돌리는 이유: 진짜 태그는 모두 스태시로 빠져 있어 태그 속을 건드리지 않는다. */
+  s = s.replace(/([=+−×÷])[ 	]+(?=\S)/g, '$1 ');   // 연산자+다음항 묶기(nbsp)
   s = s.replace(/\u0007(\d+)\u0008/g, function(m,i){ return _stash[+i]||''; });
   s = s.replace(/\u0004/g, '/');
   return s;
@@ -452,6 +458,11 @@ function isEconQ(q){
 }
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
 function rm(text, q){ return renderMath(text, isEconQ(q)); }
+/* [2026-08-23] 해설(exp.o) 전용 — 줄바꿈을 살린다.
+   데이터에는 ①②③ 단계마다 
+ 이 들어 있는데 rm 은 그대로 흘려 버려 한 문단으로 뭉쳤다.
+   단계가 여럿인 계산형 해설이 통째로 붙어 읽기 어려웠다. */
+function rmML(text, q){ return expNoteHTML(text, q); }
 function expNoteHTML(text, q){
   return rm(text, q)
     .replace(/\r\n?/g, '\n')
@@ -1374,7 +1385,7 @@ function renderMcqExam(root){
         var _hasI = q.optImg && q.optImg[i];
         var _ob = _hasT ? rm(q.opts[i],q) : (_hasI ? '<span class="eo-oimg">'+imgInner(q.optImg[i])+'</span>' : '');
         var optTxt = (_hasT || _hasI) ? '<div class="eo-q'+((_hasI && !_hasT)?' eo-q-img':'')+'">'+(i+1)+'. '+_ob+verdictTag+ansTag+'</div>' : '';
-        var expTxt= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
+        var expTxt= sv.rest ? ('<div class="eo-a">'+rmML(sv.rest,q)+'</div>') : '';
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
         return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
       }).join('')+'</div>';
@@ -1388,12 +1399,12 @@ function renderMcqExam(root){
         var sv1=splitVerdict(stripRepeatedOpt(concl, q.opts&&q.opts[ansIdx]));
         var vTag = sv1.v ? ' <span class="eo-verdict '+sv1.vc+'">'+verdictLabel(sv1.v)+'</span>' : '';
         var optLine = (q.opts&&q.opts[ansIdx]!=null) ? '<div class="eo-q">'+(ansIdx+1)+'. '+rm(q.opts[ansIdx],q)+vTag+' <span class="eo-badge">✅ 정답</span></div>' : '';
-        var aLine = sv1.rest ? '<div class="eo-a">'+rm(sv1.rest,q)+'</div>' : '';
+        var aLine = sv1.rest ? '<div class="eo-a">'+rmML(sv1.rest,q)+'</div>' : '';
         body+='<div class="exp-opts"><div class="eo">'+optLine+aLine+'</div></div>';
         body += certlabCalcHTML(q, exArr, rm);
       } else {
         // 결론 한 줄(ㄱㄴㄷ형 등)
-        body+='<div class="exp-opts"><div class="eo"><div class="eo-a">'+rm(concl,q)+'</div></div></div>';   // 결론 한 줄: 해설 전체 정오색 제거(일반 해설처럼 검정) — 배지(splitVerdict vc)는 유지
+        body+='<div class="exp-opts"><div class="eo"><div class="eo-a">'+rmML(concl,q)+'</div></div></div>';   // 결론 한 줄: 해설 전체 정오색 제거(일반 해설처럼 검정) — 배지(splitVerdict vc)는 유지
       }
     }
     if(!q.exp || (!q.exp.s && oFilled===0)) body='<div class="note">상세 해설은 추후 업데이트됩니다.</div>';
