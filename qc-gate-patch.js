@@ -54,6 +54,7 @@
       if(!_QC_DEFAULTS.gichul.CALC7_LACK)   _QC_DEFAULTS.gichul.CALC7_LACK={on:true};
       if(!_QC_DEFAULTS.gichul.CALC_EX_NOSTEP) _QC_DEFAULTS.gichul.CALC_EX_NOSTEP={on:true};
       if(!_QC_DEFAULTS.gichul.MASTER_ON_Q) _QC_DEFAULTS.gichul.MASTER_ON_Q={on:true};
+      if(!_QC_DEFAULTS.gichul.EXP_EMPTY) _QC_DEFAULTS.gichul.EXP_EMPTY={on:true};
     }
   }catch(e){}
 
@@ -406,6 +407,32 @@
       }
     }
 
+    /* ⑦ 해설이 통째로 비었다  [2026-08-24]
+       코어의 EX_MISSING·O_SHORT 는 '채워진 exp.o 가 하나라도 있을 때'만 도는 검사라
+       (_sMCQ 가 oFilledArr.length>=1 을 요구한다), exp 자체가 없는 백지 문항은
+       **아무 코드도 안 붙는다.** 실제로 klat 960문항이 백지인 채 CPT_MISSING 만 잡혀
+       "개념만 안 물렸네"로 읽혔다. 그 눈먼 자리를 여기서 메운다.
+       채움 판정은 해설 계열 필드 전부를 본다 — 객관식(o·ex·s·d·exSum·c)과
+       주관식(asks·outline)을 함께 보므로 2차 문항을 헛짚지 않는다. */
+    if(_on('gichul','EXP_EMPTY')){
+      var _EF=['o','ex','s','d','exSum','c','asks','outline','ot','tip','cpt'];
+      var _filled=function(x){
+        if(x==null) return false;
+        if(Object.prototype.toString.call(x)==='[object Array]'){
+          for(var fi=0; fi<x.length; fi++){ if(_filled(x[fi])) return true; }
+          return false;
+        }
+        if(typeof x==='object') return true;
+        return String(x).trim().length>0;
+      };
+      var _anyExp=false;
+      for(var ei=0; ei<_EF.length; ei++){ if(_filled(exp[_EF[ei]])){ _anyExp=true; break; } }
+      if(!_anyExp)
+        v.push({kind:'warn',field:'exp',idx:0,code:'EXP_EMPTY',
+          msg:'해설이 통째로 비었다 — 보기별 해설(exp.o)부터 채운다. 지금은 학생 화면에 정답만 뜨고 왜 그런지가 없다',
+          text:''});
+    }
+
     _sev(v);
     return v;
   }
@@ -498,6 +525,7 @@
       _QC_SEV.EX_UNDER90='WARNING'; _QC_SEV.CPT_MISSING='WARNING'; _QC_SEV.O_NO_ANSMARK='WARNING';
       _QC_SEV.OT_SKIP_ON_FILLED='WARNING'; _QC_SEV.CALC7_LACK='WARNING'; _QC_SEV.CALC_EX_NOSTEP='WARNING';
       _QC_SEV.MASTER_ON_Q='WARNING';
+      _QC_SEV.EXP_EMPTY='WARNING';   /* 백지 문항 — 소급 폭증 방지로 WARNING 도입, 베이스라인 정비 후 ERROR 승격 */
     }
   }catch(e){}
 
