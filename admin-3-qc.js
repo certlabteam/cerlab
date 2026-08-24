@@ -297,11 +297,69 @@ async function _impAutoManifest(uploadedCerts){
 */
   /* [qc-core.js로 이관] 검수 코어(_qg*·_qcOn/_qcN·_isCalcQ·_qcViolations·qualityGate·_QC_DEFAULTS)는 외부 qc-core.js에 있음. 로더·qcRefreshBtn만 호스트 잔류. */
 // 이미지 라이브러리 키 집합(IMG_MISSING 검사용) — 지적서/업로드 게이트 직전에 1회 로드
-var _qcImgKeys=null;
-async function _qcLoadImgKeys(){
-  if(_qcImgKeys) return _qcImgKeys;
-  try{ var snap=await db.collection('images').get(); var s=new Set(); snap.forEach(function(d){ s.add(d.id); }); _qcImgKeys=s; }catch(e){ _qcImgKeys=null; }
+var _qcImgKeys=null;   // 있다고 확인된 그림 키 (null = IMG_MISSING 검사 생략)
+var _qcImgSeen=null;   // 이미 조회해 본 키. null 이면 전량 로드된 상태
+/* [2026-08-25] 참조한 것만 조회한다.
+ * 전에는 업로드·지적서를 돌릴 때마다 images 1,200건을 통째로 받았다. 그림이 base64 라
+ * 문서당 49KB, 전량이 57.8MB 다. 정작 게이트가 알아야 하는 건 "이 문항이 가리키는
+ * 그림이 있느냐" 하나뿐이라 참조된 키만 집어 온다.
+ * 캐시는 누적이라 같은 탭에서 다음 배치는 새 참조만 더 받는다.
+ * 조회에 실패하면 null 로 되돌린다 - 빈 값으로 두면 전부 '없음' 으로 잘못 지적한다. */
+async function _qcGetDocs(col, ids){
+  var out={}, CH=25;
+  for(var i=0;i<ids.length;i+=CH){
+    var snaps=await Promise.all(ids.slice(i,i+CH).map(function(id){ return db.collection(col).doc(id).get(); }));
+    snaps.forEach(function(sn){ if(sn.exists) out[sn.id]=sn.data()||{}; });
+  }
+  return out;
+}
+/* 올리는 문항이 실제로 가리키는 참조만 모은다. img:// 정규식은 qc-core 의 IMG_MISSING 과 같은 것. */
+function _qcRefsOf(items){
+  var imgs={}, cpts={}, re=/img:\/\/([^\s"'\<>\]},]+)/g;
+  (items||[]).forEach(function(it){
+    ((it&&it.data&&it.data.questions)||[]).forEach(function(q){
+      var blob=''; try{ blob=JSON.stringify(q)||''; }catch(_){}
+      var m; re.lastIndex=0;
+      while((m=re.exec(blob))) imgs[m[1]]=1;
+      var c=(q&&q.exp&&q.exp.cpt);
+      (Array.isArray(c)?c:(c?[c]:[])).forEach(function(r){ var k=String(r||''); if(k) cpts[k]=1; });
+    });
+  });
+  return { imgs:Object.keys(imgs), cpts:Object.keys(cpts) };
+}
+async function _qcLoadImgKeys(need){
+  if(!need){                                          // 인자 없이 부르면 예전대로 전량(호환)
+    if(_qcImgKeys && !_qcImgSeen) return _qcImgKeys;
+    try{ var snap=await db.collection('images').get(); var s=new Set(); snap.forEach(function(d){ s.add(d.id); }); _qcImgKeys=s; _qcImgSeen=null; }catch(e){ _qcImgKeys=null; }
+    return _qcImgKeys;
+  }
+  if(_qcImgKeys && !_qcImgSeen) return _qcImgKeys;    // 이미 전량 로드돼 있으면 그대로
+  if(!_qcImgKeys){ _qcImgKeys=new Set(); _qcImgSeen=new Set(); }
+  var want=need.filter(function(k){ return !_qcImgSeen.has(k); });
+  if(want.length){
+    try{ var got=await _qcImgExist(want);
+      want.forEach(function(k){ _qcImgSeen.add(k); if(got[k]===true) _qcImgKeys.add(k); }); }
+    catch(e){ _qcImgKeys=null; _qcImgSeen=null; }
+  }
   return _qcImgKeys;
+}
+/* 그림은 '있느냐' 만 알면 된다. 문서를 받으면 base64 본문(49KB)까지 딸려 와
+ * 몇십 개만 연달아 읽어도 렌더러가 얼어붙는다. REST 의 mask 로 필드를 비워 받는다.
+ * 한 건이라도 통신이 어긋나면 통째로 던져서 검사를 건너뛴다 - 없는 것으로 오해하면 거짓 지적이 된다. */
+async function _qcImgExist(ids){
+  var pid=(firebase.app().options||{}).projectId;
+  var base='https://firestore.googleapis.com/v1/projects/'+pid+'/databases/(default)/documents/images/';
+  var hdr; try{ var u=firebase.auth().currentUser; if(u) hdr={Authorization:'Bearer '+(await u.getIdToken())}; }catch(_){}
+  var out={}, CH=20;
+  for(var i=0;i<ids.length;i+=CH){
+    var chunk=ids.slice(i,i+CH);
+    var rs=await Promise.all(chunk.map(function(id){
+      return fetch(base+encodeURIComponent(id)+'?mask.fieldPaths=at',{headers:hdr})
+        .then(function(r){ if(r.status===200) return true; if(r.status===404) return false; throw new Error('HTTP '+r.status); });
+    }));
+    rs.forEach(function(ok,j){ out[chunk[j]]=ok; });
+  }
+  return out;
 }
 /* [엔진 #17 · 2026-08-03] 검수조건(config/qc) → 코어 _qcCfg 연결.
    그 전에는 qcCfgUpload 가 Firestore 에 저장만 하고("다음 검수부터 적용됩니다" 안내까지 띄우면서)
@@ -343,10 +401,24 @@ function _qcCfgSummary(){
   return {n:n, off:off, chg:chg, line:line};
 }
 // exp.cpt(참조 개념) 카드 검수용 — concepts 마스터 id → cards[] 맵 (실패 시 null: cpt 링크 문항의 카드 검사만 생략)
-var _qcCptCards=null;
-async function _qcLoadCptCards(){
-  if(_qcCptCards) return _qcCptCards;
-  try{ var snap=await db.collection('concepts').get(); var m={}; snap.forEach(function(d){ var r=d.data()||{}; m[d.id]=Array.isArray(r.cards)?r.cards:[]; }); _qcCptCards=m; }catch(e){ _qcCptCards=null; }
+var _qcCptCards=null;   // 있다고 확인된 개념의 카드 (null = cpt 카드 검사 생략)
+var _qcCptSeen=null;    // 이미 조회해 본 개념 id. null 이면 전량 로드된 상태
+/* concepts 13,945건 전량 대신 exp.cpt 가 가리키는 개념만 집어 온다.
+ * 없는 개념은 map 에 넣지 않는다 - qc-core 가 undefined 를 CPT_MISSING 으로 읽는다. */
+async function _qcLoadCptCards(need){
+  if(!need){                                          // 인자 없이 부르면 예전대로 전량(호환)
+    if(_qcCptCards && !_qcCptSeen) return _qcCptCards;
+    try{ var snap=await db.collection('concepts').get(); var m={}; snap.forEach(function(d){ var r=d.data()||{}; m[d.id]=Array.isArray(r.cards)?r.cards:[]; }); _qcCptCards=m; _qcCptSeen=null; }catch(e){ _qcCptCards=null; }
+    return _qcCptCards;
+  }
+  if(_qcCptCards && !_qcCptSeen) return _qcCptCards;
+  if(!_qcCptCards){ _qcCptCards={}; _qcCptSeen=new Set(); }
+  var want=need.filter(function(k){ return !_qcCptSeen.has(k); });
+  if(want.length){
+    try{ var got=await _qcGetDocs('concepts', want);
+      want.forEach(function(k){ _qcCptSeen.add(k); if(got[k]!==undefined) _qcCptCards[k]=Array.isArray(got[k].cards)?got[k].cards:[]; }); }
+    catch(e){ _qcCptCards=null; _qcCptSeen=null; }
+  }
   return _qcCptCards;
 }
 
@@ -484,7 +556,8 @@ function qcBaselineLoad(files){
   });
 }
 async function _buildReviewLines(items){
-  await _qcLoadCfg(); await _qcLoadImgKeys(); await _qcLoadCptCards();
+  var _refs=_qcRefsOf(items);
+  await _qcLoadCfg(); await _qcLoadImgKeys(_refs.imgs); await _qcLoadCptCards(_refs.cpts);
   var L=['[CertLab 검수 지적서]','파일: '+items.map(function(it){return it.docId;}).join(', '),'생성: '+new Date().toLocaleString('ko-KR'),
     _qcCfgSummary().line,   /* [엔진 #22] 어떤 잣대로 잰 지적서인지 머리글에 남긴다 */
     '',
@@ -731,8 +804,9 @@ async function impUpload(){
   if(noDate.length){ alert('❌ 업로드 차단 — 날짜 누락 [기출]\n\n규칙: 기출 파일에 _meta.generatedAt 필수.\n\n누락: '+noDate.join(', ')); impLog('날짜 누락으로 차단: '+noDate.join(', ')); return; }
   // 품질 게이트(전수): 구조 오류=하드 차단 / 품질 경고=확인 후 우회
   await _qcLoadCfg();       // 검수조건(config/qc) 반영 — 실패 시 기본값(_QC_DEFAULTS)
-  await _qcLoadImgKeys();   // img:// 참조 대조용(실패 시 IMG_MISSING만 생략)
-  await _qcLoadCptCards();  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
+  var _refs=_qcRefsOf(ready);   // 올리는 문항이 가리키는 그림·개념만 조회(전량 1.5만 → 수십)
+  await _qcLoadImgKeys(_refs.imgs);   // img:// 참조 대조용(실패 시 IMG_MISSING만 생략)
+  await _qcLoadCptCards(_refs.cpts);  // exp.cpt 참조 개념 카드 대조용(실패 시 해당 문항 카드 검사 생략)
   var _gBlock=[], _gWarn=[];
   /* [2026-08-11] 검수기를 시험 type 으로 가른다.
    *   subjective → qc-subjective 만 (qc-core 는 opts/exp.o 기준이라 asks·outline 을 아예 안 본다)
