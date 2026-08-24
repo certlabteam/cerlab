@@ -636,7 +636,8 @@ function buildCertRegistry(man){
    manifest 의 시험에 group 을 달면 그 갈래 카드 하나로 접어 두고, 눌러야 펼쳐진다.
    갈래 이름·아이콘은 manifest/exams 의 groups 에서 읽고, 없으면 여기 기본값을 쓴다.
    ⚠ 접어도 자식 카드는 DOM 에 그대로 둔다 — 딥링크(/#{certId})가 certCard-{id} 존재를 본다. */
-var CERT_GROUPS_FALLBACK={ gov9:{name:'9급 국가공무원', icon:'🏛', desc:'객관식 기출'} };
+/* top:true 면 시험일과 무관하게 목록 맨 위에 둔다(9급은 examSchedules 에 날짜가 없어 끝으로 밀렸다) */
+var CERT_GROUPS_FALLBACK={ gov9:{name:'9급 국가공무원', icon:'🏛', desc:'객관식 기출', top:true} };
 var _certGroupMeta={};
 function _certGroupInfo(gid){
   return _certGroupMeta[gid] || CERT_GROUPS_FALLBACK[gid] || {name:gid, icon:'📘', desc:''};
@@ -724,8 +725,9 @@ function reorderCertCards(){
       kids.map(function(c,i){ var k=key(c); if(k<best) best=k; return {card:c,k:k,i:i}; })
           .sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; })
           .forEach(function(o){ if(body) body.appendChild(o.card); });
-      var ds=el.querySelector('.ds'); if(ds && kids.length) ds.textContent=kids.length+'개 직렬 · '+(_certGroupInfo(el.id.replace('certGroup-','')).desc||'객관식 기출');
-      return best;
+      var g=_certGroupInfo(el.id.replace('certGroup-',''));
+      var ds=el.querySelector('.ds'); if(ds && kids.length) ds.textContent=kids.length+'개 직렬 · '+(g.desc||'객관식 기출');
+      return g.top ? -Infinity : best;
     }
     cards.map(function(card,i){ return {card:card, k:slot(card), i:i}; })
          .sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; })   // 안정 정렬(동순위 기존순서)
