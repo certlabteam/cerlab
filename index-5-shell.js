@@ -600,6 +600,7 @@ function renderSubjExam(root){
 }
 function buildCertRegistry(man){
   var exams=(man&&man.exams)||[];
+  ((man&&man.groups)||[]).forEach(function(g){ if(g&&g.id) _certGroupMeta[g.id]=g; });   // 갈래 이름·아이콘
   exams.forEach(function(ex){
     var id=ex&&ex.id; if(!id || _certRegBuilt[id]) return;
     /* [2026-08-23] hidden:true 인 시험은 데이터를 그대로 둔 채 화면에서만 숨긴다.
@@ -630,10 +631,44 @@ function buildCertRegistry(man){
     _certRegBuilt[id]=1;
   });
 }
+/* ===== 묶음 시험 =====
+   시험이 60개까지 늘면서 9급 공무원 28직렬이 목록 절반을 차지했다.
+   manifest 의 시험에 group 을 달면 그 갈래 카드 하나로 접어 두고, 눌러야 펼쳐진다.
+   갈래 이름·아이콘은 manifest/exams 의 groups 에서 읽고, 없으면 여기 기본값을 쓴다.
+   ⚠ 접어도 자식 카드는 DOM 에 그대로 둔다 — 딥링크(/#{certId})가 certCard-{id} 존재를 본다. */
+var CERT_GROUPS_FALLBACK={ gov9:{name:'9급 국가공무원', icon:'🏛', desc:'객관식 기출'} };
+var _certGroupMeta={};
+function _certGroupInfo(gid){
+  return _certGroupMeta[gid] || CERT_GROUPS_FALLBACK[gid] || {name:gid, icon:'📘', desc:''};
+}
+function toggleCertGroup(gid){
+  var el=document.getElementById('certGroup-'+gid); if(!el) return;
+  el.classList.toggle('open');
+  try{ localStorage.setItem('certlab_grp_'+gid, el.classList.contains('open')?'1':'0'); }catch(_){}
+}
+function _certGroupEl(gid){
+  var wrap=document.querySelector('.cert-cards'); if(!wrap) return null;
+  var el=document.getElementById('certGroup-'+gid);
+  if(el) return el;
+  var g=_certGroupInfo(gid);
+  el=document.createElement('div');
+  el.className='cert-group'; el.id='certGroup-'+gid;
+  el.innerHTML='<div class="cert-card cert-ghd" onclick="toggleCertGroup(\''+gid+'\')">'
+    +'<div class="cert-ic">'+g.icon+'</div>'
+    +'<div class="cert-meta"><div class="nm">'+mqEsc(g.name)+'</div>'
+    +'<div class="ds" id="certGroupDs-'+gid+'">'+mqEsc(g.desc||'')+'</div>'
+    +'<span class="tag">모의고사</span></div>'
+    +'<div class="cert-go">›</div></div>'
+    +'<div class="cert-gbody" id="certGroupBody-'+gid+'"></div>';
+  wrap.appendChild(el);
+  try{ if(localStorage.getItem('certlab_grp_'+gid)==='1') el.classList.add('open'); }catch(_){}
+  return el;
+}
 function _addCertCard(ex, type){
   try{
     var wrap=document.querySelector('.cert-cards'); if(!wrap) return;
     var id=ex.id; if(document.getElementById('certCard-'+id)) return;
+    if(ex.group){ var _ge=_certGroupEl(ex.group); if(_ge) wrap=document.getElementById('certGroupBody-'+ex.group)||wrap; }
     var subN=(ex.subjects||[]).length;
     var hasData=subN>0;
     var icon=_certIcon(id)||ex.icon||(type==='flashcard'?'🃏':(type==='subjective'?'📝':'📘'));
@@ -674,11 +709,25 @@ async function loadExamSchedules(_retry){
 function reorderCertCards(){
   try{
     var wrap=document.querySelector('.cert-cards'); if(!wrap) return;
-    var cards=[].slice.call(wrap.querySelectorAll('.cert-card')); if(!cards.length) return;
+    // 묶음(.cert-group)은 통째로 한 칸이다. 자식은 묶음 안에서 따로 정렬한다.
+    var cards=[].slice.call(wrap.children).filter(function(el){
+      return el.classList && (el.classList.contains('cert-card') || el.classList.contains('cert-group')); });
+    if(!cards.length) return;
     var now=Date.now(), dm=_examDateMs||{};
     function certOf(card){ var id=(card.id||'').replace('certCard-',''); if(id) return id; var m=(card.getAttribute('onclick')||'').match(/enterCert\('([^']+)'\)/); return m?m[1]:''; }
     function key(card){ var ms=dm[certOf(card)]; return (ms!=null && ms>=now) ? ms : Infinity; }   // 미래=가까운순, 없음/지남=맨밑
-    cards.map(function(card,i){ return {card:card, k:key(card), i:i}; })
+    function slot(el){
+      if(!el.classList.contains('cert-group')) return key(el);
+      var kids=[].slice.call(el.querySelectorAll('.cert-card')).filter(function(c){ return !c.classList.contains('cert-ghd'); });
+      // 묶음 안에서 먼저 정렬하고, 묶음 자리는 가장 가까운 자식 시험일로 잡는다
+      var body=el.querySelector('.cert-gbody'); var best=Infinity;
+      kids.map(function(c,i){ var k=key(c); if(k<best) best=k; return {card:c,k:k,i:i}; })
+          .sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; })
+          .forEach(function(o){ if(body) body.appendChild(o.card); });
+      var ds=el.querySelector('.ds'); if(ds && kids.length) ds.textContent=kids.length+'개 직렬 · '+(_certGroupInfo(el.id.replace('certGroup-','')).desc||'객관식 기출');
+      return best;
+    }
+    cards.map(function(card,i){ return {card:card, k:slot(card), i:i}; })
          .sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; })   // 안정 정렬(동순위 기존순서)
          .forEach(function(o){ wrap.appendChild(o.card); });
     var _sp=document.getElementById('certCard-sport2'), _bb=document.getElementById('certCard-bodybuilding');

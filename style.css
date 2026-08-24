@@ -190,6 +190,17 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 .cert-meta .tag{display:inline-block;font-size:10.5px;font-weight:700;color:#185FA5;background:#E6F1FB;padding:2px 8px;border-radius:6px;margin-top:7px}
 .cert-meta .tag.soon{color:#8A6D1F;background:#FFF9EC}
 .cert-go{color:#B5D4F4;font-size:19px;flex-shrink:0}
+/* 묶음 시험(9급 공무원처럼 직렬이 많은 것) — 큰 갈래 카드 하나를 눌러 펼친다 */
+.cert-group{display:flex;flex-direction:column;gap:13px}
+.cert-ghd .cert-go{transition:transform .16s}
+.cert-group.open .cert-ghd .cert-go{transform:rotate(90deg)}
+.cert-group.open .cert-ghd{border-color:#B5D4F4;background:#F7FBFF}
+.cert-gbody{display:none;flex-direction:column;gap:9px;padding-left:14px;border-left:2px solid #E6F1FB;margin-left:12px}
+.cert-group.open .cert-gbody{display:flex}
+.cert-gbody .cert-card{padding:13px 15px;border-radius:14px}
+.cert-gbody .cert-ic{width:40px;height:40px;border-radius:11px;font-size:20px}
+.cert-gbody .cert-meta .nm{font-size:14.5px}
+.cert-gbody .cert-meta .ds{font-size:11.5px;margin-top:2px}
 .hidden{display:none}
 .cert-view.hidden{display:none}
 .soon-wrap{padding:58px 26px;text-align:center}
