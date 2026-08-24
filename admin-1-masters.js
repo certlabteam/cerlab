@@ -401,14 +401,14 @@ async function mnemSave(){
     keywords:csv(document.getElementById('mnemKwField').value), certs:csv(document.getElementById('mnemCertsField').value),
     note:document.getElementById('mnemNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
   var _ex=_mnemAll[id]; if(_ex&&_ex.subj) rec.subj=_ex.subj;   // 과목분류(subj) 보존 — 편집해도 안 날아감
-  try{ await db.collection('mnemonics').doc(id).set(rec); _mnemAll[id]=_cacheRec(rec); mnemRenderList();
+  try{ await db.collection('mnemonics').doc(id).set(rec); _mnemAll[id]=_cacheRec(rec); (typeof _mlaBust==='function'&&_mlaBust()); mnemRenderList();
     var st=document.getElementById('mnemStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_mnemAll).length+'개)'; }
     mnemCancel();
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 async function mnemDelete(id){
   if(!confirm(id+' 코드를 삭제할까요?\n(이 코드를 mn:// 참조하는 문항은 암기코드 칸이 빈 채로 렌더됩니다)')) return;
-  try{ await db.collection('mnemonics').doc(id).delete(); delete _mnemAll[id]; mnemRenderList();
+  try{ await db.collection('mnemonics').doc(id).delete(); delete _mnemAll[id]; (typeof _mlaBust==='function'&&_mlaBust()); mnemRenderList();
     var st=document.getElementById('mnemStatus'); if(st){ st.style.color='#A32D2D'; st.textContent='삭제됨: '+id+' (총 '+Object.keys(_mnemAll).length+'개)'; }
   }catch(e){ alert('삭제 실패: '+e.message); }
 }
@@ -657,14 +657,14 @@ async function tblmSave(){
     keywords:csv(document.getElementById('tblmKwField').value), certs:csv(document.getElementById('tblmCertsField').value),
     note:document.getElementById('tblmNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
   var _ex=_tblmAll[id]; if(_ex&&_ex.type) rec.type=_ex.type;   // 편집 저장 시 기존 type(html 등) 유지
-  try{ await db.collection('tables').doc(id).set(Object.assign({},rec,{rows:JSON.stringify(rec.rows)})); _tblmAll[id]=_cacheRec(rec); tblmRenderList();
+  try{ await db.collection('tables').doc(id).set(Object.assign({},rec,{rows:JSON.stringify(rec.rows)})); _tblmAll[id]=_cacheRec(rec); (typeof _mlaBust==='function'&&_mlaBust()); tblmRenderList();
     var st=document.getElementById('tblmStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_tblmAll).length+'개)'; }
     tblmCancel();
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 async function tblmDelete(id){
   if(!confirm(id+' 표를 삭제할까요?\n(이 표를 tbl:// 참조하는 문항/개념은 표 칸이 ⚠️로 렌더됩니다)')) return;
-  try{ await db.collection('tables').doc(id).delete(); delete _tblmAll[id]; tblmRenderList();
+  try{ await db.collection('tables').doc(id).delete(); delete _tblmAll[id]; (typeof _mlaBust==='function'&&_mlaBust()); tblmRenderList();
     var st=document.getElementById('tblmStatus'); if(st){ st.style.color='#A32D2D'; st.textContent='삭제됨: '+id+' (총 '+Object.keys(_tblmAll).length+'개)'; }
   }catch(e){ alert('삭제 실패: '+e.message); }
 }
@@ -892,14 +892,14 @@ async function cptmSave(){
     cards:c.cards, mn:c.mn, tbl:c.tbl, grp:c.grp,
     keywords:csv(document.getElementById('cptmKwField').value), certs:csv(document.getElementById('cptmCertsField').value),
     note:document.getElementById('cptmNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-  try{ await db.collection('concepts').doc(id).set(rec); _cptmAll[id]=_cacheRec(rec); cptmRenderList();
+  try{ await db.collection('concepts').doc(id).set(rec); _cptmAll[id]=_cacheRec(rec); (typeof _mlaBust==='function'&&_mlaBust()); cptmRenderList();
     var st=document.getElementById('cptmStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_cptmAll).length+'개)'; }
     cptmCancel();
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 async function cptmDelete(id){
   if(!confirm(id+' 개념을 삭제할까요?')) return;
-  try{ await db.collection('concepts').doc(id).delete(); delete _cptmAll[id]; cptmRenderList();
+  try{ await db.collection('concepts').doc(id).delete(); delete _cptmAll[id]; (typeof _mlaBust==='function'&&_mlaBust()); cptmRenderList();
     var st=document.getElementById('cptmStatus'); if(st){ st.style.color='#A32D2D'; st.textContent='삭제됨: '+id+' (총 '+Object.keys(_cptmAll).length+'개)'; }
   }catch(e){ alert('삭제 실패: '+e.message); }
 }
@@ -1579,14 +1579,14 @@ async function grpmSave(){
     svg:g.svg||'', type:g.type||'', params:_grpParams(g.params),
     keywords:csv(document.getElementById('grpmKwField').value), certs:csv(document.getElementById('grpmCertsField').value),
     note:document.getElementById('grpmNoteField').value.trim(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-  try{ await db.collection('graphs').doc(id).set(rec); _grpmAll[id]=_cacheRec(rec); grpmRenderList();
+  try{ await db.collection('graphs').doc(id).set(rec); _grpmAll[id]=_cacheRec(rec); (typeof _mlaBust==='function'&&_mlaBust()); grpmRenderList();
     var st=document.getElementById('grpmStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_grpmAll).length+'개)'; }
     grpmCancel();
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 async function grpmDelete(id){
   if(!confirm(id+' 그래프를 삭제할까요?')) return;
-  try{ await db.collection('graphs').doc(id).delete(); delete _grpmAll[id]; grpmRenderList();
+  try{ await db.collection('graphs').doc(id).delete(); delete _grpmAll[id]; (typeof _mlaBust==='function'&&_mlaBust()); grpmRenderList();
     var st=document.getElementById('grpmStatus'); if(st){ st.style.color='#A32D2D'; st.textContent='삭제됨: '+id+' (총 '+Object.keys(_grpmAll).length+'개)'; }
   }catch(e){ alert('삭제 실패: '+e.message); }
 }

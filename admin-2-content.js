@@ -98,14 +98,14 @@ async function itvmSave(){
     concepts:_itvmCsv('itvmConceptsField'), certs:_itvmCsv('itvmCertsField'),
     keywords:_itvmCsv('itvmKwField'), note:document.getElementById('itvmNoteField').value.trim(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-  try{ await db.collection('interactives').doc(id).set(rec); _itvmAll[id]=_cacheRec(rec); itvmRenderList();
+  try{ await db.collection('interactives').doc(id).set(rec); _itvmAll[id]=_cacheRec(rec); (typeof _mlaBust==='function'&&_mlaBust()); itvmRenderList();
     var st=document.getElementById('itvmStatus'); if(st){ st.style.color='#15793F'; st.textContent='저장됨: '+id+' (총 '+Object.keys(_itvmAll).length+'개)'; }
     itvmCancel();
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 async function itvmDelete(id){
   if(!confirm(id+' 인터랙티브를 삭제할까요?')) return;
-  try{ await db.collection('interactives').doc(id).delete(); delete _itvmAll[id]; itvmRenderList();
+  try{ await db.collection('interactives').doc(id).delete(); delete _itvmAll[id]; (typeof _mlaBust==='function'&&_mlaBust()); itvmRenderList();
     var st=document.getElementById('itvmStatus'); if(st){ st.style.color='#A32D2D'; st.textContent='삭제됨: '+id+' (총 '+Object.keys(_itvmAll).length+'개)'; }
   }catch(e){ alert('삭제 실패: '+e.message); }
 }

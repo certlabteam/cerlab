@@ -92,7 +92,7 @@ async function iuUpload(){
   document.getElementById('iuRun').disabled=true;
   for(const it of ready){
     try{
-      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() });
+      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() }); _mlaBust();
       it.status='done';
       iuLog('✓ '+it.key+' 업로드 완료 ('+Math.round(it.bytes/1024)+'KB) → img://'+it.key,'#15793F');
     }catch(e){ it.status='bad'; it.err='업로드 실패: '+(e.message||e); iuLog('✗ '+it.key+' 실패: '+(e.message||e),'#f85149'); }
@@ -595,8 +595,15 @@ function _mlaClean(u){ return String(u||'').replace(/^(cpt|tbl|mn|grp|img|itv):\
 /* [qc-core.js로 이관] ⑥ 마스터 필요 판정 신호(_CS_GRP/_CS_TBL/_CS_MN/_CS_ITV)는 qc-core.js 단일소스.
    QC.conceptSignals(txt) → {sigGrp,sigTbl,sigMn,sigItv}. (구버전 qc-core 대비 폴백 유지) */
 var _qcCS=(typeof QC!=='undefined'&&QC.conceptSignals)?QC.conceptSignals:function(t){t=String(t||'');var G=(QC&&QC.CS&&QC.CS.grp),T=(QC&&QC.CS&&QC.CS.tbl),M=(QC&&QC.CS&&QC.CS.mn),I=(QC&&QC.CS&&QC.CS.itv);return {sigGrp:G?G.test(t):false,sigTbl:T?T.test(t):false,sigMn:M?M.test(t):false,sigItv:I?I.test(t):false};};
+/* [2026-08-25] 마스터 캐시를 10분에서 6시간으로 늘렸다.
+ * 검수를 한 번 돌릴 때마다 concepts(1.4만)·tables·mnemonics·graphs·images·
+ * interactives 를 통째로 다시 읽어 하루 읽기가 백만 단위로 튀었다.
+ * 늘리기만 하면 방금 만든 개념이 캐시에 없어 '깨진 참조' 로 오판하므로,
+ * 마스터를 저장·삭제하는 자리마다 _mlaBust() 로 캐시를 비운다.
+ * 새로고침(F5)해도 초기화된다. */
+function _mlaBust(){ _mlaCache=null; }
 async function _mlaLoadMasters(force){
-  if(!force && _mlaCache && (Date.now()-_mlaCache.at)<10*60*1000) return _mlaCache;
+  if(!force && _mlaCache && (Date.now()-_mlaCache.at)<6*60*60*1000) return _mlaCache;
   var concepts={}, tables={}, mnems={}, graphs={}, images={}, itvs={};
   (await db.collection('concepts').get()).forEach(function(d){ var r=d.data()||{}; var cards=Array.isArray(r.cards)?r.cards:[]; var empty=0, hasSvg=false, hasTbl=false;
     var _txt=(r.name||''); cards.forEach(function(c){ var cx=String((c&&c.cx)||''); if(!cx.trim()) empty++; if(cx.indexOf('<svg')>=0) hasSvg=true; if(cx.indexOf('<table')>=0) hasTbl=true; _txt+=' '+((c&&c.t)||'')+' '+((c&&c.d)||'')+' '+cx; });
@@ -1584,7 +1591,7 @@ async function importImages(){
   let ok=0, fail=0;
   for(const it of imgImpData){
     try{
-      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() });
+      await db.collection('images').doc(it.key).set({ data:it.data, at:firebase.firestore.FieldValue.serverTimestamp() }); _mlaBust();
       ok++; if(ok%10===0) imgImpLog('... '+ok+'개 복구','#15793F');
     }catch(e){ fail++; imgImpLog('✗ '+it.key+' 실패: '+(e.message||e),'#f85149'); }
   }
