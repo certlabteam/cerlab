@@ -328,8 +328,28 @@
         msg:'개념카드(exp.cpt) 연결 없음 — 개념은 모든 시험이 같이 쓰는 광역 자산(§6-2). 있는 카드를 찾아 걸고, 없으면 만들고 나서 해설을 쓴다',text:''});
     }
 
-    /* ③ 정답 칸에 (정답) */
-    if(_on('gichul','O_NO_ANSMARK') && !isCalc && opts.length){
+    /* ③ 정답 칸에 (정답)
+       ⚠ [2026-08-25] 조합형은 뺀다. 이 검사가 `o` 를 **보기 번호**로 세는데,
+          조합형에서 엔진은 `o[i]` 를 **i번째 진술(ㄱㄴㄷ)** 에 붙인다(index-4-learn.js comboStmtList).
+          그래서 「정답 2번」이면 게이트가 o[1] 에 (정답)을 요구하는데 o[1] 은 ㄴ 자리다.
+          ㄴ이 틀린 진술이면 화면에서 **틀린 진술에 (정답)이 붙는다.**
+          규약 §3-9 도 조합형은 (정답)을 진술에 붙이지 말고 `s` 에 한 번만 쓰라고 한다.
+          겉수만 좋아지는 면제가 아니라 **검사가 잘못 세던 자리**를 닫는 것이다. */
+    /* 조합형 판별은 **여기서 직접** 한다. 엔진의 isComboQuestion 을 부르면
+       브라우저에서만 먹고 Node 로 게이트를 돌리는 방에서는 undefined 라 조용히 안 걸린다. */
+    var _isCombo = false;
+    try{
+      if(opts.length>=2){
+        var _mk=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ\/]+$/, _jm=/[ㄱ-ㅎ㉠-㉩]/, _cnt=0, _ok=0;
+        for(var _i=0;_i<opts.length;_i++){
+          var _o=String(opts[_i]||'').trim();
+          if(!_o || _o.length>14){ _ok=0; break; }
+          if(_mk.test(_o) && _jm.test(_o)){ _ok++; if(/[,·、ㆍ\/]/.test(_o)) _cnt++; }
+        }
+        _isCombo = (_ok===opts.length && _cnt>=1);
+      }
+    }catch(_){}
+    if(_on('gichul','O_NO_ANSMARK') && !isCalc && !_isCombo && opts.length){
       var oFilled=0; for(var k=0;k<o.length;k++){ if(o[k]&&String(o[k]).trim()) oFilled++; }
       var ansArr = Object.prototype.toString.call(q&&q.ans)==='[object Array]' ? q.ans : [(q&&q.ans)];
       var allAns = Object.prototype.toString.call(q&&q.ans)==='[object Array]' && q.ans.length>=opts.length;
