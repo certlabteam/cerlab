@@ -720,10 +720,12 @@ function reorderCertCards(){
     function slot(el){
       if(!el.classList.contains('cert-group')) return key(el);
       var kids=[].slice.call(el.querySelectorAll('.cert-card')).filter(function(c){ return !c.classList.contains('cert-ghd'); });
-      // 묶음 안에서 먼저 정렬하고, 묶음 자리는 가장 가까운 자식 시험일로 잡는다
+      // 묶음 안은 이름 가나다순(같은 시험이 여럿이라 시험일로는 갈리지 않는다).
+      // 묶음 자리는 가장 가까운 자식 시험일로 잡는다.
       var body=el.querySelector('.cert-gbody'); var best=Infinity;
-      kids.map(function(c,i){ var k=key(c); if(k<best) best=k; return {card:c,k:k,i:i}; })
-          .sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; })
+      function nameOf(c){ var n=c.querySelector('.nm'); return n?n.textContent.trim():''; }
+      kids.map(function(c,i){ var k=key(c); if(k<best) best=k; return {card:c,nm:nameOf(c),i:i}; })
+          .sort(function(a,b){ return a.nm.localeCompare(b.nm,'ko') || a.i-b.i; })
           .forEach(function(o){ if(body) body.appendChild(o.card); });
       var g=_certGroupInfo(el.id.replace('certGroup-',''));
       var ds=el.querySelector('.ds'); if(ds && kids.length) ds.textContent=kids.length+'개 직렬 · '+(g.desc||'객관식 기출');
@@ -873,7 +875,10 @@ function applyBank(ex,sub,doc){
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; if(q.type && q.type!=='SA')it.type=q.type; if(q.calc!=null)it.calc=q.calc; if(q.set)it.set=q.set; /* [2026-07-20] 자료(표)·type(개수형 렌더)·calc(계산형)·set(오답노트 회차) 필드 보존. type='SA'는 제외(MCQ경로는 blanks 미보존 → SA로 오인돼 데이터오류화면 방지). pol·fig는 앱 엔진 미사용이라 제외 */ byset[lab].push(it); });
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; if(Array.isArray(q.blanks)&&q.blanks.length){ it.blanks=q.blanks; it.type='SA'; } else if(q.type && q.type!=='SA')it.type=q.type; if(q.calc!=null)it.calc=q.calc; if(q.set)it.set=q.set; /* [2026-07-20] 자료(표)·type(개수형 렌더)·calc(계산형)·set(오답노트 회차) 필드 보존. pol·fig는 앱 엔진 미사용이라 제외.
+      [2026-08-25] blanks 를 실어 준다 — 한국어교육 113번(교수안 작성)처럼 객관식 은행에 섞인 주관식(SA) 문항이 있다.
+      전에는 blanks 를 안 싣고 type='SA' 만 떼어 냈다(안 떼면 renderMcqExam 이 '데이터 오류' 배너를 띄웠다).
+      이제 blanks 가 실제로 있을 때만 SA 로 넘기므로 그 오인은 그대로 막힌다. */ byset[lab].push(it); });
     qb[sub.code].sets=order.map(lab=>({label:lab,questions:byset[lab]}));
     // 최신 회차/연도가 위로 — 라벨 내 가장 큰 숫자 기준 내림차순
     const setKey=lab=>{ const m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };
