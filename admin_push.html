@@ -17,6 +17,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
 <script src="qc-core.js"></script>
 <script src="qc-gate-patch.js"></script>
+<!-- [2026-08-25] manifest/exams 안전 쓰기. 없으면 아래 manifestUpdate 가 죽는다(은행만 올라가고 버전이 안 붙음). -->
+<script src="manifest-tx.js"></script>
 <style>
   body{background:#F4F6FA;color:#2C2C2A;font-family:-apple-system,'Segoe UI','Malgun Gothic',sans-serif;font-size:14px;line-height:1.6;margin:0;padding:22px}
   .box{max-width:680px;margin:0 auto;background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 4px 18px rgba(0,0,0,.06)}
@@ -88,12 +90,16 @@
         var TS = firebase.firestore.FieldValue.serverTimestamp();
         await ref.update({questions:qs, version:ver, updatedAt:TS});
         await db.collection('banks').doc(cert+'__'+sub).update({version:ver, updatedAt:TS});
-        var mref = db.collection('manifest').doc('exams');
-        var ex = ((await mref.get()).data().exams)||[];
-        for(var j=0;j<ex.length;j++){
-          if((ex[j].id||ex[j].cert)===cert){ ex[j].versions=ex[j].versions||{}; ex[j].versions[sub]=ver; }
-        }
-        await mref.update({exams:ex});
+        /* [2026-08-25] 읽고-고쳐-되쓰기를 트랜잭션으로 바꿨다.
+           전에는 exams 배열을 통째로 읽어 되썼다. 방이 다섯이라 그 사이에 다른 방이 쓰면
+           그 변경이 조용히 사라진다(시험 하나가 목록에서 통째로 빠질 수 있다).
+           manifestUpdate 는 트랜잭션 안에서 다시 읽으므로 충돌하면 콜백이 다시 돈다. */
+        await manifestUpdate(function(ex){
+          for(var j=0;j<ex.length;j++){
+            if((ex[j].id||ex[j].cert)===cert){ ex[j].versions=ex[j].versions||{}; ex[j].versions[sub]=ver; }
+          }
+          return ex;
+        });
         window.__R = 'done touched='+touched;
         log(shard+' → v'+ver+' · '+touched+'문항');
       }catch(e){ window.__R='ERR '+((e&&e.message)||e); log(window.__R); }
