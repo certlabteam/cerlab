@@ -280,7 +280,9 @@ function renderMcqHome(root){
         const goBtns = hasSave
           ? '<button class="b-go" onclick="resumeMcqExam(\''+id+'\','+si+')">이어풀기</button><button class="b-fresh" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">처음부터</button>'
           : '<button class="b-go" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">풀기</button>';
-        html+='<div class="srow"><div class="srow-left"><span class="syr">'+st.label+'</span>'+
+        var _np=st._noexp?' srow-noexp':'';
+        var _npBadge=st._noexp?'<span class="s-noexp">해설 준비 중</span>':'';
+        html+='<div class="srow'+_np+'"><div class="srow-left"><span class="syr">'+st.label+_npBadge+'</span>'+
           '<span class="swc">'+st.questions.length+'문항'+(setWrong>0?' · 오답 '+setWrong:'')+(showUnans?' · 미응답 '+setUnans:'')+'</span></div>'+
           '<div class="sact">'+goBtns+(setWrong>0?'<button class="b-wr" onclick="startMcqExam(\''+id+'\','+si+',\'wrong\')">오답</button>':'')+(showUnans?'<button class="b-un" onclick="startMcqExam(\''+id+'\','+si+',\'unans\')">미응답</button>':'')+(setConceptReady(mqCert,id,si)?'<button class="b-learn" onclick="startConceptStudy(\''+id+'\','+si+')">📖 선행학습</button>':'')+'</div></div>';
       });

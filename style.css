@@ -588,6 +588,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .srow-left{display:flex;flex-direction:column;gap:2px}
 #mcqView .syr{font-size:13px;font-weight:700;color:#1E293B}
 #mcqView .swc{font-size:11px;color:#94A3B8;font-weight:500}
+/* [2026-08-25] 해설이 아직 없는 회차 — 감추지 않고 흐리게 + 배지 */
+#mcqView .srow-noexp .syr{color:#94A3B8}
+#mcqView .srow-noexp .swc{color:#B6C0CC}
+#mcqView .s-noexp{margin-left:6px;font-size:10px;font-weight:700;color:#7A4E00;background:#FFF7E6;border:1px solid #F1D9A8;border-radius:5px;padding:1px 5px;vertical-align:1px;white-space:nowrap}
 #mcqView .sact{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex:1;min-width:0}
 #mcqView .b-go{background:#0C447C;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer}
 #mcqView .b-fresh{color:#64748B;background:#fff;border:1.5px solid #E2E8F0;padding:7px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}

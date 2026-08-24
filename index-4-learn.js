@@ -1274,7 +1274,18 @@ function renderMcqExam(root){
     return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';
-  if(showExp){ const okk=isCorr(q.ans,sel);
+  /* [2026-08-25] 해설이 한 줄도 없는 문항 — 빈 학습 노트를 띄우지 않고 사정을 밝힌다.
+     회차 목록의 「해설 준비 중」 배지와 짝이다. 채워지면 저절로 원래 흐름으로 돌아간다. */
+  var _expEmpty = !(q.exp && Object.keys(q.exp).some(function(k){
+    var v=q.exp[k];
+    return Array.isArray(v) ? v.some(function(x){ return x && String(x).trim(); }) : (v && String(v).trim());
+  }));
+  if(showExp && _expEmpty){
+    expHTML='<div class="exp"><div class="exp-note-hd">학습 노트</div>'
+      +'<div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st" style="color:#7A4E00">해설 준비 중 · 정답 '+ansLabel(q.ans)+'번</span></div>'
+      +'<div class="note">이 문항은 아직 해설이 준비되지 않았습니다. 정답만 확인하실 수 있습니다.</div></div>';
+  }
+  else if(showExp){ const okk=isCorr(q.ans,sel);
     const ansN=ansArr(q.ans);
     const statusTxt = okk?'정답':(sel?'오답':'미응답');
     const statusCol = okk?'#0F6E56':'#A32D2D';

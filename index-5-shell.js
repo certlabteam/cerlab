@@ -883,6 +883,12 @@ function applyBank(ex,sub,doc){
     // 최신 회차/연도가 위로 — 라벨 내 가장 큰 숫자 기준 내림차순
     const setKey=lab=>{ const m=String(lab).match(/\d+/g); return m?Math.max.apply(null,m.map(Number)):-1; };
     qb[sub.code].sets.sort((a,b)=>setKey(b.label)-setKey(a.label));
+    /* [2026-08-25] 해설이 한 문항도 없는 회차는 목록에서 「해설 준비 중」으로 흐리게 보인다.
+       숨기지 않는 이유 — 기출 문제 자체가 값이고, 회차 단위로 깔린 SEO 페이지가 빈 곳을 가리키게 된다.
+       채워지는 순간 배지가 저절로 떨어지므로 따로 손댈 것이 없다. */
+    qb[sub.code].sets.forEach(function(st){
+      st._noexp = !(st.questions||[]).some(function(q){ return q && q.exp && Object.keys(q.exp).length; });
+    });
   }
 }
 function showDataError(err){
