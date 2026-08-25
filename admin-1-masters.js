@@ -206,30 +206,71 @@ function _impDateGate(label, fileObj, records, idKey, perRecord){
 }
 
 /* ===== 마스터 → 문항 역링크 (기출 banks + 레벨업 variantq 전수 스캔) ===== */
-var _mfQCache=null, _mfQLoading=false;
-async function _mfLoadAllQuestions(){
-  if(_mfQCache) return _mfQCache;
-  if(_mfQLoading){ await new Promise(function(r){var t=setInterval(function(){ if(!_mfQLoading){clearInterval(t);r();} },120);}); return _mfQCache||[]; }
-  _mfQLoading=true; var out=[];
+/* [2026-08-25] 마스터를 쓰는 문항 찾기 — 통째로 받지 않는다.
+ * 예전에는 adaptive 전량 + banks 전량(1,667 문서)을 받아 문항을 죄다 메모리에 쌓아
+ * 두고 걸렀다. 은행 문서가 questions 배열을 통째로 물고 있어 수백 MB 가 되고,
+ * 그게 크롬 탭을 얼렸다. 이제 한 문서씩 받아 맞는 것만 남기고 버린다.
+ *
+ * 샤드 문서에는 cert·subject 가 없다(부모에만 있고 부모엔 questions 가 없다).
+ * 그래서 where 로 못 거르고 manifest → 부모 → 샤드 순으로 짚어 간다. */
+async function _mfScope(certs){
+  var out=[];
   try{
-    var snap=await db.collection('adaptive').get();
-    snap.forEach(function(doc){
-      if(!/__variantq$/.test(doc.id)) return;
-      var d=doc.data()||{}; var qs=Array.isArray(d.questions)?d.questions:[];
-      var pref=doc.id.replace(/__variantq$/,''); var us=pref.split('__'); var cert=us[0]||'', sub=us[1]||'';
-      qs.forEach(function(q){ if(q&&q.id) out.push({id:q.id, cert:cert, sub:sub, q:q}); });
-    });
-    // 기출(banks)도 전수 스캔 — 문항이 exp.cpt 등으로 마스터를 참조하는 경우 포함(1회 로드 후 캐시)
-    var bsnap=await db.collection('banks').get();
-    bsnap.forEach(function(doc){
-      var bd=doc.data()||{}; var bqs=Array.isArray(bd.questions)?bd.questions:[];
-      if(!bqs.length) return;   // 샤드 부모 문서(questions 없음)는 건너뜀
-      var bcert=bd.cert||'', bsub=bd.subject||'';
-      if(!bcert||!bsub){ var bu=String(doc.id).split('__'); bcert=bcert||bu[0]||''; bsub=bsub||bu[1]||''; }  // 샤드 문서는 id에서 cert/과목 파싱
-      bqs.forEach(function(q){ if(q&&q.id) out.push({id:q.id, cert:bcert, sub:bsub, q:q, _bank:true}); });
+    var m=await db.collection('manifest').doc('exams').get();
+    ((m.data()||{}).exams||[]).forEach(function(e){
+      if(certs && certs.indexOf(e.id)<0) return;
+      (e.subjects||[]).forEach(function(su){ if(su&&su.code) out.push({cert:e.id, sub:su.code}); });
     });
   }catch(e){}
-  _mfQCache=out; _mfQLoading=false; return out;
+  return out;
+}
+/* 범위 안의 은행 샤드 문서 id. 샤드가 없는 옛 문서는 부모에 questions 가 들어 있다. */
+async function _mfBankDocs(pairs){
+  var out=[], CH=25;   // 부모는 작으니 묶어서 병렬로 - 279개를 하나씩 읽으면 하염없이 걸린다
+  for(var i=0;i<pairs.length;i+=CH){
+    var chunk=pairs.slice(i,i+CH);
+    var snaps;
+    try{ snaps=await Promise.all(chunk.map(function(pr){ return db.collection('banks').doc(pr.cert+'__'+pr.sub).get(); })); }
+    catch(e){ continue; }
+    snaps.forEach(function(pd,j){
+      if(!pd.exists) return;
+      var sh=((pd.data()||{}).shards)||[];
+      if(Array.isArray(sh) && sh.length) sh.forEach(function(sv){ out.push({id:pd.id+'__'+sv, cert:chunk[j].cert, sub:chunk[j].sub}); });
+      else out.push({id:pd.id, cert:chunk[j].cert, sub:chunk[j].sub});
+    });
+  }
+  return out;
+}
+var _MF_MASTER_COL={mn:'mnemonics', cpt:'concepts', tbl:'tables', grp:'graphs'};
+/* 마스터에 certs 가 적혀 있으면 그 시험만 훑는다. 없으면 전체(예전과 같은 범위). */
+async function _mfCertsOf(refType, mid){
+  var col=_MF_MASTER_COL[refType]; if(!col) return null;
+  try{ var d=await db.collection(col).doc(mid).get();
+    var cs=d.exists?(d.data()||{}).certs:null;
+    return (Array.isArray(cs)&&cs.length)?cs:null; }catch(e){ return null; }
+}
+async function _mfFindRefs(refType, mid, onStep){
+  var certs=await _mfCertsOf(refType, mid);
+  var pairs=await _mfScope(certs);
+  var hits=[];
+  function take(list, cert, sub, isBank){
+    (list||[]).forEach(function(q){ if(q&&q.id&&_mfRefMatch(q, refType, mid)) hits.push({id:q.id, cert:cert, sub:sub, q:q, _bank:isBank}); });
+  }
+  // 레벨업 변형 풀 — id 가 {cert}__{sub}__variantq 라 범위 안의 것만 집어 온다
+  for(var i=0;i<pairs.length;i+=8){
+    var ck=pairs.slice(i,i+8), ads;
+    try{ ads=await Promise.all(ck.map(function(pr){ return db.collection('adaptive').doc(pr.cert+'__'+pr.sub+'__variantq').get(); })); }
+    catch(e){ continue; }
+    ads.forEach(function(ad,j){ if(ad.exists) take((ad.data()||{}).questions, ck[j].cert, ck[j].sub, false); });
+  }
+  // 기출 은행 — 샤드를 한 문서씩
+  var docs=await _mfBankDocs(pairs);
+  for(var j=0;j<docs.length;j++){
+    try{ var bd=await db.collection('banks').doc(docs[j].id).get();
+      if(bd.exists) take((bd.data()||{}).questions, docs[j].cert, docs[j].sub, true); }catch(e){}
+    if(onStep && (j%5===4)) onStep(j+1, docs.length, hits.length);
+  }
+  return hits;
 }
 // refType: 'mn'|'cpt'|'tbl'|'grp'  → 해당 마스터 id를 참조하는 문항 찾기
 function _mfRefMatch(q, refType, mid){
@@ -247,8 +288,10 @@ async function mfShowUsage(refType, mid){
     box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
     box.onclick=function(e){ if(e.target===box) box.remove(); }; document.body.appendChild(box); }
   box.innerHTML='<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:18px 20px"><div style="font-weight:800;font-size:15px;margin-bottom:4px">이 마스터를 쓰는 문항</div><div style="font-size:12px;color:#94A3B8;margin-bottom:12px">'+mfEsc(refType)+'://'+mfEsc(mid)+' · 스캔 중…</div></div>';
-  var all=await _mfLoadAllQuestions();
-  var hits=all.filter(function(r){ return _mfRefMatch(r.q, refType, mid); });
+  var _pg=box.querySelector('div div:nth-child(2)');
+  var hits=await _mfFindRefs(refType, mid, function(done,total,found){
+    if(_pg) _pg.textContent=mfEsc(refType)+'://'+mfEsc(mid)+' · '+done+'/'+total+' 훑는 중 · '+found+'건';
+  });
   function _qnum(id){ var m=String(id||'').match(/(\d+)\s*$/); return m?parseInt(m[1],10):0; }
   hits.sort(function(a,b){ if(a.cert!==b.cert) return a.cert<b.cert?-1:1; if(a.sub!==b.sub) return a.sub<b.sub?-1:1; return _qnum(a.id)-_qnum(b.id); });  // 시험·과목·문제번호순
   var rows = hits.length? hits.map(function(r){
@@ -1136,37 +1179,35 @@ async function ottagExport(){
   var rep=document.getElementById('ottagReport');
   if(rep){ rep.innerHTML='<span style="color:#475569">내보내는 중… banks 읽는 중</span>'; }
   try{
-    var snap=await db.collection('banks').get();
+    /* [2026-08-25] 범위를 정해 놓고도 banks 를 통째로 받던 자리.
+     * 은행 문서가 questions 를 물고 있어 수백 MB 가 되고 탭이 얼었다.
+     * 이제 manifest 로 범위를 먼저 좁히고 샤드를 한 문서씩 받아 ot 만 뽑고 버린다. */
     var groups={};   // cert||subject → {cert,subject,ot:{}}
-    snap.forEach(function(doc){
-      var d=doc.data()||{}; var qs=Array.isArray(d.questions)?d.questions:[];
-      if(!qs.length) return;
-      var cert=d.cert, subject=d.subject;
-      if(!cert||!subject){ var p=doc.id.split('__'); cert=cert||p[0]; subject=subject||p[1]; }
-      if(_mexpScope&&((_mexpScope.cert&&_mexpScope.cert!=='__all'&&cert!==_mexpScope.cert)||(_mexpScope.sub&&_mexpScope.sub!=='__all'&&subject!==_mexpScope.sub))) return;
-      qs.forEach(function(q){
+    function _otTake(qs, cert, subject){
+      (qs||[]).forEach(function(q){
         if(q&&q.id&&q.exp&&q.exp.ot){
           var key=cert+'||'+subject;
           var g=groups[key]||(groups[key]={cert:cert, subject:subject, ot:{}});
           g.ot[q.id]=q.exp.ot;
         }
       });
+    }
+    var _sc=(_mexpScope&&_mexpScope.cert&&_mexpScope.cert!=='__all')?[_mexpScope.cert]:null;
+    var pairs=(await _mfScope(_sc)).filter(function(pr){
+      return !(_mexpScope&&_mexpScope.sub&&_mexpScope.sub!=='__all'&&pr.sub!==_mexpScope.sub);
     });
+    var bdocs=await _mfBankDocs(pairs);
+    for(var _i=0;_i<bdocs.length;_i++){
+      if(rep && _i%5===0){ rep.innerHTML='<span style="color:#475569">내보내는 중… 은행 '+(_i+1)+'/'+bdocs.length+'</span>'; }
+      try{ var _bd=await db.collection('banks').doc(bdocs[_i].id).get();
+        if(_bd.exists) _otTake((_bd.data()||{}).questions, bdocs[_i].cert, bdocs[_i].sub); }catch(_){}
+    }
     try{   // 변형(레벨업) 풀의 ot도 백업에 포함 — adaptive/{cert}__{subject}__variantq
       if(rep){ rep.innerHTML='<span style="color:#475569">내보내는 중… adaptive(변형) 읽는 중</span>'; }
-      var asnap=await db.collection('adaptive').get();
-      asnap.forEach(function(doc){
-        var d=doc.data()||{}; if(d.kind!=='variantq') return;
-        var qs=Array.isArray(d.questions)?d.questions:[]; if(!qs.length) return;
-        var p=doc.id.split('__'); var cert=d.cert||p[0]; var subject=d.subject||p[1];
-        qs.forEach(function(q){
-          if(q&&q.id&&q.exp&&q.exp.ot){
-            var key=cert+'||'+subject;
-            var g=groups[key]||(groups[key]={cert:cert, subject:subject, ot:{}});
-            g.ot[q.id]=q.exp.ot;
-          }
-        });
-      });
+      for(var _k=0;_k<pairs.length;_k++){
+        try{ var _ad=await db.collection('adaptive').doc(pairs[_k].cert+'__'+pairs[_k].sub+'__variantq').get();
+          if(_ad.exists) _otTake((_ad.data()||{}).questions, pairs[_k].cert, pairs[_k].sub); }catch(_){}
+      }
     }catch(_){}
     var subjects=Object.keys(groups).map(function(k){ return groups[k]; });
     if(!subjects.length){ if(rep){rep.innerHTML='<span style="color:#A32D2D">내보낼 ot 태그가 없습니다.</span>';} return; }

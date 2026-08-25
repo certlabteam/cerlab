@@ -1070,7 +1070,21 @@ function showPlanPopup(membership) {
   renderPlanCards(cert);
   mileApplyOn=false; renderMileUse();
 }
-function _planPopupShow(){ var pp=document.getElementById('planPopup'); if(!pp) return; _hideNudges(); var ov=document.getElementById('passPlanOverlay'); pp.style.zIndex=(ov && ov.style.display==='block')?'9300':''; pp.classList.remove('hidden'); }  /* [FIX 2026-07] 합격플랜 전체화면(z9000) 위로 결제팝업을 올려 가려짐 방지 */
+/* [2026-08-25] 결제창을 몇 명이 봤는지 센다.
+ * 깔때기에서 여기만 비어 있었다 - 가입·문제풀이·한도도달·결제는 다 남는데
+ * '결제창을 봤는가' 만 기록이 없어, 안 산 것인지 못 본 것인지를 못 갈랐다.
+ * 하루 한 번만 쓴다(문항 하루한도와 같은 방식). 실패해도 화면은 그대로 뜬다. */
+function _payViewLog(){
+  try{
+    if(typeof currentUser==='undefined' || !currentUser || typeof db==='undefined') return;
+    var cert=activeCertId(); var e=userEnt&&userEnt[cert]; if(!e) return;
+    var t=_todayKST(); if(e.payViewDate===t) return;
+    e.payViewDate=t; e.payViewTotal=(e.payViewTotal||0)+1;
+    var u={}; u['entitlements.'+cert+'.payViewDate']=t; u['entitlements.'+cert+'.payViewTotal']=e.payViewTotal;
+    db.collection('users').doc(currentUser.uid).update(u).catch(function(){});
+  }catch(_){}
+}
+function _planPopupShow(){ var pp=document.getElementById('planPopup'); if(!pp) return; _hideNudges(); var ov=document.getElementById('passPlanOverlay'); pp.style.zIndex=(ov && ov.style.display==='block')?'9300':''; pp.classList.remove('hidden'); _payViewLog(); }  /* [FIX 2026-07] 합격플랜 전체화면(z9000) 위로 결제팝업을 올려 가려짐 방지 */
 function hidePlanPopup() { var pp=document.getElementById('planPopup'); if(pp){ pp.classList.add('hidden'); pp.style.zIndex=''; } }
 
 function showWelcomePopup() {
