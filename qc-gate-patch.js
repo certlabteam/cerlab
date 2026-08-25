@@ -50,6 +50,8 @@
       if(!_QC_DEFAULTS.gichul.EX_UNDER90)   _QC_DEFAULTS.gichul.EX_UNDER90={on:true,minChars:90};
       if(!_QC_DEFAULTS.gichul.CPT_MISSING)  _QC_DEFAULTS.gichul.CPT_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.O_NO_ANSMARK) _QC_DEFAULTS.gichul.O_NO_ANSMARK={on:true};
+      if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH) _QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH={on:true};
+      if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISSING)  _QC_DEFAULTS.gichul.COMBO_ANS_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED) _QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED={on:true};
       if(!_QC_DEFAULTS.gichul.CALC7_LACK)   _QC_DEFAULTS.gichul.CALC7_LACK={on:true};
       if(!_QC_DEFAULTS.gichul.CALC_EX_NOSTEP) _QC_DEFAULTS.gichul.CALC_EX_NOSTEP={on:true};
@@ -363,6 +365,41 @@
       }
     }
 
+    /* [2026-08-25] 조합형은 정답칸 검사가 통째로 없었다 — 여기서 막는다.
+       O_NO_ANSMARK 를 조합형에서 뺐고(90449c2), qc-core 의 ANS_VERDICT_MISMATCH 도
+       `!_avCombo` 로 조합형을 건너뛴다. 조합형은 `(정답)` 이 o 가 아니라 s 에만 있으니
+       **s 에 몇 번이라고 적든 게이트가 볼 방법이 없었다.**
+       2026-08-25 노동법개론 2025년 14번이 그 구멍으로 통과했다 —
+       초안이 「ㄱ, ㄴ」(2번)으로 썼는데 최종정답표는 「ㄱ, ㄷ」(3번)이었다.
+       못 잡았으면 두 직렬 200문항에 틀린 정답이 그대로 퍼졌을 것이다.
+       s 는 §3-9 에서 「정답은 N번이다」로 형식이 굳어 있어 대조가 된다. */
+    if(_isCombo && o.length){
+      var _caFilled=0; for(var _ci=0;_ci<o.length;_ci++){ if(o[_ci]&&String(o[_ci]).trim()) _caFilled++; }
+      var _caAns=(q&&q.ans);
+      var _caList = Object.prototype.toString.call(_caAns)==='[object Array]' ? _caAns : [_caAns];
+      var _caAll  = Object.prototype.toString.call(_caAns)==='[object Array]' && _caAns.length>=opts.length;
+      /* 백지 문항과 전항정답은 뺀다. 전항정답은 s 에 번호가 아니라 사정을 적는다. */
+      if(_caFilled && !_caAll){
+        var _caS=String(exp.s||'');
+        var _caM=_caS.match(/정답은?\s*([1-5])\s*번/g);   /* 「정답은 N번」 — 마지막 것을 본다 */
+        if(_on('gichul','COMBO_ANS_MISSING') && !_caM){
+          v.push({kind:'warn',field:'s',idx:0,code:'COMBO_ANS_MISSING',
+            msg:'조합형인데 요약(s)에 「정답은 N번」이 없다(§3-9) — 조합형은 (정답)을 o 에 붙이지 않으므로 s 가 유일한 정답 표시다',
+            text:_caS.slice(0,60)});
+        }
+        if(_on('gichul','COMBO_ANS_MISMATCH') && _caM){
+          var _caN=parseInt(String(_caM[_caM.length-1]).replace(/[^0-9]/g,''),10);
+          var _caOk=false;
+          for(var _cj=0;_cj<_caList.length;_cj++){ if(_caList[_cj]===_caN) _caOk=true; }
+          if(typeof _caList[0]==='number' && !_caOk){
+            v.push({kind:'block',field:'s',idx:0,code:'COMBO_ANS_MISMATCH',
+              msg:'요약(s)은 「정답은 '+_caN+'번」인데 문항 정답(ans)은 '+_caList.join('·')+'번 — 둘 중 하나가 틀렸다. 최종정답표를 열어 대조하라',
+              text:_caS.slice(0,80)});
+          }
+        }
+      }
+    }
+
     /* ④ ot 의 skip 이 해설 있는 칸에 붙어 있는가
        ⚠ 처음엔 「skip 이 있으면 사람이 넣은 것」으로 잡았다가 되물렸다.
           계산형은 `ot:[{skip:'empty'}…{skip:'calc'}]` 가 정착된 방식이고 라이브에 2,347자리 있다.
@@ -543,6 +580,7 @@
       _QC_SEV.EX_MISSING='WARNING'; _QC_SEV.O_SHORT='WARNING'; _QC_SEV.O_COPY='WARNING'; _QC_SEV.TRAIL_CONN='WARNING';
       _QC_SEV.O_WRONG_SLOT='WARNING';
       _QC_SEV.EX_UNDER90='WARNING'; _QC_SEV.CPT_MISSING='WARNING'; _QC_SEV.O_NO_ANSMARK='WARNING';
+      _QC_SEV.COMBO_ANS_MISMATCH='ERROR'; _QC_SEV.COMBO_ANS_MISSING='WARNING';
       _QC_SEV.OT_SKIP_ON_FILLED='WARNING'; _QC_SEV.CALC7_LACK='WARNING'; _QC_SEV.CALC_EX_NOSTEP='WARNING';
       _QC_SEV.MASTER_ON_Q='WARNING';
       _QC_SEV.EXP_EMPTY='WARNING';   /* 백지 문항 — 소급 폭증 방지로 WARNING 도입, 베이스라인 정비 후 ERROR 승격 */
