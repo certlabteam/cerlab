@@ -467,7 +467,22 @@ async function goToCard(qid, certHint){
 function routeAfterAuth(){
   if(currentUser && !activeCert){
     const last = getLastCert();
-    if(last === 'bodybuilding' || last === 'appraiser') enterCert(last);
+    if(!last) return;
+    /* [2026-08-26] 여기에 두 시험(bodybuilding·appraiser)만 적혀 있었다 — 시험이 둘뿐이던 때 코드다.
+     * 지금은 62개이고, 나머지 60개는 **다시 와도 시험 고르는 목록을 처음부터 다시 마주한다.**
+     * 다시 온 사람에게 62개 목록을 처음부터 보여 줄 까닭이 없다. 고치는 근거는 그것이다.
+     *
+     * ⚠ **결제와 이어진다는 근거는 없다.** 재 보고 못 가렸다(2026-08-26).
+     *   되돌아가는 두 시험 중 보디빌딩이 학습자의 75%(52/69)를 차지하는데,
+     *   그 시험은 동시에 가장 오래됐고·이름표가 멀쩡했고·6~7월이 시즌이었다. 넷이 겹쳐 떼어낼 수 없다.
+     *   표본 안에서도 어긋난다 — appraiser 는 되돌아가는데 1명·결제 0,
+     *   realestate1 은 안 되돌아가는데 8명·결제 1이다.
+     *   「하루만 온 사람 2% vs 이틀 이상 53%」는 사실이지만 **이 고침이 그 갈림을 만든다는 증거는 아니다.**
+     *
+     * MANIFEST 로드와 경합한다. 아래 _known 이 null 이면 옛 두 시험으로만 떨어지므로,
+     * 매니페스트가 선 뒤 loadManifest 끝에서 이 함수를 한 번 더 부른다. */
+    var _known = (typeof MANIFEST!=='undefined' && MANIFEST && (MANIFEST.exams||[]).some(function(e){return e && e.id===last;}));
+    if(_known || last === 'bodybuilding' || last === 'appraiser') enterCert(last);
   }
 }
 // 새로고침 시 풀던 문항 화면으로 자동 복귀 (포인터 + 저장된 진행상황이 있을 때만)
@@ -608,6 +623,14 @@ function buildCertRegistry(man){
        ⚠ 하드코딩 7개(ALL_CERTS)는 아래 isNew 로 빠지므로 이 플래그가 안 먹는다. */
     if(ex.hidden){ _certRegBuilt[id]=1; return; }
     var isNew = !MCQ_EXAMS[id] && ALL_CERTS.indexOf(id)<0;   // 기존 7개면 isNew=false → 손 안 댐
+    /* [2026-08-26] 하드코딩 7개는 설명이 index.html 에 박혀 있어 매니페스트 desc 가 안 뜬다.
+       시험 62개에 두 줄 설명을 넣었는데 이 일곱(감평사·중개사1·2차·한국사·주택1·2차·보디빌딩)만
+       옛 문구(「객관식 · 부동산학개론 · 민법및민사특별법」)로 남았다. 그중에 응시자가 가장 많은
+       공인중개사와 여러 시험이 함께 쓰는 한국사가 들어 있다.
+       카드는 그대로 두고 **설명 줄만** 매니페스트 것으로 갈아 끼운다. */
+    if(!isNew && ex.desc){
+      try{ var _ds=document.querySelector('#certCard-'+id+' .ds'); if(_ds) _ds.textContent=ex.desc; }catch(_){}
+    }
     if(!isNew){ _certRegBuilt[id]=1; return; }
     var type=ex.type||'mcq';
     if(typeof CERT_LABELS!=='undefined' && !CERT_LABELS[id]) CERT_LABELS[id]=ex.label||ex.name||id;
@@ -972,6 +995,13 @@ loadManifest().then(async ()=>{
   if(typeof currentUser!=='undefined' && !currentUser && typeof srLoadLocal==='function') srLoadLocal();
   if(typeof refresh==='function') refresh();
   if(typeof mqOXLoad==='function') mqOXLoad();   // 저장된 O/X 복원(새로고침·오답노트용)
+  /* [2026-08-26] 매니페스트가 선 뒤에 routeAfterAuth 를 **한 번 더** 부른다.
+   * routeAfterAuth 는 onAuthStateChanged 안에서 불리는데, 로그인 복원은 localStorage 에서 와서
+   * 대개 매니페스트(네트워크)보다 **먼저** 끝난다. 그때는 MANIFEST 가 아직 null 이라
+   * 새로 넓힌 「마지막 본 시험으로 되돌아가기」가 옛 두 시험으로만 떨어져 안 먹는다.
+   * `currentUser && !activeCert` 일 때만 도는 함수라 두 번 불러도 탈이 없고,
+   * 여기서는 첫 시험 은행까지 실린 뒤라 enterCert 가 안전하다. */
+  try{ if(typeof routeAfterAuth==='function') routeAfterAuth(); }catch(_){}
   var _resumed=false; try{ if(typeof mqAutoResume==='function') _resumed=mqAutoResume(); }catch(_){}
   if(!_resumed && typeof renderMCQ==='function' && typeof activeCert!=='undefined' && activeCert && isMcqCert(activeCert)) renderMCQ();
   // ?card= 딥링크 실행 (데이터 로드 완료 후 1회)
