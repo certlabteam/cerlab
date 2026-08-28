@@ -911,7 +911,7 @@ function applyBank(ex,sub,doc){
     const qb=MCQ_EXAMS[ex.id]&&MCQ_EXAMS[ex.id].qb;
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
-    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; if(Array.isArray(q.blanks)&&q.blanks.length){ it.blanks=q.blanks; it.type='SA'; } else if(q.type && q.type!=='SA')it.type=q.type; if(q.calc!=null)it.calc=q.calc; if(q.set)it.set=q.set; /* [2026-07-20] 자료(표)·type(개수형 렌더)·calc(계산형)·set(오답노트 회차) 필드 보존. pol·fig는 앱 엔진 미사용이라 제외.
+    qs.forEach(q=>{ const lab=q.set||'기출'; if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.imgnote)it.imgnote=q.imgnote; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; if(Array.isArray(q.blanks)&&q.blanks.length){ it.blanks=q.blanks; it.type='SA'; } else if(q.type && q.type!=='SA')it.type=q.type; if(q.calc!=null)it.calc=q.calc; if(q.set)it.set=q.set; /* [2026-07-20] 자료(표)·type(개수형 렌더)·calc(계산형)·set(오답노트 회차) 필드 보존. pol·fig는 앱 엔진 미사용이라 제외.
       [2026-08-25] blanks 를 실어 준다 — 한국어교육 113번(교수안 작성)처럼 객관식 은행에 섞인 주관식(SA) 문항이 있다.
       전에는 blanks 를 안 싣고 type='SA' 만 떼어 냈다(안 떼면 renderMcqExam 이 '데이터 오류' 배너를 띄웠다).
       이제 blanks 가 실제로 있을 때만 SA 로 넘기므로 그 오인은 그대로 막힌다. */ byset[lab].push(it); });
