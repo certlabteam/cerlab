@@ -464,7 +464,20 @@ async function goToCard(qid, certHint){
     if(idx!==-1){ current=idx; isFlipped=false; learnOpen=false; refresh(); window.scrollTo(0,0); }
   }catch(_){}
 }
+/* [2026-08-29] 주소에 갈 곳이 적혀 있으면 되돌아가지 않는다.
+   되돌아가기가 두 시험(bodybuilding·appraiser)일 때는 딥링크가 대개 살아남았는데,
+   62개로 넓히자 **공유 링크가 전부 가로채였다** —
+   `#q/nscacpt/ncpt04_s3_2` 로 들어와도 마지막 본 시험으로 끌려갔다.
+   `#q/`·`?q=`·`#post/`·`#<시험id>` 는 다 제 라우터가 따로 있다. 여기서 손대면 안 된다. */
+function _urlHasRoute(){
+  try{
+    var h=location.hash||'';
+    if(h && h!=='#') return true;
+    return !!new URLSearchParams(location.search||'').get('q');
+  }catch(_){ return false; }
+}
 function routeAfterAuth(){
+  if(_urlHasRoute()) return;
   if(currentUser && !activeCert){
     const last = getLastCert();
     if(!last) return;
