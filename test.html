@@ -394,6 +394,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 #mcqView .qmulti{font-size:10.5px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
 #mcqView .qsubj{font-size:10.5px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
 #mcqView .qtext{font-size:15px;font-weight:500;line-height:1.65;color:#0F172A;white-space:pre-wrap;margin-bottom:15px}#mcqView .qtext .qpara{margin:0 0 12px;line-height:1.85}#mcqView .qtext .qpara:last-child{margin-bottom:0}#mcqView .qbul-wrap{margin:6px 0 2px}#mcqView .qbul{display:flex;gap:7px;line-height:1.6;margin-bottom:9px}#mcqView .qbul:last-child{margin-bottom:0}#mcqView .qbul-m{flex:0 0 auto;color:#64748B;font-size:11px;line-height:1.85}#mcqView .qbul-t{flex:1;min-width:0;font-weight:500;white-space:normal}#mcqView .qstem .qtext{margin-bottom:0;max-height:34dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#mcqView .qstem{background:#fff;border:none;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}#mcqView .qstem .qhead{margin-bottom:9px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
+.imgnote{margin:-8px 0 14px;padding:0 2px;font-size:13.5px;line-height:1.62;color:#64748B;font-weight:500;white-space:pre-wrap}
 #mcqView .opts{display:flex;flex-direction:column;gap:8px;padding:0}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#fff;border:none;border-radius:12px;padding:13px 13px;cursor:pointer;outline:none;box-shadow:0 1px 2px rgba(15,23,42,.06)}#mcqView .opt:last-child{border-bottom:none}
 #mcqView .opt:focus{outline:none}
@@ -4284,6 +4285,16 @@ function imgInner(v){
   // 그 외 = Firestore 이미지 키(맨 키, img:// 접두사 누락분 방어) → images/{키} 조회
   return '<img data-imgkey="'+v+'" alt="" src="'+IMG_PH+'">';
 }
+/* [2026-08-29] 「읽는 법」을 그림 밖으로. index-4-learn.js 와 같은 것을 둔다.
+   그림 안에 글자를 박아 두면 그림이 폭에 맞춰 늘어날 때 글자도 같이 늘어나
+   폰 17px · 넓은 화면 23px 로 널뛴다. 문제·선지와 같은 13.5px 로 붙박는다. */
+function imgBlock(q){
+  if(!q || !q.img) return '';
+  var h = '<div class="qimg">'+imgInner(q.img)+'</div>';
+  if(q.imgnote) h += '<p class="imgnote">'+mqEsc(q.imgnote)+'</p>';
+  return h;
+}
+
 async function resolveImages(scope){
   const els=(scope||document).querySelectorAll('img[data-imgkey]');
   for(const el of els){
@@ -5016,7 +5027,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+rm(jaryo,q).replace(/ \/ /g,'<br>')+'</div>':'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+rm(jaryo,q).replace(/ \/ /g,'<br>')+'</div>':'')+imgBlock(q)+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
@@ -5239,7 +5250,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):stemHTML(rm(jr.q,q)))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>'):'')+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?(jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+rm(jr.jaryo,q)+'</div>'):'')+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
