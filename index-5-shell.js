@@ -249,6 +249,10 @@ function mqRetry(){
 let activeCert = null;
 function getLastCert(){ try{ return localStorage.getItem('certlab_lastCert'); }catch(e){ return null; } }
 function setLastCert(id){ try{ localStorage.setItem('certlab_lastCert', id); }catch(e){} }
+/* [2026-09-01] 서버에 남아 있는 「마지막으로 보던 시험」은 _srvLastCert 에 담긴다.
+ * 위 둘(localStorage)은 이 브라우저 안에서만 산다 — 폰을 바꾸면 없다.
+ * ⚠ 선언은 index-1-auth.js 에 있다. 이 파일이 auth 보다 **뒤에** 실려서,
+ *   여기에 var 로 두면 auth 가 담아 둔 값을 null 로 덮어쓸 자리가 생긴다. */
 function showHome(){ if(typeof ttsStop==='function')ttsStop();
   var _wasCertHome=(typeof activeCert!=='undefined')&&!!activeCert;   // [2026-07-20] 딥링크 부팅 시 해시 보존: 시험에 들어와 있다가 나갈 때만 해시 제거(부팅 showHome이 #appraiser 등 딥링크를 지우는 회귀 방지)
   // 객관식 시험 풀던 중 홈으로 나가도 오답노트·진행상황 반영 (검토·복습·진단 제외)
@@ -291,6 +295,14 @@ async function enterCert(id, noGate){
   if(typeof mqStopTimer==='function') mqStopTimer();
   if(typeof mqStopOverTimer==='function') mqStopOverTimer();
   setLastCert(id);
+  /* [2026-09-01] 서버에도 남긴다. 다음에 다른 기기로 와도 이 시험으로 바로 들어간다.
+   * 바뀔 때만 쓴다 — 시험을 옮길 때만 한 번이라 읽기·쓰기 값이 늘지 않는다. */
+  try{
+    if(currentUser && db && id && _srvLastCert !== id){
+      _srvLastCert = id;
+      db.collection('users').doc(currentUser.uid).update({ lastCert: id }).catch(function(){});
+    }
+  }catch(_){}
   // [2026-07-20] 주소창에 현재 시험 해시 유지 (광고·공유용). 특수 라우트(#post/#account-delete)는 건드리지 않음.
   // [2026-08-05] 단, 문항 딥링크(#q/{cert}/{qid})로 들어온 경우는 덮어쓰지 않는다.
   //   딥링크는 goToCard → enterCert 순으로 도는데, 여기서 해시를 '#'+cert 로 갈아치우면
@@ -479,7 +491,9 @@ function _urlHasRoute(){
 function routeAfterAuth(){
   if(_urlHasRoute()) return;
   if(currentUser && !activeCert){
-    const last = getLastCert();
+    /* [2026-09-01] 이 브라우저 기록이 없으면 서버에 남은 것을 쓴다.
+     * 없으면 종전대로 아무 데도 안 보낸다(시험 목록이 뜬다). */
+    const last = getLastCert() || _srvLastCert;
     if(!last) return;
     /* [2026-08-26] 여기에 두 시험(bodybuilding·appraiser)만 적혀 있었다 — 시험이 둘뿐이던 때 코드다.
      * 지금은 62개이고, 나머지 60개는 **다시 와도 시험 고르는 목록을 처음부터 다시 마주한다.**

@@ -239,6 +239,11 @@ if (firebaseReady) {
   updateAuthBar();
 }
 
+/* [2026-09-01] 서버에 남아 있는 「마지막으로 보던 시험」.
+ * loadUserPlan 이 채우고 index-5-shell.js 의 routeAfterAuth·enterCert 가 쓴다.
+ * 선언이 여기 있는 까닭: shell 이 auth 보다 뒤에 실려서, 저기 두면 담아 둔 값을 덮어쓴다. */
+var _srvLastCert = null;
+
 // ===== 사용자 플랜 로드 =====
 async function loadUserPlan(user) {
   try {
@@ -297,6 +302,14 @@ async function loadUserPlan(user) {
     }
     const data = doc.data();
     userJoinedAt = data.createdAt || null;   // 첫날 몰아주기 판정용
+    /* [2026-09-01] 마지막으로 보던 시험을 서버에서 꺼내 둔다 (routeAfterAuth 가 쓴다).
+     * localStorage 는 그 브라우저 안에서만 살아서, 폰을 바꾸거나 기록을 지우면
+     * 다시 와도 시험 62개 목록을 처음부터 마주했다.
+     * 잰 것(2026-09-01): 회원 137명 · 다시 온 사람 50명 · 문제를 본 사람 9명.
+     *   다시 온 50명 중 41명이 문제를 안 봤다.
+     *   가입할 때 시험을 고른 19명은 26% 가 풀었고, 안 고른 118명은 3% 만 풀었다.
+     * lastCert 가 없으면 가입 때 보던 시험(signupCert)이라도 쓴다. */
+    try{ _srvLastCert = data.lastCert || data.signupCert || null; }catch(_){}
     let ent = data.entitlements;
     if (!ent) {
       // 지연 마이그레이션: 기존 평면 plan → entitlements.bodybuilding (레거시 필드는 보존)
