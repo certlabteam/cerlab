@@ -39,6 +39,10 @@ jobs:
 
       - name: SEO 쪽 생성
         run: npm run seo:gen
+        env:
+          # App Check 강제를 켜면 토큰 없는 읽기가 막힌다. 이 봇이 제일 먼저 죽는다.
+          # 비밀값이 없으면 빈 값이 넘어가고 봇은 지금처럼 공개 읽기로 돈다.
+          APPCHECK_DEBUG_TOKEN: ${{ secrets.APPCHECK_DEBUG_TOKEN }}
 
       # ?v= 는 건드리지 않는다. 이 워크플로가 만드는 것은 seo/ 와 sitemap 뿐이고
       # css·js 는 손대지 않으므로 버전 쿼리를 올릴 까닭이 없다. 한 번 넣어 봤다가

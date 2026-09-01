@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
+import 'firebase/compat/app-check';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -44,6 +45,25 @@ function write(rel, text) {
 
 async function main() {
   firebase.initializeApp(firebaseConfig);
+
+  /* App Check —— 토큰이 있으면 붙이고, 없으면 지금처럼 그냥 읽는다.
+   * 라이브에서 App Check 강제를 켜면 토큰 없는 읽기는 막힌다. 그때 이 봇이 제일 먼저 죽는다.
+   * 은행을 통째로 읽어서(한 번에 1,668문서) 지난 이레 「오래된 클라이언트」의 큰 몫이 이 봇이었다.
+   * GitHub Secret 에 APPCHECK_DEBUG_TOKEN 을 넣어 두면 워크플로가 환경변수로 넘겨 준다.
+   * 토큰이 없으면 아무것도 안 하고 넘어가므로, 강제를 켜기 전에도 그대로 돈다. */
+  const 디버그토큰 = process.env.APPCHECK_DEBUG_TOKEN || '';
+  if (디버그토큰) {
+    globalThis.self = globalThis;                      // compat SDK 가 self 를 본다
+    globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = 디버그토큰;
+    try {
+      firebase.appCheck().activate('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2', false);
+      console.log('App Check 디버그 토큰을 붙였습니다.');
+    } catch (e) {
+      console.log('App Check 을 못 켰습니다(그냥 읽습니다): ' + (e && e.message));
+    }
+  } else {
+    console.log('App Check 토큰이 없습니다 — 공개 읽기로 돕니다.');
+  }
   const db = firebase.firestore();
 
   console.log('Firestore 읽는 중…');
