@@ -53,11 +53,30 @@ async function main() {
    * 토큰이 없으면 아무것도 안 하고 넘어가므로, 강제를 켜기 전에도 그대로 돈다. */
   const 디버그토큰 = process.env.APPCHECK_DEBUG_TOKEN || '';
   if (디버그토큰) {
-    globalThis.self = globalThis;                      // compat SDK 가 self 를 본다
-    globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = 디버그토큰;
+    /* ⚠ reCAPTCHA 방식(`activate(siteKey)`)은 Node 에서 안 된다.
+     *    compat SDK 가 reCAPTCHA <script> 를 넣으려고 document 를 찾다가
+     *    `document is not defined` 로 죽는다 (2026-09-02 Actions 로그에서 확인).
+     *    그래서 디버그 토큰을 REST 로 직접 바꿔 받아 CustomProvider 로 넘긴다.
+     *    CustomProvider 는 DOM 을 하나도 안 쓴다. */
+    globalThis.self = globalThis;
     try {
-      firebase.appCheck().activate('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2', false);
-      console.log('App Check 디버그 토큰을 붙였습니다.');
+      const 주소 = 'https://firebaseappcheck.googleapis.com/v1/projects/'
+        + firebaseConfig.projectId + '/apps/' + firebaseConfig.appId
+        + ':exchangeDebugToken?key=' + firebaseConfig.apiKey;
+      const 답 = await fetch(주소, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ debugToken: 디버그토큰 })
+      });
+      if (!답.ok) throw new Error('교환 실패 ' + 답.status + ' ' + (await 답.text()).slice(0, 200));
+      const 몫 = await 답.json();
+      const 남은초 = parseInt(String(몫.ttl || '3600s'), 10) || 3600;
+      const 만료 = Date.now() + 남은초 * 1000;
+      firebase.appCheck().activate(
+        new firebase.appCheck.CustomProvider({
+          getToken: () => Promise.resolve({ token: 몫.token, expireTimeMillis: 만료 })
+        }), false);
+      console.log('App Check 디버그 토큰을 붙였습니다 (' + 남은초 + '초짜리).');
     } catch (e) {
       console.log('App Check 을 못 켰습니다(그냥 읽습니다): ' + (e && e.message));
     }
