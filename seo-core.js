@@ -54,6 +54,8 @@ h1{font-size:22px;color:#0C447C;margin-bottom:6px} .sub{color:#64748b;font-size:
 .bc{font-size:13px;color:#94a3b8;margin-bottom:10px} .bc a{color:#0C447C;text-decoration:none}
 .midcta{list-style:none;margin:14px 0}.cta2{display:block;text-align:center;background:#0C447C;color:#fff;text-decoration:none;padding:13px 16px;border-radius:12px;font-weight:700;font-size:15px}ul{list-style:none;padding:0;margin:0} .qitem{display:flex;gap:12px;padding:13px 14px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:9px}
 .qno{font-weight:800;color:#0C447C;flex-shrink:0;min-width:34px} .qt{margin:0 0 7px;font-weight:600}.jaryo{margin:0 0 8px;padding:9px 11px;background:#F6F8FA;border:1px solid #e2e8f0;border-radius:8px}.jaryo p{margin:0 0 4px;font-size:14px;line-height:1.65}.jaryo p:last-child{margin-bottom:0}
+.cc-dia{white-space:pre;font-family:ui-monospace,'D2Coding','Menlo','Courier New',monospace;font-size:12px;line-height:1.6;margin:6px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;color:inherit;background:transparent;border:0}
+.cc-eq{display:inline-block;font-family:ui-monospace,'D2Coding','Menlo','Courier New',monospace;font-size:13px;padding:0 2px}
 .opts{margin:0 0 7px;padding-left:18px} .opts li{margin:2px 0} .o-cor{color:#0F6E56;font-weight:700}
 .ans{margin:4px 0;font-size:13px;color:#0F6E56} .kws{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
 .kw{font-size:12px;color:#0C447C;background:#EAF0F9;border-radius:6px;padding:2px 8px}
@@ -67,8 +69,44 @@ function seoEsc(t){if(t==null)return '';return String(t).replace(/&/g,'&amp;').r
 function seoClean(t){if(t==null)return '';t=String(t).replace(/<[^>]+>/g,'').replace(/\u00a0/g,' ').trim();return seoEsc(t);}
 function seoKws(q){const toks=String(q||'').replace(/<[^>]+>/g,'').split(/\s+/);const out=[];for(let w of toks){w=w.replace(/[()\[\]?!.,\u00b7'"\u2018\u2019\u201c\u201d]/g,'').trim();if(w.length<2||SEO_STOP.has(w))continue;out.push(w);if(out.length>=5)break;}return out;}
 function seoRound(s){const m=String(s||'').match(/제\s*(\d+)\s*회/);return m?m[1]:null;}
+/* [2026-09-02] 관계도·수식 표식을 SEO 쪽에서도 푼다.
+ *
+ * 서트랩 1차 기출 해설 방이 찾았다 — 쪽에 `[dia] … [/dia]` 가 날것으로 찍히고 있었다
+ * (41장 · 319번). `[eq]` 는 보기 안에서까지 새서 선택지가 통째로 안 읽혔다(16장 · 483번).
+ *
+ * 은행은 잘못이 없다. `[dia]` 로 담아 두는 것이 우리 규약이고 앱은 풀어 낸다
+ * (index-4-learn.js:415). **SEO 쪽만 안 풀고 있었다.**
+ *
+ * ⚠ 자리표시(placeholder)를 쓰지 않는다. seoClean 이 그 표시를 건드릴 수 있다.
+ *   글을 표식으로 **쪼개서** 조각마다 따로 다루고 다시 잇는다.
+ * ⚠ &·<·> 를 먼저 바꾸는 순서가 중요하다. 안 그러면 화살표가 든 줄이 태그로 먹힌다.
+ * ⚠ 푸는 것만으로는 폰에서 더 깨진다. 관계도 58개가 가장 좁은 것도 53칸인데 폰은 40칸쯤이다.
+ *   앱은 고정폭 + overflow-x:auto 로 막아 뒀다(style.css:514). SEO 틀에도 같은 규칙을 넣는다.
+ */
+function seoEscRaw(t){
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function seoBlocks(t){
+  if(t==null) return '';
+  var s = String(t);
+  var 나온것 = '';
+  var 표 = /\[(dia|eq)\][ \t]*\r?\n?([\s\S]*?)\r?\n?[ \t]*\[\/\1\]/g;
+  var 앞 = 0, m;
+  while((m = 표.exec(s)) !== null){
+    나온것 += seoClean(s.slice(앞, m.index));
+    var 속 = seoEscRaw(m[2]);
+    if(m[1] === 'dia'){
+      나온것 += '<pre class="cc-dia">' + 속.replace(/\r?\n/g,'<br>') + '</pre>';
+    } else {
+      나온것 += '<span class="cc-eq">' + 속.replace(/\r?\n/g,' ').trim() + '</span>';
+    }
+    앞 = 표.lastIndex;
+  }
+  나온것 += seoClean(s.slice(앞));
+  return 나온것;
+}
 function seoCard(c){if(typeof c!=='object'||c==null)c={d:String(c)};const t=seoClean(c.t||''),d=seoClean(c.d||''),cx=seoClean(c.cx||'');let s='';if(t)s+='<b class="cc-t">'+t+'</b>';if(d)s+='<p class="cc-d">'+d+'</p>';if(cx)s+='<p class="cc-cx">예: '+cx+'</p>';return s?'<div class="cc">'+s+'</div>':'';}
-function seoQ(n,q){const opts=q.opts||[];const ans=q.ans;const li=[];for(let i=0;i<opts.length;i++){const cls=(typeof ans==='number'&&(i+1)===ans)?' class="o-cor"':' class=""';li.push('<li'+cls+'>'+(i+1)+'. '+seoClean(opts[i])+'</li>');}const exp=q.exp||{};const parts=[];const cards=(exp.c||[]).map(seoCard).filter(Boolean);if(cards.length)parts.push('<div class="ex-blk"><div class="ex-h">📘 개념</div>'+cards.join('')+'</div>');const os=(exp.o||[]).filter(x=>String(x).trim()).map(seoClean);if(os.length)parts.push('<div class="ex-blk"><div class="ex-h">🔍 보기별 해설</div><ol class="ex-o">'+os.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const ex=(exp.ex||[]).filter(x=>String(x).trim()).map(seoClean);if(ex.length)parts.push('<div class="ex-blk"><div class="ex-h">🧮 풀이</div><ol class="ex-ex">'+ex.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const sline=seoClean(exp.s||'');if(sline)parts.push('<p class="ex-s">'+sline+'</p>');const exphtml=parts.length?'<div class="exp">'+parts.join('')+'</div>':'';const ansline=(typeof ans==='number')?'<p class="ans"><b>정답</b> '+ans+'번</p>':'';const _jr=String(q.jaryo||'').trim();let _rows=[];if(_jr){const NL=String.fromCharCode(10);let base=_jr.split(NL);if(base.length===1){const out=[];let cur='';const toks=_jr.split(' ');for(const t of toks){const c0=t.charCodeAt(0);const mark=(t.length>=2&&c0>=12593&&c0<=12622&&t.charAt(1)==='.');if(mark&&cur.trim()){out.push(cur.trim());cur=t+' ';}else{cur+=t+' ';}}if(cur.trim())out.push(cur.trim());base=out;}_rows=base.map(x=>String(x).trim()).filter(Boolean);}const jaryohtml=_rows.length?('<div class="jaryo">'+_rows.map(x=>'<p>'+seoClean(x)+'</p>').join('')+'</div>'):'';return '<li class="qitem"><div class="qno">'+n+'</div><div class="qbody"><p class="qt">'+seoClean(q.q||'')+'</p>'+jaryohtml+'<ol class="opts">'+li.join('')+'</ol>'+ansline+exphtml+'</div></li>';}
+function seoQ(n,q){const opts=q.opts||[];const ans=q.ans;const li=[];for(let i=0;i<opts.length;i++){const cls=(typeof ans==='number'&&(i+1)===ans)?' class="o-cor"':' class=""';li.push('<li'+cls+'>'+(i+1)+'. '+seoBlocks(opts[i])+'</li>');}const exp=q.exp||{};const parts=[];const cards=(exp.c||[]).map(seoCard).filter(Boolean);if(cards.length)parts.push('<div class="ex-blk"><div class="ex-h">📘 개념</div>'+cards.join('')+'</div>');const os=(exp.o||[]).filter(x=>String(x).trim()).map(seoBlocks);if(os.length)parts.push('<div class="ex-blk"><div class="ex-h">🔍 보기별 해설</div><ol class="ex-o">'+os.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const ex=(exp.ex||[]).filter(x=>String(x).trim()).map(seoBlocks);if(ex.length)parts.push('<div class="ex-blk"><div class="ex-h">🧮 풀이</div><ol class="ex-ex">'+ex.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const sline=seoClean(exp.s||'');if(sline)parts.push('<p class="ex-s">'+sline+'</p>');const exphtml=parts.length?'<div class="exp">'+parts.join('')+'</div>':'';const ansline=(typeof ans==='number')?'<p class="ans"><b>정답</b> '+ans+'번</p>':'';const _jr=String(q.jaryo||'').trim();let _rows=[];if(_jr){const NL=String.fromCharCode(10);let base=_jr.split(NL);if(base.length===1){const out=[];let cur='';const toks=_jr.split(' ');for(const t of toks){const c0=t.charCodeAt(0);const mark=(t.length>=2&&c0>=12593&&c0<=12622&&t.charAt(1)==='.');if(mark&&cur.trim()){out.push(cur.trim());cur=t+' ';}else{cur+=t+' ';}}if(cur.trim())out.push(cur.trim());base=out;}_rows=base.map(x=>String(x).trim()).filter(Boolean);}const jaryohtml=_rows.length?('<div class="jaryo">'+_rows.map(x=>'<p>'+seoBlocks(x)+'</p>').join('')+'</div>'):'';return '<li class="qitem"><div class="qno">'+n+'</div><div class="qbody"><p class="qt">'+seoBlocks(q.q||'')+'</p>'+jaryohtml+'<ol class="opts">'+li.join('')+'</ol>'+ansline+exphtml+'</div></li>';}
 /*
  * 제목과 설명은 '사람이 검색창에 친 말' 로 짓는다.
  *
