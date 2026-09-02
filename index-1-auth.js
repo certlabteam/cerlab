@@ -619,21 +619,19 @@ function dressInappPopup(로그인하려다){
     var chrome = el.querySelector('.btn-inapp-chrome');
     var later = el.querySelector('.btn-inapp-later');
 
-    if(t) t.textContent = ios ? '다른 브라우저에서 열어 주세요' : '크롬으로 열어 주세요';
+    if(t) t.textContent = '카카오로 시작하시면 됩니다';
     if(d){
       d.textContent = k.name + ' 안에서는 구글 로그인이 막혀 있습니다. '
-        + (로그인하려다 ? '그래서 로그인이 안 됩니다. ' : '')
-        + '브라우저에서 열면 로그인도 되고 공부한 기록도 남습니다.';
+        + (로그인하려다 ? '그래서 구글로는 안 됩니다. ' : '')
+        + '「카카오로 시작하기」를 누르시면 여기서 그대로 로그인됩니다. '
+        + '구글 계정으로 하시려면 브라우저에서 열어 주세요.';
     }
     if(s){
       s.textContent = '';
-      var 줄 = ios
-        ? [k.name + ' 화면 아래(또는 위)의 메뉴를 엽니다',
-           '「다른 브라우저로 열기」나 「Safari로 열기」를 고릅니다',
-           '메뉴가 없으면 아래 「주소 복사」를 누르고 브라우저에 붙여 넣으세요']
-        : [k.name + ' 화면의 메뉴를 엽니다',
-           '「다른 브라우저로 열기」를 고릅니다',
-           '안 되면 아래 「크롬으로 열기」를 누르세요'];
+      var 줄 = ['이 창을 닫고 「카카오로 시작하기」를 누르세요 — 가장 빠릅니다',
+                '구글 계정을 쓰시려면 ' + k.name + ' 메뉴에서 「다른 브라우저로 열기」',
+                ios ? '메뉴가 없으면 아래 「주소 복사」를 누르고 브라우저에 붙여 넣으세요'
+                    : '안 되면 아래 「크롬으로 열기」를 누르세요'];
       줄.forEach(function(말, i){
         var row = document.createElement('div'); row.className = 'inapp-step';
         var num = document.createElement('div'); num.className = 'inapp-step-num';
@@ -643,7 +641,7 @@ function dressInappPopup(로그인하려다){
       });
     }
     if(chrome) chrome.textContent = ios ? '🔗 주소 복사하기' : '🔗 크롬으로 열기';
-    if(later) later.textContent = 로그인하려다 ? '그냥 둘러볼게요' : '나중에 할게요';
+    if(later) later.textContent = 로그인하려다 ? '닫고 카카오로 할게요' : '나중에 할게요';
   }catch(_){}
 }
 function checkInAppBrowser() {
@@ -693,6 +691,31 @@ async function signInWithGoogle() {
   }
 }
 
+
+/* ===== 카카오로 시작하기 ==================================================
+ * [2026-09-02] 문을 하나 더 낸다.
+ *   서트랩 유입은 거의 전부 네이버 검색인데, 네이버 앱·카톡 안에서 열면
+ *   **구글이 웹뷰 로그인을 막는다.** 카카오는 안 막는다.
+ *
+ * ⚠ 팝업(Kakao.Auth.login)이 아니라 **이동**(authorize)으로 간다.
+ *   웹뷰에서 팝업이 막히는 것이 애초에 이 단추를 만든 까닭이다.
+ * ⚠ 여기 박히는 것은 JavaScript 키다(공개 키). code 를 토큰으로 바꾸는
+ *   REST 키는 kakaoLogin 함수의 비밀값에만 있다.
+ */
+var KAKAO_JS_KEY = '20c0c6d8f149dd114903a72c545317a9';
+function signInWithKakao(){
+  try{
+    if (typeof Kakao === 'undefined') {
+      alert('카카오 로그인을 불러오지 못했습니다. 잠시 뒤에 다시 해 주세요.');
+      return;
+    }
+    if (!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
+    Kakao.Auth.authorize({ redirectUri: location.origin + '/kakao.html' });
+  }catch(e){
+    console.error('카카오 로그인 시작 실패', e);
+    alert('카카오 로그인을 시작하지 못했습니다: ' + ((e && e.message) || e));
+  }
+}
 function signOut() {
   if (confirm('로그아웃 하시겠어요?')) {
     auth.signOut();
@@ -846,7 +869,7 @@ function showLoginPopup(mode='default') {
     sub.textContent = _limitMsg('가입하면 오늘 '+(typeof _firstDayDaily==='function'?_firstDayDaily():50)+'문제까지 이어서 풀 수 있고, 학습 기록도 남아요.');
   } else {
     title.textContent = '📚 CertLab';
-    sub.textContent = '구글 로그인 후 모든 기능을 이용하세요.';
+    sub.textContent = '로그인하시면 모든 기능을 쓰실 수 있습니다.';
   }
   if(typeof updateEventBanner==='function') updateEventBanner();
   _hideNudges();   // 떠 있는 잔소리 배너를 치우고 이 팝업만 남긴다

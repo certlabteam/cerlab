@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>카카오로 로그인하는 중 · CertLab</title>
+<!--
+  카카오가 사용자를 여기로 돌려보낸다. 여기서 하는 일은 셋뿐이다.
+    1  주소에서 code 를 꺼낸다
+    2  kakaoLogin 함수에 주고 파이어베이스 표(커스텀 토큰)를 받는다
+    3  그 표로 로그인하고 홈으로 보낸다
+
+  ⚠ 이 쪽은 사람이 읽는 화면이 아니다. 오래 머물면 안 된다.
+  ⚠ App Check 를 켠 채로 함수를 부른다 — 안 켜면 나중에 강제했을 때 여기가 먼저 죽는다.
+-->
+<style>
+  :root{ --ink:#16202B; --muted:#5C6B7A; --line:#E4E9EE; --brand:#1D4E6B; --bad:#A32B1C; }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:#F4F6F8;color:var(--ink);
+       font-family:"Pretendard","Malgun Gothic",system-ui,sans-serif;word-break:keep-all}
+  .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:34px 28px;
+       width:min(92vw,380px);text-align:center;box-shadow:0 8px 30px rgba(20,28,36,.07)}
+  .spin{width:34px;height:34px;margin:0 auto 18px;border:3px solid #DCE4EB;
+        border-top-color:var(--brand);border-radius:50%;animation:t .9s linear infinite}
+  @keyframes t{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+  h1{margin:0 0 8px;font-size:17px;font-weight:800}
+  p{margin:0;font-size:14px;color:var(--muted);line-height:1.7}
+  .err h1{color:var(--bad)}
+  .btn{display:inline-block;margin-top:18px;padding:11px 20px;border:0;border-radius:8px;
+       background:var(--brand);color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="box" id="box">
+  <div class="spin" id="spin"></div>
+  <h1 id="t">카카오로 로그인하는 중입니다</h1>
+  <p id="d">잠시만 기다려 주세요.</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
+<script>
+(function(){
+  var 되돌아올곳 = location.origin + '/kakao.html';
+
+  function 망함(제목, 말){
+    var box = document.getElementById('box');
+    box.className = 'box err';
+    document.getElementById('spin').style.display = 'none';
+    document.getElementById('t').textContent = 제목;
+    document.getElementById('d').textContent = 말;
+    var b = document.createElement('button');
+    b.className = 'btn'; b.type = 'button'; b.textContent = '처음으로';
+    b.onclick = function(){ location.replace('/'); };
+    box.appendChild(b);
+  }
+
+  var code = new URLSearchParams(location.search).get('code');
+  var 거절 = new URLSearchParams(location.search).get('error');
+  if (거절) { 망함('로그인을 취소하셨습니다', '다시 하시려면 처음으로 돌아가 주세요.'); return; }
+  if (!code) { 망함('주소가 올바르지 않습니다', '카카오에서 넘어온 정보가 없습니다. 처음부터 다시 해 주세요.'); return; }
+
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+      authDomain: "certlab.ai.kr",
+      projectId: "certlab-c3bcb",
+      storageBucket: "certlab-c3bcb.firebasestorage.app",
+      messagingSenderId: "698827699707",
+      appId: "1:698827699707:web:b08d492f408ac444fa875e"
+    });
+    try {
+      firebase.appCheck().activate(
+        new firebase.appCheck.ReCaptchaV3Provider('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2'), true);
+    } catch (e) { console.warn('App Check', e); }
+  } catch (e) {
+    망함('연결에 실패했습니다', '잠시 뒤에 다시 해 주세요.');
+    return;
+  }
+
+  var fns = firebase.app().functions('asia-northeast3');
+  fns.httpsCallable('kakaoLogin')({ code: code, redirectUri: 되돌아올곳 })
+    .then(function(r){
+      var 표 = r && r.data && r.data.token;
+      if (!표) throw new Error('표가 비어 있습니다');
+      return firebase.auth().signInWithCustomToken(표);
+    })
+    .then(function(){
+      /* 주소에 code 가 남으면 새로고침할 때 또 쓰려다 실패한다. 지우고 홈으로. */
+      location.replace('/');
+    })
+    .catch(function(e){
+      console.error('카카오 로그인 실패', e);
+      망함('로그인하지 못했습니다', (e && e.message) ? e.message : '잠시 뒤에 다시 해 주세요.');
+    });
+})();
+</script>
+</body>
+</html>
