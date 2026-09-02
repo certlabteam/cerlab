@@ -1163,3 +1163,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .subj-rate button{padding:7px 14px;border-radius:10px;border:1.5px solid;font-size:12.5px;font-weight:800;cursor:pointer;background:#fff}
 .r-no{border-color:#F0C9C7;color:var(--sjno)}.r-no.sel{background:#FCEBEB}.r-amb{border-color:#F0DEB0;color:var(--sjamb)}.r-amb.sel{background:#FEF6E7}.r-ok{border-color:#B7E4CF;color:var(--sjok)}.r-ok.sel{background:#E8F8F1}
 .subj-rated{font-size:11.5px;color:var(--sjsub);margin-top:7px}
+
+/* [2026-09-03] 결제창 카카오페이 송금 단추.
+   카카오 노랑(#FEE500)에 검정 글씨가 카카오 규정이다. */
+.kakaopay-send{display:inline-block;margin:8px 0 12px;padding:10px 16px;
+  background:#FEE500;color:#191919;border-radius:10px;font-size:13.5px;
+  font-weight:700;text-decoration:none;line-height:1.2}
+.kakaopay-send:active{background:#F2DA00}
