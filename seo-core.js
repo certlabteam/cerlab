@@ -37,7 +37,12 @@ const SEO_SUBJ_OVERRIDE={civil:'민법'};
  * 다 빠지면(과목명이 통째로 자격증 이름 안에 있으면) 빈 값을 준다 - 그대로 두면
  * '보디빌딩 보디빌딩 기출문제' 처럼 같은 말이 두 번 찍힌다.
  */
-function seoSubjTrim(cname,subjName){return String(subjName||'').split(/\s+/).filter(w=>w&&String(cname||'').indexOf(w)<0).join(' ');}
+function seoSubjTrim(cname,subjName){/* [2026-09-02] 부분 문자열이 아니라 **낱말이 똑같을 때만** 뺀다.
+   전에는 「감정평가사 2차」에 「감정평가」가 들어 있다고 통째로 빼서
+   제목이 「감정평가사 2차 30회 및 보상법규 …」가 됐다(36장).
+   702장 전수와 은행 과목명으로 견주니 달라지는 과목 10개가 다 좋아지는 쪽이었고,
+   겹말 막이(보디빌딩 등)는 그대로 산다. */
+const _cw=new Set(String(cname||'').split(/\s+/).filter(Boolean));return String(subjName||'').split(/\s+/).filter(w=>w&&!_cw.has(w)).join(' ');}
 /** 정식 이름·과목에 이미 든 줄임말은 넣지 않는다. */
 function seoAlias(cert,head){const a=SEO_CERT_ALIAS[cert];return (a&&head.indexOf(a)<0)?a:'';}
 const SEO_CERT_ORDER=['appraiser','appraiser2','realestate1','realestate2','housing','housing2','koreanhistory','bodybuilding','sport2','laborattorney1','franchise','consultant','firemanager1','hesm','tourguide','hotelmgr'];
