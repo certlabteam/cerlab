@@ -565,21 +565,90 @@ function openInChrome() {
   if (/android/i.test(navigator.userAgent)) {
     window.location.href = 'intent://' + url.replace(/https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
   } else {
-    // iOS: 클립보드 복사 안내
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      alert('주소가 복사되었습니다!\nChrome을 열고 붙여넣기 해주세요.');
-    } else {
-      alert('Chrome 브라우저에서 certlab.ai.kr 을 입력해 접속해주세요.');
-    }
+    /* [2026-09-02] 인앱 브라우저에서 경고창은 잘 막힌다. 안내창 안에서 알린다.
+     * 복사가 안 될 수도 있으니 주소를 눈에 보이게 함께 놓는다. */
+    var _say = function(말){
+      var b = document.querySelector('#inappPopup .inapp-desc');
+      if(b){ b.textContent = 말; } else { alert(말); }
+    };
+    var _ok = function(){ _say('주소를 복사했습니다. 브라우저를 열고 주소창에 붙여 넣으세요. ' + url); };
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(_ok, function(){ _say('주소를 길게 눌러 복사하세요. ' + url); });
+      } else {
+        _say('브라우저를 열고 이 주소로 들어오세요. ' + url);
+      }
+    }catch(_){ _say('브라우저를 열고 이 주소로 들어오세요. ' + url); }
   }
 }
 function closeInappPopup() {
   document.getElementById('inappPopup').classList.add('hidden');
   sessionStorage.setItem('inappDismissed', '1');
 }
+/* [2026-09-02] 어느 앱 안에서 열렸는지 가려낸다.
+ *
+ * 왜 —— 안내문이 누구에게나 「카카오톡 내부 브라우저에서는…」이라고 말하고 있었다.
+ * 그런데 서트랩 유입은 거의 전부가 **네이버 검색**이다(8월 네이버 클릭 340회,
+ * 구글은 3개월 34회). 네이버 앱으로 들어온 사람에게 카톡 이야기를 하고 있던 셈이다.
+ * 메뉴 위치 안내도 카톡 것이라 네이버 앱에서는 그런 자리가 없다.
+ *
+ * 메뉴 경로는 앱마다 다르고 판올림마다 바뀐다. 그래서 **못 박지 않는다.**
+ * 앱 이름만 맞게 부르고, 어디서나 통하는 「주소 복사」를 크게 둔다. */
+function inAppKind(){
+  var ua = (navigator.userAgent || '').toLowerCase();
+  if (ua.indexOf('kakaotalk') >= 0)   return { key:'kakao',  name:'카카오톡' };
+  if (ua.indexOf('naver') >= 0)       return { key:'naver',  name:'네이버 앱' };
+  if (ua.indexOf('instagram') >= 0)   return { key:'insta',  name:'인스타그램' };
+  if (ua.indexOf('line') >= 0)        return { key:'line',   name:'라인' };
+  if (ua.indexOf('fban') >= 0 || ua.indexOf('fbav') >= 0) return { key:'fb', name:'페이스북' };
+  if (ua.indexOf('daum') >= 0)        return { key:'daum',   name:'다음 앱' };
+  return { key:'etc', name:'지금 보고 계신 앱' };
+}
+function isIOSish(){
+  var ua = (navigator.userAgent || '').toLowerCase();
+  return ua.indexOf('iphone') >= 0 || ua.indexOf('ipad') >= 0;
+}
+/* 안내창을 지금 앱에 맞게 고쳐 쓴다. checkInAppBrowser 와 signInWithGoogle 이 부른다. */
+function dressInappPopup(로그인하려다){
+  try{
+    var el = document.getElementById('inappPopup'); if(!el) return;
+    var k = inAppKind(), ios = isIOSish();
+    var t = el.querySelector('.inapp-title');
+    var d = el.querySelector('.inapp-desc');
+    var s = el.querySelector('.inapp-steps');
+    var chrome = el.querySelector('.btn-inapp-chrome');
+    var later = el.querySelector('.btn-inapp-later');
+
+    if(t) t.textContent = ios ? '다른 브라우저에서 열어 주세요' : '크롬으로 열어 주세요';
+    if(d){
+      d.textContent = k.name + ' 안에서는 구글 로그인이 막혀 있습니다. '
+        + (로그인하려다 ? '그래서 로그인이 안 됩니다. ' : '')
+        + '브라우저에서 열면 로그인도 되고 공부한 기록도 남습니다.';
+    }
+    if(s){
+      s.textContent = '';
+      var 줄 = ios
+        ? [k.name + ' 화면 아래(또는 위)의 메뉴를 엽니다',
+           '「다른 브라우저로 열기」나 「Safari로 열기」를 고릅니다',
+           '메뉴가 없으면 아래 「주소 복사」를 누르고 브라우저에 붙여 넣으세요']
+        : [k.name + ' 화면의 메뉴를 엽니다',
+           '「다른 브라우저로 열기」를 고릅니다',
+           '안 되면 아래 「크롬으로 열기」를 누르세요'];
+      줄.forEach(function(말, i){
+        var row = document.createElement('div'); row.className = 'inapp-step';
+        var num = document.createElement('div'); num.className = 'inapp-step-num';
+        num.textContent = String(i+1);
+        row.appendChild(num); row.appendChild(document.createTextNode(말));
+        s.appendChild(row);
+      });
+    }
+    if(chrome) chrome.textContent = ios ? '🔗 주소 복사하기' : '🔗 크롬으로 열기';
+    if(later) later.textContent = 로그인하려다 ? '그냥 둘러볼게요' : '나중에 할게요';
+  }catch(_){}
+}
 function checkInAppBrowser() {
   if (isInAppBrowser() && !sessionStorage.getItem('inappDismissed')) {
+    dressInappPopup(false);
     document.getElementById('inappPopup').classList.remove('hidden');
   }
 }
@@ -599,8 +668,13 @@ async function signInWithGoogle() {
     if (/android/i.test(navigator.userAgent)) {
       window.location.href = 'intent://' + url.replace(/https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
     } else {
-      // iOS: 외부 브라우저 안내
-      alert('⚠️ 로그인하려면 외부 브라우저에서 열어야 합니다. 우측 하단 메뉴(···) → 기본 브라우저로 열기 를 눌러주세요.');
+      /* [2026-09-02] 경고창은 닫으면 제자리라 길이 끊긴다.
+       * 앱 이름과 할 일이 적힌 안내창을 그대로 띄운다. */
+      try{ sessionStorage.removeItem('inappDismissed'); }catch(_){}
+      dressInappPopup(true);
+      var _ip = document.getElementById('inappPopup');
+      if(_ip) _ip.classList.remove('hidden');
+      else alert('로그인하려면 다른 브라우저에서 열어 주세요. 주소: ' + location.href);
     }
     return;
   }
