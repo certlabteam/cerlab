@@ -45,13 +45,6 @@ gtag('config', 'AW-18199166773');
 {"@type":"EducationalOrganization","name":"CertLab","url":"https://certlab.ai.kr/","description":"생활스포츠지도사 보디빌딩 구술, 감정평가사 등 자격증 기출문제 자동복습·예상점수 학습 플랫폼"}
 ]}
 </script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-functions-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
 <!-- [2026-08-29] 한글 화면용 글꼴. 전에는 웹폰트 없이 기기 글꼴에 맡겼는데,
      -apple-system·Segoe UI 는 안드로이드에 없고 한글 글자도 없어 기기마다 제각각이었다.
      윈도우는 맑은 고딕으로 떨어지는데 13.5px 에서 획이 가늘어 읽기 나쁘다.
@@ -61,21 +54,9 @@ gtag('config', 'AW-18199166773');
 <link rel="stylesheet" href="style.css?v=923e76d8">
 <link rel="stylesheet" href="subjective-responsive.css?v=c8a6a836">
 <!-- Meta Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '975416015293680');
-fbq('track', 'PageView');
-</script>
-<noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=975416015293680&ev=PageView&noscript=1"
-/></noscript>
+<!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
+     120KB 를 받고 768ms 를 끌고 있었다. 광고를 다시 켜면 그때 되살린다. -->
+
 <!-- End Meta Pixel Code -->
 <!-- CertLab → Meta 전환 이벤트 헬퍼 (fbq 미로드 시 무시) -->
 <script>
@@ -601,6 +582,16 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="payment-note">입금 완료 신청 시 이용권이 즉시 활성화됩니다.<br>결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.</div>
   </div>
 </div>
+<!-- [2026-09-02] 파이어베이스 SDK 를 <head> 에서 여기로 내렸다.
+     head 에 있으면 이 일곱 개를 다 받을 때까지 화면이 안 그려진다. 아이폰에서 특히 심하다.
+     604줄 앞에서 firebase 를 쓰는 곳이 없어(확인함) 차례가 안 깨진다. -->
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-functions-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
 <script src="index-1-auth.js?v=49dac2c0"></script>
 <script src="index-2-engine.js?v=9d852066"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
