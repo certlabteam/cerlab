@@ -536,8 +536,11 @@ function openFirstRunPicker(){
   var css = [
     '#frPick{position:fixed;inset:0;z-index:9999;background:rgba(12,18,24,.62);display:flex;align-items:flex-end;justify-content:center}',
     '#frPickBox{background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.28)}',
-    '#frPickHd{padding:22px 22px 14px;border-bottom:1px solid #EAEEF2}',
-    '#frPickHd h3{margin:0 0 6px;font-size:20px;font-weight:800;color:#16202B;word-break:keep-all}',
+    '#frPickHd{position:relative;padding:22px 22px 14px;border-bottom:1px solid #EAEEF2}',
+    '#frPickX{position:absolute;top:12px;right:12px;width:34px;height:34px;border:0;background:transparent;color:#8A98A6;font-size:19px;line-height:1;cursor:pointer;border-radius:8px}',
+    '#frPickX:hover{background:#EFF4F8;color:#16202B}',
+    '#frPickX:focus-visible{outline:2px solid #1D4E6B;outline-offset:-2px}',
+    '#frPickHd h3{margin:0 0 6px;padding-right:36px;font-size:20px;font-weight:800;color:#16202B;word-break:keep-all}',
     '#frPickHd p{margin:0;font-size:14px;color:#61707E;word-break:keep-all}',
     '#frPickQ{width:100%;margin-top:14px;padding:11px 13px;font:inherit;font-size:15px;border:1px solid #D5DCE3;border-radius:9px;background:#F7F9FB;color:#16202B;box-sizing:border-box}',
     '#frPickQ:focus{outline:2px solid #1D4E6B;outline-offset:-2px;background:#fff}',
@@ -565,6 +568,14 @@ function openFirstRunPicker(){
 
   var box = document.createElement('div'); box.id = 'frPickBox';
   var hd  = document.createElement('div'); hd.id  = 'frPickHd';
+  var x   = document.createElement('button');
+  x.type = 'button'; x.id = 'frPickX'; x.textContent = '✕';
+  x.setAttribute('aria-label', '닫기');
+  x.addEventListener('click', function(){
+    try{ sessionStorage.setItem('certlab_picker_skip','1'); }catch(_){}
+    closeFirstRunPicker();
+  });
+  hd.appendChild(x);
   var h3  = document.createElement('h3'); h3.textContent = '어떤 시험을 준비하세요?';
   var p   = document.createElement('p');
   p.textContent = '고르시면 그 시험 기출로 바로 들어갑니다. 나중에 얼마든지 바꾸실 수 있어요.';
@@ -576,7 +587,8 @@ function openFirstRunPicker(){
   var list = document.createElement('div'); list.id = 'frPickList';
   var ft   = document.createElement('div'); ft.id   = 'frPickFt';
   var skip = document.createElement('button');
-  skip.type = 'button'; skip.id = 'frPickSkip'; skip.textContent = '찾는 시험이 없어요';
+  skip.type = 'button'; skip.id = 'frPickSkip';
+  skip.textContent = '찾는 시험이 없어요 · 나중에 고를게요';
   ft.appendChild(skip);
 
   box.appendChild(hd); box.appendChild(list); box.appendChild(ft);

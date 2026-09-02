@@ -714,7 +714,10 @@ function signInWithKakao(){
     var 주소 = 'https://kauth.kakao.com/oauth/authorize'
       + '?client_id=' + encodeURIComponent(KAKAO_REST_KEY)
       + '&redirect_uri=' + encodeURIComponent(되돌아올곳)
-      + '&response_type=code';
+      + '&response_type=code'
+      /* 선택 동의 항목은 여기에 적어야 동의 화면에 뜬다.
+       * 안 적으면 이름도 사진도 안 와서 프로필이 「회」 한 글자가 된다. */
+      + '&scope=' + encodeURIComponent('profile_nickname,profile_image');
     location.href = 주소;   // 팝업이 아니라 이동. 웹뷰에서 팝업은 막힌다.
   }catch(e){
     console.error('카카오 로그인 시작 실패', e);
