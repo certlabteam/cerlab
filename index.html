@@ -11,7 +11,14 @@
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', 'G-RPZRZQ779J');
+/* [2026-09-02] 광고 신호를 끈다.
+   GA4 에 구글 광고 계정이 연결돼 있어, AW config 를 지워도 gtag 가 스스로
+   광고 태그를 불러 doubleclick 으로 다섯 번 오갔다. 광고를 다 내린 지금은 값이 없다.
+   사람 수 세기(GA4 본연)는 그대로 돈다. 광고를 다시 켜면 두 줄을 지우면 된다. */
+gtag('config', 'G-RPZRZQ779J', {
+  allow_google_signals: false,
+  allow_ad_personalization_signals: false
+});
 /* [2026-09-02] 광고 전환 추적을 껐다. 광고를 다 내린 상태라 전환이 일어날 데가 없는데
    이 한 줄 때문에 doubleclick 으로 여덟 번 오가며 7.5초까지 끌었다.
    광고를 다시 켜는 날(9/8 판단) 아래 줄의 주석만 풀면 된다.
