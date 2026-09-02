@@ -1170,3 +1170,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
   background:#FEE500;color:#191919;border-radius:10px;font-size:13.5px;
   font-weight:700;text-decoration:none;line-height:1.2}
 .kakaopay-send:active{background:#F2DA00}
+/* [2026-09-03] 결제창 토스 송금 단추. 토스 파랑(#0064FF)에 흰 글씨. */
+.toss-send{display:inline-block;margin:8px 0 12px 8px;padding:10px 16px;
+  background:#0064FF;color:#fff;border-radius:10px;font-size:13.5px;
+  font-weight:700;text-decoration:none;line-height:1.2}
+.toss-send:active{background:#0052D4}

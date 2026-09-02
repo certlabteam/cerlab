@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=93b3b37d">
+<link rel="stylesheet" href="style.css?v=17a52f39">
 <link rel="stylesheet" href="subjective-responsive.css?v=c8a6a836">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -593,7 +593,22 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
            옮겨 적어야 했다. 이 링크 하나로 그 걸음이 사라진다.
            ⚠ 사장님 실제 링크다. 지어내지 말 것 — 틀리면 남에게 돈이 간다. -->
       <a href="https://qr.kakaopay.com/FSBEPLkVm" target="_blank" rel="noopener"
-         class="kakaopay-send">카카오페이로 송금하기</a><br>
+         class="kakaopay-send">카카오페이로 송금하기</a>
+      <!-- [2026-09-03] 토스 송금 링크.
+           supertoss:// 는 앱 전용 주소라 PC 에서는 아무 일도 안 난다.
+           그래서 폰(터치 되는 기기)에서만 보이게 한다 — 안 보이는 편이 먹통 단추보다 낫다.
+           ⚠ 사장님 QR 에서 읽어낸 실제 값이다. 계좌번호 100024060293 은 위 1000-2406-0293 과 같다. -->
+      <a href="supertoss://send?amount=0&amp;bank=%ED%86%A0%EC%8A%A4%EB%B1%85%ED%81%AC&amp;accountNo=100024060293&amp;origin=qr"
+         class="toss-send" id="tossSendBtn" hidden>토스로 송금하기</a>
+      <script>
+      /* 터치 되는 기기에서만 토스 단추를 보인다. PC 에서는 눌러도 아무 일이 안 나서
+         안 보이는 편이 낫다. matchMedia 가 없는 옛 브라우저면 그냥 숨은 채로 둔다. */
+      (function(){ try{
+        if(window.matchMedia && window.matchMedia('(pointer:coarse)').matches){
+          var b=document.getElementById('tossSendBtn'); if(b) b.hidden=false;
+        }
+      }catch(_){ } })();
+      </script><br>
       입금 완료 신청 시 이용권이 <strong>즉시 활성화</strong>됩니다.<br>단, 결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.
     </div>
     <div id="mileUseBox"></div>
