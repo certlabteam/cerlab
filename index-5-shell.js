@@ -488,13 +488,150 @@ function _urlHasRoute(){
     return !!new URLSearchParams(location.search||'').get('q');
   }catch(_){ return false; }
 }
+
+/* ===== 첫 방문 시험 고르기 =====================================================
+ * [2026-09-02] 가입만 하고 시험을 안 고른 사람은 거의 다 그냥 나간다. 재 봤다:
+ *
+ *     가입할 때 시험을 골랐다     22명 중 7명이 풀었다   32%
+ *     안 골랐다                115명 중 2명이 풀었다    2%
+ *
+ * 16배다. 회원 137명 가운데 문제를 한 번이라도 푼 사람이 9명뿐인 까닭이 여기 있다.
+ * 그래서 고른 적이 없는 사람에게는 62개 카드가 깔린 홈 대신 **고르는 창부터** 보인다.
+ *
+ * 닫는 단추를 두지 않는다. 다만 찾는 시험이 정말 없을 수 있어 맨 밑에 작은 글씨로
+ * 빠져나갈 길을 하나 둔다 — 그 방문에만 접히고 다음에 오면 다시 뜬다.
+ * (그게 없으면 목록에 없는 시험을 준비하는 사람이 영영 갇힌다.)
+ *
+ * 목록은 홈에 이미 있는 .cert-card 를 그대로 읽어서 만든다.
+ * 이름과 설명을 두 군데서 관리하지 않으려는 것이다. */
+var _pickerOpen = false;
+function firstRunPickerNeeded(){
+  try{
+    if(!currentUser) return false;
+    if(_urlHasRoute()) return false;
+    if(getLastCert() || _srvLastCert) return false;
+    if(sessionStorage.getItem('certlab_picker_skip') === '1') return false;
+    return true;
+  }catch(_){ return false; }
+}
+function openFirstRunPicker(){
+  if(_pickerOpen || !firstRunPickerNeeded()) return;
+  var cards = [].slice.call(document.querySelectorAll('.cert-cards .cert-card'))
+                .filter(function(c){ return c.id && c.id.indexOf('certCard-')===0 && !c.classList.contains('cert-ghd'); });
+  if(cards.length < 5) return;   // 홈이 아직 안 그려졌다. 다음 호출 때 다시 본다
+  _pickerOpen = true;
+
+  var now = Date.now(), dm = (typeof _examDateMs!=='undefined' && _examDateMs) || {};
+  var rows = cards.map(function(c, i){
+    var id = c.id.replace('certCard-','');
+    var ms = dm[id];
+    var ic = c.querySelector('.cert-ic'), nm = c.querySelector('.nm'), ds = c.querySelector('.ds');
+    return { id:id, i:i,
+             ic: ic ? ic.textContent : '📘',
+             nm: nm ? nm.textContent : id,
+             ds: ds ? ds.textContent : '',
+             k: (ms!=null && ms>=now) ? ms : Infinity };
+  }).sort(function(a,b){ return a.k!==b.k ? a.k-b.k : a.i-b.i; });   // 시험일이 가까운 것부터
+
+  var css = [
+    '#frPick{position:fixed;inset:0;z-index:9999;background:rgba(12,18,24,.62);display:flex;align-items:flex-end;justify-content:center}',
+    '#frPickBox{background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.28)}',
+    '#frPickHd{padding:22px 22px 14px;border-bottom:1px solid #EAEEF2}',
+    '#frPickHd h3{margin:0 0 6px;font-size:20px;font-weight:800;color:#16202B;word-break:keep-all}',
+    '#frPickHd p{margin:0;font-size:14px;color:#61707E;word-break:keep-all}',
+    '#frPickQ{width:100%;margin-top:14px;padding:11px 13px;font:inherit;font-size:15px;border:1px solid #D5DCE3;border-radius:9px;background:#F7F9FB;color:#16202B;box-sizing:border-box}',
+    '#frPickQ:focus{outline:2px solid #1D4E6B;outline-offset:-2px;background:#fff}',
+    '#frPickList{overflow-y:auto;padding:8px 10px 4px}',
+    '.frPickIt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:13px 12px;border:0;background:transparent;font:inherit;cursor:pointer;border-radius:10px}',
+    '.frPickIt:hover,.frPickIt:focus-visible{background:#EFF4F8;outline:none}',
+    '.frPickIt .ic{font-size:24px;flex:0 0 auto;line-height:1}',
+    '.frPickIt .tx{min-width:0}',
+    '.frPickIt .n{font-size:15.5px;font-weight:700;color:#16202B}',
+    '.frPickIt .d{font-size:12.5px;color:#6B7A88;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '#frPickFt{padding:10px 22px 18px;border-top:1px solid #EAEEF2;text-align:center}',
+    '#frPickSkip{background:none;border:0;font:inherit;font-size:12.5px;color:#93A1AF;text-decoration:underline;cursor:pointer;padding:6px}',
+    '#frPickNone{padding:26px 12px;text-align:center;color:#8A98A6;font-size:14px}',
+    '@media(min-width:600px){#frPick{align-items:center}#frPickBox{border-radius:16px}}'
+  ].join('');
+  var st = document.createElement('style');
+  st.id = 'frPickCss';
+  st.textContent = css;
+  document.head.appendChild(st);
+
+  var wrap = document.createElement('div');
+  wrap.id = 'frPick';
+  wrap.setAttribute('role','dialog');
+  wrap.setAttribute('aria-modal','true');
+
+  var box = document.createElement('div'); box.id = 'frPickBox';
+  var hd  = document.createElement('div'); hd.id  = 'frPickHd';
+  var h3  = document.createElement('h3'); h3.textContent = '어떤 시험을 준비하세요?';
+  var p   = document.createElement('p');
+  p.textContent = '고르시면 그 시험 기출로 바로 들어갑니다. 나중에 얼마든지 바꾸실 수 있어요.';
+  var q   = document.createElement('input');
+  q.id = 'frPickQ'; q.type = 'search'; q.autocomplete = 'off';
+  q.placeholder = '시험 이름으로 찾기';
+  hd.appendChild(h3); hd.appendChild(p); hd.appendChild(q);
+
+  var list = document.createElement('div'); list.id = 'frPickList';
+  var ft   = document.createElement('div'); ft.id   = 'frPickFt';
+  var skip = document.createElement('button');
+  skip.type = 'button'; skip.id = 'frPickSkip'; skip.textContent = '찾는 시험이 없어요';
+  ft.appendChild(skip);
+
+  box.appendChild(hd); box.appendChild(list); box.appendChild(ft);
+  wrap.appendChild(box);
+  document.body.appendChild(wrap);
+
+  function draw(text){
+    var s = (text||'').trim().toLowerCase();
+    list.textContent = '';
+    var hit = rows.filter(function(r){
+      return !s || r.nm.toLowerCase().indexOf(s)>=0 || r.ds.toLowerCase().indexOf(s)>=0 || r.id.indexOf(s)>=0; });
+    if(!hit.length){
+      var none = document.createElement('div'); none.id = 'frPickNone';
+      none.textContent = '그런 이름의 시험이 없습니다. 다르게 적어 보세요.';
+      list.appendChild(none); return;
+    }
+    hit.forEach(function(r){
+      var b  = document.createElement('button'); b.type='button'; b.className='frPickIt';
+      var ic = document.createElement('span'); ic.className='ic'; ic.textContent = r.ic;
+      var tx = document.createElement('span'); tx.className='tx';
+      var n  = document.createElement('div'); n.className='n'; n.textContent = r.nm;
+      var d  = document.createElement('div'); d.className='d'; d.textContent = r.ds;
+      tx.appendChild(n); tx.appendChild(d);
+      b.appendChild(ic); b.appendChild(tx);
+      b.addEventListener('click', function(){
+        closeFirstRunPicker();
+        try{ enterCert(r.id); }catch(_){}
+      });
+      list.appendChild(b);
+    });
+  }
+  draw('');
+  q.addEventListener('input', function(){ draw(q.value); });
+  skip.addEventListener('click', function(){
+    try{ sessionStorage.setItem('certlab_picker_skip','1'); }catch(_){}
+    closeFirstRunPicker();
+  });
+  // 폰에서는 커서를 주지 않는다 — 자판이 올라와 목록을 덮는다.
+  try{
+    if(window.matchMedia && window.matchMedia('(min-width:600px)').matches) q.focus();
+  }catch(_){}
+}
+function closeFirstRunPicker(){
+  _pickerOpen = false;
+  var el = document.getElementById('frPick');
+  if(el && el.parentNode) el.parentNode.removeChild(el);
+}
 function routeAfterAuth(){
   if(_urlHasRoute()) return;
   if(currentUser && !activeCert){
     /* [2026-09-01] 이 브라우저 기록이 없으면 서버에 남은 것을 쓴다.
      * 없으면 종전대로 아무 데도 안 보낸다(시험 목록이 뜬다). */
     const last = getLastCert() || _srvLastCert;
-    if(!last) return;
+    /* [2026-09-02] 고른 적이 없으면 62개 카드가 깔린 홈 대신 고르는 창부터 보인다. */
+    if(!last){ try{ openFirstRunPicker(); }catch(_){} return; }
     /* [2026-08-26] 여기에 두 시험(bodybuilding·appraiser)만 적혀 있었다 — 시험이 둘뿐이던 때 코드다.
      * 지금은 62개이고, 나머지 60개는 **다시 와도 시험 고르는 목록을 처음부터 다시 마주한다.**
      * 다시 온 사람에게 62개 목록을 처음부터 보여 줄 까닭이 없다. 고치는 근거는 그것이다.
