@@ -702,15 +702,20 @@ async function signInWithGoogle() {
  * ⚠ 여기 박히는 것은 JavaScript 키다(공개 키). code 를 토큰으로 바꾸는
  *   REST 키는 kakaoLogin 함수의 비밀값에만 있다.
  */
-var KAKAO_JS_KEY = '20c0c6d8f149dd114903a72c545317a9';
+/* ⚠ SDK 의 Kakao.Auth.authorize 를 쓰면 client_id 로 **JavaScript 키**가 나간다.
+ *   그런데 code 를 토큰으로 바꿀 때는 REST 키를 써야 해서 둘이 어긋난다
+ *   → 카카오가 KOE010 「Bad client credentials」 로 막는다 (2026-09-02 실제로 겪음).
+ *   그래서 주소를 직접 만들어 **REST 키**를 client_id 로 보낸다. 두 걸음이 같은 키가 된다.
+ *   OAuth 에서 client_id 는 원래 주소창에 드러나는 값이라 비밀이 아니다. */
+var KAKAO_REST_KEY = 'e4af37db8f7469e40f75d9ee0641dff6';
 function signInWithKakao(){
   try{
-    if (typeof Kakao === 'undefined') {
-      alert('카카오 로그인을 불러오지 못했습니다. 잠시 뒤에 다시 해 주세요.');
-      return;
-    }
-    if (!Kakao.isInitialized()) Kakao.init(KAKAO_JS_KEY);
-    Kakao.Auth.authorize({ redirectUri: location.origin + '/kakao.html' });
+    var 되돌아올곳 = location.origin + '/kakao.html';
+    var 주소 = 'https://kauth.kakao.com/oauth/authorize'
+      + '?client_id=' + encodeURIComponent(KAKAO_REST_KEY)
+      + '&redirect_uri=' + encodeURIComponent(되돌아올곳)
+      + '&response_type=code';
+    location.href = 주소;   // 팝업이 아니라 이동. 웹뷰에서 팝업은 막힌다.
   }catch(e){
     console.error('카카오 로그인 시작 실패', e);
     alert('카카오 로그인을 시작하지 못했습니다: ' + ((e && e.message) || e));
