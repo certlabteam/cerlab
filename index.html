@@ -583,13 +583,16 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     </div>
     <div class="bank-info">
       <strong>입금 계좌</strong><br>
-      토스뱅크 1000-2406-0293<br>
+      <span class="accrow" style="display:inline-flex;align-items:center;gap:8px;margin:4px 0">
+        <span>토스뱅크 1000-2406-0293</span>
+        <button type="button" class="psucc-copy" onclick="copyDepositAcc()">복사</button>
+      </span><br>
       예금주: 박성환<br><br>
       입금 완료 신청 시 이용권이 <strong>즉시 활성화</strong>됩니다.<br>단, 결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.
     </div>
     <div id="mileUseBox"></div>
     <input id="depositorName" placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
-    <button class="btn-payment" id="btnPayment" onclick="submitPayment()">입금 완료 신청</button>
+    <button class="btn-payment" id="btnPayment" onclick="submitPayment()">입금하고 시작하기</button>
     <div class="payment-note">입금 완료 신청 시 이용권이 즉시 활성화됩니다.<br>결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.</div>
   </div>
 </div>
@@ -603,7 +606,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=49dac2c0"></script>
+<script defer src="index-1-auth.js?v=a99ace47"></script>
 <script defer src="index-2-engine.js?v=9d852066"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->

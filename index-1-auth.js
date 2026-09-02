@@ -1312,7 +1312,7 @@ function recalcPay(){
   if(price<=0){ btn.textContent='이용권을 선택하세요'; return; }
   if(payable<=0) btn.textContent='포인트 '+applied.toLocaleString()+'P로 결제 (즉시 활성화)';
   else if(applied>0) btn.textContent=payable.toLocaleString()+'원 입금 신청 (포인트 '+applied.toLocaleString()+'P 사용)';
-  else btn.textContent=price.toLocaleString()+'원 입금 완료 신청';
+  else btn.textContent=price.toLocaleString()+'원 입금하고 시작하기';
 }
 
 function consumeMileage(lots, amount){
