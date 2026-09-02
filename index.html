@@ -12,7 +12,11 @@ window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-RPZRZQ779J');
-gtag('config', 'AW-18199166773');
+/* [2026-09-02] 광고 전환 추적을 껐다. 광고를 다 내린 상태라 전환이 일어날 데가 없는데
+   이 한 줄 때문에 doubleclick 으로 여덟 번 오가며 7.5초까지 끌었다.
+   광고를 다시 켜는 날(9/8 판단) 아래 줄의 주석만 풀면 된다.
+   애널리틱스(G-)는 그대로 둔다 — 사람이 얼마나 오는지는 계속 봐야 한다. */
+// gtag('config', 'AW-18199166773');
 </script>
 <title>CertLab(서트랩) – 생활스포츠지도사·감정평가사 기출 자동복습·예상점수</title>
 <meta name="description" content="CertLab(서트랩)은 생활스포츠지도사 보디빌딩 구술, 감정평가사 등 자격증 기출문제를 망각곡선 자동복습·약점 분석·예상점수로 효율적으로 학습하는 자격증 학습 플랫폼입니다.">
