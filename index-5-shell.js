@@ -992,14 +992,48 @@ async function loadOneSubject(ex, sub){
     const meta=await _bankGet(ex.id+'__'+sub.code);   // 일반 fetch 우선, 실패 시 SDK 폴백
     if(meta){
       if(Array.isArray(meta.shards) && meta.shards.length){
-        // 회차 샤딩(Option B): banks/{cert}__{sub}__{set} 병렬 로드 후 합치기
-        const parts=await Promise.all(meta.shards.map(function(sid){
-          return _bankGet(ex.id+'__'+sub.code+'__'+sid);
-        }));
-        const qs=[];
-        parts.forEach(function(pd){ if(pd && Array.isArray(pd.questions)) qs.push.apply(qs,pd.questions); });
-        if(!qs.length && Array.isArray(meta.questions)) doc=meta;   // 안전: 샤드 비면 메타 폴백
-        else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:qs };
+        /* [2026-09-02] 회차 샤딩: 예전엔 전 회차를 다 기다렸다.
+         * 한국사 하나가 3,575KB · 12.8초였다. 학생은 한 회차만 푸는데 다섯을 기다린 셈이다.
+         * 이제 **첫 회차만 기다리고 나머지는 뒤에서** 받는다.
+         * 아예 안 받으면 안 된다 — 레벨테스트·복습·오답노트가 전 회차를 훑기 때문이다. */
+        const 뿌리=ex.id+'__'+sub.code+'__';
+        const 누적=[];
+        const 얹기=function(){
+          applyBank(ex, sub, { version:meta.version, cert:meta.cert, subject:meta.subject,
+                               name:meta.name, questions:누적.slice() });
+          try{ if(typeof rebuildQid==='function') rebuildQid(); }catch(_){}
+        };
+        const 첫=await _bankGet(뿌리+meta.shards[0]);
+        if(첫 && Array.isArray(첫.questions)) 누적.push.apply(누적, 첫.questions);
+        if(!누적.length){
+          // 첫 샤드가 비었으면 종전대로 통째로 받는다(안전 폴백)
+          const parts=await Promise.all(meta.shards.slice(1).map(function(sid){ return _bankGet(뿌리+sid); }));
+          parts.forEach(function(pd){ if(pd && Array.isArray(pd.questions)) 누적.push.apply(누적,pd.questions); });
+          if(!누적.length && Array.isArray(meta.questions)) doc=meta;
+          else doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:누적 };
+        } else {
+          얹기();                                  // 첫 회차로 화면부터 세운다
+          if(meta.shards.length>1){
+            (async function(){                     // 나머지는 뒤에서
+              for(let i=1;i<meta.shards.length;i++){
+                const pd=await _bankGet(뿌리+meta.shards[i]);
+                if(pd && Array.isArray(pd.questions)){ 누적.push.apply(누적,pd.questions); 얹기(); }
+              }
+              // 다 온 뒤에만 캐시에 넣는다. 반쪽을 넣으면 다음에도 반쪽이 된다.
+              try{
+                const 온것={ version:meta.version, cert:meta.cert, subject:meta.subject,
+                             name:meta.name, questions:누적 };
+                const pfx='qb:'+ex.id+':'+sub.code+':v';
+                for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i);
+                  if(k && k!==ck && k.indexOf(pfx)===0) localStorage.removeItem(k); }
+                localStorage.setItem(ck,JSON.stringify({__qbts:Date.now(), d:온것}));
+              }catch(_){}
+            })();
+          } else {
+            doc={ version:meta.version, cert:meta.cert, subject:meta.subject, name:meta.name, questions:누적 };
+          }
+          if(!doc) return;   // 얹기로 이미 세웠다. 아래 캐시·applyBank 를 건너뛴다.
+        }
       } else {
         doc=meta;   // 기존 단일 문서(하위호환 폴백)
       }
