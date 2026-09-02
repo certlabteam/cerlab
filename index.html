@@ -65,7 +65,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
-<script src="subjective.js?v=cc4b8d5a"></script>
+<script defer src="subjective.js?v=cc4b8d5a"></script>
 <style>
 /* [2026-09-02] 카카오 로그인 단추.
    구글 단추가 margin-bottom:12px 이라, 카카오도 같은 값을 줘서
@@ -585,28 +585,28 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- [2026-09-02] 파이어베이스 SDK 를 <head> 에서 여기로 내렸다.
      head 에 있으면 이 일곱 개를 다 받을 때까지 화면이 안 그려진다. 아이폰에서 특히 심하다.
      604줄 앞에서 firebase 를 쓰는 곳이 없어(확인함) 차례가 안 깨진다. -->
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-functions-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script src="index-1-auth.js?v=49dac2c0"></script>
-<script src="index-2-engine.js?v=9d852066"></script>
+<script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-functions-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
+<script defer src="index-1-auth.js?v=49dac2c0"></script>
+<script defer src="index-2-engine.js?v=9d852066"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
-<script src="itv-render.js?v=e9ebd33a"></script>
-<script src="index-3-mcq.js?v=cd893d8b"></script>
-<script src="index-4-learn.js?v=f5c4976b"></script>
-<script src="index-5-shell.js?v=826b0106"></script>
+<script defer src="itv-render.js?v=e9ebd33a"></script>
+<script defer src="index-3-mcq.js?v=cd893d8b"></script>
+<script defer src="index-4-learn.js?v=f5c4976b"></script>
+<script defer src="index-5-shell.js?v=826b0106"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
   <div class="pr-sheet" id="printSheetBody"></div>
 </div>
 <div id="printArea"></div>
-<script src="index-6-adaptive.js?v=7be5fdcb"></script>
-<script src="community.js"></script>
-<script src="calc-render.js"></script>
+<script defer src="index-6-adaptive.js?v=7be5fdcb"></script>
+<script defer src="community.js"></script>
+<script defer src="calc-render.js"></script>
 </body>
 </html>
