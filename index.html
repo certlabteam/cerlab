@@ -86,10 +86,12 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 </script>
 <script src="subjective.js?v=cc4b8d5a"></script>
 <style>
-/* [2026-09-02] 카카오 로그인 단추. 구글 단추와 같은 크기·간격으로 둔다.
+/* [2026-09-02] 카카오 로그인 단추.
+   구글 단추가 margin-bottom:12px 이라, 카카오도 같은 값을 줘서
+   구글-카카오-「나중에」 사이 간격이 다 12px 로 같아진다.
    색은 카카오가 정해 둔 노랑(#FEE500)과 검정 글씨를 그대로 쓴다 — 사람들이 그 조합으로 알아본다. */
 .btn-kakao-login{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
-  margin-top:8px;padding:13px 16px;border:0;border-radius:10px;background:#FEE500;
+  margin-bottom:12px;padding:13px 16px;border:0;border-radius:10px;background:#FEE500;
   color:#191600;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
 .btn-kakao-login:hover{filter:brightness(.97)}
 .btn-kakao-login:focus-visible{outline:2px solid #1D4E6B;outline-offset:2px}
