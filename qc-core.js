@@ -152,7 +152,14 @@ function _qcViolations(q){
     if(typeof _avAns==='number' && _avAns>=1 && _avAns<=o.length && (_avNeg!==_avPos) && !_avCombo){
       var _avT=o[_avAns-1];
       var _avMeta=/('[^']{0,40}(아닌|않는|않은|없는)\s*것'|"[^"]{0,40}(아닌|않는|않은|없는)\s*것"|(아닌|않는|않은|없는)\s*것(은|이)\s*(바로\s*)?(이것|이 보기|이 선지|여기)|정답|문제가\s*(찾는|요구하는|고르라는)|물음의?\s*답|고르라는|골라야|답으로|이 ?선지는)/;
-      if(_avT && String(_avT).trim() && _qgVerdict(_avT) && !_avMeta.test(String(_avT))){
+      /* [FIX 2026-09-05] 면제어 목록에 '정답' 이 있는데, 마스터가 정답칸에 붙이라고 정한 표기가
+         '(정답)' 이다. 그래서 **규약대로 쓰면 이 검사가 언제나 면제됐다.**
+         청소년상담사 2,000문항을 쓰는 동안 한 번도 안 돌았고, 부정 발문인데 정답칸이
+         '옳다(정답).' 로 끝나는 문항 446개가 그대로 나갔다 — 앱 O/X 배지가 통째로 뒤집힌다.
+         면제 자체는 살린다('이것이 정답이다' 같은 메타 서술은 여전히 봐준다).
+         **표기 '(정답)' 만 떼고 나서** 면제어를 본다. */
+      var _avNoMark=String(_avT||'').replace(/[(（]\s*정답\s*[)）]/g,'');
+      if(_avT && String(_avT).trim() && _qgVerdict(_avT) && !_avMeta.test(_avNoMark)){
         var _avL=String(_avT).trim().replace(/\.+$/,''); var _avP=_avL.split(/\.\s+/);
         _avL=(_avP[_avP.length-1]||_avL).replace(/\s*\([^)]*\)\s*$/,'');
         var _avIsNeg=/(옳지\s*않다|적절하지\s*않다|부적절하다|해당하지\s*않는다|틀리다|틀린다|아니다)$/.test(_avL);
@@ -190,7 +197,16 @@ function _qcViolations(q){
     var _idQ=/\ubc11\uc904|\uc774\s*\uc778\ubb3c|\uc774\s*\ub2e8\uccb4|\uc774\s*\ub098\ub77c|\uc774\s*\uc655|[(\uff08]\s*[\uac00-\ud558]\s*[)\uff09]|\ud65c\ub3d9\uc73c\ub85c\s*\uc633|\uc124\uba85\uc73c\ub85c\s*\uc633|\ud55c\s*\uc77c\ub85c\s*\uc633/.test(String(q.q||''));
     o.forEach(function(t,i){ var op=opts[i]; if(!(t&&String(t).trim())||!op||String(op).length<10) return; if(/^[\u3131-\u314e][\s,\u3131-\u314e]*$/.test(String(op).trim())) return; var _ts=String(t);
       /* \u00a7376/1257 \uc608\uc678: \ud2c0\ub9b0 \ubcf4\uae30 \ubc18\ubc15 \uc778\uc6a9(\uc0ac\uc720 \uc788\uc73c\uba74 \ud5c8\uc6a9)\u00b7\uc218\uce58 \uac80\uc99d(\ubcf4\uae30 \uc218\uce58 \uadf8\ub300\ub85c \uacc4\uc0b0 \ud655\uc778)\uc740 \ubca0\ub07c\uae30 \uc544\ub2d8 */
-      var _rebut=/\uc633\uc9c0\s*\uc54a|\ud2c0\ub9ac|\ud2c0\ub9b0|\uc544\ub2c8\ub2e4|\uc544\ub2c8\ub77c|\ubc18\ub300|\uc798\ubabb|\ud574\ub2f9\ud558\uc9c0\s*\uc54a|\ub2ec\ub77c|\ub4e4\uc9c0\s*\uc54a|\ub4e4\uc5b4\uac00\uc9c0\s*\uc54a|\ud3ec\ud568\ub418\uc9c0\s*\uc54a|\uac70\uafb8\ub85c/.test(_ts);
+      /* [FIX 2026-09-05] 반박 면제는 **판정 문장을 뺀 몸통**에서만 본다.
+         오답칸은 거의 다 '…옳지 않다.' 로 맺는데, 그 맺음말이 면제어에 걸려
+         **오답칸이 사실상 전부 이 검사에서 빠져 있었다.** 판정어 극성 446건을 고치며
+         어미가 '옳다' 로 바뀌자 가려져 있던 보기 베끼기 19칸이 한꺼번에 드러났다.
+         면제 자체는 살린다 — 틀린 보기를 반박하려면 인용이 필요하다.
+         다만 **맺음 판정 문장은 반박이 아니다.** 마지막 문장을 떼고 본다. */
+      var _tsB=String(_ts).trim().replace(/\.+$/,'');
+      var _tsP=_tsB.split(/\.\s+/); if(_tsP.length>1) _tsP.pop();
+      _tsB=_tsP.join('. ');
+      var _rebut=/\uc633\uc9c0\s*\uc54a|\ud2c0\ub9ac|\ud2c0\ub9b0|\uc544\ub2c8\ub2e4|\uc544\ub2c8\ub77c|\ubc18\ub300|\uc798\ubabb|\ud574\ub2f9\ud558\uc9c0\s*\uc54a|\ub2ec\ub77c|\ub4e4\uc9c0\s*\uc54a|\ub4e4\uc5b4\uac00\uc9c0\s*\uc54a|\ud3ec\ud568\ub418\uc9c0\s*\uc54a|\uac70\uafb8\ub85c/.test(_tsB);
       var _hasNum=/[0-9]/.test(_ts);
       var _ident=/(\uac83\uc740|\ub2e8\uccb4\ub294|\uc778\ubb3c\uc740|\ub098\ub77c\ub294|\uc2dc\uae30\ub294|\uc655\uc870\ub294|\uae30\uad6c\ub294)\s/.test(_ts); /* \uc2dd\ubcc4\uadc0\uc18d(\uad6d\uc0ac \uc778\ubb3c/\ud65c\ub3d9 \uc9c0\ubaa9)\uc740 \ubca0\ub07c\uae30 \uc544\ub2d8 */
       if(_rebut||_hasNum||_ident||_idQ) return;
