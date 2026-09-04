@@ -16,6 +16,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.request
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace',
@@ -59,11 +60,14 @@ def main():
         return 3
     print('열쇠 파일 확인됨')
 
+    # ⚠ 한 번에 767개를 보내면 403 이 온다. 규격은 10000개까지라는데 안 받는다.
+    #    100개씩 나누면 전부 200 이다. 2026-09-04 확인.
+    한번에 = 100
     보냄 = 0
-    for i in range(0, len(주소), 10000):
+    for i in range(0, len(주소), 한번에):
         짐 = {'host': 집, 'key': 열쇠,
               'keyLocation': 'https://%s/%s.txt' % (집, 열쇠),
-              'urlList': 주소[i:i + 10000]}
+              'urlList': 주소[i:i + 한번에]}
         req = urllib.request.Request(
             'https://api.indexnow.org/indexnow',
             data=json.dumps(짐).encode('utf-8'),
@@ -74,10 +78,11 @@ def main():
         except urllib.error.HTTPError as e:
             코드 = e.code
         print('  묶음 %d · %d개 · HTTP %s %s'
-              % (i // 10000 + 1, len(짐['urlList']), 코드,
+              % (i // 한번에 + 1, len(짐['urlList']), 코드,
                  '(받았습니다)' if 코드 in (200, 202) else '(안 받았습니다)'))
         if 코드 in (200, 202):
             보냄 += len(짐['urlList'])
+        time.sleep(2)
     print('')
     print('알린 주소 %d개' % 보냄)
     return 0
