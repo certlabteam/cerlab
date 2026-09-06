@@ -61,6 +61,7 @@ h1{font-size:22px;color:#0C447C;margin-bottom:6px} .sub{color:#64748b;font-size:
 .kw{font-size:12px;color:#0C447C;background:#EAF0F9;border-radius:6px;padding:2px 8px}
 footer{margin-top:24px;color:#94a3b8;font-size:13px;border-top:1px solid #e2e8f0;padding-top:14px} footer a{color:#0C447C}
 `;
+const SEO_FACTS_CSS='.facts{color:#334155;font-size:14px;margin:2px 0 10px;line-height:1.7}';
 const SEO_STYLE_ADD='.exp{margin:8px 0 2px;border-top:1px dashed #e2e8f0;padding-top:8px}.ex-blk{margin:7px 0}.ex-h{font-size:12px;font-weight:800;color:#0C447C;margin-bottom:3px}.cc{background:#F4F7FB;border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;margin:4px 0}.cc-t{display:block;color:#0C447C;font-size:13px;margin-bottom:2px}.cc-d{margin:0;font-size:13px}.cc-cx{margin:4px 0 0;font-size:12.5px;color:#475569}.ex-o,.ex-ex{margin:2px 0;padding-left:18px}.ex-o li,.ex-ex li{margin:3px 0;font-size:13px}.ex-s{font-size:13px;color:#0F6E56;margin:5px 0 0}';
 /* GA4 + Google Ads — SEO 정적 페이지 유입·리마케팅 계측. index.html 과 같은 ID 를 쓴다. */
 const SEO_GA4_ID='G-RPZRZQ779J', SEO_ADS_ID='AW-18199166773';
@@ -106,7 +107,7 @@ function seoBlocks(t){
   return 나온것;
 }
 function seoCard(c){if(typeof c!=='object'||c==null)c={d:String(c)};const t=seoClean(c.t||''),d=seoClean(c.d||''),cx=seoClean(c.cx||'');let s='';if(t)s+='<b class="cc-t">'+t+'</b>';if(d)s+='<p class="cc-d">'+d+'</p>';if(cx)s+='<p class="cc-cx">예: '+cx+'</p>';return s?'<div class="cc">'+s+'</div>':'';}
-function seoQ(n,q){const opts=q.opts||[];const ans=q.ans;const li=[];for(let i=0;i<opts.length;i++){const cls=(typeof ans==='number'&&(i+1)===ans)?' class="o-cor"':' class=""';li.push('<li'+cls+'>'+(i+1)+'. '+seoBlocks(opts[i])+'</li>');}const exp=q.exp||{};const parts=[];const cards=(exp.c||[]).map(seoCard).filter(Boolean);if(cards.length)parts.push('<div class="ex-blk"><div class="ex-h">📘 개념</div>'+cards.join('')+'</div>');const os=(exp.o||[]).filter(x=>String(x).trim()).map(seoBlocks);if(os.length)parts.push('<div class="ex-blk"><div class="ex-h">🔍 보기별 해설</div><ol class="ex-o">'+os.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const ex=(exp.ex||[]).filter(x=>String(x).trim()).map(seoBlocks);if(ex.length)parts.push('<div class="ex-blk"><div class="ex-h">🧮 풀이</div><ol class="ex-ex">'+ex.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const sline=seoClean(exp.s||'');if(sline)parts.push('<p class="ex-s">'+sline+'</p>');const exphtml=parts.length?'<div class="exp">'+parts.join('')+'</div>':'';const ansline=(typeof ans==='number')?'<p class="ans"><b>정답</b> '+ans+'번</p>':'';const _jr=String(q.jaryo||'').trim();let _rows=[];if(_jr){const NL=String.fromCharCode(10);let base=_jr.split(NL);if(base.length===1){const out=[];let cur='';const toks=_jr.split(' ');for(const t of toks){const c0=t.charCodeAt(0);const mark=(t.length>=2&&c0>=12593&&c0<=12622&&t.charAt(1)==='.');if(mark&&cur.trim()){out.push(cur.trim());cur=t+' ';}else{cur+=t+' ';}}if(cur.trim())out.push(cur.trim());base=out;}_rows=base.map(x=>String(x).trim()).filter(Boolean);}const jaryohtml=_rows.length?('<div class="jaryo">'+_rows.map(x=>'<p>'+seoBlocks(x)+'</p>').join('')+'</div>'):'';return '<li class="qitem"><div class="qno">'+n+'</div><div class="qbody"><p class="qt">'+seoBlocks(q.q||'')+'</p>'+jaryohtml+'<ol class="opts">'+li.join('')+'</ol>'+ansline+exphtml+'</div></li>';}
+function seoQ(n,q){const opts=q.opts||[];const ans=q.ans;const li=[];for(let i=0;i<opts.length;i++){const cls=(typeof ans==='number'&&(i+1)===ans)?' class="o-cor"':' class=""';li.push('<li'+cls+'>'+(i+1)+'. '+seoBlocks(opts[i])+'</li>');}const exp=q.exp||{};const parts=[];const cards=(exp.c||[]).map(seoCard).filter(Boolean);if(cards.length)parts.push('<div class="ex-blk"><div class="ex-h">📘 개념</div>'+cards.join('')+'</div>');const os=(exp.o||[]).filter(x=>String(x).trim()).map(seoBlocks);if(os.length)parts.push('<div class="ex-blk"><div class="ex-h">🔍 보기별 해설</div><ol class="ex-o">'+os.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const ex=(exp.ex||[]).filter(x=>String(x).trim()).map(seoBlocks);if(ex.length)parts.push('<div class="ex-blk"><div class="ex-h">🧮 풀이</div><ol class="ex-ex">'+ex.map(x=>'<li>'+x+'</li>').join('')+'</ol></div>');const sline=seoClean(exp.s||'');if(sline)parts.push('<p class="ex-s">'+sline+'</p>');const exphtml=parts.length?'<div class="exp">'+parts.join('')+'</div>':'';const ansline=(typeof ans==='number')?'<p class="ans"><b>정답</b> '+ans+'번</p>':'';const _jr=String(q.jaryo||'').trim();let _rows=[];if(_jr){const NL=String.fromCharCode(10);let base=_jr.split(NL);if(base.length===1){const out=[];let cur='';const toks=_jr.split(' ');for(const t of toks){const c0=t.charCodeAt(0);const mark=(t.length>=2&&c0>=12593&&c0<=12622&&t.charAt(1)==='.');if(mark&&cur.trim()){out.push(cur.trim());cur=t+' ';}else{cur+=t+' ';}}if(cur.trim())out.push(cur.trim());base=out;}_rows=base.map(x=>String(x).trim()).filter(Boolean);}const jaryohtml=_rows.length?('<div class="jaryo">'+_rows.map(x=>'<p>'+seoBlocks(x)+'</p>').join('')+'</div>'):'';return '<li class="qitem" id="q'+n+'"><div class="qno">'+n+'</div><div class="qbody"><p class="qt">'+seoBlocks(q.q||'')+'</p>'+jaryohtml+'<ol class="opts">'+li.join('')+'</ol>'+ansline+exphtml+'</div></li>';}
 /*
  * 제목과 설명은 '사람이 검색창에 친 말' 로 짓는다.
  *
@@ -125,13 +126,56 @@ function seoMidCta(cert,cname,n){
   return '<li class="midcta"><a class="cta2" href="https://certlab.ai.kr/#'+cert+'">'
        + seoEsc(cname)+' 기출 '+n+'문항 · 자동복습과 예상점수까지 무료로 &rarr;</a></li>';
 }
+/* [2026-09-07] 768쪽이 「제목 → 총 N문항 → 1번 문제」 한 틀이라 구글이 절반만 싣는다
+   (크롤링됨-미색인 268쪽). 쪽마다 **그 회차에서 실제로 센 값**을 넣어 서로 다르게 만든다.
+   ⚠ 지어내지 않는다. 세어서 나온 것만 쓰고, 못 세면 그 줄을 뺀다. */
+function seoFacts(qs){
+  var n=qs.length, out=[];
+  if(!n) return '';
+  /* 회차마다 **실제로 다른** 값만 쓴다. 보기 수·문항 수는 회차가 달라도 같아 뜻이 없다.
+     2026-09-07 한국사 5회차로 재 보니 부정 발문(6·1·5·2·3)과 순서형(1·1·3·0·1)이 갈렸다. */
+  var neg=qs.filter(function(q){return q.pol==='neg';}).length;
+  var ord=qs.filter(function(q){return q.type==='ORDER';}).length;
+  var cmb=qs.filter(function(q){return q.type==='COMBO';}).length;
+  var jr=qs.filter(function(q){return String(q.jaryo||'').trim();}).length;
+  var cc=qs.filter(function(q){var e=(q&&q.exp)||{};return (e.c||[]).length>0;}).length;
+  var cal=qs.filter(function(q){var e=(q&&q.exp)||{};return (e.ex||[]).some(function(x){return String(x||'').trim();});}).length;
+  if(neg) out.push('「옳지 않은 것」을 묻는 문항이 '+neg+'문항입니다.');
+  if(ord) out.push('순서를 배열하는 문항이 '+ord+'문항입니다.');
+  if(cmb) out.push('보기에서 고르는 조합형이 '+cmb+'문항입니다.');
+  if(jr) out.push('자료를 읽고 푸는 문항이 '+jr+'문항입니다.');
+  if(cc) out.push('개념 정리가 함께 있는 문항이 '+cc+'문항입니다.');
+  if(cal) out.push('풀이가 붙은 문항이 '+cal+'문항입니다.');
+  if(!out.length) return '';
+  return '이 회차는 '+n+'문항입니다. '+out.slice(0,3).join(' ');
+}
+/* [2026-09-07] 문항이 구조화 데이터에 하나도 없었다. 답변엔진이 인용할 꼴이 아니다.
+   화면에 보이는 것과 **같은 글**만 넣는다. */
+function seoQaLd(qs,url){
+  var items=[];
+  for(var i=0;i<qs.length;i++){
+    var q=qs[i], ans=q.ans, opts=q.opts||[];
+    if(typeof ans!=='number' || !opts[ans-1]) continue;
+    var mun=seoClean(q.q||''); if(!mun||mun.length<8) continue;
+    var cor=seoClean(opts[ans-1]);
+    var e=(q.exp)||{}, hae='';
+    var os=(e.o||[]).filter(function(x){return String(x||'').trim();});
+    if(os[ans-1]) hae=seoClean(os[ans-1]);
+    if(!hae && e.s) hae=seoClean(e.s);
+    var body=ans+'번. '+cor+(hae?' '+hae:'');
+    items.push({'@type':'Question','name':mun.slice(0,300),'url':url+'#q'+(i+1),
+      'acceptedAnswer':{'@type':'Answer','text':body.slice(0,900)}});
+    if(items.length>=30) break;
+  }
+  return items;
+}
 function seoPage(cert,subjName,round,subjId,qs){const cname=seoCertName(cert);const n=qs.length;/* [2026-09-02] 해설이 한 줄도 없는 쪽이 702장 중 422장(60%)이다.
    그런데 제목·소개글은 똑같이 「해설」을 약속했다. 열면 발문·보기·정답이 전부다.
    클릭을 받아 놓고 돌려보내는 꼴이라, 없으면 없다고 적는다. */
 const _hasExp=qs.some(function(q){var e=(q&&q.exp)||{};return ((e.o||[]).some(function(x){return String(x||'').trim();}))||((e.ex||[]).some(function(x){return String(x||'').trim();}))||((e.c||[]).length>0);});const subj=seoSubjTrim(cname,subjName);/* [2026-09-02] 줄임말을 자격증 이름 **바로 뒤**에 붙인다.
    전에는 제목 맨 끝 괄호에 뒀는데, 네이버 모바일이 앞에서 잘라 안 보였다.
    「한능검 74회 해설」이 570번 보여지고 5번 눌린 까닭이다(CTR 0.9%). */
-const _al0=seoAlias(cert,cname);const cname2=_al0?(cname+'('+_al0+')'):cname;const head=[cname2,round?round+'회':'',subj].filter(Boolean).join(' ');const al='';const alT='';const alD=(al||cname)+' ';let title,desc,h1,fname;if(round){title=head+(_hasExp?' 기출문제 해설·정답':' 기출문제·정답')+alT+' | CertLab';desc=head+' 기출 '+n+'문항 전체입니다. '+(_hasExp?'문제와 정답, 보기별 해설과 풀이를 한 쪽에 모았습니다. ':'문제와 정답을 한 쪽에 모았습니다. 해설은 준비 중입니다. ')+alD+'기출문제를 무료로 보세요.';h1=head+(_hasExp?' 기출문제 해설':' 기출문제·정답');fname=cert+'-'+round+'-'+subjId+'.html';}else{title=head+(_hasExp?' 기출문제 해설·정답':' 기출문제·정답')+alT+' | CertLab';desc=head+' 기출 '+n+'문항 전체입니다. '+(_hasExp?'문제와 정답, 보기별 해설과 풀이를 한 쪽에 모았습니다. ':'문제와 정답을 한 쪽에 모았습니다. 해설은 준비 중입니다. ')+alD+'기출문제를 무료로 보세요.';h1=head+(_hasExp?' 기출문제 해설':' 기출문제·정답');fname=cert+'-'+subjId+'.html';}const url='https://certlab.ai.kr/seo/'+fname;const ld={'@context':'https://schema.org','@graph':[{'@type':'EducationalOrganization','@id':'https://certlab.ai.kr/#org','name':'CertLab','alternateName':'서트랩','url':'https://certlab.ai.kr/'},{'@type':'LearningResource','name':title,'description':desc,'url':url,'inLanguage':'ko','learningResourceType':'기출문제·해설','educationalUse':'시험대비','about':cname,'isPartOf':{'@id':'https://certlab.ai.kr/#org'},'publisher':{'@id':'https://certlab.ai.kr/#org'},'isAccessibleForFree':true},{'@type':'BreadcrumbList','itemListElement':[{'@type':'ListItem','position':1,'name':'CertLab 기출문제','item':'https://certlab.ai.kr/seo/index.html'},{'@type':'ListItem','position':2,'name':cname,'item':url}]}]};const ldjson=JSON.stringify(ld);const _rows=[];qs.forEach((q,i)=>{_rows.push(seoQ(i+1,q));if((i+1)%10===0&&(i+1)<qs.length)_rows.push(seoMidCta(cert,cname,n));});const qhtml=_rows.join('\n');const doc='<!doctype html><html lang="ko"><head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>'+seoEsc(title)+'</title>\n<meta name="description" content="'+seoEsc(desc)+'">\n<link rel="canonical" href="'+url+'">\n<meta property="og:title" content="'+seoEsc(title)+'">\n<meta property="og:description" content="'+seoEsc(desc)+'">\n<meta property="og:url" content="'+url+'">\n<meta property="og:type" content="article">\n<scr'+'ipt type="application/ld+json">'+ldjson+'<\/script>\n<style>'+SEO_STYLE+SEO_STYLE_ADD+'</style>\n'+SEO_GTAG+'</head><body>\n<div class="bc"><a href="https://certlab.ai.kr/seo/index.html">CertLab 기출문제</a> › '+seoEsc(cname)+'</div>\n<h1>'+seoEsc(h1)+'</h1>\n<p class="sub">총 '+n+'문항 · '+(_hasExp?'문제·정답·해설·개념 무료 학습':'문제·보기·정답 무료 · 해설은 준비 중입니다')+'</p>\n<a class="cta" href="https://certlab.ai.kr/#'+cert+'">▶ CertLab에서 풀어보기</a>\n<ul>\n'+qhtml+'\n</ul>\n<footer><p>'+seoEsc(cname)+' 전체 기출을 복습·예상점수·자동채점과 함께 학습하려면 <a href="https://certlab.ai.kr/#'+cert+'">CertLab</a>에서 무료로 이용하세요.</p></footer>\n</body></html>';return {fname:fname,html:doc};}
+const _al0=seoAlias(cert,cname);const cname2=_al0?(cname+'('+_al0+')'):cname;const head=[cname2,round?round+'회':'',subj].filter(Boolean).join(' ');const al='';const alT='';const alD=(al||cname)+' ';let title,desc,h1,fname;if(round){title=head+(_hasExp?' 기출문제 해설·정답':' 기출문제·정답')+alT+' | CertLab';desc=head+' 기출 '+n+'문항 전체입니다. '+(_hasExp?'문제와 정답, 보기별 해설과 풀이를 한 쪽에 모았습니다. ':'문제와 정답을 한 쪽에 모았습니다. 해설은 준비 중입니다. ')+alD+'기출문제를 무료로 보세요.';h1=head+(_hasExp?' 기출문제 해설':' 기출문제·정답');fname=cert+'-'+round+'-'+subjId+'.html';}else{title=head+(_hasExp?' 기출문제 해설·정답':' 기출문제·정답')+alT+' | CertLab';desc=head+' 기출 '+n+'문항 전체입니다. '+(_hasExp?'문제와 정답, 보기별 해설과 풀이를 한 쪽에 모았습니다. ':'문제와 정답을 한 쪽에 모았습니다. 해설은 준비 중입니다. ')+alD+'기출문제를 무료로 보세요.';h1=head+(_hasExp?' 기출문제 해설':' 기출문제·정답');fname=cert+'-'+subjId+'.html';}const url='https://certlab.ai.kr/seo/'+fname;const ld={'@context':'https://schema.org','@graph':[{'@type':'EducationalOrganization','@id':'https://certlab.ai.kr/#org','name':'CertLab','alternateName':'서트랩','url':'https://certlab.ai.kr/'},{'@type':'LearningResource','name':title,'description':desc,'url':url,'inLanguage':'ko','learningResourceType':'기출문제·해설','educationalUse':'시험대비','about':cname,'isPartOf':{'@id':'https://certlab.ai.kr/#org'},'publisher':{'@id':'https://certlab.ai.kr/#org'},'isAccessibleForFree':true},{'@type':'BreadcrumbList','itemListElement':[{'@type':'ListItem','position':1,'name':'CertLab 기출문제','item':'https://certlab.ai.kr/seo/index.html'},{'@type':'ListItem','position':2,'name':cname,'item':url}]}]};var _qa=seoQaLd(qs,url);if(_qa.length){ld['@graph'].push({'@type':'QAPage','@id':url+'#qa','mainEntity':_qa});}const ldjson=JSON.stringify(ld);const _facts=seoFacts(qs);const _rows=[];qs.forEach((q,i)=>{_rows.push(seoQ(i+1,q));if((i+1)%10===0&&(i+1)<qs.length)_rows.push(seoMidCta(cert,cname,n));});const qhtml=_rows.join('\n');const doc='<!doctype html><html lang="ko"><head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>'+seoEsc(title)+'</title>\n<meta name="description" content="'+seoEsc(desc)+'">\n<link rel="canonical" href="'+url+'">\n<meta property="og:title" content="'+seoEsc(title)+'">\n<meta property="og:description" content="'+seoEsc(desc)+'">\n<meta property="og:url" content="'+url+'">\n<meta property="og:type" content="article">\n<scr'+'ipt type="application/ld+json">'+ldjson+'<\/script>\n<style>'+SEO_STYLE+SEO_STYLE_ADD+SEO_FACTS_CSS+'</style>\n'+SEO_GTAG+'</head><body>\n<div class="bc"><a href="https://certlab.ai.kr/seo/index.html">CertLab 기출문제</a> › '+seoEsc(cname)+'</div>\n<h1>'+seoEsc(h1)+'</h1>\n<p class="sub">총 '+n+'문항 · '+(_hasExp?'문제·정답·해설·개념 무료 학습':'문제·보기·정답 무료 · 해설은 준비 중입니다')+'</p>'+(_facts?'<p class="facts">'+seoEsc(_facts)+'</p>':'')+'\n<a class="cta" href="https://certlab.ai.kr/#'+cert+'">▶ CertLab에서 풀어보기</a>\n<ul>\n'+qhtml+'\n</ul>\n<footer><p>'+seoEsc(cname)+' 전체 기출을 복습·예상점수·자동채점과 함께 학습하려면 <a href="https://certlab.ai.kr/#'+cert+'">CertLab</a>에서 무료로 이용하세요.</p></footer>\n</body></html>';return {fname:fname,html:doc};}
 async function seoReadAllBanks(db){const m=await db.collection('manifest').doc('exams').get();const exams=(m.exists&&m.data().exams)||[];exams.forEach(function(e){if(e&&e.id&&e.name)SEO_CERT_NAME_MF[e.id]=e.name;});const banks=[];for(const e of exams){for(const sub of (e.subjects||[])){const docId=e.id+'__'+sub.code;try{const bd=await db.collection('banks').doc(docId).get();if(bd.exists){let data=bd.data();if(Array.isArray(data.shards)&&data.shards.length){const qs=[];for(const s of data.shards){const sd=await db.collection('banks').doc(docId+'__'+s).get();if(sd.exists&&Array.isArray(sd.data().questions))qs.push.apply(qs,sd.data().questions);}data=Object.assign({},data,{questions:qs});}banks.push({docId:docId,data:data,subjName:sub.name||sub.code});}}catch(_){}}}return banks;}
 function seoCertOfFname(fn){return fn.split('-')[0];}
 /*
