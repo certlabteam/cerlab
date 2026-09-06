@@ -123,6 +123,26 @@ function _qcViolations(q){
     if(cards.length) v.push({kind:'block',field:'card',idx:0,code:'CARD_LT2',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c \ud3ec\ud568) \u2192 \uce74\ub4dc\ub97c \ud55c \uc7a5 \ub354 \ub123\uc5b4\ub77c',text:''});
     else v.push({kind:'warn',field:'card',idx:0,code:'CARD_LT2_LINK',msg:'\uac1c\ub150\uce74\ub4dc '+_cTot+'\uc7a5(<2, \ub9c1\ud06c\ub9cc) \u2192 \ub9c1\ud06c\ub41c \uac1c\ub150\uc5d0 \uce74\ub4dc \ubcf4\uac15',text:''});
   }
+  /* [신규 2026-09-06] 한 문항 안에서 **해설(o) 두 칸이 글자 하나 안 틀리고 같은 것**을 잡는다.
+     칸을 갈아 끼울 때 자리 번호를 하나 어긋나게 적으면 옆 칸을 덮어써서 이렇게 된다.
+     덮어쓴 쪽의 본디 글은 통째로 사라지는데 — **정답칸이 사라져도 게이트가 조용했다.**
+     2026-09-06 한국어교육 s1 2024 에서 여덟 문항이 이렇게 망가졌고 kl24_1_24 는
+     정답칸(재귀대명사) 자체가 없어진 채였다. 극성검사가 울어 주지 않았으면 그대로 나갈 뻔했다.
+     ⚠ **빈 칸은 세지 않는다.** 계산형·빈칸형은 정답칸만 채우고 나머지를 빈 문자열로 두는 것이
+       규약이라(마스터 §4-1) 빈 칸끼리 같다고 잡으면 그 갈래가 통째로 걸린다.
+     ⚠ ex 는 보지 않는다 — EX_EX_ECHO 가 이미 같은 자리를 (더 느슨하게) 잡고 있다. */
+  if(_qcOn('gichul','O_DUP_CELL')){
+    var _dupSeen={};
+    o.forEach(function(t,i){
+      var _k=String(t||'').trim();
+      if(!_k) return;                       /* 빈 칸은 건너뛴다 */
+      if(_dupSeen[_k]!==undefined){
+        v.push({kind:'block',field:'o',idx:i,code:'O_DUP_CELL',
+          msg:'해설(o) '+(_dupSeen[_k]+1)+'번과 '+(i+1)+'번이 글자 하나 안 틀리고 같다 — 한 쪽은 본디 글이 사라진 것이다(칸 번호를 어긋나게 적어 옆 칸을 덮어쓴 자리)',
+          text:t});
+      } else _dupSeen[_k]=i;
+    });
+  }
   if(_qcOn('gichul','O_PLACEHOLDER')){ var _PLACE=/\ud574\uc124\s*\ucd94\uac00|\uc218\uc815\s*\uc608\uc815|\uc791\uc131\s*\uc608\uc815|\ucd94\uac00\s*\uc608\uc815|\ubbf8\uc791\uc131|\ucc44\uc6b8\s*\uc608\uc815|\uc900\ube44\s*\uc911|TODO/; o.forEach(function(t,i){ if(_PLACE.test(String(t||''))) v.push({kind:'block',field:'o',idx:i,code:'O_PLACEHOLDER',msg:'\ud574\uc124(o)\uc5d0 \uc784\uc2dc \ubb38\uad6c \u2014 \ube48 \uce78\uc740 \ubc18\ub4dc\uc2dc \ube48 \ubb38\uc790\uc5f4("")\ub85c(\uc784\uc2dc\ubb38\uad6c\ub294 oFilled\ub85c \uc624\uacc4\uc0b0\ub418\uc5b4 \uc9c4\uc220\uc218 \uc5b4\uae0b\ub0a8)',text:t}); }); }
   if(_qcOn('gichul','O_INCOMPLETE') && isMCQ && !isCalc && opts.length>=4 && String((q&&q.type)||'').toUpperCase()!=='COUNT'){ /* [FIX 2026-07-16] COUNT형은 정답칸만 설명(개수 근거)하면 되므로 빈칸 정상 — O_INCOMPLETE 오탐 제외 */ var _mk=opts.some(function(op){return /^[\u3131-\u314e][\s,:\-]/.test(String(op).trim());});
     /* [2026-08-06] \u3260\u3261 \ub098\uc5f4\ud615(\ubcf4\uae30\uac00 \uac19\uc740 \ub0b1\ub9d0\uc744 \uc790\ub9ac\ub9cc \ubc14\uafd4 \ub298\uc5b4\ub193\ub294 \uaf34) \uba74\uc81c.
@@ -344,7 +364,7 @@ var _QC_PALETTE=[
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
+  gichul:{ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_DUP_CELL:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
@@ -366,7 +386,7 @@ var _QC_DEFAULTS={
    WARNING = SHOULD 위반(권장 수정) · INFO = NICE(참고). 미등록 코드는 kind로 폴백. */
 var _QC_SEV = {
   /* ERROR (MUST — 반송) */
-  EMDASH:'ERROR', VERDICT:'ERROR', EX_VERDICT:'ERROR', CARD_CX_EMPTY:'ERROR', O_PLACEHOLDER:'ERROR',
+  EMDASH:'ERROR', VERDICT:'ERROR', EX_VERDICT:'ERROR', CARD_CX_EMPTY:'ERROR', O_PLACEHOLDER:'ERROR', O_DUP_CELL:'ERROR',
   CALC_WRONG_SLOT:'ERROR', FILL_BLANK_MISMATCH:'ERROR', CPT_MISSING:'ERROR', CPT_BROKEN:'ERROR',
   TBL_BROKEN:'ERROR', GRP_BROKEN:'ERROR', ITV_BROKEN:'ERROR', CHILD_MISSING:'ERROR',
   OTTAG_LEN:'ERROR', DUP_ID:'ERROR',
