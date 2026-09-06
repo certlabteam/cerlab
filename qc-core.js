@@ -162,8 +162,20 @@ function _qcViolations(q){
       if(_avT && String(_avT).trim() && _qgVerdict(_avT) && !_avMeta.test(_avNoMark)){
         var _avL=String(_avT).trim().replace(/\.+$/,''); var _avP=_avL.split(/\.\s+/);
         _avL=(_avP[_avP.length-1]||_avL).replace(/\s*\([^)]*\)\s*$/,'');
-        var _avIsNeg=/(옳지\s*않다|적절하지\s*않다|부적절하다|해당하지\s*않는다|틀리다|틀린다|아니다)$/.test(_avL);
-        if(_avNeg!==_avIsNeg) v.push({kind:'warn',field:'o',idx:_avAns-1,code:'ANS_VERDICT_MISMATCH',
+        /* [FIX 2026-09-06] **선택 판정으로 맺은 칸은 극성을 기계로 볼 수 없다.** 마스터 §2-2.
+           판정어는 두 갈래다 —
+             진술 판정(옳다·옳지 않다·적절하다·적절하지 않다·부적절하다·틀리다·틀린다)
+               = 그 보기 진술이 참인지 거짓인지. 발문 극성과 반드시 같아야 한다.
+             선택 판정(해당한다·해당하지 않는다·맞다·아니다)
+               = 물음이 찾는 것에 그 보기가 드는지. **부정 발문이어도 정답칸은 「해당한다」가 맞다**
+                 (「…이 아닌 것은?」의 정답칸은 「…에 해당한다」로 맺는 것이 규약이다).
+           예전에는 「해당하지 않는다」·「아니다」를 부정형 진술로 세어 규약대로 쓴 글을 잡았다.
+           2026-09-06 정수시설 c35_33·c35_39·c37_23·c36_34 네 문항이 이것으로 막혀 있었다.
+           **발문 낱말을 늘리는 쪽으로 가지 않는다** — 밭마다 새 낱말이 나와 끝이 없다.
+           극성검사.py 에 이미 같은 규칙이 들어가 있다(2026-09-06). 게이트를 거기에 맞춘다. */
+        var _avPick=/(해당한다|해당하지\s*않는다|맞다|아니다)$/.test(_avL);
+        var _avIsNeg=/(옳지\s*않다|적절하지\s*않다|부적절하다|틀리다|틀린다)$/.test(_avL);
+        if(!_avPick && _avNeg!==_avIsNeg) v.push({kind:'warn',field:'o',idx:_avAns-1,code:'ANS_VERDICT_MISMATCH',
           msg:'문두는 '+(_avNeg?'부정형(옳지 않은 것)':'긍정형(옳은 것)')+'인데 정답칸 해설이 '+(_avIsNeg?'부정':'긍정')+' 판정으로 끝남 \u2014 앱 O/X 배지가 정답 보기에 거꾸로 붙는다',text:_avT});
       }
     }
