@@ -1124,12 +1124,34 @@ function applyBank(ex,sub,doc){
     });
   }
 }
+/* [2026-09-09] 다시 시도 단추를 붙인다.
+ *
+ * 왜 — 카톡 안 브라우저로 들어간 폰에서 이 줄이 떴는데, 잠시 뒤 같은 링크가 그냥 열렸다.
+ * 잠깐 끊긴 것이었다. 그런데 손님에게는 되살릴 길이 없어 그대로 나가게 된다.
+ * 친구가 보낸 링크를 눌러 처음 들어온 사람이 이 줄을 보면 그 사람은 다시 오지 않는다.
+ * 오류 코드도 같이 적는다 — 여태 콘솔에만 찍혀서 손님도 우리도 무엇이 깨졌는지 못 봤다.
+ * (같은 자리를 2026-09-08 에 검사기에서 다섯 번 만났다 — 화면엔 안 보이는 실패.)
+ */
 function showDataError(err){
   console.error('문제 데이터 로드 실패',err);
+  if(document.getElementById('dataErrBar')) return;      // 두 번 겹쳐 뜨지 않게
   var b=document.createElement('div');
-  b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#b00020;color:#fff;padding:10px;text-align:center;z-index:99999;font-size:14px';
-  b.textContent='문제 데이터를 불러오지 못했습니다. 네트워크/Firestore 설정을 확인해 주세요.';
+  b.id='dataErrBar';
+  b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#b00020;color:#fff;padding:12px 10px;text-align:center;z-index:99999;font-size:14px;line-height:1.6';
+  b.innerHTML='<div style="font-weight:700">문제를 불러오지 못했어요</div>'
+    + '<div style="font-size:12px;opacity:.85;margin-top:2px">잠시 끊긴 것일 수 있어요. 한 번 더 눌러 보세요.</div>'
+    + '<button id="dataErrRetry" style="margin-top:8px;padding:9px 22px;background:#fff;color:#b00020;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">다시 시도</button>';
+  var 코드='';
+  try{ 코드=String((err && (err.code || err.name || err.message)) || '').slice(0,60); }catch(_){}
+  if(코드){
+    var c=document.createElement('div');
+    c.style.cssText='font-size:11px;opacity:.65;margin-top:6px';
+    c.textContent=코드;                                   // 오류 글은 textContent 로 — 그대로 넣으면 화면이 깨진다
+    b.appendChild(c);
+  }
   document.body.appendChild(b);
+  var r=document.getElementById('dataErrRetry');
+  if(r) r.onclick=function(){ location.reload(); };
 }
 showHome();
 
