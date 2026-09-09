@@ -751,7 +751,7 @@ function updateAuthBar() {
         <button class="ref-acc-btn" onclick="openMyPage()">👤 마이페이지</button>
         <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
         <div class="ref-acc hidden" id="refAcc">
-          <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 +10,000원!</div>
+          <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 그 값의 절반을 포인트로!</div>
           <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
         </div>
         <button class="ref-acc-btn" onclick="addToHome(event)">📲 홈 화면에 추가</button>
@@ -806,7 +806,7 @@ function _refShareBlockHTML(){
   return '<div style="margin:10px 0;padding:13px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
     + '<div style="font-size:13.5px;font-weight:700;color:#7A5A18;margin-bottom:3px">🎁 친구에게 알리고 포인트 받기</div>'
     + '<div style="font-size:12.5px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
-      + '친구가 가입하면 <b>둘 다 1,000원</b><br>친구가 결제하면 <b>나에게 +10,000원</b></div>'
+      + '친구가 가입하면 <b>둘 다 1,000원</b><br>친구가 결제하면 <b>그 값의 절반</b>을 나에게</div>'
     + '<button onclick="shareReferral()" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
       + 'border:none;border-radius:11px;font-size:14.5px;font-weight:700;cursor:pointer">'
       + '친구에게 보내기</button></div>';
@@ -1261,7 +1261,7 @@ function showWelcomePopup() {
     <div class="auth-feature-item">레벨테스트·예상점수 무료</div>
     <div class="auth-feature-item">50문제 무료 체험!</div>
     <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(3일 안에 사용)</span><br>
-      친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 +10,000원 (1년 유효)
+      친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 그 값의 절반을 포인트로 (1년 유효)
       <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
     </div>`;
   document.querySelector('.btn-google-login').style.display='none';
