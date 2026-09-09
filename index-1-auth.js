@@ -767,6 +767,51 @@ function copyReferralLinkW(e){
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(()=>alert('추천 링크가 복사되었어요!')).catch(()=>{if(inp){inp.select();document.execCommand('copy');}alert('추천 링크가 복사되었어요!');}); }
   else { if(inp){inp.select(); try{document.execCommand('copy');}catch(_){}} alert('추천 링크가 복사되었어요!'); }
 }
+/* [2026-09-09] 한도에 막힌 자리에서 친구에게 바로 보내기.
+ *
+ * 왜 붙였나 — 회원 140명 가운데 118명이 추천 링크를 갖고 있는데 석 달 동안 쓴 사람이 둘뿐이었다
+ * (둘 다 6월, 그 뒤 0). 기능이 없어서가 아니라 (1) 메뉴 세 단 깊이에 묻혀 있고
+ * (2) '복사' 뿐이라 카톡 열어 붙여넣기까지 손님 몫이고 (3) 아쉽지 않은 자리에 있어서다.
+ * 한도에 막힌 순간이 가장 아쉬운 자리라 여기에 문을 하나 더 낸다.
+ *
+ * ⚠ 카카오 공유 SDK(Kakao.Share)는 JavaScript 키와 도메인 등록이 따로 필요하다.
+ *   지금 로그인은 REST 키로 authorize 하는 길이라 JS 키가 없다(위 signInWithKakao 주석 참고).
+ *   그래서 navigator.share 를 쓴다 — 폰에서 누르면 카톡·문자·메일 고르는 창이 바로 뜨고
+ *   키도 도메인 등록도 필요 없다. 안 되는 자리(PC 등)는 종전대로 복사로 떨어뜨린다.
+ */
+function shareReferral(source){
+  if(!myReferralCode) return;
+  var link = myReferralLink();
+  var 이름 = (typeof certLabel==='function' && typeof activeCertId==='function')
+             ? certLabel(activeCertId()) : '';
+  var 글 = (이름 ? 이름+' ' : '') + '기출문제랑 해설 다 있는 서트랩이야. 이 링크로 들어오면 둘 다 1,000원 받아!';
+  if(navigator.share){
+    try{ clTrackCustom('InviteLinkShared', { source: source||'limit' }); }catch(_){}
+    navigator.share({ title:'서트랩', text:글, url:link })
+      .catch(function(){});   // 손님이 창을 닫은 것도 여기로 온다 — 아무 말도 하지 않는다
+    return;
+  }
+  try{ clTrackCustom('InviteLinkCopied', { source: source||'limit' }); }catch(_){}
+  var 다 = 글 + String.fromCharCode(10) + link;   // 줄바꿈은 코드로 넣는다
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(다).then(function(){ alert('링크를 복사했어요! 카톡에 붙여넣기 하세요.'); })
+      .catch(function(){ alert(다); });
+  } else { alert(다); }
+}
+
+/* 한도 팝업에 끼우는 블록. 로그인해서 추천코드가 있는 사람에게만 보인다.
+ * 코드가 없으면(게스트) 빈 문자열 — 그쪽은 로그인 팝업이 따로 받는다. */
+function _refShareBlockHTML(){
+  if(!myReferralCode) return '';
+  return '<div style="margin:10px 0;padding:13px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
+    + '<div style="font-size:13.5px;font-weight:700;color:#7A5A18;margin-bottom:3px">🎁 친구에게 알리고 포인트 받기</div>'
+    + '<div style="font-size:12.5px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
+      + '친구가 가입하면 <b>둘 다 1,000원</b><br>친구가 결제하면 <b>나에게 +10,000원</b></div>'
+    + '<button onclick="shareReferral()" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
+      + 'border:none;border-radius:11px;font-size:14.5px;font-weight:700;cursor:pointer">'
+      + '친구에게 보내기</button></div>';
+}
+
 function toggleReferralAcc(e){ if(e){e.stopPropagation();} const a=document.getElementById('refAcc'); if(a) a.classList.toggle('hidden'); }
 function copyReferralLink(e){
   if(e){e.stopPropagation();}
@@ -1142,7 +1187,7 @@ function showAppDailyDone(){
   _togglePayUI(false);
   var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🌙 오늘 무료 학습 완료!';
   var sub=document.getElementById('planSub'); if(sub) sub.textContent=_limitMsg('내일 다시 오면 새 문제로 이어서 풀 수 있어요.');
-  var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div><button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
+  var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div>'+_refShareBlockHTML()+'<button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
   _planPopupShow();
 }
 function showPlanPopup(membership) {
@@ -1183,6 +1228,7 @@ function showPlanPopup(membership) {
           + '🧠 <b style="color:#0C447C;font-weight:500">망각곡선 자동복습</b> — 푼 건 안 까먹게'
         + '</div></div>'
       + featureCompareHTML(totalTxt);
+    if(!membership) stats.innerHTML = _refShareBlockHTML() + stats.innerHTML;   // [2026-09-09] 한도로 막힌 쪽에만
   }
   _planPopupShow();
   renderPlanCards(cert);
