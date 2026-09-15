@@ -692,8 +692,8 @@ function passPlanHTML(cert, paid){
   if(!top && weak.length && typeof lt2Has==='function' && lt2Has(cert)) top={sub:weak[0].code, subName:weak[0].name, t:{tcode:'', name:'레벨업 자동출제', star:0}};
 
   var head='<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #EDE4D9;position:sticky;top:0;z-index:2">'
-    +'<span onclick="closePassPlan()" style="font-size:17px;color:#8A7D6E;cursor:pointer">←</span>'
-    +'<span style="font-size:15px;font-weight:800;color:#3C3C3A">🎯 합격 플랜</span></div>';
+    +'<span style="font-size:15px;font-weight:800;color:#3C3C3A;flex:1;min-width:0">🎯 합격 플랜</span>'
+    +'<button class="popup-x popup-x-inline" onclick="closePassPlan()" aria-label="닫기">✕</button></div>';
 
   var official=_officialExamMs(cert)!=null;
   var ddayChip;
@@ -746,6 +746,7 @@ function closePassPlan(){ var el=document.getElementById('passPlanOverlay'); if(
 function _planUpsell(){
   var w=document.createElement('div'); w.style.cssText='position:fixed;inset:0;z-index:9200;background:rgba(20,14,8,.45);display:flex;align-items:center;justify-content:center;padding:0 26px';
   w.innerHTML='<div style="background:#fff;border-radius:18px;padding:20px;text-align:center;max-width:300px;width:100%">'
+    +'<button class="popup-x" id="_pupX" aria-label="닫기">✕</button>'
     +'<div style="font-size:30px;margin-bottom:8px">🔒</div>'
     +'<div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:6px">맞춤 합격 플랜은 멤버십</div>'
     +'<div style="font-size:12.5px;color:#5F5A52;line-height:1.6;margin-bottom:15px">오늘의 1순위 학습, 과목별 약점 전체,<br>무제한 문제풀이까지 — 멤버십으로 합격까지 한 번에.</div>'
@@ -754,6 +755,7 @@ function _planUpsell(){
   document.body.appendChild(w);
   w.querySelector('#_pupBuy').onclick=function(){ document.body.removeChild(w); if(typeof showPlanPopup==='function') showPlanPopup(true); };
   w.querySelector('#_pupLater').onclick=function(){ document.body.removeChild(w); };
+  w.querySelector('#_pupX').onclick=function(){ document.body.removeChild(w); };
   w.onclick=function(e){ if(e.target===w) document.body.removeChild(w); };
 }
 function _passPlanEntryHTML(cert){
@@ -1243,8 +1245,8 @@ function _infoModal(html){
   return new Promise(function(res){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px';
-    ov.innerHTML='<div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.25)">'+html+'<button style="margin-top:16px;width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button></div>';
-    ov.querySelector('button').onclick=function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); res(); };
+    ov.innerHTML='<div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.25)"><button class="popup-x" aria-label="닫기">✕</button>'+html+'<button style="margin-top:16px;width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button></div>';
+    ov.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); res(); }; });
     document.body.appendChild(ov);
   });
 }

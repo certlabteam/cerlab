@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=17a52f39">
+<link rel="stylesheet" href="style.css?v=6041811e">
 <link rel="stylesheet" href="subjective-responsive.css?v=c8a6a836">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -94,6 +94,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- 인앱 브라우저 안내 팝업 -->
 <div class="inapp-popup hidden" id="inappPopup">
   <div class="inapp-box">
+    <button class="popup-x" onclick="closeInappPopup()" aria-label="닫기">✕</button>
     <div class="inapp-icon">🌐</div>
     <div class="inapp-title">크롬 브라우저로 열어주세요!</div>
     <div class="inapp-desc">카카오톡 내부 브라우저에서는<br>로그인 정보가 유지되지 않아요.<br>크롬으로 열면 학습 기록이 저장됩니다.</div>
@@ -109,6 +110,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 
 <div class="inapp-popup hidden" id="conceptOfferPopup">
   <div class="inapp-box">
+    <button class="popup-x" onclick="conceptOfferDismiss()" aria-label="닫고 계속 풀기" title="닫고 계속 풀기">✕</button>
     <div class="inapp-icon">📖</div>
     <div class="inapp-title">연속 3문제를 틀렸어요</div>
     <div class="inapp-desc">조금 어려운 구간이에요.<br>개념부터 짚고 다시 풀어볼까요?</div>
@@ -366,6 +368,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   </div>
 </div>
 <div class="overlay hidden" id="completeOv">
+  <button class="popup-x popup-x-fixed" onclick="hideComplete();isFlipped=false;learnOpen=false;refresh();" aria-label="닫기">✕</button>
   <div class="ov-icon" id="ovIcon">🎯</div>
   <div class="ov-title" id="ovTitle">완료!</div>
   <div class="ov-sub" id="ovSub"></div>
@@ -374,6 +377,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 </div>
 <div class="milestone hidden" id="milestoneBox">
   <div class="ms-box">
+    <button class="popup-x" onclick="closeMilestone()" aria-label="닫기">✕</button>
     <div class="ms-stars" id="msStars">⭐⭐⭐</div>
     <div class="ms-num" id="msNum">100</div>
     <div class="ms-label">문제 돌파!</div>
@@ -406,6 +410,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- 고객센터 (문제오류수정 기능 재사용) -->
 <div class="report-sheet hidden" id="csSheet">
   <div class="report-box">
+    <button class="popup-x" onclick="closeCS()" aria-label="닫기">✕</button>
     <div class="report-title">📮 고객센터</div>
     <div class="report-sub">문의·오류·개선사항을 남겨주세요. 확인 후 빠르게 반영하겠습니다.</div>
     <div class="report-types">
@@ -642,9 +647,9 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=e9ebd33a"></script>
-<script defer src="index-3-mcq.js?v=cd893d8b"></script>
+<script defer src="index-3-mcq.js?v=025c0103"></script>
 <script defer src="index-4-learn.js?v=f5c4976b"></script>
-<script defer src="index-5-shell.js?v=4398a420"></script>
+<script defer src="index-5-shell.js?v=7849bbca"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
   <div class="pr-sheet" id="printSheetBody"></div>

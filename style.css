@@ -287,7 +287,6 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .psucc-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px}
 .psucc-ov.hidden{display:none}
 .psucc-box{background:#fff;border-radius:18px;max-width:380px;width:100%;padding:24px 22px;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto}
-.psucc-x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:20px;color:#999;cursor:pointer;line-height:1}
 .psucc-ic{text-align:center;font-size:38px;margin-bottom:6px}
 .psucc-ti{text-align:center;font-size:18px;font-weight:800;color:#0C447C;margin-bottom:4px}
 .psucc-sub{text-align:center;font-size:13px;color:#6E6256;margin-bottom:16px;line-height:1.5}
@@ -745,8 +744,16 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .mq-mst.sr-weak{background:#E24B4A}
 .mq-mst.sr-learning{background:#E0A52E}
 .mq-mst.sr-master{background:#2E9B5E}
-.popup-x{position:sticky;top:10px;float:right;width:38px;height:38px;margin:2px -2px -34px 0;background:#F0EDE8;border:1px solid #E2D6CC;border-radius:50%;font-size:18px;color:#6E6256;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;z-index:5;padding:0}
-.popup-x:hover{background:#E2D6CC}
+/* [2026-09-15] 모든 팝업 닫기 X 하나로 — 오른쪽 위 · 원·테두리 없이 ✕ 글자만 · 누르는 영역 44px.
+   제 줄을 차지해(margin-left:auto) 제목·글이 X 밑으로 들어가지 않고, 스크롤해도 붙어 있되(sticky)
+   바탕을 창과 같게(inherit) 해 지나가는 글이 비치지 않는다. 사장님 『X 우측상단』『겹치지 않게』『원 없이 X 만』 */
+.popup-x,.psucc-x{position:sticky;top:0;float:none;display:flex;flex-shrink:0;align-self:flex-end;align-items:center;justify-content:center;width:44px;height:44px;margin:-10px -12px 4px auto;padding:0;border:0;border-radius:0;background:inherit;box-shadow:none;color:#5F5E5A;font-size:22px;font-weight:400;line-height:1;cursor:pointer;z-index:6;-webkit-tap-highlight-color:transparent}
+.popup-x:hover,.psucc-x:hover{background:inherit;color:#2C2C2A}
+.popup-x:focus-visible,.psucc-x:focus-visible{outline:2px solid #185FA5;outline-offset:-8px}
+.popup-x.popup-x-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));right:8px;margin:0;background:transparent;z-index:101}
+.popup-x.popup-x-inline{position:static;margin:-10px -10px -10px auto;background:transparent}
+/* 커뮤니티 글쓰기(전체 화면)의 닫기 ✕ 도 오른쪽 위로 — 머리줄 안에서 순서만 뒤로 (헤드방 2026-09-15) */
+#cmWrite .cm-top .cm-back{order:9;margin-left:auto;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;color:#5F5E5A;margin-right:-12px}
 .report-box{position:relative}
 .home-seo{font-size:12px;color:#A89C8E;line-height:1.6;margin-top:10px;max-width:440px;word-break:keep-all;overflow-wrap:break-word}
 .mnemonic{margin:14px 0 4px;padding:13px 15px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;border-radius:14px}
