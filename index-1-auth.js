@@ -1260,7 +1260,7 @@ function showWelcomePopup() {
     <div class="auth-feature-item">자동복습 & 오답노트</div>
     <div class="auth-feature-item">레벨테스트·예상점수 무료</div>
     <div class="auth-feature-item">50문제 무료 체험!</div>
-    <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(3일 안에 사용)</span><br>
+    <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(1년 안에 사용)</span><br>
       친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 그 값의 절반을 포인트로 (1년 유효)
       <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
     </div>`;
