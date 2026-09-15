@@ -1558,7 +1558,7 @@ async function submitAiBuy(){
     try{ clTrack('InitiateCheckout', { value:gotP, currency:'KRW', content_name:lb, content_category:'aigrade_'+kind, content_type:'product', contents:[{id:'aigrade_'+kind+'_'+gotN, quantity:1}], num_items:1 }); }catch(_){}
     closeAiGradeBuy();
     // 즉시 지급이 아니라 1시간 뒤 일괄 승인 → 잔액은 승인 후 반영
-    showPaySuccess({ certName: lb, planLabel:'입금 확인 후 약 10분 뒤 승인 → 잔액 반영', expireAt: null, payable: gotP, depositorName: depositorName, sub:'충전 신청이 접수됐어요. 입금 확인 후 약 10분 뒤 승인되며, 승인되면 잔액에 자동 반영됩니다.' });
+    showPaySuccess({ certName: lb, planLabel:'관리자 입금 확인 후 승인 → 잔액 반영', expireAt: null, payable: gotP, depositorName: depositorName, sub:'충전 신청이 접수됐어요. 관리자가 입금을 확인한 뒤 승인하면 잔액에 반영됩니다.' });
   }catch(e){ var m=(e&&e.message)||String(e); alert('충전 실패: '+m); }
   finally{ if(btn){ btn.disabled=false; btn.textContent='충전 신청'; } }
 }
