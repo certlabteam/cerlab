@@ -73,7 +73,7 @@ const SEO_FIRSTQ={
 };
 /* 가입하면 저장되는 것 한 줄 — 밖으로 나가는 글이라 검수 전에는 비워 둔다(비면 안 그린다).
    검수 받을 초안: 「가입하면 오답·복습 진도·풀던 회차가 계정에 저장돼 다른 기기에서도 이어 풀 수 있어요. 하루 무료 문항도 5개에서 10개로 늘어요.」 */
-const SEO_SAVE_LINE='';
+const SEO_SAVE_LINE='가입하면 오답·복습 진도·풀던 회차가 계정에 저장돼 다른 기기에서도 이어 풀 수 있어요. 하루 무료 문항도 5개에서 10개로 늘어요.';
 const SEO_STYLE_ADD='.exp{margin:8px 0 2px;border-top:1px dashed #e2e8f0;padding-top:8px}.ex-blk{margin:7px 0}.ex-h{font-size:12px;font-weight:800;color:#0C447C;margin-bottom:3px}.cc{background:#F4F7FB;border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;margin:4px 0}.cc-t{display:block;color:#0C447C;font-size:13px;margin-bottom:2px}.cc-d{margin:0;font-size:13px}.cc-cx{margin:4px 0 0;font-size:12.5px;color:#475569}.ex-o,.ex-ex{margin:2px 0;padding-left:18px}.ex-o li,.ex-ex li{margin:3px 0;font-size:13px}.ex-s{font-size:13px;color:#0F6E56;margin:5px 0 0}';
 /* GA4 + Google Ads — SEO 정적 페이지 유입·리마케팅 계측. index.html 과 같은 ID 를 쓴다. */
 const SEO_GA4_ID='G-RPZRZQ779J', SEO_ADS_ID='AW-18199166773';
