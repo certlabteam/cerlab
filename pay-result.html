@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>결제 확인 · CertLab</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{ --blue:#185FA5; --blue-d:#0C447C; --line:#B5D4F4; --bg:#F4F8FD; --fg:#2B3A4B; --mut:#7C93AD; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.7 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+       min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:28px 24px;max-width:440px;width:100%;
+        box-shadow:0 2px 18px rgba(12,68,124,.07);text-align:center}
+  .ic{font-size:42px}
+  h1{font-size:19px;color:var(--blue-d);margin:12px 0 8px}
+  p{font-size:14px;line-height:1.8;margin:6px 0;color:var(--fg)}
+  .mut{color:var(--mut);font-size:12.5px}
+  .go{display:inline-block;margin-top:18px;background:linear-gradient(135deg,#1D9E75,var(--blue-d));color:#fff;
+      text-decoration:none;font-weight:700;font-size:15px;padding:13px 22px;border-radius:12px}
+  .ord{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--mut);word-break:break-all;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="ic" id="ic">⏳</div>
+  <h1 id="ttl">결제를 확인하고 있어요</h1>
+  <p id="msg">잠시만 기다려 주세요. 이 창을 닫지 마세요.</p>
+  <p class="mut" id="sub"></p>
+  <div class="ord" id="ord"></div>
+  <a class="go" href="./">CertLab으로 돌아가기</a>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
+<script>
+/* [2026-09-17] 토스 결제창이 끝나면 이 쪽으로 돌아온다.
+ *   성공: ?paymentKey=…&orderId=…&amount=…  → confirmTossPayment 로 서버가 토스에 승인 요청
+ *   실패·취소: ?code=…&message=…&orderId=…
+ * ⚠ 이 쪽은 승인을 스스로 하지 않는다. 서버(certlab-pay)가 시크릿 키로 승인하고 이용권을 활성화한다.
+ * ⚠ 로그인 상태라야 콜러블을 부를 수 있다. 결제창을 띄운 창과 같은 브라우저라 보통 그대로 남아 있다. */
+var firebaseConfig = {
+  apiKey: "AIzaSyCSQlow8xzRsv0EMtIYJ6_WDRAFUECrw2Q",
+  authDomain: "certlab-c3bcb.firebaseapp.com",
+  projectId: "certlab-c3bcb",
+  storageBucket: "certlab-c3bcb.firebasestorage.app",
+  messagingSenderId: "698827699707",
+  appId: "1:698827699707:web:b08d492f408ac444fa875e"
+};
+firebase.initializeApp(firebaseConfig);
+
+/* ⚠ 주소창 쿼리(message·code)와 서버 오류 글은 남이 넣을 수 있는 값이다.
+ *   innerHTML 로 넣으면 스크립트 주입 자리가 된다 → 전부 textContent 로만 넣는다.
+ *   줄이 둘 필요하면 아래 작은 줄(sub)에 따로 적는다. */
+function 보이기(icon, title, text, orderId, 작은줄){
+  document.getElementById('ic').textContent = icon;
+  document.getElementById('ttl').textContent = title;
+  document.getElementById('msg').textContent = text;
+  document.getElementById('sub').textContent = 작은줄 || '';
+  document.getElementById('ord').textContent = orderId ? ('주문번호 ' + orderId) : '';
+}
+
+var q = new URLSearchParams(location.search);
+var paymentKey = q.get('paymentKey'), orderId = q.get('orderId'), amount = q.get('amount');
+var failCode = q.get('code'), failMsg = q.get('message');
+
+if (failCode || !paymentKey) {
+  var 취소 = (failCode === 'PAY_PROCESS_CANCELED' || /취소/.test(failMsg || ''));
+  보이기('⚠️', '결제가 끝나지 않았어요',
+    취소 ? '결제를 취소하셨어요. 다시 시도하시려면 CertLab에서 이용권을 다시 골라 주세요.'
+         : '결제가 완료되지 않았어요. CertLab에서 다시 시도해 주세요.',
+    orderId,
+    failMsg ? String(failMsg).slice(0, 120) : '');
+} else {
+  firebase.auth().onAuthStateChanged(async function(user){
+    if (!user) {
+      보이기('🔒', '로그인이 필요해요',
+        '결제는 접수됐지만 확인하려면 로그인이 필요해요. CertLab으로 돌아가 로그인하시면 이어서 처리돼요.', orderId);
+      return;
+    }
+    try {
+      var fn = firebase.app().functions('asia-northeast3').httpsCallable('confirmTossPayment');
+      var r = await fn({ orderId: orderId, paymentKey: paymentKey, amount: Number(amount) });
+      var d = (r && r.data) || {};
+      if (d.fulfillmentStatus === 'APPLIED' || d.status === 'PAID' || d.status === 'DONE') {
+        보이기('🎉', '결제가 끝났어요', '이용권이 켜졌어요. CertLab으로 돌아가 이어서 학습하세요.', orderId);
+      } else {
+        보이기('⏳', '결제를 확인하는 중이에요',
+          '카드사 응답을 기다리고 있어요. 조금 뒤 CertLab에서 이용권 상태를 확인해 주세요.', orderId,
+          '오래 걸리면 certlab.team@gmail.com 으로 주문번호와 함께 알려 주세요.');
+      }
+    } catch (e) {
+      보이기('⚠️', '결제 확인에 실패했어요',
+        (e && e.message) ? String(e.message).slice(0, 160) : '잠시 후 다시 시도해 주세요.', orderId,
+        '결제가 됐는데 이용권이 안 켜졌다면 certlab.team@gmail.com 으로 주문번호와 함께 알려 주세요.');
+    }
+  });
+}
+</script>
+</body>
+</html>

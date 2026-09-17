@@ -1434,6 +1434,59 @@ function consumeMileage(lots, amount){
   for(const l of active){ if(need<=0) break; const take=Math.min(l.a, need); l.a-=take; need-=take; if(l.a<=0) l.used=true; }
   return lots.filter(l=>l && !l.used && (l.a>0));   // 소진된 lot 제거
 }
+/* ===== 카드 결제(토스페이먼츠) =========================================
+ * [2026-09-17] 토스 심사가 「결제창 연동 상태」를 보기 때문에 카드 결제 길을 연다.
+ *   흐름: initializeMember(가입 초기화) → createPaymentOrder(주문·금액은 서버가 정함)
+ *        → 토스 결제창 → 성공하면 /pay-result.html 로 돌아와 confirmTossPayment.
+ * ⚠ 금액을 클라이언트가 정하지 않는다. 서버가 config/pricing 으로 계산한 payableAmount 로만 띄운다.
+ * ⚠ 지금은 서버가 결제 시험 명단(PAY_TESTERS)·관리자에게만 주문을 내준다. 나머지는 「준비 중」으로 막힌다.
+ *   심사가 끝나고 실제로 열 때 PAY_OPEN=true 로 바꾸는 것은 사장님 결정이다. */
+var TOSS_CLIENT_KEY = 'test_ck_ORzdMaqN3wqnYz2LLpBNr5AkYXQG';   // 테스트용 공개 키(상점 일구미). 시크릿 키는 서버 비밀값에만 있다.
+function _newRequestId(){
+  try{
+    var a=new Uint8Array(16); crypto.getRandomValues(a);
+    return Array.from(a).map(function(x){ return x.toString(16).padStart(2,'0'); }).join('');
+  }catch(_){ return 'r'+Date.now()+Math.random().toString(36).slice(2,10); }
+}
+async function startCardPayment(){
+  if(!currentUser){ showLoginPopup(); return; }
+  if(!firebaseReady || !fbFunctions){ alert('지금은 결제를 열 수 없어요. 잠시 후 다시 시도해 주세요.'); return; }
+  if(typeof TossPayments!=='function'){ alert('결제창을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.'); return; }
+  if(!selectedPlanDays){ alert('이용권을 먼저 선택해주세요.'); return; }
+  var btn=document.getElementById('btnCardPay');
+  if(btn){ btn.disabled=true; btn.textContent='결제창 여는 중…'; }
+  var cert=activeCertId();
+  try{
+    // 1) 가입 초기화 — 주문 서버가 memberStates 문서를 먼저 요구한다.
+    //    이미 초기화된 회원이 다시 불러도 서버가 오류 없이 {created:false} 를 돌려준다(members.js 120~125행).
+    //    그래서 오류를 삼키지 않는다 — 여기서 나는 오류는 진짜 오류다.
+    await fbFunctions.httpsCallable('initializeMember')({ requestId:_newRequestId(), signupCert:cert });
+    // 2) 주문 만들기 — 금액은 보내지 않는다(서버가 정한다)
+    var r=await fbFunctions.httpsCallable('createPaymentOrder')({
+      requestId:_newRequestId(), examId:cert, planDays:selectedPlanDays, pointsToUse:0
+    });
+    var o=(r&&r.data)||{};
+    if(!o.orderId || !(o.payableAmount>0)) throw new Error('주문을 만들지 못했어요.');
+    // 3) 결제창 — 돌아올 곳은 우리 쪽 pay-result.html
+    var back=location.origin+'/pay-result.html';
+    await TossPayments(TOSS_CLIENT_KEY).requestPayment('카드', {
+      amount:o.payableAmount,
+      orderId:o.orderId,
+      orderName:certFull(cert)+' '+planLabelOf(selectedPlanDays),
+      customerEmail:currentUser.email||undefined,
+      successUrl:back,
+      failUrl:back
+    });
+  }catch(e){
+    var m=(e&&e.message)||'';
+    if(/취소|USER_CANCEL/i.test(m)||(e&&e.code==='USER_CANCEL')) { /* 이용자가 닫은 것 — 조용히 */ }
+    else if(/준비 중/.test(m)) alert('카드 결제는 아직 준비 중이에요. 계좌이체로 신청해 주세요.');
+    else alert('결제를 시작하지 못했어요.\n' + m);
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='💳 카드로 결제'; }
+  }
+}
+
 async function submitPayment() {
   if (!currentUser) { showLoginPopup(); return; }
   if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
