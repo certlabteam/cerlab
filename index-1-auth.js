@@ -692,6 +692,71 @@ async function signInWithGoogle() {
 }
 
 
+/* ===== 이메일+비밀번호 로그인 ==============================================
+ * [2026-09-17] 소셜 로그인만 있으면 결제사(토스페이먼츠) 심사가 상품·결제를 확인할 수 없다.
+ *   심사 답변에 「일반 로그인 가능」을 적으려면 이 길이 있어야 한다.
+ *   소셜을 안 쓰는 이용자에게도 문이 하나 더 생긴다.
+ * ⚠ 파이어베이스 콘솔에서 이메일/비밀번호 공급자가 켜져 있어야 동작한다.
+ *   안 켜져 있으면 auth/operation-not-allowed 가 온다 — 그 말을 그대로 보여 주지 말고 안내로 바꾼다.
+ */
+function toggleEmailAuth(){
+  var box=document.getElementById('emailAuthBox'); if(!box) return;
+  box.classList.toggle('hidden');
+  if(!box.classList.contains('hidden')){ var id=document.getElementById('emailAuthId'); if(id) id.focus(); }
+}
+function _emailAuthSay(msg){
+  var m=document.getElementById('emailAuthMsg'); if(!m) return;
+  if(!msg){ m.style.display='none'; m.textContent=''; return; }
+  m.style.display='block'; m.textContent=msg;
+}
+function _emailAuthFields(){
+  var id=(document.getElementById('emailAuthId')||{}).value||'';
+  var pw=(document.getElementById('emailAuthPw')||{}).value||'';
+  return { email:id.trim(), pw:pw };
+}
+/* 파이어베이스 오류코드를 사람 말로. 코드를 그대로 보여 주면 이용자가 무엇을 할지 모른다. */
+function _emailAuthErr(e){
+  var c=(e&&e.code)||'';
+  if(c==='auth/invalid-email') return '이메일 주소 형식이 올바르지 않아요.';
+  if(c==='auth/missing-password'||c==='auth/weak-password') return '비밀번호는 6자 이상으로 입력해 주세요.';
+  if(c==='auth/email-already-in-use') return '이미 가입된 이메일이에요. 로그인을 눌러 주세요.';
+  if(c==='auth/user-not-found') return '가입되지 않은 이메일이에요. 가입하기를 눌러 주세요.';
+  if(c==='auth/wrong-password'||c==='auth/invalid-credential') return '이메일 또는 비밀번호가 맞지 않아요.';
+  if(c==='auth/too-many-requests') return '시도가 많아 잠시 막혔어요. 잠시 후 다시 해 주세요.';
+  if(c==='auth/operation-not-allowed') return '이메일 로그인이 아직 열려 있지 않아요. 잠시 후 다시 시도해 주세요.';
+  return '로그인에 실패했어요. 잠시 후 다시 시도해 주세요.';
+}
+async function signInWithEmail(){
+  if(!firebaseReady){ _emailAuthSay('지금은 미리보기 모드예요. 배포된 사이트에서 로그인해 주세요.'); return; }
+  var f=_emailAuthFields();
+  if(!f.email || !f.pw){ _emailAuthSay('이메일과 비밀번호를 입력해 주세요.'); return; }
+  _emailAuthSay('');
+  try{
+    await auth.signInWithEmailAndPassword(f.email, f.pw);
+    hideLoginPopup();
+  }catch(e){ _emailAuthSay(_emailAuthErr(e)); }
+}
+async function signUpWithEmail(){
+  if(!firebaseReady){ _emailAuthSay('지금은 미리보기 모드예요. 배포된 사이트에서 가입해 주세요.'); return; }
+  var f=_emailAuthFields();
+  if(!f.email || !f.pw){ _emailAuthSay('이메일과 비밀번호를 입력해 주세요.'); return; }
+  if(f.pw.length<6){ _emailAuthSay('비밀번호는 6자 이상으로 입력해 주세요.'); return; }
+  _emailAuthSay('');
+  try{
+    await auth.createUserWithEmailAndPassword(f.email, f.pw);
+    hideLoginPopup();   // 신규회원 처리(포인트·CompleteRegistration)는 loadUserPlan 분기가 맡는다 — 로그인 경로와 무관
+  }catch(e){ _emailAuthSay(_emailAuthErr(e)); }
+}
+async function resetEmailPassword(){
+  if(!firebaseReady){ _emailAuthSay('지금은 미리보기 모드예요.'); return; }
+  var f=_emailAuthFields();
+  if(!f.email){ _emailAuthSay('재설정 메일을 받을 이메일 주소를 입력해 주세요.'); return; }
+  try{
+    await auth.sendPasswordResetEmail(f.email);
+    _emailAuthSay('재설정 메일을 보냈어요. 메일함을 확인해 주세요.');
+  }catch(e){ _emailAuthSay(_emailAuthErr(e)); }
+}
+
 /* ===== 카카오로 시작하기 ==================================================
  * [2026-09-02] 문을 하나 더 낸다.
  *   서트랩 유입은 거의 전부 네이버 검색인데, 네이버 앱·카톡 안에서 열면
