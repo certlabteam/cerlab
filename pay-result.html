@@ -73,18 +73,45 @@ if (failCode || !paymentKey) {
     orderId,
     failMsg ? String(failMsg).slice(0, 120) : '');
 } else {
-  firebase.auth().onAuthStateChanged(async function(user){
+  /* ⚠ onAuthStateChanged 는 여러 번 뛴다. 그대로 두면 승인을 두 번 부르고,
+   *   두 번째가 「이미 처리 중(CONFIRMING)」을 받아 성공 화면을 덮는다(2026-09-17 실제로 겪음).
+   *   첫 호출에서 구독을 끊고 한 번만 일한다. */
+  var 끊기 = firebase.auth().onAuthStateChanged(async function(user){
+    try { if (typeof 끊기 === 'function') 끊기(); } catch (e) {}
     if (!user) {
       보이기('🔒', '로그인이 필요해요',
         '결제는 접수됐지만 확인하려면 로그인이 필요해요. CertLab으로 돌아가 로그인하시면 이어서 처리돼요.', orderId);
       return;
     }
     try {
-      var fn = firebase.app().functions('asia-northeast3').httpsCallable('confirmTossPayment');
-      var r = await fn({ orderId: orderId, paymentKey: paymentKey, amount: Number(amount) });
-      var d = (r && r.data) || {};
-      if (d.fulfillmentStatus === 'APPLIED' || d.status === 'PAID' || d.status === 'DONE') {
-        보이기('🎉', '결제가 끝났어요', '이용권이 켜졌어요. CertLab으로 돌아가 이어서 학습하세요.', orderId);
+      var 함수 = firebase.app().functions('asia-northeast3');
+      var d = {};
+      try {
+        var r = await 함수.httpsCallable('confirmTossPayment')({ orderId: orderId, paymentKey: paymentKey, amount: Number(amount) });
+        d = (r && r.data) || {};
+      } catch (e1) {
+        /* 승인이 이미 진행 중이었을 수 있다 — 아래 다시 읽기로 판정한다. 여기서 바로 실패로 보이지 않는다. */
+        d = { status: 'CONFIRMING', _오류: (e1 && e1.message) || '' };
+      }
+      /* 「확인 중」이면 서버가 뒤에서 마무리하는 중일 수 있다. 몇 초 간격으로 세 번까지 다시 읽는다. */
+      function 됐나(x){ return x && (x.fulfillmentStatus === 'APPLIED' || x.fulfillmentStatus === 'TEST_NO_GRANT' || x.status === 'PAID' || x.status === 'DONE'); }
+      for (var i = 0; i < 3 && !됐나(d); i++) {
+        await new Promise(function(r2){ setTimeout(r2, 3000); });
+        try {
+          var g = await 함수.httpsCallable('getPaymentOrder')({ orderId: orderId });
+          if (g && g.data) d = g.data;
+        } catch (e2) {}
+      }
+      if (됐나(d)) {
+        /* 테스트 환경은 설계상 이용권을 주지 않는다(TEST_NO_GRANT). 그 경우 「켜졌어요」라고 하면 사실과 다르다. */
+        var 테스트 = (d.environment === 'TEST') || (d.fulfillmentStatus === 'TEST_NO_GRANT');
+        if (테스트) {
+          보이기('🧪', '테스트 결제가 완료됐어요',
+            '결제 연동을 확인하는 테스트 결제라 실제 이용권은 지급되지 않아요. 실제 청구도 없어요.', orderId,
+            '결제창·주문·승인까지 정상으로 처리됐습니다.');
+        } else {
+          보이기('🎉', '결제가 끝났어요', '이용권이 켜졌어요. CertLab으로 돌아가 이어서 학습하세요.', orderId);
+        }
       } else {
         보이기('⏳', '결제를 확인하는 중이에요',
           '카드사 응답을 기다리고 있어요. 조금 뒤 CertLab에서 이용권 상태를 확인해 주세요.', orderId,
