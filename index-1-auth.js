@@ -30,14 +30,41 @@ try {
 
 // ===== 사용자 상태 =====
 let currentUser = null;
-// ===== AI 크레딧 지갑(회원권과 별도, 횟수 충전제): users/{uid}.aiCredits =====
-// 첨삭(Sonnet)·개념설명(Haiku) 공용. 1회당 1 차감.
-// 첨삭(grade)·해설(explain) 지갑 분리
+// ===== AI 크레딧 지갑(회원권과 별도, 횟수 충전제): users/{uid}.aiCreditLots =====
+// 첨삭(Sonnet)·개념설명(Haiku) 공용. 1회당 1 차감. 첨삭(grade)·해설(explain) 지갑 분리.
+// [2026-09-23] 충전분(lot)마다 유효기간이 다를 수 있다(9/23 이후 승인분 365일 · 그 전은 만료 없음).
+// 서버(certlab-functions/functions/aiCreditLots.js)와 같은 규칙 — 여기는 브라우저라 읽기용만 작게 옮겨 둔다.
+// window._aiCredits 는 옛 코드 호환용 캐시(표시만, 계산은 항상 _aiCreditLots 로 한다).
 window._aiCredits = { grade:0, explain:0 };
-function _walletBal(k){ var w=window._aiCredits; return (w && typeof w==='object' && +w[k]>0) ? +w[k] : 0; }
+window._aiCreditLots = { grade:[], explain:[] };
+function _aiWalletLots(data, k){
+  var L = data && data.aiCreditLots;
+  if (L && Array.isArray(L[k])) return L[k];
+  var flat = (data && data.aiCredits && Number(data.aiCredits[k])) || 0;
+  return flat > 0 ? [{ id:'legacy', a:flat, exp:0, at:0, src:'legacy' }] : [];
+}
+function _aiCreditBalance(lots, now){
+  now = now || Date.now();
+  return (lots||[]).reduce(function(s,l){ return s + ((l && (!l.exp||l.exp>now) && Number(l.a)>0) ? Number(l.a) : 0); }, 0);
+}
+function _aiSoonestExpiry(lots, now){
+  now = now || Date.now();
+  var exps=(lots||[]).filter(function(l){ return l && l.exp && l.exp>now && Number(l.a)>0; }).map(function(l){ return l.exp; });
+  return exps.length ? Math.min.apply(null, exps) : null;
+}
+function _walletBal(k){ return _aiCreditBalance(window._aiCreditLots && window._aiCreditLots[k]); }
 function gradeBal(){ return _walletBal('grade'); }
 function explainBal(){ return _walletBal('explain'); }
-function _setWallet(k, n){ if(typeof n==='number' && n>=0){ if(!window._aiCredits||typeof window._aiCredits!=='object') window._aiCredits={grade:0,explain:0}; window._aiCredits[k]=n; try{ if(typeof _refreshAiCreditUI==='function') _refreshAiCreditUI(); }catch(_){} } }
+function gradeExpiry(){ return _aiSoonestExpiry(window._aiCreditLots && window._aiCreditLots.grade); }
+function explainExpiry(){ return _aiSoonestExpiry(window._aiCreditLots && window._aiCreditLots.explain); }
+// n=잔액 하나만 아는 옛 호출(오류 시 등) 또는 lots=서버가 돌려준 lot 배열(정확한 만료 포함) — lots 있으면 그걸 우선한다.
+function _setWallet(k, n, lots){
+  if(!window._aiCredits||typeof window._aiCredits!=='object') window._aiCredits={grade:0,explain:0};
+  if(!window._aiCreditLots||typeof window._aiCreditLots!=='object') window._aiCreditLots={grade:[],explain:[]};
+  if(Array.isArray(lots)){ window._aiCreditLots[k]=lots; window._aiCredits[k]=_aiCreditBalance(lots); }
+  else if(typeof n==='number' && n>=0){ window._aiCredits[k]=n; }
+  try{ if(typeof _refreshAiCreditUI==='function') _refreshAiCreditUI(); }catch(_){}
+}
 // ===== 추천/마일리지 =====
 const MILE_DAY = 86400000;
 // ===== 추천 대기정산 (추천인 본인 로그인 시 자기 문서에 적립) =====
@@ -295,6 +322,7 @@ async function loadUserPlan(user) {
       }
       try { localStorage.removeItem('pendingRef'); } catch(_){}
       window._aiCredits = { grade:0, explain:0 };
+      window._aiCreditLots = { grade:[], explain:[] };
       userJoinedAt = { seconds: Math.floor(Date.now()/1000) };   // 방금 만든 문서 = 오늘 가입 → 첫날 몰아주기
       userEnt = ent; syncPlanMirror(); updateAuthBar(); showWelcomePopup(); loadUserData();
       if(typeof pwaSignupBanner==='function') pwaSignupBanner();
@@ -336,7 +364,8 @@ async function loadUserPlan(user) {
         }
       }
     }
-    window._aiCredits = (data.aiCredits && typeof data.aiCredits==='object') ? { grade:+(data.aiCredits.grade||0), explain:+(data.aiCredits.explain||0) } : { grade:0, explain:0 };
+    window._aiCreditLots = { grade: _aiWalletLots(data, 'grade'), explain: _aiWalletLots(data, 'explain') };
+    window._aiCredits = { grade: _aiCreditBalance(window._aiCreditLots.grade), explain: _aiCreditBalance(window._aiCreditLots.explain) };
     userEnt = clApplyUnlock(ent); syncPlanMirror(); updateAuthBar(); loadUserData();
     // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
     myReferralCode = data.referralCode || null;
@@ -1604,7 +1633,7 @@ async function _aiRunExplain(payload, boxId, btn){
   if(btn) btn.disabled=true;
   try{
     var out=await callExplainConcept(payload);
-    if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft);
+    if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft, out.lotsLeft);
     if(box) box.innerHTML='<div class="ai-exp-hd">🤖 AI 설명 <span class="ai-exp-left">해설 남은 '+explainBal().toLocaleString()+'회</span></div><div class="ai-exp-body">'+_aiMd(out&&out.text||'')+'</div>';
   }catch(err){ var e=String((err&&err.code)||'')+' '+String((err&&err.message)||'');
     if(/permission-denied|충전/.test(e)){ if(box) box.style.display='none'; openAiBuy('explain'); }
@@ -1648,7 +1677,11 @@ function openAiBuy(kind){
   var isG=_aiBuyKind==='grade', packs=_aiPacks(_aiBuyKind);
   var ti=document.getElementById('aiBuyTitle'); if(ti) ti.textContent=isG?'✍️ AI 첨삭 충전':'💡 AI 개념설명 충전';
   var sub=document.getElementById('aiBuySub'); if(sub) sub.innerHTML=(isG?'주관식 답안을 채점위원 수준으로 첨삭받는 이용권이에요.':'객관식 해설을 AI가 더 자세히 설명해주는 이용권이에요.')+'<br><span style="display:inline-block;margin-top:5px;background:#F5F3FF;color:#6D28D9;font-weight:700;font-size:11.5px;padding:2px 9px;border-radius:8px">⚠️ 회원권과 별개 · 첨삭/해설 충전은 서로 따로예요</span>';
-  var bal=document.getElementById('aiBuyBal'); if(bal) bal.innerHTML='현재 '+(isG?'첨삭':'해설')+' 잔액: <b>'+(isG?gradeBal():explainBal()).toLocaleString()+'회</b>';
+  var bal=document.getElementById('aiBuyBal'); if(bal){
+    var _b=(isG?gradeBal():explainBal()), _exp=(isG?gradeExpiry():explainExpiry());
+    bal.innerHTML='현재 '+(isG?'첨삭':'해설')+' 잔액: <b>'+_b.toLocaleString()+'회</b>'
+      +(_exp?(' <span style="color:#9A8AB8;font-weight:600">· 가장 빨리 만료 '+new Date(_exp).toLocaleDateString('ko-KR')+'</span>'):'');
+  }
   var wrap=document.getElementById('aiBuyPacks'); if(wrap){ wrap.innerHTML=packs.map(function(p,i){ var n=+p.n, pr=+p.p||0, per=n?Math.round(pr/n):0;
     return '<label style="display:flex;align-items:center;gap:10px;border:1.5px solid '+(i===_aiBuyIdx?'#6D28D9':'#E8E8E8')+';background:'+(i===_aiBuyIdx?'#FAF7FF':'#fff')+';border-radius:11px;padding:11px 13px;cursor:pointer" onclick="_aiPickPack('+i+')">'
       +'<input type="radio" name="aiPack" '+(i===_aiBuyIdx?'checked':'')+' style="accent-color:#6D28D9">'
@@ -1728,8 +1761,8 @@ function mountSubjExam(id){
     creditBalance:function(){ return gradeBal(); },
     explainBalance:function(){ return explainBal(); },
     hasEntitlement:function(){ return gradeBal() >= 1; },
-    gradeAi:function(payload){ return callGradeSubjective(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('grade', out.creditsLeft); return out; }); },
-    explainAi:(AI_OFF? null : function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft); return out; }); }),
+    gradeAi:function(payload){ return callGradeSubjective(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('grade', out.creditsLeft, out.lotsLeft); return out; }); },
+    explainAi:(AI_OFF? null : function(payload){ return callExplainConcept(payload).then(function(out){ if(out&&typeof out.creditsLeft==='number') _setWallet('explain', out.creditsLeft, out.lotsLeft); return out; }); }),
     buyAi:function(){ openAiBuy('grade'); },
     buyExplain:function(){ openAiBuy('explain'); },
     needLogin:function(){ if(typeof showLoginPopup==='function') showLoginPopup(); },

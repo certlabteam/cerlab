@@ -723,20 +723,43 @@ async function confirmApprove() {
   const cert = p.certType || 'bodybuilding';
   const expireAt = new Date();
   expireAt.setDate(expireAt.getDate() + (p.planDays || 14));
+  if (p.kind === 'aigrade') {
+    // AI 충전(횟수): 결제 상태 변경 + 지갑에 새 충전분(lot) 쌓기를 **한 트랜잭션**으로(ASTRA 230007 조건 4) —
+    // 둘 중 하나만 반영되는 일을 막고, payments.status 를 트랜잭션 안에서 다시 읽어 이미 처리된 건이면
+    // (다른 탭·이중 클릭) 아무것도 안 쓰고 멈춘다(중복 승인 차단).
+    // lot id 를 결제문서 id 로 둬서, 나중에 철회할 때 정확히 이 충전분만 찾아 되돌릴 수 있게 한다.
+    // 만료 적용 여부는 **구매(신청) 시각** 기준(경계 건 보호 · ASTRA 조건 5), 365일은 이 승인(반영) 시각부터.
+    const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
+    const pref = db.collection('payments').doc(pendingPaymentId);
+    const uref = db.collection('users').doc(p.uid);
+    const 구매시각 = (p.createdAt && p.createdAt.toMillis) ? p.createdAt.toMillis() : Date.now();
+    const lotId = 'ai_' + pendingPaymentId;
+    let newLots = null, 이미처리 = false;
+    try {
+      await db.runTransaction(async (tx) => {
+        const ps2 = await tx.get(pref); const pd = ps2.exists ? ps2.data() : {};
+        if (pd.status !== 'pending') { 이미처리 = true; return; }
+        const s = await tx.get(uref); const u = s.exists ? s.data() : {};
+        const 지금 = Date.now();
+        const lots = aiWalletLots(u, w);
+        newLots = lots.concat([ newAiCreditLot(lotId, ps, 지금, 'purchase', 구매시각) ]);
+        tx.update(pref, { status: 'approved', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        tx.set(uref, { aiCreditLots: { [w]: newLots }, aiCredits: { [w]: aiCreditBalance(newLots, 지금) } }, { merge: true });
+      });
+    } catch (e) { alert('오류: ' + e.message); return; }
+    if (이미처리) { alert('이미 처리된 결제예요(중복 승인 방지). 새로고침해서 확인해 주세요.'); closeModal(); await loadAll(); return; }
+    closeModal();
+    const 새lot = newLots.find(function(l){ return l.id===lotId; });
+    const 만료문구 = 새lot && 새lot.exp ? ('만료: ' + new Date(새lot.exp).toLocaleDateString('ko-KR')) : ('만료 없음' + (구매시각 < AI_CREDIT_CUTOVER_MS ? '(9/23 전 구매분)' : ''));
+    alert(`✅ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} ${ps}회 충전 승인 완료!\n${만료문구} · 남은 잔액 ${aiCreditBalance(newLots)}회`);
+    await loadAll();
+    return;
+  }
   try {
     await db.collection('payments').doc(pendingPaymentId).update({
       status: 'approved',
       approvedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    if (p.kind === 'aigrade') {
-      // AI 충전(횟수): 지갑(첨삭 grade / 해설 explain)에 packSize 가산
-      const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
-      await db.collection('users').doc(p.uid).update({ ['aiCredits.'+w]: firebase.firestore.FieldValue.increment(ps) });
-      closeModal();
-      alert(`✅ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} ${ps}회 충전 승인 완료!`);
-      await loadAll();
-      return;
-    }
     const upd = {
       ['entitlements.'+cert+'.plan']: 'ACTIVE',
       ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
@@ -767,25 +790,48 @@ async function confirmRevoke() {
   if (!pendingPaymentId || !pendingPaymentData) return;
   const p = pendingPaymentData;
   const cert = p.certType || 'bodybuilding';
+  if (p.kind === 'aigrade') {
+    // AI 충전 취소: 승인 때 만든 바로 그 lot(id='ai_'+결제문서id)만 찾아 회수(그 lot 안에서만, 음수 방지).
+    // [ASTRA 230007 조건 4] 그 lot 이 없으면(9/23 전 옛 방식으로 지급돼 lot 기록이 없는 건 등) **다른 lot 에서
+    //   임의로 회수하지 않는다** — 잘못된 lot 을 건드릴 위험이 있어서다. 그때는 자동으로 안 하고 관리자에게
+    //   AI 크레딧 관리(수동 조정) 화면을 쓰라고 안내한다.
+    // 결제 상태 변경 + lot 회수도 한 트랜잭션(중복 철회 차단: 이미 revoked 면 트랜잭션 안에서 멈춤).
+    const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
+    const lotId = 'ai_' + pendingPaymentId;
+    const pref = db.collection('payments').doc(pendingPaymentId);
+    let aref = null;
+    if (p.uid) aref = db.collection('users').doc(p.uid);
+    else if (p.email) { const qs = await db.collection('users').where('email','==',p.email).limit(1).get(); if (!qs.empty) aref = qs.docs[0].ref; }
+    let 이미처리 = false, lot못찾음 = false;
+    try {
+      await db.runTransaction(async (tx) => {
+        const ps2 = await tx.get(pref); const pd = ps2.exists ? ps2.data() : {};
+        if (pd.status !== 'approved' && pd.status !== 'auto_approved') { 이미처리 = true; return; }
+        tx.update(pref, { status: 'revoked', revokedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        if (!aref) return;
+        const s = await tx.get(aref); const u = s.exists ? s.data() : {};
+        const lots = aiWalletLots(u, w);
+        const i = lots.findIndex(function(l){ return l.id === lotId; });
+        if (i < 0) { lot못찾음 = true; return; }   // payments.status 는 그대로 revoked 로 반영(위에서 tx.update 함) — 잔액만 자동으로는 안 건드림
+        const newLots = lots.slice(); newLots[i] = Object.assign({}, newLots[i], { a: Math.max(0, newLots[i].a - ps) });
+        tx.set(aref, { aiCreditLots: { [w]: newLots }, aiCredits: { [w]: aiCreditBalance(newLots) } }, { merge: true });
+      });
+    } catch (e) { alert('오류: ' + e.message); return; }
+    if (이미처리) { alert('이미 처리된(취소/거절/대기가 아닌) 결제예요(중복 철회 방지). 새로고침해서 확인해 주세요.'); closeModal(); await loadAll(); return; }
+    closeModal();
+    if (lot못찾음) {
+      alert(`⚠️ 결제는 취소 처리했지만, 이 충전분(lot)을 못 찾아 잔액은 자동으로 안 뺐어요.\n${p.email} · ${w==='explain'?'AI 개념설명':'AI 첨삭'} ${ps}회를 「AI 크레딧 관리」에서 직접 확인·조정해 주세요.`);
+    } else {
+      alert(`⛔ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} 충전 취소 완료. ${ps}회 회수.`);
+    }
+    await loadAll();
+    return;
+  }
   try {
     await db.collection('payments').doc(pendingPaymentId).update({
       status: 'revoked',
       revokedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    if (p.kind === 'aigrade') {
-      // AI 충전 취소: 해당 지갑에서 packSize 회수(음수 방지)
-      const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
-      let aref=null;
-      if (p.uid) aref=db.collection('users').doc(p.uid);
-      else if (p.email) { const qs=await db.collection('users').where('email','==',p.email).limit(1).get(); if(!qs.empty) aref=qs.docs[0].ref; }
-      if (aref) {
-        await db.runTransaction(async (tx)=>{ const s=await tx.get(aref); const cur=(s.exists&&s.data().aiCredits&&+s.data().aiCredits[w])||0; var nv={}; nv[w]=Math.max(0,cur-ps); tx.set(aref,{ aiCredits:nv },{merge:true}); });
-      }
-      closeModal();
-      alert(`⛔ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} 충전 취소 완료. ${ps}회 회수.`);
-      await loadAll();
-      return;
-    }
     // 회원 문서 찾기 (uid 우선, 없으면 이메일로)
     let ref=null, data=null;
     if (p.uid) { ref=db.collection('users').doc(p.uid); const d=await ref.get(); if(d.exists) data=d.data(); }
@@ -887,8 +933,52 @@ async function markReportDone(reportId) {
   } catch(e) { alert('오류: ' + e.message); }
 }
 
+// ===== 🤖 AI 크레딧 — 충전분(lot)별 유효기간 =====
+// [2026-09-23] 토스 계약팀 요청 · ASTRA 검수 통과. certlab-functions/functions/aiCreditLots.js 와 같은 규칙
+// (서버·클라 두 곳에 각자 있다 — 이 저장소는 브라우저 compat SDK 라 require 로 나눠 쓸 수 없다).
+//   users/{uid}.aiCreditLots = { grade:[lot...], explain:[lot...] }
+//   lot = { id, a:남은 횟수, exp:만료 ms|0(없음), at:반영 ms, src:'purchase'|'legacy'|'admin' }
+//   2026-09-23 00:00(KST) 이후 반영된 lot 만 365일 만료. 그 전 lot·flat 잔액은 만료 없음.
+const AI_CREDIT_CUTOVER_MS = new Date('2026-09-23T00:00:00+09:00').getTime();
+const AI_CREDIT_EXPIRY_MS = 365 * 86400000;
+function aiWalletLots(u, w){
+  var L = u && u.aiCreditLots;
+  if (L && Array.isArray(L[w])) return L[w];
+  var flat = (u && u.aiCredits && Number(u.aiCredits[w])) || 0;
+  return flat > 0 ? [{ id:'legacy', a:flat, exp:0, at:0, src:'legacy' }] : [];
+}
+function aiCreditBalance(lots, now){
+  now = now || Date.now();
+  return (lots||[]).reduce(function(s,l){ return s + ((l && (!l.exp || l.exp>now) && Number(l.a)>0) ? Number(l.a) : 0); }, 0);
+}
+function aiSoonestExpiry(lots, now){
+  now = now || Date.now();
+  var exps = (lots||[]).filter(function(l){ return l && l.exp && l.exp>now && Number(l.a)>0; }).map(function(l){ return l.exp; });
+  return exps.length ? Math.min.apply(null, exps) : null;
+}
+function takeAiCredits(lots, n, now){
+  now = now || Date.now();
+  var idxs = (lots||[]).map(function(l,i){ return {l:l,i:i}; })
+    .filter(function(x){ return x.l && (!x.l.exp || x.l.exp>now) && Number(x.l.a)>0; })
+    .sort(function(a,b){ return (a.l.exp||9e15)-(b.l.exp||9e15); });
+  var out=(lots||[]).slice(), taken=[], need=n;
+  idxs.forEach(function(x){ if(need<=0) return; var take=Math.min(Number(x.l.a),need); out[x.i]=Object.assign({},x.l,{a:Number(x.l.a)-take}); taken.push({lotId:x.l.id, amount:take}); need-=take; });
+  return { lots: out, taken: taken, short: need };
+}
+// [ASTRA 230007 조건 5] 정책이 적용되는지는 **구매(신청) 시각** 기준 — 승인이 늦어도 신청 당시 조건을 지킨다.
+// purchasedAtMs 를 안 주면(옛 호출·관리자 즉석 부여 등) approvedAtMs 로 대신 본다.
+function newAiCreditLot(id, amount, approvedAtMs, src, purchasedAtMs){
+  var gate = (purchasedAtMs == null ? approvedAtMs : purchasedAtMs);
+  var exp = gate >= AI_CREDIT_CUTOVER_MS ? approvedAtMs + AI_CREDIT_EXPIRY_MS : 0;
+  return { id: id, a: amount, exp: exp, at: approvedAtMs, src: src || 'purchase' };
+}
+function aiExpiryLabel(lots, now){
+  var exp = aiSoonestExpiry(lots, now);
+  return exp ? ('가장 빠른 만료 ' + new Date(exp).toLocaleDateString('ko-KR')) : '만료 없음';
+}
+
 // ===== 🤖 AI 크레딧 관리 (첨삭 grade · 해설 explain 지갑) =====
-var _acmUid=null, _acmEmail=null;
+var _acmUid=null, _acmEmail=null, _acmLots={grade:[],explain:[]};
 async function acmLookup(){
   var em=((document.getElementById('acmEmail')||{}).value||'').trim().toLowerCase();
   var st=document.getElementById('acmStatus'), res=document.getElementById('acmResult');
@@ -898,31 +988,53 @@ async function acmLookup(){
     var qs=await db.collection('users').where('email','==',em).limit(1).get();
     if(qs.empty){ if(st){st.style.color='#A32D2D';st.textContent='해당 이메일 회원이 없습니다.';} return; }
     var doc=qs.docs[0]; _acmUid=doc.id; _acmEmail=em; var u=doc.data();
-    var g=(u.aiCredits&&+u.aiCredits.grade)||0, e=(u.aiCredits&&+u.aiCredits.explain)||0;
+    _acmLots={ grade: aiWalletLots(u,'grade'), explain: aiWalletLots(u,'explain') };
     if(st){st.style.color='#15793F';st.textContent=em+' 조회됨';}
-    if(res)res.innerHTML=acmCard('grade','✍️ AI 첨삭',g)+acmCard('explain','💡 AI 개념설명',e);
+    if(res)res.innerHTML=acmCard('grade','✍️ AI 첨삭')+acmCard('explain','💡 AI 개념설명');
   }catch(err){ if(st){st.style.color='#A32D2D';st.textContent='오류: '+err.message;} }
 }
-function acmCard(w,label,bal){
-  return '<div style="display:inline-block;vertical-align:top;border:1px solid #E7EBF1;border-radius:12px;padding:12px 14px;margin:0 10px 10px 0;min-width:236px">'
+function acmCard(w,label){
+  var lots=_acmLots[w]||[], bal=aiCreditBalance(lots);
+  return '<div style="display:inline-block;vertical-align:top;border:1px solid #E7EBF1;border-radius:12px;padding:12px 14px;margin:0 10px 10px 0;min-width:250px">'
     +'<div style="font-size:13px;font-weight:800;color:#2C2C2A">'+label+' 잔액 <b id="acmBal_'+w+'" style="color:#6D28D9">'+bal+'</b>회</div>'
+    +'<div id="acmExp_'+w+'" style="font-size:11px;color:#9A8E7E;margin-top:2px">'+aiExpiryLabel(lots)+'</div>'
     +'<div style="display:flex;gap:6px;margin-top:9px;align-items:center">'
     +'<input id="acmN_'+w+'" type="number" min="1" placeholder="회수" style="width:76px;padding:6px;border:1.5px solid #E1E6EE;border-radius:8px;text-align:center">'
     +'<button class="btn-sm btn-extend" onclick="acmAdjust(\''+w+'\',1)">＋부여</button>'
     +'<button class="btn-sm" style="background:#FCEBEA;color:#B5302F" onclick="acmAdjust(\''+w+'\',-1)">－차감</button>'
-    +'</div></div>';
+    +'</div>'
+    +'<input id="acmReason_'+w+'" placeholder="사유(필수 · 예: 오류 보상, 입금 확인 수기반영 등)" style="width:100%;margin-top:7px;padding:6px 8px;border:1.5px solid #E1E6EE;border-radius:8px;font-size:11.5px;box-sizing:border-box">'
+    +'<label style="display:flex;align-items:center;gap:5px;margin-top:6px;font-size:10.5px;color:#6B5E4F;cursor:pointer">'
+    +'<input type="checkbox" id="acmPaid_'+w+'" style="margin:0"> 실제 입금(유료 구매)을 수기로 반영 — 9/23 이후면 365일 만료 적용</label>'
+    +'<div style="font-size:10px;color:#B0A89C;margin-top:5px">체크 안 하면 보정·무상 지급으로 보고 만료를 걸지 않습니다.</div></div>';
 }
 async function acmAdjust(w, sign){
   if(!_acmUid){ alert('먼저 회원을 조회하세요.'); return; }
   var n=+((document.getElementById('acmN_'+w)||{}).value)||0; if(n<=0){ alert('회수를 입력하세요.'); return; }
+  var reason=((document.getElementById('acmReason_'+w)||{}).value||'').trim();
+  if(!reason){ alert('사유를 입력하세요(감사 기록에 남습니다).'); return; }
+  var paid=!!((document.getElementById('acmPaid_'+w)||{}).checked);
   var delta=sign>0?n:-n, label=(w==='grade'?'첨삭':'해설');
-  if(!confirm(_acmEmail+' · '+label+' 크레딧 '+(delta>0?'+':'')+delta+'회\n진행할까요?')) return;
+  if(!confirm(_acmEmail+' · '+label+' 크레딧 '+(delta>0?'+':'')+delta+'회\n사유: '+reason+(sign>0&&paid?'\n(실제 구매 반영 — 만료 적용)':'')+'\n진행할까요?')) return;
   try{
-    var uref=db.collection('users').doc(_acmUid); var left=0;
-    await db.runTransaction(async function(tx){ var s=await tx.get(uref); var cur=(s.exists&&s.data().aiCredits&&+s.data().aiCredits[w])||0; left=Math.max(0,cur+delta); var nv={}; nv[w]=left; tx.set(uref,{aiCredits:nv},{merge:true}); });
-    var b=document.getElementById('acmBal_'+w); if(b) b.textContent=left;
+    var uref=db.collection('users').doc(_acmUid); var newLots=null; var 지금=Date.now();
+    await db.runTransaction(async function(tx){
+      var s=await tx.get(uref); var u=s.exists?s.data():{};
+      var lots=aiWalletLots(u, w);
+      if(sign>0){
+        // 실제 구매를 수기 반영하는 것이면 purchase 로(만료 우회 안 함 · ASTRA 조건 2) · 아니면 보정/무상은 exp:0.
+        var lot = paid ? newAiCreditLot('admin_'+지금, n, 지금, 'purchase', 지금) : { id:'admin_'+지금, a:n, exp:0, at:지금, src:'admin' };
+        newLots = lots.concat([lot]);
+      } else { newLots = takeAiCredits(lots, n, 지금).lots; }
+      tx.set(uref,{ aiCreditLots:{ [w]: newLots }, aiCredits:{ [w]: aiCreditBalance(newLots, 지금) } },{merge:true});
+    });
+    _acmLots[w]=newLots;
+    var b=document.getElementById('acmBal_'+w); if(b) b.textContent=aiCreditBalance(newLots);
+    var expEl=document.getElementById('acmExp_'+w); if(expEl) expEl.textContent=aiExpiryLabel(newLots);
     var inp=document.getElementById('acmN_'+w); if(inp) inp.value='';
-    try{ await db.collection('users').doc(_acmUid).collection('aiCreditLog').add({ wallet:w, delta:delta, by:((firebase.auth().currentUser&&firebase.auth().currentUser.email)||'admin'), at: firebase.firestore.FieldValue.serverTimestamp() }); }catch(_){}
+    var reasonInp=document.getElementById('acmReason_'+w); if(reasonInp) reasonInp.value='';
+    var paidChk=document.getElementById('acmPaid_'+w); if(paidChk) paidChk.checked=false;
+    try{ await db.collection('users').doc(_acmUid).collection('aiCreditLog').add({ wallet:w, delta:delta, reason:reason, paidPurchase:(sign>0?paid:null), by:((firebase.auth().currentUser&&firebase.auth().currentUser.email)||'admin'), at: firebase.firestore.FieldValue.serverTimestamp() }); }catch(_){}
   }catch(err){ alert('오류: '+err.message); }
 }
 
