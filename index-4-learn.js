@@ -353,15 +353,39 @@ function stripRepeatedOpt(exp, opt){
   }
   return e;
 }
-function isComboQuestion(opts){
+// [2026-09-25 ASTRA 승인] 14자 컷은 전역 유지. 마커 6개 이상 조합형(「ㄱ, ㄴ, ㄷ, ㄹ, ㅁ, ㅂ」 16자)처럼 컷에 걸린
+// 진짜 조합형만, 문항(q)이 주어졌을 때 문항 단위로 예외를 준다: 모든 보기가 자모 마커 쉼표 나열이고 마커 집합이
+// 자료 진술 키 집합과 같으며, 해설 exp.o 채움 수가 진술 수와 같을 때(보기번호 단위 해설이면 O/X 채점이 어긋나므로 제외).
+function _longComboOK(opts, q){
+  try{
+    var pure=/^[ㄱ-ㅎ㉠-㉩]([,\s]+[ㄱ-ㅎ㉠-㉩])*$/, set={}, n=0;
+    for(var i=0;i<opts.length;i++){
+      var o=String(opts[i]||'').trim();
+      if(!pure.test(o)) return false;
+      (o.match(/[ㄱ-ㅎ㉠-㉩]/g)||[]).forEach(function(c){ if(!set[c]){ set[c]=1; n++; } });
+    }
+    var st=parseJaryoStmts(q.q, q.jaryo), keys={}, m=0;
+    st.forEach(function(s){ if(!keys[s.k]){ keys[s.k]=1; m++; } });
+    if(m<2 || n!==m) return false;
+    for(var k in set) if(!keys[k]) return false;
+    var oArr=(q.exp && Array.isArray(q.exp.o)) ? q.exp.o : [];
+    return oArr.filter(Boolean).length===st.length;
+  }catch(_){ return false; }
+}
+function isComboQuestion(opts, q){
   // 보기들이 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ·가/나/다/라/마 조합(+구분자)으로만 이루어진 문제인지
   if(!Array.isArray(opts) || opts.length<2) return false;
+  var _longOK=null;   // 14자 초과 보기가 나올 때만 한 번 계산(q 가 있을 때)
   var markerOnly=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자 ([2026-07-20] 원문자 ㉠~㉩ 추가)
   var hasJamo=/[ㄱ-ㅎ㉠-㉩]/, comboCnt=0, ok=0;
   for(var i=0;i<opts.length;i++){
     var o=String(opts[i]||'').trim();
     if(!o) return false;
-    if(o.length>14) return false;                 // 마커 조합은 짧음(일반 서술 보기 배제)
+    if(o.length>14){                              // 마커 조합은 짧음(일반 서술 보기 배제)
+      if(!q) return false;
+      if(_longOK===null) _longOK=_longComboOK(opts, q);
+      if(!_longOK) return false;
+    }
     if(!markerOnly.test(o)) return false;
     if(hasJamo.test(o) || /[가나다라마바사아]/.test(o)) ok++;
     if(o.replace(/[\s,·、ㆍ/]/g,'').length>=2) comboCnt++;  // 2글자 이상 = 조합
@@ -857,7 +881,7 @@ function comboLettersFromOpts(opts){
 function _assignPairs(q){
   var opts=q.opts||[]; var ans=Array.isArray(q.ans)?q.ans[0]:q.ans; if(!ans) return null;
   var opt=opts[ans-1]; if(!opt) return null;
-  if(isComboQuestion(opts)) return null;
+  if(isComboQuestion(opts, q)) return null;
   var parts=String(opt).split('/'); if(parts.length<2) return null;
   var out=[];
   for(var i=0;i<parts.length;i++){
@@ -892,8 +916,8 @@ function comboStmtList(q){
   // 순서형·짝맞추기형(하이픈·화살표·콜론 등)도 진술로 뽑혀, O/X 비교(oxCompareHTML·oxAllMatch·
   // oxWrongItems)가 실제 위젯 키('o'+i)와 다른 키('s'+글자)를 찾아 늘 스킵됐다(약점집계·SR등급·
   // 오답학습카드도 영향). 해설 렌더링(exp-opts 블록)은 이 함수를 안 쓰고 독립 계산이라 영향 없음.
-  if(st.length && isComboQuestion(q.opts)) return st;
-  if(isComboQuestion(q.opts)) return comboLettersFromOpts(q.opts).map(function(k){ return {k:k, t:''}; });
+  if(st.length && isComboQuestion(q.opts, q)) return st;
+  if(isComboQuestion(q.opts, q)) return comboLettersFromOpts(q.opts).map(function(k){ return {k:k, t:''}; });
   return [];
 }
 function mnBoxHTML(mn){
@@ -1042,7 +1066,7 @@ function markComboStmts(scope, addOX){
 function imgComboOXRow(q){
   try{
     if(mqInReview) return '';
-    if(!isComboQuestion(q.opts)) return '';
+    if(!isComboQuestion(q.opts, q)) return '';
     if(q && q.jaryo && /<table/i.test(String(q.jaryo))) return '';   // [2026-07-20] 문제보기가 표면 표 안 O/X 칸(injectTableOX)으로 처리 → 아래 줄 억제
     if(parseJaryoStmts(q.q, q.jaryo).length) return '';     // 자료 텍스트에 지문 있으면 기존(지문별) 방식 ([2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 0으로 읽혀 O/X 줄이 중복 렌더됐다)
     var letters=comboLettersFromOpts(q.opts);
@@ -1059,7 +1083,7 @@ function imgComboOXRow(q){
 function injectTableOX(scope, q){
   try{
     if(mqInReview) return;
-    if(!q || !isComboQuestion(q.opts)) return;
+    if(!q || !isComboQuestion(q.opts, q)) return;
     var letters=comboLettersFromOpts(q.opts); if(letters.length<2) return;
     (scope||document).querySelectorAll('#mcqView .jaryo table.jtbl').forEach(function(tbl){
       if(tbl.dataset.oxcol) return;
@@ -1280,7 +1304,7 @@ function renderMcqExam(root){
     return;
   }
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
-  const optOX = !mqInReview && !isComboQuestion(q.opts) && !isCountType(q);   // 일반형 보기에 O/X(조합형=자료 ㄱㄴㄷ, 개수형=○ 진술에 부착)
+  const optOX = !mqInReview && !isComboQuestion(q.opts, q) && !isCountType(q);   // 일반형 보기에 O/X(조합형=자료 ㄱㄴㄷ, 개수형=○ 진술에 부착)
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
     else if(sel===n)cls+=' sel';
@@ -1314,7 +1338,7 @@ function renderMcqExam(root){
     const oFilled=oArr.filter(Boolean).length;
     var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false) ? false : (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
     if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
-    var isCombo=isComboQuestion(q.opts);
+    var isCombo=isComboQuestion(q.opts, q);
     var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
@@ -1497,7 +1521,7 @@ function renderMcqExam(root){
   // [FIX②] 표(explicit jaryo)+조합형: 진술이 발문(jr.q)에 남아 있으면 스템에서 떼어
   //        별도 .jaryo 블록으로 렌더 → markComboStmts가 O/X를 붙인다.
   var _stemQ=jr.q, _comboJaryoHTML='';
-  if(isComboQuestion(q.opts) && jr.jaryo){
+  if(isComboQuestion(q.opts, q) && jr.jaryo){
     var _cs=splitStmtMarkers(jr.q);
     if(_cs.stmts.length>=2){
       _stemQ=_cs.intro;
@@ -1528,7 +1552,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
-  resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
+  resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
 }
