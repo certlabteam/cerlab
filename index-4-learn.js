@@ -888,7 +888,11 @@ function _splitExpByMarker(text, order){
 }
 function comboStmtList(q){
   var st=parseJaryoStmts(q.q, q.jaryo);
-  if(st.length) return st;
+  // [2026-09-24 ASTRA·서트랩헤드방·OWNER 3자 논의] isComboQuestion 확인 없이 parseJaryoStmts만 보면
+  // 순서형·짝맞추기형(하이픈·화살표·콜론 등)도 진술로 뽑혀, O/X 비교(oxCompareHTML·oxAllMatch·
+  // oxWrongItems)가 실제 위젯 키('o'+i)와 다른 키('s'+글자)를 찾아 늘 스킵됐다(약점집계·SR등급·
+  // 오답학습카드도 영향). 해설 렌더링(exp-opts 블록)은 이 함수를 안 쓰고 독립 계산이라 영향 없음.
+  if(st.length && isComboQuestion(q.opts)) return st;
   if(isComboQuestion(q.opts)) return comboLettersFromOpts(q.opts).map(function(k){ return {k:k, t:''}; });
   return [];
 }
