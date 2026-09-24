@@ -228,7 +228,7 @@ function mqFlushAnsweredToWrong(){
   });
   if(changed && currentUser) saveUserData();
 }
-function mqBackHome(){ _luReviewReturn=null; const wasReview=mqInReview; var _wasDiag=(mqDiag||mqLevelTest); mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!mqLevelUp&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); if(currentUser && typeof srFlush==='function') srFlush(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); if(mqLevelUp && currentUser && typeof srFlush==='function') srFlush(); mqReview=false; mqDiag=false; mqGather=false; mqLevelUp=false; mqScreen='home'; mqList=null; if(_wasDiag && typeof goHome==='function'){ goHome(); return; } renderMCQ(); window.scrollTo(0,0); }
+function mqBackHome(){ _luReviewReturn=null; const wasReview=mqInReview; var _wasDiag=(mqDiag||mqLevelTest); mqInReview=false; mqStopTimer(); mqStopOverTimer(); if(mqScreen==='exam'&&!mqReview&&!mqDiag&&!mqLevelUp&&!wasReview){ mqFlushAnsweredToWrong(); mqSaveProgress(); if(currentUser && typeof srFlush==='function') srFlush(); } if(mqScreen==='exam'&&mqDiag) saveDiagProgress(); if(mqLevelUp && currentUser && typeof srFlush==='function') srFlush(); mqReview=false; mqDiag=false; mqGather=false; mqLevelUp=false; mqScreen='home'; mqList=null; if(_wasDiag && typeof goHome==='function'){ goHome(); return; } try{ if(mqCert) history.replaceState(null,'',location.pathname+location.search+'#'+mqCert); }catch(_){} renderMCQ(); window.scrollTo(0,0); }
 
 const IMG_PH='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const imgCache={};
