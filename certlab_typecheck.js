@@ -79,7 +79,7 @@
   function shape(q) {
     if (!opts(q).length && (q.blanks || q.exp)) return 'SA';
     var o = opts(q), qq = String((q && q.q) || '');
-    if (typeof root.isComboQuestion === 'function') { try { if (root.isComboQuestion(o)) return 'COMBO'; } catch (e) {} }
+    if (typeof root.isComboQuestion === 'function') { try { if (root.isComboQuestion(o, q)) return 'COMBO'; } catch (e) {} }
     if (isOX(o)) return 'OX';
     if (isCombo(o)) return 'COMBO';
     if (reArrow.test(o.join('')) || isOrderSeq(o) || (reOrderStem.test(qq) && o.filter(function (x) { return /[>＞<＜→\-–]/.test(x); }).length >= 2)) return 'ORDER';
