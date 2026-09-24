@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CertLab 미리보기</title>
+<title>[구버전 참고용] CertLab 미리보기</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -1805,6 +1805,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
 
 </style></head>
 <body>
+<div id="oldCopyBanner" style="background:#B00020;color:#fff;padding:10px 14px;font-size:13px;font-weight:700;line-height:1.6;text-align:center">⚠ 구버전 참고용 — index-4-learn.js 분리 이전 복제본이라 실서비스와 다릅니다(O/X 331건 패치·14자 경계 보정 미반영). 이 화면을 O/X·해설·정답카드 검수나 QC 판정 근거로 쓰지 말고, 실서비스(certlab.ai.kr)에서 확인하세요. [2026-09-25 ASTRA 지시]</div>
 <div class="wrap">
   <div class="pv-sticky">
   <div class="ctl"><label>시험 종류</label><select id="cert"><option value="appraiser">감평사·중개사·주택관리사 등 (💡 안 뜸)</option><option value="bodybuilding">생체보디빌딩 (💡 표시)</option></select><label style="margin-left:6px">예시</label><select id="sample"><option value="combo">조합형(ㄱ~ㅂ)</option><option value="opt5">보기별 해설(5지선다)</option><option value="calc">계산형(단계풀이)</option><option value="oral1">구술 무산소운동</option><option value="oral2">구술 교감·부교감</option></select><label for="jsonFile" id="fileBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0C447C;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">📁 JSON 파일 열기</label><input type="file" id="jsonFile" accept=".json,application/json,text/plain" style="display:none"><span id="fileName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span><label for="otFile" id="otBtn" style="margin-left:8px;display:inline-block;padding:6px 12px;background:#0F6E56;color:#fff;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer">🏷️ OX태그 파일</label><input type="file" id="otFile" accept=".json,application/json,text/plain" style="display:none"><span id="otName" style="margin-left:6px;font-size:11px;color:#94A3B8"></span></div>
