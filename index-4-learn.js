@@ -1555,6 +1555,19 @@ function renderMcqExam(root){
   resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
+  /* [2026-09-26] 시험이 바뀔 때 GA4 에 page_view 를 한 번 보낸다.
+     왜: 위 한 줄이 주소를 **history.replaceState 로** 바꾼다. 그것은 hashchange 를
+     일으키지 않으므로 gtag('config') 한 번으로는 **첫 진입만** 잡혔다. 학생이 어느
+     자격증을 보는지 GA4 가 몰랐다(2026-09-26 확인 — 검색 자료로도 시험별로 안 갈린다).
+     문항마다 보내지 않고 **시험이 바뀔 때만** 보낸다 — 문항마다 보내면 이벤트가 헛되게 늘고
+     「어느 시험을 보나」는 그것으로 안 달라진다. */
+  try{
+    if(typeof mqCert!=='undefined' && mqCert && window.__ga4Cert!==mqCert){
+      window.__ga4Cert = mqCert;
+      if(typeof gtag==='function') gtag('event','page_view',{
+        page_location: location.href, page_title: document.title, exam: mqCert });
+    }
+  }catch(_){}
 }
 function mqPick(qid,n){
   if(mqInReview) return;
