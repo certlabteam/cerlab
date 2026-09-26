@@ -1818,6 +1818,24 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:-apple-system,'Segoe UI',sans-
   <div class="note">· 라이브 index.html의 해설 본체 + 의존 헬퍼(조합형 파싱·verdict·oxCompare·renderMath 등)를 라인 단위로 그대로 추출(재구현 아님 → 드리프트 방지).<br>· 이미지(img://·optImg)는 Firestore 자료라 여기선 [이미지: 키] 라벨로만 보인다. '내 O/X vs 정답' 표는 사용자 입력용이라 안 나온다.<br>· 조합형은 q의 진술 마커(ㄱ.ㄴ.ㄷ…) 개수와 exp.o 개수가 같아야 진술별로 펼쳐진다(다르면 보기별/정답보기 폴백).</div>
 </div>
 <script>
+/* [2026-09-26] 조합형·판정어 함수 8개는 복사본을 두지 않고 라이브(index-4-learn.js)를 그대로 쓴다.
+   같은 함수를 부르면 검수 화면과 라이브가 갈릴 수 없다 (isComboQuestion 옛 판이 그 뿌리였다).
+   파일 전체를 script 태그로 부르면 이 화면 전용 함수(imgInner·_conceptCards 등)가 라이브 판으로 덮여 깨진다.
+   그래서 숨은 iframe 에 불러 그 안의 함수만 꺼내 쓴다 — file:// 로 열어도 되고 전용 함수는 안 덮인다.
+   꺼내 쓰는 것: isComboQuestion comboLettersFromOpts comboStmtList splitStmtMarkers _assignPairs splitVerdict verdictIsO stripRepeatedOpt */
+var __LIVE=null, __LIVE_ERR='';
+(function(){
+  try{
+    var f=document.createElement('iframe'); f.style.cssText='display:none'; f.setAttribute('aria-hidden','true');
+    f.srcdoc='<!doctype html><script src="index-4-learn.js?_='+Date.now()+'"><\/script>';
+    f.onload=function(){ __LIVE=f.contentWindow; };
+    (document.body||document.documentElement).appendChild(f);
+  }catch(e){ __LIVE_ERR=String(e&&e.message||e); }
+})();
+function __live(n){
+  if(!__LIVE||typeof __LIVE[n]!=='function') throw new Error('[preview] 라이브 함수 '+n+' 를 못 불러왔습니다 - index-4-learn.js 를 같은 폴더에서 읽을 수 있어야 합니다. '+__LIVE_ERR);
+  return __LIVE[n];
+}
 function imgInner(v){ if(!v) return ''; var k=(String(v).indexOf('img://')===0)?String(v).slice(6):v; return '<span style="display:inline-block;padding:2px 8px;background:#E2E8F0;border-radius:6px;font-size:11px;color:#64748B">[이미지: '+k+']</span>'; }
 var IMG_PH='';
 
@@ -1836,29 +1854,12 @@ const ansArr=a=>Array.isArray(a)?a:[a];
 const isCorr=(qa,sel)=>sel!==undefined&&sel!==null&&ansArr(qa).includes(sel);
 const ansLabel=a=>ansArr(a).join(', ');
 
-function splitVerdict(ex){
-  // 해설 끝의 판정어(옳다/옳지 않다 등)를 분리 → {v:판정, vc:색클래스, rest:교정문}
-  if(!ex) return {v:'', vc:'', rest:''};
-  var m=ex.match(/\s*(옳지\s*않다|옳지않다|적절하지\s*않다|적절하지않다|부적절하다|옳다|적절하다|맞다|틀리다|틀린다)\.?\s*$/);
-  if(!m) return {v:'', vc:'', rest:ex.trim()};
-  var v=m[1].replace(/\s+/g,' ');
-  // 판정어가 문장 맨앞(^)이거나 마침표 바로 뒤(=독립 판정문)일 때만 본문에서 제거.
-  // 문장에 붙은 판정어("…쓴 이 보기는 옳지 않다")는 본문에 남겨 끊김 방지(배지는 그대로 표시).
-  var before=ex.slice(0, m.index);
-  var standalone=(before===''||/[.。]\s*$/.test(before));
-  var rest=standalone ? before.replace(/[\s.·,]+$/,'').trim() : ex.trim();
-  return {v:v, vc:verdictColor(v), rest:rest};
-}
+function splitVerdict(){ return __live('splitVerdict').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 // 판정 배지 표시 문구를 표준 축(옳음/옳지 않음)으로 정규화 — 표시 전용(로직 verdictIsO는 원본 v 사용)
 function verdictLabel(v){ if(!v) return v; if(/옳지|적절하지|부적절|틀리|틀린/.test(v)) return '옳지 않음'; if(/옳다|적절하다|맞다/.test(v)) return '옳음'; return v; }
 // O/X 자가체크 → 실제 정답 판정 비교 (1단계)
 
-function verdictIsO(v){
-  if(!v) return null;
-  if(/옳다|적절하다|맞다/.test(v)) return true;
-  if(/옳지|적절하지|부적절|틀리/.test(v)) return false;
-  return null;
-}
+function verdictIsO(){ return __live('verdictIsO').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 
 function oxCompareHTML(q, oArr){
   try{
@@ -1881,26 +1882,7 @@ function oxCompareHTML(q, oArr){
   }catch(_){ return ''; }
 }
 
-function stripRepeatedOpt(exp, opt){
-  if(!exp) return '';
-  if(!opt) return exp.trim();
-  // 공백 정규화 후, 해설이 보기 문장으로 시작하면 그 반복분을 제거
-  var norm=function(s){ return String(s).replace(/\s+/g,' ').trim(); };
-  var e=norm(exp), o=norm(opt);
-  var orig=e;   // 잘라내기 취소용 원본
-  // 보기 끝의 마침표 유무 차이를 흡수
-  var oNoDot=o.replace(/[.\s]+$/,'');
-  if(e.indexOf(o)===0){ e=e.slice(o.length); }
-  else if(e.indexOf(oNoDot)===0){ e=e.slice(oNoDot.length); }
-  e=e.replace(/^[\s.·,)\]]+/,'').trim();   // 남은 앞쪽 구두점 정리
-  // 잘라낸 결과가 조사로 시작하면(보기+조사로 이어진 문장) 잘라내기 취소 → 주어 보존
-  // 예: 보기 '…전입금' + 해설 '…전입금은 재원이다' → '은 재원이다'가 되는 것을 방지
-  // 조사 뒤에 공백이 오는 경우만 조사로 판정(‘은 재원’=조사 / ‘은행’=명사 일부 → 제외)
-  if(e !== orig && /^(은|는|이|가|을|를|과|와|도|의|에|에서|으로|로|만|뿐|께|까지|부터|이나|나|이라도|라도|이라는|라는|라고|이라고|으로서|로서|으로써|로써|에게|한테)\s/.test(e)){
-    return orig;
-  }
-  return e;
-}
+function stripRepeatedOpt(){ return __live('stripRepeatedOpt').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 
 function joxToggle(btn){
   var on=btn.classList.contains('on');
@@ -1908,21 +1890,7 @@ function joxToggle(btn){
   wrap.querySelectorAll('.jox').forEach(function(b){ b.classList.remove('on'); });
   if(!on) btn.classList.add('on');
 }
-function isComboQuestion(opts){
-  // 보기들이 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ·가/나/다/라/마 조합(+구분자)으로만 이루어진 문제인지
-  if(!Array.isArray(opts) || opts.length<2) return false;
-  var markerOnly=/^[ㄱ-ㅎ가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자
-  var hasJamo=/[ㄱ-ㅎ]/, comboCnt=0, ok=0;
-  for(var i=0;i<opts.length;i++){
-    var o=String(opts[i]||'').trim();
-    if(!o) return false;
-    if(o.length>14) return false;                 // 마커 조합은 짧음(일반 서술 보기 배제)
-    if(!markerOnly.test(o)) return false;
-    if(hasJamo.test(o) || /[가나다라마바사아]/.test(o)) ok++;
-    if(o.replace(/[\s,·、ㆍ/]/g,'').length>=2) comboCnt++;  // 2글자 이상 = 조합
-  }
-  return ok===opts.length && comboCnt>=1;           // 모든 보기가 마커형 + 최소 1개는 조합
-}
+function isComboQuestion(){ return __live('isComboQuestion').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 // 조합 변형형: 보기는 일반형(서술)이나 '옳은 묶음 1개만 고르는' 유형(예 형성권으로만 연결된 것).
 // 판별 = exp.ex 내용칸이 정확히 1개 & 그 인덱스 == ans-1. 데이터에 새 필드 안 넣음.
 // 계산형 분리: 계산형은 exp.o가 정답 1칸만(oFilled<=1)·그래프 동반 → oFilled>=2 & 그래프없음으로 배제.
@@ -2151,19 +2119,7 @@ function splitJaryo(qt, explicitJaryo){
 }
 // ㄱ~ㅁ 지문 마커를 줄바꿈/인라인 모두 인식해 분리 → {intro, stmts:[{k,t}]}
 
-function splitStmtMarkers(text){
-  var s=String(text||'').replace(/<br\s*\/?>/gi,'\n');
-  var re=/(^|\s)([ㄱ-ㅎ])[.\u00B7)\]]/g, m, hits=[];
-  while((m=re.exec(s))){ hits.push({k:m[2], mAt:m.index+m[1].length, tAt:re.lastIndex}); }
-  if(!hits.length) return {intro:s.trim(), stmts:[]};
-  var intro=s.slice(0, hits[0].mAt).trim();
-  var stmts=[];
-  for(var i=0;i<hits.length;i++){
-    var end=(i+1<hits.length)?hits[i+1].mAt:s.length;
-    stmts.push({k:hits[i].k, t:s.slice(hits[i].tAt, end).replace(/\s+/g,' ').trim()});
-  }
-  return {intro:intro, stmts:stmts};
-}
+function splitStmtMarkers(){ return __live('splitStmtMarkers').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 
 // 개수형(COUNT): type==="COUNT" 또는 "몇 개"+○진술 2개↑ (index.html과 동일 로직)
 function isCountType(q){
@@ -2239,19 +2195,10 @@ function jaryoBlanksHTML(jaryoText, q){
 }
 // 보기("ㄱ, ㄴ" 등)에서 쓰인 ㄱ~ㅁ 글자를 순서대로 추출
 
-function comboLettersFromOpts(opts){
-  var order='ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ', seen={};
-  (opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ]/g)||[]).forEach(function(c){ seen[c]=1; }); });
-  return order.split('').filter(function(c){ return seen[c]; });
-}
+function comboLettersFromOpts(){ return __live('comboLettersFromOpts').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 // 조합형 지문 목록: 자료 텍스트에 지문이 있으면 그걸, 없으면(이미지형) 보기 글자로 — exp.o 순서와 1:1
 
-function comboStmtList(q){
-  var st=parseJaryoStmts(q.q, q.jaryo);
-  if(st.length) return st;
-  if(isComboQuestion(q.opts)) return comboLettersFromOpts(q.opts).map(function(k){ return {k:k, t:''}; });
-  return [];
-}
+function comboStmtList(){ return __live('comboStmtList').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 
 var mqCert='appraiser';
 // ===== 구술(ORAL) 렌더 — 라이브 index.html의 buildMnemonic/buildLearnPanel verbatim 이식 =====
@@ -2371,7 +2318,7 @@ function renderQuestionBlock(q){
   // [FIX②] 표(explicit jaryo)+조합형: 진술이 발문(jr.q)에 남아 있으면 스템에서 떼어
   //        별도 .jaryo 블록으로 렌더하고 진술별 O/X 버튼을 붙인다.
   var _stemQ=jr.q, _comboJaryoHTML='';
-  if(isComboQuestion(q.opts||[]) && jr.jaryo){
+  if(isComboQuestion(q.opts||[], q) && jr.jaryo){
     var _cs=splitStmtMarkers(jr.q);
     if(_cs.stmts.length>=2){
       _stemQ=_cs.intro;
@@ -2394,7 +2341,7 @@ function renderQuestionBlock(q){
     }
   }
   var ansN=Array.isArray(q.ans)?q.ans:[q.ans];
-  var _isCombo=isComboQuestion(q.opts||[]);
+  var _isCombo=isComboQuestion(q.opts||[], q);
   var optHTML=(q.opts||[]).map(function(op,i){
     var n=i+1;
     var isAns=ansN.indexOf(n)>=0;
@@ -2422,7 +2369,7 @@ function renderQuestionBlock(q){
     if(jp.stmts && jp.stmts.length>=2){
       jaryoHTML='<div class="jaryo">'
         + (jp.intro?'<div style="margin-bottom:6px">'+rm(jp.intro,q)+'</div>':'')
-        + jp.stmts.map(function(st,idx){ var ox=(isComboQuestion(q.opts||[])||_tfAssign(q))?'<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>':''; var chip=isComboQuestion(q.opts||[])?otChips(q.id,idx):''; return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span>'+ox+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>'; }).join('')
+        + jp.stmts.map(function(st,idx){ var ox=(isComboQuestion(q.opts||[], q)||_tfAssign(q))?'<span class="jr-ox"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>':''; var chip=isComboQuestion(q.opts||[], q)?otChips(q.id,idx):''; return '<div class="jr-stmt"><span class="jr-stmt-t">'+st.k+'. '+rm(st.t,q)+'</span>'+ox+(chip?'<div class="ot-row">'+chip+'</div>':'')+'</div>'; }).join('')
         + '</div>';
     } else if((jr.jaryo.match(/\u25CB/g)||[]).length>=2){
       // ○로 구분된 자료: 항목마다 줄내림(hanging). 첫 ○ 앞은 intro.
@@ -2442,19 +2389,7 @@ function renderQuestionBlock(q){
     '<div class="qcard">'+tpSwap(jaryoHTML,q.id)+_comboJaryoHTML+(q.img?'<div class="qimg">'+imgInner(q.img)+'</div>':'')+'<div class="opts">'+optHTML+'</div></div>';
 }
 // ===== 배정형(참거짓 ㄱㄴㄷㄹ / 매칭 ㉠㉡㉢㉣): 정답 선지·정답칸을 마커별로 =====
-function _assignPairs(q){
-  var opts=q.opts||[]; var ans=Array.isArray(q.ans)?q.ans[0]:q.ans; if(!ans) return null;
-  var opt=opts[ans-1]; if(!opt) return null;
-  if(isComboQuestion(opts)) return null;              // 순수 조합형은 기존 처리
-  var parts=String(opt).split('/'); if(parts.length<2) return null;
-  var out=[];
-  for(var i=0;i<parts.length;i++){
-    var m=parts[i].trim().match(/^([\u3131-\u314E\u3260-\u326D])\s*(.+)$/);
-    if(!m) return null;                               // 모든 조각이 마커로 시작해야 배정형
-    out.push({k:m[1], v:m[2].trim()});
-  }
-  return out;
-}
+function _assignPairs(){ return __live('_assignPairs').apply(null, arguments); }   /* 라이브 것을 그대로 부른다 */
 function _tfAssign(q){ var ap=_assignPairs(q); if(!ap) return null; return ap.every(function(p){ return /^(참|거짓|옳음|옳지\s*않음|옳지않음|맞다|틀리다|틀린다)/.test(p.v); }) ? ap : null; }
 function _splitExpByMarker(text, order){               // 정답칸 해설을 마커 순서대로 분리
   var s=String(text||''); if(!s||!order||order.length<2) return null;
@@ -2492,7 +2427,7 @@ function renderExpFull(q, mqCertVal){
     const oFilled=oArr.filter(Boolean).length;
     var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false) ? false : (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
     if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+rm(q.exp.s,q)+'</div>';
-    var isCombo=isComboQuestion(q.opts);
+    var isCombo=isComboQuestion(q.opts, q);
     var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
@@ -2720,7 +2655,7 @@ function detectRenderType(q){
   var oArr=(q.exp && q.exp.o) || [];
   var oFilled=oArr.filter(Boolean).length;
   if(isCountType(q)) return '개수형(COUNT · ○진술 '+splitCountStmts(q.q||'').stmts.length+'개)';
-  var isCombo=isComboQuestion(q.opts||[]);
+  var isCombo=isComboQuestion(q.opts||[], q);
   var stmts=isCombo ? parseJaryoStmts(q.q||'', q.jaryo) : [];
   if(isCombo && stmts.length>0 && stmts.length===oFilled) return '조합형(진술 펼침)';
   if(isCombo && stmts.length>0 && stmts.length!==oFilled) return '일반형(보기별) ※조합 인식 실패';
@@ -2764,7 +2699,7 @@ function showTypeBadge(q){
       var _pc=_opts.filter(function(o){ return _pairRe.test(String(o||'')); }).length;
       var _shape=_opts.length>=2 && _pc>=Math.max(2, Math.ceil(_opts.length*0.6));
       var _isPair=(typeof parseBlankStmts==='function') && parseBlankStmts(q.q||'').length>=2;
-      if(_shape && !isComboQuestion(_opts) && !_isPair){
+      if(_shape && !isComboQuestion(_opts, q) && !_isPair){
         rows+='<span style="padding:3px 9px;border-radius:7px;background:#FBF1E6;color:#92600A;font-weight:800">⚠️ 연결/빈칸 매칭형으로 보임 — CV(조합형 변형) 검토</span>';
       }
     }
