@@ -5168,7 +5168,7 @@ function renderMcqExam(root){
       body+='<div class="exp-opts">'+oArr.map(function(t,i){
         if(!t) return '';
         var isAns=ansN.includes(i+1);
-        if(fbCombo && !isAns) return '';                  // 폴백: 콤보 파싱 실패 → 정답 보기만
+        if(fbCombo && !isAns && oArr.length !== (q.opts||[]).length) return '';   // 폴백: 콤보 파싱 실패 → 정답 보기만. 단 o 칸 수 = 보기 수면 보기별로 쓴 해설이라 다 보인다 [2026-09-26]
         var ex=stripRepeatedOpt(t, q.opts&&q.opts[i]);
         var sv=splitVerdict(ex);
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
