@@ -583,7 +583,7 @@ function tpPrepQ(q){ try{ if(!q||!q.id||!TP_MAP[q.id]) return q&&q.q; var m=TP_M
     var re=_tpRegionRe(m.region); if(re.test(str)) return str.replace(re,_TP_SENT);
     return str; }catch(e){ return q&&q.q; } }
 function tpSwap(html,qid){ try{ if(!qid||!TP_MAP[qid]) return html; var h=String(html==null?"":html);
-    if(h.indexOf(_TP_SENT)<0) return html; return h.replace(_TP_SENT, "<div class=\"qtbl-wrap\">"+TP_MAP[qid].html+"</div>"); }catch(e){ return html; } }
+    if(h.indexOf(_TP_SENT)<0) return html; try{ if(typeof itvEnsureCSS==='function') itvEnsureCSS(); }catch(_e){}   /* [2026-09-26] .qtbl 규칙은 itvEnsureCSS 안에만 있어 인터랙티브가 안 그려진 화면에는 표 스타일이 없었다 — 표를 끼울 때 한 번 주입(idempotent) */ return h.replace(_TP_SENT, "<div class=\"qtbl-wrap\">"+TP_MAP[qid].html+"</div>"); }catch(e){ return html; } }
 function stemHTML(html){
   // 순수 산문 스템만 문장(…다.) 단위로 단락 분리. ○/ㄱㄴㄷ 조합·자료형, 1문장은 기존 그대로.
   if(!html) return html;
