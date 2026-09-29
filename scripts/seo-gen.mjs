@@ -37,10 +37,41 @@ const firebaseConfig = {
   appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
 
+/* ★ [2026-09-29] **안 바뀜 파일은 안 쓴다.**
+ * 앞서는 날마다 772쪽을 다 덮어써
+ * git 이 전부 바뀐 것으로 보았고,
+ * sitemap 의 lastmod 도 전부 그날로 바뀌었다.
+ * 바뀐 쪽을 여기서 모아 sitemap 에 넘긴다. */
+const 바뀐것 = new Set();
+
 function write(rel, text) {
   const abs = path.join(ROOT, rel);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
+  let 옛 = null;
+  // ★ ENOENT(파일 없음)만 삼킨다. 권한·I/O 오류까지 「새 파일」로 보면
+  //   내용이 멀쩡한 파일을 덮어쓰고 sitemap 날짜까지 올린다 (GPT 검수 지적).
+  try { 옛 = fs.readFileSync(abs, 'utf8'); }
+  catch (e) { if (e.code !== 'ENOENT') throw e; }
+  if (옛 === text) return false;          // 그대로면 손대지 않는다
   fs.writeFileSync(abs, text, 'utf8');   // LF 그대로 (저장소의 기존 seo/ 파일과 동일)
+  바뀐것.add(rel);
+  return true;
+}
+
+/* 지금 저장소에 있는 sitemap.xml 에서 주소별 lastmod 를 읽어 둔다.
+ * 내용이 안 바뀐 쪽은 이 날짜를 그대로 쓴다. */
+function 옛사이트맵날짜() {
+  try {
+    const x = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+    const 맵 = {};
+    const re = /<url>\s*<loc>([^<]+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g;
+    let m;
+    while ((m = re.exec(x))) 맵[m[1]] = m[2];
+    return 맵;
+  } catch (e) {
+    if (e.code === 'ENOENT') return {};   // 첫 실행 — 사이트맵이 아직 없다
+    throw e;                              // 그 밖의 읽기 오류는 숨기지 않는다
+  }
 }
 
 async function main() {
@@ -135,7 +166,17 @@ async function main() {
     .concat(files.map(f => 'https://certlab.ai.kr/seo/' + f));
   /* 허브는 쪽 목록만 보고 자격증을 센다. 자격증 허브 주소는 빼고 넘긴다. */
   write('seo/index.html', seoHub(['https://certlab.ai.kr/seo/index.html'].concat(files.map(f => 'https://certlab.ai.kr/seo/' + f)), SEO_LABELS));
-  write('sitemap.xml', seoSitemap(urls, today));
+  /* ★ 바뀐 쪽만 오늘 날짜를 준다.
+   * 이 줄이 도는 시점에는 seo/*.html 이 다
+   * 쓰였으므로 바뀐것 이 채워져 있다. */
+  const 옛날짜 = 옛사이트맵날짜();
+  for (const rel of 바뀐것) {
+    if (rel.startsWith('seo/')) delete 옛날짜['https://certlab.ai.kr/' + rel];
+  }
+  const 사이트맵 = seoSitemap(urls, today, 옛날짜);
+  write('sitemap.xml', 사이트맵);
+  const 오늘수 = (사이트맵.match(new RegExp('<lastmod>' + today + '</lastmod>', 'g')) || []).length;
+  console.log('  sitemap     : ' + urls.length + '쪽 중 ' + 오늘수 + '쪽만 오늘 날짜 (나머지는 그대로)');
   write('robots.txt', seoRobots());
   write('llms.txt', seoLlms(urls));
 
