@@ -169,9 +169,28 @@ function clApplyUnlock(ent){
   });
   return ent;
 }
+/* [2026-10-12] 무료 사용 기록(하루 한도·결제팝업 집계·체험 횟수)은 users.usage.<cert> 에 쓴다.
+ * entitlements 는 결제·이용권 칸이라 규칙 잠금 뒤 브라우저가 못 쓴다. 옛 기록은 entitlements 에 남아 있으므로
+ * 읽을 때 둘을 합쳐 userEnt[cert] 하나로 본다 — 횟수는 큰 쪽, 날짜는 늦은 쪽. */
+function _usageOverlay(ent, usage){
+  if(!ent || !usage || typeof usage!=='object') return ent;
+  Object.keys(usage).forEach(function(c){
+    var u=usage[c]; if(!u || typeof u!=='object') return;
+    if(!ent[c]) ent[c]={plan:'FREE_TRIAL',trialCount:0,expireAt:null,planDays:null};
+    var e=ent[c];
+    if(u.trialCount!=null) e.trialCount=Math.max(e.trialCount||0, u.trialCount||0);
+    if(u.payViewTotal!=null) e.payViewTotal=Math.max(e.payViewTotal||0, u.payViewTotal||0);
+    if(u.payViewDate && (!e.payViewDate || u.payViewDate>=e.payViewDate)) e.payViewDate=u.payViewDate;
+    if(u.dayDate && (!e.dayDate || u.dayDate>=e.dayDate)){
+      e.dayCount = (u.dayDate===e.dayDate) ? Math.max(e.dayCount||0, u.dayCount||0) : (u.dayCount||0);
+      e.dayDate = u.dayDate;
+    }
+  });
+  return ent;
+}
 function _userDayCount(cert){ var e=userEnt[cert]||{}; return (e.dayDate===_todayKST())?(e.dayCount||0):0; }
 function _userDayBump(cert){ var e=userEnt[cert]; if(!e) return; if(e.dayDate!==_todayKST()){ e.dayDate=_todayKST(); e.dayCount=0; } e.dayCount=(e.dayCount||0)+1; saveDailyCount(cert); }
-async function saveDailyCount(cert){ if(!currentUser||!userEnt[cert]) return; try{ await db.collection('users').doc(currentUser.uid).update({ ['entitlements.'+cert+'.dayDate']:userEnt[cert].dayDate, ['entitlements.'+cert+'.dayCount']:userEnt[cert].dayCount }); }catch(e){ console.error('일일카운트 저장 오류:', e); } }
+async function saveDailyCount(cert){ if(!currentUser||!userEnt[cert]) return; try{ await db.collection('users').doc(currentUser.uid).update({ ['usage.'+cert+'.dayDate']:userEnt[cert].dayDate, ['usage.'+cert+'.dayCount']:userEnt[cert].dayCount }); }catch(e){ console.error('일일카운트 저장 오류:', e); } }
 // ===== Elo 반영 게이트: 문제당 하루 1회만 (해설 먼저 본 문제는 차단이 아니라 '오답'으로 반영 → mqPick에서 처리) =====
 function _eloPruneToday(m){ if(!m) return; var t=_todayKST(); for(var k in m){ if(m[k]!==t) delete m[k]; } }
 function _eloCanApply(cert,q){ try{ if(typeof eloState==='undefined'||!eloState) return true; var id=q&&q.id; if(!id) return true; var k=cert+'|'+id;
@@ -277,50 +296,33 @@ async function loadUserPlan(user) {
     const ref = db.collection('users').doc(user.uid);
     const doc = await ref.get();
     if (!doc.exists) {
-      // 신규 회원: 시험별 무료체험으로 시작
-      const ent = {}; ALL_CERTS.forEach(c=>ent[c]={plan:'FREE_TRIAL',trialCount:0,expireAt:null,planDays:null});
-      const now = Date.now();
-      const refCode = genReferralCode(user.uid);
+      /* [2026-10-12] 신규 회원: 문서는 서버(initializeMember)가 만든다 — 가입 포인트·추천코드도 서버가 정한다.
+       * 브라우저가 users 를 직접 만들면 지우고 다시 만들어 가입 포인트를 거듭 받을 수 있어서 규칙으로 막았다.
+       * 추천코드로 들어왔으면 bindReferral 로 잇는다(추천 포인트는 양쪽 모두 서버가 준다). */
+      if (!fbFunctions) throw new Error('functions 준비 안 됨');
       let referredBy = null;
-      try { const pr = localStorage.getItem('pendingRef'); if (pr && pr !== refCode) referredBy = pr; } catch(_){}
-      // 가입 보너스 1,000P(1년). 추천코드로 들어왔으면 추천 가입 보너스 1,000P 추가(=합 2,000P)
-      const lots = [ {a:1000, t:'signup', at:now, exp:now+365*MILE_DAY} ];
-      const mhist = [ {t:'signup', a:1000, at:now} ];
+      try { const pr = localStorage.getItem('pendingRef'); if (pr) referredBy = pr; } catch(_){}
+      await fbFunctions.httpsCallable('initializeMember')({ requestId:_newRequestId(),
+        signupCert:(typeof activeCert!=='undefined' ? (activeCert||null) : null) });
+      let refBonus = 0;
       if (referredBy) {
-        lots.push({a:1000, t:'ref_join', at:now, exp:now+365*MILE_DAY});
-        mhist.push({t:'ref_join', a:1000, at:now});
+        try {
+          const br = await fbFunctions.httpsCallable('bindReferral')({ requestId:_newRequestId(), code:referredBy });
+          if (br && br.data && br.data.joinPointsGranted) refBonus = 1000;
+        } catch(e) { console.warn('추천 연결 안 됨:', e && e.message); }
       }
-      await ref.set({
-        email: user.email, displayName: user.displayName, photoURL: user.photoURL,
-        plan: 'FREE_TRIAL', trialCount: 0,        // 레거시 미러(관리자 호환)
-        entitlements: ent,
-        signupCert: (typeof activeCert!=='undefined' ? (activeCert||null) : null),  // 가입 시점에 보던 시험
-        referralCode: refCode,
-        referredBy: referredBy || null,
-        mileageLots: lots,
-        mileageHistory: mhist,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      try { localStorage.removeItem('pendingRef'); } catch(_){}
       // 신규 가입 확정 시점(로그인 경로 무관) → Meta CompleteRegistration
       try { clTrack('CompleteRegistration', { content_name:'signup', content_category:(typeof activeCert!=='undefined'?(activeCert||''):''), status:true }); } catch(_){}
       // 같은 지점 → Google Ads 전환(회원가입). 신규 가입에만 1회 발화
       try { if (typeof gtag === 'function') gtag('event','conversion',{ 'send_to':'AW-18199166773/5qIECPuRk9scELX-hOZD', 'value':1.0, 'currency':'KRW' }); } catch(_){}
-      myReferralCode = refCode; myMileageLots = lots;
+      const nd = (await ref.get()).data() || {};
+      const ent = nd.entitlements || {};
+      ALL_CERTS.forEach(c=>{ if(!ent[c]) ent[c]={plan:'FREE_TRIAL',trialCount:0,expireAt:null,planDays:null}; });
+      myReferralCode = nd.referralCode || null;
+      myMileageLots = Array.isArray(nd.mileageLots) ? nd.mileageLots : [];
       // 추천받아 가입했으면 환영 모달로 보너스 안내
-      if (referredBy && typeof showPtModal==='function') { setTimeout(function(){ showPtModal('referral', 1000); }, 1200); }
-      // 추천 기록(추천인 정산용) — 추천코드로 들어온 경우만
-      if (referredBy) {
-        try {
-          await db.collection('referrals').doc(user.uid).set({
-            refereeUid: user.uid, refereeEmail: user.email || null,
-            referrerCode: referredBy, paid: false,
-            signupSettled: false, paidSettled: false,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        } catch(_){}
-      }
-      try { localStorage.removeItem('pendingRef'); } catch(_){}
+      if (refBonus && typeof showPtModal==='function') { setTimeout(function(){ showPtModal('referral', refBonus); }, 1200); }
       window._aiCredits = { grade:0, explain:0 };
       window._aiCreditLots = { grade:[], explain:[] };
       userJoinedAt = { seconds: Math.floor(Date.now()/1000) };   // 방금 만든 문서 = 오늘 가입 → 첫날 몰아주기
@@ -366,6 +368,7 @@ async function loadUserPlan(user) {
     }
     window._aiCreditLots = { grade: _aiWalletLots(data, 'grade'), explain: _aiWalletLots(data, 'explain') };
     window._aiCredits = { grade: _aiCreditBalance(window._aiCreditLots.grade), explain: _aiCreditBalance(window._aiCreditLots.explain) };
+    _usageOverlay(ent, data.usage);
     userEnt = clApplyUnlock(ent); syncPlanMirror(); updateAuthBar(); loadUserData();
     // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
     myReferralCode = data.referralCode || null;
@@ -374,7 +377,7 @@ async function loadUserPlan(user) {
       myReferralCode = genReferralCode(user.uid);
       try { await ref.update({ referralCode: myReferralCode }); } catch(_){}
     }
-    settleReferralMileage(ref, data).catch(()=>{});
+    // settleReferralMileage — 2026-10-12 뺐다. 추천 포인트는 bindReferral 이 서버에서 양쪽에 준다
     try { await ref.update({ lastLoginAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch(_){}
   } catch(e) {
     console.error('플랜 로드 오류:', e);
@@ -1353,7 +1356,7 @@ function _payViewLog(){
     var cert=activeCertId(); var e=userEnt&&userEnt[cert]; if(!e) return;
     var t=_todayKST(); if(e.payViewDate===t) return;
     e.payViewDate=t; e.payViewTotal=(e.payViewTotal||0)+1;
-    var u={}; u['entitlements.'+cert+'.payViewDate']=t; u['entitlements.'+cert+'.payViewTotal']=e.payViewTotal;
+    var u={}; u['usage.'+cert+'.payViewDate']=t; u['usage.'+cert+'.payViewTotal']=e.payViewTotal;
     db.collection('users').doc(currentUser.uid).update(u).catch(function(){});
   }catch(_){}
 }
@@ -1910,8 +1913,7 @@ async function saveTrialCount(cert) {
   if (!currentUser) return;
   cert = cert || activeCertId();
   try {
-    const upd = { ['entitlements.'+cert+'.trialCount']: userEnt[cert].trialCount };
-    if (cert === 'bodybuilding') upd.trialCount = userEnt.bodybuilding.trialCount; // 레거시 미러
+    const upd = { ['usage.'+cert+'.trialCount']: userEnt[cert].trialCount };
     await db.collection('users').doc(currentUser.uid).update(upd);
   } catch(e) { console.error('trialCount 저장 오류:', e); }
 }
@@ -1923,74 +1925,27 @@ async function applyDiscount() {
   const msgEl = document.getElementById('discountMsg');
   if (!code) return;
   msgEl.style.display = 'none';
+  /* [2026-10-12] 확인·사용 처리·이용권 지급·결제 기록을 서버(redeemDiscountCode)가 한 트랜잭션으로 한다.
+   * 브라우저가 하던 때는 코드 used 표시와 이용권 지급이 따로 돌아, 둘이 동시에 쓰면 둘 다 받을 수 있었다. */
+  const cert = activeCertId();
   try {
-    const ref = db.collection('discountCodes').doc(code);
-    const doc = await ref.get();
-    if (!doc.exists || doc.data().used) {
-      msgEl.className = 'discount-msg error';
-      msgEl.textContent = '유효하지 않거나 이미 사용된 코드입니다.';
-      msgEl.style.display = 'block';
-      return;
-    }
-    const data = doc.data();
-    const cert = activeCertId();
-    // 코드에 certType이 지정돼 있으면 해당 시험에서만 사용 가능 (없으면 현재 시험에 적용)
-    if (data.certType && data.certType !== cert) {
-      const need = data.certType === 'appraiser' ? '감정평가사' : '스포츠지도사 실기·구술';
-      msgEl.className = 'discount-msg error';
-      msgEl.textContent = `이 코드는 ${need} 전용입니다. 해당 시험에서 사용해주세요.`;
-      msgEl.style.display = 'block';
-      return;
-    }
-    const expireAt = new Date();
-    expireAt.setDate(expireAt.getDate() + (data.days || 7));
-    // 코드 사용 처리
-    await ref.update({
-      used: true,
-      usedBy: currentUser.uid,
-      usedByEmail: currentUser.email,
-      usedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    // 유저 플랜 활성화 (현재 보고 있는 시험에 적용)
-    const upd = {
-      ['entitlements.'+cert+'.plan']: 'ACTIVE',
-      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
-      ['entitlements.'+cert+'.planDays']: data.days || 7
-    };
-    if (cert === 'bodybuilding') { // 레거시 미러
-      upd.plan = 'ACTIVE';
-      upd.expireAt = firebase.firestore.Timestamp.fromDate(expireAt);
-      upd.planDays = data.days || 7;
-    }
-    await db.collection('users').doc(currentUser.uid).update(upd);
-    userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = data.days || 7;
-    // 결제 기록 남기기(회원권 관리·마이페이지 결제내역 표시용) — 쿠폰은 0원
-    try {
-      await db.collection('payments').add({
-        uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
-        depositorName: '(할인코드)',
-        certType: cert, certName: certFull(cert),
-        planDays: data.days || 7,
-        price: 0,
-        mileageUsed: 0,
-        depositAmount: 0,
-        discountCode: code,
-        paidByCoupon: true,
-        status: 'auto_approved', autoApproved: true,
-        paidByMileageOnly: false,
-        approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    } catch(_) {}
+    if (!fbFunctions) throw new Error('functions 준비 안 됨');
+    const r = await fbFunctions.httpsCallable('redeemDiscountCode')({ requestId:_newRequestId(), code:code, examId:cert });
+    const d = (r && r.data) || {};
+    const expireAt = d.expireAt ? new Date(d.expireAt) : null;
+    const nd = (await db.collection('users').doc(currentUser.uid).get()).data() || {};
+    const se = (nd.entitlements || {})[cert] || {};
+    userEnt[cert] = Object.assign(userEnt[cert] || {}, { plan: se.plan || 'ACTIVE', expireAt: se.expireAt || expireAt, planDays: se.planDays || null });
     syncPlanMirror();
     updateAuthBar();
     hidePlanPopup();
     msgEl.style.display = 'none';
-    alert('이용권이 적용되었습니다! 만료일: ' + expireAt.toLocaleDateString('ko-KR'));
+    alert('이용권이 적용되었습니다!' + (expireAt ? ' 만료일: ' + expireAt.toLocaleDateString('ko-KR') : ''));
     refresh();
   } catch(e) {
     msgEl.className = 'discount-msg error';
-    msgEl.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+    // 서버가 돌려준 까닭(없는 코드·이미 사용·다른 시험 전용·기간 지남)을 그대로 보여 준다
+    msgEl.textContent = (e && e.message && !/internal|INTERNAL/.test(e.message)) ? e.message : '오류가 발생했습니다. 다시 시도해주세요.';
     msgEl.style.display = 'block';
   }
 }
