@@ -1206,3 +1206,16 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .bb-dock .bb-dock-main span{color:#E6F1FB}
 #bodybuildingView.bbfs-1 .card-text{font-size:21px!important}
 #bodybuildingView.bbfs-2 .card-text{font-size:25px!important}
+
+/* ===== 해설 접기 (2026-10-12 · 그록 UI/UX 안 ③) ===== */
+.exp-foldbar{display:flex;justify-content:flex-end;margin:8px 0 2px}
+.exp-foldbar button{border:1px solid var(--line);background:#fff;color:#185FA5;font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:20px;cursor:pointer}
+.eo-fold>.eo-q{cursor:pointer;position:relative;padding-right:24px}
+.eo-fold>.eo-q::after{content:'\25BE';position:absolute;right:4px;top:1px;color:#94A3B8;font-size:13px}
+.eo-fold.eo-shut>.eo-q::after{content:'\25B8'}
+.eo-shut>.eo-a,.eo-shut>.eo-ex{display:none}
+.cb-fold>.concept-ti{cursor:pointer}
+.cb-fold>.concept-ti::after{content:'  \25BE 접기';font-weight:600;color:#94A3B8;font-size:11.5px}
+.cb-shut>.concept-ti{margin-bottom:0}
+.cb-shut>.concept-ti::after{content:'  \25B8 펼치기'}
+.cb-shut>*:not(.concept-ti){display:none}

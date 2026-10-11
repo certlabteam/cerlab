@@ -1270,6 +1270,47 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     expHTML+'</div>';
   resolveImages(root); if(typeof fmtJaryo==='function') fmtJaryo(root);
 }
+/* [2026-10-12] 해설 접기 — 그록 UI/UX 안 ③ 「핵심 먼저 · 자세히는 펼치기」 (크리스 고름)
+ * 맨 위 해설 요약(정답·한 단락)은 그대로 둔다. 보기별 해설은 정답 보기와 내가 고른 보기만 펼치고 나머지는 제목 줄만 남긴다.
+ * 개념설명도 접는다. 암기코드·표는 짧은 정리라 그대로. 「모두 펼치기」를 누르면 기억한다(localStorage expAll).
+ * 해설을 만드는 갈래(일반 보기·ㄱㄴㄷ·빈칸·조합·계산)가 여럿이라 갈래마다 고치지 않고, 그린 뒤 화면에서 접는다.
+ * 번호(「3.」)로 시작하는 보기 칸만 접는다 — ㄱㄴㄷ 진술 칸은 하나하나가 판정 근거라 그대로 펼친다. */
+function expFoldAll(){ try{ return localStorage.getItem('expAll') === '1'; }catch(_){ return false; } }
+function expFold(root, q){
+  try{
+    var exp = root.querySelector('.exp'); if(!exp || !q) return;
+    var all = expFoldAll();
+    var s = (typeof mqAns !== 'undefined') ? mqAns[q.id] : null;
+    var picked = (Array.isArray(s) ? s : ((s != null && s !== '') ? [s] : [])).map(Number);
+    var n = 0;
+    exp.querySelectorAll('.exp-opts > .eo').forEach(function(eo){
+      var hd = eo.querySelector(':scope > .eo-q'); if(!hd) return;
+      if(!eo.querySelector(':scope > .eo-a, :scope > .eo-ex')) return;
+      var m = /^\s*(\d+)\./.exec(hd.textContent || ''); if(!m) return;
+      if(hd.querySelector('.eo-badge') || picked.indexOf(+m[1]) >= 0) return;
+      n++;
+      eo.classList.add('eo-fold'); if(!all) eo.classList.add('eo-shut');
+      hd.addEventListener('click', function(){ eo.classList.toggle('eo-shut'); });
+    });
+    exp.querySelectorAll('.concept-box').forEach(function(cb){
+      var ti = cb.querySelector('.concept-ti'); if(!ti) return;
+      n++;
+      cb.classList.add('cb-fold'); if(!all) cb.classList.add('cb-shut');
+      ti.addEventListener('click', function(){ cb.classList.toggle('cb-shut'); });
+    });
+    if(!n) return;
+    var bar = document.createElement('div'); bar.className = 'exp-foldbar';
+    bar.innerHTML = '<button type="button">' + (all ? '▴ 핵심만 보기' : '▾ 모두 펼치기') + '</button>';
+    bar.querySelector('button').onclick = function(){
+      try{ localStorage.setItem('expAll', all ? '0' : '1'); }catch(_){}
+      exp.querySelectorAll('.eo-fold').forEach(function(e){ e.classList.toggle('eo-shut', all); });
+      exp.querySelectorAll('.cb-fold').forEach(function(e){ e.classList.toggle('cb-shut', all); });
+      all = !all; this.textContent = all ? '▴ 핵심만 보기' : '▾ 모두 펼치기';
+    };
+    var first = exp.querySelector('.exp-opts');
+    if(first) first.parentNode.insertBefore(bar, first); else exp.appendChild(bar);
+  }catch(e){ console.warn('expFold', e); }
+}
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
@@ -1560,6 +1601,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
+  expFold(root, q);   // 해설 접기(위 함수 머리글)
   resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
