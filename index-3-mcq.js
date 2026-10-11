@@ -214,6 +214,13 @@ function renderMCQ(){
   if(mqScreen==='luhist') return renderLuHist(root);
   return renderMcqHome(root);
 }
+/* 「오늘 할 일」 단추 — 회차는 들어올 때 다시 정렬돼 번호가 바뀐다(index-5-shell.js sets.sort). 그래서 이름으로 찾아 연다 */
+function mqTodoGo(id, enc, mode){
+  var s=curQB()[id]; if(!s) return; var lb=decodeURIComponent(enc);
+  var j=s.sets.findIndex(function(st){ return st.label===lb; });
+  if(j<0){ renderMCQ(); return; }
+  if(mode==='resume') resumeMcqExam(id,j); else startMcqExam(id,j,'all');
+}
 function renderMcqHome(root){
   let html='';
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name) || (_isSubjCert(mqCert)?certLabel(mqCert):'') || '';
@@ -226,7 +233,22 @@ function renderMcqHome(root){
   const dueAll=srDueReviewable(mqCert);
   const due=Math.min(dueAll, REVIEW_MCQ_CAP);
   const _dueSub = dueAll>REVIEW_MCQ_CAP ? ('급한 순 '+REVIEW_MCQ_CAP+'개 먼저 · 나머지는 다음에') : '틀렸거나 복습일이 된 문제';
-  html+='<div class="sr-banner" onclick="startMcqReview()"><div class="sr-banner-l"><b>오늘 복습 '+due+'개</b><span class="sr-exam">'+_dueSub+'</span></div><div class="sr-banner-go">복습 시작 →</div></div>';
+  /* [2026-10-12] 「오늘 할 일」 — 그록 UI/UX 안 ① (크리스 고름). 복습할 것이 없을 때 「오늘 복습 0개」가 자리만 차지했다.
+   * 가장 먼저 할 일 하나를 큰 단추로: ① 복습할 문제 → ② 풀다 만 회차 이어 풀기 → ③ 안 푼 문제가 남은 첫 회차.
+   * 주관식(2차)은 회차 구조가 달라 예전처럼 복습만 보인다. 클래스 sr-banner 는 그대로 — 말풍선 안내(tour.js)가 이것을 짚는다. */
+  var _todo=(function(){
+    var rv={t:'오늘 복습 '+due+'개', s:_dueSub, go:'startMcqReview()', b:'복습 시작 →'};
+    if(due>0 || _isSubjCert(mqCert)) return rv;
+    var ord=curOrder(), qb=curQB(), i, j, sb;
+    for(i=0;i<ord.length;i++){ sb=qb[ord[i]]; if(!sb) continue;
+      for(j=0;j<sb.sets.length;j++){ if(mqLoadProgress(ord[i],j)) return {t:'이어 풀기', s:sb.name+' · '+sb.sets[j].label, go:"mqTodoGo('"+ord[i]+"','"+encodeURIComponent(sb.sets[j].label)+"','resume')", b:'이어 풀기 →'}; } }
+    for(i=0;i<ord.length;i++){ sb=qb[ord[i]]; if(!sb) continue;
+      for(j=0;j<sb.sets.length;j++){ var _qs=sb.sets[j].questions||[];
+        if(_qs.length && _qs.some(function(x){ return srMasteryK(mqCert,x.id)==='new'; }))
+          return {t:'다음 회차 풀기', s:sb.name+' · '+sb.sets[j].label, go:"mqTodoGo('"+ord[i]+"','"+encodeURIComponent(sb.sets[j].label)+"','all')", b:'풀기 시작 →'}; } }
+    return rv;
+  })();
+  html+='<div class="sr-banner" onclick="'+_todo.go+'"><div class="sr-banner-l"><b>'+mqEsc(_todo.t)+'</b><span class="sr-exam">'+mqEsc(_todo.s)+'</span></div><div class="sr-banner-go">'+_todo.b+'</div></div>';
   // ▼ 약점개념카드 보류: exp.c가 문항 단위라 OX(진술 단위)·정답오답으로 집계 시 무관한 개념까지 잡힘.
   //   데이터방이 진술별 개념 태그를 붙인 뒤 재개. 재개 시 아래 false→mqWeakCache.length 로 복원.
   mqWeakCache=[];
