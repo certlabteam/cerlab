@@ -318,6 +318,7 @@ async function enterCert(id, noGate){
   document.getElementById('homeView').classList.add('hidden');
   var _hd2=document.querySelector('.header'); if(_hd2) _hd2.classList.add('hidden');
   document.getElementById('certSwitch').classList.remove('hidden');
+  try{ if(typeof clTourFor==='function') clTourFor(id); }catch(_){}   // 처음 쓰는 사람에게 버튼 말풍선 안내(tour.js · 기기당 한 번)
   // 뷰 전환 먼저(사용자가 로딩을 보게)
   if(id === 'bodybuilding'){
     document.getElementById('bodybuildingView').classList.remove('hidden');
