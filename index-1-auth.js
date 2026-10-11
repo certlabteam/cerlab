@@ -733,6 +733,16 @@ function toggleEmailAuth(){
   box.classList.toggle('hidden');
   if(!box.classList.contains('hidden')){ var id=document.getElementById('emailAuthId'); if(id) id.focus(); }
 }
+/* ★ [2026-10-12 크리스] 결제 전 환불 고지를 접는다 — 『이거 다 펼쳐놓지말고 우측 더보기 텍스트버튼 넣어』
+   고지가 화면을 덮어 아래 포인트·결제 단추가 안 보였다. 첫 줄만 두고 나머지를 접는다.
+   ⚠ 고지 자체는 지우지 않는다 — 결제 전에 보여야 하는 글이다. */
+function toggleRefundNotice(){
+  var m=document.getElementById('refundMore'), b=document.getElementById('refundMoreBtn');
+  if(!m||!b) return;
+  var 펼침 = m.hasAttribute('hidden');
+  if(펼침) m.removeAttribute('hidden'); else m.setAttribute('hidden','');
+  b.textContent = 펼침 ? '접기 ▴' : '더보기 ▾';
+}
 function _emailAuthSay(msg){
   var m=document.getElementById('emailAuthMsg'); if(!m) return;
   if(!msg){ m.style.display='none'; m.textContent=''; return; }

@@ -1643,10 +1643,11 @@ function mpShowEnts(){
 async function mpShowPayments(){
   var box=document.getElementById('mpBody'); if(!box) return;
   var top='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>결제 내역</span></div>';
-  var accBox='<div class="psucc-acc" style="margin:0 16px 14px">'
-    +'<div class="accrow"><span class="accnum">토스뱅크 1000-2406-0293</span><button class="psucc-copy" onclick="copyDepositAcc()">복사</button></div>'
-    +'<div>예금주: 박성환</div>'
-    +'<div style="font-size:12px;color:#8A6A2A;margin-top:4px">입금자명을 신청자명과 동일하게 보내주세요. 입금 확인은 영업일 기준 처리됩니다.</div></div>';
+  // ★★ [2026-10-12] **계좌 안내를 뺐다.** 크리스가 「취소했는데 남아 있다」로 보신 화면에
+  //   카드로 낸 이용권 위에 입금 계좌가 떠 있었다 — 카드로 냈는데 또 입금하라는 꼴이다.
+  //   index.html 에서는 10-12 에 계좌이체를 없앴는데(카드만 받는다) 이 화면만 남아 있었다.
+  //   결제 내역은 **낸 것을 보여 주는 자리**이지 새로 내라는 자리가 아니다.
+  var accBox='';
   box.innerHTML=top+'<div class="cm-loading">불러오는 중\u2026</div>';
   try{
     var snap=await db.collection('payments').where('uid','==',currentUser.uid).get();
