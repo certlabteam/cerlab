@@ -630,7 +630,12 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       · 개정 제7조는 2026년 10월 16일부터 시행합니다. 그 전에 구매한 이용권에는 종전 약관과 구매 당시 조건을 적용하되, 이용자에게 더 유리한 개정 내용은 공지일부터 적용합니다.<br>
       <a href="terms.html#refund" target="_blank" rel="noopener" style="color:#185FA5">청약철회·중도 해지·환불 상세 기준 및 예외 — 이용약관 제7조</a>
     </div>
-    <div class="bank-info">
+    <!-- ★★ [2026-10-12 크리스] 계좌이체를 없앴다. 카드 결제만 받는다.
+         토스페이먼츠 카드 결제가 열려(일구미 q_certlagi5t · 카드사 여덟 승인) 손으로 입금 확인할 일이
+         없어졌다. 계좌이체는 관리자가 일일이 확인해야 하고, 그 길이 열려 있으면 파이어스토어 규칙을
+         잠글 수 없다(브라우저가 직접 이용권을 켜는 옛 경로라서).
+         ⚠ 지우지 않고 숨겨 둔다 — 카드가 막히는 날 한 줄만 되살리면 된다. -->
+    <div class="bank-info" hidden>
       <strong>입금 계좌</strong><br>
       <span class="accrow" style="display:inline-flex;align-items:center;gap:8px;margin:4px 0">
         <span>토스뱅크 1000-2406-0293</span>
@@ -661,13 +666,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       입금 완료 신청 시 이용권이 <strong>즉시 활성화</strong>됩니다.<br>단, 결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.
     </div>
     <div id="mileUseBox"></div>
-    <input id="depositorName" placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
-    <!-- [2026-09-17] 카드 결제(토스페이먼츠). 지금은 결제 시험 명단(PAY_TESTERS)·관리자만 열린다.
-         열리지 않은 이용자에게는 서버가 「카드 결제는 준비 중입니다」로 막고, 계좌이체 단추는 그대로 쓴다. -->
+    <!-- ★ 입금자 이름은 계좌이체용이라 같이 숨긴다. 카드 결제는 안 쓴다. -->
+    <input id="depositorName" hidden placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
+    <!-- [2026-10-12] 카드 결제(토스페이먼츠)만 받는다. 일구미 q_certlagi5t · 카드사 여덟 승인. -->
     <button class="btn-payment" id="btnCardPay" onclick="startCardPayment()"
-      style="background:linear-gradient(135deg,#185FA5,#0C447C);margin-bottom:8px">💳 카드로 결제</button>
-    <button class="btn-payment" id="btnPayment" onclick="submitPayment()">입금하고 시작하기</button>
-    <div class="payment-note">입금 완료 신청 시 이용권이 즉시 활성화됩니다.<br>결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.</div>
+      style="background:linear-gradient(135deg,#185FA5,#0C447C)">💳 카드로 결제</button>
+    <!-- ★ 계좌이체 단추는 숨겨 둔다(지우지 않음). 카드가 막히는 날 hidden 만 떼면 된다. -->
+    <button class="btn-payment" id="btnPayment" hidden onclick="submitPayment()">입금하고 시작하기</button>
+    <div class="payment-note">결제가 끝나면 이용권이 <strong>바로 켜집니다</strong>.<br>국민·신한·삼성·하나·BC·롯데·농협·우리카드로 결제할 수 있어요.</div>
   </div>
 </div>
 <!-- [2026-09-02] 파이어베이스 SDK 를 <head> 에서 여기로 내렸다.
