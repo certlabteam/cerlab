@@ -1551,7 +1551,7 @@ async function startCardPayment(){
   }catch(e){
     var m=(e&&e.message)||'';
     if(/취소|USER_CANCEL/i.test(m)||(e&&e.code==='USER_CANCEL')) { /* 이용자가 닫은 것 — 조용히 */ }
-    else if(/준비 중/.test(m)) alert('카드 결제는 아직 준비 중이에요. 계좌이체로 신청해 주세요.');
+    else if(/준비 중/.test(m)) alert('카드 결제를 잠시 쓸 수 없어요. 조금 뒤 다시 시도해 주세요.\n계속 안 되면 certlab.team@gmail.com 으로 알려 주세요.');   // 계좌이체는 없앴다(10-12)
     else alert('결제를 시작하지 못했어요.\n' + m);
   }finally{
     if(btn){ btn.disabled=false; btn.textContent='💳 카드로 결제'; }
