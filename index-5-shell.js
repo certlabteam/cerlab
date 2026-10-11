@@ -1549,6 +1549,12 @@ function mpRenderHome(){
     '<div class="mp-prof">'+av+'<div><div class="mp-nick">'+cmEsc(nick)+'</div><div class="mp-email">'+cmEsc(email)+'</div></div></div>'
     +'<div class="pt-card"><div class="pt-top"><span class="l">💰 보유 포인트</span><span class="pt-detail" onclick="mpShowHistory()">상세내역 \u203a</span></div>'
     +'<div class="pt-v">'+bal.toLocaleString()+' P</div><div class="pt-sub">이용권 결제에 사용 (1P = 1원)</div></div>'
+    +'<div class="mp-sec">이용권</div>'
+    /* ★★ [2026-10-12] 이용권을 살 길이 「무료 한도 초과」와 「만료」 둘뿐이라,
+     *   이용권이 **살아 있는 회원은 연장을 못 샀다**(showPlanPopup 이 그 둘에서만 불렸다).
+     *   돈 받을 길이 막혀 있던 자리다. 마이페이지에서 언제든 열 수 있게 한다. */
+    /* ⚠ hideMyPage 같은 함수는 없다. planPopup 은 마이페이지 **위에** 뜨므로 그냥 연다. */
+    +'<div class="mp-link" onclick="showPlanPopup()"><span class="e">🎫</span>이용권 구매·연장</div>'
     +'<div class="mp-sec">활동</div>'
     +'<div class="mp-link" onclick="mpShowPayments()"><span class="e">💳</span>결제 내역</div>'
     +'<div class="mp-link" onclick="mpShowMyPosts()"><span class="e">📝</span>내가 쓴 글</div>'
