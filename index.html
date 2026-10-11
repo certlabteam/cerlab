@@ -583,6 +583,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <div class="auth-sheet">
     <button class="popup-x" onclick="hidePlanPopup()" aria-label="닫기">✕</button>
     <div class="plan-sheet-title" id="planSheetTitle">⏰ 무료 체험 완료!</div>
+    <!-- ★ 어느 시험 이용권인지 — 마이페이지에서 바로 열면 맥락이 없어 엉뚱한 시험을 결제할 수 있다 -->
+    <div id="planCertName" style="margin:2px 0 8px;padding:5px 12px;display:inline-block;border-radius:999px;background:#EEF4FB;color:#0C447C;font-size:13.5px;font-weight:700"></div>
     <div class="plan-sheet-sub" id="planSub">이용권 구매 후 전체 문제와 학습 기록을 계속 이용할 수 있습니다.</div>
     <div class="plan-stats" id="planStats"></div>
     <div class="plan-cards">
@@ -678,14 +680,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=08ea0f99"></script>
+<script defer src="index-1-auth.js?v=b12652b4"></script>
 <script defer src="index-2-engine.js?v=9d852066"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=e9ebd33a"></script>
 <script defer src="index-3-mcq.js?v=025c0103"></script>
 <script defer src="index-4-learn.js?v=b9efad5b"></script>
-<script defer src="index-5-shell.js?v=271b207a"></script>
+<script defer src="index-5-shell.js?v=d1fda354"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
   <div class="pr-sheet" id="printSheetBody"></div>

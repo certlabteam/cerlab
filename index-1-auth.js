@@ -1293,6 +1293,11 @@ function showPlanPopup(membership) {
   _togglePayUI(true);
   const titleEl = document.getElementById('planSheetTitle');
   if (titleEl) titleEl.textContent = membership ? `🎯 멤버십 이용권` : `🎯 합격까지 가는 가장 빠른 길`;
+  /* ★★ [2026-10-12] **어느 시험 이용권인지 적는다.** 마이페이지에서 바로 열 수 있게 되면서
+   *   「무료 한도가 끝나 뜬 팝업」이 아니라 맥락 없이 열리는 때가 생겼다. 시험 이름이 없으면
+   *   엉뚱한 시험을 결제할 수 있다(크리스 2026-10-12 지적). 돈이 잘못 나가는 자리라 꼭 보인다. */
+  const nameEl = document.getElementById('planCertName');
+  if (nameEl) nameEl.textContent = (typeof certFull === 'function' ? certFull(cert) : cert) + ' 이용권';
   const subEl = document.getElementById('planSub');
   /*
    * 무료 한도로 막힌 쪽은 기능을 늘어놓지 않는다.

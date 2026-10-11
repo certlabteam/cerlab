@@ -1553,8 +1553,9 @@ function mpRenderHome(){
     /* ★★ [2026-10-12] 이용권을 살 길이 「무료 한도 초과」와 「만료」 둘뿐이라,
      *   이용권이 **살아 있는 회원은 연장을 못 샀다**(showPlanPopup 이 그 둘에서만 불렸다).
      *   돈 받을 길이 막혀 있던 자리다. 마이페이지에서 언제든 열 수 있게 한다. */
-    /* ⚠ hideMyPage 같은 함수는 없다. planPopup 은 마이페이지 **위에** 뜨므로 그냥 연다. */
-    +'<div class="mp-link" onclick="showPlanPopup()"><span class="e">🎫</span>이용권 구매·연장</div>'
+    /* ★ [2026-10-12 크리스] 누르면 바로 결제창이 뜨면 **어느 시험인지 모르고 결제**할 수 있다.
+     *   먼저 내 이용권(무슨 시험·언제까지·몇 개월권)을 보여 주고, 거기서 사게 한다. */
+    +'<div class="mp-link" onclick="mpShowEnts()"><span class="e">🎫</span>내 이용권</div>'
     +'<div class="mp-sec">활동</div>'
     +'<div class="mp-link" onclick="mpShowPayments()"><span class="e">💳</span>결제 내역</div>'
     +'<div class="mp-link" onclick="mpShowMyPosts()"><span class="e">📝</span>내가 쓴 글</div>'
@@ -1575,6 +1576,69 @@ function mpShowHistory(){
     h+='<div class="hist"><div class="ht">'+cmEsc(mpHistLabel(x.t))+'<div class="hd">'+cmHistDate(x.at)+'</div></div><div class="ha '+cls+'">'+sign+amt.toLocaleString()+'</div></div>';
   });
   box.innerHTML=h;
+}
+/* ★ [2026-10-12 크리스] 내 이용권 — 무슨 시험 · 언제까지 · 몇 개월권 · 상태.
+ *   「이용권 구매·연장」이 바로 결제창을 열면 어느 시험인지 모르고 결제할 수 있어, 먼저 이 화면을 둔다.
+ *   자료는 users/<uid>.entitlements 하나만 쓴다(plan · expireAt · planDays). 결제 기록은 「결제 내역」 몫. */
+function mpPlanLabel(days){
+  var m = { 30:'1개월권', 90:'3개월권', 180:'6개월권', 365:'1년권',
+            7:'1주권', 14:'2주권', 28:'4주권', 56:'8주권' };
+  return m[days] || ((days || 0) + '일권');
+}
+function mpEntState(e){
+  var now = Date.now();
+  var exp = (e && e.expireAt && e.expireAt.toDate) ? e.expireAt.toDate().getTime()
+          : (e && typeof e.expireAt === 'number' ? e.expireAt : 0);
+  if (e && e.plan === 'CANCELED') return { 글:'취소', 색:'#8A7D6E', 바탕:'#F0EDE9', exp:exp };
+  if (e && e.plan === 'ACTIVE' && exp > now) return { 글:'이용중', 색:'#0F6E56', 바탕:'#E6F4EF', exp:exp };
+  return { 글:'만료', 색:'#8A7D6E', 바탕:'#F0EDE9', exp:exp };
+}
+function mpShowEnts(){
+  var box = document.getElementById('mpBody'); if(!box) return;
+  var top = '<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">←</button><span>내 이용권</span></div>';
+  var doc = window._cmUserDoc || {};
+  var ent = doc.entitlements || {};
+  var 줄 = [];
+  for (var k in ent) {
+    var e = ent[k] || {};
+    if (!e.plan || e.plan === 'FREE_TRIAL') continue;   // 무료 체험은 이용권이 아니다
+    var s = mpEntState(e);
+    줄.push({ cert:k, 상태:s, days:e.planDays });
+  }
+  /* 이용중을 위로, 그 안에서 만료일이 먼 것부터 */
+  줄.sort(function(a,b){
+    var pa = (a.상태.글==='이용중') ? 0 : 1, pb = (b.상태.글==='이용중') ? 0 : 1;
+    return pa !== pb ? pa - pb : (b.상태.exp - a.상태.exp);
+  });
+
+  var h = top;
+  if (!줄.length) {
+    h += '<div class="cm-empty">아직 이용권이 없어요.</div>';
+  } else {
+    줄.forEach(function(x){
+      var s = x.상태;
+      var 날 = s.exp ? new Date(s.exp) : null;
+      var 까지 = 날 ? (날.getFullYear()+'.'+(날.getMonth()+1)+'.'+날.getDate()) : '-';
+      var 남음 = (s.글==='이용중' && s.exp) ? Math.ceil((s.exp - Date.now())/86400000) : 0;
+      h += '<div style="margin:0 16px 10px;padding:13px 14px;border:1px solid #E8E2DA;border-radius:12px;background:#fff">'
+        +   '<div style="display:flex;align-items:center;gap:8px">'
+        +     '<span style="font-size:14.5px;font-weight:700;color:#2B3A4B">'+cmEsc(certFull(x.cert)||x.cert)+'</span>'
+        +     '<span style="padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700;color:'+s.색+';background:'+s.바탕+'">'+s.글+'</span>'
+        +   '</div>'
+        +   '<div style="margin-top:6px;font-size:13px;color:#5A6B7C">'
+        +     cmEsc(mpPlanLabel(x.days)) + ' · ' + 까지 + ' 까지'
+        +     (남음 > 0 ? ' <span style="color:#0F6E56">(' + 남음 + '일 남음)</span>' : '')
+        +   '</div>'
+        + '</div>';
+    });
+  }
+  h += '<div style="margin:14px 16px 0"><button onclick="showPlanPopup()" '
+    +  'style="width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;'
+    +  'border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">'
+    +  '🎫 ' + cmEsc(certFull(activeCertId())||'') + ' 이용권 구매·연장</button>'
+    +  '<div style="margin-top:7px;font-size:12px;color:#8A7D6E;text-align:center">'
+    +  '지금 보고 있는 시험의 이용권을 삽니다. 다른 시험은 그 시험으로 옮긴 뒤 눌러 주세요.</div></div>';
+  box.innerHTML = h;
 }
 async function mpShowPayments(){
   var box=document.getElementById('mpBody'); if(!box) return;
