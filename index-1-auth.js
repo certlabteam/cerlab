@@ -1476,12 +1476,14 @@ function consumeMileage(lots, amount){
  *   ★★ **상점이 둘이라 헷갈린 자리다**(2026-10-11 밤 내내 헛돌았다).
  *       일구미(서트랩)      dashboard 1817435 · MID q_certlagi5t · 계약완료 9/22
  *       개발 연동 체험 상점  developers 1817465 ← ★ 여기 키를 쓰면 전부 거절된다
- *   ★★ **키는 쌍이 둘이다. 섞으면 토스가 승인을 거절한다**(2026-10-12 실측).
- *       ck  ↔ sk    「API 개별 연동 키」   ← ★ 지금 쓰는 쌍 (서버 시크릿이 live_sk_)
- *       gck ↔ gsk   「주문서형·결제창형 연동 키」
- *       서버 시크릿 접두어는 `processPaymentEvents` 로그의 `[키] 접두어=…` 로 확인한다.
+ *   ★★ **키는 쌍이 둘이다. 섞으면 토스가 401 UNAUTHORIZED_KEY 로 거절한다**(2026-10-12 실측).
+ *       gck ↔ gsk   「주문서형·결제창형 연동 키」  ← ★ 이 쌍을 쓴다
+ *       ck  ↔ sk    「API 개별 연동 키」
+ *   ★ ck+sk 쌍으로도 맞춰 봤지만 **401 로 거절됐다.** 이 상점은 결제창형(g) 쌍이라야 한다 —
+ *     9/17 에 test_gsk_ 로 v1 /payments/confirm 이 통한 기록과 맞는다.
+ *   서버 시크릿 접두어는 `processPaymentEvents` 로그의 `[키] 접두어=…` 로 확인한다.
  *   되돌릴 값(테스트) : test_ck_ORzdMaqN3wqnYz2LLpBNr5AkYXQG */
-var TOSS_CLIENT_KEY = 'live_ck_Z1aOwX7K8meQj6ZGqeB08yQxzvNP';
+var TOSS_CLIENT_KEY = 'live_gck_Z1aOwX7K8mX5BnyomaXjryQxzvNP';
 function _newRequestId(){
   try{
     var a=new Uint8Array(16); crypto.getRandomValues(a);
