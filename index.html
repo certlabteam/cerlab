@@ -435,14 +435,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <div class="auth-sheet" style="text-align:center">
     <button class="popup-x" onclick="closeRefundPopup('day')" aria-label="닫기">✕</button>
     <div style="font-size:40px;margin:6px 0 2px">🎉</div>
-    <div class="auth-sheet-title" id="refundTitle">100% 환급 이벤트에 당첨되었습니다!</div>
-    <div class="auth-sheet-sub" id="refundSub">CertLab로 공부하고 합격하면, 합격 인증 + 후기 작성 시 결제금액을 <b>100% 환급</b>해 드려요. <b>선착순 30명!</b></div>
+    <div class="auth-sheet-title" id="refundTitle">합격하면 결제금액 100% 포인트로!</div>
+    <div class="auth-sheet-sub" id="refundSub">CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제금액만큼 <b>포인트</b>로 돌려드려요. <b>자격증별 선착순 30명!</b></div>
     <div class="refund-banner" style="animation:none;text-align:left">
       <div class="rb-sub" id="refundSteps" style="margin-top:0">
-        ① 큐넷 합격 화면 캡처<br>
-        ② CertLab 활용 후기 100자 이상<br>
-        ③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>
-        → 확인 후 전액 환급!
+        ① 큐넷·한능검 등에서 합격 화면 캡처<br>
+        ② 커뮤니티 「합격후기」에 후기를 쓰고 캡처 사진 붙여 올리기<br>
+        → 올리는 즉시 포인트 자동 적립!
       </div>
     </div>
     <div id="refundStats" style="font-size:12.5px;color:#185FA5;background:#E9F1FB;border-radius:10px;padding:9px 11px;margin-bottom:4px;line-height:1.6"></div>
@@ -480,14 +479,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="auth-sheet-title" id="loginTitle">🎯 로그인하면 무료체험 계속!</div>
     <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
     <div class="refund-banner" id="loginRefundBanner">
-      <div class="rb-ti" id="loginRbTi">🎉 합격하면 결제금액 전액 환급<span class="rb-tag">선착순 30명</span></div>
-      <div class="rb-sub" id="loginRbSub">CertLab로 공부하고 합격 인증 + 후기 작성 시 결제금액을 100% 돌려드려요.</div>
+      <div class="rb-ti" id="loginRbTi">🎉 합격하면 결제금액 100% 포인트로<span class="rb-tag">선착순 30명</span></div>
+      <div class="rb-sub" id="loginRbSub">CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제금액만큼 포인트로 돌려드려요.</div>
       <button class="rb-more" onclick="toggleRefundDetail()">자세히 ▾</button>
       <div class="rb-detail hidden" id="refundDetail">
-        ① 합격 확인 화면 캡처 제출<br>
-        ② CertLab 활용 경험이 담긴 100자 이상 후기 작성<br>
+        ① 합격 확인 화면 캡처<br>
+        ② 커뮤니티 「합격후기」에 CertLab 활용 후기를 쓰고 캡처 사진 붙여 올리기<br>
         ③ 후기 게시 동의 (마케팅·웹사이트 게시 가능)<br>
-        확인 후 결제금액 전액 환급해 드립니다.
+        → 올리는 즉시 결제금액만큼 포인트 자동 적립 (1P=1원 · 다음 이용권 결제에 사용)
       </div>
     </div>
     <div class="auth-features">
@@ -697,7 +696,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=55086894"></script>
+<script defer src="index-1-auth.js?v=f6ab0b04"></script>
 <script defer src="index-2-engine.js?v=9d852066"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->

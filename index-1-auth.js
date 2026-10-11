@@ -238,11 +238,12 @@ function ltCertName(c){ return LT_CERT_NAMES[c] || (typeof CERT_FULLNAMES!=='und
 // 환급 이벤트 — 시험 구분 없이 단일 공통 문구(급수 시험은 최고 급수 달성 시)
 const REFUND = {
   page:'#post/LOk5j9wje78LqxRt34SW', badge:'합격 환급',
-  bannerLine:'🎉 합격하면 결제금액 전액 환급',
-  bannerSub:'CertLab로 공부하고 합격하면, 인증 + 후기 작성 시 결제금액을 100% 돌려드려요. (급수가 있는 시험은 가장 높은 급수 달성 시)',
-  popTitle:'100% 환급 이벤트에 당첨되었습니다!',
-  popSub:'CertLab로 공부하고 <b>합격하면 100% 환급</b>해 드려요. (급수가 있는 시험은 가장 높은 급수 달성 시) <b>선착순 30명!</b>',
-  popSteps:'① 큐넷·한능검 등에서 환불 조건에 맞는 합격·점수(급수) 캡처<br>② CertLab 활용 후기 100자 이상<br>③ 가입 이메일로 캡처+후기+이름+계좌번호를 certlab.team@gmail.com 발송<br>→ 확인 후 전액 환급!'
+  // [2026-10-12] 6월 현금 환급(계좌번호 메일) 문구가 남아 있던 것을 지금 방식(포인트 자동 적립)으로 맞췄다 — 공지 글과 같은 말
+  bannerLine:'🎉 합격하면 결제금액 100% 포인트로',
+  bannerSub:'CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제하신 금액만큼 포인트로 돌려드려요. (급수가 있는 시험은 가장 높은 급수 달성 시)',
+  popTitle:'합격하면 결제금액 100% 포인트로!',
+  popSub:'CertLab로 공부하고 <b>합격하면 결제하신 금액만큼 포인트</b>로 돌려드려요. (급수가 있는 시험은 가장 높은 급수 달성 시) <b>자격증별 선착순 30명!</b>',
+  popSteps:'① 큐넷·한능검 등에서 합격·점수(급수) 화면 캡처<br>② 커뮤니티 「합격후기」에 CertLab 활용 후기를 쓰고 캡처 사진을 붙여 올리기<br>→ 올리는 즉시 포인트 자동 적립! (1P=1원 · 자격증마다 한 번 · 다음 이용권 결제에 사용)'
 };
 function certLabel(c){ return CERT_LABELS[c]||c; }
 function certFull(c){ return CERT_FULLNAMES[c]||c; }
