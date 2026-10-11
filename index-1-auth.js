@@ -1489,6 +1489,16 @@ async function startCardPayment(){
   if(!currentUser){ showLoginPopup(); return; }
   if(!firebaseReady || !fbFunctions){ alert('지금은 결제를 열 수 없어요. 잠시 후 다시 시도해 주세요.'); return; }
   if(typeof TossPayments!=='function'){ alert('결제창을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.'); return; }
+  /* ★★ [2026-10-12] 고른 값이 **지금 파는 표에 없으면** 표의 기본값으로 맞춘다.
+   *   `selectedPlanDays` 의 초기값이 56(옛 주 단위)인데, 이용권 팝업을 한 번도 안 열면
+   *   renderPlanCards() 가 안 돌아 그 56 이 그대로 서버에 간다 → 「없는 이용권입니다」로
+   *   거절되고 결제창까지 못 간다. 2026-10-11 밤에 이것으로 여러 번 헛돌았다.
+   *   ⚠ selectPlan() 은 쓰지 않는다 — 팝업이 닫혀 있으면 `#plan<일수>` 가 없어 터진다. */
+  var _ps = (typeof plansFor === 'function') ? (plansFor(activeCertId()) || []) : [];
+  if(_ps.length && !_ps.some(function(p){ return p.d === selectedPlanDays; })){
+    var _m = _ps.filter(function(x){ return x.sel; })[0] || _ps[1] || _ps[0];
+    selectedPlanDays = _m.d; selectedPlanPrice = _m.p;
+  }
   if(!selectedPlanDays){ alert('이용권을 먼저 선택해주세요.'); return; }
   var btn=document.getElementById('btnCardPay');
   if(btn){ btn.disabled=true; btn.textContent='결제창 여는 중…'; }
