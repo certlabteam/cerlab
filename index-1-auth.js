@@ -1470,12 +1470,15 @@ function consumeMileage(lots, amount){
  * ⚠ 금액을 클라이언트가 정하지 않는다. 서버가 config/pricing 으로 계산한 payableAmount 로만 띄운다.
  * ⚠ 지금은 서버가 결제 시험 명단(PAY_TESTERS)·관리자에게만 주문을 내준다. 나머지는 「준비 중」으로 막힌다.
  *   심사가 끝나고 실제로 열 때 PAY_OPEN=true 로 바꾸는 것은 사장님 결정이다. */
-/* ★★ [2026-10-11] 라이브 공개 키로 바꿨다(상점 일구미). 시크릿 키는 서버 비밀값에만 있다.
- *   ⚠ 토스는 클라이언트 키와 시크릿 키를 **쌍으로** 본다. 한쪽만 live_ 로 두면
- *     결제창은 떠도 승인(confirm)에서 막힌다. 서버 PAY_ENV 와 이 줄은 **같이** 움직인다.
- *       PAY_ENV=TEST  ↔  test_ck_      PAY_ENV=LIVE  ↔  live_ck_
+/* ★★ [2026-10-12] 일구미 상점(MID q_certlagi5t) 라이브 공개 키. 시크릿은 서버 비밀값에만 있다.
+ *   ⚠ 토스는 클라이언트 키와 시크릿 키를 **쌍으로** 본다. 한쪽만 바꾸면 결제창은 떠도
+ *     승인(confirm)에서 「인증되지 않은 키」로 막힌다. 서버 PAY_ENV 와 이 줄은 같이 움직인다.
+ *   ★★ **상점이 둘이라 헷갈린 자리다**(2026-10-11 밤 내내 헛돌았다).
+ *       일구미(서트랩)      dashboard 1817435 · MID q_certlagi5t · 계약완료 9/22
+ *       개발 연동 체험 상점  developers 1817465 ← ★ 여기 키를 쓰면 전부 거절된다
+ *   gck/gsk 는 **결제창형** 쌍이다. ck/sk(API 개별 연동)와 섞어 쓰면 안 된다.
  *   되돌릴 값(테스트) : test_ck_ORzdMaqN3wqnYz2LLpBNr5AkYXQG */
-var TOSS_CLIENT_KEY = 'live_ck_LkKEypNArWgvpQ042j9ArImeaxYG';
+var TOSS_CLIENT_KEY = 'live_gck_Z1aOwX7K8mX5BnyomaXjryQxzvNP';
 function _newRequestId(){
   try{
     var a=new Uint8Array(16); crypto.getRandomValues(a);
