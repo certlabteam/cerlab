@@ -6,6 +6,10 @@
     {
       "source": "/__/auth/:path*",
       "destination": "https://certlab-c3bcb.firebaseapp.com/__/auth/:path*"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
     }
   ],
   "headers": [
@@ -115,18 +119,6 @@
     },
     {
       "source": "/preview.html",
-      "missing": [
-        {
-          "type": "query",
-          "key": "k",
-          "value": "cl7f2ka9"
-        }
-      ],
-      "destination": "/",
-      "permanent": false
-    },
-    {
-      "source": "/admin",
       "missing": [
         {
           "type": "query",
