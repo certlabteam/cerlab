@@ -1,6 +1,13 @@
 /* ===== 이메일 발송 (Phase 1b) — emailTemplates CRUD + previewSegment/sendBulkEmail ===== */
 let emTpls = [], emEditingId = null, emInited = false;
 function emFns(){ return firebase.app().functions('asia-northeast3'); }
+// [2026-10-12] 이용권·결제·AI 크레딧·관리자 지정·추천코드는 서버(adminOp)가 쓴다 — 기록이 adminAudit 에 남는다.
+// 규칙 잠금 2단계에서 관리자 브라우저도 그 칸을 직접 못 쓰게 막는다(certlab-pay/functions/lib/admin.js).
+async function adminOp(op, data){
+  const rid = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  const r = await emFns().httpsCallable('adminOp')({ op: op, requestId: rid, data: data });
+  return (r && r.data) || {};
+}
 const EM_CERTS = { appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사', bodybuilding:'스포츠지도사 2급 실기·구술' };
 
 async function emInit(){
@@ -501,7 +508,7 @@ async function toggleAdmin(uid){
     : (m.email||uid)+' 님의 관리자 권한을 해제할까요?';
   if(!confirm(msg)) return;
   try {
-    await db.collection('users').doc(uid).set({ isAdmin: makeAdmin }, { merge:true });
+    await adminOp('setAdmin', { uid: uid, on: makeAdmin });
     m.isAdmin = makeAdmin;
     openMemberDetail(uid);
   } catch(e){ alert('오류: ' + (e&&e.message?e.message:e)); }
@@ -720,55 +727,16 @@ function closeModal() {
 async function confirmApprove() {
   if (!pendingPaymentId || !pendingPaymentData) return;
   const p = pendingPaymentData;
-  const cert = p.certType || 'bodybuilding';
-  const expireAt = new Date();
-  expireAt.setDate(expireAt.getDate() + (p.planDays || 14));
-  if (p.kind === 'aigrade') {
-    // AI 충전(횟수): 결제 상태 변경 + 지갑에 새 충전분(lot) 쌓기를 **한 트랜잭션**으로(ASTRA 230007 조건 4) —
-    // 둘 중 하나만 반영되는 일을 막고, payments.status 를 트랜잭션 안에서 다시 읽어 이미 처리된 건이면
-    // (다른 탭·이중 클릭) 아무것도 안 쓰고 멈춘다(중복 승인 차단).
-    // lot id 를 결제문서 id 로 둬서, 나중에 철회할 때 정확히 이 충전분만 찾아 되돌릴 수 있게 한다.
-    // 만료 적용 여부는 **구매(신청) 시각** 기준(경계 건 보호 · ASTRA 조건 5), 365일은 이 승인(반영) 시각부터.
-    const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
-    const pref = db.collection('payments').doc(pendingPaymentId);
-    const uref = db.collection('users').doc(p.uid);
-    const 구매시각 = (p.createdAt && p.createdAt.toMillis) ? p.createdAt.toMillis() : Date.now();
-    const lotId = 'ai_' + pendingPaymentId;
-    let newLots = null, 이미처리 = false;
-    try {
-      await db.runTransaction(async (tx) => {
-        const ps2 = await tx.get(pref); const pd = ps2.exists ? ps2.data() : {};
-        if (pd.status !== 'pending') { 이미처리 = true; return; }
-        const s = await tx.get(uref); const u = s.exists ? s.data() : {};
-        const 지금 = Date.now();
-        const lots = aiWalletLots(u, w);
-        newLots = lots.concat([ newAiCreditLot(lotId, ps, 지금, 'purchase', 구매시각) ]);
-        tx.update(pref, { status: 'approved', approvedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        tx.set(uref, { aiCreditLots: { [w]: newLots }, aiCredits: { [w]: aiCreditBalance(newLots, 지금) } }, { merge: true });
-      });
-    } catch (e) { alert('오류: ' + e.message); return; }
-    if (이미처리) { alert('이미 처리된 결제예요(중복 승인 방지). 새로고침해서 확인해 주세요.'); closeModal(); await loadAll(); return; }
-    closeModal();
-    const 새lot = newLots.find(function(l){ return l.id===lotId; });
-    const 만료문구 = 새lot && 새lot.exp ? ('만료: ' + new Date(새lot.exp).toLocaleDateString('ko-KR')) : ('만료 없음' + (구매시각 < AI_CREDIT_CUTOVER_MS ? '(9/23 전 구매분)' : ''));
-    alert(`✅ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} ${ps}회 충전 승인 완료!\n${만료문구} · 남은 잔액 ${aiCreditBalance(newLots)}회`);
-    await loadAll();
-    return;
-  }
   try {
-    await db.collection('payments').doc(pendingPaymentId).update({
-      status: 'approved',
-      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    const upd = {
-      ['entitlements.'+cert+'.plan']: 'ACTIVE',
-      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
-      ['entitlements.'+cert+'.planDays']: p.planDays
-    };
-    if (cert === 'bodybuilding') { upd.plan='ACTIVE'; upd.expireAt=firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays=p.planDays; }
-    await db.collection('users').doc(p.uid).update(upd);
+    const r = await adminOp('approvePayment', { paymentId: pendingPaymentId });
     closeModal();
-    alert(`✅ ${p.email} 승인 완료!\n만료일: ${expireAt.toLocaleDateString('ko-KR')}`);
+    if (r.already) { alert('이미 처리된 결제예요(중복 승인 방지). 새로고침해서 확인해 주세요.'); await loadAll(); return; }
+    if (r.kind === 'ai') {
+      const 만료문구 = r.lotExp ? ('만료: ' + new Date(r.lotExp).toLocaleDateString('ko-KR')) : '만료 없음(9/23 전 구매분)';
+      alert(`✅ ${p.email} ${r.wallet==='explain'?'AI 개념설명':'AI 첨삭'} ${r.packSize}회 충전 승인 완료!\n${만료문구} · 남은 잔액 ${r.balance}회`);
+    } else {
+      alert(`✅ ${p.email} 승인 완료!\n만료일: ${new Date(r.expireAt).toLocaleDateString('ko-KR')}`);
+    }
     await loadAll();
   } catch(e) { alert('오류: ' + e.message); }
 }
@@ -776,12 +744,9 @@ async function confirmApprove() {
 async function confirmReject() {
   if (!pendingPaymentId || !pendingPaymentData) return;
   try {
-    await db.collection('payments').doc(pendingPaymentId).update({
-      status: 'rejected',
-      rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    const r = await adminOp('rejectPayment', { paymentId: pendingPaymentId });
     closeModal();
-    alert('거절 처리되었습니다.');
+    alert(r.already ? '이미 처리된 결제예요. 새로고침해서 확인해 주세요.' : '거절 처리되었습니다.');
     await loadAll();
   } catch(e) { alert('오류: ' + e.message); }
 }
@@ -789,84 +754,20 @@ async function confirmReject() {
 async function confirmRevoke() {
   if (!pendingPaymentId || !pendingPaymentData) return;
   const p = pendingPaymentData;
-  const cert = p.certType || 'bodybuilding';
-  if (p.kind === 'aigrade') {
-    // AI 충전 취소: 승인 때 만든 바로 그 lot(id='ai_'+결제문서id)만 찾아 회수(그 lot 안에서만, 음수 방지).
-    // [ASTRA 230007 조건 4] 그 lot 이 없으면(9/23 전 옛 방식으로 지급돼 lot 기록이 없는 건 등) **다른 lot 에서
-    //   임의로 회수하지 않는다** — 잘못된 lot 을 건드릴 위험이 있어서다. 그때는 자동으로 안 하고 관리자에게
-    //   AI 크레딧 관리(수동 조정) 화면을 쓰라고 안내한다.
-    // 결제 상태 변경 + lot 회수도 한 트랜잭션(중복 철회 차단: 이미 revoked 면 트랜잭션 안에서 멈춤).
-    const ps = +p.packSize || 0; const w = (p.wallet === 'explain') ? 'explain' : 'grade';
-    const lotId = 'ai_' + pendingPaymentId;
-    const pref = db.collection('payments').doc(pendingPaymentId);
-    let aref = null;
-    if (p.uid) aref = db.collection('users').doc(p.uid);
-    else if (p.email) { const qs = await db.collection('users').where('email','==',p.email).limit(1).get(); if (!qs.empty) aref = qs.docs[0].ref; }
-    let 이미처리 = false, lot못찾음 = false;
-    try {
-      await db.runTransaction(async (tx) => {
-        const ps2 = await tx.get(pref); const pd = ps2.exists ? ps2.data() : {};
-        if (pd.status !== 'approved' && pd.status !== 'auto_approved') { 이미처리 = true; return; }
-        tx.update(pref, { status: 'revoked', revokedAt: firebase.firestore.FieldValue.serverTimestamp() });
-        if (!aref) return;
-        const s = await tx.get(aref); const u = s.exists ? s.data() : {};
-        const lots = aiWalletLots(u, w);
-        const i = lots.findIndex(function(l){ return l.id === lotId; });
-        if (i < 0) { lot못찾음 = true; return; }   // payments.status 는 그대로 revoked 로 반영(위에서 tx.update 함) — 잔액만 자동으로는 안 건드림
-        const newLots = lots.slice(); newLots[i] = Object.assign({}, newLots[i], { a: Math.max(0, newLots[i].a - ps) });
-        tx.set(aref, { aiCreditLots: { [w]: newLots }, aiCredits: { [w]: aiCreditBalance(newLots) } }, { merge: true });
-      });
-    } catch (e) { alert('오류: ' + e.message); return; }
-    if (이미처리) { alert('이미 처리된(취소/거절/대기가 아닌) 결제예요(중복 철회 방지). 새로고침해서 확인해 주세요.'); closeModal(); await loadAll(); return; }
-    closeModal();
-    if (lot못찾음) {
-      alert(`⚠️ 결제는 취소 처리했지만, 이 충전분(lot)을 못 찾아 잔액은 자동으로 안 뺐어요.\n${p.email} · ${w==='explain'?'AI 개념설명':'AI 첨삭'} ${ps}회를 「AI 크레딧 관리」에서 직접 확인·조정해 주세요.`);
-    } else {
-      alert(`⛔ ${p.email} ${w==='explain'?'AI 개념설명':'AI 첨삭'} 충전 취소 완료. ${ps}회 회수.`);
-    }
-    await loadAll();
-    return;
-  }
   try {
-    await db.collection('payments').doc(pendingPaymentId).update({
-      status: 'revoked',
-      revokedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    // 회원 문서 찾기 (uid 우선, 없으면 이메일로)
-    let ref=null, data=null;
-    if (p.uid) { ref=db.collection('users').doc(p.uid); const d=await ref.get(); if(d.exists) data=d.data(); }
-    if (!data && p.email) {
-      const qs=await db.collection('users').where('email','==',p.email).limit(1).get();
-      if(!qs.empty){ ref=qs.docs[0].ref; data=qs.docs[0].data(); }
-    }
-    if (ref) {
-      const upd = { ['entitlements.'+cert+'.plan']: 'EXPIRED' };
-      // 이번에 만료시키는 것 외에 살아있는 다른 이용권이 있는지 확인
-      const ents = (data && data.entitlements) || {};
-      const now = Date.now();
-      const otherLive = Object.keys(ents).some(k => {
-        if (k===cert) return false;
-        const e=ents[k]; if(!e || e.plan!=='ACTIVE') return false;
-        if(!e.expireAt) return true;
-        const t = e.expireAt.toDate ? e.expireAt.toDate().getTime() : new Date(e.expireAt).getTime();
-        return t > now;
-      });
-      // bodybuilding(레거시 top-plan)이거나, 남은 이용권이 없으면 top-level plan도 만료
-      if (cert==='bodybuilding' || !otherLive) upd.plan='EXPIRED';
-      // 마일리지 사용분 환원 (1년 유효)
-      const used = p.mileageUsed || 0;
-      if (used > 0) {
-        const lots = Array.isArray(data && data.mileageLots) ? data.mileageLots.slice() : [];
-        lots.push({a:used, t:'refund', at:now, exp:now+365*86400000});
-        const hist = Array.isArray(data && data.mileageHistory) ? data.mileageHistory.slice() : [];
-        hist.push({t:'refund', a:used, at:now, memo:'결제 철회 환원'});
-        upd.mileageLots = lots;
-        upd.mileageHistory = hist;
-      }
-      await ref.update(upd);
-    }
+    const r = await adminOp('revokePayment', { paymentId: pendingPaymentId });
     closeModal();
-    alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`+((p.mileageUsed||0)>0?`\n사용한 마일리지 ${(p.mileageUsed||0).toLocaleString()}원을 환원했습니다.`:''));
+    if (r.already) { alert('이미 처리된(취소/거절/대기가 아닌) 결제예요(중복 철회 방지). 새로고침해서 확인해 주세요.'); await loadAll(); return; }
+    const wl = r.wallet==='explain'?'AI 개념설명':'AI 첨삭';
+    if (r.kind === 'ai' && r.lotMissing) {
+      alert(`⚠️ 결제는 취소 처리했지만, 이 충전분(lot)을 못 찾아 잔액은 자동으로 안 뺐어요.\n${p.email} · ${wl} ${r.packSize}회를 「AI 크레딧 관리」에서 직접 확인·조정해 주세요.`);
+    } else if (r.kind === 'ai') {
+      alert(`⛔ ${p.email} ${wl} 충전 취소 완료. ${r.packSize}회 회수.`);
+    } else {
+      alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`
+        +(r.refundedPoints>0?`\n사용한 마일리지 ${r.refundedPoints.toLocaleString()}원을 환원했습니다.`:'')
+        +(r.userMissing?'\n⚠️ 회원 문서를 못 찾아 이용권은 손대지 못했어요.':''));
+    }
     await loadAll();
   } catch(e) { alert('오류: ' + e.message); }
 }
@@ -1017,24 +918,15 @@ async function acmAdjust(w, sign){
   var delta=sign>0?n:-n, label=(w==='grade'?'첨삭':'해설');
   if(!confirm(_acmEmail+' · '+label+' 크레딧 '+(delta>0?'+':'')+delta+'회\n사유: '+reason+(sign>0&&paid?'\n(실제 구매 반영 — 만료 적용)':'')+'\n진행할까요?')) return;
   try{
-    var uref=db.collection('users').doc(_acmUid); var newLots=null; var 지금=Date.now();
-    await db.runTransaction(async function(tx){
-      var s=await tx.get(uref); var u=s.exists?s.data():{};
-      var lots=aiWalletLots(u, w);
-      if(sign>0){
-        // 실제 구매를 수기 반영하는 것이면 purchase 로(만료 우회 안 함 · ASTRA 조건 2) · 아니면 보정/무상은 exp:0.
-        var lot = paid ? newAiCreditLot('admin_'+지금, n, 지금, 'purchase', 지금) : { id:'admin_'+지금, a:n, exp:0, at:지금, src:'admin' };
-        newLots = lots.concat([lot]);
-      } else { newLots = takeAiCredits(lots, n, 지금).lots; }
-      tx.set(uref,{ aiCreditLots:{ [w]: newLots }, aiCredits:{ [w]: aiCreditBalance(newLots, 지금) } },{merge:true});
-    });
+    var r=await adminOp('adjustAiCredits', { uid:_acmUid, wallet:w, delta:delta, reason:reason, paid:paid });
+    var newLots=r.lots||[];
     _acmLots[w]=newLots;
     var b=document.getElementById('acmBal_'+w); if(b) b.textContent=aiCreditBalance(newLots);
     var expEl=document.getElementById('acmExp_'+w); if(expEl) expEl.textContent=aiExpiryLabel(newLots);
     var inp=document.getElementById('acmN_'+w); if(inp) inp.value='';
     var reasonInp=document.getElementById('acmReason_'+w); if(reasonInp) reasonInp.value='';
     var paidChk=document.getElementById('acmPaid_'+w); if(paidChk) paidChk.checked=false;
-    try{ await db.collection('users').doc(_acmUid).collection('aiCreditLog').add({ wallet:w, delta:delta, reason:reason, paidPurchase:(sign>0?paid:null), by:((firebase.auth().currentUser&&firebase.auth().currentUser.email)||'admin'), at: firebase.firestore.FieldValue.serverTimestamp() }); }catch(_){}
+    // 감사 기록(aiCreditLog)은 서버가 같은 트랜잭션에서 남긴다
   }catch(err){ alert('오류: '+err.message); }
 }
 
@@ -1177,13 +1069,11 @@ async function confirmGrant(){
       base.setDate(base.getDate()+Number(grantDays));
       msg='['+CERT_NAMES[cert]+'] '+grantDays+'일 부여 → 새 만료일 '+base.toLocaleDateString('ko-KR');
     }
-    const ts=firebase.firestore.Timestamp.fromDate(base);
-    const upd={};
-    upd['entitlements.'+cert+'.plan']='ACTIVE';
-    upd['entitlements.'+cert+'.expireAt']=ts;
-    if(grantMode==='extend'){ upd['entitlements.'+cert+'.planDays']=Number(grantDays); }
-    if(cert==='bodybuilding'){ upd.plan='ACTIVE'; upd.expireAt=ts; if(grantMode==='extend') upd.planDays=Number(grantDays); }
-    await db.collection('users').doc(grantUid).update(upd);
+    // 쓰기는 서버가 한다 — 만료일도 서버가 셈한 값으로 알린다(위 base 는 미리보기·확인용)
+    const r = (grantMode==='set')
+      ? await adminOp('setEntitlement', { uid:grantUid, cert:cert, mode:'set', date:document.getElementById('grantSetDate').value })
+      : await adminOp('setEntitlement', { uid:grantUid, cert:cert, mode:'extend', days:Number(grantDays) });
+    if (r.expireAt) msg = '['+CERT_NAMES[cert]+'] '+(grantMode==='set'?'만료일 지정':grantDays+'일 부여')+' → 새 만료일 '+new Date(r.expireAt).toLocaleDateString('ko-KR');
     closeGrantModal();
     alert('✅ '+grantEmailVal+'\n'+msg);
     await loadAll();
@@ -1201,17 +1091,11 @@ async function expireMemberCert(uid, email){
   const n=Number(pick);
   try{
     if(n===0){
-      const doc=await db.collection('users').doc(uid).get(); const data=doc.data()||{};
-      const upd={plan:'EXPIRED'};
-      if(data.entitlements){ Object.keys(data.entitlements).forEach(c=>{ upd['entitlements.'+c+'.plan']='EXPIRED'; }); }
-      else { upd['entitlements.bodybuilding.plan']='EXPIRED'; }
-      await db.collection('users').doc(uid).update(upd);
+      await adminOp('expireEntitlement', { uid:uid, all:true });
       alert(email+' 전체 만료 처리 완료.');
     } else if(n>=1&&n<=actives.length){
       const cert=actives[n-1];
-      const upd={}; upd['entitlements.'+cert+'.plan']='EXPIRED';
-      if(cert==='bodybuilding') upd.plan='EXPIRED';
-      await db.collection('users').doc(uid).update(upd);
+      await adminOp('expireEntitlement', { uid:uid, cert:cert });
       alert(email+'\n['+CERT_NAMES[cert]+'] 만료 처리 완료.');
     } else { alert('잘못된 번호입니다.'); return; }
     await loadAll();

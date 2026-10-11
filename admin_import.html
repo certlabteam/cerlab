@@ -1148,88 +1148,15 @@ function closeModal() {
 }
 
 async function confirmApprove() {
-  if (!pendingPaymentId || !pendingPaymentData) return;
-  const p = pendingPaymentData;
-  const cert = p.certType || 'bodybuilding';
-  const expireAt = new Date();
-  expireAt.setDate(expireAt.getDate() + (p.planDays || 14));
-  try {
-    await db.collection('payments').doc(pendingPaymentId).update({
-      status: 'approved',
-      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    const upd = {
-      ['entitlements.'+cert+'.plan']: 'ACTIVE',
-      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
-      ['entitlements.'+cert+'.planDays']: p.planDays
-    };
-    if (cert === 'bodybuilding') { upd.plan='ACTIVE'; upd.expireAt=firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays=p.planDays; }
-    await db.collection('users').doc(p.uid).update(upd);
-    closeModal();
-    alert(`✅ ${p.email} 승인 완료!\n만료일: ${expireAt.toLocaleDateString('ko-KR')}`);
-    await loadAll();
-  } catch(e) { alert('오류: ' + e.message); }
+  alert('결제·회원권 처리는 admin.html 에서 해 주세요.\n(2026-10-12부터 서버가 처리하고 기록을 남깁니다 — 이 화면의 옛 사본은 막았습니다)');
 }
 
 async function confirmReject() {
-  if (!pendingPaymentId || !pendingPaymentData) return;
-  try {
-    await db.collection('payments').doc(pendingPaymentId).update({
-      status: 'rejected',
-      rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    closeModal();
-    alert('거절 처리되었습니다.');
-    await loadAll();
-  } catch(e) { alert('오류: ' + e.message); }
+  alert('결제·회원권 처리는 admin.html 에서 해 주세요.\n(2026-10-12부터 서버가 처리하고 기록을 남깁니다 — 이 화면의 옛 사본은 막았습니다)');
 }
 
 async function confirmRevoke() {
-  if (!pendingPaymentId || !pendingPaymentData) return;
-  const p = pendingPaymentData;
-  const cert = p.certType || 'bodybuilding';
-  try {
-    await db.collection('payments').doc(pendingPaymentId).update({
-      status: 'revoked',
-      revokedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    // 회원 문서 찾기 (uid 우선, 없으면 이메일로)
-    let ref=null, data=null;
-    if (p.uid) { ref=db.collection('users').doc(p.uid); const d=await ref.get(); if(d.exists) data=d.data(); }
-    if (!data && p.email) {
-      const qs=await db.collection('users').where('email','==',p.email).limit(1).get();
-      if(!qs.empty){ ref=qs.docs[0].ref; data=qs.docs[0].data(); }
-    }
-    if (ref) {
-      const upd = { ['entitlements.'+cert+'.plan']: 'EXPIRED' };
-      // 이번에 만료시키는 것 외에 살아있는 다른 이용권이 있는지 확인
-      const ents = (data && data.entitlements) || {};
-      const now = Date.now();
-      const otherLive = Object.keys(ents).some(k => {
-        if (k===cert) return false;
-        const e=ents[k]; if(!e || e.plan!=='ACTIVE') return false;
-        if(!e.expireAt) return true;
-        const t = e.expireAt.toDate ? e.expireAt.toDate().getTime() : new Date(e.expireAt).getTime();
-        return t > now;
-      });
-      // bodybuilding(레거시 top-plan)이거나, 남은 이용권이 없으면 top-level plan도 만료
-      if (cert==='bodybuilding' || !otherLive) upd.plan='EXPIRED';
-      // 마일리지 사용분 환원 (1년 유효)
-      const used = p.mileageUsed || 0;
-      if (used > 0) {
-        const lots = Array.isArray(data && data.mileageLots) ? data.mileageLots.slice() : [];
-        lots.push({a:used, t:'refund', at:now, exp:now+365*86400000});
-        const hist = Array.isArray(data && data.mileageHistory) ? data.mileageHistory.slice() : [];
-        hist.push({t:'refund', a:used, at:now, memo:'결제 철회 환원'});
-        upd.mileageLots = lots;
-        upd.mileageHistory = hist;
-      }
-      await ref.update(upd);
-    }
-    closeModal();
-    alert(`⛔ ${p.email} (${certNameOf(p)}) 철회 완료. 이용권을 만료 처리했습니다.`+((p.mileageUsed||0)>0?`\n사용한 마일리지 ${(p.mileageUsed||0).toLocaleString()}원을 환원했습니다.`:''));
-    await loadAll();
-  } catch(e) { alert('오류: ' + e.message); }
+  alert('결제·회원권 처리는 admin.html 에서 해 주세요.\n(2026-10-12부터 서버가 처리하고 기록을 남깁니다 — 이 화면의 옛 사본은 막았습니다)');
 }
 
 // ===== 오류 신고 =====
@@ -1294,45 +1221,11 @@ async function markReportDone(reportId) {
 
 // ===== 회원 관리 =====
 async function extendMember(uid, email) {
-  const days = prompt(`${email}\n연장할 일수를 입력하세요 (숫자만):`);
-  if (!days || isNaN(days) || Number(days) <= 0) return;
-  try {
-    const doc = await db.collection('users').doc(uid).get();
-    const data = doc.data() || {};
-    let base = new Date();
-    if (data.plan === 'ACTIVE' && data.expireAt) {
-      const cur = data.expireAt.toDate ? data.expireAt.toDate() : new Date(data.expireAt);
-      if (cur > base) base = cur;
-    }
-    base.setDate(base.getDate() + Number(days));
-    const ts = firebase.firestore.Timestamp.fromDate(base);
-    // 생체(top-level 미러) + 생체 entitlement 동시 반영
-    await db.collection('users').doc(uid).update({
-      plan: 'ACTIVE',
-      expireAt: ts,
-      ['entitlements.bodybuilding.plan']: 'ACTIVE',
-      ['entitlements.bodybuilding.expireAt']: ts
-    });
-    alert(`✅ ${email} ${days}일 연장 완료!\n새 만료일: ${base.toLocaleDateString('ko-KR')}`);
-    await loadAll();
-  } catch(e) { alert('오류: ' + e.message); }
+  alert('결제·회원권 처리는 admin.html 에서 해 주세요.\n(2026-10-12부터 서버가 처리하고 기록을 남깁니다 — 이 화면의 옛 사본은 막았습니다)');
 }
 
 async function expireMember(uid, email) {
-  if (!confirm(`${email}\n이 회원의 모든 이용권을 즉시 만료 처리하시겠어요?`)) return;
-  try {
-    const doc = await db.collection('users').doc(uid).get();
-    const data = doc.data() || {};
-    const upd = { plan: 'EXPIRED' };
-    if (data.entitlements) {
-      Object.keys(data.entitlements).forEach(c => { upd['entitlements.'+c+'.plan'] = 'EXPIRED'; });
-    } else {
-      upd['entitlements.bodybuilding.plan'] = 'EXPIRED';
-    }
-    await db.collection('users').doc(uid).update(upd);
-    alert(`${email} 만료 처리 완료.`);
-    await loadAll();
-  } catch(e) { alert('오류: ' + e.message); }
+  alert('결제·회원권 처리는 admin.html 에서 해 주세요.\n(2026-10-12부터 서버가 처리하고 기록을 남깁니다 — 이 화면의 옛 사본은 막았습니다)');
 }
 </script>
 </body>
