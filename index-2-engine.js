@@ -1062,6 +1062,7 @@ function renderCard(){
     +'<div class="tap-hint">'+hintText+'</div>'
     +learnHTML
     +reportBtn;
+  try{ bbDockSync(); }catch(_){}
   try{ resolveImages(area); }catch(_){}
 
   // 하단 평가 버튼 (답 확인 후에만 노출)
@@ -1209,6 +1210,34 @@ function srEditExam(){
   srExamOverride[SR_CERT]=v; srFlush(); refresh();
 }
 
+/* [2026-10-12] 구술 카드 아래 고정 막대(index.html #bbDock) · 글자 크기 3단계 — 그록 UI/UX 안 ④ */
+var BB_FS = ['보통', '크게', '더 크게'];
+function bbFontApply(){
+  var n = 0; try{ n = parseInt(localStorage.getItem('bbfs') || '0', 10) || 0; }catch(_){}
+  var v = document.getElementById('bodybuildingView'); if(!v) return;
+  v.classList.remove('bbfs-1', 'bbfs-2'); if(n > 0) v.classList.add('bbfs-' + n);
+  var t = document.getElementById('bbDockFsN'); if(t) t.textContent = BB_FS[n];
+  bbCardFit();
+}
+function bbFontCycle(){
+  var n = 0; try{ n = parseInt(localStorage.getItem('bbfs') || '0', 10) || 0; }catch(_){}
+  n = (n + 1) % 3; try{ localStorage.setItem('bbfs', String(n)); }catch(_){}
+  bbFontApply();
+}
+/* 카드 앞·뒷면은 absolute 라 카드(#ci) 높이가 220 에 묶여 있었다 — 긴 답이 아래 평가 단추를 덮었다(10-12 찾음).
+   두 면 중 긴 쪽에 맞춰 카드 높이를 늘린다. 글자 크기를 바꿀 때도 다시 잰다. */
+function bbCardFit(){
+  var ci = document.getElementById('ci'); if(!ci) return;
+  var h = 220;
+  ci.querySelectorAll('.card-face').forEach(function(f){ h = Math.max(h, f.offsetHeight); });
+  ci.style.minHeight = h + 'px';
+}
+function bbDockSync(){
+  var p = document.getElementById('bbDockPrev'), x = document.getElementById('bbDockNext');
+  if(p) p.disabled = current <= 0;
+  if(x) x.disabled = !(filtered && current < filtered.length - 1);
+  bbFontApply();
+}
 function navigate(dir){
   if(dir===1&&current<filtered.length-1){ isFlipped=false;learnOpen=false;current++;renderCard(); }
   else if(dir===-1&&current>0){ isFlipped=false;learnOpen=false;current--;renderCard(); }
