@@ -1543,7 +1543,7 @@ function clRouteFromHash(){
 /* 마이페이지 (6단계) */
 function cmHistDate(at){ if(!at) return ''; var d=new Date(at); return (d.getMonth()+1)+'/'+d.getDate(); }
 function mpHistLabel(t){
-  var m={signup:'가입 축하', ref_signup:'추천 가입 보상', ref_paid:'추천 결제 보상', ref_join:'추천 가입 보너스',
+  var m={signup:'가입 축하', ref_signup:'친구 초대 보상', ref_paid:'추천 결제 보상', ref_join:'초대받아 가입 보상',
     board_post:'글 작성', board_comment:'댓글 작성', board_post_cancel:'글 삭제 회수',
     board_comment_cancel:'댓글 삭제 회수', purchase:'이용권 결제 사용', use:'이용권 결제 사용', event:'이벤트 보너스', event_refund:'합격 후기 환급'};
   return m[t]||t||'포인트 변동';
@@ -1569,7 +1569,9 @@ function mpRenderHome(){
   box.innerHTML=
     '<div class="mp-prof">'+av+'<div><div class="mp-nick">'+cmEsc(nick)+'</div><div class="mp-email">'+cmEsc(email)+'</div></div></div>'
     +'<div class="pt-card"><div class="pt-top"><span class="l">💰 보유 포인트</span><span class="pt-detail" onclick="mpShowHistory()">상세내역 \u203a</span></div>'
-    +'<div class="pt-v">'+bal.toLocaleString()+' P</div><div class="pt-sub">이용권 결제에 사용 (1P = 1원)</div></div>'
+    +'<div class="pt-v">'+bal.toLocaleString()+' P</div><div class="pt-sub">이용권 결제에 사용 (1P = 1원 · 전액 결제 가능)</div></div>'
+    /* [2026-10-12 크리스] 친구 초대 칸 — 일구미 마이페이지 「포인트 · 친구 초대」 꼴. 한도 팝업과 같은 칸을 쓴다 */
+    +((typeof _refShareBlockHTML==='function') ? '<div style="margin:0 16px">'+_refShareBlockHTML('mypage')+'</div>' : '')
     +'<div class="mp-sec">이용권</div>'
     /* ★★ [2026-10-12] 이용권을 살 길이 「무료 한도 초과」와 「만료」 둘뿐이라,
      *   이용권이 **살아 있는 회원은 연장을 못 샀다**(showPlanPopup 이 그 둘에서만 불렸다).

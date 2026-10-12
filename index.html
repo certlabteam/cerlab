@@ -676,6 +676,10 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       </script><br>
       입금 완료 신청 시 이용권이 <strong>즉시 활성화</strong>됩니다.<br>단, 결제(입금)가 확인되지 않으면 승인이 취소될 수 있습니다.
     </div>
+    <!-- [2026-10-12 크리스] 결제 직전 친구 초대 한 줄 — 받은 포인트는 이번 결제에 바로 쓴다 -->
+    <div class="pay-ref-line" onclick="if(myReferralCode){shareReferral('pay')}else{showLoginPopup()}"
+      style="margin:0 0 10px;padding:10px 12px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:10px;font-size:12.5px;color:#7A5A18;line-height:1.6;cursor:pointer;text-align:center">
+      🎁 친구를 초대하면 친구도 나도 <b>9,900P</b> · 포인트로 전액 결제돼요 <u>친구에게 보내기</u></div>
     <div id="mileUseBox"></div>
     <!-- ★ 입금자 이름은 계좌이체용이라 같이 숨긴다. 카드 결제는 안 쓴다. -->
     <input id="depositorName" hidden placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
@@ -697,14 +701,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=05a4ed7c"></script>
+<script defer src="index-1-auth.js?v=1d94ffe3"></script>
 <script defer src="index-2-engine.js?v=d632aafc"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=e9ebd33a"></script>
 <script defer src="index-3-mcq.js?v=b32e4240"></script>
 <script defer src="index-4-learn.js?v=c2ca6392"></script>
-<script defer src="index-5-shell.js?v=5b42abc7"></script>
+<script defer src="index-5-shell.js?v=56ddc4c2"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">

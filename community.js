@@ -453,6 +453,8 @@ async function cmLoadNoticeBar(){
         _cmNbItems=mix;
       }
     }catch(_){}
+    /* [2026-10-12 크리스] 친구 초대(9,900P)도 두 번째 줄로 섞는다 */
+    _cmNbItems.splice(Math.min(1,_cmNbItems.length),0,{board:'invite', title:'🎁 친구 초대하면 친구도 나도 9,900P — 한 달 이용권 값'});
     if(!_cmNbItems.length){ bar.classList.add('hidden'); if(_cmNbTimer){clearInterval(_cmNbTimer);_cmNbTimer=null;} return; }
     bar.classList.remove('hidden');
     var roll=document.getElementById('cmNbRoll');
@@ -473,6 +475,11 @@ async function cmLoadNoticeBar(){
 function cmGotoNotice(){ cmBoard='notice'; openCommunity(); }
 function cmNbClick(){
   var it=_cmNbItems&&_cmNbItems[_cmNbIdx]; if(!it){ openCommunity(); return; }
+  if(it.board==='invite'){
+    if(typeof myReferralCode!=='undefined' && myReferralCode && typeof shareReferral==='function') shareReferral('notice');
+    else if(typeof showLoginPopup==='function') showLoginPopup();
+    return;
+  }
   cmBoard=it.board||'notice'; openCommunity();
   setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(it.id); },60);
 }

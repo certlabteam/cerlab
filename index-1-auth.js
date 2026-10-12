@@ -106,6 +106,29 @@ let myReferralCode = null;
  *   연결(bindReferral)은 가입 때, 지급(claimReferralReward)은 30문제를 넘긴 뒤 서버가 userData.solveCount 로 확인한다. */
 const REF_REWARD_P = 9900, REF_SOLVE_NEED = 30;
 let myReferredBy = null;
+/* [2026-10-12 크리스] 문제를 30개 넘게 푼 회원에게 친구 초대를 한 번만 띄운다(기기마다 한 번).
+ *   다른 창(보상 알림·이용권)이 떠 있으면 이번엔 건너뛰고 다음 저장 때 다시 본다. */
+function maybeInvitePrompt(){
+  if(!currentUser || !myReferralCode) return;
+  if(typeof totalSolve==='function' && totalSolve() < REF_SOLVE_NEED) return;
+  var k='invitePrompted_'+currentUser.uid;
+  try{ if(localStorage.getItem(k)) return; }catch(_){ return; }
+  var busy=['ptModalOv','planPopup','loginPopup'].some(function(id){ var el=document.getElementById(id); return el && !el.classList.contains('hidden') && el.offsetParent!==null; });
+  if(busy || document.getElementById('invitePromptOv')) return;
+  try{ localStorage.setItem(k,'1'); }catch(_){}
+  try{ clTrackCustom('InvitePromptShown', { solved: (typeof totalSolve==='function'?totalSolve():0) }); }catch(_){}
+  var ov=document.createElement('div');
+  ov.id='invitePromptOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(20,28,40,.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:18px 16px 12px;text-align:center">'
+    + '<div style="font-size:16px;font-weight:800;color:#2B3A4B;margin-bottom:4px">벌써 '+REF_SOLVE_NEED+'문제 넘게 푸셨어요 👏</div>'
+    + '<div style="font-size:13px;color:#5A6B7C;line-height:1.6">같이 공부할 친구를 부르면 한 달이 무료예요</div>'
+    + _refShareBlockHTML('solve30')
+    + '<button onclick="document.getElementById(\'invitePromptOv\').remove()" style="background:none;border:none;color:#8A7D6E;font-size:13px;padding:6px 10px;cursor:pointer">다음에 할게요</button>'
+    + '</div>';
+  document.body.appendChild(ov);
+}
 async function tryClaimReferral(){
   if(!myReferredBy || !currentUser || !fbFunctions) return;
   if(typeof totalSolve==='function' && totalSolve() < REF_SOLVE_NEED) return;
@@ -610,6 +633,7 @@ async function saveUserData() {
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     tryClaimReferral();   // [2026-10-12] 푼 수가 서버에 올라간 뒤에 추천 보상을 확인한다
+    setTimeout(maybeInvitePrompt, 2500);
   } catch(e) { console.error('저장 오류:', e); }
 }
 
@@ -932,13 +956,13 @@ function shareReferral(source){
 
 /* 한도 팝업에 끼우는 블록. 로그인해서 추천코드가 있는 사람에게만 보인다.
  * 코드가 없으면(게스트) 빈 문자열 — 그쪽은 로그인 팝업이 따로 받는다. */
-function _refShareBlockHTML(){
+function _refShareBlockHTML(source){
   if(!myReferralCode) return '';
   return '<div style="margin:10px 0;padding:13px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
     + '<div style="font-size:13.5px;font-weight:700;color:#7A5A18;margin-bottom:3px">🎁 친구 초대하면 한 달 무료</div>'
     + '<div style="font-size:12.5px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
       + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값 · 포인트로 전액 결제)<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
-    + '<button onclick="shareReferral()" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
+    + '<button onclick="shareReferral(\''+(source||'limit')+'\')" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
       + 'border:none;border-radius:11px;font-size:14.5px;font-weight:700;cursor:pointer">'
       + '친구에게 보내기</button></div>';
 }
@@ -1301,7 +1325,7 @@ function featureCompareHTML(totalTxt){
     + '</div>';
 }
 function _togglePayUI(show){
-  var els=['.plan-cards','.discount-row','.bank-info','#mileUseBox','#depositorName','#btnPayment','.payment-note'];
+  var els=['.plan-cards','.discount-row','.bank-info','.pay-ref-line','#mileUseBox','#depositorName','#btnPayment','.payment-note'];
   els.forEach(function(sel){ document.querySelectorAll(sel).forEach(function(el){ el.style.display=show?'':'none'; }); });
   if(!show){ var m=document.querySelector('.discount-msg'); if(m) m.style.display='none'; }
 }
