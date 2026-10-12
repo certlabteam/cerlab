@@ -356,6 +356,13 @@ function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc, calcDoc){
     (variantsByTopic[r.topic]=variantsByTopic[r.topic]||[]).push(r);
   });
   var variantPool=(varqDoc&&varqDoc.questions)||[];   // 이론형 변형 문제 풀
+  /* [2026-10-12] 흠 있는 라이브 레벨업 문항을 학생 화면에서 뺀다 — 라이브 q·opts·ans 는 불변이라 자료를 고치지 않고 여기서 거른다.
+   * 넣을 때: 문항 id · 이유 한 줄 · 날짜. 대신할 새 문항은 레벨업 방이 새 id 로 민다(크리스 「숨기고 새로 만들기」). */
+  var LU_HIDE={
+    'yc1_lv_s5_sexual_health_reproduction_02':1,   // 오답 셋이 「~에만」 배타어 — 내용 몰라도 걸러진다 (10-12 레벨업2방)
+    'yc7q_lv_s7_bulimia_diagnosis_03':1            // 오답 넷이 같은 말 바꿔 쓰기 — 사실상 두 갈래 (10-12 레벨업2방)
+  };
+  variantPool=variantPool.filter(function(q){ return q && !q.hidden && !LU_HIDE[q.id]; });
   // 변형 풀 문항도 룩업에 추가(Elo·출제에서 topic/diff 조회 가능하게)
   variantPool.forEach(function(q){ if(q&&q.id) lookup[q.id]={topic:q.topic, diff:q.diff, subtopic:q.subtopic||null}; });
   var calcTemplates=(calcDoc&&calcDoc.templates)||[];   // 계산형 자동생성 템플릿(앱이 즉석 인스턴스화)
