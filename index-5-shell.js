@@ -638,6 +638,8 @@ function closeFirstRunPicker(){
   if(el && el.parentNode) el.parentNode.removeChild(el);
 }
 function routeAfterAuth(){
+  // [2026-10-12] #write/ 주소로 와서 로그인한 사람 — 「글 작성하기」를 다시 누르지 않아도 쓰기 창을 연다
+  try{ if(currentUser && /^#write\//.test(location.hash||'') && typeof clRouteBoard==='function'){ clRouteBoard(); return; } }catch(_){}
   if(_urlHasRoute()) return;
   if(currentUser && !activeCert){
     /* [2026-09-01] 이 브라우저 기록이 없으면 서버에 남은 것을 쓴다.
@@ -1404,9 +1406,25 @@ function cmGetNick(){
   if(currentUser && currentUser.displayName) return currentUser.displayName;
   return '익명';
 }
+/* [2026-10-12] 게시판 주소 — 지인에게 후기를 부탁할 때 보낼 주소(크리스).
+ *   #board/review · #board/sugg · #board/notice  그 게시판 목록
+ *   #write/review[/시험id]                          후기 쓰기 화면(로그인 안 됐으면 로그인부터 · 시험을 미리 고름) */
+function clRouteBoard(){
+  var h=location.hash||'', m=h.match(/^#(board|write)\/(review|sugg|notice)(?:\/([a-z0-9_]+))?$/);
+  if(!m || typeof openCommunity!=='function') return false;
+  cmBoard=m[2]; openCommunity();
+  if(m[1]==='write'){
+    setTimeout(function(){
+      if(typeof cmOpenWrite==='function') cmOpenWrite();
+      var cs=document.getElementById('cmwCert');
+      if(m[3] && cs && [].some.call(cs.options, function(o){ return o.value===m[3]; })) cs.value=m[3];
+    }, 260);
+  }
+  return true;
+}
 function clRouteFromHash(){
   var h=location.hash||''; var m=h.match(/^#post\/(.+)$/);
-  if(!m||!m[1]) return false;
+  if(!m||!m[1]) return clRouteBoard();
   var id=decodeURIComponent(m[1]);
   if(typeof openCommunity==='function') openCommunity();
   setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(id); }, 220);
@@ -1417,8 +1435,9 @@ function clRouteFromHash(){
     if(typeof firebaseReady!=='undefined' && firebaseReady && typeof openCommunity==='function'){ clRouteFromHash(); return; }
     if(n>0) setTimeout(function(){ tryRoute(n-1); }, 300);
   }
-  window.addEventListener('load', function(){ if((location.hash||'').indexOf('#post/')===0) tryRoute(20); });
-  window.addEventListener('hashchange', function(){ if((location.hash||'').indexOf('#post/')===0) clRouteFromHash(); });
+  function isCm(){ return /^#(post|board|write)\//.test(location.hash||''); }
+  window.addEventListener('load', function(){ if(isCm()) tryRoute(20); });
+  window.addEventListener('hashchange', function(){ if(isCm()) clRouteFromHash(); });
 })();
 
 // ===== [2026-07-20] 시험 딥링크: /#{certId} → 해당 시험 바로 진입 (광고·안내용 고정 URL) =====
@@ -1428,6 +1447,7 @@ function clRouteFromHash(){
   function certWanted(){
     var h=location.hash||'';
     if(!h || h==='#' || h.indexOf('#post/')===0 || h.indexOf('#q/')===0 || h==='#account-delete') return null;
+    if(h.indexOf('#board/')===0 || h.indexOf('#write/')===0) return null;   // 게시판 주소(clRouteBoard)
     try{ return decodeURIComponent(h.slice(1)); }catch(_){ return null; }
   }
   function go(id){ enterCert(id); }
