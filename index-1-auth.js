@@ -101,6 +101,7 @@ async function settleReferralMileage(ref, data){
 }
 
 let myReferralCode = null;
+function _avatarUrl(u){ return u ? String(u).replace(/^http:\/\//i, 'https://') : ''; }
 /* [2026-10-12] 크리스 『일구미가 한 포인트 전략 서트랩도 쓰자 파격적으로 친구추가하게』
  *   추천으로 이어진 친구가 문제를 30개 풀면 둘 다 9,900P(스탠다드 한 달 값). 포인트는 전액 결제에 쓸 수 있다.
  *   연결(bindReferral)은 가입 때, 지급(claimReferralReward)은 30문제를 넘긴 뒤 서버가 userData.solveCount 로 확인한다. */
@@ -894,9 +895,13 @@ function updateAuthBar() {
   }
   const planLabels = { FREE_TRIAL:'무료체험', ACTIVE:'이용중', EXPIRED:'만료', GUEST:'게스트' };
   const planClasses = { FREE_TRIAL:'plan-free', ACTIVE:'plan-active', EXPIRED:'plan-expired', GUEST:'plan-guest' };
+  const _fb = `<div style="width:28px;height:28px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
+  /* [2026-10-13] 옛 카카오 계정은 http 사진 주소를 줘서 https 화면에서 막힌다 → https 로 바꾼다.
+   *   주소가 죽어 깨지면 머리글자 원으로 돌린다(일구미와 함께 UIUX_모바일 「프로필 사진」에 맞춤). */
   const img = currentUser.photoURL
-    ? `<img class="user-avatar" src="${currentUser.photoURL}" alt="">`
-    : `<div style="width:28px;height:28px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
+    ? `<img class="user-avatar" src="${_avatarUrl(currentUser.photoURL)}" alt="" onerror="this.onerror=null;this.outerHTML=_avatarFallbackHTML()">`
+    : _fb;
+  window._avatarFallbackHTML = function(){ return _fb; };
   bar.innerHTML = `
     <div class="user-menu" id="userMenu">
       <button class="avatar-btn" onclick="toggleUserMenu(event)" aria-label="내 메뉴">${img}</button>

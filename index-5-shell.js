@@ -1565,7 +1565,7 @@ function mpRenderHome(){
   var nick=cmGetNick(); var email=(currentUser&&currentUser.email)||'';
   var _lots=(window._cmUserDoc && Array.isArray(window._cmUserDoc.mileageLots))?window._cmUserDoc.mileageLots:myMileageLots;
   var bal=(typeof mileageBalance==='function')?mileageBalance(_lots):0;
-  var av=(currentUser&&currentUser.photoURL)?'<img class="mp-av" src="'+cmEsc(currentUser.photoURL)+'" alt="">':'<div class="mp-av"></div>';
+  var av=(currentUser&&currentUser.photoURL)?'<img class="mp-av" src="'+cmEsc(_avatarUrl(currentUser.photoURL))+'" alt="" onerror="this.onerror=null;this.removeAttribute(\'src\')">':'<div class="mp-av"></div>';
   box.innerHTML=
     '<div class="mp-prof">'+av+'<div><div class="mp-nick">'+cmEsc(nick)+'</div><div class="mp-email">'+cmEsc(email)+'</div></div></div>'
     +'<div class="pt-card"><div class="pt-top"><span class="l">💰 보유 포인트</span><span class="pt-detail" onclick="mpShowHistory()">상세내역 \u203a</span></div>'
