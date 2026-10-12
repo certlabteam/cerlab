@@ -101,6 +101,27 @@ async function settleReferralMileage(ref, data){
 }
 
 let myReferralCode = null;
+/* [2026-10-12] 크리스 『일구미가 한 포인트 전략 서트랩도 쓰자 파격적으로 친구추가하게』
+ *   추천으로 이어진 친구가 문제를 30개 풀면 둘 다 9,900P(스탠다드 한 달 값). 포인트는 전액 결제에 쓸 수 있다.
+ *   연결(bindReferral)은 가입 때, 지급(claimReferralReward)은 30문제를 넘긴 뒤 서버가 userData.solveCount 로 확인한다. */
+const REF_REWARD_P = 9900, REF_SOLVE_NEED = 30;
+let myReferredBy = null;
+async function tryClaimReferral(){
+  if(!myReferredBy || !currentUser || !fbFunctions) return;
+  if(typeof totalSolve==='function' && totalSolve() < REF_SOLVE_NEED) return;
+  var k='refClaimed_'+currentUser.uid;
+  try{ if(localStorage.getItem(k)) return; }catch(_){}
+  try{
+    var r=await fbFunctions.httpsCallable('claimReferralReward')({});
+    var d=(r&&r.data)||{};
+    if(d.granted){
+      myMileageLots=(myMileageLots||[]).concat([{a:d.amount, t:'ref_join', at:Date.now(), exp:Date.now()+365*MILE_DAY}]);
+      updateAuthBar();
+      if(typeof showPtModal==='function') showPtModal('referral', d.amount);
+    }
+    if(d.granted || d.reason==='already' || d.reason==='expired' || d.reason==='no-referral'){ try{ localStorage.setItem(k,'1'); }catch(_){} }
+  }catch(e){ console.warn('추천 보상 확인 안 됨:', e && e.message); }
+}
 let myMileageLots = [];   // [{a금액, t유형, at적립ms, exp만료ms}]
 // ?ref= 캡처 (로그인 팝업/리다이렉트 넘어가도 유지)
 try {
@@ -309,7 +330,7 @@ async function loadUserPlan(user) {
       if (referredBy) {
         try {
           const br = await fbFunctions.httpsCallable('bindReferral')({ requestId:_newRequestId(), code:referredBy });
-          if (br && br.data && br.data.joinPointsGranted) refBonus = 1000;
+          if (br && br.data && br.data.bound) refBonus = REF_REWARD_P;
         } catch(e) { console.warn('추천 연결 안 됨:', e && e.message); }
       }
       try { localStorage.removeItem('pendingRef'); } catch(_){}
@@ -323,7 +344,7 @@ async function loadUserPlan(user) {
       myReferralCode = nd.referralCode || null;
       myMileageLots = Array.isArray(nd.mileageLots) ? nd.mileageLots : [];
       // 추천받아 가입했으면 환영 모달로 보너스 안내
-      if (refBonus && typeof showPtModal==='function') { setTimeout(function(){ showPtModal('referral', refBonus); }, 1200); }
+      if (refBonus) { myReferredBy = referredBy; setTimeout(function(){ showPtModal('refbound', refBonus); }, 1200); }
       window._aiCredits = { grade:0, explain:0 };
       window._aiCreditLots = { grade:[], explain:[] };
       userJoinedAt = { seconds: Math.floor(Date.now()/1000) };   // 방금 만든 문서 = 오늘 가입 → 첫날 몰아주기
@@ -373,6 +394,7 @@ async function loadUserPlan(user) {
     userEnt = clApplyUnlock(ent); syncPlanMirror(); updateAuthBar(); loadUserData();
     // 추천코드 없으면 발급(기존 회원 백필) + 마일리지 로드
     myReferralCode = data.referralCode || null;
+    myReferredBy = data.referredBy || null;
     myMileageLots = Array.isArray(data.mileageLots) ? data.mileageLots : [];
     if (!myReferralCode) {
       myReferralCode = genReferralCode(user.uid);
@@ -587,6 +609,7 @@ async function saveUserData() {
       lastStudyAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    tryClaimReferral();   // [2026-10-12] 푼 수가 서버에 올라간 뒤에 추천 보상을 확인한다
   } catch(e) { console.error('저장 오류:', e); }
 }
 
@@ -859,7 +882,7 @@ function updateAuthBar() {
         <button class="ref-acc-btn" onclick="openMyPage()">👤 마이페이지</button>
         <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
         <div class="ref-acc hidden" id="refAcc">
-          <div class="ref-acc-desc">친구가 가입하면 둘 다 1,000원, 친구가 결제하면 그 값의 절반을 포인트로!</div>
+          <div class="ref-acc-desc">친구가 내 링크로 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b>(한 달 이용권 값)! 친구가 결제하면 그 값의 절반도 나에게.</div>
           <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
         </div>
         <button class="ref-acc-btn" onclick="addToHome(event)">📲 홈 화면에 추가</button>
@@ -892,7 +915,7 @@ function shareReferral(source){
   var link = myReferralLink();
   var 이름 = (typeof certLabel==='function' && typeof activeCertId==='function')
              ? certLabel(activeCertId()) : '';
-  var 글 = (이름 ? 이름+' ' : '') + '기출문제랑 해설 다 있는 서트랩이야. 이 링크로 들어오면 둘 다 1,000원 받아!';
+  var 글 = (이름 ? 이름+' ' : '') + '기출문제랑 해설 다 있는 서트랩이야. 이 링크로 가입해서 문제 30개 풀면 너도 나도 9,900포인트(한 달 이용권 값) 받아!';
   if(navigator.share){
     try{ clTrackCustom('InviteLinkShared', { source: source||'limit' }); }catch(_){}
     navigator.share({ title:'서트랩', text:글, url:link })
@@ -912,9 +935,9 @@ function shareReferral(source){
 function _refShareBlockHTML(){
   if(!myReferralCode) return '';
   return '<div style="margin:10px 0;padding:13px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
-    + '<div style="font-size:13.5px;font-weight:700;color:#7A5A18;margin-bottom:3px">🎁 친구에게 알리고 포인트 받기</div>'
+    + '<div style="font-size:13.5px;font-weight:700;color:#7A5A18;margin-bottom:3px">🎁 친구 초대하면 한 달 무료</div>'
     + '<div style="font-size:12.5px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
-      + '친구가 가입하면 <b>둘 다 1,000원</b><br>친구가 결제하면 <b>그 값의 절반</b>을 나에게</div>'
+      + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값 · 포인트로 전액 결제)<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
     + '<button onclick="shareReferral()" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
       + 'border:none;border-radius:11px;font-size:14.5px;font-weight:700;cursor:pointer">'
       + '친구에게 보내기</button></div>';
@@ -1345,7 +1368,7 @@ function showPlanPopup(membership) {
   }
   _planPopupShow();
   renderPlanCards(cert);
-  mileApplyOn=false; renderMileUse();
+  mileApplyOn=mileageBalance(myMileageLots)>0; renderMileUse(); recalcPay();   // [2026-10-12] 포인트가 있으면 기본으로 쓴다
 }
 /* [2026-08-25] 결제창을 몇 명이 봤는지 센다.
  * 깔때기에서 여기만 비어 있었다 - 가입·문제풀이·한도도달·결제는 다 남는데
@@ -1374,7 +1397,7 @@ function showWelcomePopup() {
     <div class="auth-feature-item">레벨테스트·예상점수 무료</div>
     <div class="auth-feature-item">50문제 무료 체험!</div>
     <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(1년 안에 사용)</span><br>
-      친구를 초대하면 친구도 나도 1,000원, 친구가 결제하면 그 값의 절반을 포인트로 (1년 유효)
+      친구를 초대해 친구가 문제 30개를 풀면 <b>친구도 나도 9,900P</b>(한 달 이용권 값) · 친구가 결제하면 그 값의 절반도 포인트로 (1년 유효)
       <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
     </div>`;
   document.querySelector('.btn-google-login').style.display='none';
@@ -1462,7 +1485,22 @@ function renderMileUse(){
   box.innerHTML='<label class="mile-use"><input type="checkbox" id="mileChk" '+(mileApplyOn?'checked':'')+' onchange="onMileToggle()"> 💰 보유 포인트 <b>'+bal.toLocaleString()+'P</b> 사용</label>';
 }
 function onMileToggle(){ const c=document.getElementById('mileChk'); mileApplyOn=!!(c&&c.checked); recalcPay(); }
+/* [2026-10-12] 포인트 한도가 없어졌다(전액 가능). 카드로 낼 돈이 남으면 토스 최소 100원 이상이어야 해서
+ * 1~99원이 남는 값은 100원이 남게 줄인다 — 서버 pricing.quote 와 같은 셈. */
+function _pointsFor(price){
+  const bal=mileageBalance(myMileageLots);
+  let applied=mileApplyOn?Math.min(bal,price):0;
+  if(price-applied>0 && price-applied<100) applied=Math.max(0,price-100);
+  return applied;
+}
 function recalcPay(){
+  const card=document.getElementById('btnCardPay');
+  const price0=selectedPlanPrice||0, applied0=_pointsFor(price0), payable0=price0-applied0;
+  if(card && !card.disabled){
+    card.textContent = (price0>0 && payable0<=0) ? '💰 포인트 '+applied0.toLocaleString()+'P로 바로 시작'
+      : applied0>0 ? '💳 '+payable0.toLocaleString()+'원 카드 결제 (포인트 '+applied0.toLocaleString()+'P 사용)'
+      : '💳 카드로 결제';
+  }
   const btn=document.getElementById('btnPayment'); if(!btn) return;
   const price=selectedPlanPrice||0;
   const bal=mileageBalance(myMileageLots);
@@ -1534,9 +1572,14 @@ async function startCardPayment(){
     await fbFunctions.httpsCallable('initializeMember')({ requestId:_newRequestId(), signupCert:cert });
     // 2) 주문 만들기 — 금액은 보내지 않는다(서버가 정한다)
     var r=await fbFunctions.httpsCallable('createPaymentOrder')({
-      requestId:_newRequestId(), examId:cert, planDays:selectedPlanDays, pointsToUse:0
+      requestId:_newRequestId(), examId:cert, planDays:selectedPlanDays, pointsToUse:_pointsFor(selectedPlanPrice||0)
     });
     var o=(r&&r.data)||{};
+    // [2026-10-12] 포인트로 전액 — 서버가 결제창 없이 바로 켰다
+    if(o.orderId && o.status==='PAID' && o.fulfillmentStatus==='APPLIED' && !(o.payableAmount>0)){
+      alert('포인트로 결제했어요. '+certFull(cert)+' '+planLabelOf(selectedPlanDays)+'이 바로 켜졌어요.');
+      location.reload(); return;
+    }
     if(!o.orderId || !(o.payableAmount>0)) throw new Error('주문을 만들지 못했어요.');
     // 3) 결제창 — 돌아올 곳은 우리 쪽 pay-result.html
     var back=location.origin+'/pay-result.html';
@@ -1552,9 +1595,10 @@ async function startCardPayment(){
     var m=(e&&e.message)||'';
     if(/취소|USER_CANCEL/i.test(m)||(e&&e.code==='USER_CANCEL')) { /* 이용자가 닫은 것 — 조용히 */ }
     else if(/준비 중/.test(m)) alert('카드 결제를 잠시 쓸 수 없어요. 조금 뒤 다시 시도해 주세요.\n계속 안 되면 certlab.team@gmail.com 으로 알려 주세요.');   // 계좌이체는 없앴다(10-12)
+    else if(/보유 포인트가 부족/.test(m) && mileApplyOn) alert('조금 전에 연 결제창이 포인트를 잡아 두고 있어요(30분 뒤 풀려요).\n지금 바로 결제하려면 「보유 포인트 사용」을 끄고 다시 눌러 주세요.');
     else alert('결제를 시작하지 못했어요.\n' + m);
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent='💳 카드로 결제'; }
+    if(btn){ btn.disabled=false; btn.textContent='💳 카드로 결제'; recalcPay(); }
   }
 }
 
@@ -1882,7 +1926,10 @@ function showPtModal(kind, points, certLabel){
   var ic=document.getElementById('ptModalIc'), ti=document.getElementById('ptModalTi'), sub=document.getElementById('ptModalSub');
   if(kind==='referral'){
     ic.textContent='🎁'; ti.textContent='추천 보상 '+points.toLocaleString()+'포인트!';
-    sub.textContent='내 추천으로 친구가 가입·결제했어요. 이용권에 사용할 수 있어요. (유효기간 1년)';
+    sub.textContent='친구 초대 보상이에요. 이용권 결제에 전액 쓸 수 있어요. (1P = 1원 · 유효기간 1년)';
+  } else if(kind==='refbound'){
+    ic.textContent='🤝'; ti.textContent='친구 초대로 가입했어요!';
+    sub.textContent='문제를 '+REF_SOLVE_NEED+'개 풀면 나도, 초대한 친구도 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 받아요.';
   } else if(kind==='earn'){
     ic.textContent='💰'; ti.textContent=points.toLocaleString()+'포인트 적립되었어요';
     if(certLabel && points>1000){
