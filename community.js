@@ -437,6 +437,22 @@ async function cmLoadNoticeBar(){
       arr.sort(function(a,b){ return b.at-a.at; });
       arr.slice(0,5).forEach(function(p){ _cmNbItems.push({id:p.id, board:'notice', title:('\uD83D\uDCE2 '+p.t)}); });
     }catch(_){}
+    /* [2026-10-12] \uD569\uACA9\uD6C4\uAE30\uB3C4 \uC11E\uC5B4 \uB3CC\uB9B0\uB2E4 \u2014 \uD06C\uB9AC\uC2A4 \u300E\uC5EC\uAE30\uC5D0 \uD6C4\uAE30 \uB9AC\uBDF0 \uC62C\uB77C\uC628\uAC83\uB3C4 \uB864\uB9C1\uB418\uAC8C \uD574\uC918\u300F.
+       \uCD5C\uC2E0 5\uAC1C\uB97C \uACF5\uC9C0\uC640 \uBC88\uAC08\uC544 \uB123\uB294\uB2E4(\uACF5\uC9C01\u00B7\uD6C4\uAE301\u00B7\uACF5\uC9C02\u00B7\uD6C4\uAE302\u2026). \uB204\uB974\uBA74 \uADF8 \uD6C4\uAE30\uAC00 \uC5F4\uB9B0\uB2E4(cmNbClick \uC774 board \uB97C \uBCF8\uB2E4). */
+    try{
+      var rq=await db.collection('posts').where('board','==','review').limit(20).get();
+      var rv=[]; rq.forEach(function(d){ var p=d.data(); rv.push({id:d.id, t:(p.title||''), c:p.cert, at:(p.createdAt&&p.createdAt.seconds)||0}); });
+      rv.sort(function(a,b){ return b.at-a.at; });
+      var ri=rv.slice(0,5).map(function(p){
+        var lb=(p.c && typeof CM_CERT_LABEL!=='undefined' && CM_CERT_LABEL[p.c]) ? (CM_CERT_LABEL[p.c]+' \u2014 ') : '';
+        return {id:p.id, board:'review', title:('\u2B50 \uD569\uACA9\uD6C4\uAE30 \u00B7 '+lb+p.t)};
+      });
+      if(ri.length){
+        var mix=[], ni=_cmNbItems;
+        for(var k=0;k<Math.max(ni.length,ri.length);k++){ if(ni[k]) mix.push(ni[k]); if(ri[k]) mix.push(ri[k]); }
+        _cmNbItems=mix;
+      }
+    }catch(_){}
     if(!_cmNbItems.length){ bar.classList.add('hidden'); if(_cmNbTimer){clearInterval(_cmNbTimer);_cmNbTimer=null;} return; }
     bar.classList.remove('hidden');
     var roll=document.getElementById('cmNbRoll');
