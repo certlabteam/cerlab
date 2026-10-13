@@ -619,7 +619,10 @@ async function saveUserData() {
         }
       }
     }catch(_){ resumeState=null; }
-    await db.collection('userData').doc(currentUser.uid).set({
+    /* ★ [2026-10-13] merge 없이 set 하면 문서가 통째로 바뀌어 **푸시 토큰(fcmTokens)·보낸 기록(pushState)·알림 끔(pushOff)이
+     *   저장할 때마다 지워졌다** — 복습 푸시가 로그인 직후 잠깐 말고는 못 갔다.
+     *   mergeFields 로 아래 칸만 통째로 바꾼다(merge:true 는 지도 칸을 깊이 섞어 지운 값이 남으므로 쓰지 않는다). */
+    const _ud = {
       wrongList, favoriteList, solveCount: totalSolve(), solveCountByCert,
       cardProgress: srProgress, examDates: srExamOverride, diagnostics: srDiagnostics,
       resumeState: resumeState,
@@ -632,7 +635,8 @@ async function saveUserData() {
       sport2subs: (_sp2SubsMem && _sp2SubsMem.length===5) ? _sp2SubsMem : null,
       lastStudyAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    await db.collection('userData').doc(currentUser.uid).set(_ud, { mergeFields: Object.keys(_ud) });
     tryClaimReferral();   // [2026-10-12] 푼 수가 서버에 올라간 뒤에 추천 보상을 확인한다
     setTimeout(maybeInvitePrompt, 2500);
   } catch(e) { console.error('저장 오류:', e); }

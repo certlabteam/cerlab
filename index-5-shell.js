@@ -1585,7 +1585,41 @@ function mpRenderHome(){
     +'<div class="mp-link" onclick="mpShowMyComments()"><span class="e">💬</span>내가 쓴 댓글</div>'
     +'<div class="mp-sec">회원정보</div>'
     +((window._cmUserDoc && window._cmUserDoc.boardNick) ? '<div class="mp-link" style="opacity:.6;cursor:default"><span class="e">\u270F\ufe0f</span>닉네임 '+cmEsc(window._cmUserDoc.boardNick)+' (변경 불가)</div>' : '<div class="mp-link" onclick="mpChangeNick()"><span class="e">\u270F\ufe0f</span>닉네임 설정</div>');
+  /* [2026-10-13 크리스] 복습 알림 켜고 끄기 — 끄면 userData.pushOff=true 를 적고 서버(runReviewPush)가 건너뛴다.
+   *   브라우저 권한은 건드리지 않는다 → 다시 켤 때 권한 창 없이 바로 켜진다. */
+  box.innerHTML += '<div class="mp-sec">알림</div><div class="mp-link" onclick="mpTogglePush()"><span class="e">🔔</span>복습 알림 받기'
+    + ' <span id="mpPushState" style="margin-left:auto;font-size:12.5px;color:#8A7D6E">확인 중…</span></div>';
+  mpPushStateLoad();
   box.innerHTML += '<div class="mp-sec">계정</div><div class="mp-link" onclick="showDeletePopup()" style="color:#C0392B"><span class="e">⚠️</span>회원 탈퇴</div>';
+}
+function _mpPushSupported(){
+  return !_pushIsIOS() && ('Notification' in window) && ('serviceWorker' in navigator)
+    && !!(window.firebase && firebase.messaging && (!firebase.messaging.isSupported || firebase.messaging.isSupported()));
+}
+var _mpPushOn = false;
+function _mpPushShow(t, on){ var s=document.getElementById('mpPushState'); if(s){ s.textContent=t; s.style.color=on?'#0F6E56':'#8A7D6E'; s.style.fontWeight=on?'700':'400'; } }
+async function mpPushStateLoad(){
+  if(!_mpPushSupported()){ _mpPushOn=false; _mpPushShow('이 기기는 안 돼요', false); return; }
+  var d={};
+  try{ var s=await db.collection('userData').doc(currentUser.uid).get(); d=s.exists?s.data():{}; }catch(_){}
+  _mpPushOn = Notification.permission==='granted' && d.pushOff!==true;
+  _mpPushShow(_mpPushOn?'켜짐':'꺼짐', _mpPushOn);
+}
+async function mpTogglePush(){
+  if(!currentUser) return;
+  if(!_mpPushSupported()){ alert('이 기기에서는 복습 알림을 받을 수 없어요.\n(아이폰은 아직 지원하지 않아요)'); return; }
+  var ref=db.collection('userData').doc(currentUser.uid);
+  if(_mpPushOn){
+    try{ await ref.set({ pushOff:true }, {merge:true}); _mpPushOn=false; _mpPushShow('꺼짐', false); }catch(e){ alert('저장하지 못했어요. 잠시 후 다시 눌러 주세요.'); }
+    return;
+  }
+  if(Notification.permission==='denied'){ alert('브라우저에서 이 사이트 알림이 막혀 있어요.\n주소창 왼쪽 자물쇠 → 알림 → 허용으로 바꾼 뒤 다시 눌러 주세요.'); return; }
+  if(Notification.permission!=='granted'){
+    var p; try{ p=await Notification.requestPermission(); }catch(_){}
+    if(p!=='granted'){ _mpPushShow('꺼짐', false); return; }
+  }
+  await _pushRegisterToken();
+  try{ await ref.set({ pushOff:false }, {merge:true}); _mpPushOn=true; _mpPushShow('켜짐', true); }catch(e){ alert('저장하지 못했어요. 잠시 후 다시 눌러 주세요.'); }
 }
 function mpShowHistory(){
   var box=document.getElementById('mpBody'); if(!box) return;
