@@ -646,9 +646,9 @@ async function saveUserData() {
 // ===== 인앱 브라우저 팝업 =====
 function openInChrome() {
   const url = window.location.href;
-  // 안드로이드: intent로 크롬 강제 실행
-  if (/android/i.test(navigator.userAgent)) {
-    window.location.href = 'intent://' + url.replace(/https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+  // 카카오톡(아이폰 포함)·안드로이드는 바로 밖으로 — _goOutside
+  if (_goOutside()) {
+    return;
   } else {
     /* [2026-09-02] 인앱 브라우저에서 경고창은 잘 막힌다. 안내창 안에서 알린다.
      * 복사가 안 될 수도 있으니 주소를 눈에 보이게 함께 놓는다. */
@@ -729,11 +729,37 @@ function dressInappPopup(로그인하려다){
     if(later) later.textContent = 로그인하려다 ? '닫고 카카오로 할게요' : '나중에 할게요';
   }catch(_){}
 }
+/* [2026-10-13] 앱 안 브라우저면 **안내 없이 바로 바깥 브라우저로** 보낸다 — 일구미와 같게(크리스 말씀).
+ *   카카오톡: kakaotalk://web/openExternal (안드로이드·아이폰 둘 다) · 그 밖의 안드로이드 앱(네이버 등): 크롬 intent.
+ *   아이폰의 다른 앱은 밖으로 보낼 길이 없어 안내 창을 띄운다.
+ *   ★ 세션마다 한 번만 시도한다(되돌아오면 또 보내는 고리를 막는다).
+ *     보낸 뒤에도 이 화면이 그대로 보이면(크롬이 없어 못 넘어감 등) 지금까지의 안내 창을 띄운다. */
+function _goOutside(){
+  var url = location.href, ua = (navigator.userAgent || '').toLowerCase();
+  if (ua.indexOf('kakaotalk') >= 0) { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); return true; }
+  if (/android/.test(ua)) { location.href = 'intent://' + url.replace(/https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end'; return true; }
+  return false;
+}
+function _showInappPopup(){
+  if (sessionStorage.getItem('inappDismissed')) return;
+  dressInappPopup(false);
+  document.getElementById('inappPopup').classList.remove('hidden');
+}
 function checkInAppBrowser() {
-  if (isInAppBrowser() && !sessionStorage.getItem('inappDismissed')) {
-    dressInappPopup(false);
-    document.getElementById('inappPopup').classList.remove('hidden');
+  if (!isInAppBrowser()) return;
+  var tried = false;
+  try { tried = !!sessionStorage.getItem('inappTried'); sessionStorage.setItem('inappTried', '1'); } catch(_) { tried = true; }
+  if (!tried) {
+    /* 페이지를 다 받은 뒤에 보낸다 — 받는 중에 보내면 남은 스크립트가 끊겨, 앱으로 돌아왔을 때 화면이 반쯤 깨진다 */
+    var go = function(){
+      if (_goOutside()) setTimeout(function(){ if (document.visibilityState === 'visible') _showInappPopup(); }, 2000);
+      else _showInappPopup();
+    };
+    if (document.readyState === 'complete') setTimeout(go, 300);
+    else window.addEventListener('load', function(){ setTimeout(go, 300); }, { once: true });
+    return;
   }
+  _showInappPopup();
 }
 
 function isInAppBrowser() {
@@ -746,10 +772,9 @@ function isInAppBrowser() {
 async function signInWithGoogle() {
   if (!firebaseReady) { alert('로그인은 배포된 사이트(인터넷 연결)에서 동작합니다. 지금은 미리보기 모드예요.'); return; }
   if (isInAppBrowser()) {
-    const url = window.location.href;
-    // 안드로이드: intent로 크롬 열기
-    if (/android/i.test(navigator.userAgent)) {
-      window.location.href = 'intent://' + url.replace(/https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+    // 카카오톡(아이폰 포함)·안드로이드는 바로 밖으로 — _goOutside
+    if (_goOutside()) {
+      /* 밖으로 보냈다 */
     } else {
       /* [2026-09-02] 경고창은 닫으면 제자리라 길이 끊긴다.
        * 앱 이름과 할 일이 적힌 안내창을 그대로 띄운다. */
