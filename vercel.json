@@ -8,6 +8,14 @@
       "destination": "https://certlab-c3bcb.firebaseapp.com/__/auth/:path*"
     },
     {
+      "source": "/seo",
+      "destination": "https://certlabteam.github.io/cerlab/seo/index.html"
+    },
+    {
+      "source": "/seo/:path*",
+      "destination": "https://certlabteam.github.io/cerlab/seo/:path*"
+    },
+    {
       "source": "/admin",
       "destination": "/admin.html"
     }

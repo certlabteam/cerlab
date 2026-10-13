@@ -1,0 +1,6 @@
+# [2026-10-14] 기출 정적 페이지(seo/ · 686장 · 113 MB)는 버셀에 올리지 않는다.
+#   배포 한 벌이 117 MB 라 버셀 저장공간(10 GB)의 94% 를 서트랩이 먹었다 → 한 벌 4 MB 로 줄인다.
+#   seo/ 는 같은 저장소의 GitHub Pages(certlabteam.github.io/cerlab/seo/)가 내보내고,
+#   vercel.json rewrites 가 certlab.ai.kr/seo/… 를 그쪽으로 잇는다 — 주소·canonical 은 그대로다.
+#   ⚠ 저장소의 CNAME 을 다시 넣으면 GitHub Pages 가 certlab.ai.kr 로 되돌려 보내(301) 잇기가 빙빙 돈다.
+seo/
