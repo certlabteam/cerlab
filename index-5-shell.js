@@ -1550,7 +1550,7 @@ function clRouteFromHash(){
 /* 마이페이지 (6단계) */
 function cmHistDate(at){ if(!at) return ''; var d=new Date(at); return (d.getMonth()+1)+'/'+d.getDate(); }
 function mpHistLabel(t){
-  var m={signup:'가입 축하', ref_signup:'친구 초대 보상', ref_paid:'추천 결제 보상', ref_join:'초대받아 가입 보상',
+  var m={signup:'가입 축하', ref_signup:'친구 초대 보상', ref_paid:'추천 결제 보상', ref_join:'초대받아 가입 보상', app_bonus:'앱 첫 로그인 혜택',
     board_post:'글 작성', board_comment:'댓글 작성', board_post_cancel:'글 삭제 회수',
     board_comment_cancel:'댓글 삭제 회수', purchase:'이용권 결제 사용', use:'이용권 결제 사용', event:'이벤트 보너스', event_refund:'합격 후기 환급'};
   return m[t]||t||'포인트 변동';

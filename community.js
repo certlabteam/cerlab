@@ -455,6 +455,9 @@ async function cmLoadNoticeBar(){
     }catch(_){}
     /* [2026-10-12 크리스] 친구 초대(9,900P)도 두 번째 줄로 섞는다 */
     _cmNbItems.splice(Math.min(1,_cmNbItems.length),0,{board:'invite', title:'🎁 친구 초대하면 친구도 나도 9,900P — 한 달 이용권 값'});
+    /* [2026-10-13] 안드로이드 웹에서만 — 앱 첫 로그인 혜택(앱 안이면 안 띄운다) */
+    if(/android/i.test(navigator.userAgent) && !(typeof clInApp==='function' && clInApp()) && !(typeof pwaStandalone==='function' && pwaStandalone()))
+      _cmNbItems.splice(Math.min(3,_cmNbItems.length),0,{board:'app', title:'📲 앱에서 첫 로그인하고 문제 10개 풀면 9,900P'});
     if(!_cmNbItems.length){ bar.classList.add('hidden'); if(_cmNbTimer){clearInterval(_cmNbTimer);_cmNbTimer=null;} return; }
     bar.classList.remove('hidden');
     var roll=document.getElementById('cmNbRoll');
@@ -475,6 +478,7 @@ async function cmLoadNoticeBar(){
 function cmGotoNotice(){ cmBoard='notice'; openCommunity(); }
 function cmNbClick(){
   var it=_cmNbItems&&_cmNbItems[_cmNbIdx]; if(!it){ openCommunity(); return; }
+  if(it.board==='app'){ location.href='https://play.google.com/store/apps/details?id=kr.certlab.app'; return; }
   if(it.board==='invite'){
     if(typeof myReferralCode!=='undefined' && myReferralCode && typeof shareReferral==='function') shareReferral('notice');
     else if(typeof showLoginPopup==='function') showLoginPopup();

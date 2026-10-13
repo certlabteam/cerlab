@@ -130,6 +130,42 @@ function maybeInvitePrompt(){
     + '</div>';
   document.body.appendChild(ov);
 }
+/* [2026-10-13] 앱 첫 로그인 혜택 — 앱(플레이스토어 TWA)에서 문제 10개를 풀면 9,900P · 계정당 한 번(서버 claimAppBonus).
+ *   ⚠ 「설치하면 지급」이라고 쓰지 않는다 — 플레이 정책이 보상 설치를 막는다. 「앱에서 로그인·학습한 회원 혜택」이다.
+ *   앱인지: 앱이 열 때 넘기는 출처 android-app://kr.certlab.app 를 세션에 적어 둔다(크롬과 저장소를 같이 써서 localStorage 는 안 쓴다). */
+const APP_BONUS_P = 9900, APP_BONUS_NEED = 10;
+function clInApp(){
+  try{
+    if(/^android-app:\/\/kr\.certlab\.app/.test(document.referrer||'')) sessionStorage.setItem('clInApp','1');
+    return sessionStorage.getItem('clInApp')==='1';
+  }catch(_){ return false; }
+}
+var _appBase = null;
+async function tryAppBonus(){
+  if(!currentUser || !fbFunctions || !db || !clInApp()) return;
+  var k='appBonusDone_'+currentUser.uid;
+  try{ if(localStorage.getItem(k)) return; }catch(_){}
+  if(_appBase===null){
+    try{
+      var ref=db.collection('userData').doc(currentUser.uid), s=await ref.get(), d=s.exists?s.data():{};
+      if(typeof d.appBase==='number') _appBase=d.appBase;
+      else{
+        _appBase=Math.max(0,totalSolve());
+        await ref.set({ appBase:_appBase, appSince:firebase.firestore.FieldValue.serverTimestamp() }, {merge:true});
+        try{ if(!localStorage.getItem('appIntro_'+currentUser.uid)){ localStorage.setItem('appIntro_'+currentUser.uid,'1'); showPtModal('appintro', APP_BONUS_P); } }catch(_){}
+      }
+    }catch(_){ _appBase=null; return; }
+  }
+  if(totalSolve()-_appBase < APP_BONUS_NEED) return;
+  try{
+    var r=await fbFunctions.httpsCallable('claimAppBonus')({}), d2=(r&&r.data)||{};
+    if(d2.granted){
+      myMileageLots=(myMileageLots||[]).concat([{a:d2.amount, t:'app_bonus', at:Date.now(), exp:Date.now()+365*MILE_DAY}]);
+      updateAuthBar(); showPtModal('appbonus', d2.amount);
+    }
+    if(d2.granted || d2.reason==='already'){ try{ localStorage.setItem(k,'1'); }catch(_){} }
+  }catch(e){ console.warn('앱 혜택 확인 안 됨:', e && e.message); }
+}
 async function tryClaimReferral(){
   if(!myReferredBy || !currentUser || !fbFunctions) return;
   if(typeof totalSolve==='function' && totalSolve() < REF_SOLVE_NEED) return;
@@ -638,6 +674,7 @@ async function saveUserData() {
     };
     await db.collection('userData').doc(currentUser.uid).set(_ud, { mergeFields: Object.keys(_ud) });
     tryClaimReferral();   // [2026-10-12] 푼 수가 서버에 올라간 뒤에 추천 보상을 확인한다
+    tryAppBonus();        // [2026-10-13] 앱 첫 로그인 혜택
     setTimeout(maybeInvitePrompt, 2500);
   } catch(e) { console.error('저장 오류:', e); }
 }
@@ -943,7 +980,7 @@ function updateAuthBar() {
           <div class="ref-acc-desc">친구가 내 링크로 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b>(한 달 이용권 값)! 친구가 결제하면 그 값의 절반도 나에게.</div>
           <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
         </div>
-        <button class="ref-acc-btn" onclick="addToHome(event)">${/android/i.test(navigator.userAgent) ? '📲 앱 설치 (플레이스토어)' : '📲 홈 화면에 추가'}</button>
+        <button class="ref-acc-btn" onclick="addToHome(event)">${/android/i.test(navigator.userAgent) ? '📲 앱 첫 로그인 혜택 9,900P' : '📲 홈 화면에 추가'}</button>
         <button class="btn-logout" onclick="signOut()">로그아웃</button>
       </div>
     </div>`;
@@ -1985,6 +2022,12 @@ function showPtModal(kind, points, certLabel){
   if(kind==='referral'){
     ic.textContent='🎁'; ti.textContent='추천 보상 '+points.toLocaleString()+'포인트!';
     sub.textContent='친구 초대 보상이에요. 이용권 결제에 전액 쓸 수 있어요. (1P = 1원 · 유효기간 1년)';
+  } else if(kind==='appintro'){
+    ic.textContent='📲'; ti.textContent='앱 첫 로그인 혜택';
+    sub.textContent='앱에서 문제를 '+APP_BONUS_NEED+'개 풀면 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 드려요. 포인트로 이용권을 전액 결제할 수 있어요.';
+  } else if(kind==='appbonus'){
+    ic.textContent='🎉'; ti.textContent='앱 혜택 '+points.toLocaleString()+'포인트!';
+    sub.textContent='앱으로 공부해 주셔서 고마워요. 이용권 결제에 전액 쓸 수 있어요. (1P = 1원 · 유효기간 1년)';
   } else if(kind==='refbound'){
     ic.textContent='🤝'; ti.textContent='친구 초대로 가입했어요!';
     sub.textContent='문제를 '+REF_SOLVE_NEED+'개 풀면 나도, 초대한 친구도 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 받아요.';
