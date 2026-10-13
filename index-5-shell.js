@@ -1350,7 +1350,14 @@ async function addToHome(e){
   const isAndroid=/android/i.test(ua);
   const isIOS=!isAndroid && (/iphone|ipad|ipod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1));
   if(pwaStandalone()){ alert('이미 앱으로 설치되어 실행 중이에요.'); return; }
-  if(pwaPrompt){                       // 안드로이드·크롬·엣지: 원터치 설치
+  /* [2026-10-13] 안드로이드는 플레이스토어 앱(kr.certlab.app · 공개 확인)으로 보낸다 — 홈 화면 바로가기보다
+   *   알림·전체 화면이 안정적이다. 크롬 설치 신호(pwaPrompt)가 있어도 앱이 먼저다. */
+  if(isAndroid){
+    try{ clTrackCustom('PlayStoreClick', { source:'addToHome' }); }catch(_){}
+    location.href='https://play.google.com/store/apps/details?id=kr.certlab.app';
+    return;
+  }
+  if(pwaPrompt){                      // 안드로이드·크롬·엣지: 원터치 설치
     pwaPrompt.prompt();
     try{ await pwaPrompt.userChoice; }catch(_){}
     pwaPrompt=null; return;

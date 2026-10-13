@@ -943,7 +943,7 @@ function updateAuthBar() {
           <div class="ref-acc-desc">친구가 내 링크로 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b>(한 달 이용권 값)! 친구가 결제하면 그 값의 절반도 나에게.</div>
           <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
         </div>
-        <button class="ref-acc-btn" onclick="addToHome(event)">📲 홈 화면에 추가</button>
+        <button class="ref-acc-btn" onclick="addToHome(event)">${/android/i.test(navigator.userAgent) ? '📲 앱 설치 (플레이스토어)' : '📲 홈 화면에 추가'}</button>
         <button class="btn-logout" onclick="signOut()">로그아웃</button>
       </div>
     </div>`;
