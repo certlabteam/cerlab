@@ -1354,9 +1354,12 @@ function lpTrack(name, params){
   try{ if(typeof gtag==='function') gtag('event', name, params||{}); }catch(_){}
 }
 var _lpSeen=false;
+/* ★ [2026-10-14] 크리스 「의견 다 받아서 고치고 올려」 — GPT·그록·방들 의견을 다 받고 고칠 때까지 끈다.
+ *   켜려면 LP_ON=true. 미리 보기는 주소 끝에 ?lp=1 */
+var LP_ON=false;
 function lpSync(){
   var w=document.getElementById('lpWrap'), h=document.getElementById('homeHero'); if(!w) return;
-  var guest=!(typeof currentUser!=='undefined' && currentUser);
+  var guest=!(typeof currentUser!=='undefined' && currentUser) && (LP_ON || /[?&]lp=1/.test(location.search));
   w.classList.toggle('hidden', !guest);
   if(h) h.classList.toggle('hidden', guest);   // 랜딩 히어로가 같은 말을 하니 옛 히어로는 숨긴다
   if(guest && !_lpSeen){ _lpSeen=true; lpTrack('LandingView', { src:(location.search||'').slice(0,80) }); }
