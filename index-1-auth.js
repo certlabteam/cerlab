@@ -1396,7 +1396,8 @@ function featureCompareHTML(totalTxt){
     + '</div>';
 }
 function _togglePayUI(show){
-  var els=['.plan-cards','.discount-row','.bank-info','.pay-ref-line','#mileUseBox','#depositorName','#btnPayment','.payment-note'];
+  /* ★ [2026-10-14] #btnCardPay(토스 카드 결제)가 빠져 있어 앱(TWA)에서도 카드 결제 단추가 보였다 — 플레이 정책 위반 자리. 더한다. */
+  var els=['.plan-cards','.discount-row','.bank-info','.pay-ref-line','#mileUseBox','#depositorName','#btnPayment','#btnCardPay','.payment-note'];
   els.forEach(function(sel){ document.querySelectorAll(sel).forEach(function(el){ el.style.display=show?'':'none'; }); });
   if(!show){ var m=document.querySelector('.discount-msg'); if(m) m.style.display='none'; }
 }
@@ -1405,7 +1406,9 @@ function showAppWebPay(){
   var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🎯 멤버십 이용권';
   var sub=document.getElementById('planSub'); if(sub) sub.textContent='맞춤 합격플랜과 무제한 문제풀이는 멤버십에서 이용할 수 있어요.';
   var st=document.getElementById('planStats');
-  if(st) st.innerHTML='<div style="text-align:center;padding:16px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">멤버십 이용권은 <b style="color:#0C447C">certlab.ai.kr</b> (웹)에서<br>가입하신 계정으로 시작할 수 있어요.<br><span style="font-size:12px;color:#8A7D6E">웹에서 이용권을 시작하면 앱에서도 바로 열려요.</span></div>'
+  /* [2026-10-14] 플레이 정책 — 앱 안에서 바깥(웹) 결제로 이끄는 말을 쓰지 않는다(안티 스티어링).
+   *   크리스 「앱스토어 결제 가잖아 · 일구미처럼」 → 구글 플레이 결제를 붙일 때까지 앱에서는 안내만 한다. */
+  if(st) st.innerHTML='<div style="text-align:center;padding:16px 8px;font-size:14px;color:#3A4A5E;line-height:1.9">이용권이 있으면 모든 문제와 해설을<br>제한 없이 볼 수 있어요.<br><span style="font-size:12px;color:#8A7D6E">앱 안 결제는 곧 열려요.</span></div>'
     +'<button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
   _planPopupShow();
 }
@@ -1643,6 +1646,7 @@ function _newRequestId(){
   }catch(_){ return 'r'+Date.now()+Math.random().toString(36).slice(2,10); }
 }
 async function startCardPayment(){
+  if(typeof pwaStandalone==='function' && pwaStandalone()) return;   // [2026-10-14] 앱(TWA)에서는 토스 결제를 띄우지 않는다 — 플레이 정책
   if(!currentUser){ showLoginPopup(); return; }
   if(!firebaseReady || !fbFunctions){ alert('지금은 결제를 열 수 없어요. 잠시 후 다시 시도해 주세요.'); return; }
   if(typeof TossPayments!=='function'){ alert('결제창을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.'); return; }

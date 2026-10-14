@@ -1342,6 +1342,9 @@ async function _pushRegisterToken(){
 function _pushSyncIfGranted(){ try{ if(!_pushIsIOS() && ('Notification' in window) && Notification.permission==='granted') _pushRegisterToken(); }catch(_){} }
 
 function pwaStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+/* [2026-10-14] 앱(TWA·설치앱)에서는 웹 결제로 이끄는 자리(.web-pay-only)를 숨긴다 — 플레이 정책.
+ *   구글 플레이 결제를 붙이면 그 자리에 플레이 결제를 넣는다(크리스 「일구미처럼」). */
+(function(){ try{ if(pwaStandalone()) document.documentElement.classList.add('in-app'); }catch(_){} })();
 // 프로필 메뉴: 홈 화면에 추가
 async function addToHome(e){
   if(e){ e.stopPropagation(); }
@@ -1696,7 +1699,7 @@ function mpShowEnts(){
         + '</div>';
     });
   }
-  h += '<div style="margin:14px 16px 0"><button onclick="showPlanPopup()" '
+  h += '<div class="web-pay-only" style="margin:14px 16px 0"><button onclick="showPlanPopup()" '
     +  'style="width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;'
     +  'border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">'
     +  '🎫 ' + cmEsc(certFull(activeCertId())||'') + ' 이용권 구매·연장</button>'

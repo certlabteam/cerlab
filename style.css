@@ -1227,3 +1227,5 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 @media (max-width:768px){
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),textarea,select{font-size:16px !important}
 }
+/* [2026-10-14] 앱(TWA)에서는 웹 결제로 이끄는 자리를 숨긴다 — 플레이 정책(index-5-shell.js in-app) */
+.in-app .web-pay-only{display:none !important}
