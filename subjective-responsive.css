@@ -13,8 +13,8 @@
 @media (min-width:820px){
   #subjectiveView{max-width:940px}
   .subj-hdrbar{max-width:940px}
-  #subjMount .subj-view .jaryo{font-size:14.5px;line-height:1.75;padding:16px 18px}
-  #subjMount .subj-view .qstem{padding:18px 20px}
+  #subjMount .subj-view .jaryo{font-size:16px;line-height:1.75;padding:16px 16px}
+  #subjMount .subj-view .qstem{padding:16px 20px}
 }
 
 /* ── PC(≥1100px): 자료(왼쪽 고정) + 답안·해설(오른쪽) 2단 배치 ── */
