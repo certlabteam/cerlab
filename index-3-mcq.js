@@ -824,6 +824,7 @@ async function startDiagnostic(){
   });
   if(picked.length<1){ _luToast('레벨 테스트에 사용할 문제가 아직 없어요. (정답이 입력된 문제가 필요해요)'); return; }
   clearDiagProgress(cert);
+  try{ if(typeof lpTrack==='function') lpTrack('LevelTestStart', { cert:cert, guest:!currentUser }); }catch(_){}
   mqStopTimer();
   mqDiag=true; mqLevelTest=true; mqReview=false; mqInReview=false; mqConcept=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
   mqList=picked; mqOXClearList(picked);   // 레벨 테스트 출제 문항의 이전 O/X 해제
@@ -1021,6 +1022,7 @@ function ltFinalize(cert, qs, ans){
       }
     });
     eloState._levelTest[cert]={at:Date.now(), summary:summary};
+    try{ if(typeof lpTrack==='function') lpTrack('LevelTestDone', { cert:cert, guest:!currentUser }); }catch(_){}
     if(typeof saveUserData==='function' && currentUser) saveUserData();
   }catch(e){}
 }

@@ -1229,3 +1229,37 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 }
 /* [2026-10-14] 앱(TWA)에서는 웹 결제로 이끄는 자리를 숨긴다 — 플레이 정책(index-5-shell.js in-app) */
 .in-app .web-pay-only{display:none !important}
+/* [2026-10-14] 랜딩(로그인 전 처음 손님) — 숫자는 피그마 계단 안에서만(글자 12·14·16·20·24 · 여백 4~24 · 둥글기 12·16) */
+.lp{padding:8px 16px 4px;max-width:480px;margin:0 auto}
+.lp-hero{text-align:center;padding:16px 0 20px}
+.lp-pain{display:inline-block;font-size:14px;font-weight:700;color:#C2620C;background:#FFF1E6;border-radius:999px;padding:4px 12px;margin-bottom:12px}
+.lp-h1{font-size:24px;line-height:32px;font-weight:800;color:#0C447C;margin:0 0 8px;word-break:keep-all}
+.lp-sub{font-size:14px;line-height:20px;color:#5A6B7C;margin:0 0 16px;word-break:keep-all}
+.lp-cta{width:100%;padding:16px;border:none;border-radius:12px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;font-size:18px;font-weight:800;cursor:pointer}
+.lp-free{font-size:12px;color:#8A7D6E;margin-top:8px}
+.lp-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;align-items:center}
+.lp-chips span{font-size:12px;color:#8A7D6E}
+.lp-chips button{border:1.5px solid #B5D4F4;background:#fff;color:#185FA5;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;cursor:pointer}
+.lp-sec{margin:16px 0}
+.lp-label{font-size:16px;font-weight:800;color:#2B3A4B;margin:0 0 8px}
+.lp-card{background:#fff;border:1px solid #E6EEF8;border-radius:16px;padding:16px}
+.lp-src{font-size:12px;color:#8A7D6E;margin-bottom:8px}
+.lp-q{font-size:16px;line-height:24px;font-weight:700;color:#2B3A4B;word-break:keep-all}
+.lp-tip{font-size:12px;color:#185FA5;margin:8px 0}
+.lp-opt{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:left;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:12px;padding:12px;margin-top:8px;font-size:14px;line-height:20px;color:#2B3A4B;cursor:pointer}
+.lp-opt .lp-n{flex:0 0 auto;width:20px;height:20px;border-radius:999px;background:#E6F1FB;color:#185FA5;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.lp-opt.on{border-color:#185FA5;background:#EEF4FC}
+.lp-opt.on.ok{border-color:#1D9E75;background:#E6F4EF}
+.lp-exp{margin:8px 0 0;padding:12px;border-radius:12px;background:#FFFDF7;border:1px solid #F1E6CF;font-size:14px;line-height:20px;color:#3A4A5E;word-break:keep-all}
+.lp-o b{color:#0F6E56;margin-right:4px}
+.lp-ex{margin-top:8px;padding-top:8px;border-top:1px dashed #E8DCC2}
+.lp-ex span{display:block;font-size:12px;font-weight:800;color:#B97A12;margin-bottom:4px}
+.lp-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.lp-nums div{background:#fff;border:1px solid #E6EEF8;border-radius:12px;padding:12px 4px}
+.lp-nums b{display:block;font-size:20px;font-weight:800;color:#0C447C}
+.lp-nums span{font-size:12px;color:#5A6B7C}
+.lp-cap{font-size:12px;color:#8A7D6E;text-align:center;margin-top:8px}
+.lp-list{list-style:none;margin:0;padding:0}
+.lp-list li{font-size:14px;line-height:20px;color:#2B3A4B;padding:8px 0 8px 24px;position:relative;border-bottom:1px solid #F0EDE9}
+.lp-list li::before{content:"✓";position:absolute;left:4px;color:#1D9E75;font-weight:800}
+.lp-cta2{margin:8px 0 16px}

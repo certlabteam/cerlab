@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=bb6a0de4">
+<link rel="stylesheet" href="style.css?v=d1d07f04">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -143,11 +143,56 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="cm-nb-roll" id="cmNbRoll"></div>
     <span class="cm-nb-arr">›</span>
   </div>
-  <div class="home-hero">
+  <!-- [2026-10-14] 랜딩 — 로그인 안 한 처음 손님에게만(lpSync). 크리스 「서트랩도 랜딩 페이지 만들자」 → 메뉴 「짧은 랜딩 + 바로 시험 목록」.
+       의견: 일구미(진짜 화면·바로 해 보기·네 단계 재기) · 다매(가입 없이 쓰는 것을 맨 위에) · SEO방(검색어 · 「무료로 시작」) · 공용 UIUX_모바일 4부 가.
+       숫자는 2026-10-14 실측(manifest 시험 62 · seo/ 686장 qitem 31,470 · adaptive 레벨업 5,937). 근거 없는 주장 금지. -->
+  <section class="lp hidden" id="lpWrap">
+    <div class="lp-hero">
+      <div class="lp-pain">기출은 많은데, 내 점수는 모르죠?</div>
+      <h1 class="lp-h1">자격증 기출문제, 무료 레벨테스트로<br>내 점수부터 확인하세요</h1>
+      <p class="lp-sub">62개 자격증 기출 · 보기마다 해설과 장면 예시 · 망각곡선 자동 복습</p>
+      <button type="button" class="lp-cta" onclick="lpGoList('hero')">무료 레벨테스트 시작</button>
+      <div class="lp-free">가입 없이 · 카드 등록 없음 · 설치 없음</div>
+      <div class="lp-chips"><span>바로 시작</span>
+        <button type="button" onclick="lpGo('realestate1')">공인중개사 1차</button>
+        <button type="button" onclick="lpGo('appraiser')">감정평가사</button>
+        <button type="button" onclick="lpGo('housing')">주택관리사</button>
+        <button type="button" onclick="lpGo('koreanhistory')">한국사</button>
+      </div>
+    </div>
+    <div class="lp-sec">
+      <div class="lp-label">해설은 이렇게 나와요</div>
+      <div class="lp-card">
+        <div class="lp-src">2025년 공인중개사 1차 기출(제36회) 2번 · 실제 해설 그대로</div>
+        <div class="lp-q">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</div>
+        <div class="lp-tip">보기를 눌러 보세요</div>
+        <button type="button" class="lp-opt" data-i="0" onclick="lpPick(0)"><span class="lp-n">1</span>부동산 임대 및 공급업</button><div class="lp-exp hidden" id="lpExp0"><div class="lp-o"><b>정답</b> 부동산 임대 및 공급업은 부동산 관련 서비스업이 아니라 그와 나란한 별도의 중분류라, 관련 서비스업에 해당하지 않으므로 옳지 않다(정답).</div><div class="lp-ex"><span>장면 예시</span>甲은 자기 이름으로 된 오피스텔 여러 채를 세놓아 다달이 임대료를 거두는데, 이 일은 거래를 옆에서 돕는 중개나 자문과 달리 부동산을 직접 갖고 굴리는 업종으로 분류된다.</div></div><button type="button" class="lp-opt" data-i="1" onclick="lpPick(1)"><span class="lp-n">2</span>부동산 중개 및 대리업</button><div class="lp-exp hidden" id="lpExp1"><div class="lp-o"><b>정답 아님</b> 부동산 중개 및 대리업은 사거나 빌리려는 사람을 연결해 거래를 도와주는 일이라, 부동산을 직접 빌려주거나 공급하지 않는 &#x27;관련 서비스업&#x27;에 속한다. 해당하는 것이므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 집을 사려는 사람과 팔려는 사람을 이어 주고 계약을 도와 수수료를 받는 중개 일을 하며, 직접 집을 빌려주거나 공급하지 않고 거래만 거들어 주는 서비스를 제공한다.</div></div><button type="button" class="lp-opt" data-i="2" onclick="lpPick(2)"><span class="lp-n">3</span>부동산 감정평가업</button><div class="lp-exp hidden" id="lpExp2"><div class="lp-o"><b>정답 아님</b> 부동산 감정평가업은 부동산의 값이 얼마인지 전문적으로 매겨 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속한다. 해당하는 것이므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 대상 부동산이 얼마짜리인지 전문적으로 값을 매겨 주는 감정평가 일을 하며, 부동산을 직접 사고팔지는 않고 거래와 이용을 옆에서 돕는 서비스를 제공한다.</div></div><button type="button" class="lp-opt" data-i="3" onclick="lpPick(3)"><span class="lp-n">4</span>부동산 투자 자문업</button><div class="lp-exp hidden" id="lpExp3"><div class="lp-o"><b>정답 아님</b> 부동산 투자 자문업은 어디에 어떻게 투자할지 조언해 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속하므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 어느 지역 어떤 상가에 어떻게 돈을 넣으면 좋을지 조언해 주는 투자 자문 일을 하며, 부동산을 직접 굴리지 않고 판단만 거드는 서비스를 판다.</div></div><button type="button" class="lp-opt" data-i="4" onclick="lpPick(4)"><span class="lp-n">5</span>부동산 분양 대행업</button><div class="lp-exp hidden" id="lpExp4"><div class="lp-o"><b>정답 아님</b> 부동산 분양 대행업은 새로 지은 건물을 대신 팔아 주는 일이라, 공급 자체가 아니라 그 거래를 돕는 관련 서비스업에 속하므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 새로 지은 아파트를 시행사 대신 나서서 팔아 주는 분양대행 일을 맡아, 건물을 직접 공급하는 것이 아니라 그 거래가 성사되도록 옆에서 돕는다.</div></div>
+      </div>
+    </div>
+    <div class="lp-sec">
+      <div class="lp-nums">
+        <div><b>62</b><span>자격증</span></div>
+        <div><b>31,470</b><span>기출 문항</span></div>
+        <div><b>5,937</b><span>레벨업 변형문항</span></div>
+      </div>
+      <div class="lp-cap">2026년 10월 기준 · 기출 문항은 공개 기출 페이지에 실린 수</div>
+    </div>
+    <div class="lp-sec">
+      <div class="lp-label">무료로 이만큼</div>
+      <ul class="lp-list">
+        <li>레벨테스트 · 예상점수 무료</li>
+        <li>시험마다 기출 50문제 무료 체험</li>
+        <li class="web-pay-only">더 풀려면 30일 이용권 6,900원부터(시험마다 다름)</li>
+        <li>친구를 초대하면 친구도 나도 9,900포인트</li>
+      </ul>
+    </div>
+    <button type="button" class="lp-cta lp-cta2" onclick="lpGoList('bottom')">시험 고르고 무료로 시작</button>
+  </section>
+  <div class="home-hero" id="homeHero">
     <h1>내 합격 점수, AI가 미리 알려드려요</h1>
     <p class="home-seo">지금 내 실력이면 몇 점? 레벨테스트·예상점수 무료로 확인.<br>틀린 문제는 망각곡선으로 까먹기 전에 자동 복습.</p>
   </div>
-  <div class="home-label">시험 선택</div>
+  <div class="home-label" id="homeExamList">시험 선택</div>
   <div class="cert-cards">
     <div class="cert-card" id="certCard-bodybuilding" onclick="enterCert('bodybuilding')">
       <div class="cert-ic">💪</div>
@@ -703,14 +748,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=da04200a"></script>
+<script defer src="index-1-auth.js?v=43c3bca2"></script>
 <script defer src="index-2-engine.js?v=d632aafc"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=e9ebd33a"></script>
-<script defer src="index-3-mcq.js?v=b32e4240"></script>
+<script defer src="index-3-mcq.js?v=7296c374"></script>
 <script defer src="index-4-learn.js?v=c2ca6392"></script>
-<script defer src="index-5-shell.js?v=01377b08"></script>
+<script defer src="index-5-shell.js?v=62a5b444"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">

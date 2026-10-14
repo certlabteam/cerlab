@@ -1345,6 +1345,35 @@ function pwaStandalone(){ return window.matchMedia('(display-mode: standalone)')
 /* [2026-10-14] 앱(TWA·설치앱)에서는 웹 결제로 이끄는 자리(.web-pay-only)를 숨긴다 — 플레이 정책.
  *   구글 플레이 결제를 붙이면 그 자리에 플레이 결제를 넣는다(크리스 「일구미처럼」). */
 (function(){ try{ if(pwaStandalone()) document.documentElement.classList.add('in-app'); }catch(_){} })();
+
+/* ===== 랜딩(로그인 안 한 처음 손님) — 2026-10-14 =====
+ * 잣대 네 단계를 Meta 픽셀·gtag 로 남긴다(일구미 권고 — 처음부터 걸어야 견줄 숫자가 생긴다):
+ *   LandingView(랜딩 보임) → LandingCTA(시작 단추·바로 시작 칩) → LevelTestStart → LevelTestDone(index-3-mcq.js) */
+function lpTrack(name, params){
+  try{ if(typeof clTrackCustom==='function') clTrackCustom(name, params||{}); }catch(_){}
+  try{ if(typeof gtag==='function') gtag('event', name, params||{}); }catch(_){}
+}
+var _lpSeen=false;
+function lpSync(){
+  var w=document.getElementById('lpWrap'), h=document.getElementById('homeHero'); if(!w) return;
+  var guest=!(typeof currentUser!=='undefined' && currentUser);
+  w.classList.toggle('hidden', !guest);
+  if(h) h.classList.toggle('hidden', guest);   // 랜딩 히어로가 같은 말을 하니 옛 히어로는 숨긴다
+  if(guest && !_lpSeen){ _lpSeen=true; lpTrack('LandingView', { src:(location.search||'').slice(0,80) }); }
+}
+function lpGoList(which){
+  lpTrack('LandingCTA', { which:which });
+  var t=document.getElementById('homeExamList'); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' });
+  if(typeof _luToast==='function') _luToast('시험을 고르면 바로 무료 레벨테스트가 시작돼요');
+}
+function lpGo(cert){ lpTrack('LandingCTA', { which:'chip', cert:cert }); if(typeof enterCert==='function') enterCert(cert); }
+function lpPick(i){
+  document.querySelectorAll('#lpWrap .lp-opt').forEach(function(b){
+    var k=+b.getAttribute('data-i'); b.classList.toggle('on', k===i); b.classList.toggle('ok', k===0); });
+  document.querySelectorAll('#lpWrap .lp-exp').forEach(function(x, k){ x.classList.toggle('hidden', k!==i); });
+  lpTrack('LandingSample', { pick:i+1 });
+}
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(lpSync, 0); });
 // 프로필 메뉴: 홈 화면에 추가
 async function addToHome(e){
   if(e){ e.stopPropagation(); }

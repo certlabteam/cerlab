@@ -954,6 +954,7 @@ function signOut() {
 
 // ===== Auth 바 업데이트 =====
 function updateAuthBar() {
+  if (typeof lpSync === 'function') lpSync();   // [2026-10-14] 로그인 상태가 바뀌면 랜딩도 따라 숨기거나 보인다
   const bar = document.getElementById('authBar');
   if (!currentUser) {
     bar.innerHTML = '<button class="btn-login" onclick="showLoginPopup()">로그인</button>';
