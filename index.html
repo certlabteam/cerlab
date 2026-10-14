@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=d1d07f04">
+<link rel="stylesheet" href="style.css?v=f6fef2f6">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -148,16 +148,30 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
        숫자는 2026-10-14 실측(manifest 시험 62 · seo/ 686장 qitem 31,470 · adaptive 레벨업 5,937). 근거 없는 주장 금지. -->
   <section class="lp hidden" id="lpWrap">
     <div class="lp-hero">
-      <div class="lp-pain">기출은 많은데, 내 점수는 모르죠?</div>
+      <!-- [2026-10-14 크리스] 「캐릭터 들어갈 자리 만들어놓고」 — 캐릭터가 나오기 전엔 로고, 나오면 lp-char.png 로 갈아 끼운다(png 는 1년 캐시라 ?v 를 바꿀 것) -->
+      <img class="lp-char" id="lpChar" src="icon-512.png?v=9ca17d26" alt="서트랩" width="72" height="72">
+      <div class="lp-pain">기출, 정답만 외우지 마세요</div>
       <h1 class="lp-h1">자격증 기출문제, 무료 레벨테스트로<br>내 점수부터 확인하세요</h1>
-      <p class="lp-sub">62개 자격증 기출 · 보기마다 해설과 장면 예시 · 망각곡선 자동 복습</p>
+      <p class="lp-sub">62개 자격증 기출 · 보기마다 해설과 장면 예시&nbsp;· <span style="white-space:nowrap">망각곡선 자동 복습</span></p>
       <button type="button" class="lp-cta" onclick="lpGoList('hero')">무료 레벨테스트 시작</button>
       <div class="lp-free">가입 없이 · 카드 등록 없음 · 설치 없음</div>
-      <div class="lp-chips"><span>바로 시작</span>
+      <div class="lp-chips"><span>시험을 고르면 바로 시작</span>
         <button type="button" onclick="lpGo('realestate1')">공인중개사 1차</button>
         <button type="button" onclick="lpGo('appraiser')">감정평가사</button>
         <button type="button" onclick="lpGo('housing')">주택관리사</button>
         <button type="button" onclick="lpGo('koreanhistory')">한국사</button>
+      </div>
+    </div>
+    <!-- [2026-10-14 크리스] 「서트랩 장점들 소개하는 형태로 일구미처럼」 — 있는 기능만 · 제목·차례는 GPT(이해→진단→약점→기억→내 방식→무료) · 그록·일구미 의견과 견줘 고름 -->
+    <div class="lp-sec">
+      <div class="lp-label">서트랩이 다른 점</div>
+      <div class="lp-adv">
+        <div><i>📖</i><b>정답만 말하지 않아요</b><span>보기마다 해설과 실제 생활 속 예시까지</span></div>
+        <div><i>🎯</i><b>내 실력부터 확인하세요</b><span>가입 없이 예상점수와 과목별 약점</span></div>
+        <div><i>🔁</i><b>틀린 개념만 다시 훈련</b><span>약점 개념마다 변형문제 5개씩</span></div>
+        <div><i>🧠</i><b>잊기 전에 다시 복습</b><span>망각곡선 자동 복습과 오답노트</span></div>
+        <div><i>🎧</i><b>내 방식대로 외우세요</b><span>OX·암기 코드·음성 학습부터 시험장 인쇄까지</span></div>
+        <div><i>🆓</i><b>무료로 풀어 보고 결정</b><span>레벨테스트와 기출 50문제는 무료</span></div>
       </div>
     </div>
     <div class="lp-sec">
@@ -755,7 +769,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="itv-render.js?v=e9ebd33a"></script>
 <script defer src="index-3-mcq.js?v=7296c374"></script>
 <script defer src="index-4-learn.js?v=c2ca6392"></script>
-<script defer src="index-5-shell.js?v=a1151659"></script>
+<script defer src="index-5-shell.js?v=ac9a9bac"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">

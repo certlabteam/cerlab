@@ -904,6 +904,7 @@ async function loadExamSchedules(_retry){
       if(best!=null) map[d.id]=best;
     });
     _examDateMs = map; window._exErr=null;
+    if(typeof lpChips==='function') lpChips();   // [2026-10-14] 랜딩 「바로 시작」을 시험일 순으로
     // 즉시 + 지연 재정렬(모바일: 카드 동적추가/늦은 렌더와의 경합 방지)
     if(typeof reorderCertCards==='function'){ reorderCertCards(); setTimeout(reorderCertCards,400); setTimeout(reorderCertCards,1200); setTimeout(reorderCertCards,2500); }
     try{ if(/[?&]dbg=1/.test(location.search) && typeof clToast==='function') clToast('\uC2DC\uD5D8\uC77C '+Object.keys(map).length+'\uAC1C \uB85C\uB4DC\u00B7\uC815\uB82C'); }catch(_){}
@@ -1362,12 +1363,30 @@ function lpSync(){
   var guest=!(typeof currentUser!=='undefined' && currentUser) && (LP_ON || /[?&]lp=1/.test(location.search));
   w.classList.toggle('hidden', !guest);
   if(h) h.classList.toggle('hidden', guest);   // 랜딩 히어로가 같은 말을 하니 옛 히어로는 숨긴다
+  if(guest) lpChips();
   if(guest && !_lpSeen){ _lpSeen=true; lpTrack('LandingView', { src:(location.search||'').slice(0,80) }); }
 }
 function lpGoList(which){
   lpTrack('LandingCTA', { which:which });
   var t=document.getElementById('homeExamList'); if(t) t.scrollIntoView({ behavior:'smooth', block:'start' });
   if(typeof _luToast==='function') _luToast('시험을 고르면 바로 무료 레벨테스트가 시작돼요');
+}
+/* [2026-10-14 크리스] 「바로 시작」은 시험이 임박한 것부터 · 3개씩 2줄(6칸).
+ *   examSchedules 에 날짜가 앞으로 남은 시험만 D-day 를 붙여 앞에 둔다. 「다음 시험일」에 지난 날짜가 든 시험이 많아
+ *   (2026-10-14 실측: 10개 중 8개 — 내년 일정이 아직 안 들어옴) 날짜를 모르는 칸은 많이 찾는 시험으로 채우고 D-day 를 안 붙인다. */
+var LP_POP=['realestate1','realestate2','appraiser','housing','koreanhistory','sport2'];
+var LP_SHORT={realestate1:'중개사 1차',realestate2:'중개사 2차',appraiser:'감평사',housing:'주택관리사',koreanhistory:'한국사',sport2:'생체2급 필기'};
+function lpChips(){
+  var box=document.querySelector('#lpWrap .lp-chips'); if(!box) return;
+  var ex=(MANIFEST&&MANIFEST.exams)||[], has=function(c){ return !ex.length || ex.some(function(e){ return e&&e.id===c; }); };
+  var lab=function(c){ if(LP_SHORT[c]) return LP_SHORT[c]; var e=ex.filter(function(x){ return x&&x.id===c; })[0]; return (e&&(e.label||e.name))||c; };
+  var now=Date.now(), dm=(typeof _examDateMs!=='undefined'&&_examDateMs)||{};
+  var dated=Object.keys(dm).filter(function(c){ return dm[c]>=now && has(c); }).sort(function(a,b){ return dm[a]-dm[b]; });
+  var list=dated.concat(LP_POP.filter(function(c){ return dated.indexOf(c)<0 && has(c); })).slice(0,6);
+  box.innerHTML='<span>시험이 가까운 것부터 · 누르면 바로 시작</span>'+list.map(function(c){
+    var d=dm[c]>=now ? Math.ceil((dm[c]-now)/864e5) : null;
+    return '<button type="button" onclick="lpGo(\''+c+'\')">'+cmEsc(lab(c))+(d!=null?'<small>D-'+d+'</small>':'')+'</button>';
+  }).join('');
 }
 function lpGo(cert){ lpTrack('LandingCTA', { which:'chip', cert:cert }); if(typeof enterCert==='function') enterCert(cert); }
 function lpPick(i){
