@@ -878,8 +878,12 @@ function _ltRenderResultGate(M){
          * 둔다 - 기다리라는 말이 아니라 한 번만 누르면 된다는 말이어야 한다.
          */
         +'<div class="ltg-gt">채점 끝났어요. 지금 바로 확인</div>'
-        +'<div class="ltg-gs">내 '+metric+'와 약한 과목이 나왔어요.<br>구글 로그인 한 번이면 바로 열립니다.</div>'
-        +'<button class="ltg-btn" onclick="_ltGateLogin()"><span class="ltg-g">G</span> 구글로 1초 로그인하고 결과 보기</button>'
+        +'<div class="ltg-gs">내 '+metric+'와 약한 과목이 나왔어요.<br>로그인 한 번이면 바로 열립니다.</div>'
+        /* [2026-10-14 크리스] 「레벨테스트후 카톡 로그인이 없다」 — 구글만 있으면 카카오톡·네이버 앱 안(구글 막힘)에서 결과를 못 본다.
+         *   카카오를 더하고, 앱 안 브라우저에서는 카카오를 앞에 둔다. */
+        +(function(){ var k='<button class="ltg-btn ltg-kakao" onclick="_ltGateLogin(\'kakao\')"><span class="ltg-k">💬</span> 카카오로 로그인하고 결과 보기</button>',
+                         g='<button class="ltg-btn" onclick="_ltGateLogin(\'google\')"><span class="ltg-g">G</span> 구글로 로그인하고 결과 보기</button>';
+                     var inApp=(typeof isInAppBrowser==='function') && isInAppBrowser(); return inApp ? k+g : g+k; })()
         +'<div class="ltg-note">가입하면 오늘 하루는 문제 수 제한 없이 풀 수 있어요</div>'
       +'</div></div>'
   +'</div>';
@@ -899,13 +903,14 @@ function _ltRenderResultGate(M){
       +'.ltg-lock{font-size:28px;margin-bottom:9px}.ltg-gt{font-size:17px;font-weight:900;color:#1F2937;margin-bottom:7px}'
       +'.ltg-gs{font-size:13px;color:#6B7280;line-height:1.55;margin-bottom:18px}'
       +'.ltg-btn{width:100%;max-width:330px;display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;border:1.5px solid #DADCE0;border-radius:13px;padding:14px;font-size:14.5px;font-weight:800;color:#3C4043;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)}'
+      +'.ltg-kakao{background:#FEE500;border-color:#FEE500;color:#191600;margin-top:8px}.ltg-btn+.ltg-btn{margin-top:8px}.ltg-k{font-size:16px}'
       +'.ltg-g{font-size:17px;font-weight:900;color:#4285F4}.ltg-note{font-size:11.5px;color:#9AA1AD;margin-top:11px}'
       +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:22px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:15px;font-weight:800;color:#1F2937}';
     document.head.appendChild(st);
   }
   window.scrollTo(0,0);
 }
-function _ltGateLogin(){ if(typeof signInWithGoogle==='function') signInWithGoogle(); }
+function _ltGateLogin(kind){ if(kind==='kakao'){ if(typeof signInWithKakao==='function') signInWithKakao(); return; } if(typeof signInWithGoogle==='function') signInWithGoogle(); }
 // 비로그인 시험 진입: 레벨테스트 안 했으면 후킹, 했으면(같은 브라우저) 결과 게이트
 function _ltGuestHasDone(cert){ try{ var raw=localStorage.getItem('certlab_lt_pending'); if(!raw) return false; var j=JSON.parse(raw); return !!(j && j.cert===cert && j.ids && j.ids.length); }catch(_){ return false; } }
 function _ltGuestGate(cert){
@@ -962,7 +967,7 @@ function _ltHookingScreen(cert){
     +'<div class="lth-desc">'+n+'문제로 내 실력과 <b>'+metric+'</b>을<br>3분 만에 확인해보세요.</div>'
     +'<div class="lth-free"><span>✓ 결제 없음</span><span>✓ 가입 없이 시작</span><span>✓ 예상점수</span></div>'
     +'<button class="lth-cta" onclick="_ltHookStart()">무료로 시작하기 →</button>'
-    +'<div class="lth-note">문제를 다 풀면 '+metric+'·약점 결과를 드려요</div>'
+    +'<div class="lth-note">문제를 다 풀면 '+metric+'·약점 결과를 드려요'+((typeof currentUser!=='undefined'&&currentUser)?'':' · 결과는 로그인 한 번(카카오·구글)으로 열려요')+'</div>'
   +'</div>';
   window.scrollTo(0,0);
 }

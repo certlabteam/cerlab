@@ -1206,6 +1206,31 @@ async function deleteMyAccount() {
   var btn = document.getElementById('delGoBtn');
   if (btn) { btn.disabled = true; btn.textContent = '삭제 중…'; }
   var uid = currentUser.uid;
+  /* ★ [2026-10-14] 본인 확인을 **지우기 전에** 한다.
+   *   전에는 학습 기록을 먼저 지우고, 계정 삭제가 「최근 로그인 필요」로 막히면 구글로만 재인증했다.
+   *   카카오(커스텀 토큰)·이메일 회원은 구글 재인증이 안 맞아 실패 → 기록만 지워지고 계정은 남았다.
+   *   이제: 로그인한 지 5분이 넘었으면 구글 회원은 재인증, 그 밖은 다시 로그인하게 하고 멈춘다. */
+  var lastMs = Date.parse((currentUser.metadata && currentUser.metadata.lastSignInTime) || '') || 0;
+  if (Date.now() - lastMs > 5 * 60 * 1000) {
+    var isGoogle = (currentUser.providerData || []).some(function(p){ return p && p.providerId === 'google.com'; });
+    if (!isGoogle) {
+      alert('안전을 위해 한 번 더 로그인해 주세요.\n로그인한 뒤 바로 마이페이지 → 회원 탈퇴를 누르면 삭제됩니다.');
+      if (btn) { btn.disabled = false; btn.textContent = '영구 삭제하기'; }
+      try { await auth.signOut(); } catch(_){}
+      if (typeof hideDeletePopup === 'function') hideDeletePopup();
+      if (typeof showLoginPopup === 'function') showLoginPopup();
+      return;
+    }
+    try { await currentUser.reauthenticateWithPopup(googleProvider); }
+    catch (e0) {
+      if (e0 && (e0.code === 'auth/operation-not-supported-in-this-environment' || e0.code === 'auth/popup-blocked')) {
+        await currentUser.reauthenticateWithRedirect(googleProvider); return;
+      }
+      alert('본인 확인을 마치지 못했어요. 다시 시도해 주세요.');
+      if (btn) { btn.disabled = false; btn.textContent = '영구 삭제하기'; }
+      return;
+    }
+  }
   try {
     // 1) Firestore 사용자 데이터 삭제 (없는 문서는 무시)
     await Promise.allSettled([
