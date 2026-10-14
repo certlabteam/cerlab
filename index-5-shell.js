@@ -1354,9 +1354,9 @@ function lpTrack(name, params){
   try{ if(typeof gtag==='function') gtag('event', name, params||{}); }catch(_){}
 }
 var _lpSeen=false;
-/* ★ [2026-10-14] 크리스 「의견 다 받아서 고치고 올려」 — GPT·그록·방들 의견을 다 받고 고칠 때까지 끈다.
- *   켜려면 LP_ON=true. 미리 보기는 주소 끝에 ?lp=1 */
-var LP_ON=false;
+/* [2026-10-14] 끄는 스위치 — false 면 랜딩이 안 보이고 주소 끝 ?lp=1 로만 미리 본다.
+ *   크리스 「한번 볼께」로 켠 채 둔다. 의견을 받아 고치는 동안 내려야 하면 false. */
+var LP_ON=true;
 function lpSync(){
   var w=document.getElementById('lpWrap'), h=document.getElementById('homeHero'); if(!w) return;
   var guest=!(typeof currentUser!=='undefined' && currentUser) && (LP_ON || /[?&]lp=1/.test(location.search));
