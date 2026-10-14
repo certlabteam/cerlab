@@ -686,6 +686,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <!-- [2026-10-12] 카드 결제(토스페이먼츠)만 받는다. 일구미 q_certlagi5t · 카드사 여덟 승인. -->
     <button class="btn-payment" id="btnCardPay" onclick="startCardPayment()"
       style="background:linear-gradient(135deg,#185FA5,#0C447C)">💳 카드로 결제</button>
+    <!-- [2026-10-14] 앱(TWA) 안 구글 플레이 결제 — 앱이고 Play 결제가 붙은 판일 때만 보인다(_playMode) -->
+    <button class="btn-payment" id="btnPlayPay" onclick="startPlayPayment()" style="display:none;background:linear-gradient(135deg,#1D9E75,#0C447C)">Google Play로 결제</button>
     <!-- ★ 계좌이체 단추는 숨겨 둔다(지우지 않음). 카드가 막히는 날 hidden 만 떼면 된다. -->
     <button class="btn-payment" id="btnPayment" hidden onclick="submitPayment()">입금하고 시작하기</button>
     <div class="payment-note">결제가 끝나면 이용권이 <strong>바로 켜집니다</strong>.<br>국민·신한·삼성·하나·BC·롯데·농협·우리카드로 결제할 수 있어요.</div>
@@ -701,7 +703,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=a3111cca"></script>
+<script defer src="index-1-auth.js?v=da04200a"></script>
 <script defer src="index-2-engine.js?v=d632aafc"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->

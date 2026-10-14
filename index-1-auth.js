@@ -1421,11 +1421,13 @@ function showAppDailyDone(){
 }
 function showPlanPopup(membership) {
   const cert = activeCertId();
-  if (typeof pwaStandalone==='function' && pwaStandalone()) {   // 설치앱: Play 정책 — 가격/결제 노출 금지
+  const _inApp = (typeof pwaStandalone==='function' && pwaStandalone());
+  if (_inApp && !_playReady()) {   // 설치앱: Play 정책 — 구글 결제가 안 붙은 판이면 가격/결제 노출 금지
     if (membership) { showAppWebPay(); } else { showAppDailyDone(); }
     return;
   }
   _togglePayUI(true);
+  _playMode(_inApp);   // [2026-10-14] 앱이면 구글 플레이 결제만(토스·포인트·할인코드 숨김)
   const titleEl = document.getElementById('planSheetTitle');
   if (titleEl) titleEl.textContent = membership ? `🎯 멤버십 이용권` : `🎯 합격까지 가는 가장 빠른 길`;
   /* ★★ [2026-10-12] **어느 시험 이용권인지 적는다.** 마이페이지에서 바로 열 수 있게 되면서
@@ -1644,6 +1646,57 @@ function _newRequestId(){
     var a=new Uint8Array(16); crypto.getRandomValues(a);
     return Array.from(a).map(function(x){ return x.toString(16).padStart(2,'0'); }).join('');
   }catch(_){ return 'r'+Date.now()+Math.random().toString(36).slice(2,10); }
+}
+/* ===== 구글 플레이 결제(앱 TWA) — 2026-10-14 크리스 「앱스토어 결제 가잖아 · 일구미처럼」 =====
+ * 앱 안 디지털 상품은 Play 결제만(Play 결제 정책). 웹 브라우저는 토스 그대로.
+ * 흐름: PaymentRequest(https://play.google.com/billing · sku) → 구매 토큰 → 서버 confirmPlayPurchase 가 Play API 로 확인·지급·consume.
+ * 상품 ID cl_<등급>_m<개월> — 등급은 config/pricing.certTier(서버가 시험 등급과 같은지 다시 본다). 값은 Play Console(웹과 같게).
+ * 포인트·할인코드는 Play 결제에 못 쓴다. 결제는 됐는데 서버가 못 받았으면(앱이 닫힘 등) 다음에 이용권 창을 열 때 이어서 켠다. */
+var PLAY_BILLING='https://play.google.com/billing';
+function _playReady(){ return ('getDigitalGoodsService' in window) && ('PaymentRequest' in window); }
+function _playMode(on){
+  ['#btnCardPay','#mileUseBox','.discount-row','.pay-ref-line','.payment-note'].forEach(function(sel){
+    document.querySelectorAll(sel).forEach(function(el){ el.style.display = on ? 'none' : ''; }); });
+  var b=document.getElementById('btnPlayPay'); if(b) b.style.display = on ? '' : 'none';
+  if(on) _playRestore();
+}
+function _playSku(cert, days){ var m={30:1,90:3,180:6,365:12}[days]; return m ? ('cl_'+_certTier(cert)+'_m'+m) : null; }
+function _playPendSave(o){ try{ localStorage.setItem('clPlayPend', JSON.stringify(o)); }catch(_){} }
+function _playPendClear(){ try{ localStorage.removeItem('clPlayPend'); }catch(_){} }
+async function _playConfirm(examId, sku, token){
+  var r=await fbFunctions.httpsCallable('confirmPlayPurchase')({ examId:examId, sku:sku, purchaseToken:token });
+  _playPendClear();
+  return (r&&r.data)||{};
+}
+async function _playRestore(){
+  if(!currentUser || !fbFunctions) return;
+  var p=null; try{ p=JSON.parse(localStorage.getItem('clPlayPend')||'null'); }catch(_){}
+  if(!p || !p.token) return;
+  try{ var d=await _playConfirm(p.examId, p.sku, p.token); if(d.status==='PAID'){ alert('앞서 결제하신 '+certFull(p.examId)+' 이용권을 켰어요.'); location.reload(); } }
+  catch(e){ console.warn('플레이 결제 이어 켜기 안 됨:', e && e.message); }
+}
+async function startPlayPayment(){
+  if(!currentUser){ showLoginPopup(); return; }
+  if(!_playReady()){ alert('앱을 업데이트하면 결제할 수 있어요. Play 스토어에서 CertLab 을 업데이트해 주세요.'); return; }
+  var cert=activeCertId(), sku=_playSku(cert, selectedPlanDays);
+  if(!sku){ alert('이용권을 먼저 선택해주세요.'); return; }
+  var btn=document.getElementById('btnPlayPay'); if(btn) btn.disabled=true;
+  try{
+    await fbFunctions.httpsCallable('initializeMember')({ requestId:_newRequestId(), signupCert:cert });
+    var req=new PaymentRequest([{ supportedMethods:PLAY_BILLING, data:{ sku:sku } }],
+      { total:{ label:'합계', amount:{ currency:'KRW', value:'0' } } });   // 값은 Play 가 정한다
+    var res=await req.show();
+    var token=res.details && res.details.purchaseToken;
+    _playPendSave({ examId:cert, sku:sku, token:token, at:Date.now() });   // 서버 확인 전에 적어 둔다 — 앱이 닫혀도 이어서 켠다
+    try{
+      var d=await _playConfirm(cert, sku, token);
+      await res.complete('success');
+      alert(certFull(cert)+' '+planLabelOf(selectedPlanDays)+'이 켜졌어요.');
+      location.reload();
+    }catch(e){ await res.complete('fail'); throw e; }
+  }catch(e){
+    if(!(e && e.name==='AbortError')) alert('결제를 마치지 못했어요.\n'+((e&&e.message)||'')+'\n결제가 됐다면 다음에 이용권 창을 열 때 이어서 켜 드려요.');
+  }finally{ if(btn) btn.disabled=false; }
 }
 async function startCardPayment(){
   if(typeof pwaStandalone==='function' && pwaStandalone()) return;   // [2026-10-14] 앱(TWA)에서는 토스 결제를 띄우지 않는다 — 플레이 정책
