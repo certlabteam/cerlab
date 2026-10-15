@@ -90,6 +90,12 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 .btn-kakao-login:hover{filter:brightness(.97)}
 .btn-kakao-login:focus-visible{outline:2px solid #1D4E6B;outline-offset:2px}
 .btn-kakao-login .kakao-icon{width:20px;height:20px;flex:0 0 auto}
+/* [2026-10-15] 로그인 단추 한 줄 반반 — 왼쪽 카카오 · 오른쪽 구글 */
+/*   값은 일구미 그대로(_공용/일구미_로그인단추_본보기.html) — 줄 1fr 1fr · 사이 8 · 최대 360 · 높이 48 · 둥글기 12 · 16px 700 · 구글 테두리 #DADCE0 */
+.login-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:360px;margin:0 auto 12px}
+.login-row>button{min-width:0;margin:0;height:48px;padding:0 8px;border-radius:12px;font-size:16px;font-weight:700;white-space:nowrap;gap:8px}
+.login-row>.btn-google-login{border:1px solid #DADCE0;color:#1F1F1F}
+.login-row svg{width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -559,14 +565,17 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
         <div class="auth-feat-cell">💾 학습 기록 저장</div>
       </div>
     </div>
-    <button class="btn-google-login" onclick="signInWithGoogle()">
-      <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Google로 계속하기
-    </button>
-    <button class="btn-kakao-login" onclick="signInWithKakao()">
-      <svg class="kakao-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#191600" d="M12 3C6.9 3 2.8 6.3 2.8 10.3c0 2.6 1.7 4.8 4.3 6.1-.2.7-.7 2.5-.8 2.9 0 .2.1.4.3.4h.2c.4-.1 3-2 3.6-2.4.5.1 1 .1 1.6.1 5.1 0 9.2-3.3 9.2-7.3S17.1 3 12 3z"/></svg>
-      카카오로 시작하기
-    </button>
+    <!-- ★ [2026-10-15 크리스] 「로그인 버튼도 좌측 카톡 우측 구글로 반반씩 하는 형태로 통일해」(다매·일구미와 같은 꼴) -->
+    <div class="login-row">
+      <button class="btn-kakao-login" onclick="signInWithKakao()">
+        <svg class="kakao-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#191600" d="M12 3C6.9 3 2.8 6.3 2.8 10.3c0 2.6 1.7 4.8 4.3 6.1-.2.7-.7 2.5-.8 2.9 0 .2.1.4.3.4h.2c.4-.1 3-2 3.6-2.4.5.1 1 .1 1.6.1 5.1 0 9.2-3.3 9.2-7.3S17.1 3 12 3z"/></svg>
+        카카오로 시작
+      </button>
+      <button class="btn-google-login" onclick="signInWithGoogle()">
+        <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        구글로 시작
+      </button>
+    </div>
 
     <!-- 이메일+비밀번호 로그인 — 소셜 로그인을 쓸 수 없는 분을 위한 일반 로그인
          ★★ [2026-10-12] **가입 단추를 뺐다.** 크리스 『토스결제승인받았으니 이메일가입 숨기자』.
@@ -761,12 +770,12 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=8fb4bde6"></script>
+<script defer src="index-1-auth.js?v=7412e6f1"></script>
 <script defer src="index-2-engine.js?v=243bcf58"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=e9ebd33a"></script>
-<script defer src="index-3-mcq.js?v=3dcd65d6"></script>
+<script defer src="index-3-mcq.js?v=7ce2b346"></script>
 <script defer src="index-4-learn.js?v=832427c7"></script>
 <script defer src="index-5-shell.js?v=a09ba4da"></script>
 <script defer src="tour.js?v=64edf288"></script>

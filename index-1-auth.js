@@ -1575,7 +1575,7 @@ function showWelcomePopup() {
       친구를 초대해 친구가 문제 30개를 풀면 <b>친구도 나도 9,900P</b>(한 달 이용권 값) · 친구가 결제하면 그 값의 절반도 포인트로 (1년 유효)
       <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
     </div>`;
-  document.querySelector('.btn-google-login').style.display='none';
+  { var _lr=document.querySelector('#loginPopup .login-row'); if(_lr) _lr.style.display='none'; }   // [2026-10-15] 환영 창엔 로그인 단추 줄을 숨긴다(예전엔 첫 .btn-google-login 이 환급 창 단추라 엉뚱한 것을 숨겼다)
   document.querySelector('.auth-sheet-close').textContent='학습 시작하기!';
   document.querySelector('.auth-sheet-close').style.background='linear-gradient(135deg,#185FA5,#0C447C)';
   document.querySelector('.auth-sheet-close').style.color='#fff';

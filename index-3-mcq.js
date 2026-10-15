@@ -909,9 +909,9 @@ function _ltRenderResultGate(M){
         +'<div class="ltg-gs">내 '+metric+'와 약한 과목이 나왔어요.<br>로그인 한 번이면 바로 열립니다.</div>'
         /* [2026-10-14 크리스] 「레벨테스트후 카톡 로그인이 없다」 — 구글만 있으면 카카오톡·네이버 앱 안(구글 막힘)에서 결과를 못 본다.
          *   카카오를 더하고, 앱 안 브라우저에서는 카카오를 앞에 둔다. */
-        +(function(){ var k='<button class="ltg-btn ltg-kakao" onclick="_ltGateLogin(\'kakao\')"><span class="ltg-k">💬</span> 카카오로 로그인하고 결과 보기</button>',
-                         g='<button class="ltg-btn" onclick="_ltGateLogin(\'google\')"><span class="ltg-g">G</span> 구글로 로그인하고 결과 보기</button>';
-                     var inApp=(typeof isInAppBrowser==='function') && isInAppBrowser(); return inApp ? k+g : g+k; })()
+        /* [2026-10-15 크리스] 로그인 단추는 어디서나 한 줄 반반 — 왼쪽 카카오 · 오른쪽 구글 */
+        +'<div class="ltg-row"><button class="ltg-btn ltg-kakao" onclick="_ltGateLogin(\'kakao\')"><span class="ltg-k">💬</span> 카카오로 시작</button>'
+        +'<button class="ltg-btn" onclick="_ltGateLogin(\'google\')"><span class="ltg-g">G</span> 구글로 시작</button></div>'
         +'<div class="ltg-note">가입하면 오늘 하루는 문제 수 제한 없이 풀 수 있어요</div>'
       +'</div></div>'
   +'</div>';
@@ -931,7 +931,8 @@ function _ltRenderResultGate(M){
       +'.ltg-lock{font-size:28px;margin-bottom:8px}.ltg-gt{font-size:18px;font-weight:900;color:#1F2937;margin-bottom:6px}'
       +'.ltg-gs{font-size:14px;color:#6B7280;line-height:1.55;margin-bottom:16px}'
       +'.ltg-btn{width:100%;max-width:330px;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1.5px solid #DADCE0;border-radius:12px;padding:14px;font-size:16px;font-weight:800;color:#3C4043;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)}'
-      +'.ltg-kakao{background:#FEE500;border-color:#FEE500;color:#191600;margin-top:8px}.ltg-btn+.ltg-btn{margin-top:8px}.ltg-k{font-size:16px}'
+      +'.ltg-kakao{background:#FEE500;border-color:#FEE500;color:#191600}.ltg-k{font-size:16px}'
+      +'.ltg-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:360px}.ltg-row .ltg-btn{min-width:0;height:48px;padding:0 8px;border-radius:12px;font-size:16px;font-weight:700;white-space:nowrap;box-shadow:none}.ltg-row .ltg-btn:not(.ltg-kakao){border:1px solid #DADCE0;color:#1F1F1F}'
       +'.ltg-g{font-size:18px;font-weight:900;color:#4285F4}.ltg-note{font-size:12px;color:#9AA1AD;margin-top:10px}'
       +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
     document.head.appendChild(st);
