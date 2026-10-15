@@ -115,7 +115,7 @@ function maybeInvitePrompt(){
   var k='invitePrompted_'+currentUser.uid;
   try{ if(localStorage.getItem(k)) return; }catch(_){ return; }
   var busy=['ptModalOv','planPopup','loginPopup'].some(function(id){ var el=document.getElementById(id); return el && !el.classList.contains('hidden') && el.offsetParent!==null; });
-  if(busy || document.getElementById('invitePromptOv')) return;
+  if(busy || document.getElementById('invitePromptOv') || (typeof mqTimer!=='undefined' && mqTimer)) return;
   try{ localStorage.setItem(k,'1'); }catch(_){}
   try{ clTrackCustom('InvitePromptShown', { solved: (typeof totalSolve==='function'?totalSolve():0) }); }catch(_){}
   var ov=document.createElement('div');
@@ -158,6 +158,7 @@ async function tryAppBonus(){
     }catch(_){ _appBase=null; return; }
   }
   if(totalSolve()-_appBase < APP_BONUS_NEED) return;
+  if(typeof mqTimer!=='undefined' && mqTimer) return;   // [2026-10-15] 시간 재는 시험 중엔 팝업으로 끊지 않는다 — 다음 저장 때 다시 본다
   try{
     var r=await fbFunctions.httpsCallable('claimAppBonus')({}), d2=(r&&r.data)||{};
     if(d2.granted){
@@ -2108,15 +2109,20 @@ function closePaySuccess(){ var ov=document.getElementById('paySuccessOv'); if(o
 function showPtModal(kind, points, certLabel){
   var ov=document.getElementById('ptModalOv'); if(!ov) return;
   var ic=document.getElementById('ptModalIc'), ti=document.getElementById('ptModalTi'), sub=document.getElementById('ptModalSub');
+  /* [2026-10-15] 앱(TWA)에선 「포인트로 결제」를 말하지 않고 안내글 링크도 숨긴다 — 앱 결제는 구글 플레이라 포인트가 안 들고(플레이 정책),
+   *   링크는 새 창 대신 앱 안에서 열려 게시글이 문제 화면 밑에 붙었다(크리스 폰 2026-10-15). */
+  var _app=(typeof pwaStandalone==='function' && pwaStandalone());
+  var _use=_app ? '' : ' 이용권 결제에 전액 쓸 수 있어요.';
+  var _gl=ov.querySelector('a[onclick="ptGoGuide()"]'); if(_gl && _gl.parentNode) _gl.parentNode.style.display=_app?'none':'';
   if(kind==='referral'){
     ic.textContent='🎁'; ti.textContent='추천 보상 '+points.toLocaleString()+'포인트!';
-    sub.textContent='친구 초대 보상이에요. 이용권 결제에 전액 쓸 수 있어요. (1P = 1원 · 유효기간 1년)';
+    sub.textContent='친구 초대 보상이에요.'+_use+' (1P = 1원 · 유효기간 1년)';
   } else if(kind==='appintro'){
     ic.textContent='📲'; ti.textContent='앱 첫 로그인 혜택';
-    sub.textContent='앱에서 문제를 '+APP_BONUS_NEED+'개 풀면 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 드려요. 포인트로 이용권을 전액 결제할 수 있어요.';
+    sub.textContent='앱에서 문제를 '+APP_BONUS_NEED+'개 풀면 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 드려요.'+(_app?'':' 포인트로 이용권을 전액 결제할 수 있어요.');
   } else if(kind==='appbonus'){
     ic.textContent='🎉'; ti.textContent='앱 혜택 '+points.toLocaleString()+'포인트!';
-    sub.textContent='앱으로 공부해 주셔서 고마워요. 이용권 결제에 전액 쓸 수 있어요. (1P = 1원 · 유효기간 1년)';
+    sub.textContent='앱으로 공부해 주셔서 고마워요.'+_use+' (1P = 1원 · 유효기간 1년)';
   } else if(kind==='refbound'){
     ic.textContent='🤝'; ti.textContent='친구 초대로 가입했어요!';
     sub.textContent='문제를 '+REF_SOLVE_NEED+'개 풀면 나도, 초대한 친구도 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 받아요.';
