@@ -1750,7 +1750,9 @@ function mpShowEnts(){
         + '</div>';
     });
   }
-  h += '<div class="web-pay-only" style="margin:14px 16px 0"><button onclick="showPlanPopup()" '
+  /* [2026-10-15] 플레이 결제가 붙은 앱(TWA)에선 이 단추를 보인다 — 숨기면 앱 안에서 이용권 창을 열 길이 무료 한도뿐이다(크리스 「결제창이 안뜬다」) */
+  var _payCls = (typeof _playReady === 'function' && _playReady()) ? '' : ' class="web-pay-only"';
+  h += '<div'+_payCls+' style="margin:14px 16px 0"><button onclick="showPlanPopup()" '
     +  'style="width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;'
     +  'border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">'
     +  '🎫 ' + cmEsc(certFull(activeCertId())||'') + ' 이용권 구매·연장</button>'
