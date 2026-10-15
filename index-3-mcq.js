@@ -324,10 +324,10 @@ function renderMcqHome(root){
       _luRows+='<div class="scard"><div class="scard-hd" onclick="luStartSub(\''+id+'\')">'
         +'<span class="sdot" style="background:#1D9E75"></span><span class="snm">'+curQB()[id].name+'</span>'
         +'<span class="scard-set-label">레벨업 '+n.toLocaleString()+'문항</span>'
-        +'<span class="b-go" style="margin-left:8px;flex-shrink:0">풀기</span></div></div>';
+        +'<span class="b-go" style="margin-left:8px;flex-shrink:0">5문제 풀기</span></div></div>';
     });
     if(_luRows){
-      html+='<div class="sec-lbl">레벨업 문제 <span style="font-weight:600;color:#888780">· 기출을 바꿔 만든 '+_luSum.toLocaleString()+'문항'+(ltDone(mqCert)?'':' · 레벨테스트 후 약점부터')+'</span></div>'+_luRows;
+      html+='<div class="sec-lbl">레벨업 문제 <span style="font-weight:600;color:#888780">· 기출을 바꿔 만든 '+_luSum.toLocaleString()+'문항 · 5문제씩 이어서'+(ltDone(mqCert)?'':' · 레벨테스트 후 약점부터')+'</span></div>'+_luRows;
     }
   }
   root.innerHTML=html;
@@ -1369,6 +1369,9 @@ function luResumeApply(cert){ var r=luResumeAll[cert];
   var list=(r.qids||[]).map(function(id){ return _luFindQ(cert,id); }).filter(Boolean);
   luLockSub=r.lockSub||''; luLockTopic=r.lockTopic||''; luSubIdx=r.luSubIdx||0; luSeen=r.luSeen||{}; luSessTotal=r.sessTotal||0; luSessCorrect=r.sessCorrect||0; luSessChanges=r.sessChanges||{}; luSessPredStart=(r.predBefore!=null?r.predBefore:_luPredScore(cert)); luPreScores=r.preScores||{};
   if(list.length!==(r.qids||[]).length || !list.length){ luResumeClear(cert); luLoadRound(false); return; }   // 문항 못 찾으면(데이터 변경 등) 새 라운드로
+  /* ★ [2026-10-15 크리스 「이어풀기해도 5문제 다푼화면이 그대로 이어서 나와」] 판을 다 풀면(결과 화면) luResumeSave 가 그 판을 남겨,
+   *   이어풀기가 다 푼 5/5 화면을 다시 열었다(시간도 +00:01 넘김). 다섯 문제에 다 답이 있으면 **다음 판**으로 간다. */
+  if((r.qids||[]).every(function(id){ return r.ans && r.ans[id]!=null; })){ luResumeClear(cert); luLoadRound(false); return; }
   luCurSub=r.sub; mqSub=r.sub; mqSet=0; mqMode='levelup';
   _luRelearn={}; (r.relearn||[]).forEach(function(id){ _luRelearn[id]=1; });   // 복습 뱃지 복원
   mqList=list; mqAns=r.ans||{}; mqGuess=r.guess||{}; mqShow={}; mqIdx=Math.min(r.idx||0, list.length-1); mqTimeLeft=_sessionSecs(list, mqCert);
