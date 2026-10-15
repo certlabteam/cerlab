@@ -109,13 +109,44 @@ const REF_REWARD_P = 9900, REF_SOLVE_NEED = 30;
 let myReferredBy = null;
 /* [2026-10-12 크리스] 문제를 30개 넘게 푼 회원에게 친구 초대를 한 번만 띄운다(기기마다 한 번).
  *   다른 창(보상 알림·이용권)이 떠 있으면 이번엔 건너뛰고 다음 저장 때 다시 본다. */
+/* ★★ [2026-10-15] 저절로 뜨는 팝업은 한 번에 하나만 — 크리스 「동시에 뜰때는 우선순위 정해서 하나만 뜨게하고
+ *   그거 뜨고 문제를 몇문제 더 풀면 팝업 뜨도록 시간텀을 둬」(로그인 뒤 환급 안내와 다른 안내가 위아래로 같이 떴다).
+ *   popOffer(이름, 순위, 띄우기) 로 줄에 넣으면 _popTick 이 빈 때에 순위 높은 것 하나만 띄운다.
+ *   빈 때 = 다른 창이 없고 · 시간 재는 시험 중이 아니고 · 지난 팝업 뒤 POP_GAP 문제를 더 풀었거나 POP_IDLE_MS 가 지남.
+ *   순위: 가입 보너스 80 · 포인트 받음 70 · 앱 혜택 안내 50 · 환급 40 · 체험 기능 안내 35 · 친구 초대 30 · 알림 받기 20
+ *   ⚠ 사람이 눌러서 여는 창(로그인·이용권·탈퇴·마이페이지)과 가입 직후 환영 창은 줄에 넣지 않는다 — 바로 뜬다. */
+var POP_GAP=5, POP_IDLE_MS=6*3600*1000, _popQ=[], _popNow=false;
+function _popKey(){ return 'popLast_'+((typeof currentUser!=='undefined'&&currentUser)?currentUser.uid:'guest'); }
+function _popSolved(){ return (typeof totalSolve==='function')?totalSolve():0; }
+function popMark(){ try{ localStorage.setItem(_popKey(), JSON.stringify({s:_popSolved(), t:Date.now()})); }catch(_){} }
+function _popVis(id){ var e=document.getElementById(id); if(!e || e.classList.contains('hidden')) return false; try{ return getComputedStyle(e).display!=='none'; }catch(_){ return true; } }
+function _popBusy(){
+  return ['loginPopup','planPopup','inappPopup','guestFeatPopup','refundPopup','ptModalOv','delPopup','paySuccessOv','conceptOfferPopup'].some(_popVis)
+    || !!document.getElementById('invitePromptOv') || !!document.getElementById('pushBannerWrap');
+}
+function popOffer(name, prio, fn){
+  if(!_popQ.some(function(x){ return x.name===name; })) _popQ.push({ name:name, prio:prio, fn:fn });
+  setTimeout(_popTick, 1500);
+}
+function _popTick(){
+  if(!_popQ.length || _popBusy()) return;
+  if(typeof mqTimer!=='undefined' && mqTimer) return;
+  var last=null; try{ last=JSON.parse(localStorage.getItem(_popKey())||'null'); }catch(_){}
+  if(last && (_popSolved()-last.s) < POP_GAP && (Date.now()-last.t) < POP_IDLE_MS) return;
+  _popQ.sort(function(a,b){ return b.prio-a.prio; });
+  while(_popQ.length){
+    var x=_popQ.shift(), r;
+    _popNow=true; try{ r=x.fn(); }catch(_){ r=false; } finally{ _popNow=false; }
+    if(r!==false && _popBusy()){ popMark(); return; }   // 정말 떴을 때만 텀을 잰다
+  }
+}
 function maybeInvitePrompt(){
   if(!currentUser || !myReferralCode) return;
   if(typeof totalSolve==='function' && totalSolve() < REF_SOLVE_NEED) return;
   var k='invitePrompted_'+currentUser.uid;
   try{ if(localStorage.getItem(k)) return; }catch(_){ return; }
-  var busy=['ptModalOv','planPopup','loginPopup'].some(function(id){ var el=document.getElementById(id); return el && !el.classList.contains('hidden') && el.offsetParent!==null; });
-  if(busy || document.getElementById('invitePromptOv') || (typeof mqTimer!=='undefined' && mqTimer)) return;
+  if(!_popNow){ popOffer('invite', 30, maybeInvitePrompt); return; }   // [2026-10-15] 팝업 줄로
+  if(document.getElementById('invitePromptOv')) return false;
   try{ localStorage.setItem(k,'1'); }catch(_){}
   try{ clTrackCustom('InvitePromptShown', { solved: (typeof totalSolve==='function'?totalSolve():0) }); }catch(_){}
   var ov=document.createElement('div');
@@ -158,7 +189,6 @@ async function tryAppBonus(){
     }catch(_){ _appBase=null; return; }
   }
   if(totalSolve()-_appBase < APP_BONUS_NEED) return;
-  if(typeof mqTimer!=='undefined' && mqTimer) return;   // [2026-10-15] 시간 재는 시험 중엔 팝업으로 끊지 않는다 — 다음 저장 때 다시 본다
   try{
     var r=await fbFunctions.httpsCallable('claimAppBonus')({}), d2=(r&&r.data)||{};
     if(d2.granted){
@@ -678,6 +708,7 @@ async function saveUserData() {
     tryClaimReferral();   // [2026-10-12] 푼 수가 서버에 올라간 뒤에 추천 보상을 확인한다
     tryAppBonus();        // [2026-10-13] 앱 첫 로그인 혜택
     setTimeout(maybeInvitePrompt, 2500);
+    setTimeout(_popTick, 3000);   // [2026-10-15] 문제를 더 풀었으니 기다리던 팝업을 살핀다
   } catch(e) { console.error('저장 오류:', e); }
 }
 
@@ -1297,10 +1328,8 @@ function maybeShowRefundPopup(){
     var ev=REFUND;   // 시험 구분 없이 단일 공통 문구
     var raw=localStorage.getItem('refundPopupHide');
     if(raw){ var until=parseInt(raw,10); if(until && Date.now()<until) return; }  // 숨김 기간 중
-    var p=document.getElementById('refundPopup'); if(!p) return;
-    // 다른 팝업(가입유도·환영·이용권)이 떠 있으면 양보
-    var busy=['loginPopup','planPopup','inappPopup','guestFeatPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
-    if(busy) return;
+    var p=document.getElementById('refundPopup'); if(!p) return false;
+    if(!_popNow){ popOffer('refund', 40, maybeShowRefundPopup); return; }   // [2026-10-15] 다른 팝업과 겹치지 않게 줄로
     // 장점 줄: 지금 보던 시험 문제수 + 전체 통계
     try{
       var rs=document.getElementById('refundStats');
@@ -1343,9 +1372,8 @@ function bumpGuestSolved(){
 function maybeShowGuestFeatPopup(){
   if(!currentUser) return;
   try{ var raw=localStorage.getItem('guestFeatPopupHide'); if(raw){ var u=parseInt(raw,10); if(u && Date.now()<u) return; } }catch(_){}
-  var p=document.getElementById('guestFeatPopup'); if(!p || !p.classList.contains('hidden')) return;
-  var busy=['loginPopup','planPopup','inappPopup','refundPopup','conceptOfferPopup'].some(function(id){ var e=document.getElementById(id); return e && !e.classList.contains('hidden'); });
-  if(busy) return;
+  var p=document.getElementById('guestFeatPopup'); if(!p || !p.classList.contains('hidden')) return false;
+  if(!_popNow){ popOffer('guestfeat', 35, maybeShowGuestFeatPopup); return; }   // [2026-10-15] 팝업 줄로
   p.classList.remove('hidden');
 }
 function closeGuestFeatPopup(){
@@ -2107,7 +2135,10 @@ function showPaySuccess(info){
 function closePaySuccess(){ var ov=document.getElementById('paySuccessOv'); if(ov) ov.classList.add('hidden'); }
 // 포인트 적립/차감 안내 모달
 function showPtModal(kind, points, certLabel){
-  var ov=document.getElementById('ptModalOv'); if(!ov) return;
+  var ov=document.getElementById('ptModalOv'); if(!ov) return false;
+  // [2026-10-15] 저절로 뜨는 포인트 안내는 팝업 줄로(글쓰기 적립·회수처럼 사람이 한 일의 답은 바로)
+  var _prio={refbound:80, referral:70, appbonus:70, appintro:50}[kind];
+  if(_prio && !_popNow){ popOffer('pt_'+kind+'_'+points, _prio, function(){ return showPtModal(kind, points, certLabel); }); return; }
   var ic=document.getElementById('ptModalIc'), ti=document.getElementById('ptModalTi'), sub=document.getElementById('ptModalSub');
   /* [2026-10-15] 앱(TWA)에선 「포인트로 결제」를 말하지 않고 안내글 링크도 숨긴다 — 앱 결제는 구글 플레이라 포인트가 안 들고(플레이 정책),
    *   링크는 새 창 대신 앱 안에서 열려 게시글이 문제 화면 밑에 붙었다(크리스 폰 2026-10-15). */
