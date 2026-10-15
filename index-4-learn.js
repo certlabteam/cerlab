@@ -1279,6 +1279,9 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
  *   기본을 **펼침**으로 바꿨다. 「모두 접기」를 누른 사람만(expAll='0') 접힌다. */
 function expFoldAll(){ try{ return localStorage.getItem('expAll') !== '0'; }catch(_){ return true; } }
 function expFold(root, q){
+  /* ★ [2026-10-15 크리스 「핵심만 보기가 있구나 이거 그냥 다 보여줘」] 접기를 없앤다 — 보기별 해설·개념설명을 늘 다 보이고 접는 단추도 두지 않는다.
+   *   아래 접기 코드는 되돌릴 때를 위해 남겨 둔다(이 return 한 줄만 빼면 살아난다). */
+  return;
   try{
     var exp = root.querySelector('.exp'); if(!exp || !q) return;
     var all = expFoldAll();
