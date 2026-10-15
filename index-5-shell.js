@@ -1622,51 +1622,57 @@ async function openMyPage(){
   await cmLoadUserDoc();
   mpRenderHome();
 }
+/* ★ [2026-10-15 크리스] 「마이페이지 기능 켜고 끄기 → 토글 형태 · 마이페이지 형식 일구미랑 같게」
+ *   일구미 본보기(_공용/일구미_마이페이지_본보기.html · ilgumi web/src/view.js myPageHtml)를 따랐다:
+ *   프로필 머리(사진 52px) → 카드 하나(.my-list) 안에 줄을 죽 — 칸 제목으로 나누지 않는다(일구미 크리스 10-12 「계정 따로 나누지 않는다」).
+ *   줄 = 이름 16px · 오른쪽에 지금 값 14px 회색 + › · 켜고 끄기는 스위치(.dg-switch 38×22) · 로그아웃·탈퇴는 맨 아래 › 없이, 탈퇴만 빨강. */
+function _mpRow(label, small, onclick, cls){
+  return '<button type="button" class="'+(cls||'')+'"'+(onclick?' onclick="'+onclick+'"':'')+'><span>'+label+'</span><small>'+(small||'')+'</small></button>';
+}
 function mpRenderHome(){
   var box=document.getElementById('mpBody'); if(!box) return;
   var nick=cmGetNick(); var email=(currentUser&&currentUser.email)||'';
   var _lots=(window._cmUserDoc && Array.isArray(window._cmUserDoc.mileageLots))?window._cmUserDoc.mileageLots:myMileageLots;
   var bal=(typeof mileageBalance==='function')?mileageBalance(_lots):0;
-  var av=(currentUser&&currentUser.photoURL)?'<img class="mp-av" src="'+cmEsc(_avatarUrl(currentUser.photoURL))+'" alt="" onerror="this.onerror=null;this.removeAttribute(\'src\')">':'<div class="mp-av"></div>';
-  box.innerHTML=
-    '<div class="mp-prof">'+av+'<div><div class="mp-nick">'+cmEsc(nick)+'</div><div class="mp-email">'+cmEsc(email)+'</div></div></div>'
-    +'<div class="pt-card"><div class="pt-top"><span class="l">💰 보유 포인트</span><span class="pt-detail" onclick="mpShowHistory()">상세내역 \u203a</span></div>'
-    +'<div class="pt-v">'+bal.toLocaleString()+' P</div><div class="pt-sub">이용권 결제에 사용 (1P = 1원 · 전액 결제 가능)</div></div>'
-    /* [2026-10-12 크리스] 친구 초대 칸 — 일구미 마이페이지 「포인트 · 친구 초대」 꼴. 한도 팝업과 같은 칸을 쓴다 */
-    +((typeof _refShareBlockHTML==='function') ? '<div style="margin:0 16px">'+_refShareBlockHTML('mypage')+'</div>' : '')
-    +'<div class="mp-sec">이용권</div>'
-    /* ★★ [2026-10-12] 이용권을 살 길이 「무료 한도 초과」와 「만료」 둘뿐이라,
-     *   이용권이 **살아 있는 회원은 연장을 못 샀다**(showPlanPopup 이 그 둘에서만 불렸다).
-     *   돈 받을 길이 막혀 있던 자리다. 마이페이지에서 언제든 열 수 있게 한다. */
-    /* ★ [2026-10-12 크리스] 누르면 바로 결제창이 뜨면 **어느 시험인지 모르고 결제**할 수 있다.
-     *   먼저 내 이용권(무슨 시험·언제까지·몇 개월권)을 보여 주고, 거기서 사게 한다. */
-    +'<div class="mp-link" onclick="mpShowEnts()"><span class="e">🎫</span>내 이용권</div>'
-    +'<div class="mp-sec">활동</div>'
-    +'<div class="mp-link" onclick="mpShowPayments()"><span class="e">💳</span>결제 내역</div>'
-    +'<div class="mp-link" onclick="mpShowMyPosts()"><span class="e">📝</span>내가 쓴 글</div>'
-    +'<div class="mp-link" onclick="mpShowMyComments()"><span class="e">💬</span>내가 쓴 댓글</div>'
-    +'<div class="mp-sec">회원정보</div>'
-    +((window._cmUserDoc && window._cmUserDoc.boardNick) ? '<div class="mp-link" style="opacity:.6;cursor:default"><span class="e">\u270F\ufe0f</span>닉네임 '+cmEsc(window._cmUserDoc.boardNick)+' (변경 불가)</div>' : '<div class="mp-link" onclick="mpChangeNick()"><span class="e">\u270F\ufe0f</span>닉네임 설정</div>');
-  /* [2026-10-13 크리스] 복습 알림 켜고 끄기 — 끄면 userData.pushOff=true 를 적고 서버(runReviewPush)가 건너뛴다.
-   *   브라우저 권한은 건드리지 않는다 → 다시 켤 때 권한 창 없이 바로 켜진다. */
-  box.innerHTML += '<div class="mp-sec">알림</div><div class="mp-link" onclick="mpTogglePush()"><span class="e">🔔</span>복습 알림 받기'
-    + ' <span id="mpPushState" style="margin-left:auto;font-size:12.5px;color:#8A7D6E">확인 중…</span></div>';
-  mpPushStateLoad();
-  /* [2026-10-15] 펼침 메뉴를 없애며 「앱·홈 화면」과 「로그아웃」을 여기로 옮겼다(UIUX_모바일 4부 라-1 · 크리스 같은 날 지시) */
+  var av=(currentUser&&currentUser.photoURL)
+    ? '<span class="avatar big"><img src="'+cmEsc(_avatarUrl(currentUser.photoURL))+'" alt="" onerror="this.onerror=null;this.remove()"></span>'
+    : '<span class="avatar big">'+cmEsc((nick||'U').charAt(0))+'</span>';
+  var cert=activeCertId(), e=(typeof userEnt!=='undefined' && userEnt && userEnt[cert])||{};
+  var st={ACTIVE:'이용중', EXPIRED:'만료'}[e.plan]||'무료 체험';
+  var bn=window._cmUserDoc && window._cmUserDoc.boardNick;
   var _isApp=(typeof pwaStandalone==='function' && pwaStandalone());
   var _isAnd=/android/i.test(navigator.userAgent);
-  box.innerHTML += '<div class="mp-sec">앱</div>'
-    + (_isApp ? '<div class="mp-link" style="cursor:default"><span class="e">📲</span>앱으로 쓰는 중 <span style="margin-left:auto;font-size:12.5px;color:#0F6E56;font-weight:700">추가됨 ✓</span></div>'
-              : '<div class="mp-link" onclick="addToHome(event)"><span class="e">📲</span>'+(_isAnd ? '앱 설치하기 · 앱 첫 로그인 혜택 9,900P' : '홈 화면에 추가')+'</div>');
-  box.innerHTML += '<div class="mp-sec">계정</div><div class="mp-link" onclick="signOut()"><span class="e">🚪</span>로그아웃</div>'
-    + '<div class="mp-link" onclick="showDeletePopup()" style="color:#C0392B"><span class="e">⚠️</span>회원 탈퇴</div>';
+  box.innerHTML=
+    '<section class="my-head">'+av+'<div><b>'+cmEsc(nick)+'</b><p>'+cmEsc(email)+'</p></div></section>'
+    +'<nav class="my-list">'
+    + _mpRow('이용권', cmEsc(certLabel(cert)||'')+' · '+st, 'mpShowEnts()', 'go')
+    + _mpRow('포인트', bal.toLocaleString()+'P', 'mpShowHistory()', 'go')
+    + _mpRow('친구 초대', '친구도 나도 9,900P', 'mpShowInvite()', 'go')
+    + _mpRow('결제 내역', '', 'mpShowPayments()', 'go')
+    + _mpRow('내가 쓴 글', '', 'mpShowMyPosts()', 'go')
+    + _mpRow('내가 쓴 댓글', '', 'mpShowMyComments()', 'go')
+    + (bn ? _mpRow('닉네임', cmEsc(bn)+' · 변경 불가', '', 'still') : _mpRow('닉네임', '설정하기', 'mpChangeNick()', 'go'))
+    /* [2026-10-13 크리스] 복습 알림 — 끄면 userData.pushOff=true(서버 runReviewPush 가 건너뜀) · 브라우저 권한은 안 건드린다 */
+    + '<div class="my-row-static my-push"><span>복습 알림<small>복습할 때가 된 문제를 알려 드려요</small></span>'
+    +   '<button type="button" class="dg-switch" id="mpPushSw" onclick="mpTogglePush()"><i class="dg-switch-knob"></i><span id="mpPushState">확인 중…</span></button></div>'
+    + (_isApp ? _mpRow('앱', '앱으로 쓰는 중 ✓', '', 'still')
+              : _mpRow(_isAnd ? '앱 설치하기' : '홈 화면에 추가', _isAnd ? '앱 첫 로그인 혜택 9,900P' : '', 'addToHome(event)', 'go'))
+    + _mpRow('로그아웃', '', 'signOut()', '')
+    + _mpRow('회원 탈퇴', '', 'showDeletePopup()', 'danger-text')
+    +'</nav>';
+  mpPushStateLoad();
+}
+function mpShowInvite(){
+  var box=document.getElementById('mpBody'); if(!box) return;
+  box.innerHTML='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">←</button><span>친구 초대</span></div>'
+    + ((typeof _refShareBlockHTML==='function') ? _refShareBlockHTML('mypage') : '');
 }
 function _mpPushSupported(){
   return !_pushIsIOS() && ('Notification' in window) && ('serviceWorker' in navigator)
     && !!(window.firebase && firebase.messaging && (!firebase.messaging.isSupported || firebase.messaging.isSupported()));
 }
 var _mpPushOn = false;
-function _mpPushShow(t, on){ var s=document.getElementById('mpPushState'); if(s){ s.textContent=t; s.style.color=on?'#0F6E56':'#8A7D6E'; s.style.fontWeight=on?'700':'400'; } }
+function _mpPushShow(t, on){ var s=document.getElementById('mpPushState'); if(s) s.textContent=t; var w=document.getElementById('mpPushSw'); if(w){ w.classList.toggle('on', !!on); w.classList.toggle('dis', t==='이 기기는 안 돼요'); } }
 async function mpPushStateLoad(){
   if(!_mpPushSupported()){ _mpPushOn=false; _mpPushShow('이 기기는 안 돼요', false); return; }
   var d={};

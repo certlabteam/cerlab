@@ -1285,3 +1285,24 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .plan-ben-li:first-of-type{border-top:0}
 .plan-ben-li b{color:#1D9E75}
 .plan-ben-free{margin-top:8px;font-size:12px;color:#8A7D6E;line-height:1.6}
+
+/* [2026-10-15] 마이페이지 = 일구미 꼴(_공용/일구미_마이페이지_본보기.html) · 켜짐 색만 서트랩 파랑 */
+.my-head{display:flex;align-items:center;gap:12px;margin:8px 0 4px}
+.my-head b{font-size:18px;color:#2C2C2A}.my-head p{margin:2px 0 0;font-size:14px;color:#888780}
+.avatar.big{width:52px;height:52px;flex:none;border-radius:50%;background:#185FA5;color:#fff;display:grid;place-items:center;font-size:24px;font-weight:800;overflow:hidden}
+.avatar.big img{width:100%;height:100%;object-fit:cover;display:block}
+.my-list{display:grid;grid-template-columns:minmax(0,1fr);background:#fff;border-radius:12px;margin-top:12px;overflow:hidden;box-shadow:0 0 0 1px rgba(15,23,42,.05),0 1px 2px -1px rgba(15,23,42,.06),0 2px 6px rgba(15,23,42,.04)}
+.my-list>*{min-width:0}
+.my-list>button{display:flex;justify-content:space-between;align-items:center;width:100%;padding:16px;color:#2C2C2A;font:inherit;font-size:16px;text-align:left;background:none;border:0;border-top:1px solid #E5E7EB;border-radius:0;cursor:pointer}
+.my-list>:first-child{border-top:0}
+.my-list>button small{color:#888780;font-size:14px;margin-left:auto;margin-right:8px;text-align:right}
+.my-list>button.go::after{content:'A';color:#888780;font-size:18px}
+.my-list>button.still{cursor:default}
+.my-list>button.danger-text span{color:#DC2626}
+.my-row-static{display:flex;justify-content:space-between;align-items:center;padding:16px;border-top:1px solid #E5E7EB;font-size:16px;color:#2C2C2A}
+.my-push{gap:12px}.my-push>span{display:flex;flex-direction:column;gap:2px}.my-push>span small{color:#888780;font-size:12px}
+.dg-switch{display:inline-flex;align-items:center;gap:8px;flex:none;white-space:nowrap;padding:0;border:0;background:none;cursor:pointer;font:inherit;font-weight:600;font-size:14px;color:#888780}
+.dg-switch .dg-switch-knob{display:inline-block;position:relative;width:38px;height:22px;border-radius:999px;background:#D1D5DB;transition:background .15s;flex:none}
+.dg-switch .dg-switch-knob::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(15,23,42,.3)}
+.dg-switch.on{color:#185FA5}.dg-switch.on .dg-switch-knob{background:#185FA5}.dg-switch.on .dg-switch-knob::after{transform:translateX(16px)}
+.dg-switch.dis{opacity:.45;cursor:not-allowed}
