@@ -681,6 +681,7 @@ function mqAutoResume(){
 
 /* ===== Firestore 문제은행 로더 (버전 캐시, 시험별 lazy 로드) ===== */
 var MANIFEST=null;          // manifest/exams 1회 캐시
+var QB_META_COUNT={};       // [2026-10-15] 시험→과목→전체 문항 수(banks 머리 문서 count)
 var loadedExams={};         // 시험별 로드 완료 플래그
 async function loadManifest(){
   if(MANIFEST) return MANIFEST;
@@ -995,6 +996,8 @@ async function loadOneSubject(ex, sub){
   if(!doc){
     const meta=await _bankGet(ex.id+'__'+sub.code);   // 일반 fetch 우선, 실패 시 SDK 폴백
     if(meta){
+      /* [2026-10-15] 회차를 나눠 받으니 받은 만큼만 세면 「한국사 50문제」처럼 적게 나왔다(실제 300) — 머리 문서의 count 를 적어 둔다 */
+      if(typeof meta.count==='number'){ (QB_META_COUNT[ex.id]=QB_META_COUNT[ex.id]||{})[sub.code]=meta.count; }
       if(Array.isArray(meta.shards) && meta.shards.length){
         /* [2026-09-02] 회차 샤딩: 예전엔 전 회차를 다 기다렸다.
          * 한국사 하나가 3,575KB · 12.8초였다. 학생은 한 회차만 푸는데 다섯을 기다린 셈이다.

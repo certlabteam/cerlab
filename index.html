@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=f6fef2f6">
+<link rel="stylesheet" href="style.css?v=d619d78e">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -642,12 +642,12 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- 이용권 팝업 -->
 <div class="auth-popup hidden" id="planPopup">
   <div class="auth-sheet">
-    <button class="popup-x" onclick="hidePlanPopup()" aria-label="닫기">✕</button>
+    <!-- [2026-10-15 크리스] 「이것도 팝업 말고 페이지로 … 좀 깔끔하게 다듬어봐」 — 위에 ← 줄, 가격·결제를 위로, 장점은 결제 단추 아래 한 칸 -->
+    <div class="plan-top"><button onclick="hidePlanPopup()" aria-label="뒤로">←</button><span>이용권</span></div>
     <div class="plan-sheet-title" id="planSheetTitle">⏰ 무료 체험 완료!</div>
     <!-- ★ 어느 시험 이용권인지 — 마이페이지에서 바로 열면 맥락이 없어 엉뚱한 시험을 결제할 수 있다 -->
     <div id="planCertName" style="margin:2px 0 8px;padding:5px 12px;display:inline-block;border-radius:999px;background:#EEF4FB;color:#0C447C;font-size:13.5px;font-weight:700"></div>
     <div class="plan-sheet-sub" id="planSub">이용권 구매 후 전체 문제와 학습 기록을 계속 이용할 수 있습니다.</div>
-    <div class="plan-stats" id="planStats"></div>
     <div class="plan-cards">
       <div class="plan-card" id="plan7" onclick="selectPlan(7,3900)">
         <div class="plan-card-top">
@@ -748,6 +748,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <!-- ★ 계좌이체 단추는 숨겨 둔다(지우지 않음). 카드가 막히는 날 hidden 만 떼면 된다. -->
     <button class="btn-payment" id="btnPayment" hidden onclick="submitPayment()">입금하고 시작하기</button>
     <div class="payment-note">결제가 끝나면 이용권이 <strong>바로 켜집니다</strong>.<br>국민·신한·삼성·하나·BC·롯데·농협·우리카드로 결제할 수 있어요.</div>
+    <div class="plan-stats" id="planStats"></div>
   </div>
 </div>
 <!-- [2026-09-02] 파이어베이스 SDK 를 <head> 에서 여기로 내렸다.
@@ -760,14 +761,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=433f82e0"></script>
+<script defer src="index-1-auth.js?v=821fca39"></script>
 <script defer src="index-2-engine.js?v=d632aafc"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=e9ebd33a"></script>
 <script defer src="index-3-mcq.js?v=542b6650"></script>
 <script defer src="index-4-learn.js?v=c2ca6392"></script>
-<script defer src="index-5-shell.js?v=759ea32c"></script>
+<script defer src="index-5-shell.js?v=73311626"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">

@@ -1055,7 +1055,7 @@ function _refShareBlockHTML(source){
   return '<div style="margin:10px 0;padding:13px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
     + '<div style="font-size:13.5px;font-weight:700;color:#7A5A18;margin-bottom:3px">🎁 친구 초대하면 한 달 무료</div>'
     + '<div style="font-size:12.5px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
-      + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값 · 포인트로 전액 결제)<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
+      + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값'+((typeof pwaStandalone==='function'&&pwaStandalone())?'':' · 포인트로 전액 결제')+')<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
     + '<button onclick="shareReferral(\''+(source||'limit')+'\')" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
       + 'border:none;border-radius:11px;font-size:14.5px;font-weight:700;cursor:pointer">'
       + '친구에게 보내기</button></div>';
@@ -1398,7 +1398,9 @@ function certQuestionCount(cert){
     if(typeof isMcqCert==='function' && isMcqCert(cert)){
       const qb=qbOf(cert); let n=0;
       Object.keys(qb).forEach(s=>(qb[s].sets||[]).forEach(st=>n+=(st.questions||[]).length));
-      return n;
+      // [2026-10-15] 나머지 회차를 아직 받는 중이면 받은 것만 센다 → banks 머리 문서의 전체 수와 견줘 큰 쪽
+      let m=0; try{ const mc=(typeof QB_META_COUNT!=='undefined'&&QB_META_COUNT[cert])||{}; Object.keys(mc).forEach(k=>m+=mc[k]||0); }catch(_){}
+      return Math.max(n, m);
     }
     return (typeof D!=='undefined') ? D.length : 0;   // 플래시카드
   }catch(_){ return 0; }
@@ -1493,23 +1495,19 @@ function showPlanPopup(membership) {
     : _limitMsg('이용권을 시작하면 문제 수 제한이 없어져요.');
   const n = certQuestionCount(cert);
   const totalTxt = n>0 ? n.toLocaleString()+'문제' : '전체 기출문제';
-  const allN = totalQuestionCountAll();
-  const exams = examCount();
-  const headTxt = (n>0) ? certLabel(cert)+' · '+n.toLocaleString()+'문제 수록' : certLabel(cert)+' · 전체 기출 + 상세해설';
+  /* [2026-10-15] 「깔끔하게」 — 큰 제목 칸 · 학습법 칸 · 무료/유료 비교표 · 친구 초대 큰 칸을 장점 한 칸으로 합쳤다.
+   *   친구 초대는 결제 단추 위 한 줄(.pay-ref-line)이 맡는다. 비교표의 「무료는 체험분」은 끝 한 줄로. */
   const stats = document.getElementById('planStats');
   if (stats) {
-    stats.innerHTML =
-      '<div class="plan-hl">📚 '+headTxt+'</div>'
-      + '<div style="margin:10px 0;padding:11px 13px;background:#F5F8FF;border:1px solid #D6E2F5;border-radius:10px;text-align:left">'
-        + '<div style="font-size:13px;font-weight:700;color:#0C447C;margin-bottom:7px">서트랩만의 학습법</div>'
-        + '<div style="font-size:12.5px;color:#3A4A5E;line-height:1.85">'
-          + '🎯 <b style="color:#0C447C;font-weight:500">레벨테스트 + 레벨업</b> — 실력 진단 후 5문제씩, 약점만 집중<br>'
-          + '🔁 <b style="color:#0C447C;font-weight:500">변형문제 · OX진술 학습</b> — 같은 유형 반복으로 확실히<br>'
-          + '📈 <b style="color:#0C447C;font-weight:500">예상점수 · 약점 분석</b> — 지금 합격선인지 바로 확인<br>'
-          + '🧠 <b style="color:#0C447C;font-weight:500">망각곡선 자동복습</b> — 푼 건 안 까먹게'
-        + '</div></div>'
-      + featureCompareHTML(totalTxt);
-    if(!membership) stats.innerHTML = _refShareBlockHTML() + stats.innerHTML;   // [2026-09-09] 한도로 막힌 쪽에만
+    const ben=['📚 '+(n>0?'전체 '+totalTxt:'전체 기출')+' · 보기마다 해설',
+               '🎯 레벨테스트 + 레벨업 — 약점만 5문제씩',
+               '🔁 변형문제 · OX진술 학습',
+               '📈 예상점수 · 약점 분석',
+               '🧠 망각곡선 자동복습 · 오답노트',
+               '🔊 음성 · 암기 · 학습기록 계속'];
+    stats.innerHTML = '<div class="plan-ben"><div class="plan-ben-h">이용권으로 열리는 것</div>'
+      + ben.map(function(t){ return '<div class="plan-ben-li"><span>'+t+'</span><b>✓</b></div>'; }).join('')
+      + '<div class="plan-ben-free">무료 체험은 50문제까지예요. 체험이 끝나면 학습기록도 멈춰요.</div></div>';
   }
   _planPopupShow();
   renderPlanCards(cert);

@@ -1270,3 +1270,18 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .lp-adv b{display:block;font-size:14px;line-height:20px;color:#0C447C;font-weight:800;word-break:keep-all}
 .lp-adv span{display:block;font-size:12px;line-height:16px;color:#5A6B7C;margin-top:4px;word-break:keep-all}
 .lp-char{display:block;width:72px;height:72px;margin:0 auto 8px;border-radius:16px;object-fit:contain}
+
+/* [2026-10-15] 이용권 = 팝업이 아니라 페이지(크리스 「이것도 팝업 말고 페이지로 … 깔끔하게」) */
+#planPopup{background:#fff;align-items:stretch;animation:none}
+#planPopup .auth-sheet{max-width:520px;max-height:none;height:100%;border-radius:0;padding:0 16px 40px;animation:none}
+#planPopup .plan-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:4px;height:56px;margin:0 -16px 16px;padding:0 4px;background:#fff;border-bottom:1px solid #EEECE8}
+#planPopup .plan-top button{width:44px;height:44px;border:0;background:none;font-size:24px;color:#2C2C2A;cursor:pointer}
+#planPopup .plan-top span{font-size:18px;font-weight:700;color:#2C2C2A}
+#planPopup .plan-sheet-title{font-size:20px;text-align:left}
+#planPopup .plan-sheet-sub{text-align:left;margin-bottom:16px}
+.plan-ben{margin:24px 0 0;padding:16px;border:1px solid #E3EAF3;border-radius:16px;background:#F8FAFD}
+.plan-ben-h{font-size:16px;font-weight:700;color:#0C447C;margin-bottom:8px}
+.plan-ben-li{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid #EDF1F6;font-size:14px;color:#2C2C2A;line-height:1.5}
+.plan-ben-li:first-of-type{border-top:0}
+.plan-ben-li b{color:#1D9E75}
+.plan-ben-free{margin-top:8px;font-size:12px;color:#8A7D6E;line-height:1.6}
