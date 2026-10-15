@@ -109,6 +109,31 @@ const REF_REWARD_P = 9900, REF_SOLVE_NEED = 30;
 let myReferredBy = null;
 /* [2026-10-12 크리스] 문제를 30개 넘게 푼 회원에게 친구 초대를 한 번만 띄운다(기기마다 한 번).
  *   다른 창(보상 알림·이용권)이 떠 있으면 이번엔 건너뛰고 다음 저장 때 다시 본다. */
+/* ★ [2026-10-15] 브라우저 기본 alert·confirm 대신 자체 창 — UIUX_모바일 5부 다 「alert·confirm 기본 창을 쓰지 않는다」
+ *   (화면을 얼리고 폰에서 어색하다 · 크리스 「메뉴얼이랑 다른거 없나 … 어디든」).
+ *   alert 은 아흔 곳이 넘어 window.alert 를 이 창으로 돌렸다. ★ 이 창은 멈추지 않는다 —
+ *   alert 바로 뒤에 새로고침·이동이 붙은 자리는 `await clNotice(...)` 로 바꿨다(안 바꾸면 글이 뜨자마자 사라진다).
+ *   confirm 은 값이 필요해 일곱 곳을 `await clConfirm(...)` 로 바꿨다. */
+function _clDlg(msg, okTxt, noTxt){
+  return new Promise(function(res){
+    var ov=document.createElement('div'); ov.className='cl-dlg-ov';
+    ov.innerHTML='<div class="cl-dlg" role="dialog" aria-modal="true"><div class="cl-dlg-msg"></div><div class="cl-dlg-btns">'
+      +(noTxt?'<button type="button" class="cl-dlg-no"></button>':'')+'<button type="button" class="cl-dlg-ok"></button></div></div>';
+    ov.querySelector('.cl-dlg-msg').textContent=(msg==null?'':String(msg));
+    var ok=ov.querySelector('.cl-dlg-ok'), no=ov.querySelector('.cl-dlg-no');
+    ok.textContent=okTxt||'확인'; if(no) no.textContent=noTxt;
+    function key(e){ if(e.key==='Escape') done(!noTxt); else if(e.key==='Enter'){ e.preventDefault(); done(true); } }
+    function done(v){ if(ov.parentNode) ov.parentNode.removeChild(ov); document.removeEventListener('keydown', key, true); res(v); }
+    ok.onclick=function(){ done(true); }; if(no) no.onclick=function(){ done(false); };
+    ov.onclick=function(e){ if(e.target===ov) done(!noTxt); };
+    document.addEventListener('keydown', key, true);
+    (document.body||document.documentElement).appendChild(ov);
+    try{ ok.focus(); }catch(_){}
+  });
+}
+function clNotice(msg){ return _clDlg(msg, '확인'); }
+function clConfirm(msg, okTxt){ return _clDlg(msg, okTxt||'확인', '취소'); }
+window.alert=function(m){ clNotice(m); };
 /* ★★ [2026-10-15] 저절로 뜨는 팝업은 한 번에 하나만 — 크리스 「동시에 뜰때는 우선순위 정해서 하나만 뜨게하고
  *   그거 뜨고 문제를 몇문제 더 풀면 팝업 뜨도록 시간텀을 둬」(로그인 뒤 환급 안내와 다른 안내가 위아래로 같이 떴다).
  *   popOffer(이름, 순위, 띄우기) 로 줄에 넣으면 _popTick 이 빈 때에 순위 높은 것 하나만 띄운다.
@@ -153,11 +178,11 @@ function maybeInvitePrompt(){
   ov.id='invitePromptOv';
   ov.style.cssText='position:fixed;inset:0;background:rgba(20,28,40,.45);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px';
   ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
-  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:18px 16px 12px;text-align:center">'
+  ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:16px 16px 12px;text-align:center">'
     + '<div style="font-size:16px;font-weight:800;color:#2B3A4B;margin-bottom:4px">벌써 '+REF_SOLVE_NEED+'문제 넘게 푸셨어요 👏</div>'
-    + '<div style="font-size:13px;color:#5A6B7C;line-height:1.6">같이 공부할 친구를 부르면 한 달이 무료예요</div>'
+    + '<div style="font-size:14px;color:#5A6B7C;line-height:1.6">같이 공부할 친구를 부르면 한 달이 무료예요</div>'
     + _refShareBlockHTML('solve30')
-    + '<button onclick="document.getElementById(\'invitePromptOv\').remove()" style="background:none;border:none;color:#8A7D6E;font-size:13px;padding:6px 10px;cursor:pointer">다음에 할게요</button>'
+    + '<button onclick="document.getElementById(\'invitePromptOv\').remove()" style="background:none;border:none;color:#8A7D6E;font-size:14px;padding:6px 10px;cursor:pointer">다음에 할게요</button>'
     + '</div>';
   document.body.appendChild(ov);
 }
@@ -979,8 +1004,8 @@ function signInWithKakao(){
     alert('카카오 로그인을 시작하지 못했습니다: ' + ((e && e.message) || e));
   }
 }
-function signOut() {
-  if (confirm('로그아웃 하시겠어요?')) {
+async function signOut() {
+  if (await clConfirm('로그아웃 하시겠어요?', '로그아웃')) {
     auth.signOut();
   }
 }
@@ -1052,12 +1077,12 @@ function shareReferral(source){
  * 코드가 없으면(게스트) 빈 문자열 — 그쪽은 로그인 팝업이 따로 받는다. */
 function _refShareBlockHTML(source){
   if(!myReferralCode) return '';
-  return '<div style="margin:10px 0;padding:13px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
-    + '<div style="font-size:13.5px;font-weight:700;color:#7A5A18;margin-bottom:3px">🎁 친구 초대하면 한 달 무료</div>'
-    + '<div style="font-size:12.5px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
+  return '<div style="margin:10px 0;padding:12px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
+    + '<div style="font-size:14px;font-weight:700;color:#7A5A18;margin-bottom:2px">🎁 친구 초대하면 한 달 무료</div>'
+    + '<div style="font-size:14px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
       + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값'+((typeof pwaStandalone==='function'&&pwaStandalone())?'':' · 포인트로 전액 결제')+')<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
     + '<button onclick="shareReferral(\''+(source||'limit')+'\')" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
-      + 'border:none;border-radius:11px;font-size:14.5px;font-weight:700;cursor:pointer">'
+      + 'border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">'
       + '친구에게 보내기</button></div>';
 }
 
@@ -1224,7 +1249,7 @@ function _delSyncView() {
 }
 async function deleteMyAccount() {
   if (!firebaseReady || !db || !currentUser) { alert('로그인 상태에서만 탈퇴할 수 있어요.'); return; }
-  if (!confirm('정말 계정을 영구 삭제할까요?\n삭제된 학습 기록·이용권·마일리지는 되돌릴 수 없습니다.')) return;
+  if (!(await clConfirm('정말 계정을 영구 삭제할까요?\n삭제된 학습 기록·이용권·마일리지는 되돌릴 수 없습니다.', '영구 삭제'))) return;
   var btn = document.getElementById('delGoBtn');
   if (btn) { btn.disabled = true; btn.textContent = '삭제 중…'; }
   var uid = currentUser.uid;
@@ -1277,7 +1302,7 @@ async function deleteMyAccount() {
     }
     // 3) 로컬 상태 정리
     try { Object.keys(localStorage).forEach(function(k){ if (k.indexOf('certlab_') === 0) localStorage.removeItem(k); }); } catch(_){}
-    alert('계정과 관련 데이터가 삭제되었습니다. 그동안 이용해 주셔서 감사합니다.');
+    await clNotice('계정과 관련 데이터가 삭제되었습니다. 그동안 이용해 주셔서 감사합니다.');
     try { history.replaceState(null, '', location.pathname + location.search); } catch(_){ location.hash=''; }
     location.reload();
   } catch (e) {
@@ -1456,14 +1481,14 @@ function showAppWebPay(){
   /* [2026-10-14] 플레이 정책 — 앱 안에서 바깥(웹) 결제로 이끄는 말을 쓰지 않는다(안티 스티어링).
    *   크리스 「앱스토어 결제 가잖아 · 일구미처럼」 → 구글 플레이 결제를 붙일 때까지 앱에서는 안내만 한다. */
   if(st) st.innerHTML='<div style="text-align:center;padding:16px 8px;font-size:14px;color:#3A4A5E;line-height:1.9">이용권이 있으면 모든 문제와 해설을<br>제한 없이 볼 수 있어요.<br><span style="font-size:12px;color:#8A7D6E">앱 안 결제는 곧 열려요.</span></div>'
-    +'<button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
+    +'<button onclick="hidePlanPopup()" style="width:100%;padding:12px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button>';
   _planPopupShow();
 }
 function showAppDailyDone(){
   _togglePayUI(false);
   var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🌙 오늘 무료 학습 완료!';
   var sub=document.getElementById('planSub'); if(sub) sub.textContent=_limitMsg('내일 다시 오면 새 문제로 이어서 풀 수 있어요.');
-  var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:13.5px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div>'+_refShareBlockHTML()+'<button onclick="hidePlanPopup()" style="width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button>';
+  var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:14px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div>'+_refShareBlockHTML()+'<button onclick="hidePlanPopup()" style="width:100%;padding:12px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button>';
   _planPopupShow();
 }
 function showPlanPopup(membership) {
@@ -1718,7 +1743,7 @@ async function _playRestore(){
   if(!currentUser || !fbFunctions) return;
   var p=null; try{ p=JSON.parse(localStorage.getItem('clPlayPend')||'null'); }catch(_){}
   if(!p || !p.token) return;
-  try{ var d=await _playConfirm(p.examId, p.sku, p.token); if(d.status==='PAID'){ alert('앞서 결제하신 '+certFull(p.examId)+' 이용권을 켰어요.'); location.reload(); } }
+  try{ var d=await _playConfirm(p.examId, p.sku, p.token); if(d.status==='PAID'){ await clNotice('앞서 결제하신 '+certFull(p.examId)+' 이용권을 켰어요.'); location.reload(); } }
   catch(e){ console.warn('플레이 결제 이어 켜기 안 됨:', e && e.message); }
 }
 async function startPlayPayment(){
@@ -1737,7 +1762,7 @@ async function startPlayPayment(){
     try{
       var d=await _playConfirm(cert, sku, token);
       await res.complete('success');
-      alert(certFull(cert)+' '+planLabelOf(selectedPlanDays)+'이 켜졌어요.');
+      await clNotice(certFull(cert)+' '+planLabelOf(selectedPlanDays)+'이 켜졌어요.');
       location.reload();
     }catch(e){ await res.complete('fail'); throw e; }
   }catch(e){
@@ -1777,7 +1802,7 @@ async function startCardPayment(){
     var o=(r&&r.data)||{};
     // [2026-10-12] 포인트로 전액 — 서버가 결제창 없이 바로 켰다
     if(o.orderId && o.status==='PAID' && o.fulfillmentStatus==='APPLIED' && !(o.payableAmount>0)){
-      alert('포인트로 결제했어요. '+certFull(cert)+' '+planLabelOf(selectedPlanDays)+'이 바로 켜졌어요.');
+      await clNotice('포인트로 결제했어요. '+certFull(cert)+' '+planLabelOf(selectedPlanDays)+'이 바로 켜졌어요.');
       location.reload(); return;
     }
     if(!o.orderId || !(o.payableAmount>0)) throw new Error('주문을 만들지 못했어요.');
@@ -1817,7 +1842,7 @@ async function submitPayment() {
   const confMsg = payable<=0
     ? '['+certName+'] '+planLabelOf(selectedPlanDays)+'\n포인트 '+applied.toLocaleString()+'P로 결제 (입금 없이 즉시 활성화)\n진행할까요?'
     : '['+certName+'] '+planLabelOf(selectedPlanDays)+' - '+price.toLocaleString()+'원\n'+(applied>0?'포인트 '+applied.toLocaleString()+'P 사용 + 입금 '+payable.toLocaleString()+'원\n':'')+'입금자: '+depositorName+'\n신청하시겠어요?';
-  if (!confirm(confMsg)) return;
+  if (!(await clConfirm(confMsg))) return;
 
   try {
     const expireAt = new Date();
@@ -1962,16 +1987,16 @@ function openAiBuy(kind){
   _aiBuyKind=(kind==='explain'?'explain':'grade'); _aiBuyIdx=0;
   var isG=_aiBuyKind==='grade', packs=_aiPacks(_aiBuyKind);
   var ti=document.getElementById('aiBuyTitle'); if(ti) ti.textContent=isG?'✍️ AI 첨삭 충전':'💡 AI 개념설명 충전';
-  var sub=document.getElementById('aiBuySub'); if(sub) sub.innerHTML=(isG?'주관식 답안을 채점위원 수준으로 첨삭받는 이용권이에요.':'객관식 해설을 AI가 더 자세히 설명해주는 이용권이에요.')+'<br><span style="display:inline-block;margin-top:5px;background:#F5F3FF;color:#6D28D9;font-weight:700;font-size:11.5px;padding:2px 9px;border-radius:8px">⚠️ 회원권과 별개 · 첨삭/해설 충전은 서로 따로예요</span>';
+  var sub=document.getElementById('aiBuySub'); if(sub) sub.innerHTML=(isG?'주관식 답안을 채점위원 수준으로 첨삭받는 이용권이에요.':'객관식 해설을 AI가 더 자세히 설명해주는 이용권이에요.')+'<br><span style="display:inline-block;margin-top:4px;background:#F5F3FF;color:#6D28D9;font-weight:700;font-size:12px;padding:2px 8px;border-radius:8px">⚠️ 회원권과 별개 · 첨삭/해설 충전은 서로 따로예요</span>';
   var bal=document.getElementById('aiBuyBal'); if(bal){
     var _b=(isG?gradeBal():explainBal()), _exp=(isG?gradeExpiry():explainExpiry());
     bal.innerHTML='현재 '+(isG?'첨삭':'해설')+' 잔액: <b>'+_b.toLocaleString()+'회</b>'
       +(_exp?(' <span style="color:#9A8AB8;font-weight:600">· 가장 빨리 만료 '+new Date(_exp).toLocaleDateString('ko-KR')+'</span>'):'');
   }
   var wrap=document.getElementById('aiBuyPacks'); if(wrap){ wrap.innerHTML=packs.map(function(p,i){ var n=+p.n, pr=+p.p||0, per=n?Math.round(pr/n):0;
-    return '<label style="display:flex;align-items:center;gap:10px;border:1.5px solid '+(i===_aiBuyIdx?'#6D28D9':'#E8E8E8')+';background:'+(i===_aiBuyIdx?'#FAF7FF':'#fff')+';border-radius:11px;padding:11px 13px;cursor:pointer" onclick="_aiPickPack('+i+')">'
+    return '<label style="display:flex;align-items:center;gap:10px;border:1.5px solid '+(i===_aiBuyIdx?'#6D28D9':'#E8E8E8')+';background:'+(i===_aiBuyIdx?'#FAF7FF':'#fff')+';border-radius:12px;padding:10px 12px;cursor:pointer" onclick="_aiPickPack('+i+')">'
       +'<input type="radio" name="aiPack" '+(i===_aiBuyIdx?'checked':'')+' style="accent-color:#6D28D9">'
-      +'<span style="flex:1;text-align:left"><b style="font-size:14px">'+n+'회</b> <span style="font-size:11px;color:#9A8AB8">회당 '+per.toLocaleString()+'원</span></span>'
+      +'<span style="flex:1;text-align:left"><b style="font-size:14px">'+n+'회</b> <span style="font-size:12px;color:#9A8AB8">회당 '+per.toLocaleString()+'원</span></span>'
       +'<b style="font-size:14px;color:#6D28D9">'+pr.toLocaleString()+'원</b></label>';
   }).join(''); }
   var nm=document.getElementById('aiBuyName'); if(nm) nm.value=(currentUser&&currentUser.displayName)||'';

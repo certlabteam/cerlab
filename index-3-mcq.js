@@ -55,13 +55,13 @@ function _sp2OpenPicker(cb){
   function render(){
     var n=cnt();
     ov.innerHTML='<div class="auth-sheet" style="max-width:360px;text-align:left">'
-      +'<div style="font-size:17px;font-weight:900;color:#0C447C;margin-bottom:3px">\uC2DC\uD5D8 \uBCFC 5\uACFC\uBAA9 \uC120\uD0DD</div>'
-      +'<div style="font-size:12.5px;color:#8A7D6E;margin-bottom:14px">7\uACFC\uBAA9 \uC911 <b>5\uACFC\uBAA9</b>\uC744 \uACE8\uB77C \uC751\uC2DC\uD574\uC694. \uB808\uBCA8\uD14C\uC2A4\uD2B8\u00B7\uB808\uBCA8\uC5C5\uC774 \uC120\uD0DD\uD55C 5\uACFC\uBAA9\uC73C\uB85C \uC9C4\uD589\uB3FC\uC694.</div>'
+      +'<div style="font-size:18px;font-weight:900;color:#0C447C;margin-bottom:2px">\uC2DC\uD5D8 \uBCFC 5\uACFC\uBAA9 \uC120\uD0DD</div>'
+      +'<div style="font-size:14px;color:#8A7D6E;margin-bottom:14px">7\uACFC\uBAA9 \uC911 <b>5\uACFC\uBAA9</b>\uC744 \uACE8\uB77C \uC751\uC2DC\uD574\uC694. \uB808\uBCA8\uD14C\uC2A4\uD2B8\u00B7\uB808\uBCA8\uC5C5\uC774 \uC120\uD0DD\uD55C 5\uACFC\uBAA9\uC73C\uB85C \uC9C4\uD589\uB3FC\uC694.</div>'
       +'<div>'+codes.map(function(c){ var nm=(qb[c]&&qb[c].name)||c; var on=!!sel[c];
-          return '<label style="display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid '+(on?'#185FA5':'#E8E8E8')+';border-radius:12px;margin-bottom:8px;cursor:pointer;background:'+(on?'#EAF2FC':'#fff')+'"><input type="checkbox" data-c="'+c+'" '+(on?'checked':'')+' style="width:18px;height:18px;accent-color:#185FA5"><span style="font-size:14px;font-weight:700;color:#2C2C2A">'+mqEsc(nm)+'</span></label>';
+          return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid '+(on?'#185FA5':'#E8E8E8')+';border-radius:12px;margin-bottom:8px;cursor:pointer;background:'+(on?'#EAF2FC':'#fff')+'"><input type="checkbox" data-c="'+c+'" '+(on?'checked':'')+' style="width:18px;height:18px;accent-color:#185FA5"><span style="font-size:14px;font-weight:700;color:#2C2C2A">'+mqEsc(nm)+'</span></label>';
         }).join('')+'</div>'
-      +'<div style="text-align:center;font-size:13px;font-weight:800;color:'+(n===5?'#15793F':'#A32D2D')+';margin:4px 0 12px">'+n+' / 5 \uC120\uD0DD\uB428</div>'
-      +'<button id="sp2Go" '+(n===5?'':'disabled')+' style="width:100%;background:'+(n===5?'linear-gradient(135deg,#185FA5,#0C447C)':'#C9C2B8')+';color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:'+(n===5?'pointer':'not-allowed')+'">'+(n===5?'\uC120\uD0DD \uC644\uB8CC':'5\uACFC\uBAA9\uC744 \uC120\uD0DD\uD558\uC138\uC694')+'</button>';
+      +'<div style="text-align:center;font-size:14px;font-weight:800;color:'+(n===5?'#15793F':'#A32D2D')+';margin:4px 0 12px">'+n+' / 5 \uC120\uD0DD\uB428</div>'
+      +'<button id="sp2Go" '+(n===5?'':'disabled')+' style="width:100%;background:'+(n===5?'linear-gradient(135deg,#185FA5,#0C447C)':'#C9C2B8')+';color:#fff;border:none;border-radius:12px;padding:12px;font-size:16px;font-weight:800;cursor:'+(n===5?'pointer':'not-allowed')+'">'+(n===5?'\uC120\uD0DD \uC644\uB8CC':'5\uACFC\uBAA9\uC744 \uC120\uD0DD\uD558\uC138\uC694')+'</button>';
     ov.querySelectorAll('input[type=checkbox]').forEach(function(chk){ chk.onchange=function(){ var c=chk.getAttribute('data-c'); if(chk.checked){ if(cnt()>=5){ chk.checked=false; return; } sel[c]=true; } else { delete sel[c]; } render(); }; });
     var go=document.getElementById('sp2Go'); if(go) go.onclick=function(){ var arr=Object.keys(sel).filter(function(k){return sel[k];}); if(arr.length!==5) return; _sp2Set(arr); ov.remove(); if(typeof cb==='function') cb(); };
   }
@@ -226,9 +226,9 @@ function renderMcqHome(root){
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name) || (_isSubjCert(mqCert)?certLabel(mqCert):'') || '';
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
-  if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:11px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:11px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:11px;padding:8px 6px;font-size:11px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
+  if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:10px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:10px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:12px;padding:8px 6px;font-size:12px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
   if(typeof lt2Has==='function' && lt2Has(mqCert) && ltDone(mqCert)){
-    html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:11px;cursor:pointer" onclick="startLt2LevelUp()"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">\u26A1</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">\uB808\uBCA8\uC5C5 \uBB38\uC81C\uD480\uAE30</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">\uC57D\uD55C \uACFC\uBAA9\uBD80\uD130 \uC790\uB3D9\uC73C\uB85C \uC774\uC5B4\uC11C</div></div><div style="font-size:15px;color:#185FA5">\u2192</div></div>';
+    html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="startLt2LevelUp()"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">\u26A1</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">\uB808\uBCA8\uC5C5 \uBB38\uC81C\uD480\uAE30</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">\uC57D\uD55C \uACFC\uBAA9\uBD80\uD130 \uC790\uB3D9\uC73C\uB85C \uC774\uC5B4\uC11C</div></div><div style="font-size:16px;color:#185FA5">\u2192</div></div>';
   }
   const dueAll=srDueReviewable(mqCert);
   const due=Math.min(dueAll, REVIEW_MCQ_CAP);
@@ -408,10 +408,10 @@ function lt2Finalize(){ var cert=lt2State.cert;
 function lt2ResultCard(cert){ var rec=(typeof eloState!=='undefined')&&eloState._levelTest&&eloState._levelTest[cert]; if(!rec||!rec.summary) return '';
   var TIER={right:{t:'맞음',c:'#2E9B5E'},vague:{t:'애매',c:'#E0A52E'},wrong:{t:'틀림',c:'#E24B4A'}};
   var rows=Object.keys(rec.summary).map(function(sub){ var s=rec.summary[sub]; var ti=TIER[s.bucket]||TIER.vague;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-top:1px solid #F1ECE4"><span style="font-weight:700;color:#3C3C3A">'+mqEsc(s.name||sub)+'</span><span><span style="font-size:12px;font-weight:800;color:'+ti.c+';margin-right:8px">'+ti.t+' '+(s.pts!=null?s.pts:'')+'점</span><span style="font-size:11px;color:#8A7D6E">Lv '+(s.level||'')+'</span></span></div>'; }).join('');
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-top:1px solid #F1ECE4"><span style="font-weight:700;color:#3C3C3A">'+mqEsc(s.name||sub)+'</span><span><span style="font-size:12px;font-weight:800;color:'+ti.c+';margin-right:8px">'+ti.t+' '+(s.pts!=null?s.pts:'')+'점</span><span style="font-size:12px;color:#8A7D6E">Lv '+(s.level||'')+'</span></span></div>'; }).join('');
   return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
     +'<div style="padding:4px 4px 2px;font-size:12px;color:#6B7280">레벨 테스트 결과 · 과목별 채점(틀림0·애매5·맞음10)</div>'+rows
-    +'<div style="padding:8px 4px 2px;font-size:11px;color:#A89C8E">레벨은 시작점이에요. 문제를 풀면 조정됩니다.</div></div>'; }
+    +'<div style="padding:8px 4px 2px;font-size:12px;color:#A89C8E">레벨은 시작점이에요. 문제를 풀면 조정됩니다.</div></div>'; }
 function renderLt2(root){ if(!lt2State || lt2State.cert!==mqCert){ lt2State=null; mqScreen='home'; return renderMCQ(); }
   var qs=lt2State.qs, idx=lt2State.idx, q=qs[idx]; var n=qs.length, pct=Math.round((idx+1)/n*100); var graded=lt2State.scores[q.ltSubject];
   root.innerHTML='<div class="exam-sticky">'+
@@ -419,9 +419,9 @@ function renderLt2(root){ if(!lt2State || lt2State.cert!==mqCert){ lt2State=null
       '<div class="exam-ti"><div class="nm">🎯 레벨 테스트</div><div class="st">'+mqEsc(q.ltSubjectName||'')+'</div></div></div>'+
     '<div class="mq-prog"><div class="row"><span>'+(idx+1)+' / '+n+' 과목</span><span class="subj-credit">🤖 첨삭 '+gradeBal().toLocaleString()+'</span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '</div>'+
-    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EEF4FB;border:1px solid #D6E4F5;border-radius:10px;padding:10px 12px;font-size:13px;color:#334155;line-height:1.6">답안을 작성하고 <b>채점하기</b>를 누르면 자동 채점돼요(무료). 채점 후 아래 <b>다음</b>으로 넘어가세요. (과목당 1문항)</div></div>'+
+    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EEF4FB;border:1px solid #D6E4F5;border-radius:12px;padding:10px 12px;font-size:14px;color:#334155;line-height:1.6">답안을 작성하고 <b>채점하기</b>를 누르면 자동 채점돼요(무료). 채점 후 아래 <b>다음</b>으로 넘어가세요. (과목당 1문항)</div></div>'+
     '<div id="lt2Mount"></div>'+
-    '<div style="max-width:760px;margin:12px auto 40px;padding:0 14px"><button id="lt2Next" onclick="lt2Next()" style="display:'+(graded?'block':'none')+';width:100%;padding:13px;border:none;border-radius:12px;background:#0C447C;color:#fff;font-weight:800;font-size:15px;cursor:pointer">'+(idx>=n-1?'결과 보기 →':'다음 과목 →')+'</button></div>';
+    '<div style="max-width:760px;margin:12px auto 40px;padding:0 14px"><button id="lt2Next" onclick="lt2Next()" style="display:'+(graded?'block':'none')+';width:100%;padding:12px;border:none;border-radius:12px;background:#0C447C;color:#fff;font-weight:800;font-size:16px;cursor:pointer">'+(idx>=n-1?'결과 보기 →':'다음 과목 →')+'</button></div>';
   var host=document.getElementById('lt2Mount');
   var exam={ id:mqCert, name:'레벨테스트', questions:qs };
   var opts=_subjExamOpts(mqCert); opts.host=host; opts.mountId='lt2Mount'; opts.replace=false;
@@ -430,7 +430,7 @@ function renderLt2(root){ if(!lt2State || lt2State.cert!==mqCert){ lt2State=null
   opts.aiSell=false;   // AI 채점 버튼 잠깐 숨김(결제 뚫리면 이 줄만 제거)
   opts.explainAi=null;   // 'AI에게 더 물어보기' 위젯도 숨김
   opts.onGraded=function(rec){ lt2OnGraded(rec); };
-  if(!(window.CLSubj && CLSubj.openOne)){ host.innerHTML='<div style="margin:16px;padding:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700">subjective.js 최신본이 필요합니다 (openOne 없음).</div>'; return; }
+  if(!(window.CLSubj && CLSubj.openOne)){ host.innerHTML='<div style="margin:16px;padding:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:12px;color:#A32D2D;font-weight:700">subjective.js 최신본이 필요합니다 (openOne 없음).</div>'; return; }
   try{ CLSubj.openOne(host, exam, idx, opts); }catch(e){ console.error('lt2 openOne',e); host.innerHTML='<div style="margin:16px">문제 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; }
   window.scrollTo(0,0); }
 
@@ -478,22 +478,22 @@ function renderLu2(root){ if(!lu2State||lu2State.cert!==mqCert){ lu2State=null; 
       '<div class="exam-ti"><div class="nm">⚡ 레벨업</div><div class="st">'+mqEsc(q.subName||'')+' · Lv '+curLv+'</div></div></div>'+
     '<div class="mq-prog"><div class="row"><span>'+(lu2State.done+1)+'번째 · 약한 과목 우선</span><span class="subj-credit">'+mqEsc(q.subName||'')+'</span></div><div class="track"><div class="bar" style="width:100%"></div></div></div>'+
     '</div>'+
-    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EAF2FC;border:1px solid #C7DBF2;border-radius:10px;padding:10px 12px;font-size:13px;color:#334155;line-height:1.6">약한 과목부터 자동으로 출제돼요. 답안 작성 후 <b>채점하기</b>(AI) 또는 아래 <b>직접 채점</b> → <b>다음</b>. 점수에 따라 과목 레벨이 조정됩니다.</div></div>'+
+    '<div style="max-width:760px;margin:8px auto 0;padding:0 14px"><div style="background:#EAF2FC;border:1px solid #C7DBF2;border-radius:12px;padding:10px 12px;font-size:14px;color:#334155;line-height:1.6">약한 과목부터 자동으로 출제돼요. 답안 작성 후 <b>채점하기</b>(AI) 또는 아래 <b>직접 채점</b> → <b>다음</b>. 점수에 따라 과목 레벨이 조정됩니다.</div></div>'+
     '<div id="lu2Mount"></div>'+
     '<div style="max-width:760px;margin:10px auto 0;padding:0 14px" id="lu2SelfWrap"><div style="background:#fff;border:1px solid #E2D6CC;border-radius:12px;padding:12px 14px">'+
-      '<div style="font-size:12.5px;color:#6B7280;margin-bottom:9px;line-height:1.6">모범답안과 비교해 <b>직접 채점</b>할 수도 있어요 — 레벨에 똑같이 반영돼요.</div>'+
+      '<div style="font-size:14px;color:#6B7280;margin-bottom:8px;line-height:1.6">모범답안과 비교해 <b>직접 채점</b>할 수도 있어요 — 레벨에 똑같이 반영돼요.</div>'+
       '<div style="display:flex;gap:8px">'+
-        '<button onclick="lu2SelfGrade(\'wrong\',this)" style="flex:1;padding:11px;border:1.5px solid #F3C1C0;border-radius:10px;background:#FDF1F1;color:#C0392B;font-weight:800;font-size:14px;cursor:pointer">틀림</button>'+
-        '<button onclick="lu2SelfGrade(\'vague\',this)" style="flex:1;padding:11px;border:1.5px solid #EBD6A4;border-radius:10px;background:#FCF6E8;color:#B7791F;font-weight:800;font-size:14px;cursor:pointer">애매</button>'+
-        '<button onclick="lu2SelfGrade(\'right\',this)" style="flex:1;padding:11px;border:1.5px solid #BCDFC9;border-radius:10px;background:#EFF8F2;color:#0F6E56;font-weight:800;font-size:14px;cursor:pointer">맞음</button>'+
+        '<button onclick="lu2SelfGrade(\'wrong\',this)" style="flex:1;padding:10px;border:1.5px solid #F3C1C0;border-radius:12px;background:#FDF1F1;color:#C0392B;font-weight:800;font-size:14px;cursor:pointer">틀림</button>'+
+        '<button onclick="lu2SelfGrade(\'vague\',this)" style="flex:1;padding:10px;border:1.5px solid #EBD6A4;border-radius:12px;background:#FCF6E8;color:#B7791F;font-weight:800;font-size:14px;cursor:pointer">애매</button>'+
+        '<button onclick="lu2SelfGrade(\'right\',this)" style="flex:1;padding:10px;border:1.5px solid #BCDFC9;border-radius:12px;background:#EFF8F2;color:#0F6E56;font-weight:800;font-size:14px;cursor:pointer">맞음</button>'+
       '</div></div></div>'+
-    '<div style="max-width:760px;margin:12px auto 40px;padding:0 14px"><button id="lu2Next" onclick="lu2Next()" style="display:none;width:100%;padding:13px;border:none;border-radius:12px;background:#185FA5;color:#fff;font-weight:800;font-size:15px;cursor:pointer">다음 문제 →</button></div>';
+    '<div style="max-width:760px;margin:12px auto 40px;padding:0 14px"><button id="lu2Next" onclick="lu2Next()" style="display:none;width:100%;padding:12px;border:none;border-radius:12px;background:#185FA5;color:#fff;font-weight:800;font-size:16px;cursor:pointer">다음 문제 →</button></div>';
   var host=document.getElementById('lu2Mount');
   var exam={ id:mqCert, name:'레벨업', questions:[q.q] };
   var opts=_subjExamOpts(mqCert); opts.host=host; opts.mountId='lu2Mount'; opts.replace=false;
   opts.reportOffline=true; opts.aiSell=false; opts.explainAi=null;   // canOpen은 기본값(canAccessSubjective) 유지 → 무료 한도 뒤 합격플랜 결제
   opts.onGraded=function(rec){ lu2OnGraded(rec); };
-  if(!(window.CLSubj && CLSubj.openOne)){ host.innerHTML='<div style="margin:16px;padding:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700">subjective.js 최신본이 필요합니다 (openOne 없음).</div>'; return; }
+  if(!(window.CLSubj && CLSubj.openOne)){ host.innerHTML='<div style="margin:16px;padding:14px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:12px;color:#A32D2D;font-weight:700">subjective.js 최신본이 필요합니다 (openOne 없음).</div>'; return; }
   var _ok; try{ _ok=CLSubj.openOne(host, exam, 0, opts); }catch(e){ console.error('lu2 openOne',e); host.innerHTML='<div style="margin:16px">문제 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; return; }
   if(_ok===false){ lu2State=null; mqScreen='home'; if(typeof mqBackHome==='function') mqBackHome(); else renderMCQ(); return; }   // 무료 한도 초과 → 결제팝업(canAccessSubjective) 뜬 뒤 목록으로
   window.scrollTo(0,0); }
@@ -531,15 +531,15 @@ function mcqAnalysisCard(cert){
   const subsHTML=(cert==='sport2'?_sp2BtnHTML():'')+order.map(function(sub){
     var lv=luSubjectLevel(cert,sub); if(lv==null) return '';
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, open=!!luCardOpen[sub];
-    var pill='<span style="font-size:12px;font-weight:800;padding:3px 11px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
-    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:13.5px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:11px;font-weight:600;color:#B4A99C;margin-left:5px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();'+(_isLt2?('startLt2LevelUp(\''+sub+'\')'):('luStartSub(\''+sub+'\')'))+'" style="flex:0 0 auto;font-size:11px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:3px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:10px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
+    var pill='<span style="font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
+    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:14px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:12px;font-weight:600;color:#B4A99C;margin-left:4px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();'+(_isLt2?('startLt2LevelUp(\''+sub+'\')'):('luStartSub(\''+sub+'\')'))+'" style="flex:0 0 auto;font-size:12px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:2px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:12px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
     var body='';
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
       Object.keys(sc).forEach(function(t){ var tl=AE.scoreToLevel(sc[t]), tn=(tmap[t]&&tmap[t].name)||t;
-        rows+='<div onclick="_planTopicGo(\''+sub+'\',\''+t+'\')" style="display:flex;align-items:center;gap:8px;margin:3px 0;padding:5px 7px;border-radius:9px;background:#FBF8F4;cursor:pointer"><span style="font-size:12px;color:#6E6256;width:108px;flex:0 0 108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(tn)+'</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(tl/5*100)+'%;background:'+LVC[tl]+'"></div></div><span style="font-size:11px;font-weight:700;color:#8A7D6E;width:30px;text-align:right">Lv'+tl+'</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:3px 9px;border-radius:999px;flex:0 0 auto">풀기</span></div>';
+        rows+='<div onclick="_planTopicGo(\''+sub+'\',\''+t+'\')" style="display:flex;align-items:center;gap:8px;margin:2px 0;padding:4px 6px;border-radius:8px;background:#FBF8F4;cursor:pointer"><span style="font-size:12px;color:#6E6256;width:108px;flex:0 0 108px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(tn)+'</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(tl/5*100)+'%;background:'+LVC[tl]+'"></div></div><span style="font-size:12px;font-weight:700;color:#8A7D6E;width:30px;text-align:right">Lv'+tl+'</span><span style="font-size:12px;font-weight:800;color:#fff;background:#C79A5B;padding:2px 8px;border-radius:999px;flex:0 0 auto">풀기</span></div>';
       });
-      var _thint=Object.keys(sc).length?'<div style="font-size:11px;color:#8A7D6E;margin:0 2px 6px">단원을 누르면 그 단원만 5문제씩 풀어요</div>':'';
+      var _thint=Object.keys(sc).length?'<div style="font-size:12px;color:#8A7D6E;margin:0 2px 6px">단원을 누르면 그 단원만 5문제씩 풀어요</div>':'';
       if(!rows) rows='<div style="font-size:12px;color:#B4A99C;padding:4px">단원 데이터 준비 중</div>';
       body='<div style="padding:2px 4px 8px">'+_thint+rows+'</div>';
     }
@@ -590,7 +590,7 @@ async function _crowdVote(cert, oldDate, newDate){
     if(Object.keys(upd).length){ await db.collection('examDateVotes').doc(cert).set(upd,{merge:true}); _crowdVotes[cert]=null; loadCrowdExamVotes(cert); }
   }catch(e){ try{ console.error('시험일 집계 오류', e); }catch(_){} }
 }
-function editExamDate(cert){
+async function editExamDate(cert){
   cert = cert || (typeof mqCert!=='undefined'?mqCert:null); if(!cert) return;
   if(_officialExamMs(cert)!=null){ if(typeof clToast==='function') clToast('공식 시험일이 등록된 시험이에요'); return; }
   if(typeof currentUser==='undefined' || !currentUser){ if(typeof showLoginPopup==='function') showLoginPopup('exam_date'); return; }
@@ -600,7 +600,7 @@ function editExamDate(cert){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ alert('날짜 형식이 올바르지 않습니다. 예: 2026-06-23'); return; }
   var ms=new Date(v+'T23:59:59').getTime();
   if(isNaN(ms)){ alert('올바르지 않은 날짜예요.'); return; }
-  if(ms < Date.now()-86400000){ if(!confirm('이미 지난 날짜예요. 그래도 저장할까요?')) return; }
+  if(ms < Date.now()-86400000){ if(!(await clConfirm('이미 지난 날짜예요. 그래도 저장할까요?', '저장'))) return; }
   srExamOverride[cert]=v; if(typeof srFlush==='function') srFlush();
   _crowdVote(cert, old, v);
   var el=document.getElementById('passPlanOverlay'); if(el && el.style.display==='block'){ el.innerHTML=passPlanHTML(cert,_planIsPaid(cert)); }
@@ -654,11 +654,11 @@ function _planTopicGo(sub, tcode){
 var _PLAN_LVC={1:'#E24B4A',2:'#E24B4A',3:'#E0A52E',4:'#2E9B5E',5:'#2E9B5E'};
 function _planTopicRow(cert, sub, t, paid){
   var fire = t.star>=3 ? '<span style="font-size:12px;flex:0 0 auto">🔥</span>' : '<span style="font-size:12px;flex:0 0 auto;opacity:.2">🔥</span>';
-  var solve = '<span onclick="_planTopicGo(\''+sub+'\',\''+t.tcode+'\')" style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px;cursor:pointer">풀기</span>';
-  return '<div style="display:flex;align-items:center;gap:7px;margin:4px 0;padding:6px 8px;border-radius:9px;background:#FBF8F4">'
+  var solve = '<span onclick="_planTopicGo(\''+sub+'\',\''+t.tcode+'\')" style="font-size:12px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 10px;border-radius:999px;cursor:pointer">풀기</span>';
+  return '<div style="display:flex;align-items:center;gap:6px;margin:4px 0;padding:6px 8px;border-radius:8px;background:#FBF8F4">'
     +fire+'<span style="font-size:12px;color:#6E6256;width:78px;flex:0 0 78px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+mqEsc(t.name)+'</span>'
     +'<div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;border-radius:999px;width:'+(t.lv/5*100)+'%;background:'+_PLAN_LVC[t.lv]+'"></div></div>'
-    +'<span style="font-size:11px;font-weight:700;color:#8A7D6E;width:24px;text-align:right">Lv'+t.lv+'</span>'+solve+'</div>';
+    +'<span style="font-size:12px;font-weight:700;color:#8A7D6E;width:24px;text-align:right">Lv'+t.lv+'</span>'+solve+'</div>';
 }
 function _planSubCard(cert, s, rule, paid){
   var tops=_planTopics(cert, s.code).slice(0,3);
@@ -667,36 +667,36 @@ function _planSubCard(cert, s, rule, paid){
     // [2026-07-20] 주관식(2차): 단원 데이터가 없어 과목 단위 카드로 — 풀기=레벨업(약한 과목 자동출제)
     var floor2=(rule&&rule.floor)||0; var isFail2=floor2>0 && s.score<floor2;
     var pill2=isFail2
-      ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 '+s.score+'점</span>'
+      ? '<span style="font-size:12px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 '+s.score+'점</span>'
       : (s.score<((rule&&rule.pass)||60)
-         ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 '+s.score+'점</span>'
-         : '<span style="font-size:11px;font-weight:800;color:#946200;background:#FBF0D8;padding:2px 8px;border-radius:999px">🟡 '+s.score+'점</span>');
-    var solve2='<span onclick="_planTopicGo(\''+s.code+'\',\'\')" style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px;cursor:pointer;flex:0 0 auto">풀기</span>';
-    return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+(isFail2?'#F0C9C9':'#E2D6CC')+';border-radius:14px;padding:12px 13px">'
+         ? '<span style="font-size:12px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 '+s.score+'점</span>'
+         : '<span style="font-size:12px;font-weight:800;color:#946200;background:#FBF0D8;padding:2px 8px;border-radius:999px">🟡 '+s.score+'점</span>');
+    var solve2='<span onclick="_planTopicGo(\''+s.code+'\',\'\')" style="font-size:12px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 10px;border-radius:999px;cursor:pointer;flex:0 0 auto">풀기</span>';
+    return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+(isFail2?'#F0C9C9':'#E2D6CC')+';border-radius:12px;padding:12px 12px">'
       +'<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:14px;font-weight:800;color:#3C3C3A">'+mqEsc(s.name)+'</span>'+pill2+solve2+'</div>'
-      +'<div style="font-size:11.5px;color:#A38C7A;margin-top:6px">레벨업으로 약한 과목부터 자동 출제 · 채점 결과로 점수가 조정돼요</div></div>';
+      +'<div style="font-size:12px;color:#A38C7A;margin-top:6px">레벨업으로 약한 과목부터 자동 출제 · 채점 결과로 점수가 조정돼요</div></div>';
   }
   var floor=(rule&&rule.floor)||0;
   var isFail = floor>0 && s.score<floor;
   var pill = isFail
-    ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 '+s.score+'점</span>'
+    ? '<span style="font-size:12px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 '+s.score+'점</span>'
     : (s.score<((rule&&rule.pass)||60)
-       ? '<span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 '+s.score+'점</span>'
-       : '<span style="font-size:11px;font-weight:800;color:#946200;background:#FBF0D8;padding:2px 8px;border-radius:999px">🟡 '+s.score+'점</span>');
+       ? '<span style="font-size:12px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 '+s.score+'점</span>'
+       : '<span style="font-size:12px;font-weight:800;color:#946200;background:#FBF0D8;padding:2px 8px;border-radius:999px">🟡 '+s.score+'점</span>');
   var raise=tops.map(function(t){return t.tcode;});
   var sim=_planSimSubject(cert, s.code, raise, 3);
   var simLine='';
-  if(sim!=null && sim>s.score){ var tail=isFail?'(과락 탈출)':(sim>=((rule&&rule.pass)||60)?'(합격권)':''); simLine='<div style="font-size:11.5px;color:#A38C7A;margin-bottom:8px">이 단원들 Lv3로 올리면 → <b style="color:#1E6B41">약 '+sim+'점 '+tail+'</b></div>'; }
+  if(sim!=null && sim>s.score){ var tail=isFail?'(과락 탈출)':(sim>=((rule&&rule.pass)||60)?'(합격권)':''); simLine='<div style="font-size:12px;color:#A38C7A;margin-bottom:8px">이 단원들 Lv3로 올리면 → <b style="color:#1E6B41">약 '+sim+'점 '+tail+'</b></div>'; }
   var rows=tops.map(function(t){return _planTopicRow(cert, s.code, t, paid);}).join('');
-  return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+(isFail?'#F0C9C9':'#E2D6CC')+';border-radius:14px;padding:12px 13px">'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-size:14px;font-weight:800;color:#3C3C3A">'+mqEsc(s.name)+'</span>'+pill+'</div>'
+  return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+(isFail?'#F0C9C9':'#E2D6CC')+';border-radius:12px;padding:12px 12px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-size:14px;font-weight:800;color:#3C3C3A">'+mqEsc(s.name)+'</span>'+pill+'</div>'
     +simLine+rows+'</div>';
 }
 function _planDummyCard(color){
-  return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+color+';border-radius:14px;padding:12px 13px">'
-    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:14px;font-weight:800;color:#3C3C3A">○○○</span><span style="font-size:11px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 ○○점</span></div>'
-    +'<div style="display:flex;align-items:center;gap:7px;margin:4px 0;padding:6px 8px;border-radius:9px;background:#FBF8F4"><span style="font-size:12px">🔥</span><span style="font-size:12px;color:#6E6256;width:78px">○○○○</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;width:20%;background:#E24B4A;border-radius:999px"></div></div><span style="font-size:11px;color:#8A7D6E">Lv1</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px">풀기</span></div>'
-    +'<div style="display:flex;align-items:center;gap:7px;margin:4px 0;padding:6px 8px;border-radius:9px;background:#FBF8F4"><span style="font-size:12px">🔥</span><span style="font-size:12px;color:#6E6256;width:78px">○○○○</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;width:40%;background:#E24B4A;border-radius:999px"></div></div><span style="font-size:11px;color:#8A7D6E">Lv2</span><span style="font-size:10.5px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 11px;border-radius:999px">풀기</span></div></div>';
+  return '<div style="margin:0 14px 12px;background:#fff;border:1px solid '+color+';border-radius:12px;padding:12px 12px">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:14px;font-weight:800;color:#3C3C3A">○○○</span><span style="font-size:12px;font-weight:800;color:#fff;background:#E24B4A;padding:2px 8px;border-radius:999px">🔴 과락 예상 ○○점</span></div>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin:4px 0;padding:6px 8px;border-radius:8px;background:#FBF8F4"><span style="font-size:12px">🔥</span><span style="font-size:12px;color:#6E6256;width:78px">○○○○</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;width:20%;background:#E24B4A;border-radius:999px"></div></div><span style="font-size:12px;color:#8A7D6E">Lv1</span><span style="font-size:12px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 10px;border-radius:999px">풀기</span></div>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin:4px 0;padding:6px 8px;border-radius:8px;background:#FBF8F4"><span style="font-size:12px">🔥</span><span style="font-size:12px;color:#6E6256;width:78px">○○○○</span><div style="flex:1;height:8px;background:#F0E7DE;border-radius:999px;overflow:hidden"><div style="height:100%;width:40%;background:#E24B4A;border-radius:999px"></div></div><span style="font-size:12px;color:#8A7D6E">Lv2</span><span style="font-size:12px;font-weight:800;color:#fff;background:#C79A5B;padding:4px 10px;border-radius:999px">풀기</span></div></div>';
 }
 function passPlanHTML(cert, paid){
   var ap=adPredicted(cert), rule=passRule(cert), v=(ap.predicted!=null)?adVerdict(cert,ap):null;
@@ -714,15 +714,15 @@ function passPlanHTML(cert, paid){
   if(!top && weak.length && typeof lt2Has==='function' && lt2Has(cert)) top={sub:weak[0].code, subName:weak[0].name, t:{tcode:'', name:'레벨업 자동출제', star:0}};
 
   var head='<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #EDE4D9;position:sticky;top:0;z-index:2">'
-    +'<span style="font-size:15px;font-weight:800;color:#3C3C3A;flex:1;min-width:0">🎯 합격 플랜</span>'
+    +'<span style="font-size:16px;font-weight:800;color:#3C3C3A;flex:1;min-width:0">🎯 합격 플랜</span>'
     +'<button class="popup-x popup-x-inline" onclick="closePassPlan()" aria-label="닫기">✕</button></div>';
 
   var official=_officialExamMs(cert)!=null;
   var ddayChip;
   if(dl!=null){
-    ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:800;color:#C0392B;background:#FCEBEB;padding:3px 10px;border-radius:999px;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+(official?'':' ✎')+'</span>';
+    ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:800;color:#C0392B;background:#FCEBEB;padding:2px 10px;border-radius:999px;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+(official?'':' ✎')+'</span>';
   } else {
-    ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:11.5px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 11px;border-radius:999px;cursor:pointer">📅 시험일 등록 →</span>';
+    ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:12px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 10px;border-radius:999px;cursor:pointer">📅 시험일 등록 →</span>';
   }
   /*
    * '하루 20문제' 가 박혀 있었다. 시험이 열흘 남았든 석 달 남았든 같은 숫자라
@@ -732,10 +732,10 @@ function passPlanHTML(cert, paid){
   var perDay = (typeof _planPerDay==='function') ? _planPerDay(cert) : 20;
   var rounds = (typeof _planRounds==='function') ? _planRounds() : 2;
   var schedLine = (dl!=null && dl>0) ? '시험까지 '+dl+'일 · 하루 '+perDay+'문제씩 풀면 '+rounds+'회독하고 <b style="color:#1E6B41">안전권 도달</b> 예상' : '하루 '+perDay+'문제씩 풀면 '+rounds+'회독하고 <b style="color:#1E6B41">안전권 도달</b> 예상';
-  var summary='<div style="margin:14px 14px 0;background:#fff;border:1px solid #E2D6CC;border-radius:14px;padding:13px 15px">'
-    +'<div style="display:flex;align-items:baseline;gap:9px">'
+  var summary='<div style="margin:14px 14px 0;background:#fff;border:1px solid #E2D6CC;border-radius:12px;padding:12px 14px">'
+    +'<div style="display:flex;align-items:baseline;gap:8px">'
     +'<span style="font-size:30px;font-weight:800;color:#185FA5;line-height:1">'+(ap.predicted!=null?ap.predicted:'--')+'<span style="font-size:14px">점</span></span>'
-    +(vlabel?'<span style="font-size:13px;font-weight:800;color:'+vcolor+'">'+vlabel+'</span>':'')+ddayChip+'</div>'
+    +(vlabel?'<span style="font-size:14px;font-weight:800;color:'+vcolor+'">'+vlabel+'</span>':'')+ddayChip+'</div>'
     +'<div style="margin-top:8px;font-size:12px;color:#7A6F62;line-height:1.5">'+schedLine+'</div></div>';
 
   var todayCard='';
@@ -743,16 +743,16 @@ function passPlanHTML(cert, paid){
     var nQ=_planRoundCount(cert, top.sub);
     var startBtn = '<span onclick="_planTopicGo(\''+top.sub+'\',\''+top.t.tcode+'\')" style="font-size:12px;font-weight:800;color:#fff;background:#185FA5;padding:8px 16px;border-radius:999px;cursor:pointer">시작 →</span>';
     var previewBadge = '';
-    todayCard='<div style="margin:12px 14px 0;background:#EAF1FB;border:1px solid #BFD8F2;border-radius:14px;padding:12px 14px">'
-      +'<div style="font-size:11px;font-weight:800;color:#185FA5;margin-bottom:3px">⚡ 오늘의 1순위'+previewBadge+'</div>'
+    todayCard='<div style="margin:12px 14px 0;background:#EAF1FB;border:1px solid #BFD8F2;border-radius:12px;padding:12px 14px">'
+      +'<div style="font-size:12px;font-weight:800;color:#185FA5;margin-bottom:2px">⚡ 오늘의 1순위'+previewBadge+'</div>'
       +'<div style="display:flex;align-items:center;gap:10px"><div style="flex:1">'
       +'<div style="font-size:14px;font-weight:800;color:#0C447C">'+mqEsc(top.subName)+' · '+mqEsc(top.t.name)+' '+nQ+'문제</div>'
-      +'<div style="font-size:11px;color:#5B6B7E;margin-top:1px">'+(top.t.star>=3?'🔥 약한데 자주 나옴 · 가장 이득':'가장 이득인 단원')+'</div></div>'+startBtn+'</div></div>';
+      +'<div style="font-size:12px;color:#5B6B7E;margin-top:1px">'+(top.t.star>=3?'🔥 약한데 자주 나옴 · 가장 이득':'가장 이득인 단원')+'</div></div>'+startBtn+'</div></div>';
   }
 
   var cards=weak.map(function(s){return _planSubCard(cert,s,rule,true);}).join('');
-  var safeLine = safeSubs.length ? '<div style="margin:0 14px 16px;padding:10px 13px;background:#EAF3EC;border-radius:12px;font-size:12px;color:#1E6B41">🟢 <b>'+mqEsc(safeSubs[0].name)+(safeSubs.length>1?' 외 '+(safeSubs.length-1)+'과목':'')+'</b>은 양호해요 · 복습만 유지</div>' : '';
-  var body='<div style="margin:16px 14px 4px;font-size:11px;font-weight:800;color:#B4A99C">전체 합격 플랜 · 가성비 순</div>'+cards+safeLine;
+  var safeLine = safeSubs.length ? '<div style="margin:0 14px 16px;padding:10px 12px;background:#EAF3EC;border-radius:12px;font-size:12px;color:#1E6B41">🟢 <b>'+mqEsc(safeSubs[0].name)+(safeSubs.length>1?' 외 '+(safeSubs.length-1)+'과목':'')+'</b>은 양호해요 · 복습만 유지</div>' : '';
+  var body='<div style="margin:16px 14px 4px;font-size:12px;font-weight:800;color:#B4A99C">전체 합격 플랜 · 가성비 순</div>'+cards+safeLine;
   return head+summary+todayCard+body+'<div style="height:20px"></div>';
 }
 function openPassPlan(){
@@ -766,14 +766,14 @@ function openPassPlan(){
 }
 function closePassPlan(){ var el=document.getElementById('passPlanOverlay'); if(el){ el.style.display='none'; el.innerHTML=''; } document.body.style.overflow=''; }
 function _planUpsell(){
-  var w=document.createElement('div'); w.style.cssText='position:fixed;inset:0;z-index:9200;background:rgba(20,14,8,.45);display:flex;align-items:center;justify-content:center;padding:0 26px';
-  w.innerHTML='<div style="background:#fff;border-radius:18px;padding:20px;text-align:center;max-width:300px;width:100%">'
+  var w=document.createElement('div'); w.style.cssText='position:fixed;inset:0;z-index:9200;background:rgba(20,14,8,.45);display:flex;align-items:center;justify-content:center;padding:0 24px';
+  w.innerHTML='<div style="background:#fff;border-radius:16px;padding:20px;text-align:center;max-width:300px;width:100%">'
     +'<button class="popup-x" id="_pupX" aria-label="닫기">✕</button>'
     +'<div style="font-size:30px;margin-bottom:8px">🔒</div>'
     +'<div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:6px">맞춤 합격 플랜은 멤버십</div>'
-    +'<div style="font-size:12.5px;color:#5F5A52;line-height:1.6;margin-bottom:15px">오늘의 1순위 학습, 과목별 약점 전체,<br>무제한 문제풀이까지 — 멤버십으로 합격까지 한 번에.</div>'
-    +'<button id="_pupBuy" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:13px 0;border-radius:12px;width:100%;cursor:pointer">멤버십 구매하기</button>'
-    +'<div id="_pupLater" style="font-size:11.5px;color:#A79C8C;margin-top:11px;cursor:pointer">나중에</div></div>';
+    +'<div style="font-size:14px;color:#5F5A52;line-height:1.6;margin-bottom:14px">오늘의 1순위 학습, 과목별 약점 전체,<br>무제한 문제풀이까지 — 멤버십으로 합격까지 한 번에.</div>'
+    +'<button id="_pupBuy" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:12px 0;border-radius:12px;width:100%;cursor:pointer">멤버십 구매하기</button>'
+    +'<div id="_pupLater" style="font-size:12px;color:#A79C8C;margin-top:10px;cursor:pointer">나중에</div></div>';
   document.body.appendChild(w);
   w.querySelector('#_pupBuy').onclick=function(){ document.body.removeChild(w); if(typeof showPlanPopup==='function') showPlanPopup(true); };
   w.querySelector('#_pupLater').onclick=function(){ document.body.removeChild(w); };
@@ -781,7 +781,7 @@ function _planUpsell(){
   w.onclick=function(e){ if(e.target===w) document.body.removeChild(w); };
 }
 function _passPlanEntryHTML(cert){
-  return '<div onclick="openPassPlan()" style="margin:10px 0 2px;border-radius:12px;background:#0C447C;color:#fff;padding:11px 14px;display:flex;align-items:center;gap:8px;cursor:pointer"><span style="font-size:16px">🎯</span><span style="flex:1;font-size:14px;font-weight:800">합격 플랜 확인하기</span><span style="font-size:15px">→</span></div>';
+  return '<div onclick="openPassPlan()" style="margin:10px 0 2px;border-radius:12px;background:#0C447C;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer"><span style="font-size:16px">🎯</span><span style="flex:1;font-size:14px;font-weight:800">합격 플랜 확인하기</span><span style="font-size:16px">→</span></div>';
 }
 function _analLockWrap(cert, inner){ return inner; }   // 블러 제거 — 다 보여주고 풀기 버튼(_planTopicGo)에서 게이트
 
@@ -891,21 +891,21 @@ function _ltRenderResultGate(M){
   else { var d=document.getElementById('mqResultMount'); if(!d){ d=document.createElement('div'); d.id='mqResultMount'; host.appendChild(d); } d.innerHTML=html; }
   if(!document.getElementById('ltgCss')){
     var st=document.createElement('style'); st.id='ltgCss';
-    st.textContent='.ltg-wrap{max-width:440px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 6px 22px rgba(31,41,55,.1)}'
-      +'.ltg-top{background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;padding:24px 22px 28px;text-align:center}'
-      +'.ltg-done{font-size:12px;opacity:.85;margin-bottom:6px}.ltg-h{font-size:20px;font-weight:900;margin:2px 0 5px}.ltg-sc{font-size:13px;opacity:.9}'
-      +'.ltg-blurwrap{position:relative;padding:18px 20px;min-height:230px}'
+    st.textContent='.ltg-wrap{max-width:440px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 22px rgba(31,41,55,.1)}'
+      +'.ltg-top{background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;padding:24px 20px 28px;text-align:center}'
+      +'.ltg-done{font-size:12px;opacity:.85;margin-bottom:6px}.ltg-h{font-size:20px;font-weight:900;margin:2px 0 4px}.ltg-sc{font-size:14px;opacity:.9}'
+      +'.ltg-blurwrap{position:relative;padding:16px 20px;min-height:230px}'
       +'.ltg-blur{filter:blur(6px);opacity:.55;pointer-events:none}'
-      +'.ltg-card{background:#F7F9FC;border:1px solid #E8EEF5;border-radius:12px;padding:13px;margin-bottom:9px}'
-      +'.ltg-nm{font-size:13px;font-weight:800;color:#1F2937;margin-bottom:6px}'
+      +'.ltg-card{background:#F7F9FC;border:1px solid #E8EEF5;border-radius:12px;padding:12px;margin-bottom:8px}'
+      +'.ltg-nm{font-size:14px;font-weight:800;color:#1F2937;margin-bottom:6px}'
       +'.ltg-bar{height:9px;border-radius:99px;background:#E2E8F0;overflow:hidden}.ltg-bar>div{height:100%;background:linear-gradient(90deg,#5B8DEF,#185FA5)}'
-      +'.ltg-gate{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:22px;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.96) 40%)}'
-      +'.ltg-lock{font-size:28px;margin-bottom:9px}.ltg-gt{font-size:17px;font-weight:900;color:#1F2937;margin-bottom:7px}'
-      +'.ltg-gs{font-size:13px;color:#6B7280;line-height:1.55;margin-bottom:18px}'
-      +'.ltg-btn{width:100%;max-width:330px;display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;border:1.5px solid #DADCE0;border-radius:13px;padding:14px;font-size:14.5px;font-weight:800;color:#3C4043;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)}'
+      +'.ltg-gate{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.96) 40%)}'
+      +'.ltg-lock{font-size:28px;margin-bottom:8px}.ltg-gt{font-size:18px;font-weight:900;color:#1F2937;margin-bottom:6px}'
+      +'.ltg-gs{font-size:14px;color:#6B7280;line-height:1.55;margin-bottom:16px}'
+      +'.ltg-btn{width:100%;max-width:330px;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1.5px solid #DADCE0;border-radius:12px;padding:14px;font-size:16px;font-weight:800;color:#3C4043;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)}'
       +'.ltg-kakao{background:#FEE500;border-color:#FEE500;color:#191600;margin-top:8px}.ltg-btn+.ltg-btn{margin-top:8px}.ltg-k{font-size:16px}'
-      +'.ltg-g{font-size:17px;font-weight:900;color:#4285F4}.ltg-note{font-size:11.5px;color:#9AA1AD;margin-top:11px}'
-      +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:22px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:15px;font-weight:800;color:#1F2937}';
+      +'.ltg-g{font-size:18px;font-weight:900;color:#4285F4}.ltg-note{font-size:12px;color:#9AA1AD;margin-top:10px}'
+      +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
     document.head.appendChild(st);
   }
   window.scrollTo(0,0);
@@ -949,15 +949,15 @@ function _ltHookingScreen(cert){
   var metric=isGrade?'예상 급수':'예상 점수';
   if(!document.getElementById('lthCss')){
     var st=document.createElement('style'); st.id='lthCss';
-    st.textContent='.lth-wrap{max-width:420px;margin:0 auto;text-align:center;padding:38px 26px 30px;background:linear-gradient(165deg,#F4F8FF,#EAF1FB);border-radius:18px}'
-      +'.lth-badge{display:inline-block;background:#FFE9B8;color:#9A6800;font-size:12px;font-weight:800;padding:6px 14px;border-radius:999px;margin-bottom:18px}'
+    st.textContent='.lth-wrap{max-width:420px;margin:0 auto;text-align:center;padding:38px 24px 28px;background:linear-gradient(165deg,#F4F8FF,#EAF1FB);border-radius:16px}'
+      +'.lth-badge{display:inline-block;background:#FFE9B8;color:#9A6800;font-size:12px;font-weight:800;padding:6px 14px;border-radius:999px;margin-bottom:16px}'
       +'.lth-ttl{font-size:23px;font-weight:900;color:#1F2937;line-height:1.32;margin-bottom:12px}.lth-hl{color:#185FA5}'
-      +'.lth-desc{font-size:13.5px;color:#6B7280;line-height:1.6;margin-bottom:8px}'
-      +'.lth-free{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin:14px 0 26px}'
-      +'.lth-free span{background:#fff;border:1px solid #DCE6F2;color:#3E5168;font-size:11.5px;font-weight:700;padding:6px 11px;border-radius:9px}'
-      +'.lth-cta{width:100%;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(24,95,165,.32)}'
-      +'.lth-note{font-size:11.5px;color:#9AA1AD;margin-top:12px}'
-      +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:420px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:22px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:15px;font-weight:800;color:#1F2937}';
+      +'.lth-desc{font-size:14px;color:#6B7280;line-height:1.6;margin-bottom:8px}'
+      +'.lth-free{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:14px 0 24px}'
+      +'.lth-free span{background:#fff;border:1px solid #DCE6F2;color:#3E5168;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px}'
+      +'.lth-cta{width:100%;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(24,95,165,.32)}'
+      +'.lth-note{font-size:12px;color:#9AA1AD;margin-top:12px}'
+      +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:420px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
     document.head.appendChild(st);
   }
   root.innerHTML='<div class="lt-nav"><button class="lt-nav-back" onclick="goHome()" aria-label="홈">←</button><span>레벨테스트</span></div>'
@@ -1054,7 +1054,7 @@ function _ltResultHTML(M){
     var LVC={1:'#E24B4A',2:'#E0813A',3:'#E0A52E',4:'#5AA86B',5:'#2E9B5E'};
     var rows=Object.keys(rec.summary).map(function(sub){
       var r=rec.summary[sub]; var nm=(qb[sub]&&qb[sub].name)||sub; var lv=r.level||3;
-      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #EFE9E1">'
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:1px solid #EFE9E1">'
         +'<span style="flex:1;font-weight:600;color:#4A4036">'+mqEsc(nm)+'</span>'
         +'<span style="font-weight:700;color:'+(LVC[lv]||'#E0A52E')+'">Lv '+lv+'</span>'
         +'<span style="font-size:12px;color:#A89C8E;min-width:34px;text-align:right">'+r.correct+'/'+r.n+'</span></div>';
@@ -1069,9 +1069,9 @@ function _ltResultHTML(M){
         var pred=(ap.predicted==null)?'--':ap.predicted;
         var lbl=(v&&v.label)?v.label:'';
         scoreHTML='<div style="text-align:center;padding:14px 12px;background:#F4F8FC;border-bottom:1px solid #E3EDF7">'
-          +'<div style="font-size:12.5px;color:#6B7C8F;font-weight:700">예상 점수</div>'
-          +'<div style="font-size:40px;font-weight:800;color:'+col+';line-height:1.1;margin:2px 0">'+pred+'<span style="font-size:16px;font-weight:700">점</span></div>'
-          +(lbl?'<div style="font-size:13px;font-weight:700;color:'+col+'">'+lbl+'</div>':'')
+          +'<div style="font-size:14px;color:#6B7C8F;font-weight:700">예상 점수</div>'
+          +'<div style="font-size:36px;font-weight:800;color:'+col+';line-height:1.1;margin:2px 0">'+pred+'<span style="font-size:16px;font-weight:700">점</span></div>'
+          +(lbl?'<div style="font-size:14px;font-weight:700;color:'+col+'">'+lbl+'</div>':'')
           +((typeof _luGaugeHTML==='function'&&v&&ap.predicted!=null)?_luGaugeHTML(M.cert,ap,v):'')
           +'</div>';
       }
@@ -1256,25 +1256,25 @@ function luRenderPopup(changes){
   var up=changes.filter(function(c){return c.up;}), main=up.length?up[0]:changes[0];
   var root=document.getElementById('mcqRoot'); if(!root){ luLoadRound(false); return; }
   var col=main.up?'#2E9B5E':'#946200', em=main.up?'🎉':'💪', ti=main.up?'레벨 업!':'아쉬웠어요';
-  var chg='<div style="font-size:15px;font-weight:800;color:'+col+';margin:12px 0 4px">'+mqEsc(main.sub)+' · '+mqEsc(main.topic)+'  Lv'+main.from+' → Lv'+main.to+'</div>';
+  var chg='<div style="font-size:16px;font-weight:800;color:'+col+';margin:12px 0 4px">'+mqEsc(main.sub)+' · '+mqEsc(main.topic)+'  Lv'+main.from+' → Lv'+main.to+'</div>';
   var more=changes.length-1, extra=more>0?'<div style="font-size:12px;color:#8A7D6E;margin-top:4px">그 외 '+more+'개 단원도 변동됐어요</div>':'';
   var desc=main.up?'약했던 단원이 한 단계 올라갔어요.':'다지면 다시 올라가요.';
   // 보조 버튼: 업=결과보기 / 다운=개념 다지기(그 토픽 개념 데이터 있을 때만)
   var side='';
   if(main.up){
-    side='<button onclick="luFinish(\'\')" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#F1F5F9;color:#475569;cursor:pointer">결과 보기</button>';
+    side='<button onclick="luFinish(\'\')" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#F1F5F9;color:#475569;cursor:pointer">결과 보기</button>';
   } else {
     var loc=_luTopicConceptLoc(mqCert, main.subCode, main.tcode);
-    if(loc) side='<button onclick="_luToConcept(\''+main.subCode+'\','+loc.si+','+loc.idx+')" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#FFF4E0;color:#92600C;cursor:pointer">📖 개념 다지기</button>';
+    if(loc) side='<button onclick="_luToConcept(\''+main.subCode+'\','+loc.si+','+loc.idx+')" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#FFF4E0;color:#92600C;cursor:pointer">📖 개념 다지기</button>';
   }
-  root.innerHTML='<div class="mcq-result" style="text-align:center;padding:30px 20px"><div style="font-size:42px">'+em+'</div><div style="font-size:19px;font-weight:800;margin:8px 0 4px">'+ti+'</div>'+chg+'<div style="font-size:13.5px;color:#5F5E5A">'+desc+'</div>'+extra+'<div style="display:flex;gap:8px;margin-top:20px;max-width:320px;margin-left:auto;margin-right:auto">'+side+'<button onclick="luLoadRound(false)" style="flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;border:none;background:#0C447C;color:#fff;cursor:pointer">계속 풀기</button></div></div>';
+  root.innerHTML='<div class="mcq-result" style="text-align:center;padding:28px 20px"><div style="font-size:42px">'+em+'</div><div style="font-size:20px;font-weight:800;margin:8px 0 4px">'+ti+'</div>'+chg+'<div style="font-size:14px;color:#5F5E5A">'+desc+'</div>'+extra+'<div style="display:flex;gap:8px;margin-top:20px;max-width:320px;margin-left:auto;margin-right:auto">'+side+'<button onclick="luLoadRound(false)" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#0C447C;color:#fff;cursor:pointer">계속 풀기</button></div></div>';
   window.scrollTo(0,0);
 }
 function _infoModal(html){
   return new Promise(function(res){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px';
-    ov.innerHTML='<div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.25)"><button class="popup-x" aria-label="닫기">✕</button>'+html+'<button style="margin-top:16px;width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">확인</button></div>';
+    ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.25)"><button class="popup-x" aria-label="닫기">✕</button>'+html+'<button style="margin-top:16px;width:100%;padding:12px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button></div>';
     ov.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); res(); }; });
     document.body.appendChild(ov);
   });
@@ -1286,20 +1286,20 @@ async function _eloInfoPopups(qs, wasTimeUp){
     (qs||[]).forEach(function(q){ if(q&&q.id&&typeof eloState!=='undefined'&&eloState&&eloState._expSeen&&eloState._expSeen[mqCert+'|'+q.id]===t) sawExp=true; });
     if(sawExp && !localStorage.getItem('certlab_info_expElo')){
       try{ localStorage.setItem('certlab_info_expElo','1'); }catch(_){}
-      await _infoModal('<div style="font-size:34px;margin-bottom:8px">📖</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>');
+      await _infoModal('<div style="font-size:36px;margin-bottom:8px">📖</div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>');
     }
     var hadUnans=false;
     (qs||[]).forEach(function(q){ if(q&&q.id&&mqResultAns[q.id]===undefined) hadUnans=true; });
     if(wasTimeUp && hadUnans && !localStorage.getItem('certlab_info_timeoutElo')){
       try{ localStorage.setItem('certlab_info_timeoutElo','1'); }catch(_){}
-      await _infoModal('<div style="font-size:34px;margin-bottom:8px">⏰</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">시간 안에 못 푼 문제</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">시간 안에 못 푼 문제는 <b>오답으로 처리</b>돼요.<br>다음엔 시간 안에 도전해봐요!</div>');
+      await _infoModal('<div style="font-size:36px;margin-bottom:8px">⏰</div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">시간 안에 못 푼 문제</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">시간 안에 못 푼 문제는 <b>오답으로 처리</b>돼요.<br>다음엔 시간 안에 도전해봐요!</div>');
     }
   }catch(_){}
 }
 function _luToast(msg){
   if(!msg) return;
   var t=document.createElement('div');
-  t.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;background:#2C2C2A;color:#fff;padding:15px 22px;border-radius:14px;font-size:14px;font-weight:700;max-width:300px;text-align:center;line-height:1.55;box-shadow:0 10px 34px rgba(0,0,0,.3)';
+  t.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;background:#2C2C2A;color:#fff;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:700;max-width:300px;text-align:center;line-height:1.55;box-shadow:0 10px 34px rgba(0,0,0,.3)';
   t.textContent=msg;
   document.body.appendChild(t);
   setTimeout(function(){ t.style.transition='opacity .4s'; t.style.opacity='0'; setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },420); }, 2300);
@@ -1352,17 +1352,17 @@ function renderLuRound(root){ var R=_luRound; if(!R){ luLoadRound(false); return
   var pct=R.total?Math.round(R.correct/R.total*100):0;
   var chgHTML='';
   if(R.changes && R.changes.length){ var up=R.changes.filter(function(c){return c.up;}); var m=up.length?up[0]:R.changes[0]; var col=m.up?'#2E9B5E':'#946200';
-    chgHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:12px 14px;margin:12px 14px 0"><div style="font-size:13.5px;font-weight:800;color:'+col+'">'+(m.up?'🎉 ':'💪 ')+mqEsc(m.topic)+'  Lv'+m.from+' → Lv'+m.to+'</div>'+(R.changes.length>1?'<div style="font-size:12px;color:#8A7D6E;margin-top:3px">그 외 '+(R.changes.length-1)+'개 단원 변동</div>':'')+'<div style="font-size:12px;color:#5F5E5A;margin-top:3px">'+(m.up?'약했던 단원이 한 단계 올라갔어요.':'다지면 다시 올라가요.')+'</div></div>'; }
+    chgHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:12px;padding:12px 14px;margin:12px 14px 0"><div style="font-size:14px;font-weight:800;color:'+col+'">'+(m.up?'🎉 ':'💪 ')+mqEsc(m.topic)+'  Lv'+m.from+' → Lv'+m.to+'</div>'+(R.changes.length>1?'<div style="font-size:12px;color:#8A7D6E;margin-top:2px">그 외 '+(R.changes.length-1)+'개 단원 변동</div>':'')+'<div style="font-size:12px;color:#5F5E5A;margin-top:2px">'+(m.up?'약했던 단원이 한 단계 올라갔어요.':'다지면 다시 올라가요.')+'</div></div>'; }
   var wrong=R.qs.filter(function(q){ return R.ans[q.id]!==undefined && !mqCorrect(q,R.ans[q.id]); });
   var wrongHTML;
-  if(wrong.length){ wrongHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:12px 14px;margin:11px 14px 0;text-align:left"><div style="font-size:12.5px;font-weight:800;margin-bottom:6px">틀린 문항 '+wrong.length+'</div>'+wrong.map(function(q){ return '<div style="display:flex;gap:7px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed #EFE7DD"><span style="color:#E24B4A;font-weight:900">✗</span><span>'+mqEsc(_luQLabel(q))+'</span></div>'; }).join('')+'<button onclick="luRoundReview()" style="width:100%;margin-top:9px;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:800;background:#FCEBEA;color:#B5302F;cursor:pointer">틀린 문항 다시보기</button></div>'; }
-  else { wrongHTML='<div style="background:#EAF7EF;border:1px solid #BfE6CD;border-radius:14px;padding:14px;margin:11px 14px 0;text-align:center;color:#1E7A45;font-weight:800;font-size:13.5px">모두 맞혔어요! 🎉</div>'; }
-  root.innerHTML='<div class="mcq-result" style="padding:24px 0 20px"><div style="text-align:center"><div style="font-size:40px;line-height:1">'+em+'</div>'+
+  if(wrong.length){ wrongHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:12px;padding:12px 14px;margin:10px 14px 0;text-align:left"><div style="font-size:14px;font-weight:800;margin-bottom:6px">틀린 문항 '+wrong.length+'</div>'+wrong.map(function(q){ return '<div style="display:flex;gap:6px;font-size:14px;padding:4px 0;border-bottom:1px dashed #EFE7DD"><span style="color:#E24B4A;font-weight:900">✗</span><span>'+mqEsc(_luQLabel(q))+'</span></div>'; }).join('')+'<button onclick="luRoundReview()" style="width:100%;margin-top:8px;border:none;border-radius:12px;padding:10px;font-size:14px;font-weight:800;background:#FCEBEA;color:#B5302F;cursor:pointer">틀린 문항 다시보기</button></div>'; }
+  else { wrongHTML='<div style="background:#EAF7EF;border:1px solid #BfE6CD;border-radius:12px;padding:14px;margin:10px 14px 0;text-align:center;color:#1E7A45;font-weight:800;font-size:14px">모두 맞혔어요! 🎉</div>'; }
+  root.innerHTML='<div class="mcq-result" style="padding:24px 0 20px"><div style="text-align:center"><div style="font-size:36px;line-height:1">'+em+'</div>'+
     '<div style="font-size:18px;font-weight:900;margin:6px 0 2px">이번 라운드 '+R.correct+' / '+R.total+'</div>'+
-    '<div style="font-size:13px;color:#888780">'+mqEsc(R.subName||'')+' · 정답률 '+pct+'%</div></div>'+
+    '<div style="font-size:14px;color:#888780">'+mqEsc(R.subName||'')+' · 정답률 '+pct+'%</div></div>'+
     chgHTML+wrongHTML+
-    '<div style="display:flex;flex-direction:column;gap:9px;padding:18px 14px 0"><button onclick="luLoadRound(false)" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#0C447C;color:#fff;cursor:pointer">계속 풀기 (다음 5문제)</button>'+
-    '<button onclick="luSessionEnd()" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#F1F5F9;color:#475569;cursor:pointer">그만하기</button></div></div>';
+    '<div style="display:flex;flex-direction:column;gap:8px;padding:16px 14px 0"><button onclick="luLoadRound(false)" style="border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;background:#0C447C;color:#fff;cursor:pointer">계속 풀기 (다음 5문제)</button>'+
+    '<button onclick="luSessionEnd()" style="border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;background:#F1F5F9;color:#475569;cursor:pointer">그만하기</button></div></div>';
   window.scrollTo(0,0);
 }
 function luRoundReview(){ var R=_luRound; if(!R) return; mqResultQs=R.qs.slice(); mqResultAns=Object.assign({},R.ans); _luReviewReturn='luround'; mqOpenReview('wrong',0); }
@@ -1372,23 +1372,23 @@ function renderLuSummary(root){ var cert=mqCert;
   var pct=luSessTotal?Math.round(luSessCorrect/luSessTotal*100):0;
   var rounds=Math.max(1, Math.round(luSessTotal/LU_ROUND));
   var predHTML='';
-  if(predNow!=null){ var arrow=(predStart!=null&&predNow!==predStart)?(' → <span style="color:'+(predNow>predStart?'#2E9B5E':'#946200')+'">'+predNow+'</span>'):''; predHTML='<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F3EEE7;font-size:14px"><span>예상점수</span><b>'+(predStart!=null?predStart:predNow)+arrow+' 점</b></div>'; }
+  if(predNow!=null){ var arrow=(predStart!=null&&predNow!==predStart)?(' → <span style="color:'+(predNow>predStart?'#2E9B5E':'#946200')+'">'+predNow+'</span>'):''; predHTML='<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F3EEE7;font-size:14px"><span>예상점수</span><b>'+(predStart!=null?predStart:predNow)+arrow+' 점</b></div>'; }
   var chgKeys=Object.keys(luSessChanges);
   var wrongCnt=Math.max(0, luSessTotal-luSessCorrect);
   var chgHTML='';
-  if(chgKeys.length){ chgHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:12px 14px;margin:11px 14px 0;text-align:left"><div style="font-size:12.5px;font-weight:800;margin-bottom:6px">레벨 변동</div>'+
-    chgKeys.map(function(k){ var c=luSessChanges[k]; var up=c.to>=c.from; return '<div style="display:flex;gap:7px;font-size:13px;padding:5px 0"><span style="color:'+(up?'#2E9B5E':'#946200')+';font-weight:900">'+(up?'▲':'▼')+'</span><span>'+mqEsc(c.subName||'')+' · '+mqEsc(c.topic||'')+' Lv'+c.from+' → <b>Lv'+c.to+'</b></span></div>'; }).join('')+'</div>'; }
-  root.innerHTML='<div class="mcq-result" style="padding:24px 0 20px"><div style="text-align:center"><div style="font-size:40px;line-height:1">🏁</div>'+
+  if(chgKeys.length){ chgHTML='<div style="background:#fff;border:1px solid #EDE6DD;border-radius:12px;padding:12px 14px;margin:10px 14px 0;text-align:left"><div style="font-size:14px;font-weight:800;margin-bottom:6px">레벨 변동</div>'+
+    chgKeys.map(function(k){ var c=luSessChanges[k]; var up=c.to>=c.from; return '<div style="display:flex;gap:6px;font-size:14px;padding:4px 0"><span style="color:'+(up?'#2E9B5E':'#946200')+';font-weight:900">'+(up?'▲':'▼')+'</span><span>'+mqEsc(c.subName||'')+' · '+mqEsc(c.topic||'')+' Lv'+c.from+' → <b>Lv'+c.to+'</b></span></div>'; }).join('')+'</div>'; }
+  root.innerHTML='<div class="mcq-result" style="padding:24px 0 20px"><div style="text-align:center"><div style="font-size:36px;line-height:1">🏁</div>'+
     '<div style="font-size:18px;font-weight:900;margin:6px 0 2px">오늘 레벨업 완료</div>'+
-    '<div style="font-size:13px;color:#888780;margin-bottom:16px">'+luSessTotal+'문제 풀이</div></div>'+
+    '<div style="font-size:14px;color:#888780;margin-bottom:16px">'+luSessTotal+'문제 풀이</div></div>'+
     '<div class="sc"><div><div class="v ok">'+luSessCorrect+'</div><div class="l">정답</div></div>'+
     '<div><div class="v bad">'+wrongCnt+'</div><div class="l">오답</div></div>'+
     '<div><div class="v">'+pct+'%</div><div class="l">정답률</div></div></div>'+
-    '<div style="background:#fff;border:1px solid #EDE6DD;border-radius:14px;padding:6px 14px;margin:0 14px;text-align:left">'+
-    '<div style="display:flex;justify-content:space-between;padding:9px 0;'+(predHTML?'border-bottom:1px solid #F3EEE7;':'')+'font-size:14px"><span>푼 문제</span><b>'+luSessTotal+'문제 ('+rounds+'라운드)</b></div>'+
+    '<div style="background:#fff;border:1px solid #EDE6DD;border-radius:12px;padding:6px 14px;margin:0 14px;text-align:left">'+
+    '<div style="display:flex;justify-content:space-between;padding:8px 0;'+(predHTML?'border-bottom:1px solid #F3EEE7;':'')+'font-size:14px"><span>푼 문제</span><b>'+luSessTotal+'문제 ('+rounds+'라운드)</b></div>'+
     predHTML+'</div>'+chgHTML+
-    '<div style="display:flex;flex-direction:column;gap:9px;padding:18px 14px 0"><button onclick="luLoadRound(false)" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#0C447C;color:#fff;cursor:pointer">더 풀기</button>'+
-    '<button onclick="luFinish(\'\')" style="border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;background:#F1F5F9;color:#475569;cursor:pointer">홈으로</button></div></div>';
+    '<div style="display:flex;flex-direction:column;gap:8px;padding:16px 14px 0"><button onclick="luLoadRound(false)" style="border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;background:#0C447C;color:#fff;cursor:pointer">더 풀기</button>'+
+    '<button onclick="luFinish(\'\')" style="border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;background:#F1F5F9;color:#475569;cursor:pointer">홈으로</button></div></div>';
   window.scrollTo(0,0);
 }
 // 기록 페이지
@@ -1441,19 +1441,19 @@ function _luHistRow(rec, gIdx){
   var pctCol=(rec.correct>=rec.total)?'#1E7A45':(rec.correct>=Math.ceil(rec.total*0.6)?'#8a6510':'#B5302F');
   var d=new Date(rec.ts||0); var hh=('0'+d.getHours()).slice(-2), mm=('0'+d.getMinutes()).slice(-2);
   var chg=rec.chg?('<span style="font-weight:800;color:'+(rec.chg.up?'#2E9B5E':'#946200')+'">'+(rec.chg.up?'▲':'▼')+' Lv'+rec.chg.from+'→'+rec.chg.to+'</span>'):'<span style="color:#888780">변동 없음</span>';
-  return '<div onclick="luHistReview('+gIdx+')" style="display:flex;align-items:center;gap:10px;padding:11px 12px;background:#fff;border:1px solid #EDE6DD;border-radius:13px;margin-bottom:8px;cursor:pointer">'+
-    '<div style="font-size:12px;font-weight:900;width:42px;text-align:center;border-radius:9px;padding:5px 0;background:'+pctClass+';color:'+pctCol+'">'+rec.correct+'/'+rec.total+'</div>'+
-    '<div style="flex:1"><b style="font-size:13.5px">'+mqEsc(rec.subName||'')+(rec.topic?(' · '+mqEsc(rec.topic)):'')+'</b><div style="font-size:11px;color:#888780;margin-top:2px">'+hh+':'+mm+' · '+chg+'</div></div>'+
+  return '<div onclick="luHistReview('+gIdx+')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #EDE6DD;border-radius:12px;margin-bottom:8px;cursor:pointer">'+
+    '<div style="font-size:12px;font-weight:900;width:42px;text-align:center;border-radius:8px;padding:4px 0;background:'+pctClass+';color:'+pctCol+'">'+rec.correct+'/'+rec.total+'</div>'+
+    '<div style="flex:1"><b style="font-size:14px">'+mqEsc(rec.subName||'')+(rec.topic?(' · '+mqEsc(rec.topic)):'')+'</b><div style="font-size:12px;color:#888780;margin-top:2px">'+hh+':'+mm+' · '+chg+'</div></div>'+
     '<span style="color:#c9bdac;font-size:18px">›</span></div>'; }
 function renderLuHist(root){ var cert=mqCert; var list=luHistList(cert);
   var head='<div class="mcq-exam-title"><button class="exam-home-back" onclick="luHistBack()" aria-label="뒤로">'+BACK_ARROW+'</button>전체 레벨업 결과</div>';
   var body='';
-  if(!list.length){ body='<div style="text-align:center;color:#A89C8E;font-size:13px;padding:40px 20px">아직 레벨업 기록이 없어요.<br>레벨업 문제를 풀면 라운드별로 쌓여요.</div>'; }
+  if(!list.length){ body='<div style="text-align:center;color:#A89C8E;font-size:14px;padding:40px 20px">아직 레벨업 기록이 없어요.<br>레벨업 문제를 풀면 라운드별로 쌓여요.</div>'; }
   else { var groups={}, order=[];
     list.forEach(function(rec,i){ var d=new Date(rec.ts||0); var key=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); if(!groups[key]){ groups[key]=[]; order.push(key); } groups[key].push({rec:rec,gIdx:i}); });
     var today=new Date(); var tkey=today.getFullYear()+'-'+('0'+(today.getMonth()+1)).slice(-2)+'-'+('0'+today.getDate()).slice(-2);
     body='<div style="padding:8px 14px 0">'+order.map(function(key){ var parts=key.split('-'); var lbl=(key===tkey)?('오늘 · '+parseInt(parts[1],10)+'월 '+parseInt(parts[2],10)+'일'):(parseInt(parts[1],10)+'월 '+parseInt(parts[2],10)+'일');
-      return '<div style="font-size:12px;font-weight:800;color:#8a8175;margin:14px 2px 7px">'+lbl+'</div>'+groups[key].map(function(o){ return _luHistRow(o.rec,o.gIdx); }).join(''); }).join('')+'</div>'; }
+      return '<div style="font-size:12px;font-weight:800;color:#8a8175;margin:14px 2px 6px">'+lbl+'</div>'+groups[key].map(function(o){ return _luHistRow(o.rec,o.gIdx); }).join(''); }).join('')+'</div>'; }
   root.innerHTML=head+body;
 }
 function luHistReview(gIdx){ var list=luHistList(mqCert); var rec=list[gIdx]; if(!rec) return;

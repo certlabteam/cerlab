@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="naver-site-verification" content="b0c8051f34afc49ab3bbe1f95955181cf9fdc615" />
 <meta name="google-site-verification" content="LQQCOeoEz2XvqNfY0Lmx0vGuf0gaS8iiyjxbZjIHorY" />
 <!-- Google Analytics (GA4) -->
@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=a5b6daa9">
+<link rel="stylesheet" href="style.css?v=29bea151">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -85,8 +85,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
    구글-카카오-「나중에」 사이 간격이 다 12px 로 같아진다.
    색은 카카오가 정해 둔 노랑(#FEE500)과 검정 글씨를 그대로 쓴다 — 사람들이 그 조합으로 알아본다. */
 .btn-kakao-login{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
-  margin-bottom:12px;padding:13px 16px;border:0;border-radius:10px;background:#FEE500;
-  color:#191600;font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+  margin-bottom:12px;padding:12px 16px;border:0;border-radius:12px;background:#FEE500;
+  color:#191600;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .btn-kakao-login:hover{filter:brightness(.97)}
 .btn-kakao-login:focus-visible{outline:2px solid #1D4E6B;outline-offset:2px}
 .btn-kakao-login .kakao-icon{width:20px;height:20px;flex:0 0 auto}
@@ -295,7 +295,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- AI 첨삭 기록 모달 -->
 <div class="psucc-ov hidden" id="gradeLogOv"><div class="psucc-box" style="max-width:560px;text-align:left">
   <button class="psucc-x" onclick="closeGradeLogs()" aria-label="닫기">✕</button>
-  <div style="font-size:16px;font-weight:800;color:#2C2C2A;margin-bottom:3px">📋 내 AI 첨삭 기록</div>
+  <div style="font-size:16px;font-weight:800;color:#2C2C2A;margin-bottom:2px">📋 내 AI 첨삭 기록</div>
   <div style="font-size:12px;color:#8A7D6E;margin-bottom:12px" id="gradeLogSub">최근 채점 내역을 다시 볼 수 있어요.</div>
   <div id="gradeLogBody" style="max-height:60vh;overflow:auto"></div>
 </div></div>
@@ -394,7 +394,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="psucc-sub" id="psuccSub">이용권이 즉시 활성화되었습니다.</div>
     <div class="psucc-plan" id="psuccPlan"></div>
     <div id="psuccDepositWrap">
-      <div style="font-size:13px;font-weight:700;color:#2C2C2A;margin-bottom:7px">💳 아래 계좌로 입금해 주세요</div>
+      <div style="font-size:14px;font-weight:700;color:#2C2C2A;margin-bottom:6px">💳 아래 계좌로 입금해 주세요</div>
       <div class="psucc-acc">
         <div class="accrow"><span class="accnum">토스뱅크 1000-2406-0293</span><button class="psucc-copy" onclick="copyDepositAcc()">복사</button></div>
         <div>예금주: 박성환</div>
@@ -415,9 +415,9 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="psucc-sub" id="aiBuySub"></div>
     <div id="aiBuyBal" style="font-size:12px;color:#6D28D9;font-weight:700;margin:6px 0 2px"></div>
     <div id="aiBuyPacks" style="display:flex;flex-direction:column;gap:8px;margin:12px 0 6px"></div>
-    <div style="text-align:left;margin:8px 0 6px;font-size:12.5px;font-weight:700;color:#2C2C2A">입금자 이름 <span style="font-weight:500;color:#9A8E7E">· 입금 확인용</span></div>
-    <input id="aiBuyName" placeholder="입금하실 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
-    <div style="font-size:11.5px;color:#8A7D6E;line-height:1.5;margin-bottom:12px">‘충전 신청’을 누르면 입금 안내가 떠요. <b>관리자가 입금을 확인한 뒤 승인</b>하면 잔액에 반영되고, 충전분마다 반영된 날부터 365일 동안 쓸 수 있어요(2026년 9월 23일 이후 구매분). 입금이 확인되지 않으면 신청이 취소될 수 있어요.</div>
+    <div style="text-align:left;margin:8px 0 6px;font-size:14px;font-weight:700;color:#2C2C2A">입금자 이름 <span style="font-weight:500;color:#9A8E7E">· 입금 확인용</span></div>
+    <input id="aiBuyName" placeholder="입금하실 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
+    <div style="font-size:12px;color:#8A7D6E;line-height:1.5;margin-bottom:12px">‘충전 신청’을 누르면 입금 안내가 떠요. <b>관리자가 입금을 확인한 뒤 승인</b>하면 잔액에 반영되고, 충전분마다 반영된 날부터 365일 동안 쓸 수 있어요(2026년 9월 23일 이후 구매분). 입금이 확인되지 않으면 신청이 취소될 수 있어요.</div>
     <button class="psucc-ok" id="aiBuyBtn" onclick="submitAiBuy()">충전 신청</button>
   </div>
 </div>
@@ -427,9 +427,9 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <button class="psucc-x" onclick="closePtModal()" aria-label="닫기">✕</button>
     <div class="psucc-ic" id="ptModalIc">💰</div>
     <div class="psucc-ti" id="ptModalTi">100포인트 적립되었어요</div>
-    <div class="psucc-sub" id="ptModalSub" style="margin-bottom:18px"></div>
+    <div class="psucc-sub" id="ptModalSub" style="margin-bottom:16px"></div>
     <button class="psucc-ok" onclick="closePtModal()">확인</button>
-    <div style="text-align:center;margin-top:10px"><a href="javascript:void(0)" onclick="ptGoGuide()" style="font-size:12.5px;color:#0C447C;text-decoration:underline">포인트 적립·사용 안내 자세히 보기 ›</a></div>
+    <div style="text-align:center;margin-top:10px"><a href="javascript:void(0)" onclick="ptGoGuide()" style="font-size:14px;color:#0C447C;text-decoration:underline">포인트 적립·사용 안내 자세히 보기 ›</a></div>
   </div>
 </div>
 <div class="overlay hidden" id="completeOv">
@@ -494,7 +494,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <div class="auth-popup hidden" id="refundPopup">
   <div class="auth-sheet" style="text-align:center">
     <button class="popup-x" onclick="closeRefundPopup('day')" aria-label="닫기">✕</button>
-    <div style="font-size:40px;margin:6px 0 2px">🎉</div>
+    <div style="font-size:36px;margin:6px 0 2px">🎉</div>
     <div class="auth-sheet-title" id="refundTitle">합격하면 결제금액 100% 포인트로!</div>
     <div class="auth-sheet-sub" id="refundSub">CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제금액만큼 <b>포인트</b>로 돌려드려요. <b>자격증별 선착순 30명!</b></div>
     <div class="refund-banner" style="animation:none;text-align:left">
@@ -504,8 +504,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
         → 올리는 즉시 포인트 자동 적립!
       </div>
     </div>
-    <div id="refundStats" style="font-size:12.5px;color:#185FA5;background:#E9F1FB;border-radius:10px;padding:9px 11px;margin-bottom:4px;line-height:1.6"></div>
-    <div style="text-align:left;font-size:12.5px;color:#3C3C3A;line-height:1.9;margin:4px 2px 10px">
+    <div id="refundStats" style="font-size:14px;color:#185FA5;background:#E9F1FB;border-radius:12px;padding:8px 10px;margin-bottom:4px;line-height:1.6"></div>
+    <div style="text-align:left;font-size:14px;color:#3C3C3A;line-height:1.9;margin:4px 2px 10px">
       ✓ 전 과목·회차 기출 + 상세 해설<br>
       ✓ 망각곡선 자동복습 · 오답노트<br>
       ✓ 레벨테스트·예상점수 무료<br>
@@ -521,13 +521,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <div class="auth-popup hidden" id="guestFeatPopup">
   <div class="auth-sheet" style="text-align:center">
     <button class="popup-x" onclick="closeGuestFeatPopup()" aria-label="닫기">✕</button>
-    <div style="font-size:40px;margin:6px 0 2px">🧠</div>
+    <div style="font-size:36px;margin:6px 0 2px">🧠</div>
     <div class="auth-sheet-title">방금 푼 문제, 이렇게 내 점수가 됩니다</div>
     <div class="auth-sheet-sub">CertLab은 푼 문제를 그냥 흘려보내지 않아요. 가입하면 이 3가지가 자동으로 작동해요.</div>
-    <div style="text-align:left;font-size:13.5px;color:#3C3C3A;line-height:1.85;background:#F4F8FC;border-radius:12px;padding:13px 15px;margin:10px 2px 12px">
-      📈 <b>망각곡선 자동복습</b><br><span style="color:#64748B;font-size:12.5px">까먹을 때쯤 알아서 다시 띄워줘요</span><br>
-      🎯 <b>예상 점수</b><br><span style="color:#64748B;font-size:12.5px">지금 실력이면 몇 점인지 바로 보여줘요</span><br>
-      📌 <b>약점 분석 · 오답노트</b><br><span style="color:#64748B;font-size:12.5px">틀린 개념만 모아 집중 공략</span>
+    <div style="text-align:left;font-size:14px;color:#3C3C3A;line-height:1.85;background:#F4F8FC;border-radius:12px;padding:12px 14px;margin:10px 2px 12px">
+      📈 <b>망각곡선 자동복습</b><br><span style="color:#64748B;font-size:14px">까먹을 때쯤 알아서 다시 띄워줘요</span><br>
+      🎯 <b>예상 점수</b><br><span style="color:#64748B;font-size:14px">지금 실력이면 몇 점인지 바로 보여줘요</span><br>
+      📌 <b>약점 분석 · 오답노트</b><br><span style="color:#64748B;font-size:14px">틀린 개념만 모아 집중 공략</span>
     </div>
     <button class="btn-google-login" onclick="goGuestFeatNotice()" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;width:100%">어떻게 작동하는지 보기 →</button>
     <button class="auth-sheet-close" style="width:100%;margin-top:8px" onclick="closeGuestFeatPopup()">닫기</button>
@@ -581,15 +581,15 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       </button>
       <div id="emailAuthBox" class="hidden" style="margin-top:10px;background:#F9F7F5;border:1px solid #EDE9E5;border-radius:12px;padding:14px">
         <input id="emailAuthId" type="email" autocomplete="email" placeholder="이메일 주소"
-          style="width:100%;padding:11px 12px;border:1px solid #E2E1DE;border-radius:10px;font-size:14px;margin-bottom:8px">
+          style="width:100%;padding:10px 12px;border:1px solid #E2E1DE;border-radius:12px;font-size:14px;margin-bottom:8px">
         <input id="emailAuthPw" type="password" autocomplete="current-password" placeholder="비밀번호 (6자 이상)"
-          style="width:100%;padding:11px 12px;border:1px solid #E2E1DE;border-radius:10px;font-size:14px">
-        <div id="emailAuthMsg" style="font-size:12.5px;color:#C0392B;line-height:1.6;margin-top:8px;display:none"></div>
+          style="width:100%;padding:10px 12px;border:1px solid #E2E1DE;border-radius:12px;font-size:14px">
+        <div id="emailAuthMsg" style="font-size:14px;color:#C0392B;line-height:1.6;margin-top:8px;display:none"></div>
         <div style="margin-top:10px">
           <button type="button" onclick="signInWithEmail()"
-            style="width:100%;padding:12px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">로그인</button>
+            style="width:100%;padding:12px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">로그인</button>
         </div>
-        <div style="font-size:11.5px;color:#8A7D6E;line-height:1.6;margin-top:9px">
+        <div style="font-size:12px;color:#8A7D6E;line-height:1.6;margin-top:8px">
           비밀번호를 잊으셨으면 <a href="javascript:void(0)" onclick="resetEmailPassword()" style="color:#185FA5">재설정 메일 받기</a>를 눌러 주세요.<br>
           처음 오셨으면 위의 <b>구글</b>이나 <b>카카오</b>로 시작해 주세요.
         </div>
@@ -608,7 +608,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="auth-sheet-sub" id="delSub">아래 내용을 확인하신 뒤 진행해 주세요.</div>
 
     <div id="delLoggedOut" style="display:none">
-      <div style="background:#F9F7F5;border:1px solid #EDE9E5;border-radius:12px;padding:14px;font-size:13px;color:#334155;line-height:1.7;margin:14px 0">
+      <div style="background:#F9F7F5;border:1px solid #EDE9E5;border-radius:12px;padding:14px;font-size:14px;color:#334155;line-height:1.7;margin:14px 0">
         계정을 삭제하려면 먼저 삭제할 계정으로 로그인해야 합니다.<br>
         아래 버튼으로 가입하신 방법(카카오·구글·이메일)으로 로그인한 뒤, 이 화면에서 탈퇴를 진행할 수 있어요.
       </div>
@@ -617,7 +617,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     </div>
 
     <div id="delLoggedIn" style="display:none">
-      <div style="background:#FDF2F0;border:1px solid #F3D3CC;border-radius:12px;padding:14px;font-size:13px;color:#334155;line-height:1.75;margin:14px 0">
+      <div style="background:#FDF2F0;border:1px solid #F3D3CC;border-radius:12px;padding:14px;font-size:14px;color:#334155;line-height:1.75;margin:14px 0">
         <b style="color:#C0392B">삭제되는 항목 (복구 불가)</b><br>
         1. 계정(Google 로그인 정보)<br>
         2. 학습 기록·Elo 점수·레벨업 기록<br>
@@ -626,8 +626,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
           결제 기록은 관련 법령(전자상거래법)에 따라 일정 기간 보관 후 파기되며, 개인정보처리방침에 안내되어 있습니다.
         </div>
       </div>
-      <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#334155;cursor:pointer;margin-bottom:14px">
-        <input type="checkbox" id="delAgree" onchange="document.getElementById('delGoBtn').disabled=!this.checked" style="margin-top:3px">
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:14px;color:#334155;cursor:pointer;margin-bottom:14px">
+        <input type="checkbox" id="delAgree" onchange="document.getElementById('delGoBtn').disabled=!this.checked" style="margin-top:2px">
         <span>위 내용을 이해했으며, 계정과 관련 데이터의 영구 삭제에 동의합니다.</span>
       </label>
       <button class="btn-google-login" id="delGoBtn" disabled onclick="deleteMyAccount()" style="background:#C0392B;color:#fff;justify-content:center;opacity:1">
@@ -646,7 +646,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="plan-top"><button onclick="hidePlanPopup()" aria-label="뒤로">←</button><span>이용권</span></div>
     <div class="plan-sheet-title" id="planSheetTitle">⏰ 무료 체험 완료!</div>
     <!-- ★ 어느 시험 이용권인지 — 마이페이지에서 바로 열면 맥락이 없어 엉뚱한 시험을 결제할 수 있다 -->
-    <div id="planCertName" style="margin:2px 0 8px;padding:5px 12px;display:inline-block;border-radius:999px;background:#EEF4FB;color:#0C447C;font-size:13.5px;font-weight:700"></div>
+    <div id="planCertName" style="margin:2px 0 8px;padding:4px 12px;display:inline-block;border-radius:999px;background:#EEF4FB;color:#0C447C;font-size:14px;font-weight:700"></div>
     <div class="plan-sheet-sub" id="planSub">이용권 구매 후 전체 문제와 학습 기록을 계속 이용할 수 있습니다.</div>
     <div class="plan-cards">
       <div class="plan-card" id="plan7" onclick="selectPlan(7,3900)">
@@ -682,14 +682,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       <div class="discount-msg" id="discountMsg" style="display:none"></div>
     </div>
     <!-- [2026-09-15] 결제 전 청약철회·환불 고지 — 약관 제7조(코덱스 검수·승인 2026-09-15). 송금 수단(계좌·송금 링크)보다 위에 둔다: 보지 않고 송금부터 하지 못하게 -->
-    <div class="refund-notice" style="font-size:12.5px;line-height:1.7;color:#3C3C3A;background:#F4F8FC;border:1px solid #B5D4F4;border-radius:10px;padding:10px 12px;margin:0 0 10px;text-align:left">
+    <div class="refund-notice" style="font-size:14px;line-height:1.7;color:#3C3C3A;background:#F4F8FC;border:1px solid #B5D4F4;border-radius:12px;padding:10px 12px;margin:0 0 10px;text-align:left">
       <!-- ★★ [2026-10-12 크리스] 『이거 다 펼쳐놓지말고 우측 더보기 텍스트버튼 넣어』
            고지가 화면을 통째로 덮어 아래의 포인트·결제 단추가 안 보였다. 첫 줄만 두고 접는다.
            ⚠ 고지는 **지우지 않는다** — 전자상거래법상 결제 전에 보여야 하는 글이다.
              접되 「더보기」가 바로 옆에 있고, 약관 제7조 링크는 접힌 채로도 보인다. -->
       <b>결제 전 확인해 주세요</b>
       <button type="button" id="refundMoreBtn" onclick="toggleRefundNotice()"
-        style="float:right;background:none;border:none;padding:0;font-size:12.5px;font-weight:700;color:#185FA5;cursor:pointer">더보기 ▾</button><br>
+        style="float:right;background:none;border:none;padding:0;font-size:14px;font-weight:700;color:#185FA5;cursor:pointer">더보기 ▾</button><br>
       · 계약내용에 관한 서면(전자문서 포함)을 받은 날부터 7일 이내에 청약철회를 신청하고 유료 콘텐츠를 이용하지 않았다면 전액 환불됩니다.
       <span id="refundMore" hidden>콘텐츠 공급이 더 늦으면 공급받거나 공급이 시작된 날부터 계산하며, 법령상 별도 기간이 적용되는 경우는 이용약관 제7조에 따릅니다.<br>
       · 무료 체험 범위를 넘는 유료 문항·해설·학습 기능의 이용을 시작하면 관계 법령에 따라 단순변심 청약철회가 제한될 수 있습니다. 무료 체험·로그인·이용권 자동 활성화만으로는 유료 콘텐츠를 이용한 것으로 보지 않습니다.<br>
@@ -735,11 +735,11 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     </div>
     <!-- [2026-10-12 크리스] 결제 직전 친구 초대 한 줄 — 받은 포인트는 이번 결제에 바로 쓴다 -->
     <div class="pay-ref-line" onclick="if(myReferralCode){shareReferral('pay')}else{showLoginPopup()}"
-      style="margin:0 0 10px;padding:10px 12px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:10px;font-size:12.5px;color:#7A5A18;line-height:1.6;cursor:pointer;text-align:center">
+      style="margin:0 0 10px;padding:10px 12px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;font-size:14px;color:#7A5A18;line-height:1.6;cursor:pointer;text-align:center">
       🎁 친구를 초대하면 친구도 나도 <b>9,900P</b> · 포인트로 전액 결제돼요 <u>친구에게 보내기</u></div>
     <div id="mileUseBox"></div>
     <!-- ★ 입금자 이름은 계좌이체용이라 같이 숨긴다. 카드 결제는 안 쓴다. -->
-    <input id="depositorName" hidden placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
+    <input id="depositorName" hidden placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
     <!-- [2026-10-12] 카드 결제(토스페이먼츠)만 받는다. 일구미 q_certlagi5t · 카드사 여덟 승인. -->
     <button class="btn-payment" id="btnCardPay" onclick="startCardPayment()"
       style="background:linear-gradient(135deg,#185FA5,#0C447C)">💳 카드로 결제</button>
@@ -761,14 +761,14 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=821fca39"></script>
-<script defer src="index-2-engine.js?v=d632aafc"></script>
+<script defer src="index-1-auth.js?v=b565e4c7"></script>
+<script defer src="index-2-engine.js?v=243bcf58"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=e9ebd33a"></script>
-<script defer src="index-3-mcq.js?v=542b6650"></script>
-<script defer src="index-4-learn.js?v=c2ca6392"></script>
-<script defer src="index-5-shell.js?v=e794554e"></script>
+<script defer src="index-3-mcq.js?v=6d0621cc"></script>
+<script defer src="index-4-learn.js?v=832427c7"></script>
+<script defer src="index-5-shell.js?v=cc895026"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
@@ -776,7 +776,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 </div>
 <div id="printArea"></div>
 <script defer src="index-6-adaptive.js?v=5a714ecb"></script>
-<script defer src="community.js?v=412d8ef5"></script>
+<script defer src="community.js?v=de5ef1b4"></script>
 <script defer src="calc-render.js?v=a7d9019a"></script>
 </body>
 </html>

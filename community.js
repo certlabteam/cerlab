@@ -357,7 +357,7 @@ async function cmAddComment(){
 }
 async function cmDeleteComment(cid){
   if(!cmCurPost) return;
-  if(!confirm('댓글을 삭제할까요?')) return;
+  if(!(await clConfirm('댓글을 삭제할까요?', '삭제'))) return;
   var pref=db.collection('posts').doc(cmCurPost._id);
   try{
     await pref.collection('comments').doc(cid).delete();
@@ -368,7 +368,7 @@ async function cmDeleteComment(cid){
 }
 async function cmDeletePost(){
   if(!cmCurPost) return;
-  if(!confirm('이 글을 삭제할까요? 삭제하면 되돌릴 수 없어요.')) return;
+  if(!(await clConfirm('이 글을 삭제할까요? 삭제하면 되돌릴 수 없어요.', '삭제'))) return;
   var _prevBal=(typeof mileageBalance==='function')?mileageBalance(myMileageLots):0;
   try{
     await db.collection('posts').doc(cmCurPost._id).delete(); cmInvalidateCache();

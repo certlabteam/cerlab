@@ -1306,3 +1306,12 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .dg-switch .dg-switch-knob::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s;box-shadow:0 1px 3px rgba(15,23,42,.3)}
 .dg-switch.on{color:#185FA5}.dg-switch.on .dg-switch-knob{background:#185FA5}.dg-switch.on .dg-switch-knob::after{transform:translateX(16px)}
 .dg-switch.dis{opacity:.45;cursor:not-allowed}
+
+/* [2026-10-15] 자체 확인 창(clNotice·clConfirm) — 기본 alert·confirm 대신(UIUX_모바일 5부 다) */
+.cl-dlg-ov{position:fixed;inset:0;z-index:100001;background:rgba(20,28,40,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.cl-dlg{background:#fff;border-radius:16px;max-width:360px;width:100%;padding:24px 20px 16px;box-shadow:0 16px 44px rgba(0,0,0,.2)}
+.cl-dlg-msg{font-size:16px;line-height:1.6;color:#2C2C2A;white-space:pre-line;word-break:keep-all;overflow-wrap:break-word;max-height:60vh;overflow:auto}
+.cl-dlg-btns{display:flex;gap:8px;margin-top:20px}
+.cl-dlg-btns button{flex:1;height:48px;border:0;border-radius:12px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.cl-dlg-ok{background:#185FA5;color:#fff}
+.cl-dlg-no{background:#F1F4F8;color:#2C2C2A}

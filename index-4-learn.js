@@ -517,7 +517,7 @@ function expNoteHTML(text, q){
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
 function _jaryoDots(html){
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
-  return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 5px 0 2px;position:relative;top:-1px">\u25CF</span>');
+  return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 4px 0 2px;position:relative;top:-1px">\u25CF</span>');
 }
 // [ADD 2026-07] 현가/연금 계수 블록을 표로 렌더 — q(불변)는 그대로 두고 화면만 (기간×이자율) 표로 정리.
 //  대괄호 안에 '현가계수/연금현가/할인계수' + 'N기간 R%값' 항목이 있을 때만 변환. 파싱 실패 시 원문 유지(안전).
@@ -1349,7 +1349,7 @@ function renderMcqExam(root){
   if(isSA(q)){ renderSaExam(root,q,qs,pct,examName,examSet+qCtx); return; }
   if(q && q.type==='SA' && !isSA(q)){   // type=SA인데 blanks 유실 → 객관식 오인 방지, 데이터 오류 조기 경고
     root.innerHTML='<div class="exam-sticky"><div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="\uB4A4\uB85C">'+BACK_ARROW+'</button><div class="exam-ti"><div class="nm">'+examName+'</div><div class="st">'+examSet+'</div></div></div></div>'+
-      '<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:14px;line-height:1.6">\u26A0\uFE0F \uC8FC\uAD00\uC2DD(SA) \uBB38\uD56D\uC778\uB370 blanks\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uB370\uC774\uD130 \uD655\uC778 \uD544\uC694 ('+(q.id||'')+')</div>';
+      '<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:12px;color:#A32D2D;font-weight:700;font-size:14px;line-height:1.6">\u26A0\uFE0F \uC8FC\uAD00\uC2DD(SA) \uBB38\uD56D\uC778\uB370 blanks\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uB370\uC774\uD130 \uD655\uC778 \uD544\uC694 ('+(q.id||'')+')</div>';
     return;
   }
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
@@ -1539,7 +1539,7 @@ function renderMcqExam(root){
       mnList.forEach(function(mn){ _cards=_cards.concat(mnBoxCards(mnResolve(mn))); });
       _cards.forEach(function(cd,i){
         var extra=i>0?' mn-box-extra':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':'';
-        if(cd.broken){ body+='<div class="mn-box'+extra+'">'+ti+'<div class="mn-code" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+cd.ref+' (마스터에 없음)</div></div>'; return; }
+        if(cd.broken){ body+='<div class="mn-box'+extra+'">'+ti+'<div class="mn-code" style="color:#A32D2D;font-size:14px">⚠️ 참조 오류: mn://'+cd.ref+' (마스터에 없음)</div></div>'; return; }
         var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
         body+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
       });
@@ -1549,7 +1549,7 @@ function renderMcqExam(root){
       body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it,ci){
         if(!it||!it.t) return '';
         var _aiOff=(typeof AI_OFF!=='undefined' && AI_OFF);
-        var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span>'+(_aiOff?'':'<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:11px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button>')+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
+        var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span>'+(_aiOff?'':'<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:12px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button>')+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd">💡 '+rm(String(it.exd).trim(),q)+'</div>';
@@ -1648,11 +1648,11 @@ function mqPick(qid,n){
       if(!mqLevelTest && typeof adEloUpdate==='function' && _eloCanApply(mqCert,q)){ adEloUpdate(q, _sawExp ? false : _corr); _eloMarkApplied(mqCert,q); }   // 해설 먼저 봄 → Elo 강제 오답, 아니면 정답/오답 그대로
       if(_sawExp && _corr && !mqLevelTest && !localStorage.getItem('certlab_info_expElo')){   // 해설 보고 정답 누름 → 오답 처리 안내(최초1회)
         try{ localStorage.setItem('certlab_info_expElo','1'); }catch(_){}
-        setTimeout(function(){ _infoModal('<div style="font-size:34px;margin-bottom:8px">📖</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>'); }, 300);
+        setTimeout(function(){ _infoModal('<div style="font-size:36px;margin-bottom:8px">📖</div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>'); }, 300);
       }
       if(mqLevelUp && firstTime && _corr && !_sawExp && _preBlk && !localStorage.getItem('certlab_info_reapplyElo')){   // 오늘 이미 채점된 문제(시간초과 포함) 재풀이 정답 → 안내(최초1회)
         try{ localStorage.setItem('certlab_info_reapplyElo','1'); }catch(_){}
-        setTimeout(function(){ _infoModal('<div style="font-size:34px;margin-bottom:8px">🔄</div><div style="font-size:15.5px;font-weight:800;color:#0C447C;margin-bottom:8px">오늘 이미 채점된 문제예요</div><div style="font-size:13px;color:#3A4A5E;line-height:1.75">시간초과됐거나 오늘 이미 푼 문제는 <b>다시 풀어도 오늘은 반영되지 않아요.</b><br>내일 다시 풀면 반영됩니다!</div>'); }, 300);
+        setTimeout(function(){ _infoModal('<div style="font-size:36px;margin-bottom:8px">🔄</div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">오늘 이미 채점된 문제예요</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">시간초과됐거나 오늘 이미 푼 문제는 <b>다시 풀어도 오늘은 반영되지 않아요.</b><br>내일 다시 풀면 반영됩니다!</div>'); }, 300);
       }
       if(mqLevelUp && firstTime){   // 게이미피케이션 콤보: 레벨업 풀이중·첫 응답만(기출/복습/찍음 제외)
         if(mqGuess[qid]){ /* 🎲 찍음: 콤보 끊지 않고 보류 */ }

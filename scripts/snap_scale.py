@@ -5,20 +5,22 @@
   여백   가까운 칸 · 같으면 작은 쪽(폰 자리)
   둥글기 가까운 칸(일구미 표와 같은 쪽) · 99·999(알약)은 그대로
   #printArea(시험장 인쇄 · A4 접기 맞춤) 줄은 건드리지 않는다.
-쓰는 법: cerlab 폴더에서  python scripts/snap_scale.py [--보기]
+쓰는 법: cerlab 폴더에서  python scripts/snap_scale.py [파일 …] [--보기]   (파일을 안 주면 CSS 둘)
 되돌릴 원본: certlab 컨텐츠/_디자인/_백업_피그마계단_20261014/
 """
 import re, sys
 
-FONT = {10: 12, 10.5: 12, 11: 12, 12.5: 14, 13: 14, 13.5: 14, 14.5: 16, 15: 16, 17: 18, 19: 20,
+FONT = {9: 12, 9.5: 12, 10: 12, 10.5: 12, 11: 12, 11.5: 12, 15.5: 16, 16.5: 18, 17.5: 18, 18.5: 20, 12.5: 14, 13: 14, 13.5: 14, 14.5: 16, 15: 16, 17: 18, 19: 20,
         21: 20, 22: 24, 25: 24, 26: 24, 32: 30, 34: 36, 38: 36, 40: 36, 44: 48, 46: 48, 52: 48}
 RAD = {1: 2, 3: 4, 5: 4, 7: 6, 9: 8, 10: 12, 11: 12, 13: 12, 14: 12, 18: 16, 20: 24, 30: 24}
 SPACE = {3: 2, 5: 4, 7: 6, 9: 8, 11: 10, 13: 12, 15: 14, 18: 16, 22: 20, 26: 24, 30: 28,
          34: 32, 58: 56, 84: 80, 86: 80}
-RULES = [('글자', re.compile(r'(font-size:\s*)([^;"`}]+)'), FONT),
-         ('둥글기', re.compile(r'(border-radius:\s*)([^;"`}]+)'), RAD),
-         ('여백', re.compile(r'((?:padding|margin|gap|row-gap|column-gap)(?:-[a-z]+)?:\s*)([^;"`}]+)'), SPACE)]
-FILES = ['style.css', 'subjective-responsive.css']
+# [2026-10-15] 인라인(JS·HTML 안 style="…")도 맞춘다 — 크리스 「디자인 스타일 메뉴얼이랑 다른거 없나 … 어디든」.
+#   JS 문자열은 ' 로 끝나므로 값 끝에 ' 도 넣는다(안 넣으면 '+변수+' 너머의 px 까지 잡는다).
+RULES = [('글자', re.compile(r"(font-size:\s*)([^;\"'`}]+)"), FONT),
+         ('둥글기', re.compile(r"(border-radius:\s*)([^;\"'`}]+)"), RAD),
+         ('여백', re.compile(r"((?:padding|margin|gap|row-gap|column-gap)(?:-[a-z]+)?:\s*)([^;\"'`}]+)"), SPACE)]
+FILES = [a for a in sys.argv[1:] if not a.startswith('--')] or ['style.css', 'subjective-responsive.css']
 보기만 = '--보기' in sys.argv
 셈 = {}
 

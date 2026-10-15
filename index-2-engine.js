@@ -454,8 +454,8 @@ function tblResolve(ref){
 function tipEnsureCSS(){
   if(document.getElementById('tip-css')) return;
   var s=document.createElement('style'); s.id='tip-css';
-  s.textContent='.tip-box{border:1px solid #E2E8F0;border-radius:10px;padding:11px 13px;margin:12px 0;background:#fff;font-size:12.5px;line-height:1.62;color:#0F172A}'
-    +'.tip-box .tip-ti{font-weight:800;font-size:12.5px;color:#0F172A;margin-bottom:5px;letter-spacing:-.2px}'
+  s.textContent='.tip-box{border:1px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin:12px 0;background:#fff;font-size:14px;line-height:1.62;color:#0F172A}'
+    +'.tip-box .tip-ti{font-weight:800;font-size:14px;color:#0F172A;margin-bottom:4px;letter-spacing:-.2px}'
     +'.tip-box .tip-body{color:#334155}'
     +'.tip-box .tip-k{color:#C0392B;font-weight:700}';
   document.head.appendChild(s);
@@ -562,21 +562,21 @@ function itvEnsureCSS(){
   var s=document.createElement('style'); s.id='itv-css';
   s.textContent=[
     /* 공통 */
-    '.itv-box{border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin:10px 0;font-size:13px;line-height:1.6;color:#0F172A;max-width:100%;min-width:0}',
+    '.itv-box{border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin:10px 0;font-size:14px;line-height:1.6;color:#0F172A;max-width:100%;min-width:0}',
     '.itv-ti{font-weight:800;font-size:14px;margin-bottom:8px}',
-    '.itv-def{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:11px;font-size:12.5px;color:#334155;margin:0 0 10px}',
-    '.itv-def b{color:#0F172A}.itv-def .term{display:block;margin:3px 0}',
+    '.itv-def{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px;font-size:14px;color:#334155;margin:0 0 10px}',
+    '.itv-def b{color:#0F172A}.itv-def .term{display:block;margin:2px 0}',
     '.itv-defd{margin:0 0 10px}.itv-defd summary{font-size:12px;color:#64748B;cursor:pointer;font-weight:700}',
-    '.itv-story{font-size:12.5px;margin:0 0 12px;color:#334155}',
+    '.itv-story{font-size:14px;margin:0 0 12px;color:#334155}',
     '.itv-ctrl{display:flex;align-items:center;gap:10px;margin:6px 0 2px}',
-    '.itv-ctrl label{font-size:13px;font-weight:700;white-space:nowrap}',
+    '.itv-ctrl label{font-size:14px;font-weight:700;white-space:nowrap}',
     '.itv-ctrl input[type=range]{flex:1;accent-color:#C0392B;height:30px}',
     '.itv-rate{font-size:18px;font-weight:800;color:#C0392B;min-width:54px;text-align:right;font-variant-numeric:tabular-nums}',
-    '.itv-hint{font-size:11px;color:#64748B;margin:2px 0 0}',
-    '.itv-say{margin:13px 0 6px;padding:13px;border-radius:10px;background:#FFF7F5;border:1px solid #F3D6CF;font-size:14px;line-height:1.65}',
-    '.itv-say .h{font-weight:800;margin-bottom:4px}.itv-say .w{color:#334155;font-size:13px}',
+    '.itv-hint{font-size:12px;color:#64748B;margin:2px 0 0}',
+    '.itv-say{margin:12px 0 6px;padding:12px;border-radius:12px;background:#FFF7F5;border:1px solid #F3D6CF;font-size:14px;line-height:1.65}',
+    '.itv-say .h{font-weight:800;margin-bottom:4px}.itv-say .w{color:#334155;font-size:14px}',
     '.itv-k{color:#C0392B;font-weight:700}',
-    '.itv-tip{font-size:12px;color:#334155;background:#F8FAFC;border:1px dashed #E2E8F0;border-radius:8px;padding:9px;margin:8px 0 2px;min-height:18px}.itv-tip b{color:#0F172A}',
+    '.itv-tip{font-size:12px;color:#334155;background:#F8FAFC;border:1px dashed #E2E8F0;border-radius:8px;padding:8px;margin:8px 0 2px;min-height:18px}.itv-tip b{color:#0F172A}',
     /* T1 막대(NPV) */
     '.itv-t1bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}',
     '.itv-t1bar .lab{width:86px;flex:none;font-weight:700}',
@@ -584,64 +584,64 @@ function itvEnsureCSS(){
     '.itv-t1track .mid{position:absolute;top:0;bottom:0;left:50%;width:1px;background:#94A3B8}',
     '.itv-t1fill{position:absolute;top:0;bottom:0;border-radius:6px;transition:all .08s linear}.itv-t1fill.neg{opacity:.55}',
     '.itv-bv{width:84px;flex:none;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}',
-    '.itv-det{margin-top:12px;border-top:1px solid #E2E8F0;padding-top:10px}.itv-det summary{font-size:12.5px;color:#64748B;cursor:pointer}',
+    '.itv-det{margin-top:12px;border-top:1px solid #E2E8F0;padding-top:10px}.itv-det summary{font-size:14px;color:#64748B;cursor:pointer}',
     '.itv-det svg{width:100%;height:auto;display:block;margin-top:8px}',
-    '.itv-legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:11px;color:#334155;margin-top:6px}',
-    '.itv-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}',
+    '.itv-legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:12px;color:#334155;margin-top:6px}',
+    '.itv-legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}',
     /* T5 막대(재고) */
-    '.itv-mb{margin:14px 0 4px}.itv-mb .mh{font-size:13px;font-weight:800;margin-bottom:5px}',
+    '.itv-mb{margin:14px 0 4px}.itv-mb .mh{font-size:14px;font-weight:800;margin-bottom:4px}',
     '.itv-mb.fifo .mh{color:#3B82F6}.itv-mb.wavg .mh{color:#10A37F}',
-    '.itv-caps{display:flex;justify-content:space-between;font-size:11px;font-weight:700;margin-bottom:3px}',
+    '.itv-caps{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:2px}',
     '.itv-caps .cl{color:#0F172A}.itv-caps .cr{color:#64748B}.itv-caps .amt{font-weight:800}',
     '.itv-bar{position:relative;height:38px;border-radius:8px;overflow:hidden;border:1px solid #E2E8F0;background:#fff;user-select:none}',
-    '.itv-seg{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#334155;border-right:1px solid #9AAEC6;cursor:pointer;overflow:hidden;text-align:center;line-height:1.12;padding:0 1px}',
+    '.itv-seg{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:#334155;border-right:1px solid #9AAEC6;cursor:pointer;overflow:hidden;text-align:center;line-height:1.12;padding:0 1px}',
     '.itv-mb .itv-bar .itv-seg:last-of-type{border-right:none}',
     '.itv-bound{position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed #5B6B82;pointer-events:none;z-index:2}',
-    '.itv-seg .sl{font-weight:800;color:#1f2d3d}.itv-seg .sq{font-weight:700}.itv-seg .sp{font-size:9px;color:#64748B;font-weight:600}',
+    '.itv-seg .sl{font-weight:800;color:#1f2d3d}.itv-seg .sq{font-weight:700}.itv-seg .sp{font-size:12px;color:#64748B;font-weight:600}',
     '.itv-mb.fifo .itv-seg{background:#E7F0FB}.itv-mb.wavg .itv-seg{background:#E6F4EF}',
     '.itv-kept{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(148,163,184,.20),rgba(148,163,184,.20) 5px,rgba(148,163,184,.32) 5px,rgba(148,163,184,.32) 10px);transition:left .3s ease,width .3s ease;pointer-events:none}',
     '.itv-div{position:absolute;top:-2px;bottom:-2px;width:2px;background:#C0392B;transition:left .3s ease;pointer-events:none}',
-    '.itv-div:after{content:"";position:absolute;left:-4px;top:50%;width:10px;height:10px;margin-top:-5px;background:#C0392B;border-radius:50%}',
-    '.itv-cmp{width:100%;border-collapse:collapse;font-size:12.5px;margin:12px 0 4px;table-layout:fixed}',
-    '.itv-cmp th,.itv-cmp td{border-bottom:1px solid #E2E8F0;padding:7px 4px;text-align:right;vertical-align:top;word-break:keep-all}',
+    '.itv-div:after{content:"";position:absolute;left:-4px;top:50%;width:10px;height:10px;margin-top:-4px;background:#C0392B;border-radius:50%}',
+    '.itv-cmp{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0 4px;table-layout:fixed}',
+    '.itv-cmp th,.itv-cmp td{border-bottom:1px solid #E2E8F0;padding:6px 4px;text-align:right;vertical-align:top;word-break:keep-all}',
     '.itv-cmp th:first-child,.itv-cmp td:first-child{text-align:left}',
-    '.itv-cmp thead th{color:#64748B;font-weight:700;font-size:11.5px}',
+    '.itv-cmp thead th{color:#64748B;font-weight:700;font-size:12px}',
     '.itv-cmp tbody td{color:#0F172A;font-weight:800}.itv-cmp tbody td:first-child{font-weight:600;color:#64748B}',
     '.itv-cmp tbody tr.rfifo td:first-child{box-shadow:inset 3px 0 0 #3B82F6;padding-left:8px}',
     '.itv-cmp tbody tr.rwavg td:first-child{box-shadow:inset 3px 0 0 #10A37F;padding-left:8px}',
-    '.itv-cmp .diff td{color:#C0392B;font-weight:700;border-bottom:none;font-size:11.5px}',
+    '.itv-cmp .diff td{color:#C0392B;font-weight:700;border-bottom:none;font-size:12px}',
     '.qtbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0}',
-    '.qtbl{border-collapse:collapse;width:100%;font-size:13px;background:#fff;margin:6px 0}',
+    '.qtbl{border-collapse:collapse;width:100%;font-size:14px;background:#fff;margin:6px 0}',
     '.qtbl caption{caption-side:top;text-align:left;font-size:12px;font-weight:700;color:#475569;padding:4px 2px}',
-    '.qtbl th,.qtbl td{border:1px solid #D9E2EC;padding:6px 9px;text-align:center;vertical-align:top;line-height:1.5;word-break:keep-all}',
+    '.qtbl th,.qtbl td{border:1px solid #D9E2EC;padding:6px 8px;text-align:center;vertical-align:top;line-height:1.5;word-break:keep-all}',
     '.qtbl th{background:#EEF3F9;font-weight:700;color:#0F172A;white-space:nowrap}',
     '.qtbl td:first-child,.qtbl th:first-child{text-align:left}',
     '.qtbl-wrap .qtbl+.qtbl{margin-top:10px}',
-    '.itv-mlegend{font-size:11px;color:#64748B;text-align:center;margin:4px 0 0}',
+    '.itv-mlegend{font-size:12px;color:#64748B;text-align:center;margin:4px 0 0}',
     '.itv-tl-era{font-size:12px;font-weight:700;color:#334155;margin:2px 0 6px}',
     '.itv-tl-scroll{display:block;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;border:1px solid #F1F5F9;border-radius:8px;background:#fff}',
     '.itv-tl-track{position:relative}',
     '.itv-tl-line{position:absolute;top:14px;left:0;right:0;height:2px;background:#CBD5E1}',
     '.itv-tl-band{position:absolute;top:11px;height:8px;background:#EEF2F7}.itv-tl-band.alt{background:#E2E8F0}',
-    '.itv-tl-plab{position:absolute;top:26px;font-size:9px;color:#64748B;transform:translateX(-50%);white-space:nowrap}',
+    '.itv-tl-plab{position:absolute;top:26px;font-size:12px;color:#64748B;transform:translateX(-50%);white-space:nowrap}',
     '.itv-tl-dot{position:absolute;top:9px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #94A3B8;transform:translateX(-50%);cursor:pointer;z-index:2;transition:all .15s}',
     '.itv-tl-dot.on{background:#C0392B;border-color:#C0392B;width:16px;height:16px;top:7px}',
-    '.itv-tl-tip{position:absolute;bottom:150%;left:50%;transform:translateX(-50%);white-space:nowrap;background:#0F172A;color:#fff;font-size:10px;font-weight:600;padding:3px 7px;border-radius:6px;opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none;z-index:9;box-shadow:0 2px 6px rgba(0,0,0,.18)}',
+    '.itv-tl-tip{position:absolute;bottom:150%;left:50%;transform:translateX(-50%);white-space:nowrap;background:#0F172A;color:#fff;font-size:12px;font-weight:600;padding:2px 6px;border-radius:6px;opacity:0;visibility:hidden;transition:opacity .12s;pointer-events:none;z-index:9;box-shadow:0 2px 6px rgba(0,0,0,.18)}',
     '.itv-tl-tip:after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#0F172A}',
     '.itv-tl-dot:hover .itv-tl-tip{opacity:1;visibility:visible}',
     '.itv-tl-dot:hover{border-color:#C0392B;z-index:8}',
     '.itv-tl-nav{flex:none;width:34px;height:30px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;font-size:12px;cursor:pointer;color:#334155}',
-    '.itv-tl-top{position:sticky;top:0;z-index:5;background:#fff;padding:6px 0 5px;border-bottom:1px solid #EEF2F7}',
-    '.itv-tl-cur{font-size:11px;color:#C0392B;font-weight:700;margin-top:4px;text-align:center}',
+    '.itv-tl-top{position:sticky;top:0;z-index:5;background:#fff;padding:6px 0 4px;border-bottom:1px solid #EEF2F7}',
+    '.itv-tl-cur{font-size:12px;color:#C0392B;font-weight:700;margin-top:4px;text-align:center}',
     '.itv-tl-list{margin-top:10px;max-height:60vh;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}',
     '.itv-tl-tip{display:none}',
-    '.itv-ev{border:1px solid #E2E8F0;border-left:3px solid #E2E8F0;border-radius:10px;padding:11px 12px;margin:8px 0;background:#fff;scroll-margin-top:100px;transition:border-color .2s,background .2s}',
+    '.itv-ev{border:1px solid #E2E8F0;border-left:3px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin:8px 0;background:#fff;scroll-margin-top:100px;transition:border-color .2s,background .2s}',
     '.itv-ev.on{border-left-color:#C0392B;background:#FFF7F5}',
-    '.itv-ev .evy{font-size:12px;color:#64748B}.itv-ev .evy b{color:#C0392B;font-size:15px}',
-    '.itv-ev .evt{font-size:14px;font-weight:800;margin:3px 0 5px}',
-    '.itv-ev .evs{font-size:13px;color:#334155;line-height:1.6}',
+    '.itv-ev .evy{font-size:12px;color:#64748B}.itv-ev .evy b{color:#C0392B;font-size:16px}',
+    '.itv-ev .evt{font-size:14px;font-weight:800;margin:2px 0 4px}',
+    '.itv-ev .evs{font-size:14px;color:#334155;line-height:1.6}',
     '.itv-ev .evk{font-size:12px;color:#C0392B;font-weight:700;margin-top:6px}',
-    '.itv-ev .evr{margin-top:6px}.itv-ev .evr .rftag{font-size:11px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:2px 7px}'
+    '.itv-ev .evr{margin-top:6px}.itv-ev .evr .rftag{font-size:12px;color:#64748B;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:6px;padding:2px 6px}'
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -948,7 +948,7 @@ function buildMnemonic(card){
   // 단일 항목(문자열/객체)을 암기코드 한 박스로 — 배열 지원을 위한 내부 헬퍼
   function oneMn(item){
     const _r=mnResolve(item);
-    if(_r.broken){ return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div><div class="learn-section-body" style="color:#A32D2D;font-size:12.5px">⚠️ 참조 오류: mn://'+_r.ref+' (마스터에 없음)</div></div>'; }
+    if(_r.broken){ return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div><div class="learn-section-body" style="color:#A32D2D;font-size:14px">⚠️ 참조 오류: mn://'+_r.ref+' (마스터에 없음)</div></div>'; }
     var cards=mnBoxCards(_r);
     if(!cards.length) return '';
     var inner=cards.map(function(cd,i){
@@ -1175,7 +1175,7 @@ function updateBbAnalysis(){
       +'<span class="anal-pct">'+(sc==null?'-':sc+'%')+'</span></div>';
   }).join('');
   el.innerHTML='<div class="anal-card"><div class="anal-top"><b>📊 내 실력 분석</b>'
-    +'<span style="font-size:11px;color:#B4A99C">숙달 '+a.cnt.master+' · 학습중 '+a.cnt.learning+' · 미숙 '+a.cnt.weak+'</span></div>'
+    +'<span style="font-size:12px;color:#B4A99C">숙달 '+a.cnt.master+' · 학습중 '+a.cnt.learning+' · 미숙 '+a.cnt.weak+'</span></div>'
     +'<div class="anal-score"><div class="anal-pred">'+a.predicted+'<small>점</small></div>'
     +'<div class="anal-lv" style="color:'+lv.color+'">'+lv.label+'</div></div>'
     +'<div class="anal-bars">'+bars+'</div>'
@@ -1312,8 +1312,8 @@ function shuffle(){
   shuffleCards();
   current=0;isFlipped=false;learnOpen=false;refresh();
 }
-function resetWrong(){
-  if(!confirm('오답 표시를 모두 초기화할까요?'))return;
+async function resetWrong(){
+  if(!(await clConfirm('오답 표시를 모두 초기화할까요?', '초기화')))return;
   cards.forEach(c=>c.w=false);
   if(reviewMode){reviewMode=false;document.getElementById('btnReview').classList.remove('review-on');document.getElementById('modePill').className='mode-pill';document.getElementById('modePill').textContent='전체';}
   current=0;isFlipped=false;learnOpen=false;refresh();

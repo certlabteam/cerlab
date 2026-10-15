@@ -19,14 +19,14 @@ function _oxWarnShow(){
       var st=document.createElement('style'); st.id='oxWarnCss';
       st.textContent='#oxWarnPop{position:fixed;inset:0;z-index:100002;display:flex;align-items:center;justify-content:center;padding:24px}'
         +'#oxWarnPop .oxw-back{position:absolute;inset:0;background:rgba(20,24,31,.5)}'
-        +'#oxWarnPop .oxw-card{position:relative;background:#fff;border-radius:18px;padding:24px 22px 18px;max-width:340px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)}'
-        +'#oxWarnPop .oxw-ic{font-size:32px;margin-bottom:8px}'
+        +'#oxWarnPop .oxw-card{position:relative;background:#fff;border-radius:16px;padding:24px 20px 16px;max-width:340px;width:100%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.25)}'
+        +'#oxWarnPop .oxw-ic{font-size:30px;margin-bottom:8px}'
         +'#oxWarnPop .oxw-t{font-size:18px;font-weight:900;color:#1F2937;margin-bottom:8px}'
-        +'#oxWarnPop .oxw-s{font-size:13.5px;color:#6B7280;line-height:1.6;margin-bottom:10px}'
-        +'#oxWarnPop .oxw-note{font-size:12px;color:#94A3B8;line-height:1.55;background:#F7F9FC;border-radius:10px;padding:10px 12px;margin-bottom:16px;text-align:left}'
+        +'#oxWarnPop .oxw-s{font-size:14px;color:#6B7280;line-height:1.6;margin-bottom:10px}'
+        +'#oxWarnPop .oxw-note{font-size:12px;color:#94A3B8;line-height:1.55;background:#F7F9FC;border-radius:12px;padding:10px 12px;margin-bottom:16px;text-align:left}'
         +'#oxWarnPop .oxw-note b{color:#475569}'
-        +'#oxWarnPop .oxw-b1{width:100%;background:#0C447C;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14.5px;font-weight:800;cursor:pointer;margin-bottom:8px}'
-        +'#oxWarnPop .oxw-b2{width:100%;background:#F1F4F8;color:#475569;border:none;border-radius:12px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer;margin-bottom:6px}'
+        +'#oxWarnPop .oxw-b1{width:100%;background:#0C447C;color:#fff;border:none;border-radius:12px;padding:12px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:8px}'
+        +'#oxWarnPop .oxw-b2{width:100%;background:#F1F4F8;color:#475569;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:6px}'
         +'#oxWarnPop .oxw-b3{width:100%;background:none;color:#9AA1AD;border:none;padding:6px;font-size:12px;font-weight:600;cursor:pointer}';
       document.head.appendChild(st);
     }
@@ -107,9 +107,9 @@ function renderMqResultScreen(){
   // 레벨업 머리말: ⚡태그 + 레벨변동(+기록열람 시 날짜)
   var luHead='';
   if(M.lu){
-    luHead='<div style="margin:2px 0 5px"><span style="display:inline-block;background:#E0ECFA;color:#185FA5;font-size:11px;font-weight:800;border-radius:8px;padding:2px 8px">⚡ 레벨업</span>'
+    luHead='<div style="margin:2px 0 4px"><span style="display:inline-block;background:#E0ECFA;color:#185FA5;font-size:12px;font-weight:800;border-radius:8px;padding:2px 8px">⚡ 레벨업</span>'
       +((!M.luFromHist && M.luCombo>=2)?'<span class="lu-combo-recap">🔥 최고 콤보 '+M.luCombo+'</span>':'')+'</div>';
-    if(M.luFromHist && M.ts){ var _d=new Date(M.ts); luHead+='<div style="font-size:11px;color:#94A3B8;margin-bottom:3px">'+(_d.getMonth()+1)+'/'+_d.getDate()+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2)+'</div>'; }
+    if(M.luFromHist && M.ts){ var _d=new Date(M.ts); luHead+='<div style="font-size:12px;color:#94A3B8;margin-bottom:2px">'+(_d.getMonth()+1)+'/'+_d.getDate()+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2)+'</div>'; }
     var _lc=M.luChanges||[]; if(_lc.length){ var _lm=_lc.filter(function(c){return c.up;})[0]||_lc[0];
       if(!M.luFromHist){
         // 게이미피케이션: 레벨 변동 연출 스테이지(XP 바 + Lv 배지 + 컨페티)
@@ -122,12 +122,12 @@ function renderMqResultScreen(){
           +'<div class="lu-stage-desc">'+_sdesc+'</div>'
         +'</div>';
       } else {
-        luHead+='<div style="font-size:12.5px;font-weight:800;color:'+(_lm.up?'#2E9B5E':'#946200')+';margin-bottom:4px">'+(_lm.up?'🎉 ':'💪 ')+mqEsc(_lm.topic)+' Lv'+_lm.from+' → Lv'+_lm.to+'</div>';
+        luHead+='<div style="font-size:14px;font-weight:800;color:'+(_lm.up?'#2E9B5E':'#946200')+';margin-bottom:4px">'+(_lm.up?'🎉 ':'💪 ')+mqEsc(_lm.topic)+' Lv'+_lm.from+' → Lv'+_lm.to+'</div>';
       }
       if(!M.luFromHist && _lc.length>=2){   // 이번 라운드에 레벨이 바뀐 단원 전부 표시(오름 ▲ / 내림 ▼)
-        luHead+='<div style="margin:8px 0 2px"><div style="font-size:11px;font-weight:800;color:#8A7D6E;margin:0 2px 5px">📊 이번 라운드 단원 변동</div>'
+        luHead+='<div style="margin:8px 0 2px"><div style="font-size:12px;font-weight:800;color:#8A7D6E;margin:0 2px 4px">📊 이번 라운드 단원 변동</div>'
           +_lc.map(function(c){ var col=c.up?'#1E7A45':'#946200', bg=c.up?'#E6F4EC':'#FBF0D8', ar=c.up?'▲':'▼';
-            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:'+bg+';border-radius:9px;margin-bottom:5px"><span style="font-weight:900;font-size:12px;color:'+col+'">'+ar+'</span><span style="flex:1;font-size:12.5px;font-weight:700;color:#3C3C3A">'+mqEsc(c.topic)+'</span><span style="font-size:11.5px;font-weight:800;color:'+col+'">Lv'+c.from+' → Lv'+c.to+'</span></div>';
+            return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:'+bg+';border-radius:8px;margin-bottom:4px"><span style="font-weight:900;font-size:12px;color:'+col+'">'+ar+'</span><span style="flex:1;font-size:14px;font-weight:700;color:#3C3C3A">'+mqEsc(c.topic)+'</span><span style="font-size:12px;font-weight:800;color:'+col+'">Lv'+c.from+' → Lv'+c.to+'</span></div>';
           }).join('')+'</div>';
       }
     }
@@ -170,7 +170,7 @@ function renderMqResultScreen(){
     luHead+
     '<div class="rt">'+titleTxt+modeLbl+'</div>'+
     '<div class="rs">총 '+total+'문항 중 '+answered+'문항 응답'+(diag?' · 레벨 점수 '+pct+'점':'')+'</div>'+
-    ((M.otc>0||M.ots>0)?'<div class="rs" style="color:#C2410C">⏱ 시간종료 후 '+M.otc+'문항 · 추가 +'+mqFmt(M.ots)+' <span style="font-size:11px;color:#A89C8E">(예상점수 미반영)</span></div>':'')+
+    ((M.otc>0||M.ots>0)?'<div class="rs" style="color:#C2410C">⏱ 시간종료 후 '+M.otc+'문항 · 추가 +'+mqFmt(M.ots)+' <span style="font-size:12px;color:#A89C8E">(예상점수 미반영)</span></div>':'')+
     '<div class="sc"><div><div class="v ok">'+correct+'</div><div class="l">정답</div></div>'+
     '<div><div class="v bad">'+(answered-correct)+'</div><div class="l">오답</div></div>'+
     '<div><div class="v none">'+(total-answered)+'</div><div class="l">미응답</div></div>'+
@@ -344,7 +344,7 @@ async function enterCert(id, noGate){
   // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
   if(!loadedExams[id]){
     var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
-    if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px"><button onclick="goHome()" aria-label="홈" style="border:none;background:none;font-size:22px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1">←</button><span style="font-size:15px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
+    if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px"><button onclick="goHome()" aria-label="홈" style="border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1">←</button><span style="font-size:16px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
     try{ await loadExam(id); }
     catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
     if(id==='bodybuilding'){ cards=[...D]; filtered=[...cards]; current=0; }
@@ -537,24 +537,24 @@ function openFirstRunPicker(){
   var css = [
     '#frPick{position:fixed;inset:0;z-index:9999;background:rgba(12,18,24,.62);display:flex;align-items:flex-end;justify-content:center}',
     '#frPickBox{background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.28)}',
-    '#frPickHd{position:relative;padding:22px 22px 14px;border-bottom:1px solid #EAEEF2}',
-    '#frPickX{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;background:transparent;color:#5F5E5A;font-size:22px;line-height:1;cursor:pointer;border-radius:0;padding:0;display:flex;align-items:center;justify-content:center}',
+    '#frPickHd{position:relative;padding:20px 20px 14px;border-bottom:1px solid #EAEEF2}',
+    '#frPickX{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;background:transparent;color:#5F5E5A;font-size:24px;line-height:1;cursor:pointer;border-radius:0;padding:0;display:flex;align-items:center;justify-content:center}',
     '#frPickX:hover{background:transparent;color:#16202B}',
     '#frPickX:focus-visible{outline:2px solid #1D4E6B;outline-offset:-2px}',
     '#frPickHd h3{margin:0 0 6px;padding-right:44px;font-size:20px;font-weight:800;color:#16202B;word-break:keep-all}',
     '#frPickHd p{margin:0;font-size:14px;color:#61707E;word-break:keep-all}',
-    '#frPickQ{width:100%;margin-top:14px;padding:11px 13px;font:inherit;font-size:15px;border:1px solid #D5DCE3;border-radius:9px;background:#F7F9FB;color:#16202B;box-sizing:border-box}',
+    '#frPickQ{width:100%;margin-top:14px;padding:10px 12px;font:inherit;font-size:16px;border:1px solid #D5DCE3;border-radius:8px;background:#F7F9FB;color:#16202B;box-sizing:border-box}',
     '#frPickQ:focus{outline:2px solid #1D4E6B;outline-offset:-2px;background:#fff}',
     '#frPickList{overflow-y:auto;padding:8px 10px 4px}',
-    '.frPickIt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:13px 12px;border:0;background:transparent;font:inherit;cursor:pointer;border-radius:10px}',
+    '.frPickIt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 12px;border:0;background:transparent;font:inherit;cursor:pointer;border-radius:12px}',
     '.frPickIt:hover,.frPickIt:focus-visible{background:#EFF4F8;outline:none}',
     '.frPickIt .ic{font-size:24px;flex:0 0 auto;line-height:1}',
     '.frPickIt .tx{min-width:0}',
-    '.frPickIt .n{font-size:15.5px;font-weight:700;color:#16202B}',
-    '.frPickIt .d{font-size:12.5px;color:#6B7A88;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-    '#frPickFt{padding:10px 22px 18px;border-top:1px solid #EAEEF2;text-align:center}',
-    '#frPickSkip{background:none;border:0;font:inherit;font-size:12.5px;color:#93A1AF;text-decoration:underline;cursor:pointer;padding:6px}',
-    '#frPickNone{padding:26px 12px;text-align:center;color:#8A98A6;font-size:14px}',
+    '.frPickIt .n{font-size:16px;font-weight:700;color:#16202B}',
+    '.frPickIt .d{font-size:14px;color:#6B7A88;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '#frPickFt{padding:10px 20px 16px;border-top:1px solid #EAEEF2;text-align:center}',
+    '#frPickSkip{background:none;border:0;font:inherit;font-size:14px;color:#93A1AF;text-decoration:underline;cursor:pointer;padding:6px}',
+    '#frPickNone{padding:24px 12px;text-align:center;color:#8A98A6;font-size:14px}',
     '@media(min-width:600px){#frPick{align-items:center}#frPickBox{border-radius:16px}}'
   ].join('');
   var st = document.createElement('style');
@@ -776,12 +776,12 @@ function renderSubjExam(root){
   var exam={ id:cert, name:examName, questions:list };
   var opts=_subjExamOpts(cert); opts.host=host; opts.mountId='subjRunMount'; opts.replace=false;
   if(!(window.CLSubj && CLSubj.openOne)){   // 구버전 subjective.js(=openOne 없음) → 조용히 튕기지 말고 원인 표시
-    host.innerHTML='<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:13.5px;line-height:1.7">⚠️ subjective.js 최신본이 필요합니다 (openOne 없음).<br>압축 푼 <b>subjective.js</b>를 올리고 <b>Ctrl+Shift+R</b>로 새로고침해 주세요.</div>';
+    host.innerHTML='<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:12px;color:#A32D2D;font-weight:700;font-size:14px;line-height:1.7">⚠️ subjective.js 최신본이 필요합니다 (openOne 없음).<br>압축 푼 <b>subjective.js</b>를 올리고 <b>Ctrl+Shift+R</b>로 새로고침해 주세요.</div>';
     return;
   }
   var okOpen;
   try{ okOpen=CLSubj.openOne(host, exam, idx, opts); }
-  catch(e){ console.error('subj openOne',e); host.innerHTML='<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;color:#A32D2D;font-weight:700;font-size:13px;line-height:1.7">문제를 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; return; }
+  catch(e){ console.error('subj openOne',e); host.innerHTML='<div style="margin:16px;padding:14px 16px;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:12px;color:#A32D2D;font-weight:700;font-size:14px;line-height:1.7">문제를 여는 중 오류: '+mqEsc(String(e&&e.message||e))+'</div>'; return; }
   if(okOpen===false){ mqBackHome(); return; }   // 무료 한도 게이트(로그인/결제 안내는 canAccessSubjective가 띄움) → 목록으로
   // [2026-08-11] 주관식도 문제별 단독 URL — 객관식은 index-4-learn.js 에서 하는데 그 코드는
   //   mqScreen==='exam' 조건이라 주관식('subjexam')은 여태 안 걸려 주소창이 안 바뀌었다.
@@ -1064,7 +1064,7 @@ function ensureMasters(){
 }
 /* ===== [임시] 로딩 성능 측정: ?perf=1 접속 시에만 동작 (측정 후 제거) ===== */
 var PERF=false; try{ if(/[?&]perf=1/.test(location.search)){ PERF=true; localStorage.setItem('certlab_perf','1'); } else if(localStorage.getItem('certlab_perf')==='1'){ PERF=true; } }catch(e){}
-function _perfShow(msg){ try{ var b=document.getElementById('_perfBox'); if(!b){ b=document.createElement('div'); b.id='_perfBox'; b.style.cssText='position:fixed;left:8px;right:8px;bottom:70px;z-index:100001;background:#0C447C;color:#fff;padding:10px 12px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:pre-wrap'; b.onclick=function(){ b.remove(); }; document.body.appendChild(b); b._lines=[]; } b._lines.unshift('⏱ '+msg); if(b._lines.length>8) b._lines.length=8; b.textContent=b._lines.join('\n')+'\n(탭하면 닫힘)'; }catch(e){} }
+function _perfShow(msg){ try{ var b=document.getElementById('_perfBox'); if(!b){ b=document.createElement('div'); b.id='_perfBox'; b.style.cssText='position:fixed;left:8px;right:8px;bottom:70px;z-index:100001;background:#0C447C;color:#fff;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:700;line-height:1.6;box-shadow:0 4px 16px rgba(0,0,0,.3);white-space:pre-wrap'; b.onclick=function(){ b.remove(); }; document.body.appendChild(b); b._lines=[]; } b._lines.unshift('⏱ '+msg); if(b._lines.length>8) b._lines.length=8; b.textContent=b._lines.join('\n')+'\n(탭하면 닫힘)'; }catch(e){} }
 async function loadExam(examId){
   if(loadedExams[examId]) return;
   if(loadingExams[examId]) return loadingExams[examId];   // 이미 로딩 중이면 같은 작업 공유
@@ -1147,12 +1147,12 @@ function showDataError(err){
   b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#b00020;color:#fff;padding:12px 10px;text-align:center;z-index:99999;font-size:14px;line-height:1.6';
   b.innerHTML='<div style="font-weight:700">문제를 불러오지 못했어요</div>'
     + '<div style="font-size:12px;opacity:.85;margin-top:2px">잠시 끊긴 것일 수 있어요. 한 번 더 눌러 보세요.</div>'
-    + '<button id="dataErrRetry" style="margin-top:8px;padding:9px 22px;background:#fff;color:#b00020;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">다시 시도</button>';
+    + '<button id="dataErrRetry" style="margin-top:8px;padding:8px 20px;background:#fff;color:#b00020;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">다시 시도</button>';
   var 코드='';
   try{ 코드=String((err && (err.code || err.name || err.message)) || '').slice(0,60); }catch(_){}
   if(코드){
     var c=document.createElement('div');
-    c.style.cssText='font-size:11px;opacity:.65;margin-top:6px';
+    c.style.cssText='font-size:12px;opacity:.65;margin-top:6px';
     c.textContent=코드;                                   // 오류 글은 textContent 로 — 그대로 넣으면 화면이 깨진다
     b.appendChild(c);
   }
@@ -1165,15 +1165,17 @@ showHome();
 /* ===== 폰 백버튼: 앱 안에서 단계적으로 뒤로 (실수 종료 방지) ===== */
 var clLastBack=0;
 function clOpenOverlay(){
+  var dl=document.querySelectorAll('.cl-dlg-ov'); if(dl.length){ var k=dl[dl.length-1].querySelector('.cl-dlg-no')||dl[dl.length-1].querySelector('.cl-dlg-ok'); return { classList:{ add:function(){ if(k) k.click(); } } }; }   // [2026-10-15] 자체 확인 창 — 뒤로 = 취소(알림은 확인)
   var ids=['conceptOfferPopup','reportSheet','csSheet','planPopup','refundPopup','loginPopup','inappPopup','milestoneBox','completeOv','userDropdown'];
   for(var i=0;i<ids.length;i++){ var el=document.getElementById(ids[i]); if(el && !el.classList.contains('hidden')) return el; }
   return null;
 }
 function clToast(msg){
   var t=document.getElementById('clToast');
-  if(!t){ t=document.createElement('div'); t.id='clToast'; t.style.cssText='position:fixed;left:50%;bottom:66px;transform:translateX(-50%);background:rgba(20,20,24,.92);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:700;z-index:100000;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap'; document.body.appendChild(t); }
-  t.textContent=msg; t.style.opacity='1';
-  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.opacity='0'; },1700);
+  /* [2026-10-15] UIUX_모바일 5부 나-1 — 길면 잘리던 한 줄(nowrap)을 풀고, 누르면 닫히고, 3초 띄운다 */
+  if(!t){ t=document.createElement('div'); t.id='clToast'; t.style.cssText='position:fixed;left:50%;bottom:66px;transform:translateX(-50%);max-width:calc(100% - 32px);width:max-content;box-sizing:border-box;background:rgba(20,20,24,.92);color:#fff;padding:10px 16px;border-radius:16px;font-size:14px;font-weight:700;line-height:1.5;text-align:center;z-index:100000;opacity:0;transition:opacity .2s;pointer-events:none'; t.onclick=function(){ t.style.opacity='0'; t.style.pointerEvents='none'; }; document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1'; t.style.pointerEvents='auto';
+  clearTimeout(t._h); t._h=setTimeout(function(){ t.style.opacity='0'; t.style.pointerEvents='none'; },3000);
 }
 // 글/댓글 작성 후 서버(Cloud Function) 적립분을 폴링해 +NP 토스트 + 잔액 캐시 갱신
 function clHandleBack(){
@@ -1291,15 +1293,15 @@ function _pushShowBanner(){
   if(!document.getElementById('pushBannerCss')){
     var st=document.createElement('style'); st.id='pushBannerCss';
     st.textContent='#pushBannerWrap{position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;justify-content:center;padding:0 12px calc(14px + env(safe-area-inset-bottom,0px));pointer-events:none}'
-      +'#pushBanner{pointer-events:auto;width:100%;max-width:440px;background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(31,41,55,.18);padding:16px 16px 14px;animation:pbUp .42s cubic-bezier(.22,1,.36,1)}'
+      +'#pushBanner{pointer-events:auto;width:100%;max-width:440px;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(31,41,55,.18);padding:16px 16px 14px;animation:pbUp .42s cubic-bezier(.22,1,.36,1)}'
       +'@keyframes pbUp{from{transform:translateY(130%);opacity:.3}to{transform:translateY(0);opacity:1}}'
       +'#pushBanner .pb-top{display:flex;gap:12px;align-items:flex-start}'
-      +'#pushBanner .pb-ic{flex:0 0 44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#EEF0FF,#E0E4FF);display:flex;align-items:center;justify-content:center;font-size:22px}'
-      +'#pushBanner .pb-title{font-size:15px;font-weight:800;color:#1F2937;margin:1px 0 3px}'
-      +'#pushBanner .pb-desc{font-size:12.5px;color:#6B7280;line-height:1.5}'
+      +'#pushBanner .pb-ic{flex:0 0 44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#EEF0FF,#E0E4FF);display:flex;align-items:center;justify-content:center;font-size:24px}'
+      +'#pushBanner .pb-title{font-size:16px;font-weight:800;color:#1F2937;margin:1px 0 2px}'
+      +'#pushBanner .pb-desc{font-size:14px;color:#6B7280;line-height:1.5}'
       +'#pushBanner .pb-x{flex:0 0 auto;border:none;background:none;color:#C3C9D4;font-size:20px;cursor:pointer;line-height:1;padding:0 2px}'
       +'#pushBanner .pb-btns{display:flex;gap:8px;margin-top:12px}'
-      +'#pushBanner .pb-btns button{flex:1;border:none;border-radius:11px;padding:11px;font-size:13.5px;font-weight:800;cursor:pointer}'
+      +'#pushBanner .pb-btns button{flex:1;border:none;border-radius:12px;padding:10px;font-size:14px;font-weight:800;cursor:pointer}'
       +'#pushBanner .pb-later{background:#F1F3F7;color:#8A93A3}'
       +'#pushBanner .pb-allow{background:linear-gradient(135deg,#5B6CF0,#4453D6);color:#fff}';
     document.head.appendChild(st);
@@ -1752,12 +1754,12 @@ function mpShowEnts(){
       var 날 = s.exp ? new Date(s.exp) : null;
       var 까지 = 날 ? (날.getFullYear()+'.'+(날.getMonth()+1)+'.'+날.getDate()) : '-';
       var 남음 = (s.글==='이용중' && s.exp) ? Math.ceil((s.exp - Date.now())/86400000) : 0;
-      h += '<div style="margin:0 16px 10px;padding:13px 14px;border:1px solid #E8E2DA;border-radius:12px;background:#fff">'
+      h += '<div style="margin:0 16px 10px;padding:12px 14px;border:1px solid #E8E2DA;border-radius:12px;background:#fff">'
         +   '<div style="display:flex;align-items:center;gap:8px">'
-        +     '<span style="font-size:14.5px;font-weight:700;color:#2B3A4B">'+cmEsc(certFull(x.cert)||x.cert)+'</span>'
-        +     '<span style="padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700;color:'+s.색+';background:'+s.바탕+'">'+s.글+'</span>'
+        +     '<span style="font-size:16px;font-weight:700;color:#2B3A4B">'+cmEsc(certFull(x.cert)||x.cert)+'</span>'
+        +     '<span style="padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;color:'+s.색+';background:'+s.바탕+'">'+s.글+'</span>'
         +   '</div>'
-        +   '<div style="margin-top:6px;font-size:13px;color:#5A6B7C">'
+        +   '<div style="margin-top:6px;font-size:14px;color:#5A6B7C">'
         +     cmEsc(mpPlanLabel(x.days)) + ' · ' + 까지 + ' 까지'
         +     (남음 > 0 ? ' <span style="color:#0F6E56">(' + 남음 + '일 남음)</span>' : '')
         +   '</div>'
@@ -1767,10 +1769,10 @@ function mpShowEnts(){
   /* [2026-10-15] 플레이 결제가 붙은 앱(TWA)에선 이 단추를 보인다 — 숨기면 앱 안에서 이용권 창을 열 길이 무료 한도뿐이다(크리스 「결제창이 안뜬다」) */
   var _payCls = (typeof _playReady === 'function' && _playReady()) ? '' : ' class="web-pay-only"';
   h += '<div'+_payCls+' style="margin:14px 16px 0"><button onclick="showPlanPopup()" '
-    +  'style="width:100%;padding:13px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;'
-    +  'border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">'
+    +  'style="width:100%;padding:12px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;'
+    +  'border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">'
     +  '🎫 ' + cmEsc(certFull(activeCertId())||'') + ' 이용권 구매·연장</button>'
-    +  '<div style="margin-top:7px;font-size:12px;color:#8A7D6E;text-align:center">'
+    +  '<div style="margin-top:6px;font-size:12px;color:#8A7D6E;text-align:center">'
     +  '지금 보고 있는 시험의 이용권을 삽니다. 다른 시험은 그 시험으로 옮긴 뒤 눌러 주세요.</div></div>';
   box.innerHTML = h;
 }
@@ -1793,9 +1795,9 @@ async function mpShowPayments(){
       var isCoupon=(p.paidByCoupon||p.discountCode);
       var cName=p.certName||certFull(p.certType||'')||'-';
       var plan=mpPlanName(p);
-      var amt=isCoupon ? '0원 <span style="font-size:11px;color:#0F6E56">🎟 '+cmEsc(p.discountCode||'할인코드')+'</span>'
+      var amt=isCoupon ? '0원 <span style="font-size:12px;color:#0F6E56">🎟 '+cmEsc(p.discountCode||'할인코드')+'</span>'
                        : (p.depositAmount!=null?p.depositAmount:(p.price||0)).toLocaleString()+'원';
-      var mil=(!isCoupon&&p.mileageUsed>0)?(' <span style="font-size:11px;color:#C2611B">(+P '+p.mileageUsed.toLocaleString()+')</span>'):'';
+      var mil=(!isCoupon&&p.mileageUsed>0)?(' <span style="font-size:12px;color:#C2611B">(+P '+p.mileageUsed.toLocaleString()+')</span>'):'';
       var st=mpPayStatus(p);
       var exp=mpExpiryText(p);
       var dt=(p.createdAt&&p.createdAt.toDate)?mpFmtDate(p.createdAt.toDate()):'';
@@ -1803,7 +1805,7 @@ async function mpShowPayments(){
         +'<div class="ht">'+cmEsc(cName)+' · '+plan
         +'<div class="hd">신청일 '+dt+(exp?(' · 만료 '+exp):'')+'</div></div>'
         +'<div style="text-align:right"><div style="font-weight:700;color:#2C2C2A">'+amt+mil+'</div>'
-        +'<div style="margin-top:3px">'+st+'</div></div></div>';
+        +'<div style="margin-top:2px">'+st+'</div></div></div>';
     });
     box.innerHTML=h;
   }catch(e){ console.warn('mpShowPayments',e); box.innerHTML=top+accBox+'<div class="cm-empty">불러오지 못했어요.</div>'; }
@@ -1824,14 +1826,14 @@ function mpExpiryText(p){
 }
 function mpPayStatus(p){
   var s=p.status;
-  if(s==='revoked') return '<span style="font-size:11px;font-weight:700;color:#A32D2D;background:#FCEBEB;padding:2px 8px;border-radius:10px">철회</span>';
-  if(s==='rejected') return '<span style="font-size:11px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:10px">거절</span>';
-  if(s==='pending') return '<span style="font-size:11px;font-weight:700;color:#A8650A;background:#FFF4E0;padding:2px 8px;border-radius:10px">승인대기</span>';
+  if(s==='revoked') return '<span style="font-size:12px;font-weight:700;color:#A32D2D;background:#FCEBEB;padding:2px 8px;border-radius:12px">철회</span>';
+  if(s==='rejected') return '<span style="font-size:12px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:12px">거절</span>';
+  if(s==='pending') return '<span style="font-size:12px;font-weight:700;color:#A8650A;background:#FFF4E0;padding:2px 8px;border-radius:12px">승인대기</span>';
   var ent=(window._cmUserDoc&&window._cmUserDoc.entitlements&&window._cmUserDoc.entitlements[p.certType])||null;
   var now=Date.now();
   var exp=ent&&ent.expireAt?(ent.expireAt.toDate?ent.expireAt.toDate().getTime():new Date(ent.expireAt).getTime()):0;
-  if(ent&&ent.plan==='ACTIVE'&&exp>now) return '<span style="font-size:11px;font-weight:700;color:#15793F;background:#E7F6EC;padding:2px 8px;border-radius:10px">이용중</span>';
-  return '<span style="font-size:11px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:10px">만료</span>';
+  if(ent&&ent.plan==='ACTIVE'&&exp>now) return '<span style="font-size:12px;font-weight:700;color:#15793F;background:#E7F6EC;padding:2px 8px;border-radius:12px">이용중</span>';
+  return '<span style="font-size:12px;font-weight:700;color:#A89C8E;background:#F0F0F0;padding:2px 8px;border-radius:12px">만료</span>';
 }
 function mpFmtDate(d){ return d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate(); }
 async function mpShowMyPosts(){
