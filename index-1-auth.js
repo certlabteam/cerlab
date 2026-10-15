@@ -140,6 +140,7 @@ function clInApp(){
     return sessionStorage.getItem('clInApp')==='1';
   }catch(_){ return false; }
 }
+clInApp();   // [2026-10-15] referrer 는 첫 화면에만 붙는다 — 읽자마자 세션에 적어 둔다(Play 결제·앱 혜택이 이것으로 가른다)
 var _appBase = null;
 async function tryAppBonus(){
   if(!currentUser || !fbFunctions || !db || !clInApp()) return;
@@ -1679,7 +1680,10 @@ function _newRequestId(){
  * 상품 ID cl_<등급>_m<개월> — 등급은 config/pricing.certTier(서버가 시험 등급과 같은지 다시 본다). 값은 Play Console(웹과 같게).
  * 포인트·할인코드는 Play 결제에 못 쓴다. 결제는 됐는데 서버가 못 받았으면(앱이 닫힘 등) 다음에 이용권 창을 열 때 이어서 켠다. */
 var PLAY_BILLING='https://play.google.com/billing';
-function _playReady(){ return ('getDigitalGoodsService' in window) && ('PaymentRequest' in window); }
+/* ★ [2026-10-15] getDigitalGoodsService 는 크롬(홈 화면 바로가기 등)에도 있어, 그것만 보고 Play 결제 단추를 띄웠더니
+ *   「only supported in Trusted Web Activity」로 실패했다(크리스 폰). Play 결제는 **플레이스토어 앱(TWA)으로 열렸을 때만** —
+ *   앱이 넘겨 주는 referrer android-app://kr.certlab.app 를 세션에 적어 둔 clInApp() 로 가른다. */
+function _playReady(){ return (typeof clInApp==='function' && clInApp()) && ('getDigitalGoodsService' in window) && ('PaymentRequest' in window); }
 function _playMode(on){
   ['#btnCardPay','#mileUseBox','.discount-row','.pay-ref-line','.payment-note'].forEach(function(sel){
     document.querySelectorAll(sel).forEach(function(el){ el.style.display = on ? 'none' : ''; }); });
@@ -1721,7 +1725,9 @@ async function startPlayPayment(){
       location.reload();
     }catch(e){ await res.complete('fail'); throw e; }
   }catch(e){
-    if(!(e && e.name==='AbortError')) alert('결제를 마치지 못했어요.\n'+((e&&e.message)||'')+'\n결제가 됐다면 다음에 이용권 창을 열 때 이어서 켜 드려요.');
+    var em=(e&&e.message)||'';
+    if(/Trusted Web Activity|not supported/i.test(em)) alert('이 화면에서는 Google Play 결제를 쓸 수 없어요.\nPlay 스토어에서 설치한 CertLab 앱으로 열어 주세요.');
+    else if(!(e && e.name==='AbortError')) alert('결제를 마치지 못했어요.\n'+em+'\n결제가 됐다면 다음에 이용권 창을 열 때 이어서 켜 드려요.');
   }finally{ if(btn) btn.disabled=false; }
 }
 async function startCardPayment(){
