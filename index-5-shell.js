@@ -1649,7 +1649,14 @@ function mpRenderHome(){
   box.innerHTML += '<div class="mp-sec">알림</div><div class="mp-link" onclick="mpTogglePush()"><span class="e">🔔</span>복습 알림 받기'
     + ' <span id="mpPushState" style="margin-left:auto;font-size:12.5px;color:#8A7D6E">확인 중…</span></div>';
   mpPushStateLoad();
-  box.innerHTML += '<div class="mp-sec">계정</div><div class="mp-link" onclick="showDeletePopup()" style="color:#C0392B"><span class="e">⚠️</span>회원 탈퇴</div>';
+  /* [2026-10-15] 펼침 메뉴를 없애며 「앱·홈 화면」과 「로그아웃」을 여기로 옮겼다(UIUX_모바일 4부 라-1 · 크리스 같은 날 지시) */
+  var _isApp=(typeof pwaStandalone==='function' && pwaStandalone());
+  var _isAnd=/android/i.test(navigator.userAgent);
+  box.innerHTML += '<div class="mp-sec">앱</div>'
+    + (_isApp ? '<div class="mp-link" style="cursor:default"><span class="e">📲</span>앱으로 쓰는 중 <span style="margin-left:auto;font-size:12.5px;color:#0F6E56;font-weight:700">추가됨 ✓</span></div>'
+              : '<div class="mp-link" onclick="addToHome(event)"><span class="e">📲</span>'+(_isAnd ? '앱 설치하기 · 앱 첫 로그인 혜택 9,900P' : '홈 화면에 추가')+'</div>');
+  box.innerHTML += '<div class="mp-sec">계정</div><div class="mp-link" onclick="signOut()"><span class="e">🚪</span>로그아웃</div>'
+    + '<div class="mp-link" onclick="showDeletePopup()" style="color:#C0392B"><span class="e">⚠️</span>회원 탈퇴</div>';
 }
 function _mpPushSupported(){
   return !_pushIsIOS() && ('Notification' in window) && ('serviceWorker' in navigator)

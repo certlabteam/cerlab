@@ -993,8 +993,6 @@ function updateAuthBar() {
     bar.innerHTML = '<button class="btn-login" onclick="showLoginPopup()">로그인</button>';
     return;
   }
-  const planLabels = { FREE_TRIAL:'무료체험', ACTIVE:'이용중', EXPIRED:'만료', GUEST:'게스트' };
-  const planClasses = { FREE_TRIAL:'plan-free', ACTIVE:'plan-active', EXPIRED:'plan-expired', GUEST:'plan-guest' };
   const _fb = `<div style="width:28px;height:28px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
   /* [2026-10-13] 옛 카카오 계정은 http 사진 주소를 줘서 https 화면에서 막힌다 → https 로 바꾼다.
    *   주소가 죽어 깨지면 머리글자 원으로 돌린다(일구미와 함께 UIUX_모바일 「프로필 사진」에 맞춤). */
@@ -1002,21 +1000,12 @@ function updateAuthBar() {
     ? `<img class="user-avatar" src="${_avatarUrl(currentUser.photoURL)}" alt="" onerror="this.onerror=null;this.outerHTML=_avatarFallbackHTML()">`
     : _fb;
   window._avatarFallbackHTML = function(){ return _fb; };
+  /* ★ [2026-10-15 크리스] 「마이페이지 클릭시 작은 팝업 형태하지말고 페이지로 해 일구미 마이페이지 형태로」
+   *   프로필 원을 누르면 펼침 메뉴 없이 바로 마이페이지(한 화면)로 간다. 펼침에 있던 것
+   *   (이용 상태 · 포인트 · 추천 링크 · 앱/홈 화면 · 로그아웃)은 모두 마이페이지 안에 있다. */
   bar.innerHTML = `
     <div class="user-menu" id="userMenu">
-      <button class="avatar-btn" onclick="toggleUserMenu(event)" aria-label="내 메뉴">${img}</button>
-      <div class="user-dropdown hidden" id="userDropdown">
-        <span class="plan-badge ${planClasses[userPlan]}">${planLabels[userPlan]||userPlan}</span>
-        <div class="mile-bal">💰 포인트 <b>${mileageBalance(myMileageLots).toLocaleString()}P</b></div>
-        <button class="ref-acc-btn" onclick="openMyPage()">👤 마이페이지</button>
-        <button class="ref-acc-btn" onclick="toggleReferralAcc(event)">🎁 추천 링크 ▾</button>
-        <div class="ref-acc hidden" id="refAcc">
-          <div class="ref-acc-desc">친구가 내 링크로 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b>(한 달 이용권 값)! 친구가 결제하면 그 값의 절반도 나에게.</div>
-          <div class="ref-link-box"><input id="refLinkInput" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLink(event)">복사</button></div>
-        </div>
-        <button class="ref-acc-btn" onclick="addToHome(event)">${/android/i.test(navigator.userAgent) ? '📲 앱 첫 로그인 혜택 9,900P' : '📲 홈 화면에 추가'}</button>
-        <button class="btn-logout" onclick="signOut()">로그아웃</button>
-      </div>
+      <button class="avatar-btn" onclick="openMyPage()" aria-label="마이페이지">${img}</button>
     </div>`;
 }
 function toggleUserMenu(e){ if(e){e.stopPropagation();} const d=document.getElementById('userDropdown'); if(d) d.classList.toggle('hidden'); }
