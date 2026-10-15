@@ -753,7 +753,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .popup-x.popup-x-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));right:8px;margin:0;background:transparent;z-index:101}
 .popup-x.popup-x-inline{position:static;margin:-10px -10px -10px auto;background:transparent}
 /* 커뮤니티 글쓰기(전체 화면)의 닫기 ✕ 도 오른쪽 위로 — 머리줄 안에서 순서만 뒤로 (헤드방 2026-09-15) */
-#cmWrite .cm-top .cm-back{order:9;margin-left:auto;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#5F5E5A;margin-right:-12px}
+#cmWrite .cm-top .cm-back{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#2C2C2A;margin-left:-8px}
 .report-box{position:relative}
 .home-seo{font-size:12px;color:#A89C8E;line-height:1.6;margin-top:10px;max-width:440px;word-break:keep-all;overflow-wrap:break-word}
 .mnemonic{margin:14px 0 4px;padding:12px 14px;background:linear-gradient(135deg,#FFF6E9,#FFEFD6);border:1px solid #F1D9A8;border-radius:12px}
@@ -1315,3 +1315,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .cl-dlg-btns button{flex:1;height:48px;border:0;border-radius:12px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .cl-dlg-ok{background:#185FA5;color:#fff}
 .cl-dlg-no{background:#F1F4F8;color:#2C2C2A}
+
+/* ★ [2026-10-15 크리스 「어디를 들어가든 하부 메뉴면 <- 로 나올 수 있어야 하는데 우측 상단에 x버튼이 있어 이 버튼은 없애야지」]
+ *   들어가 머무는 화면(신고·고객센터·탈퇴·AI 첨삭 기록·인쇄·완료)은 **페이지 꼴** — 화면을 꽉 채우고 왼쪽 위 ← 로 나온다.
+ *   짧게 알리고 닫는 창(로그인·포인트 안내·확인 창 등)은 그대로 둔다(UIUX_모바일 4부 「작은 팝업 말고 페이지로」 범위). */
+.as-page{background:#FDF8F5 !important;align-items:stretch !important;justify-content:center !important;padding:0 !important;animation:none !important}
+.as-page>.report-box,.as-page>.auth-sheet,.as-page>.psucc-box,.as-page>.pr-sheet{max-width:480px !important;width:100%;max-height:none !important;height:100%;overflow-y:auto;border-radius:0 !important;box-shadow:none !important;padding:8px 16px 40px !important;animation:none !important}
+.page-back{display:flex;align-items:center;justify-content:center;width:44px;height:44px;margin:0 0 8px -8px;padding:0;border:0;background:none;font-size:24px;line-height:1;color:#2C2C2A;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left:16px;margin:0;z-index:101}

@@ -312,6 +312,24 @@ function renderMcqHome(root){
     }
     html+='</div>';
   });
+  /* ★ [2026-10-15 크리스 「우리가 레벨업 문제가 있다는걸 못보여주잖아 기출 밑에 레벨업 영역도 잡아서 보여주자」]
+   *   레벨업 단추는 레벨테스트를 마친 뒤에만 떠서, 처음 온 사람은 기출 말고 만든 문제가 있는 줄 몰랐다.
+   *   과목마다 레벨업 문항 수(AD_DATA variantPool · 시험에 들어올 때 불러옴)를 기출 목록 바로 밑에 보인다.
+   *   누르면 luStartSub — 레벨테스트 전이면 ltGate 가 먼저 레벨테스트로 이끈다. 주관식(2차)엔 레벨업 문항이 없어 안 그린다. */
+  if(!_isSubjCert(mqCert)){
+    var _luRows='', _luSum=0;
+    curOrder().forEach(function(id){
+      var b=(typeof AD_DATA!=='undefined')&&AD_DATA[mqCert+'|'+id]; var n=(b&&b.variantPool)?b.variantPool.length:0;
+      if(!n) return; _luSum+=n;
+      _luRows+='<div class="scard"><div class="scard-hd" onclick="luStartSub(\''+id+'\')">'
+        +'<span class="sdot" style="background:#1D9E75"></span><span class="snm">'+curQB()[id].name+'</span>'
+        +'<span class="scard-set-label">레벨업 '+n.toLocaleString()+'문항</span>'
+        +'<span class="b-go" style="margin-left:8px;flex-shrink:0">풀기</span></div></div>';
+    });
+    if(_luRows){
+      html+='<div class="sec-lbl">레벨업 문제 <span style="font-weight:600;color:#888780">· 기출을 바꿔 만든 '+_luSum.toLocaleString()+'문항'+(ltDone(mqCert)?'':' · 레벨테스트 후 약점부터')+'</span></div>'+_luRows;
+    }
+  }
   root.innerHTML=html;
 }
 function mqToggle(id){ const wasOpen=!!mqOpen[id]; mqOpen={}; mqWeakOpen=false; if(!wasOpen) mqOpen[id]=true; renderMCQ(); }
@@ -557,9 +575,18 @@ function mcqAnalysisCard(cert){
 
 /* ===== 합격 플랜 (1단계) ===== */
 function _planIsPaid(cert){ try{ return !!(typeof userEnt!=='undefined' && userEnt[cert] && userEnt[cert].plan==='ACTIVE'); }catch(_){ return false; } }
+/* ★ [2026-10-15] 공식 시험일이 이미 지났으면(큐넷이 다음 해 일정을 아직 안 냄) 해마다 같은 때로 보고 **다음 해 예상**으로 민다.
+ *   안 밀면 합격플랜이 「시험종료」인데 「하루 20문제씩 풀면 … 도달 예상」을 같이 말했다(크리스 폰 · 주택관리사 2026-06-27). */
+var _examGuess = {};
+function _rollExamMs(cert, ms){
+  if(ms==null) return null;
+  var d=new Date(ms), now=Date.now(); _examGuess[cert]=false;
+  while(d.getTime() < now-86400000){ d.setFullYear(d.getFullYear()+1); _examGuess[cert]=true; }
+  return d.getTime();
+}
 function _officialExamMs(cert){
-  try{ if(typeof _examDateMs!=='undefined' && _examDateMs && _examDateMs[cert]!=null) return _examDateMs[cert]; }catch(_){}
-  try{ if(typeof SR_DEFAULT_EXAM!=='undefined' && SR_DEFAULT_EXAM[cert]) return new Date(SR_DEFAULT_EXAM[cert]+'T23:59:59').getTime(); }catch(_){}
+  try{ if(typeof _examDateMs!=='undefined' && _examDateMs && _examDateMs[cert]!=null) return _rollExamMs(cert, _examDateMs[cert]); }catch(_){}
+  try{ if(typeof SR_DEFAULT_EXAM!=='undefined' && SR_DEFAULT_EXAM[cert]) return _rollExamMs(cert, new Date(SR_DEFAULT_EXAM[cert]+'T23:59:59').getTime()); }catch(_){}
   return null;
 }
 var _crowdVotes = {};   // {cert: {date: count}}
@@ -714,13 +741,14 @@ function passPlanHTML(cert, paid){
   if(!top && weak.length && typeof lt2Has==='function' && lt2Has(cert)) top={sub:weak[0].code, subName:weak[0].name, t:{tcode:'', name:'레벨업 자동출제', star:0}};
 
   var head='<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #EDE4D9;position:sticky;top:0;z-index:2">'
-    +'<span style="font-size:16px;font-weight:800;color:#3C3C3A;flex:1;min-width:0">🎯 합격 플랜</span>'
-    +'<button class="popup-x popup-x-inline" onclick="closePassPlan()" aria-label="닫기">✕</button></div>';
+    /* [2026-10-15 크리스 「합격 플랜인데 <- 버튼이 없어」] 머무는 화면은 페이지 꼴 — 왼쪽 ← 로 돌아간다(UIUX_모바일 4부 나 「‹ 이전」) */
+    +'<button onclick="closePassPlan()" aria-label="뒤로" style="width:44px;height:44px;margin:-8px 0 -8px -8px;border:0;background:none;font-size:24px;color:#2C2C2A;cursor:pointer">←</button>'
+    +'<span style="font-size:18px;font-weight:800;color:#3C3C3A;flex:1;min-width:0">🎯 합격 플랜</span></div>';
 
   var official=_officialExamMs(cert)!=null;
   var ddayChip;
   if(dl!=null){
-    ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:800;color:#C0392B;background:#FCEBEB;padding:2px 10px;border-radius:999px;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+(official?'':' ✎')+'</span>';
+    ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:800;color:#C0392B;background:#FCEBEB;padding:2px 10px;border-radius:999px;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+((official && _examGuess[cert])?' 예상':'')+(official?'':' ✎')+'</span>';
   } else {
     ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:12px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 10px;border-radius:999px;cursor:pointer">📅 시험일 등록 →</span>';
   }
