@@ -1430,13 +1430,20 @@ function certQuestionCount(cert){
     return (typeof D!=='undefined') ? D.length : 0;   // 플래시카드
   }catch(_){ return 0; }
 }
+/* ★ [2026-10-15] 「전체 몇 시험 · 몇 문제」는 **불러온 시험만** 세면 「전체 1개 시험 · 총 300문제」가 된다(시험은 들어갈 때 받는다).
+ *   시험 수는 manifest, 문항 수는 랜딩과 같은 실측값(2026-10-14 · index.html lp-num)을 아래로 깐다. */
+var CL_TOTAL_Q = 31470;
 function totalQuestionCountAll(){
+  return Math.max(CL_TOTAL_Q, _loadedQuestionCountAll());
+}
+function _loadedQuestionCountAll(){
   let n=0;
   try{ if(typeof D!=='undefined') n+=D.length; }catch(_){}
   try{ (MCQ_CERTS||[]).forEach(c=>{ n+=certQuestionCount(c); }); }catch(_){}
   return n;
 }
 function examCount(){
+  try{ if(typeof MANIFEST!=='undefined' && MANIFEST && Array.isArray(MANIFEST.exams) && MANIFEST.exams.length) return MANIFEST.exams.length; }catch(_){}
   let c=0;
   try{ if(typeof D!=='undefined' && D.length>0) c++; }catch(_){}      // 플래시카드(생체)
   try{ (MCQ_CERTS||[]).forEach(cert=>{ if(certQuestionCount(cert)>0) c++; }); }catch(_){}
