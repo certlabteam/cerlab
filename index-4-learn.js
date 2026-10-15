@@ -1275,7 +1275,9 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
  * 개념설명도 접는다. 암기코드·표는 짧은 정리라 그대로. 「모두 펼치기」를 누르면 기억한다(localStorage expAll).
  * 해설을 만드는 갈래(일반 보기·ㄱㄴㄷ·빈칸·조합·계산)가 여럿이라 갈래마다 고치지 않고, 그린 뒤 화면에서 접는다.
  * 번호(「3.」)로 시작하는 보기 칸만 접는다 — ㄱㄴㄷ 진술 칸은 하나하나가 판정 근거라 그대로 펼친다. */
-function expFoldAll(){ try{ return localStorage.getItem('expAll') === '1'; }catch(_){ return false; } }
+/* ★ [2026-10-15 크리스] 「개념설명이 왜 펼쳐서 보기로 되어있지?」 「1 2 3 4 … 옳지 않음 이라고만뜨네」 → 메뉴에서 「다 펼쳐 두기」.
+ *   기본을 **펼침**으로 바꿨다. 「모두 접기」를 누른 사람만(expAll='0') 접힌다. */
+function expFoldAll(){ try{ return localStorage.getItem('expAll') !== '0'; }catch(_){ return true; } }
 function expFold(root, q){
   try{
     var exp = root.querySelector('.exp'); if(!exp || !q) return;
