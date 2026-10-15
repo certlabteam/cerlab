@@ -435,6 +435,8 @@ async function cmLoadNoticeBar(){
       var qs=await db.collection('posts').where('board','==','notice').limit(20).get();
       var arr=[]; qs.forEach(function(d){ var p=d.data(); arr.push({id:d.id, t:(p.title||''), at:(p.createdAt&&p.createdAt.seconds)||0}); });
       arr.sort(function(a,b){ return b.at-a.at; });
+      /* [2026-10-15] 앱(TWA)에선 「포인트로 이용권 결제」 안내 공지를 빼고 돌린다 — 앱 결제는 구글 플레이라 포인트가 안 든다(에뮬레이터 검수) */
+      if(typeof pwaStandalone==='function' && pwaStandalone() && typeof POINT_GUIDE_POST!=='undefined') arr=arr.filter(function(p){ return p.id!==POINT_GUIDE_POST; });
       arr.slice(0,5).forEach(function(p){ _cmNbItems.push({id:p.id, board:'notice', title:('\uD83D\uDCE2 '+p.t)}); });
     }catch(_){}
     /* [2026-10-12] \uD569\uACA9\uD6C4\uAE30\uB3C4 \uC11E\uC5B4 \uB3CC\uB9B0\uB2E4 \u2014 \uD06C\uB9AC\uC2A4 \u300E\uC5EC\uAE30\uC5D0 \uD6C4\uAE30 \uB9AC\uBDF0 \uC62C\uB77C\uC628\uAC83\uB3C4 \uB864\uB9C1\uB418\uAC8C \uD574\uC918\u300F.
