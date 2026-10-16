@@ -1355,7 +1355,7 @@ async function cpatchValidate(){
   cpatchCancelConfirm();   // 재검증하면 이전 확인 토큰·배너는 무효
   var groups=(_cpatchData&&_cpatchData.groups)||[];
   var allHomes={}, okMap={}, errN=0, okN=0, setStat={}, errRows=[], failSubs=[];
-  var cptExists={};
+  var cptExists={}, collectedSubjects={};
   var requestedCpts=[];
   groups.forEach(function(G){ G.edits.forEach(function(e){ if(Array.isArray(e&&e.cpt)) requestedCpts=requestedCpts.concat(e.cpt); }); });
   requestedCpts=Array.from(new Set(requestedCpts));
@@ -1367,7 +1367,10 @@ async function cpatchValidate(){
   var cntO=0, cntEx=0, cntSp=0, cntAns=0;
   for(var gi=0; gi<groups.length; gi++){
     var G=groups[gi];
-    var col=await _ottagCollect(G.cert, G.subject);
+    var subjectKey=G.cert+'__'+G.subject;
+    // Reuse one subject snapshot across its shard groups so edits and saved questions share object references.
+    var col=collectedSubjects[subjectKey];
+    if(!col){ col=await _ottagCollect(G.cert, G.subject); collectedSubjects[subjectKey]=col; }
     if(col.err){ failSubs.push(csKo(G.cert,G.subject)+': '+col.err); continue; }
     Object.keys(col.homes).forEach(function(h){ allHomes[h]=col.homes[h]; });
     var byId=col.byId;
