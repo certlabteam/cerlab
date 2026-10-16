@@ -1338,3 +1338,21 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .cc-flow-n{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-top:2px;border-radius:999px;background:#B45309;color:#fff;font-size:12px;font-weight:800}
 .cc-flow-t b{color:#0F172A}
 .cc-flow-ar{color:#B45309;font-size:14px;line-height:1.2;padding:2px 0 2px 14px}
+
+/* [2026-10-17] 긴 지문 — 제목 칸 · ㉠ 칩 · 지문 다시 보기 */
+.jaryo .jr-sec{margin:0 0 10px;padding:8px 10px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;white-space:pre-wrap}
+.jaryo .jr-sec:last-child{margin-bottom:0}
+.jaryo .jr-sec-ti{font-weight:800;color:#0F172A;margin:0 0 4px;white-space:normal}
+.jaryo .jr-k{color:#475569;font-weight:800}
+.mk{color:#B45309;font-weight:800;cursor:pointer}
+.jaryo .mk{display:inline-block;padding:0 3px;margin:0 1px;border-radius:4px;background:#FEF3C7;color:#92400E;cursor:default;line-height:1.4}
+.jaryo .mk.mk-flash{animation:mkFlash 1.4s ease-out}
+@keyframes mkFlash{0%,40%{background:#F59E0B;color:#fff;box-shadow:0 0 0 4px rgba(245,158,11,.35)}100%{background:#FEF3C7;color:#92400E;box-shadow:none}}
+.jr-fab{position:fixed;right:16px;bottom:104px;z-index:60;padding:8px 14px;border-radius:999px;border:1px solid #CBD5E1;background:#fff;color:#0F172A;font-size:14px;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.14)}
+.jr-sheet{position:fixed;inset:0;z-index:70;display:none}
+.jr-sheet.on{display:block}
+.jr-sheet-bg{position:absolute;inset:0;background:rgba(15,23,42,.35)}
+.jr-sheet-pn{position:absolute;left:0;right:0;bottom:0;max-height:70vh;display:flex;flex-direction:column;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.18)}
+.jr-sheet-hd{flex:0 0 auto;padding:12px 16px;border:0;border-bottom:1px solid #E2E8F0;background:transparent;font-size:14px;font-weight:800;color:#334155;text-align:center}
+.jr-sheet-bd{overflow:auto;padding:12px 16px 20px}
+.jr-sheet-bd .jaryo{margin:0}

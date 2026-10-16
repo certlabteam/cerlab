@@ -494,6 +494,8 @@ function renderMath(text, allowBareFraction){
   /* [2026-10-17] 가운뎃점(ㆍ·) 뒤에서 줄을 바꿀 수 있게 — 크리스 「개행시 단어만 안 끊기게 꽉 채워야지」.
      word-break:keep-all 이라 「전기차충전ㆍ소규모전력중개ㆍ재생에너지전기공급을」이 한 낱말로 묶여 통째로 다음 줄로 넘어가 앞줄이 비었다. */
   s = s.replace(/([ㆍ·・])(?!\s)/g, '$1<wbr>');
+  /* [2026-10-17] ㉠~㉻ 를 표시 칸으로 — 지문에선 색 칩, 해설에선 누르면 지문의 같은 표시로 올라간다(크리스 「㉠·㉡ 표시를 눈에 띄게」). */
+  s = s.replace(/([㉠-㉻])/g, '<span class="mk" data-mk="$1">$1</span>');
   s = s.replace(/\u0007(\d+)\u0008/g, function(m,i){ return _stash[+i]||''; });
   s = s.replace(/\u0004/g, '/');
   return s;
@@ -524,6 +526,24 @@ function expNoteHTML(text, q){
     .replace(/\n/g, '<br>');
 }
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
+/* [2026-10-17] 긴 지문 보기 좋게 — 줄 첫머리의 <제목> 마다 칸을 나누고 제목을 굵은 머리로(크리스 「〈제목〉마다 칸 나누기」).
+   제목이 하나도 없으면 원문 그대로 둔다. 공문서 칸은 「수신 · 제목」 앞에서 줄을 바꾼다. 데이터(jaryo)는 손대지 않는다. */
+function _jaryoSections(html){
+  var lines=String(html==null?'':html).split('\n'), secs=[], cur={ti:null, body:[]}, hit=0;
+  lines.forEach(function(ln){
+    var m=ln.match(/^\s*(?:&lt;|<)([^&<>]{1,40})(?:&gt;|>)\s*(.*)$/);   // 지문의 <제목> 은 날글자로 들어오기도, &lt; 로 들어오기도 한다
+    if(m){ hit++; if(cur.ti!==null||cur.body.join('').trim()) secs.push(cur); cur={ti:m[1], body:m[2]?[m[2]]:[]}; }
+    else cur.body.push(ln);
+  });
+  secs.push(cur);
+  if(!hit) return html;
+  return secs.map(function(sc){
+    var bd=sc.body.join('\n').replace(/^\n+|\n+$/g,'');
+    if(sc.ti && /공문/.test(sc.ti)) bd=bd.replace(/\s(수신|제목)\s/g, function(_m,k){ return '\n<b class="jr-k">'+k+'</b> '; });
+    if(sc.ti===null) return bd;
+    return '<div class="jr-sec"><div class="jr-sec-ti">'+sc.ti+'</div><div class="jr-sec-bd">'+bd+'</div></div>';
+  }).join('');
+}
 function _jaryoDots(html){
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
   return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 4px 0 2px;position:relative;top:-1px">\u25CF</span>');
@@ -1271,7 +1291,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoDots(rm(jaryo,q).replace(/ \/ /g,'<br>'))+'</div>':'')+imgBlock(q)+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(jaryo,q).replace(/ \/ /g,'<br>')))+'</div>':'')+imgBlock(q)+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
@@ -1610,7 +1630,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):tpSwap(_jaryoDots(stemHTML(rm(_stemQ,q))),q.id))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q).replace(/ \/ /g,'<br>'))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(jr.jaryo,q).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
@@ -1709,3 +1729,44 @@ function mqToggleGuess(qid){
   }
   renderMCQ();
 }
+
+/* [2026-10-17] 긴 지문 도우미 — 크리스 「문제가 보기가 힘든데 보기좋게 하는방법? … 지문이 긴경우 해결책」
+   ① 해설·선지의 ㉠ 을 누르면 지문의 같은 ㉠ 으로 올라가 반짝인다(선지는 고르기 전에는 안 건드린다 — 해설 안에서만).
+   ② 지문이 300자를 넘고 화면 밖으로 나가면 오른쪽 아래에 「지문」 단추 — 누르면 지문이 반쪽 창으로 올라온다.
+   데이터는 손대지 않는다. 화면이 다시 그려질 때마다 단추 상태를 맞춘다(MutationObserver · 0.2초 모아서). */
+(function(){
+  function flash(el){ el.classList.remove('mk-flash'); void el.offsetWidth; el.classList.add('mk-flash'); }
+  document.addEventListener('click', function(e){
+    var m=e.target && e.target.closest && e.target.closest('.mk'); if(!m) return;
+    if(m.closest('.jaryo') || !m.closest('.exp, .jr-sheet')) return;
+    var box=document.querySelector('.jr-sheet.on .jaryo') || document.querySelector('.qcard .jaryo'); if(!box) return;
+    var t=[].slice.call(box.querySelectorAll('.mk')).find(function(x){ return x.getAttribute('data-mk')===m.getAttribute('data-mk'); });
+    if(!t) return;
+    e.preventDefault(); e.stopPropagation();
+    try{ t.scrollIntoView({block:'center', behavior:'smooth'}); }catch(_){ t.scrollIntoView(); }
+    flash(t);
+  }, true);
+  var btn=null, sheet=null, io=null, cur=null;
+  function ensure(){
+    if(btn) return;
+    btn=document.createElement('button'); btn.type='button'; btn.className='jr-fab'; btn.textContent='📄 지문'; btn.style.display='none';
+    sheet=document.createElement('div'); sheet.className='jr-sheet';
+    sheet.innerHTML='<div class="jr-sheet-bg"></div><div class="jr-sheet-pn"><button type="button" class="jr-sheet-hd">지문 · 내려서 닫기 ▾</button><div class="jr-sheet-bd"></div></div>';
+    document.body.appendChild(btn); document.body.appendChild(sheet);
+    btn.addEventListener('click', function(){ if(!cur) return; sheet.querySelector('.jr-sheet-bd').innerHTML='<div class="jaryo">'+cur.innerHTML+'</div>'; sheet.classList.add('on'); });
+    sheet.addEventListener('click', function(e){ if(e.target.closest('.jr-sheet-hd') || e.target.classList.contains('jr-sheet-bg')) sheet.classList.remove('on'); });
+  }
+  function sync(){
+    var j=document.querySelector('.qcard .jaryo');
+    if(j===cur) return; cur=j;
+    if(io){ io.disconnect(); io=null; }
+    ensure(); sheet.classList.remove('on');
+    if(!j || (j.textContent||'').length<300 || typeof IntersectionObserver==='undefined'){ btn.style.display='none'; return; }
+    io=new IntersectionObserver(function(en){ btn.style.display = en[0].isIntersecting ? 'none' : ''; });
+    io.observe(j);
+  }
+  var tm=null;
+  function later(){ if(tm) return; tm=setTimeout(function(){ tm=null; try{ sync(); }catch(_){} }, 200); }
+  function start(){ try{ new MutationObserver(later).observe(document.body,{childList:true,subtree:true}); }catch(_){} later(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
