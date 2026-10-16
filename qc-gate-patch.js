@@ -41,6 +41,12 @@
          나머지 4종은 코어(qc-core.js)에 같은 이름으로 이미 있어 여기서 기본값을 또 심을 이유가 없다. */
       if(!_QC_DEFAULTS.mnem.MN_SAME_CODE_DESC) _QC_DEFAULTS.mnem.MN_SAME_CODE_DESC={on:true};
       _QC_DEFAULTS.gichul = _QC_DEFAULTS.gichul || {};
+      /* [2026-10-16 · ti_hist 2025 제25회 4번] 새 E1/E2 잣대는 보기 이름과
+         연결 카드 내용을 직접 대조해, 대명사 대체·개념 카드 오연결을 다시 막는다. */
+      if(!_QC_DEFAULTS.gichul.O_CORE_NAME_MISSING) _QC_DEFAULTS.gichul.O_CORE_NAME_MISSING={on:true};
+      if(!_QC_DEFAULTS.gichul.CPT_CONCEPT_MISMATCH) _QC_DEFAULTS.gichul.CPT_CONCEPT_MISMATCH={on:true};
+      if(!_QC_DEFAULTS.gichul.CPT_SHARED) _QC_DEFAULTS.gichul.CPT_SHARED={on:true};
+      if(!_QC_DEFAULTS.gichul.CPT_TOO_MANY_CARDS) _QC_DEFAULTS.gichul.CPT_TOO_MANY_CARDS={on:true};
       if(!_QC_DEFAULTS.gichul.EX_MISSING) _QC_DEFAULTS.gichul.EX_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.O_SHORT) _QC_DEFAULTS.gichul.O_SHORT={on:true,minChars:30};
       if(!_QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT) _QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT={on:true};

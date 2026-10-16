@@ -80,6 +80,23 @@ function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.index
   var o=(q.exp&&q.exp.o)||[]; var oF=o.filter(function(x){return x&&String(x).trim();}).length; if(oF!==1) return false;
   var hg=q.exp&&q.exp.graph&&String(q.exp.graph).trim(); var ex=(q.exp&&q.exp.ex)||[]; var hs=ex.filter(function(x){return x&&String(x).trim();}).length>0;
   return !!(hg||hs); }
+/* [2026-10-16 · ti_hist 2025 제25회 4번] 꼴(길이·甲 시작)만으로는 보기의
+   고유명사 누락이나 엉뚱한 개념카드를 잡지 못했다. 책·인물·조문·전문용어를 대조한다. */
+var _qcCptQuestionUse={};
+function _qcCoreNames(s){
+  s=String(s||'').replace(/<[^>]+>/g,''); var out=[],seen={};
+  function add(x){x=String(x||'').trim().replace(/^[\s\[\](){}:;,·ㆍ]+|[\s\[\](){}:;,·ㆍ]+$/g,'');if(x.length>=2&&!seen[x]){seen[x]=1;out.push(x);}}
+  var m,re=/[『「“\"‘']([^』」”\"’']{2,32})[』」”\"’']/g;
+  while((m=re.exec(s)))add(m[1]);
+  re=/(?:제\s*\d+\s*조(?:의\s*\d+)?|[A-Z][A-Za-z0-9-]{1,}|[가-힣]{2,12}(?:법률?|령|협약|조약|이론|원칙|제도|학파|모형|모델|유형|단계|척도|효과|개념|현상|권리|문화|지원|체계|위원회|센터|기관|연대력|잡전|필경|세기|주의|론|학습|검사|기법|방법|발달|관계|양식|사상|운동|정책|교육|복지|자존감|충동성|대상화|강화))/g;
+  while((m=re.exec(s)))add(m[0]);
+  s.split(/\s*(?:-|–|—|→|:|·|ㆍ)\s*/).forEach(function(part){
+    (part.match(/[가-힣]{3,8}/g)||[]).forEach(function(t){if(!/^(다음|설명|보기|해당|옳지|않은|것은|모두|각각|순서|내용|기준|경우|이상|이하|관련|관한)$/.test(t))add(t);});
+  });
+  return out;
+}
+function _qcCoreNorm(s){return String(s||'').replace(/<[^>]+>/g,'').replace(/[\s.,·ㆍ:;!?()[\]{}「」『』“”"'’‘]/g,'').toLowerCase();}
+function _qcHasCore(text,term){var a=_qcCoreNorm(text),b=_qcCoreNorm(term);return !!(b&&a.indexOf(b)>=0);}
 function _qcViolations(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[], cards=exp.c||[];
   // exp.cpt(마스터 링크) 카드: 개수(CARD_LT2)·화살표(REL_NO_ARROW) 판정에만 반영.
@@ -96,9 +113,27 @@ function _qcViolations(q){
   }
   var opts=(q&&Array.isArray(q.opts))?q.opts:[];
   var isSAq=Array.isArray(q&&q.blanks)&&q.blanks.length;
+  /* E1 — 이름이 보기에는 있는데 그 보기의 해설·예시에는 빠졌는지 경고한다. */
+  if(!isSAq && _qcOn('gichul','O_CORE_NAME_MISSING')) opts.forEach(function(opt,i){
+    var names=_qcCoreNames(opt); if(!names.length)return;
+    var body=String(o[i]||'')+' '+String(ex[i]||''), missing=names.filter(function(n){return !_qcHasCore(body,n);});
+    if(missing.length)v.push({kind:'warn',field:'o',idx:i,code:'O_CORE_NAME_MISSING',msg:'보기 핵심 이름/용어 '+missing.slice(0,4).join('·')+' 이 대응 해설·예시에 그대로 없음 — 대명사 대신 이름을 적는다',text:opt});
+  });
   var oFilled=o.filter(function(x){return x&&String(x).trim();}).length;
   var isCalc=_isCalcQ(q);   /* [FIX] oFilled===1 순진판 → 견고판(_isCalcQ). 미완성 조합형이 계산형으로 오인돼 종결형/카드 검사 건너뛰던 문제 해결 */
   var isMCQ=Array.isArray(q&&q.opts)&&q.opts.length&&oFilled>=1&&!isSAq;
+  /* E2 — 실제로 연결된 카드에 선지의 개념어가 하나도 없는지 본다. */
+  if(!_cptSkip && _lk.length && _qcOn('gichul','CPT_CONCEPT_MISMATCH')){
+    var _want=[]; opts.forEach(function(opt){_qcCoreNames(opt).forEach(function(n){if(!_want.some(function(x){return _qcCoreNorm(x)===_qcCoreNorm(n);}))_want.push(n);});});
+    var _linkedText=_lk.map(function(c){return String(c&&c.t||'')+' '+String(c&&c.d||'')+' '+String(c&&c.cx||'');}).join(' ');
+    if(_want.length && !_want.some(function(n){return _qcHasCore(_linkedText,n);}))v.push({kind:'warn',field:'cpt',idx:0,code:'CPT_CONCEPT_MISMATCH',msg:'연결 개념카드 제목·본문에 보기 핵심 개념/이름이 없음 — 문항 선지 개념과 카드 연결을 확인'});
+  }
+  /* 한 cpt 가 세 문항 이상 공유되거나 한 문서가 6장을 넘으면 경고한다. */
+  if(Array.isArray(exp.cpt)&&exp.cpt.length){var _once={};exp.cpt.forEach(function(r){r=String(r);if(_once[r])return;_once[r]=1;
+    var uses=_qcCptQuestionUse[r]||0, cds=_qcCptCards&&_qcCptCards[r];
+    if(uses>2&&_qcOn('gichul','CPT_SHARED'))v.push({kind:'warn',field:'cpt',idx:0,code:'CPT_SHARED',msg:'개념 '+r+' 이 '+uses+'문항에서 공유됨(2문항 초과)'});
+    if(Array.isArray(cds)&&cds.length>6&&_qcOn('gichul','CPT_TOO_MANY_CARDS'))v.push({kind:'warn',field:'cpt',idx:0,code:'CPT_TOO_MANY_CARDS',msg:'개념 '+r+' 카드 '+cds.length+'장(6장 초과)'});
+  });}
   var _rel=/\uc591\ub3c4|\uc591\uc218|\ub300\uc704|\ubcf4\uc99d|\uc5f0\ub300|\uc9c8\uad8c|\uc800\ub2f9|\uc774\uc911\ub9e4\ub9e4|\uc804\ub4dd|\uba85\uc758\uc2e0\ud0c1|\uc0c1\uc18d|\uc99d\uc5ec|\ubb3c\uc0c1\ub300\uc704|\ucc44\ubb34\uc778\uc218|\uac00\ub4f1\uae30|\uc804\uc138\uad8c|\uc9c0\uc0c1\uad8c|\uc9c0\uc5ed\uad8c|\uad6c\uc0c1/;
   var _arrow=/[\u2192\u25b6\u2193\u27f6\u21d2]/;
   function em(t){ return t&&/\u2014/.test(String(t)); }
@@ -335,6 +370,8 @@ var _qcCptExemptCerts = (typeof _qcCptExemptCerts!=='undefined') ? _qcCptExemptC
 
 function qualityGate(questions){
   var block=[], warn=[];
+  _qcCptQuestionUse={};
+  (questions||[]).forEach(function(q){var refs=((q&&q.exp)||{}).cpt||[],once={};refs.forEach(function(r){r=String(r);if(once[r])return;once[r]=1;_qcCptQuestionUse[r]=(_qcCptQuestionUse[r]||0)+1;});});
   if(_qcGateBypass && !_qcBypassWarned){ _qcBypassWarned=true;
     try{ if(typeof console!=='undefined') console.warn('[QC] \u26a0\ufe0f _qcGateBypass=true \u2014 \uac80\uc218 \ud544\uc218\ud1b5\uacfc \uc5c6\uc774 \uc5c5\ub85c\ub4dc \uac15\ud589 \uc911. \uc815\ube44 \ud6c4 false \ubcf5\uad6c \ud544\uc694.'); }catch(e){}
   }
@@ -370,7 +407,7 @@ var _QC_PALETTE=[
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},EX_REASK:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_DUP_CELL:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
+  gichul:{O_CORE_NAME_MISSING:{on:true},CPT_CONCEPT_MISMATCH:{on:true},CPT_SHARED:{on:true},CPT_TOO_MANY_CARDS:{on:true},ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},EX_REASK:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_DUP_CELL:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
@@ -398,6 +435,7 @@ var _QC_SEV = {
   OTTAG_LEN:'ERROR', DUP_ID:'ERROR',
   /* WARNING (SHOULD — 권장 수정) */
   ANS_VERDICT_MISMATCH:'WARNING',
+  O_CORE_NAME_MISSING:'WARNING', CPT_CONCEPT_MISMATCH:'WARNING', CPT_SHARED:'WARNING', CPT_TOO_MANY_CARDS:'WARNING',
   O_INCOMPLETE:'WARNING', COMBO_STMT_MISMATCH:'WARNING', O_ECHO_D:'WARNING', O_NO_ACTOR:'WARNING',
   O_STEPS_NOBR:'WARNING', EX_STEPS_NOBR:'WARNING', EX_STEPS_CRAMMED:'WARNING', O_ECHO_OPT:'WARNING',
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',
