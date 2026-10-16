@@ -411,7 +411,13 @@ async function goToCard(qid, certHint){
       if(typeof db!=='undefined' && db){
         for(var pf=0; pf<_subs.length && !_found; pf++){
           try{
-            var _ps=await db.collection('adaptive').doc(certHint+'__'+_subs[pf]+'__variantq').get();
+            /* SDK 로 같은 문서를 두 번째 읽으면 4~5초 — 시험에 들어갈 때 이미 한 번 읽는다. 링크는 REST 로 바로 받는다(0.2초), 안 되면 SDK. */
+            var _raw=null;
+            try{ var _rr=await fetch('https://firestore.googleapis.com/v1/projects/'+firebase.app().options.projectId+'/databases/(default)/documents/adaptive/'+encodeURIComponent(certHint+'__'+_subs[pf]+'__variantq')+'?key='+firebase.app().options.apiKey);
+              if(_rr.ok){ var _rj=await _rr.json(); var _fv=function(v){ if(!v) return null; if('stringValue' in v) return v.stringValue; if('integerValue' in v) return Number(v.integerValue); if('doubleValue' in v) return v.doubleValue; if('booleanValue' in v) return v.booleanValue; if('nullValue' in v) return null; if('timestampValue' in v) return v.timestampValue;
+                  if('arrayValue' in v) return ((v.arrayValue&&v.arrayValue.values)||[]).map(_fv); if('mapValue' in v){ var o={}, fs=(v.mapValue&&v.mapValue.fields)||{}; for(var k in fs) o[k]=_fv(fs[k]); return o; } return null; };
+                _raw=_fv({mapValue:{fields:_rj.fields||{}}}); } }catch(_){ _raw=null; }
+            var _ps=_raw?{exists:true,data:function(){ return _raw; }}:await db.collection('adaptive').doc(certHint+'__'+_subs[pf]+'__variantq').get();
             if(_ps && _ps.exists){
               var _pd=(typeof _adParse==='function')?_adParse(_ps.data()):(_ps.data());
               var _pq=((_pd&&_pd.questions)||[]).find(function(q){ return q && q.id===qid; });
