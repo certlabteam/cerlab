@@ -2045,6 +2045,7 @@ function _jaryoSections(html){
   var lines=String(html==null?'':html).split('\n'), secs=[], cur={ti:null, body:[]}, hit=0;
   lines.forEach(function(ln){
     var m=ln.match(/^\s*(?:&lt;|<)([^&<>]{1,40})(?:&gt;|>)\s*(.*)$/);   // 지문의 <제목> 은 날글자로 들어오기도, &lt; 로 들어오기도 한다
+    if(m && !/[가-힣]/.test(m[1])) m=null;   // <u>·<b> 같은 HTML 태그는 제목이 아니다 — 한글이 든 <제목> 만(2026-10-17 한국사 「<u>그</u>」가 「u」 칸이 됨)
     if(m){ hit++; if(cur.ti!==null||cur.body.join('').trim()) secs.push(cur); cur={ti:m[1], body:m[2]?[m[2]]:[]}; }
     else cur.body.push(ln);
   });
