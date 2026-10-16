@@ -506,7 +506,7 @@ function rmML(text, q){
   /* 줄바꿈이 있으면 그대로 살리고, 없더라도 **번호별로는** 끊는다.
      예전 해설은 줄바꿈 없이 `…이다. 2. LM곡선…` 처럼 이어 쓴 것이 많다.
      마침표 뒤의 `숫자. ` 앞에서만 끊어 소수점(0.8)·천단위(1,500)는 건드리지 않는다. */
-  return expNoteHTML(text, q).replace(/([.\u3002])(?:<br>|\s)+(?=\d+\.\s)/g, '$1<br>');
+  return expNoteHTML(text, q).replace(/([^\d])([.\u3002])(?:<br>|\s)+(?=\d+\.\s)/g, '$1$2<br>');   /* [2026-10-16] 마침표 앞이 숫자면(판례 날짜 2024. 7. 18.) 끊지 않는다 — 크리스 「해설 날짜가 개행이 이상한데」 */
 }
 function expNoteHTML(text, q){
   return rm(text, q)
