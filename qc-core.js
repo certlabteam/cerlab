@@ -158,7 +158,7 @@ function _qcViolations(q){
   /* 모든 문항 공통 — 해설은 일목요연하게 1~2문장, 예시는 해설보다 길게(크리스 「해설 짧게 예시 길게는 모든거 공통이야」 「해설은 일목요연하게 예는 그거보고 이해안가는 사람을 위한 상세할 설명이거든」 「갑을병정 사례도 그래서 드는거고 머리속에 그리라고」).
      빼는 것: noEx(예시가 필요 없는 문항 — 이때는 해설을 자세히) · 계산형(풀이가 예시 몫) · 영어 선지(예시가 단어 풀이 한 줄 꼴). */
   if(!isSAq && !exp.noEx && !_isCalcQ(q) && (_qcOn('gichul','O_LONG_WITH_EX')||_qcOn('gichul','EX_FEW_SENT'))){
-    var _sn=function(t){ return String(t||'').replace(/(\d)\.(?=\s*\d)/g,'$1').replace(/\(정답\)/g,'').replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/<[^>]+>/g,'').split(/[.。](?:\s|$)/).filter(function(x){return x.trim().length>3;}).length; };
+    var _sn=function(t){ return String(t||'').replace(/\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\./g,'날짜').replace(/(\d)\.(?=\s*\d)/g,'$1').replace(/\(정답\)/g,'').replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/<[^>]+>/g,'').split(/[.。](?:\s|$)/).filter(function(x){return x.trim().length>3;}).length; };
     var _eng=function(w){ return /^[A-Za-z][A-Za-z\s'\-,.]{1,40}$/.test(String(w||'').trim()); };
     o.forEach(function(t,i){ if(!String(ex[i]||'').trim()||_eng(opts[i]))return; if(_qcOn('gichul','O_LONG_WITH_EX') && _sn(t)!==2) v.push({kind:'warn',field:'o',idx:i,code:'O_LONG_WITH_EX',msg:'해설이 '+_sn(t)+'문장 — 2문장으로(무엇인지 · 판정). 1문장은 짧고, 더 자세한 것은 예시로(크리스 「해설은 2문장 하자 1문장은 또 짧아」)',text:String(t)}); });
     ex.forEach(function(t,i){ t=String(t||'').trim(); if(!t||_eng(opts[i])||!_qcOn('gichul','EX_FEW_SENT'))return; var _L=function(x){return String(x||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').length;}; if(_L(t)<_L(o[i])) v.push({kind:'warn',field:'ex',idx:i,code:'EX_FEW_SENT',msg:'예시('+_L(t)+'자)가 해설('+_L(o[i])+'자)보다 짧음 — 해설은 일목요연하게, 예시는 해설만 보고 모르는 사람이 머릿속에 그릴 수 있게 甲乙丙 사례로 자세히',text:t}); });
