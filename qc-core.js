@@ -160,7 +160,7 @@ function _qcViolations(q){
   if(!isSAq && !exp.noEx && !_isCalcQ(q) && (_qcOn('gichul','O_LONG_WITH_EX')||_qcOn('gichul','EX_FEW_SENT'))){
     var _sn=function(t){ return String(t||'').replace(/\[dia\][\s\S]*?\[\/dia\]/g,'').replace(/<[^>]+>/g,'').split(/[.。](?:\s|$)/).filter(function(x){return x.trim().length>3;}).length; };
     var _eng=function(w){ return /^[A-Za-z][A-Za-z\s'\-,.]{1,40}$/.test(String(w||'').trim()); };
-    o.forEach(function(t,i){ if(!String(ex[i]||'').trim()||_eng(opts[i]))return; if(_qcOn('gichul','O_LONG_WITH_EX') && _sn(t)>2) v.push({kind:'warn',field:'o',idx:i,code:'O_LONG_WITH_EX',msg:'해설이 '+_sn(t)+'문장 — 1~2문장(무엇인지 + 판정)으로 줄이고 자세한 것은 예시로',text:String(t)}); });
+    o.forEach(function(t,i){ if(!String(ex[i]||'').trim()||_eng(opts[i]))return; if(_qcOn('gichul','O_LONG_WITH_EX') && _sn(t)!==2) v.push({kind:'warn',field:'o',idx:i,code:'O_LONG_WITH_EX',msg:'해설이 '+_sn(t)+'문장 — 2문장으로(무엇인지 · 판정). 1문장은 짧고, 더 자세한 것은 예시로(크리스 「해설은 2문장 하자 1문장은 또 짧아」)',text:String(t)}); });
     ex.forEach(function(t,i){ t=String(t||'').trim(); if(!t||_eng(opts[i])||!_qcOn('gichul','EX_FEW_SENT'))return; var _L=function(x){return String(x||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').length;}; if(_L(t)<_L(o[i])) v.push({kind:'warn',field:'ex',idx:i,code:'EX_FEW_SENT',msg:'예시('+_L(t)+'자)가 해설('+_L(o[i])+'자)보다 짧음 — 해설은 일목요연하게, 예시는 해설만 보고 모르는 사람이 머릿속에 그릴 수 있게 甲乙丙 사례로 자세히',text:t}); });
   }
   /* E7 덧 — 해설 끝이 「…이 아니다」면 앱 딱지가 「아니다」 한 낱말로 뜬다(크리스 「아니다는 뭐야」). 끝은 옳다/옳지 않다 또는 발문 축 낱말로. */
