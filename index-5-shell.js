@@ -396,9 +396,13 @@ async function goToCard(qid, certHint){
       var _subs=_qb?Object.keys(_qb):[];
       if(!_subs.length){ try{ var _mex=(typeof MANIFEST!=='undefined'&&MANIFEST&&(MANIFEST.exams||[]).find(function(e){return e&&e.id===certHint;})); _subs=((_mex&&_mex.subjects)||[]).map(function(s){return s&&s.code;}).filter(Boolean); }catch(_){} }
       try{ console.info('[레벨업 딥링크] 진입 cert='+certHint+' subs='+JSON.stringify(_subs)+' isMcq='+((typeof isMcqCert==='function')?isMcqCert(certHint):'?')); }catch(_){}
+      /* [2026-10-17] 전 과목 레벨업 자료를 다 받은 뒤에 찾느라 5초가 들었다 — 문항은 아래서 Firestore 로 바로 읽으므로 자료는 뒤에서 받고,
+         캐시 길(직독 실패)에서만 기다린다. 과목도 id 앞머리(hm2mgmt ↔ hm2_mgmt)가 맞는 것부터 읽는다. */
+      var _adAll=null;
       if(typeof loadAdaptiveSubject==='function'){
-        try{ await Promise.all(_subs.map(function(code){ return loadAdaptiveSubject(certHint, code).catch(function(){return null;}); })); }catch(_){}
+        try{ _adAll=Promise.all(_subs.map(function(code){ return loadAdaptiveSubject(certHint, code).catch(function(){return null;}); })); }catch(_){}
       }
+      try{ var _qh=String(qid).split('_')[0]; _subs=_subs.slice().sort(function(x,y){ return (String(y).replace(/_/g,'')===_qh)-(String(x).replace(/_/g,'')===_qh); }); }catch(_){}
       // variantPool 전 과목에서 문항 찾기
       var _found=null, _foundSub=null, _poolInfo=[];
       // [2026-08-05] 딥링크는 '검수·공유용'이라 항상 최신을 보여 준다.
@@ -421,6 +425,7 @@ async function goToCard(qid, certHint){
           }catch(_){}
         }
       }
+      if(!_found && _adAll){ try{ await _adAll; }catch(_){} }
       if(!_found && typeof AD_DATA!=='undefined'){
         for(var vi=0; vi<_subs.length; vi++){
           var _b=AD_DATA[certHint+'|'+_subs[vi]];
