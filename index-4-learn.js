@@ -543,7 +543,8 @@ function _jaryoSections(html){
     var bd=sc.body.join('\n').replace(/^\n+|\n+$/g,'');
     if(sc.ti && /공문/.test(sc.ti)) bd=bd.replace(/\s(수신|제목)\s/g, function(_m,k){ return '\n<b class="jr-k">'+k+'</b> '; });
     if(sc.ti===null) return bd;
-    return '<div class="jr-sec"><div class="jr-sec-ti">'+sc.ti+'</div><div class="jr-sec-bd">'+bd+'</div></div>';
+    var mono=/SQL|코드|릴레이션|테이블|프로그램|의사\s*코드/i.test(sc.ti) ? ' jr-mono' : '';   // 코드·표 칸은 고정폭 — 띄어쓰기로 맞춘 열이 줄을 선다
+    return '<div class="jr-sec'+mono+'"><div class="jr-sec-ti">'+sc.ti+'</div><div class="jr-sec-bd">'+bd+'</div></div>';
   }).join('');
 }
 function _jaryoDots(html){

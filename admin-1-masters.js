@@ -1432,7 +1432,7 @@ async function cpatchValidate(){
         // [2026-10-17] jaryo — 지문에 밑줄 표시 [u]…[/u] 만 더하거나 빼게 한다(크리스 「ㄱ 부터 ㄹ 이 어디까지인지는 밑줄로」). 표시를 걷어 낸 글자가 지금 지문과 한 글자라도 다르면 막는다.
         if(e.jaryo!=null){ hasField=true; var _strip=function(t){ return String(t==null?'':t).replace(/\[\/?u\]/g,''); };
           if(typeof e.jaryo!=='string') errs.push('jaryo 문자열 아님');
-          else if(_strip(e.jaryo)!==_strip(q.jaryo)) errs.push('jaryo 밑줄 표시 밖의 글자가 바뀜 — 차단');
+          else if(_cpNormFmt(_strip(e.jaryo))!==_cpNormFmt(_strip(q.jaryo))) errs.push('jaryo 밑줄 표시·줄바꿈·띄어쓰기 밖의 글자가 바뀜 — 차단');   // 줄바꿈·띄어쓰기도 받는다(크리스 「릴레이션 sql문도 타이틀 상세내용 구분해서 개행해」)
           else if((e.jaryo.match(/\[u\]/g)||[]).length!==(e.jaryo.match(/\[\/u\]/g)||[]).length) errs.push('jaryo [u]·[/u] 짝이 안 맞음'); }
         // [2026-10-16] noEx — 「예시가 필요 없는 문항」 표시(분류·정의·수치·학자–이론·특징). true 면 ex 는 비어 있어야 한다. QC 가 예시 빠짐 경고를 건너뛴다.
         if(e.noEx!=null){ hasField=true;

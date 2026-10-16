@@ -1359,3 +1359,5 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 
 /* [2026-10-17] 밑줄 [u] */
 .ul{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:#B45309}
+
+.jaryo .jr-mono .jr-sec-bd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'D2Coding',monospace;font-size:13px;line-height:1.7;overflow-x:auto;white-space:pre}
