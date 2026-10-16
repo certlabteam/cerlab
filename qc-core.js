@@ -174,7 +174,7 @@ function _qcViolations(q){
     ex.forEach(function(t,i){ t=String(t||'').trim(); if(!t||_eng(opts[i])||!_qcOn('gichul','EX_FEW_SENT'))return; var _L=function(x){return String(x||'').replace(/<[^>]+>/g,'').replace(/\s+/g,'').length;}; if(_L(t)<_L(o[i])) v.push({kind:'warn',field:'ex',idx:i,code:'EX_FEW_SENT',msg:'예시('+_L(t)+'자)가 해설('+_L(o[i])+'자)보다 짧음 — 해설은 일목요연하게, 예시는 해설만 보고 모르는 사람이 머릿속에 그릴 수 있게 甲乙丙 사례로 자세히',text:t}); });
   }
   /* E7 덧 — 해설 끝이 「…이 아니다」면 앱 딱지가 「아니다」 한 낱말로 뜬다(크리스 「아니다는 뭐야」). 끝은 옳다/옳지 않다 또는 발문 축 낱말로. */
-  if(!isSAq && _qcOn('gichul','O_VERDICT_BARE')) o.forEach(function(t,i){ t=String(t||''); if(/(이|가)\s*아니다[.\s]*$/.test(t) && !/(옳|적절|해당|맞)/.test(t.slice(-14))) v.push({kind:'warn',field:'o',idx:i,code:'O_VERDICT_BARE',msg:'해설 끝이 「…이 아니다」 — 앱 판정 딱지가 「아니다」로만 뜬다. 「옳다/옳지 않다」나 발문의 말로 맺는다',text:t}); });
+  if(!isSAq && _qcOn('gichul','O_VERDICT_BARE')) o.forEach(function(t,i){ t=String(t||''); if(/(이|가)\s*아니다[.\s]*$/.test(t) && !/(옳|적절|해당|맞|사항|장점|단점|특징|원칙|요건|기능|역할|요소|조건|방법|내용|성격|사례|효과|목적|대상|유형)/.test(t.slice(-14))) v.push({kind:'warn',field:'o',idx:i,code:'O_VERDICT_BARE',msg:'해설 끝이 「…이 아니다」 — 앱 판정 딱지가 「아니다」로만 뜬다. 「옳다/옳지 않다」나 발문의 말로 맺는다',text:t}); });
   /* E7 — 「아닌/않은 것은?」 발문인데 해설 꼬리가 「해당한다/해당하지 않는다」(정답 여부로 씀). 앱이 꼬리를 딱지로 띄워 맞는 보기가 틀린 것처럼 보인다. */
   if(!isSAq && _qcOn('gichul','O_VERDICT_AXIS')){ var _stem=String((q&&q.q)||''); if(/(아닌|않은)\s*것/.test(_stem) && !/해당/.test(_stem))
     o.forEach(function(t,i){ t=String(t||''); if(/해당(하지\s*않는다|되지\s*않는다|한다|된다)[^가-힣]*$/.test(t)) v.push({kind:'warn',field:'o',idx:i,code:'O_VERDICT_AXIS',msg:'판정 꼬리를 발문의 말로 — 「고려 사항이다/아니다」「장점이다/아니다」처럼. 부정 발문에서 「해당하지 않는다」를 정답 아님 뜻으로 쓰지 않는다',text:t}); }); }

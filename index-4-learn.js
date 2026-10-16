@@ -271,7 +271,12 @@ async function resolveImages(scope){
 function splitVerdict(ex){
   // 해설 끝의 판정어(옳다/옳지 않다 등)를 분리 → {v:판정, vc:색클래스, rest:교정문}
   if(!ex) return {v:'', vc:'', rest:''};
+  // [2026-10-17] 발문 말로 맺은 판정(「고려 사항이다 / 고려 사항이 아니다」)을 먼저 본다 — 크리스 「맞다 표시가 없네」(아래 일반 판정어가 「아니다」만 떼어 갔다)
+    var m2=ex.match(/\s*((?:[가-힣]{1,4}\s?)?(?:사항|장점|단점|특징|원칙|요건|기능|역할|요소|조건|방법|내용|성격|사례|효과|목적|대상)(?:이|가)\s*아니다|(?:[가-힣]{1,4}\s?)?(?:사항|장점|단점|특징|원칙|요건|기능|역할|요소|조건|방법|내용|성격|사례|효과|목적|대상)이다)(\s*\(정답\))?[.。]?\s*$/);
+  if(m2){ var v2=m2[1].replace(/\s+/g,' ').trim(), b2=ex.slice(0,m2.index), st2=(b2===''||/[.。]\s*$/.test(b2));
+    return {v:v2, vc:/아니다/.test(v2)?'eo-red':'eo-grn', rest:(st2?b2.replace(/[\s.·,]+$/,'').trim():ex.trim()).replace(/\s*\(정답\)/g,'')}; }
   var m=ex.match(/\s*(옳지\s*않다|옳지않다|적절하지\s*않다|적절하지않다|부적절하다|해당하지\s*않는다|해당되지\s*않는다|옳다|적절하다|맞다|틀리다|틀린다|해당한다|해당된다|아니다|아니라)(\s*\([^)]*\))?\.?\s*$/);
+
   if(!m) return {v:'', vc:'', rest:ex.trim()};
   var v=m[1].replace(/\s+/g,' ');
   // 판정어가 문장 맨앞(^)이거나 마침표 바로 뒤(=독립 판정문)일 때만 본문에서 제거.
@@ -279,7 +284,7 @@ function splitVerdict(ex){
   var before=ex.slice(0, m.index);
   var standalone=(before===''||/[.。]\s*$/.test(before));
   var rest=standalone ? before.replace(/[\s.·,]+$/,'').trim() : ex.trim();
-  return {v:v, vc:verdictColor(v), rest:rest};
+  return {v:v, vc:verdictColor(v), rest:String(rest).replace(/\s*\(정답\)/g,'')};   // (정답) 글자는 ✅ 정답 딱지와 겹쳐 뺀다
 }
 // 판정 배지 표시 문구를 표준 축(옳음/옳지 않음)으로 정규화 — 표시 전용(로직 verdictIsO는 원본 v 사용)
 function verdictLabel(v){ if(!v) return v; if(/옳지|적절하지|부적절|틀리|틀린/.test(v)) return '옳지 않음'; if(/옳다|적절하다|맞다/.test(v)) return '옳음'; return v; }
@@ -575,6 +580,8 @@ function _noteWithTr(q){
   var box='<div class="tr-box"><div class="tr-ti">지문 해석</div>'+(src?'<div class="tr-row"><b>지문</b><div class="tr-src">'+rm(src,q)+'</div></div>':'')+'<div class="tr-row"><b>해석</b><div>'+rm(m[1],q)+'</div></div></div>';
   return box+(m[2]&&m[2].trim()?'<div class="note">'+expNoteHTML(m[2],q)+'</div>':'');
 }
+/* [2026-10-17] 예시 첫머리 「예를 들어 / 예컨대 / 가령」은 「예)」 표시와 겹쳐 뗀다 — 크리스 「예를 들어 또 중복 · 예)가 있잖아」 */
+function _exTrim(t){ return String(t==null?'':t).trim().replace(/^(예를\s*들어|예를\s*들면|예컨대|가령)\s*[,，]?\s*/,''); }
 function _jaryoDots(html){
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
   return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 4px 0 2px;position:relative;top:-1px">\u25CF</span>');
@@ -1485,7 +1492,7 @@ function renderMcqExam(root){
         var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
         var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
-        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
         return '<div class="eo">'+q1+a1+exTxt+'</div>';
       }).join('')+'</div>';
       // 정답 보기 조합 줄 — 문제 유형(옳지 않은/적절하지 않은/틀린 계열)에 맞춰 판정 라벨
@@ -1528,7 +1535,7 @@ function renderMcqExam(root){
         var termTag = term ? ' <span class="eo-badge">\u2192 '+rm(term,q)+'</span>' : '';
         var head='<div class="eo-q">'+st.k+'. '+rm(st.t,q)+termTag+'</div>';
         var a1=(sv.rest||raw) ? '<div class="eo-a">'+rm(sv.rest||raw,q)+'</div>' : '';
-        var exTxt=(exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
+        var exTxt=(exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
         return '<div class="eo">'+head+a1+exTxt+'</div>';
       }).join('')+'</div>';
       var bCirc=['\u2460','\u2461','\u2462','\u2463','\u2464'];
@@ -1560,7 +1567,7 @@ function renderMcqExam(root){
         var _ob = _hasT ? rm(q.opts[i],q) : (_hasI ? '<span class="eo-oimg">'+imgInner(q.optImg[i])+'</span>' : '');
         var optTxt = (_hasT || _hasI) ? '<div class="eo-q'+((_hasI && !_hasT)?' eo-q-img':'')+'">'+(i+1)+'. '+_ob+verdictTag+ansTag+'</div>' : '';
         var expTxt= sv.rest ? ('<div class="eo-a">'+rmML(sv.rest,q)+'</div>') : '';
-        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(String(exArr[i]).trim(),q)+'</div>' : '';
+        var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
         return '<div class="eo">'+optTxt+expTxt+exTxt+'</div>';
       }).join('')+'</div>';
     } else if(_isCalc){
