@@ -1345,9 +1345,9 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .jaryo .jr-sec-ti{font-weight:800;color:#0F172A;margin:0 0 4px;white-space:normal}
 .jaryo .jr-k{color:#475569;font-weight:800}
 .mk{color:#B45309;font-weight:800;cursor:pointer}
-.jaryo .mk{display:inline-block;padding:0 3px;margin:0 1px;border-radius:4px;background:#FEF3C7;color:#92400E;cursor:default;line-height:1.4}
+.jaryo .mk{color:inherit;font-weight:inherit;cursor:default}   /* 원문자만으로 충분 — 음영 뺌(크리스 2026-10-17) */
 .jaryo .mk.mk-flash{animation:mkFlash 1.4s ease-out}
-@keyframes mkFlash{0%,40%{background:#F59E0B;color:#fff;box-shadow:0 0 0 4px rgba(245,158,11,.35)}100%{background:#FEF3C7;color:#92400E;box-shadow:none}}
+@keyframes mkFlash{0%,40%{background:#FDE68A;border-radius:4px;box-shadow:0 0 0 4px rgba(245,158,11,.35)}100%{background:transparent;box-shadow:none}}
 .jr-fab{position:fixed;right:16px;bottom:104px;z-index:60;padding:8px 14px;border-radius:999px;border:1px solid #CBD5E1;background:#fff;color:#0F172A;font-size:14px;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.14)}
 .jr-sheet{position:fixed;inset:0;z-index:70;display:none}
 .jr-sheet.on{display:block}
