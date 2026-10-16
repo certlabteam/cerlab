@@ -1762,7 +1762,9 @@ function mqToggleGuess(qid){
     if(io){ io.disconnect(); io=null; }
     ensure(); sheet.classList.remove('on');
     if(!j || (j.textContent||'').length<300 || typeof IntersectionObserver==='undefined'){ btn.style.display='none'; return; }
-    io=new IntersectionObserver(function(en){ btn.style.display = en[0].isIntersecting ? 'none' : ''; });
+    // 위쪽 고정 머리(문제 칸) 밑에 깔린 부분은 안 보이는 것으로 친다 — 그만큼 위를 깎고 잰다
+    var hd=document.querySelector('.exam-sticky'), top=hd?Math.round(hd.getBoundingClientRect().height):0;
+    io=new IntersectionObserver(function(en){ btn.style.display = en[0].isIntersecting ? 'none' : ''; }, {rootMargin:'-'+(top+40)+'px 0px 0px 0px'});
     io.observe(j);
   }
   var tm=null;
