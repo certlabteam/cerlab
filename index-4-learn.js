@@ -543,7 +543,18 @@ function _jaryoSections(html){
     var bd=sc.body.join('\n').replace(/^\n+|\n+$/g,'');
     if(sc.ti && /공문/.test(sc.ti)) bd=bd.replace(/\s(수신|제목)\s/g, function(_m,k){ return '\n<b class="jr-k">'+k+'</b> '; });
     if(sc.ti===null) return bd;
-    var mono=/SQL|코드|릴레이션|테이블|프로그램|의사\s*코드/i.test(sc.ti) ? ' jr-mono' : '';   // 코드·표 칸은 고정폭 — 띄어쓰기로 맞춘 열이 줄을 선다
+    var mono=/SQL|코드|릴레이션|테이블|프로그램|의사\s*코드/i.test(sc.ti) ? ' jr-mono' : '';
+    // [2026-10-17] 릴레이션·테이블 칸은 진짜 표로 — 띄어쓰기로 맞춘 열은 폰 글꼴에서 한글 폭이 달라 어긋났다(크리스 2026-10-17 화면).
+    //   두 칸 이상 띄운 곳을 열 경계로 읽고, 열 수가 같은 줄이 둘 이상 이어지면 표로 바꾼다. 첫 줄 한 낱말(릴레이션 이름)은 표 위 머리로 둔다.
+    if(/릴레이션|테이블/.test(sc.ti)){
+      var L=bd.split('\n'), nm='', rows=[];
+      L.forEach(function(x){ var c=x.trim().split(/\s{2,}/); if(c.length>=2) rows.push(c); else if(x.trim()&&!rows.length) nm=x.trim(); });
+      if(rows.length>=2 && rows.every(function(r){return r.length===rows[0].length;})){
+        var th='<tr>'+rows[0].map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr>';
+        var tb=rows.slice(1).map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('');
+        return '<div class="jr-sec"><div class="jr-sec-ti">'+sc.ti+(nm?' · '+nm:'')+'</div><div class="jr-tbl"><table><thead>'+th+'</thead><tbody>'+tb+'</tbody></table></div></div>';
+      }
+    }   // 코드·표 칸은 고정폭 — 띄어쓰기로 맞춘 열이 줄을 선다
     return '<div class="jr-sec'+mono+'"><div class="jr-sec-ti">'+sc.ti+'</div><div class="jr-sec-bd">'+bd+'</div></div>';
   }).join('');
 }

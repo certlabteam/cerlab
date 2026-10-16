@@ -1361,3 +1361,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .ul{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:#B45309}
 
 .jaryo .jr-mono .jr-sec-bd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'D2Coding',monospace;font-size:13px;line-height:1.7;overflow-x:auto;white-space:pre}
+
+.jaryo .jr-tbl{overflow-x:auto;white-space:normal}
+.jaryo .jr-tbl table{border-collapse:collapse;width:100%;font-size:13px}
+.jaryo .jr-tbl th,.jaryo .jr-tbl td{border:1px solid #E2E8F0;padding:4px 6px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.jaryo .jr-tbl th{background:#F1F5F9;font-weight:800;color:#0F172A}
