@@ -1366,3 +1366,6 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .jaryo .jr-tbl table{border-collapse:collapse;width:100%;font-size:13px}
 .jaryo .jr-tbl th,.jaryo .jr-tbl td{border:1px solid #E2E8F0;padding:4px 6px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
 .jaryo .jr-tbl th{background:#F1F5F9;font-weight:800;color:#0F172A}
+
+.cc-pair-src{display:flex;gap:8px;align-items:flex-start;line-height:1.6;color:#475569}
+.cc-pair-src b{flex:0 0 auto;font-size:12px;font-weight:800;color:#64748B;background:#F1F5F9;border-radius:4px;padding:0 4px;margin-top:2px}
