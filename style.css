@@ -1376,3 +1376,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .opt-tbl{border-collapse:collapse;font-size:13px;margin:2px 0}
 .opt-tbl th,.opt-tbl td{border:1px solid #E2E8F0;padding:3px 10px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
 .opt-tbl th{background:#F8FAFC;font-weight:800}
+
+/* [2026-10-17] 지문 해석 칸 */
+.tr-box{margin:0 0 10px;padding:10px 12px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px}
+.tr-ti{font-size:13px;font-weight:800;color:#0F172A;margin:0 0 6px}
+.tr-row{display:flex;gap:8px;align-items:flex-start;line-height:1.65;font-size:14px}
+.tr-row+.tr-row{margin-top:6px}
+.tr-row>b{flex:0 0 auto;min-width:40px;text-align:center;font-size:12px;font-weight:800;background:#E2E8F0;color:#334155;border-radius:4px;padding:0 5px;margin-top:2px}
+.tr-src{white-space:pre-wrap;color:#334155}

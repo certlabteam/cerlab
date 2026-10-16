@@ -565,6 +565,15 @@ function _optTbl(html){
   var R=L.map(function(x){return x.split(/\s{2,}/);}); if(R[0].length<2 || !R.every(function(r){return r.length===R[0].length;})) return html;
   return '<table class="opt-tbl"><thead><tr>'+R[0].map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr></thead><tbody>'+R.slice(1).map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table>';
 }
+/* [2026-10-17] 지문 해석 칸 — exp.s 가 「[지문 해석] … ▶ 풀이」 꼴이면 위에 별도 칸(지문 원문 · 해석)을, 아래에 풀이를 따로 그린다.
+   크리스 「지문 해석 위에 지문도 보여주자 · 지문 해석 별도로 영역 잡아서 · ▶ 하고 해설 시작하는데 그냥 별도 해설 공간 마련해 · 아까 국어 문제 정리하듯」. 데이터는 그대로. */
+function _noteWithTr(q){
+  var s=String((q.exp&&q.exp.s)||''), m=s.match(/^\s*\[지문\s*해석\]\s*([\s\S]*?)(?:\s*▶\s*([\s\S]*))?$/);
+  if(!m) return '<div class="note">'+expNoteHTML(s,q)+'</div>';
+  var src=q.jaryo?String(q.jaryo).replace(/\[\/?u\]/g,''):'';
+  var box='<div class="tr-box"><div class="tr-ti">지문 해석</div>'+(src?'<div class="tr-row"><b>지문</b><div class="tr-src">'+rm(src,q)+'</div></div>':'')+'<div class="tr-row"><b>해석</b><div>'+rm(m[1],q)+'</div></div></div>';
+  return box+(m[2]&&m[2].trim()?'<div class="note">'+expNoteHTML(m[2],q)+'</div>':'');
+}
 function _jaryoDots(html){
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
   return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 4px 0 2px;position:relative;top:-1px">\u25CF</span>');
@@ -1281,7 +1290,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     var statusTxt=g.allOK?'\uC815\uB2F5':(saAnswered(q,ansObj)?'\uC624\uB2F5':'\uBBF8\uC751\uB2F5');
     var statusCol=g.allOK?'#0F6E56':'#A32D2D';
     var body='';
-    if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
+    if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+=_noteWithTr(q);
     var oArr=(q.exp&&q.exp.o)||[];
     if(oArr.length){
       body+='<div class="exp-opts">'+q.blanks.map(function(b,i){
@@ -1441,7 +1450,7 @@ function renderMcqExam(root){
     const oArr=(q.exp && q.exp.o)||[];
     const oFilled=oArr.filter(Boolean).length;
     var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false) ? false : (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
-    if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+='<div class="note">'+expNoteHTML(q.exp.s,q)+'</div>';
+    if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+=_noteWithTr(q);
     var isCombo=isComboQuestion(q.opts, q);
     var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
