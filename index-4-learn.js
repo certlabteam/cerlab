@@ -440,6 +440,9 @@ function renderMath(text, allowBareFraction){
   /* [2026-10-17] 짝 블록 [pair]틀린 것|맞는 것[/pair] → 위(✕)·화살표·아래(○)로 짝을 맞춘다 — 크리스 「원문 고침 위 아래로 짝이 맞게 화살표로 보여줄까? 지금 산만해보여」 「O x도 위아래 짝이 맞게」.
      [dia] 는 고정폭이라 긴 문장이 폰에서 옆으로 넘친다 — 이 칸은 줄을 접는다. 통째로 stash 해 아래 변환에 안 걸린다. */
   s = s.replace(/\[pair\]([^|\[]*)\|([^\[]*)\[\/pair\]/g, function(_m, a, b){ var e=function(t){ return String(t).trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }; return _st('<div class="cc-pair"><div class="cc-pair-x"><b>✕</b>'+e(a)+'</div><div class="cc-pair-ar">↓</div><div class="cc-pair-o"><b>○</b>'+e(b)+'</div></div>'); });
+  /* [2026-10-17] 순서도 블록 [flow]단계|단계|…[/flow] → 번호 칸과 ↓ 로 내려가는 순서도 — 크리스 「이거 계산형 5단계처럼 표시하자 순서도처럼」(SQL 실행 차례).
+     칸마다 「머리: 내용」이면 머리를 굵게. 통째로 stash 해 아래 변환에 안 걸린다. */
+  s = s.replace(/\[flow\]([^\[]*)\[\/flow\]/g, function(_m, body){ var e=function(t){ return String(t).trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }; var st=String(body).split('|').map(function(x){return x.trim();}).filter(Boolean); var h=st.map(function(x,i){ var m=x.match(/^([^:：]{1,40})[:：]\s*([\s\S]*)$/); var t=m?('<b>'+e(m[1])+'</b> '+e(m[2])):e(x); return (i?'<div class="cc-flow-ar">↓</div>':'')+'<div class="cc-flow-st"><span class="cc-flow-n">'+(i+1)+'</span><span class="cc-flow-t">'+t+'</span></div>'; }).join(''); return _st('<div class="cc-flow">'+h+'</div>'); });
   /* [2026-08-07] 수식 블록 [eq]…[/eq] → 가운데 정렬 <div class="cc-eq">.
      왜 태그가 필요한가: 분수 렌더는 이미 아래에 있지만 (변수/한글단위)·맨분수는 **경제 전용**이다
      (전 과목에 풀면 1/3000 축척·회계 콤마숫자·날짜가 분수로 깨진다 — allowBareFraction 주석 참조).

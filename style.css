@@ -1331,3 +1331,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .cc-pair-o{color:#166534;font-weight:600}
 .cc-pair-x b,.cc-pair-o b{flex:0 0 auto;text-decoration:none;display:inline-block}
 .cc-pair-ar{color:#B45309;font-size:14px;line-height:1.2;padding-left:4px}
+
+/* [2026-10-17] 순서도 블록 [flow] — 번호 칸 + ↓ */
+.cc-flow{margin:8px 0 6px}
+.cc-flow-st{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:#fff;border:1px solid #F1D9A8;border-radius:8px;line-height:1.6}
+.cc-flow-n{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-top:2px;border-radius:999px;background:#B45309;color:#fff;font-size:12px;font-weight:800}
+.cc-flow-t b{color:#0F172A}
+.cc-flow-ar{color:#B45309;font-size:14px;line-height:1.2;padding:2px 0 2px 14px}
