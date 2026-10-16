@@ -1428,7 +1428,7 @@ async function cpatchValidate(){
         // [2026-10-16] noEx — 「예시가 필요 없는 문항」 표시(분류·정의·수치·학자–이론·특징). true 면 ex 는 비어 있어야 한다. QC 가 예시 빠짐 경고를 건너뛴다.
         if(e.noEx!=null){ hasField=true;
           if(typeof e.noEx!=='boolean') errs.push('noEx 는 true/false');
-          else if(e.noEx){ var _exChk=(e.ex!=null?e.ex:((q.exp&&q.exp.ex)||[])); if((Array.isArray(_exChk)?_exChk:[_exChk]).some(function(t){return t&&String(t).trim();})) errs.push('noEx 인데 예시가 남아 있음 — ex 를 "" 로 함께 보내야 함'); }
+          else if(e.noEx){ errs.push('noEx:true 는 받지 않음 — 해설·예시는 보기마다 100%(크리스 2026-10-16)'); } else if(false){ var _exChk=(e.ex!=null?e.ex:((q.exp&&q.exp.ex)||[])); if((Array.isArray(_exChk)?_exChk:[_exChk]).some(function(t){return t&&String(t).trim();})) errs.push('noEx 인데 예시가 남아 있음 — ex 를 "" 로 함께 보내야 함'); }
         }
         if(!hasField) errs.push('수정 필드 없음(cpt·o·ex·q·opts·s·ans·noEx 중 하나 필요)');
       }
