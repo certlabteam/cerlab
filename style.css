@@ -1369,3 +1369,5 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 
 .cc-pair-src{display:flex;gap:8px;align-items:flex-start;line-height:1.6;color:#475569}
 .cc-pair-src b{background:#F1F5F9;color:#475569}
+
+.cc-pair>div+div{margin-top:6px}
