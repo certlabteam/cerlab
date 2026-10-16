@@ -160,7 +160,8 @@ function _qcViolations(q){
     o.forEach(function(t,i){ t=String(t||'').trim(); if(/^(이|위|해당)\s*(선택지|선지|보기|진술)(는|은|에서)/.test(t) || /^[^.。]{4,}(라고|다고|는\s*방안을|는\s*내용을|을|를)\s*(설명|제시|서술|주장|말)한다[.。]/.test(t) || /(보기|선지|선택지|진술)(가|는|은)\s*[^.。]{0,30}(정확하게|정확히|올바르게|바르게)?\s*(제시|설명|반영|서술)(하였|했|하)(으므로|기에|어서)/.test(t)) v.push({kind:'warn',field:'o',idx:i,code:'TXT_FILLER',msg:'해설 첫머리 사족(「이 선택지는 …」·「…라고 설명한다/제시한다」로 선지를 되풀이) — 첫 문장부터 사실·근거로',text:t}); });
     var _seen={}; ex.forEach(function(t,i){ t=String(t||'').replace(/<[^>]+>/g,'').trim(); if(!t)return;
       if(/^(예를\s*들어|예컨대|예를\s*들면|가령)/.test(t)) v.push({kind:'warn',field:'ex',idx:i,code:'TXT_FILLER',msg:'예시 첫머리 사족(「예를 들어」) — 「예)」 표시가 이미 있다',text:t});
-      t.split(/[.。](?:\s|$)/).map(function(x){return x.trim();}).filter(function(x){return x.length>=20;}).forEach(function(sn){ if(_seen[sn]!==undefined && _seen[sn]!==i) v.push({kind:'warn',field:'ex',idx:i,code:'TXT_FILLER',msg:'예시 '+(_seen[sn]+1)+'번과 같은 문장을 되풀이 — 길이 채우기 문장은 빼고 그 보기의 장면을 쓴다',text:sn}); else _seen[sn]=i; }); }); }
+      /* [2026-10-17] 기준 표 [tbl]·기간 화살표 [span]·짝 [pair] 은 선지마다 같게 두는 칸이라 되풀이로 세지 않는다 */
+      t.replace(/\[(tbl|span|pair)\][^]*?\[\/\1\]/g,'').split(/[.。](?:\s|$)/).map(function(x){return x.trim();}).filter(function(x){return x.length>=20;}).forEach(function(sn){ if(_seen[sn]!==undefined && _seen[sn]!==i) v.push({kind:'warn',field:'ex',idx:i,code:'TXT_FILLER',msg:'예시 '+(_seen[sn]+1)+'번과 같은 문장을 되풀이 — 길이 채우기 문장은 빼고 그 보기의 장면을 쓴다',text:sn}); else _seen[sn]=i; }); }); }
   /* 판정 빠짐 — 해설 끝에 판정이 없으면 앱 딱지(옳음/옳지 않음)가 안 붙는다(크리스 「옳음 옳지 않음 없네」 · gov9arch 2026 2번 4번 선지 「…구조와 다르다.」). */
   if(!isSAq && !_isCalcQ(q) && _qcOn('gichul','O_NO_VERDICT')) o.forEach(function(t,i){ t=String(t||'').replace(/<[^>]+>/g,'').trim(); if(!t)return;
     if(!/(옳다|옳지\s*않다|적절하다|적절하지\s*않다|해당한다|해당하지\s*않는다|맞다|틀리다|(사항|장점|단점|특징|특성|원칙|요건|기능|역할|요소|조건|방법|내용|성격|사례|효과|목적|대상)(이다|이\s*아니다|가\s*아니다))\s*(\(정답\))?[.。]?\s*$/.test(t))
