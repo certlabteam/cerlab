@@ -1607,6 +1607,9 @@ function clRouteFromHash(){
   /* 앱이 뒤에 떠 있다가 앞으로 나오는 경우에도 한 번 더 본다(안드로이드 TWA) */
   document.addEventListener('visibilitychange', function(){ if(!document.hidden && qWanted()) tryQ(10); });
   try{ if(document.readyState==='complete') tryQ(60); }catch(_){}   /* 이미 로드가 끝난 뒤 스크립트가 붙는 경우 */
+  /* [2026-10-17] load(그림·글꼴까지 다 받음)를 기다리지 않고 바로 시작한다 — 문항 색인은 2초에 서는데 load 가 9초여서 링크가 9초 걸렸다.
+     tryQ 는 준비될 때까지 0.3초마다 다시 보므로 일찍 불러도 안전하다(_done 으로 한 번만 연다). */
+  try{ setTimeout(function(){ tryQ(60); }, 0); }catch(_){}
 })();
 
 
