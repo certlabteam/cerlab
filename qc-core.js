@@ -86,18 +86,21 @@ var _qcCptQuestionUse={};
 function _qcCoreNames(s){
   s=String(s||'').replace(/<[^>]+>/g,''); var out=[],seen={};
   function add(x){x=String(x||'').trim().replace(/^[\s\[\](){}:;,·ㆍ]+|[\s\[\](){}:;,·ㆍ]+$/g,'');if(x.length>=2&&!seen[x]){seen[x]=1;out.push(x);}}
-  var m,re=/[『「“\"‘']([^』」”\"’']{2,32})[』」”\"’']/g;
-  while((m=re.exec(s)))add(m[1]);
-  re=/(?:제\s*\d+\s*조(?:의\s*\d+)?|[A-Z][A-Za-z0-9-]{1,}|[가-힣]{2,12}(?:법률?|령|협약|조약|이론|원칙|제도|학파|모형|모델|유형|단계|척도|효과|개념|현상|권리|문화|지원|체계|위원회|센터|기관|연대력|잡전|필경|세기|주의|론|학습|검사|기법|방법|발달|관계|양식|사상|운동|정책|교육|복지|자존감|충동성|대상화|강화))/g;
-  while((m=re.exec(s)))add(m[0]);
+  var ordinary=/^(?:다음|설명|보기|해당|옳지|않은|것은|모두|각각|순서|내용|기준|경우|이상|이하|관련|의의|특징|특성|한국|한국어|기능|목적|원인|결과|차이|관계|방법|사례|사람|과정|방향|이유|이용|사용|하나|전체|일부|현재|미래|과거|오른쪽|왼쪽|앞쪽|뒤쪽|가운데|오늘|지금|이리|저리|여기|저기|무엇|어떤|모든|자신|상태|모습|성격|변화|시작|종류|요소|단계|자료|개념|활동|문장|표현|기호|단어|형태|의미|소리|사회|문화|교육|지원|발달|정책|제도|사상|이론|학습|행동|환경|가치|효과|사실|정리|확인|분석|비교|구별|포함|제외|없애고|합치는|처음|먹었다|어리다|좋아요|벤치도|귀가|막히길래|돌아왔다)$/;
+  function addCore(x){x=String(x||'').trim().replace(/(?:으로부터|으로|에서|에게|한테|까지|부터|보다|처럼|하고|이며|이고|이나|라도|만|도|은|는|이|가|을|를|의|에|로|와|과)$/,'');if(x.length>=2&&!ordinary.test(x)&&!/(?:길래|면서|는데|하고|이며|이고|으면|아서|어서|했다|한다|된다|있는|없는|하다|되다)$/.test(x)&&!/(?:방법|기법|교수법|상각법|사용법|계산법|측정법)$/.test(x))add(x);}
+  /* Quotes mark linguistic examples as often as proper names; do not treat the quoted
+     phrase itself as E1 evidence. Acronyms and explicit named-term suffixes are safer. */
+  var m,re=/[『「]([^』」]{2,32})[』」]|(?:제\s*\d+\s*조(?:의\s*\d+)?|[A-Z][A-Za-z0-9-]{1,}|[가-힣]{2,12}(?:법률|령|협약|조약|직설|대전|이론|원칙|학파|모형|모델|검정시험))/g;
+  while((m=re.exec(s)))addCore(m[0]);
   if(/\s(?:-|–|—|→)\s/.test(s)){
     var parts=s.split(/\s+(?:-|–|—|→)\s+/);
-    if(parts.length===2 && parts.every(function(p){return p.trim().length<=24 && !/[.?!。？！]/.test(p);}))
-      parts.forEach(function(part){(part.match(/[가-힣]{3,8}/g)||[]).forEach(function(t){if(!/^(다음|설명|보기|해당|옳지|않은|것은|모두|각각|순서|내용|기준|경우|이상|이하|관련|관한)$/.test(t))add(t);});});
+    /* Generic hyphenated descriptions (e.g. "특성을 없애고 하나로 합치는") are not names.
+       Only explicit proper-term patterns above are eligible; arbitrary segment words were
+       the source of hundreds of KLAT false positives. */
   }
   return out;
 }
-function _qcCoreNorm(s){return String(s||'').replace(/<[^>]+>/g,'').replace(/[\s.,·ㆍ:;!?()[\]{}「」『』“”"'’‘]/g,'').toLowerCase();}
+function _qcCoreNorm(s){return String(s||'').replace(/<[^>]+>/g,'').replace(/\uFFFD/g,'').replace(/[\s.,·ㆍ:;!?()[\]{}「」『』“”"'’‘]/g,'').toLowerCase();}
 function _qcHasCore(text,term){var a=_qcCoreNorm(text),b=_qcCoreNorm(term);return !!(b&&a.indexOf(b)>=0);}
 function _qcViolations(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[], cards=exp.c||[];
@@ -105,6 +108,7 @@ function _qcViolations(q){
   // 카드 내용검사(CARD_CX_EMPTY 등)는 인라인 exp.c 전용 — 마스터 카드 품질은 masterLinkAudit 소관.
   var _cptSkip=false, _lk=[];
   if(Array.isArray(exp.cpt) && exp.cpt.length){
+    var _seenCpt={}; exp.cpt.forEach(function(r,i){r=String(r);if(_seenCpt[r]!==undefined&&_qcOn('gichul','CPT_DUP_LINK'))v.push({kind:'warn',field:'cpt',idx:i,code:'CPT_DUP_LINK',msg:'같은 문항에서 개념 '+r+' 을 중복 연결함'});else _seenCpt[r]=i;});
     if(_qcCptCards){
       exp.cpt.forEach(function(r){
         var cs=_qcCptCards[String(r)];
@@ -127,12 +131,17 @@ function _qcViolations(q){
   /* E2 — 실제로 연결된 카드에 선지의 개념어가 하나도 없는지 본다. */
   if(!_cptSkip && _lk.length && _qcOn('gichul','CPT_CONCEPT_MISMATCH')){
     var _want=[]; opts.forEach(function(opt){_qcCoreNames(opt).forEach(function(n){if(!_want.some(function(x){return _qcCoreNorm(x)===_qcCoreNorm(n);}))_want.push(n);});});
+    /* Formal names are sparse in sentence-like options. Also compare meaningful Korean
+       content terms so a card on the same topic is not rejected because one distractor
+       contains an unmentioned phrase such as "수익·비용 대응원칙". */
+    var _tokenWant=[];opts.forEach(function(opt){(String(opt||'').match(/[가-힣]{3,12}/g)||[]).forEach(function(t){t=t.replace(/(?:으로부터|으로|에서|에게|한테|까지|부터|보다|처럼|하고|이며|이고|이나|라도|만|도|은|는|이|가|을|를|의|에|로|와|과)$/,'');if(t.length<3||/^(?:설명|보기|해당|옳지|않은|모두|각각|내용|기준|경우|이상|이하|관련|의의|특징|특성|한국어|기능|목적|원인|결과|차이|관계|방법|사례|사람|과정|방향|이유|이용|사용|하나|전체|일부|현재|미래|과거|오늘|지금|무엇|어떤|모든|자신|상태|모습|성격|변화|시작|종류|요소|단계|자료|개념|활동|문장|표현|기호|단어|형태|의미|소리|사회|문화|교육|지원|발달|정책|제도|사상|이론|학습|행동|환경|가치|효과|사실|정리|확인|분석|비교|구별|포함|제외|하다|된다|한다|있는|없는)$/.test(t))return;if(!_tokenWant.includes(t))_tokenWant.push(t);});});
     var _linkedText=_lk.map(function(c){return String(c&&c.t||'')+' '+String(c&&c.d||'')+' '+String(c&&c.cx||'');}).join(' ');
-    if(_want.length && !_want.some(function(n){return _qcHasCore(_linkedText,n);}))v.push({kind:'warn',field:'cpt',idx:0,code:'CPT_CONCEPT_MISMATCH',msg:'연결 개념카드 제목·본문에 보기 핵심 개념/이름이 없음 — 문항 선지 개념과 카드 연결을 확인'});
+    var _hasLinkedTerm=_want.some(function(n){return _qcHasCore(_linkedText,n);})||_tokenWant.some(function(n){return _qcHasCore(_linkedText,n);});
+    if(_want.length && !_hasLinkedTerm)v.push({kind:'warn',field:'cpt',idx:0,code:'CPT_CONCEPT_MISMATCH',msg:'연결 개념카드 제목·본문에 보기 핵심 개념/이름이 없음 — 문항 선지 개념과 카드 연결을 확인'});
   }
   /* E4 — 개념카드가 보기 해설을 옮긴 흔적을 검사한다. */
   if(!_cptSkip && _lk.length && _qcOn('gichul','CPT_EXPLANATION_ECHO')){
-    var _echoRe=/(?:옳지\s*않다|옳다(?:\s*\([^)]*\))?|정답|자료의|이\s*설명)/;
+    var _echoRe=/(?:옳지\s*않다|옳다(?:\s*\([^)]*\))?|정답|자료의\s*(?:내용|요구|조건|제시)|이\s*설명(?:은|이)\s*(?:옳|틀|맞|정답))/;
     _lk.forEach(function(c,j){
       var title=String(c&&c.t||''), body=String(c&&c.d||'')+' '+String(c&&c.cx||'');
       var titleEcho=opts.some(function(opt){
@@ -153,6 +162,14 @@ function _qcViolations(q){
   function em(t){ return t&&/\u2014/.test(String(t)); }
   o.forEach(function(t,i){ if(em(t)) v.push({kind:'block',field:'o',idx:i,code:'EMDASH',msg:'\ud574\uc124(o)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:t}); });
   ex.forEach(function(t,i){ if(em(t)) v.push({kind:'block',field:'ex',idx:i,code:'EMDASH',msg:'\uc608\uc2dc(ex)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:t}); });
+  /* E5 — 문법에 맞지 않는 비유적 연결 표현은 내용이 맞아도 손본다. */
+  var _awk=/갈라\s*그린다|한\s*자리라|자리라\s|짝이\s*어긋난다|때가\s*어긋난다|맞아떨어진다|겨냥하는\s*자리|맞물린다/;
+  function _awkHit(t){t=String(t||'');if(/맞아떨어진다/.test(t)&&(/(?:기초\s*\d+\s*[+＋].*기말|\d+\s*[+＋].*=.*\d+)/.test(t)||(/(?:=|평균|계산|분자|분모|수치|검산|대입)/.test(t)&&/\d/.test(t))||/(?:GDP|국내총생산).{0,20}(?:GNI|국내총소득)|(?:GNI|국내총소득).{0,20}(?:GDP|국내총생산)|(?:표와|계산값과|계산 결과와|잣대 방향과|기준 방향과).{0,12}맞아떨어진다/.test(t)||(/\d+(?:\.\d+)?[^.]{0,50}(?:같아|같다|같은|일치)[^.]{0,50}맞아떨어진다/.test(t)&&/\d/.test(t))))return false;if(/맞물린다/.test(t)&&/(?:수요량.*공급량|공급량.*수요량|시장균형|시장 균형)/.test(t))return false;return _awk.test(t);}
+  if(_qcOn('gichul','E5_AWKWARD_PHRASE')){
+    o.forEach(function(t,i){if(_awkHit(t))v.push({kind:'warn',field:'o',idx:i,code:'E5_AWKWARD_PHRASE',msg:'교과서·수험서의 보통 말로 고친다',text:t});});
+    ex.forEach(function(t,i){if(_awkHit(t))v.push({kind:'warn',field:'ex',idx:i,code:'E5_AWKWARD_PHRASE',msg:'교과서·수험서의 보통 말로 고친다',text:t});});
+    cards.forEach(function(c,i){var t=String(c&&c.t||'')+' '+String(c&&c.d||'');if(_awkHit(t))v.push({kind:'warn',field:'card',idx:i,code:'E5_AWKWARD_PHRASE',msg:'교과서·수험서의 보통 말로 고친다',text:(c&&c.t)||''});});
+  }
   cards.forEach(function(c,j){ var s=((c&&c.d)||'')+' '+((c&&c.cx)||'')+' '+((c&&c.t)||''); if(em(s)) v.push({kind:'block',field:'card',idx:j,code:'EMDASH',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+'\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:(c&&c.t)||''}); });
   if(em(exp.tip)) v.push({kind:'block',field:'tip',idx:0,code:'EMDASH',msg:'tip\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.tip});
   if(em(exp.s))   v.push({kind:'block',field:'s',idx:0,code:'EMDASH',msg:'\uc694\uc57d(s)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.s});
@@ -421,7 +438,7 @@ var _QC_PALETTE=[
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{O_CORE_NAME_MISSING:{on:true},CPT_CONCEPT_MISMATCH:{on:true},CPT_EXPLANATION_ECHO:{on:true},CPT_SHARED:{on:true},CPT_TOO_MANY_CARDS:{on:true},ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},EX_REASK:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_DUP_CELL:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
+  gichul:{O_CORE_NAME_MISSING:{on:true},CPT_CONCEPT_MISMATCH:{on:true},CPT_EXPLANATION_ECHO:{on:true},CPT_SHARED:{on:true},CPT_TOO_MANY_CARDS:{on:true},CPT_DUP_LINK:{on:true},E5_AWKWARD_PHRASE:{on:true},ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},EX_REASK:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_DUP_CELL:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
@@ -449,7 +466,7 @@ var _QC_SEV = {
   OTTAG_LEN:'ERROR', DUP_ID:'ERROR',
   /* WARNING (SHOULD — 권장 수정) */
   ANS_VERDICT_MISMATCH:'WARNING',
-  O_CORE_NAME_MISSING:'WARNING', CPT_CONCEPT_MISMATCH:'WARNING', CPT_EXPLANATION_ECHO:'WARNING', CPT_SHARED:'WARNING', CPT_TOO_MANY_CARDS:'WARNING',
+  O_CORE_NAME_MISSING:'WARNING', CPT_CONCEPT_MISMATCH:'WARNING', CPT_EXPLANATION_ECHO:'WARNING', CPT_SHARED:'WARNING', CPT_TOO_MANY_CARDS:'WARNING', CPT_DUP_LINK:'WARNING', E5_AWKWARD_PHRASE:'WARNING',
   O_INCOMPLETE:'WARNING', COMBO_STMT_MISMATCH:'WARNING', O_ECHO_D:'WARNING', O_NO_ACTOR:'WARNING',
   O_STEPS_NOBR:'WARNING', EX_STEPS_NOBR:'WARNING', EX_STEPS_CRAMMED:'WARNING', O_ECHO_OPT:'WARNING',
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',

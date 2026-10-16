@@ -45,9 +45,11 @@
          연결 카드 내용을 직접 대조해, 대명사 대체·개념 카드 오연결을 다시 막는다. */
       if(!_QC_DEFAULTS.gichul.O_CORE_NAME_MISSING) _QC_DEFAULTS.gichul.O_CORE_NAME_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.CPT_CONCEPT_MISMATCH) _QC_DEFAULTS.gichul.CPT_CONCEPT_MISMATCH={on:true};
+      if(!_QC_DEFAULTS.gichul.CPT_DUP_LINK) _QC_DEFAULTS.gichul.CPT_DUP_LINK={on:true};
       if(!_QC_DEFAULTS.gichul.CPT_EXPLANATION_ECHO) _QC_DEFAULTS.gichul.CPT_EXPLANATION_ECHO={on:true};
       if(!_QC_DEFAULTS.gichul.CPT_SHARED) _QC_DEFAULTS.gichul.CPT_SHARED={on:true};
       if(!_QC_DEFAULTS.gichul.CPT_TOO_MANY_CARDS) _QC_DEFAULTS.gichul.CPT_TOO_MANY_CARDS={on:true};
+      if(!_QC_DEFAULTS.gichul.E5_AWKWARD_PHRASE) _QC_DEFAULTS.gichul.E5_AWKWARD_PHRASE={on:true};
       if(!_QC_DEFAULTS.gichul.EX_MISSING) _QC_DEFAULTS.gichul.EX_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.O_SHORT) _QC_DEFAULTS.gichul.O_SHORT={on:true,minChars:30};
       if(!_QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT) _QC_DEFAULTS.gichul.VERDICT_FILL_EXEMPT={on:true};
