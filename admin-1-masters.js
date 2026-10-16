@@ -1400,7 +1400,7 @@ async function cpatchValidate(){
             e.o.forEach(function(t,i){
               var emptyNew=(typeof t!=='string'||!String(t).trim());
               var origHad=(oArr[i]!=null && String(oArr[i]).replace(/<[^>]+>/g,'').trim()!=='');
-              if(emptyNew && origHad) errs.push('o['+i+'] 기존 해설을 빈값으로 덮음 — 차단');  // 계산형 빈 슬롯(원래도 빈칸)은 허용, 기존 해설 삭제만 차단
+              if(emptyNew && origHad && !(e.calcConvert===true && i!==(parseInt(q.ans,10)-1))) errs.push('o['+i+'] 기존 해설을 빈값으로 덮음 — 차단');   // calcConvert: 계산형으로 바꿀 때만 정답 칸 밖을 비울 수 있다  // 계산형 빈 슬롯(원래도 빈칸)은 허용, 기존 해설 삭제만 차단
             });
           }
         }
@@ -1425,6 +1425,10 @@ async function cpatchValidate(){
           else if(!e.s.trim() && String((q.exp&&q.exp.s)||'').trim()) errs.push('s 기존 요약을 빈값으로 덮음 — 차단');
         }
         if(e.ans!=null){ hasField=true; _cpAnsErrs(e,q).forEach(function(m){ errs.push(m); }); }
+        // [2026-10-17] 계산형 칸 — approach·principle·tip·recall(글) · exSum(글 배열). 크리스 「계산형은 선지 다 해설하는거 아니잖아」 — SQL 실행 결과 같은 문항을 계산형 꼴로 바꾼다.
+        ['approach','principle','tip','recall'].forEach(function(k){ if(e[k]!=null){ hasField=true; if(typeof e[k]!=='string'||!e[k].trim()) errs.push(k+' 글이 비었거나 글이 아님'); } });
+        if(e.exSum!=null){ hasField=true; if(!Array.isArray(e.exSum)||!e.exSum.length||e.exSum.some(function(x){return typeof x!=='string';})) errs.push('exSum 은 글 배열'); }
+        if(e.calcConvert===true){ var _oc=(e.o||[]).filter(function(x){return x&&String(x).trim();}).length; if(_oc!==1) errs.push('calcConvert 는 o 에 정답 칸 하나만 남겨야 함('+_oc+'칸)'); if(e.o && !String(e.o[parseInt(q.ans,10)-1]||'').trim()) errs.push('calcConvert: 정답 칸 o 가 비었음'); if(!e.ex||!e.exSum) errs.push('calcConvert 는 ex(풀이 단계)·exSum(요약풀이)이 같이 와야 함'); }
         // [2026-10-17] jaryo — 지문에 밑줄 표시 [u]…[/u] 만 더하거나 빼게 한다(크리스 「ㄱ 부터 ㄹ 이 어디까지인지는 밑줄로」). 표시를 걷어 낸 글자가 지금 지문과 한 글자라도 다르면 막는다.
         if(e.jaryo!=null){ hasField=true; var _strip=function(t){ return String(t==null?'':t).replace(/\[\/?u\]/g,''); };
           if(typeof e.jaryo!=='string') errs.push('jaryo 문자열 아님');
@@ -1435,7 +1439,7 @@ async function cpatchValidate(){
           if(typeof e.noEx!=='boolean') errs.push('noEx 는 true/false');
           else if(e.noEx){ errs.push('noEx:true 는 받지 않음 — 해설·예시는 보기마다 100%(크리스 2026-10-16)'); } else if(false){ var _exChk=(e.ex!=null?e.ex:((q.exp&&q.exp.ex)||[])); if((Array.isArray(_exChk)?_exChk:[_exChk]).some(function(t){return t&&String(t).trim();})) errs.push('noEx 인데 예시가 남아 있음 — ex 를 "" 로 함께 보내야 함'); }
         }
-        if(!hasField) errs.push('수정 필드 없음(cpt·o·ex·q·opts·s·ans·jaryo 중 하나 필요)');
+        if(!hasField) errs.push('수정 필드 없음(cpt·o·ex·q·opts·s·ans·jaryo·approach·principle·tip·recall·exSum 중 하나 필요)');
       }
       var setKey=G.subject+' · '+((q&&q.set)||'(미상)');
       var ss=setStat[setKey]||(setStat[setKey]={ok:0,err:0});
@@ -1443,7 +1447,7 @@ async function cpatchValidate(){
       else {
         okN++; ss.ok++;
         okMap[rec.home+'||'+e.id]={ rec:rec, cpt:(e.cpt!=null?e.cpt:null), o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null),
-          s:(e.s!=null?e.s:null), jaryo:(e.jaryo!=null?e.jaryo:null), noEx:(e.noEx!=null?e.noEx:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
+          s:(e.s!=null?e.s:null), calc:{approach:e.approach,principle:e.principle,tip:e.tip,recall:e.recall,exSum:e.exSum}, jaryo:(e.jaryo!=null?e.jaryo:null), noEx:(e.noEx!=null?e.noEx:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
           basis:(e.ans!=null?(e['근거']||e.basis||null):null), log:(e.ans!=null?String(e['로그']||e.log||''):null) };
         if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++; if(e.ans!=null) cntAns++;
       }
@@ -1500,6 +1504,7 @@ async function cpatchApply(tok){
     if(it.opts!=null){ q.opts=it.opts; }
     if(it.s!=null){ q.exp=q.exp||{}; q.exp.s=it.s; }
     if(it.jaryo!=null){ q.jaryo=it.jaryo; }
+    if(it.calc){ ['approach','principle','tip','recall','exSum'].forEach(function(k){ if(it.calc[k]!=null){ q.exp=q.exp||{}; q.exp[k]=it.calc[k]; } }); }
     if(it.noEx!=null){ q.exp=q.exp||{}; if(it.noEx) q.exp.noEx=true; else delete q.exp.noEx; }
     if(it.ans!=null){ q.ans=it.ans; _cpAnsAudit.push({docId:it.docId, home:rec.home, id:it.id, before:it.ansFrom, after:it.ans, 근거:it.basis, 로그:it.log}); }
     touched[rec.home]=true;
