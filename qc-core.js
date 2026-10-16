@@ -157,7 +157,7 @@ function _qcViolations(q){
       v.push({kind:'warn',field:'ex',idx:i,code:'EX_VERDICT_TAIL',msg:'예시에 판정·문항 이야기가 들어감(…므로 옳다 / 이 선택지는 틀리다 / 이 문항과는 다르다) — 예시는 장면과 결과만, 판정은 해설에서',text:t}); });
   /* 사족 — 해설 첫머리 「이 선택지는 …라고 설명한다」, 예시 첫머리 「예를 들어」, 한 문항 예시들에 같은 문장 되풀이(길이 채우기). 크리스 「예) 라고표기가 되어있는데 예를들어 란 사족을 왜 붙여」 「이 선택지는 이란말 사족이야 빼」 */
   if(!isSAq && _qcOn('gichul','TXT_FILLER')){
-    o.forEach(function(t,i){ t=String(t||'').trim(); if(/^(이|위|해당)\s*(선택지|선지|보기|진술)(는|은|에서)/.test(t)) v.push({kind:'warn',field:'o',idx:i,code:'TXT_FILLER',msg:'해설 첫머리 사족(「이 선택지는 …」) — 바로 내용으로 시작',text:t}); });
+    o.forEach(function(t,i){ t=String(t||'').trim(); if(/^(이|위|해당)\s*(선택지|선지|보기|진술)(는|은|에서)/.test(t) || /^[^.。]{4,}(라고|다고|는\s*방안을|는\s*내용을|을|를)\s*(설명|제시|서술|주장|말)한다[.。]/.test(t)) v.push({kind:'warn',field:'o',idx:i,code:'TXT_FILLER',msg:'해설 첫머리 사족(「이 선택지는 …」·「…라고 설명한다/제시한다」로 선지를 되풀이) — 첫 문장부터 사실·근거로',text:t}); });
     var _seen={}; ex.forEach(function(t,i){ t=String(t||'').replace(/<[^>]+>/g,'').trim(); if(!t)return;
       if(/^(예를\s*들어|예컨대|예를\s*들면|가령)/.test(t)) v.push({kind:'warn',field:'ex',idx:i,code:'TXT_FILLER',msg:'예시 첫머리 사족(「예를 들어」) — 「예)」 표시가 이미 있다',text:t});
       t.split(/[.。](?:\s|$)/).map(function(x){return x.trim();}).filter(function(x){return x.length>=20;}).forEach(function(sn){ if(_seen[sn]!==undefined && _seen[sn]!==i) v.push({kind:'warn',field:'ex',idx:i,code:'TXT_FILLER',msg:'예시 '+(_seen[sn]+1)+'번과 같은 문장을 되풀이 — 길이 채우기 문장은 빼고 그 보기의 장면을 쓴다',text:sn}); else _seen[sn]=i; }); }); }
