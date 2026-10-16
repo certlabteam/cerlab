@@ -1355,6 +1355,15 @@ async function cpatchValidate(){
   cpatchCancelConfirm();   // 재검증하면 이전 확인 토큰·배너는 무효
   var groups=(_cpatchData&&_cpatchData.groups)||[];
   var allHomes={}, okMap={}, errN=0, okN=0, setStat={}, errRows=[], failSubs=[];
+  var cptExists={};
+  var requestedCpts=[];
+  groups.forEach(function(G){ G.edits.forEach(function(e){ if(Array.isArray(e&&e.cpt)) requestedCpts=requestedCpts.concat(e.cpt); }); });
+  requestedCpts=Array.from(new Set(requestedCpts));
+  for(var cpi=0;cpi<requestedCpts.length;cpi+=20){
+    var cptChunk=requestedCpts.slice(cpi,cpi+20);
+    var cptSnaps=await Promise.all(cptChunk.map(function(id){return db.collection('concepts').doc(id).get().catch(function(){return null;});}));
+    cptSnaps.forEach(function(snap,ci){ cptExists[cptChunk[ci]]=snap?!!snap.exists:null; });
+  }
   var cntO=0, cntEx=0, cntSp=0, cntAns=0;
   for(var gi=0; gi<groups.length; gi++){
     var G=groups[gi];
@@ -1366,6 +1375,21 @@ async function cpatchValidate(){
       var rec=byId[e.id], q=rec&&rec.q, errs=[], hasField=false;
       if(!q){ errs.push('문항 없음'); }
       else {
+        if(e.cpt!=null){ hasField=true;
+          if(!Array.isArray(e.cpt)) errs.push('cpt는 배열이어야 함');
+          else {
+            if(!e.cpt.length) errs.push('cpt를 빈 배열로 바꿀 수 없음');
+            if(e.cpt.some(function(id){return typeof id!=='string'||!/^cpt_[A-Za-z0-9_]+$/.test(id);})) errs.push('cpt ID 형식 오류');
+            if(new Set(e.cpt).size!==e.cpt.length) errs.push('cpt 중복 ID 있음');
+            var currentCpt=(q.exp&&q.exp.cpt)||[];
+            if(!Array.isArray(currentCpt)) currentCpt=[currentCpt];
+            if(JSON.stringify(e.cpt)===JSON.stringify(currentCpt)) errs.push('cpt unchanged');
+            for(var ci=0;ci<e.cpt.length;ci++){
+              if(cptExists[e.cpt[ci]]===false) errs.push('없는 개념 ID: '+e.cpt[ci]);
+              else if(cptExists[e.cpt[ci]]!==true) errs.push('개념 확인 실패: '+e.cpt[ci]);
+            }
+          }
+        }
         if(e.o!=null){ hasField=true;
           if(!Array.isArray(e.o)) errs.push('o 배열 아님');
           else { var oArr=(q.exp&&q.exp.o)||[];
@@ -1398,14 +1422,14 @@ async function cpatchValidate(){
           else if(!e.s.trim() && String((q.exp&&q.exp.s)||'').trim()) errs.push('s 기존 요약을 빈값으로 덮음 — 차단');
         }
         if(e.ans!=null){ hasField=true; _cpAnsErrs(e,q).forEach(function(m){ errs.push(m); }); }
-        if(!hasField) errs.push('수정 필드 없음(o·ex·q·opts·s·ans 중 하나 필요)');
+        if(!hasField) errs.push('수정 필드 없음(cpt·o·ex·q·opts·s·ans 중 하나 필요)');
       }
       var setKey=G.subject+' · '+((q&&q.set)||'(미상)');
       var ss=setStat[setKey]||(setStat[setKey]={ok:0,err:0});
       if(errs.length){ errN++; ss.err++; errRows.push('<div style="color:#A32D2D">✗ '+cpatchEsc(G.docId+' / '+e.id)+' — '+cpatchEsc(errs.join(' · '))+'</div>'); }
       else {
         okN++; ss.ok++;
-        okMap[rec.home+'||'+e.id]={ rec:rec, o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null),
+        okMap[rec.home+'||'+e.id]={ rec:rec, cpt:(e.cpt!=null?e.cpt:null), o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null),
           s:(e.s!=null?e.s:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
           basis:(e.ans!=null?(e['근거']||e.basis||null):null), log:(e.ans!=null?String(e['로그']||e.log||''):null) };
         if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++; if(e.ans!=null) cntAns++;
@@ -1456,6 +1480,7 @@ async function cpatchApply(tok){
   keys.forEach(function(k){
     var it=_cpatchOk[k]; var rec=it&&it.rec; if(!rec||!rec.q) return;
     var q=rec.q;
+    if(it.cpt!=null){ q.exp=q.exp||{}; q.exp.cpt=it.cpt; }
     if(it.o!=null){ q.exp=q.exp||{}; q.exp.o=it.o; }
     if(it.ex!=null){ q.exp=q.exp||{}; q.exp.ex=it.ex; }
     if(it.q!=null){ q.q=it.q; }
@@ -1684,5 +1709,3 @@ async function grpmImport(){
   var stt=document.getElementById('grpmImpStatus'); if(stt){ stt.style.color='#15793F'; stt.innerHTML='✅ 올림: 성공 <b>'+ok+'</b>개'+(fail?(' · 실패 '+fail+'개'+((typeof _r!=='undefined'&&_r&&_r.err)?(' — '+_r.err):'')):'')+'.'; }
   grpmRenderList();
 }
-
-

@@ -134,7 +134,7 @@ async function impHandleFiles(fileList){
     if(parsed && typeof parsed==='object'){
       var _mk=(parsed&&parsed._meta&&String(parsed._meta.kind||''))||'';
       var _pe=Array.isArray(parsed)?parsed[0]:(Array.isArray(parsed.edits)?parsed.edits[0]:(Array.isArray(parsed.patch)?parsed.patch[0]:null));
-      if(_pe && _pe.docId && _pe.id && (_pe.o!=null||_pe.ex!=null||_pe.q!=null||_pe.opts!=null) && !Array.isArray(_pe.questions)) _wrong='콘텐츠 패치 → 🩹 콘텐츠 패치 탭';
+      if(_pe && _pe.docId && _pe.id && (_pe.cpt!=null||_pe.o!=null||_pe.ex!=null||_pe.q!=null||_pe.opts!=null) && !Array.isArray(_pe.questions)) _wrong='콘텐츠 패치 → 🩹 콘텐츠 패치 탭';
       else if(/ottag/i.test(_mk) || (Array.isArray(parsed.subjects) && parsed.subjects[0] && parsed.subjects[0].ot)) _wrong='OX진술 태그 → 🏷️ OX진술 태그 탭';
       else if(/levelup|adaptive/i.test(_mk) || Array.isArray(parsed.mapping)||Array.isArray(parsed.variants)||Array.isArray(parsed.diagnostic)||Array.isArray(parsed.topics)||Array.isArray(parsed.subjects)) _wrong='레벨업 데이터 → ⚡ 레벨업 업로드 탭';
       else if(parsed.ot && typeof parsed.ot==='object' && !Array.isArray(parsed.questions)) _wrong='OX진술 태그 → 🏷️ OX진술 태그 탭';

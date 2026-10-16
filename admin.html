@@ -1139,7 +1139,8 @@ tr:hover td{background:#FAFAFA}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 20px 2px">
           <h2 style="margin:0;font-size:16px">🩹 콘텐츠 패치 업로드</h2>
         </div>
-        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">해설·예시·띄어쓰기 <b>부분 패치</b>를 문항에 <b>id로 콕 집어 병합</b>합니다(문서 통째 덮어쓰기·재샤딩 없음). 형식: <b>[{docId, id, o?, ex?, q?, opts?}, …]</b>(배열) 또는 <b>{edits:[…]}</b>. <b>o</b>→exp.o(선지 해설), <b>ex</b>→exp.ex(예시), <b>q·opts</b>→문두·보기. 검증: ①문항 id 존재 ②o 길이=현재 exp.o 길이 ③<b>q·opts는 띄어쓰기만 다를 때만 통과</b>(내용 바뀌면 자동 차단). 한 번에 파일 1개(콘텐츠 패치·띄어쓰기 패치 각각 드롭).</div>
+        <div style="padding:6px 20px 4px;font-size:12px;color:#A89C8E">해설·예시·띄어쓰기 <b>부분 패치</b>를 문항에 <b>id로 콕 집어 병합</b>합니다(문서 통째 덮어쓰기·재샤딩 없음). 형식: <b>[{docId, id, cpt?, o?, ex?, q?, opts?}, …]</b>(배열) 또는 <b>{edits:[…]}</b>. <b>cpt</b>→exp.cpt(개념 ID 배열), <b>o</b>→exp.o(선지 해설), <b>ex</b>→exp.ex(예시), <b>q·opts</b>→문두·보기. 검증: ①문항 id 존재 ②o 길이=현재 exp.o 길이 ③<b>q·opts는 띄어쓰기만 다를 때만 통과</b>(내용 바뀌면 자동 차단). 한 번에 파일 1개(콘텐츠 패치·띄어쓰기 패치 각각 드롭).</div>
+        <div style="padding:0 20px 4px;font-size:12px;color:#5B50C0"><b>exp.cpt</b> 개념 연결 패치도 지원합니다. 새 ID만 지정할 수 있고, 기존 개념 문서 존재와 중복 여부를 확인합니다. 패치가 지정한 문항 필드만 바꿉니다.</div>
         <div id="cpatchStatus" style="padding:2px 20px;font-size:12px;color:#7F77DD"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px;align-items:center">
           <span id="cpatchImpDrop" style="cursor:pointer;flex:1;min-width:220px;display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed #CBD5E1;border-radius:8px;padding:10px 12px;color:#94A3B8;font-size:12px">📁 여기로 콘텐츠 패치 JSON 파일을 끌어다 놓기</span>
@@ -1639,10 +1640,10 @@ tr:hover td{background:#FAFAFA}
 </div>
 
 <script src="manifest-tx.js?v=d0b27757"></script>
-<script src="admin-1-masters.js?v=720ec7a5"></script>
+<script src="admin-1-masters.js?v=bc163911"></script>
 <script src="admin-2-content.js?v=5e50d1f3"></script>
 <script src="seo-core.js?v=0510e48c"></script>
-<script src="admin-3-qc.js?v=d8a5d2e3"></script>
+<script src="admin-3-qc.js?v=9e1c7126"></script>
 <script src="admin-4-ops.js?v=d2db5ed4"></script>
 </body>
 </html>
