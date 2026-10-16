@@ -91,7 +91,7 @@ function _qcCoreNames(s){
   /* Quotes mark linguistic examples as often as proper names; do not treat the quoted
      phrase itself as E1 evidence. Acronyms and explicit named-term suffixes are safer. */
   var m,re=/[『「]([^』」]{2,32})[』」]|(?:제\s*\d+\s*조(?:의\s*\d+)?|[A-Z][A-Za-z0-9-]{1,}|[가-힣]{2,12}(?:법률|령|협약|조약|직설|대전|이론|원칙|학파|모형|모델|검정시험))/g;
-  while((m=re.exec(s)))addCore(m[0]);
+  while((m=re.exec(s))){var term=m[0],inner=term.slice(1,-1);if(term.charAt(0)==="「"&&/\s/.test(inner)&&/(?:다|요|니다|습니다|습니까)$/.test(inner))continue;addCore(term);}
   if(/\s(?:-|–|—|→)\s/.test(s)){
     var parts=s.split(/\s+(?:-|–|—|→)\s+/);
     /* Generic hyphenated descriptions (e.g. "특성을 없애고 하나로 합치는") are not names.
@@ -102,6 +102,23 @@ function _qcCoreNames(s){
 }
 function _qcCoreNorm(s){return String(s||'').replace(/<[^>]+>/g,'').replace(/\uFFFD/g,'').replace(/[\s.,·ㆍ:;!?()[\]{}「」『』“”"'’‘]/g,'').toLowerCase();}
 function _qcHasCore(text,term){var a=_qcCoreNorm(text),b=_qcCoreNorm(term);return !!(b&&a.indexOf(b)>=0);}
+/* E1 이름 누락 검사에서만 쓰는 제한적 한영 표기 대응. 일반 E2 카드 연결 판정은 그대로 둔다. */
+var _qcCoreNameAliasGroups=[
+  ['장사등에관한법률','장사법'],
+  ['rawls','롤즈'],
+  ['giffen','기펜재'],
+  ['say','세이의법칙'],
+  ['keynes','케인즈']
+];
+function _qcHasCoreName(text,term){
+  var b=_qcCoreNorm(term), forms=[b], a=_qcCoreNorm(text);
+  if(!b)return false;
+  _qcCoreNameAliasGroups.forEach(function(group){
+    var normalized=group.map(_qcCoreNorm);
+    if(normalized.indexOf(b)>=0) forms=forms.concat(normalized);
+  });
+  return forms.some(function(form){return !!(form&&a.indexOf(form)>=0);});
+}
 function _qcViolations(q){
   var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[], cards=exp.c||[];
   // exp.cpt(마스터 링크) 카드: 개수(CARD_LT2)·화살표(REL_NO_ARROW) 판정에만 반영.
@@ -122,7 +139,7 @@ function _qcViolations(q){
   /* E1 — 이름이 보기에는 있는데 그 보기의 해설·예시에는 빠졌는지 경고한다. */
   if(!isSAq && _qcOn('gichul','O_CORE_NAME_MISSING')) opts.forEach(function(opt,i){
     var names=_qcCoreNames(opt); if(!names.length)return;
-    var body=String(o[i]||'')+' '+String(ex[i]||''), missing=names.filter(function(n){return !_qcHasCore(body,n);});
+    var body=String(o[i]||'')+' '+String(ex[i]||''), missing=names.filter(function(n){return !_qcHasCoreName(body,n);});
     if(missing.length)v.push({kind:'warn',field:'o',idx:i,code:'O_CORE_NAME_MISSING',msg:'보기 핵심 이름/용어 '+missing.slice(0,4).join('·')+' 이 대응 해설·예시에 그대로 없음 — 대명사 대신 이름을 적는다',text:opt});
   });
   var oFilled=o.filter(function(x){return x&&String(x).trim();}).length;
