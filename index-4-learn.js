@@ -1751,7 +1751,7 @@ function mqToggleGuess(qid){
     if(btn) return;
     btn=document.createElement('button'); btn.type='button'; btn.className='jr-fab'; btn.textContent='📄 지문'; btn.style.display='none';
     sheet=document.createElement('div'); sheet.className='jr-sheet';
-    sheet.innerHTML='<div class="jr-sheet-bg"></div><div class="jr-sheet-pn"><button type="button" class="jr-sheet-hd">지문 · 내려서 닫기 ▾</button><div class="jr-sheet-bd"></div></div>';
+    sheet.innerHTML='<div class="jr-sheet-bg"></div><div class="jr-sheet-pn"><button type="button" class="jr-sheet-hd">지문 · 눌러서 닫기 ▾</button><div class="jr-sheet-bd"></div></div>';
     document.body.appendChild(btn); document.body.appendChild(sheet);
     btn.addEventListener('click', function(){ if(!cur) return; sheet.querySelector('.jr-sheet-bd').innerHTML='<div class="jaryo">'+cur.innerHTML+'</div>'; sheet.classList.add('on'); });
     sheet.addEventListener('click', function(e){ if(e.target.closest('.jr-sheet-hd') || e.target.classList.contains('jr-sheet-bg')) sheet.classList.remove('on'); });
