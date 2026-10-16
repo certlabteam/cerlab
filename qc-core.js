@@ -153,7 +153,7 @@ function _qcViolations(q){
       v.push({kind:'warn',field:'ex',idx:i,code:'EX_OBSERVER_SCENE',msg:'예시가 구경꾼·판정 장면(…학생이다 / …알았다·정리했다·짚는다). 甲은 그 일을 하는 사람으로 1~2문장, 한 일과 결과만 — 예시가 필요 없는 문항이면 ex 를 비우고 해설을 자세히',text:t}); });
   /* 예시 끝 판정 — 예시는 장면만 그리고 판정은 해설이 맡는다(코덱스 첫 3문항 묶음 · 「…므로 옳다」 「이 선택지는 틀리다」 「이 문항과는 다르다」). */
   if(!isSAq && _qcOn('gichul','EX_VERDICT_TAIL')) ex.forEach(function(t,i){ t=String(t||'').replace(/<[^>]+>/g,'').trim(); if(!t)return;
-    if(/(옳다|옳지 않다|틀리다|틀린다|맞다|적절하다|적절하지 않다|해당한다|해당하지 않는다)\(?정답?\)?[.\s]*$/.test(t) || /이 (문항|선택지|선지|보기)(은|는|과는|와는|의)/.test(t))
+    if(/(옳다|옳지 않다|틀리다|틀린다|맞다|적절하다|적절하지 않다|해당한다|해당하지 않는다)(?:\(정답\))?[.\s]*$/.test(t) || /이 (문항|선택지|선지|보기)(은|는|과는|와는|의)/.test(t))
       v.push({kind:'warn',field:'ex',idx:i,code:'EX_VERDICT_TAIL',msg:'예시에 판정·문항 이야기가 들어감(…므로 옳다 / 이 선택지는 틀리다 / 이 문항과는 다르다) — 예시는 장면과 결과만, 판정은 해설에서',text:t}); });
   /* 어학 — 선지가 영어 낱말·구인데 그 보기 예시에 그 영어가 없다(크리스 「이게 뭐냐」 · 甲이 단어를 회의록에 적었다는 예시). 예시는 단어·숙어 풀이나 문맥 단서 대 보기로 쓴다. */
   if(!isSAq && _qcOn('gichul','EX_LANG_NO_WORD')) opts.forEach(function(opt,i){ var w=String(opt||'').replace(/<[^>]+>/g,'').replace(/^\s*[①-⑤\d.)]+\s*/,'').trim(); var t=String(ex[i]||'').trim();
