@@ -1546,7 +1546,16 @@ function clRouteFromHash(){
     return null;
   }
   async function openQ(cert, qid){
-    try{ if(typeof loadExam==='function') await loadExam(cert); }catch(_){}
+    /* [2026-10-17] 링크가 7~9초 걸렸다 — 시험 다섯 과목을 다 받은 뒤에 문제로 갔다(크리스 「링크 누르면 넘어가는데 왜 이리 오래걸리냐」 → 「고친다 — 그 회차만 먼저」).
+       문항 id 에 과목 코드가 있으면(adm26_s1_1 → s1) 그 과목만 먼저 받아 띄우고, 나머지는 뒤에서 받는다. 과목을 모르면 종전대로 다 받는다. */
+    var _fast=false;
+    try{ if(typeof loadedExams!=='undefined' && !loadedExams[cert] && typeof loadOneSubject==='function' && typeof loadManifest==='function'){
+      await loadManifest(); var _ex=(MANIFEST.exams||[]).find(function(e){return e.id===cert;});
+      var _sb=_ex && (_ex.type||'mcq')==='mcq' && (_ex.subjects||[]).find(function(s){ return String(qid).indexOf('_'+s.code+'_')>=0; });
+      if(_sb){ await loadOneSubject(_ex,_sb); if(typeof rebuildQid==='function') rebuildQid(); _fast=!!(typeof MCQ_QID2CS!=='undefined' && MCQ_QID2CS[qid]); }
+    } }catch(_){ _fast=false; }
+    var _full=null; try{ if(typeof loadExam==='function') _full=loadExam(cert); }catch(_){}
+    if(!_fast){ try{ await _full; }catch(_){} }
     var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
     // [2026-08-04] 레벨업(variantq)도 #q/ 로 열리게 — 기출 색인에 없으면 goToCard 로 넘긴다.
     //  레벨업은 회차(set)가 없어 기존 '회차 진입 + 번호 점프' 경로를 못 탄다. goToCard 는 그 자격증의
@@ -1559,7 +1568,7 @@ function clRouteFromHash(){
       return !!(_q && _q.length===1 && _q[0] && _q[0].id===qid);
     }
     try{ await enterCert(cs.cert); }catch(_){}
-    try{ if(typeof loadExam==='function') await loadExam(cs.cert); }catch(_){}
+    if(!_fast){ try{ if(typeof loadExam==='function') await loadExam(cs.cert); }catch(_){} }
     var qb=(typeof qbOf==='function')?qbOf(cs.cert):null, sub=qb&&qb[cs.sub]; if(!sub||!sub.sets) return false;
     var si=sub.sets.findIndex(function(s){return s.label===cs.lab;}); if(si<0) return false;
     var qi=sub.sets[si].questions.findIndex(function(x){return x&&x.id===qid;}); if(qi<0) return false;
