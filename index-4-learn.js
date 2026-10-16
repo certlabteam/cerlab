@@ -558,6 +558,13 @@ function _jaryoSections(html){
     return '<div class="jr-sec'+mono+'"><div class="jr-sec-ti">'+sc.ti+'</div><div class="jr-sec-bd">'+bd+'</div></div>';
   }).join('');
 }
+/* [2026-10-17] 표 선지 — 선지 글이 여러 줄이고 줄마다 두 칸 이상 띄운 곳으로 열이 같게 나뉘면 작은 표로 그린다(크리스 「선지도 작은 표로」 · SQL 실행 결과 문항).
+   데이터는 줄바꿈·띄어쓰기만 바꾼다(글자 그대로). 조건이 안 맞으면 원래대로 둔다. */
+function _optTbl(html){
+  var L=String(html==null?'':html).split('\n').map(function(x){return x.trim();}).filter(Boolean); if(L.length<2) return html;
+  var R=L.map(function(x){return x.split(/\s{2,}/);}); if(R[0].length<2 || !R.every(function(r){return r.length===R[0].length;})) return html;
+  return '<table class="opt-tbl"><thead><tr>'+R[0].map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr></thead><tbody>'+R.slice(1).map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table>';
+}
 function _jaryoDots(html){
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
   return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 4px 0 2px;position:relative;top:-1px">\u25CF</span>');
@@ -1407,7 +1414,7 @@ function renderMcqExam(root){
     else if(sel===n)cls+=' sel';
     const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
     const oxBtns=(optOX && o && !showExp)?'<span class="opt-ox" data-oxk="o'+i+'" onclick="event.stopPropagation()"><button type="button" class="jox jox-o" onclick="event.stopPropagation();joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="event.stopPropagation();joxToggle(this)">X</button></span>':'';
-    const otxt=o?('<div class="otxt">'+_jaryoDots(rm(o,q))+oxBtns+'</div>'):'';   // [2026-07-20] 보기 ○→· 일관 적용
+    const otxt=o?('<div class="otxt">'+_optTbl(_jaryoDots(rm(o,q)))+oxBtns+'</div>'):'';   // [2026-07-20] 보기 ○→· 일관 적용
     return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';

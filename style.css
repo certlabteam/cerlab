@@ -1371,3 +1371,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .cc-pair-src b{background:#F1F5F9;color:#475569}
 
 .cc-pair>div+div{margin-top:6px}
+
+/* [2026-10-17] 표 선지 */
+.opt-tbl{border-collapse:collapse;font-size:13px;margin:2px 0}
+.opt-tbl th,.opt-tbl td{border:1px solid #E2E8F0;padding:3px 10px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.opt-tbl th{background:#F8FAFC;font-weight:800}
