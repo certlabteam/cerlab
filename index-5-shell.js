@@ -1557,6 +1557,9 @@ function clRouteFromHash(){
     var _full=null; try{ if(typeof loadExam==='function') _full=loadExam(cert); }catch(_){}
     if(!_fast){ try{ await _full; }catch(_){} }
     var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
+    /* [2026-10-17] 회차가 뒤에서 조금씩 붙어 링크를 받는 순간엔 색인에 없을 때가 있다 — 그러면 레벨업 길(goToCard)로 빠져
+       마스터 자료를 다 기다리느라 6~9초 걸렸다(크리스 「왜 못고쳐」 → 함수 시각을 재서 찾음). 기출 문항이면 곧 색인에 선다 — 0.15초마다 다시 보고, 5초 안에 안 서면 그때 레벨업 길로. */
+    for(var _w=0; !cs && _w<33; _w++){ await new Promise(function(r){ setTimeout(r,150); }); if(typeof rebuildQid==='function') rebuildQid(); cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null; }
     // [2026-08-04] 레벨업(variantq)도 #q/ 로 열리게 — 기출 색인에 없으면 goToCard 로 넘긴다.
     //  레벨업은 회차(set)가 없어 기존 '회차 진입 + 번호 점프' 경로를 못 탄다. goToCard 는 그 자격증의
     //  과목을 전수로 훑어(캐시 없으면 Firestore 직독 폴백) 찾으면 단독 1문항 리뷰로 띄운다 —
