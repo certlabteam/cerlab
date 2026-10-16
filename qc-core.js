@@ -144,8 +144,8 @@ function _qcViolations(q){
   });
   /* [2026-10-16 크리스] E5·E6·E7 — 서트랩헤드방이 관리. 잣대 글은 certlab 컨텐츠/_도구/_QC_레벨업_판정잣대.md 8~10절. */
   /* E5 — 시험 용어를 억지 순우리말로 바꾼 낱말(크리스 「뜻매김한 이런말 안써 보통」). 낱말 목록은 좁게 둔다 — 흔한 말은 넣지 않는다. */
-  if(!isSAq && _qcOn('gichul','TXT_COINED_TERM')){ var _coin=/(뜻매김|뜻매기|세모꼴|네모꼴|일솜씨|주장을 물리쳤|손을 들어 주었|손을 들어줬)/;   /* 판결은 기각·인용으로(크리스 「주장을 물리쳤다 보다 좋은 표현 없나」) */
-    o.concat(ex).forEach(function(t,k){ var m=String(t||'').match(_coin); if(m) v.push({kind:'warn',field:k<o.length?'o':'ex',idx:k<o.length?k:k-o.length,code:'TXT_COINED_TERM',msg:'시험 용어를 억지 순우리말로 바꿈: 「'+m[1]+'」 → 시험에서 쓰는 말로(정의·삼각형·직무 능력 · 판결은 청구를 기각했다/인용했다)',text:String(t)}); }); }
+  if(!isSAq && _qcOn('gichul','TXT_COINED_TERM')){ var _coin=/(뜻매김|뜻매기|세모꼴|네모꼴|일솜씨|주장을 물리쳤|손을 들어 주었|손을 들어줬|부분 가운데 한 부분|몫 가운데 한 몫)/;   /* 수치는 5%·1/20 처럼 숫자로(크리스 「스무부분가운데 한부분 이런표현 안써」) */   /* 판결은 기각·인용으로(크리스 「주장을 물리쳤다 보다 좋은 표현 없나」) */
+    o.concat(ex).forEach(function(t,k){ var m=String(t||'').match(_coin); if(m) v.push({kind:'warn',field:k<o.length?'o':'ex',idx:k<o.length?k:k-o.length,code:'TXT_COINED_TERM',msg:'시험 용어를 억지 순우리말로 바꿈: 「'+m[1]+'」 → 시험에서 쓰는 말로(정의·삼각형·직무 능력 · 판결은 청구를 기각했다/인용했다 · 수치는 5% 처럼 숫자로)',text:String(t)}); }); }
   /* E6 — 예시가 「甲은 …를 본 학생이다 … 알았다/정리했다/노트에 적었다/짚는다」 구경꾼·판정 장면(크리스 「학생이 이걸 왜 정리해」).
      예시가 필요 없는 문항(분류·정의·수치·학자–이론·특징)은 ex 를 "" 로 비우고 해설을 자세히 쓴다 — 빈 칸은 걸지 않는다. */
   if(!isSAq && _qcOn('gichul','EX_OBSERVER_SCENE')) ex.forEach(function(t,i){ t=String(t||'').trim(); if(!t)return;
