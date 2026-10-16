@@ -149,7 +149,7 @@ function _qcViolations(q){
   /* E6 — 예시가 「甲은 …를 본 학생이다 … 알았다/정리했다/노트에 적었다/짚는다」 구경꾼·판정 장면(크리스 「학생이 이걸 왜 정리해」).
      예시가 필요 없는 문항(분류·정의·수치·학자–이론·특징)은 ex 를 "" 로 비우고 해설을 자세히 쓴다 — 빈 칸은 걸지 않는다. */
   if(!isSAq && _qcOn('gichul','EX_OBSERVER_SCENE')) ex.forEach(function(t,i){ t=String(t||'').trim(); if(!t)return;
-    if(/학생이다|학생이었다/.test(t) || /(알았다|깨달았다|확인했다|정리했다|정리한다|짚는다|분류했다|적어 두었다|노트에 적었다)\.?\s*$/.test(t))
+    if(/학생이다|학생이었다/.test(t) || /(알았다|깨달았다|알아차렸다|확인했다|짐작했다|정리했다|정리한다|짚는다|분류했다|적어 두었다|노트에 적었다|눈을 새로 얻었다|감을 잡았다)\.?\s*$/.test(t))
       v.push({kind:'warn',field:'ex',idx:i,code:'EX_OBSERVER_SCENE',msg:'예시가 구경꾼·판정 장면(…학생이다 / …알았다·정리했다·짚는다). 甲은 그 일을 하는 사람으로 1~2문장, 한 일과 결과만 — 예시가 필요 없는 문항이면 ex 를 비우고 해설을 자세히',text:t}); });
   /* 어학 — 선지가 영어 낱말·구인데 그 보기 예시에 그 영어가 없다(크리스 「이게 뭐냐」 · 甲이 단어를 회의록에 적었다는 예시). 예시는 단어·숙어 풀이나 문맥 단서 대 보기로 쓴다. */
   if(!isSAq && _qcOn('gichul','EX_LANG_NO_WORD')) opts.forEach(function(opt,i){ var w=String(opt||'').replace(/<[^>]+>/g,'').replace(/^\s*[①-⑤\d.)]+\s*/,'').trim(); var t=String(ex[i]||'').trim();
