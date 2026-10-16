@@ -1549,6 +1549,13 @@ function clRouteFromHash(){
     /* [2026-10-17] 링크가 7~9초 걸렸다 — 시험 다섯 과목을 다 받은 뒤에 문제로 갔다(크리스 「링크 누르면 넘어가는데 왜 이리 오래걸리냐」 → 「고친다 — 그 회차만 먼저」).
        문항 id 에 과목 코드가 있으면(adm26_s1_1 → s1) 그 과목만 먼저 받아 띄우고, 나머지는 뒤에서 받는다. 과목을 모르면 종전대로 다 받는다. */
     var _fast=false;
+    /* [2026-10-17] 레벨업 문항(id 에 _lv_)은 기출 색인에 영영 안 선다 — 시험 전체를 받고 5초를 더 기다린 뒤에야 레벨업 길로 가 11초 걸렸다
+       (크리스 텔레그램 링크 → 첫 화면만 보임). 레벨업이면 곧장 goToCard 로 간다. */
+    if(/_lv_/.test(String(qid)) && typeof goToCard==='function'){
+      try{ await goToCard(qid, cert); }catch(_){ return false; }
+      var _lq=(typeof mqQuestions==='function')?mqQuestions():[];
+      return !!(_lq && _lq.length===1 && _lq[0] && _lq[0].id===qid);
+    }
     try{ if(typeof loadedExams!=='undefined' && !loadedExams[cert] && typeof loadOneSubject==='function' && typeof loadManifest==='function'){
       await loadManifest(); var _ex=(MANIFEST.exams||[]).find(function(e){return e.id===cert;});
       var _sb=_ex && (_ex.type||'mcq')==='mcq' && (_ex.subjects||[]).find(function(s){ return String(qid).indexOf('_'+s.code+'_')>=0; });
