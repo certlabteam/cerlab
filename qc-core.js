@@ -142,6 +142,18 @@ function _qcViolations(q){
     var body=String(o[i]||'')+' '+String(ex[i]||''), missing=names.filter(function(n){return !_qcHasCoreName(body,n);});
     if(missing.length)v.push({kind:'warn',field:'o',idx:i,code:'O_CORE_NAME_MISSING',msg:'보기 핵심 이름/용어 '+missing.slice(0,4).join('·')+' 이 대응 해설·예시에 그대로 없음 — 대명사 대신 이름을 적는다',text:opt});
   });
+  /* [2026-10-16 크리스] E5·E6·E7 — 서트랩헤드방이 관리. 잣대 글은 certlab 컨텐츠/_도구/_QC_레벨업_판정잣대.md 8~10절. */
+  /* E5 — 시험 용어를 억지 순우리말로 바꾼 낱말(크리스 「뜻매김한 이런말 안써 보통」). 낱말 목록은 좁게 둔다 — 흔한 말은 넣지 않는다. */
+  if(!isSAq && _qcOn('gichul','TXT_COINED_TERM')){ var _coin=/(뜻매김|뜻매기|세모꼴|네모꼴|일솜씨)/;
+    o.concat(ex).forEach(function(t,k){ var m=String(t||'').match(_coin); if(m) v.push({kind:'warn',field:k<o.length?'o':'ex',idx:k<o.length?k:k-o.length,code:'TXT_COINED_TERM',msg:'시험 용어를 억지 순우리말로 바꿈: 「'+m[1]+'」 → 정의·삼각형·직무 능력처럼 시험에서 쓰는 말로',text:String(t)}); }); }
+  /* E6 — 예시가 「甲은 …를 본 학생이다 … 알았다/정리했다/노트에 적었다/짚는다」 구경꾼·판정 장면(크리스 「학생이 이걸 왜 정리해」).
+     예시가 필요 없는 문항(분류·정의·수치·학자–이론·특징)은 ex 를 "" 로 비우고 해설을 자세히 쓴다 — 빈 칸은 걸지 않는다. */
+  if(!isSAq && _qcOn('gichul','EX_OBSERVER_SCENE')) ex.forEach(function(t,i){ t=String(t||'').trim(); if(!t)return;
+    if(/학생이다|학생이었다/.test(t) || /(알았다|깨달았다|확인했다|정리했다|정리한다|짚는다|분류했다|적어 두었다|노트에 적었다)\.?\s*$/.test(t))
+      v.push({kind:'warn',field:'ex',idx:i,code:'EX_OBSERVER_SCENE',msg:'예시가 구경꾼·판정 장면(…학생이다 / …알았다·정리했다·짚는다). 甲은 그 일을 하는 사람으로 1~2문장, 한 일과 결과만 — 예시가 필요 없는 문항이면 ex 를 비우고 해설을 자세히',text:t}); });
+  /* E7 — 「아닌/않은 것은?」 발문인데 해설 꼬리가 「해당한다/해당하지 않는다」(정답 여부로 씀). 앱이 꼬리를 딱지로 띄워 맞는 보기가 틀린 것처럼 보인다. */
+  if(!isSAq && _qcOn('gichul','O_VERDICT_AXIS')){ var _stem=String((q&&q.q)||''); if(/(아닌|않은)\s*것/.test(_stem) && !/해당/.test(_stem))
+    o.forEach(function(t,i){ t=String(t||''); if(/해당(하지\s*않는다|되지\s*않는다|한다|된다)[^가-힣]*$/.test(t)) v.push({kind:'warn',field:'o',idx:i,code:'O_VERDICT_AXIS',msg:'판정 꼬리를 발문의 말로 — 「고려 사항이다/아니다」「장점이다/아니다」처럼. 부정 발문에서 「해당하지 않는다」를 정답 아님 뜻으로 쓰지 않는다',text:t}); }); }
   var oFilled=o.filter(function(x){return x&&String(x).trim();}).length;
   var isCalc=_isCalcQ(q);   /* [FIX] oFilled===1 순진판 → 견고판(_isCalcQ). 미완성 조합형이 계산형으로 오인돼 종결형/카드 검사 건너뛰던 문제 해결 */
   var isMCQ=Array.isArray(q&&q.opts)&&q.opts.length&&oFilled>=1&&!isSAq;
@@ -455,7 +467,7 @@ var _QC_PALETTE=[
 
 /* ---- [추출·확장] _QC_DEFAULTS (admin__20 4383-4390 → 신규 코드 추가) ---- */
 var _QC_DEFAULTS={
-  gichul:{O_CORE_NAME_MISSING:{on:true},CPT_CONCEPT_MISMATCH:{on:true},CPT_EXPLANATION_ECHO:{on:true},CPT_SHARED:{on:true},CPT_TOO_MANY_CARDS:{on:true},CPT_DUP_LINK:{on:true},E5_AWKWARD_PHRASE:{on:true},ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},EX_REASK:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_DUP_CELL:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
+  gichul:{O_CORE_NAME_MISSING:{on:true},TXT_COINED_TERM:{on:true},EX_OBSERVER_SCENE:{on:true},O_VERDICT_AXIS:{on:true},CPT_CONCEPT_MISMATCH:{on:true},CPT_EXPLANATION_ECHO:{on:true},CPT_SHARED:{on:true},CPT_TOO_MANY_CARDS:{on:true},CPT_DUP_LINK:{on:true},E5_AWKWARD_PHRASE:{on:true},ANS_VERDICT_MISMATCH:{on:true},EX_SHORT:{on:true,minChars:60},EX_STUB:{on:true,minChars:15,minDeclChars:25},O_ECHO_OPT:{on:true,minRun:4},EX_ECHO:{on:true,minSim:0.5,minRun:6},EX_NONAME:{on:true},EX_EX_ECHO:{on:true,minSim:0.5},EX_GENERIC_NOUN:{on:true},EX_PROSE_CALC:{on:true},EX_REP_VERB:{on:true},EX_REASK:{on:true},REL_NO_ARROW:{on:true},O_PLACEHOLDER:{on:true},O_DUP_CELL:{on:true},O_INCOMPLETE:{on:true},EX_MULTILINE:{on:true},CALC_WRONG_SLOT:{on:true},COMBO_STMT_MISMATCH:{on:true},FILL_BLANK_MISMATCH:{on:true},O_ECHO_D:{on:true,minSim:0.6},O_NO_ACTOR:{on:true},O_STEPS_NOBR:{on:true},EX_STEPS_NOBR:{on:true},IMG_MISSING:{on:true},OTTAG_LEN:{on:true},EX_VERDICT:{on:true},EX_NOUN_END:{on:true},CALC_NO_FORMULA:{on:true},DUP_ID:{on:true},CONST_NO_BASIS:{on:false},CALC_MECHANICAL:{on:true},CALC_REPEAT_LEAD:{on:true},CALC_NO_APPROACH:{on:false},TYPE_MISMATCH:{on:true},EX_SUM_CRAMMED:{on:true},EX_SUM_MULTILINE:{on:true},CALC_SUM_ANS:{on:true},CALC_NEWFMT_PARTIAL:{on:true},CALC_NO_TIP:{on:false},CALC_FLAG_MISMATCH:{on:true},OX_STMT_MISMATCH:{on:true},OX_DUP_PATTERN:{on:true},CALC_OLD_FORMAT:{on:true},CALC_ARITH_MISMATCH:{on:true},CALC_ANS_NO_MATCH:{on:true},FACTOR_TABLE_PROSE:{on:true,minVals:4},EX_MISSING:{on:true},EX_COVERAGE:{on:true},O_SHORT:{on:true,minChars:60},CALC_HIDDEN_BY_TYPE:{on:true},Q_TABLE_PROSE:{on:true,minNums:8},CALC_FIELDS_ON_NONCALC:{on:true},ALLANS_NO_NOTE:{on:true},CALC_EX_3X:{on:true,ratio:3},WORK_MEMO_LEFT:{on:true},TBL_MENTION_NO_TABLE:{on:true}},
   link:{CPT_UNLINKED:{on:true},CPT_BROKEN:{on:true},CPT_CX_EMPTY:{on:true},CHILD_MISSING:{on:true},TBL_BROKEN:{on:true},GRP_BROKEN:{on:true},MN_BROKEN:{on:true},ITV_BROKEN:{on:true}},
   levelup:{LVUP_ANS_SKEW:{on:true,maxPct:30},LVUP_DUP:{on:true},LVUP_LV_BAND:{on:false},LVUP_COUNT:{on:false,floor:100}},
   concept:{CX_ECHO_D:{on:true,minSim:0.5},CX_SHORT:{on:true,minLines:4,minChars:60},CX_NONAME:{on:true},CX_DEICTIC:{on:true},CD_D_NAMED:{on:true},CD_OLD_FIELD:{on:true},CPT_NO_CARDS:{on:true},CD_NO_D:{on:true},CX_EMPTY:{on:true},CPT_DUP:{on:true},D_SHORT:{on:true,minChars:60}},
@@ -483,7 +495,7 @@ var _QC_SEV = {
   OTTAG_LEN:'ERROR', DUP_ID:'ERROR',
   /* WARNING (SHOULD — 권장 수정) */
   ANS_VERDICT_MISMATCH:'WARNING',
-  O_CORE_NAME_MISSING:'WARNING', CPT_CONCEPT_MISMATCH:'WARNING', CPT_EXPLANATION_ECHO:'WARNING', CPT_SHARED:'WARNING', CPT_TOO_MANY_CARDS:'WARNING', CPT_DUP_LINK:'WARNING', E5_AWKWARD_PHRASE:'WARNING',
+  O_CORE_NAME_MISSING:'WARNING', TXT_COINED_TERM:'WARNING', EX_OBSERVER_SCENE:'WARNING', O_VERDICT_AXIS:'WARNING', CPT_CONCEPT_MISMATCH:'WARNING', CPT_EXPLANATION_ECHO:'WARNING', CPT_SHARED:'WARNING', CPT_TOO_MANY_CARDS:'WARNING', CPT_DUP_LINK:'WARNING', E5_AWKWARD_PHRASE:'WARNING',
   O_INCOMPLETE:'WARNING', COMBO_STMT_MISMATCH:'WARNING', O_ECHO_D:'WARNING', O_NO_ACTOR:'WARNING',
   O_STEPS_NOBR:'WARNING', EX_STEPS_NOBR:'WARNING', EX_STEPS_CRAMMED:'WARNING', O_ECHO_OPT:'WARNING',
   O_SELFREF:'WARNING', CX_ECHO_D:'WARNING', CARD_DEICTIC:'WARNING', CARD_LABEL:'WARNING',
@@ -822,7 +834,7 @@ function _qcExtraRules(q){
   /* (n) 예시 커버리지 — 해설(o)이 달린 보기/진술마다 장면 예시(exp.ex) 100% 필요(§A-7).
      o·ex는 같은 축(SC/NEG=보기, COMBO=진술)에 정렬되므로 opts가 아니라 '채워진 o 수' 대비 '채워진 ex 수'로 판정(정렬 안전).
      예시 전무=EX_MISSING(경고), 일부만=EX_COVERAGE(참고). */
-  if(_sScene){
+  if(_sScene && !exp.noEx){   /* noEx = 예시가 필요 없는 문항으로 판정해 비운 것(2026-10-16) */
     var _oF2=0; o.forEach(function(t){ if(t&&String(t).trim()) _oF2++; });
     var _exF2=0; ex.forEach(function(t){ if(t&&String(t).trim()) _exF2++; });
     if(_oF2>0){

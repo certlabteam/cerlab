@@ -147,7 +147,7 @@
     var _qtxt=String((q&&q.q)||'')+' '+((q&&q.opts)||[]).join(' ');
     if(/함수|균형\s*가격|[A-Za-z]\s*=\s*[^=]*[+\-*/]|Q[ds]?\s*=|승수|현재가치|내부수익률|자본환원|환원이율|LTV|DTI|DSR|탄력성.{0,6}(값|계산|=)|계산하면|얼마(인가|나)/.test(_qtxt)) return v;
     var exFilled=ex.filter(function(x){return x&&String(x).trim();}).length;
-    if(exFilled===0){
+    if(exFilled===0 && !exp.noEx){   /* noEx = 예시가 필요 없는 문항(2026-10-16) */
       var cert=(q&&(q.cert||q.docId))||'';
       v.push({ kind:'warn', field:'ex', idx:0, code:'EX_MISSING',
         msg:'이론형 객관식인데 장면 예시(exp.ex)가 통째로 비어 있음 — 예시는 예외 없이 모두 넣는다(개념을 실생활 장면으로 1개)'

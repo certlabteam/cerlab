@@ -1425,7 +1425,12 @@ async function cpatchValidate(){
           else if(!e.s.trim() && String((q.exp&&q.exp.s)||'').trim()) errs.push('s 기존 요약을 빈값으로 덮음 — 차단');
         }
         if(e.ans!=null){ hasField=true; _cpAnsErrs(e,q).forEach(function(m){ errs.push(m); }); }
-        if(!hasField) errs.push('수정 필드 없음(cpt·o·ex·q·opts·s·ans 중 하나 필요)');
+        // [2026-10-16] noEx — 「예시가 필요 없는 문항」 표시(분류·정의·수치·학자–이론·특징). true 면 ex 는 비어 있어야 한다. QC 가 예시 빠짐 경고를 건너뛴다.
+        if(e.noEx!=null){ hasField=true;
+          if(typeof e.noEx!=='boolean') errs.push('noEx 는 true/false');
+          else if(e.noEx){ var _exChk=(e.ex!=null?e.ex:((q.exp&&q.exp.ex)||[])); if((Array.isArray(_exChk)?_exChk:[_exChk]).some(function(t){return t&&String(t).trim();})) errs.push('noEx 인데 예시가 남아 있음 — ex 를 "" 로 함께 보내야 함'); }
+        }
+        if(!hasField) errs.push('수정 필드 없음(cpt·o·ex·q·opts·s·ans·noEx 중 하나 필요)');
       }
       var setKey=G.subject+' · '+((q&&q.set)||'(미상)');
       var ss=setStat[setKey]||(setStat[setKey]={ok:0,err:0});
@@ -1433,7 +1438,7 @@ async function cpatchValidate(){
       else {
         okN++; ss.ok++;
         okMap[rec.home+'||'+e.id]={ rec:rec, cpt:(e.cpt!=null?e.cpt:null), o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null),
-          s:(e.s!=null?e.s:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
+          s:(e.s!=null?e.s:null), noEx:(e.noEx!=null?e.noEx:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
           basis:(e.ans!=null?(e['근거']||e.basis||null):null), log:(e.ans!=null?String(e['로그']||e.log||''):null) };
         if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++; if(e.ans!=null) cntAns++;
       }
@@ -1489,6 +1494,7 @@ async function cpatchApply(tok){
     if(it.q!=null){ q.q=it.q; }
     if(it.opts!=null){ q.opts=it.opts; }
     if(it.s!=null){ q.exp=q.exp||{}; q.exp.s=it.s; }
+    if(it.noEx!=null){ q.exp=q.exp||{}; if(it.noEx) q.exp.noEx=true; else delete q.exp.noEx; }
     if(it.ans!=null){ q.ans=it.ans; _cpAnsAudit.push({docId:it.docId, home:rec.home, id:it.id, before:it.ansFrom, after:it.ans, 근거:it.basis, 로그:it.log}); }
     touched[rec.home]=true;
   });
