@@ -579,6 +579,49 @@
 
 </script>
 <style>
+/* [2026-10-17] 짝 블록 [pair] — 위(✕ 틀림)·화살표·아래(○ 맞음) */
+.cc-pair{margin:8px 0 6px;padding:8px 10px;background:#fff;border:1px solid #F1D9A8;border-radius:8px}
+.cc-pair-x,.cc-pair-o,.cc-pair-src{display:flex;gap:8px;align-items:flex-start;line-height:1.6}
+.cc-pair-x{color:#9A3412}
+.cc-pair-o{color:#166534;font-weight:600}
+.cc-pair-x b,.cc-pair-o b,.cc-pair-src b{flex:0 0 auto;display:inline-block;min-width:52px;font-size:12px;font-weight:800;border-radius:4px;padding:0 5px;margin-top:2px;text-align:center}.cc-pair-x b{background:#FEE2E2;color:#9A3412}.cc-pair-o b{background:#DCFCE7;color:#166534}
+.cc-pair-ar{color:#B45309;font-size:14px;line-height:1.2;padding-left:4px}
+
+
+/* [2026-10-17] 긴 지문 — 제목 칸 · ㉠ 칩 · 지문 다시 보기 */
+.jaryo .jr-sec{margin:0 0 10px;padding:8px 10px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;white-space:pre-wrap}
+.jaryo .jr-sec:last-child{margin-bottom:0}
+.jaryo .jr-sec-ti{font-weight:800;color:#0F172A;margin:0 0 4px;white-space:normal}
+.jaryo .jr-k{color:#475569;font-weight:800}
+.mk{color:#B45309;font-weight:800;cursor:pointer}
+.jaryo .mk{color:inherit;font-weight:inherit;cursor:default}   /* 원문자만으로 충분 — 음영 뺌(크리스 2026-10-17) */
+.jaryo .mk.mk-flash{animation:mkFlash 1.4s ease-out}
+@keyframes mkFlash{0%,40%{background:#FDE68A;border-radius:4px;box-shadow:0 0 0 4px rgba(245,158,11,.35)}100%{background:transparent;box-shadow:none}}
+.jr-fab{position:fixed;right:16px;bottom:104px;z-index:60;padding:8px 14px;border-radius:999px;border:1px solid #CBD5E1;background:#fff;color:#0F172A;font-size:14px;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.14)}
+.jr-sheet{position:fixed;inset:0;z-index:70;display:none}
+.jr-sheet.on{display:block}
+.jr-sheet-bg{position:absolute;inset:0;background:rgba(15,23,42,.35)}
+.jr-sheet-pn{position:absolute;left:0;right:0;bottom:0;max-height:70vh;display:flex;flex-direction:column;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.18)}
+.jr-sheet-hd{flex:0 0 auto;padding:12px 16px;border:0;border-bottom:1px solid #E2E8F0;background:transparent;font-size:14px;font-weight:800;color:#334155;text-align:center}
+.jr-sheet-bd{overflow:auto;padding:12px 16px 20px}
+.jr-sheet-bd .jaryo{margin:0}
+
+/* [2026-10-17] 밑줄 [u] */
+.ul{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:3px;text-decoration-color:#B45309}
+
+.jaryo .jr-mono .jr-sec-bd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'D2Coding',monospace;font-size:13px;line-height:1.7;overflow-x:auto;white-space:pre}
+
+.jaryo .jr-tbl{overflow-x:auto;white-space:normal}
+.jaryo .jr-tbl table{border-collapse:collapse;width:100%;font-size:13px}
+.jaryo .jr-tbl th,.jaryo .jr-tbl td{border:1px solid #E2E8F0;padding:4px 6px;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.jaryo .jr-tbl th{background:#F1F5F9;font-weight:800;color:#0F172A}
+
+.cc-pair-src{display:flex;gap:8px;align-items:flex-start;line-height:1.6;color:#475569}
+.cc-pair-src b{background:#F1F5F9;color:#475569}
+
+.cc-pair>div+div{margin-top:6px}
+
+
 /* [2026-08-07] 줄바꿈은 어절 단위로 — 전역. style.css 의 body 규칙과 같이 간다.
    기본값은 한글을 글자 아무 데서나 끊는다("세대당" → "세대"/"당").
    overflow-wrap 은 도피구 — 한 어절이 폭보다 길 때만 쪼갠다. */
@@ -1935,6 +1978,14 @@ function renderMath(text, allowBareFraction){
   s = s.replace(/<svg[\s\S]*?<\/svg>/gi, _st);
   // dia relation-diagram -> fixed-width <pre class="cc-dia"> (arrow alignment). stashed whole.
   s = s.replace(/\[dia\]\s*([\s\S]*?)\s*\[\/dia\]/g, function(_m, inner){ var body=String(inner).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>"); return _st('<pre class="cc-dia">'+body+'</pre>'); });
+  s = s.replace(/\[u\]/g, function(){ return _st('<span class="ul">'); }).replace(/\[\/u\]/g, function(){ return _st('</span>'); });   // 밑줄 — 짝·순서도 안에서도 쓰게 먼저 바꾼다
+  /* [2026-10-17] 짝 블록 [pair]틀린 것|맞는 것[/pair] → 위(✕)·화살표·아래(○)로 짝을 맞춘다 — 크리스 「원문 고침 위 아래로 짝이 맞게 화살표로 보여줄까? 지금 산만해보여」 「O x도 위아래 짝이 맞게」.
+     [dia] 는 고정폭이라 긴 문장이 폰에서 옆으로 넘친다 — 이 칸은 줄을 접는다. 통째로 stash 해 아래 변환에 안 걸린다. */
+  s = s.replace(/\[pair\]([\s\S]*?)\[\/pair\]/g, function(_m, body){ var e=function(t){ return String(t).trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }; var p=String(body).split('|'); var dflt = p.length>=3 ? ['지문','선지','바른 고침'] : ['틀린 예','바른 예']; var rows=p.slice(0,3).map(function(x,k){ if(k===2&&p.length>3) x=p.slice(2).join('|'); var m=String(x).match(/^\s*([^:：\n]{1,8}?)\s*[:：]\s+([\s\S]*)$/); var lb=m?m[1]:dflt[k], t=m?m[2]:x; var tone=/^(틀린 예|잘못)/.test(lb)?'x':(/^바른/.test(lb)?'o':'src'); return '<div class="cc-pair-'+tone+'"><b>'+e(lb)+'</b>'+e(t)+'</div>'; }); return _st('<div class="cc-pair">'+rows.join('')+'</div>'); });   /* 이름표가 있으니 화살표는 뺀다(크리스 「이런형태는 화살표 빼자」) */   // 이름표 짝 칸 — 칸마다 「이름: 내용」(이름 없으면 두 칸=틀린 예→바른 예, 세 칸=지문→선지→바른 고침). ○✕ 는 헷갈려 쓰지 않는다(크리스 「지문 선지가 맞겠다」)
+  /* [2026-10-17] 밑줄 [u]…[/u] — 지문의 ㉠~㉣ 범위처럼 원래 시험지의 밑줄을 살린다(크리스 「ㄱ 부터 ㄹ 이 어디까지인지는 밑줄로할까?」). */
+  /* [2026-10-17] 순서도 블록 [flow]단계|단계|…[/flow] → 번호 칸과 ↓ 로 내려가는 순서도 — 크리스 「이거 계산형 5단계처럼 표시하자 순서도처럼」(SQL 실행 차례).
+     칸마다 「머리: 내용」이면 머리를 굵게. 통째로 stash 해 아래 변환에 안 걸린다. */
+  s = s.replace(/\[flow\]([\s\S]*?)\[\/flow\]/g, function(_m, body){ var e=function(t){ return String(t).trim().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }; var st=String(body).split('|').map(function(x){return x.trim();}).filter(Boolean); var h=st.map(function(x,i){ var m=x.match(/^([^:：]{1,40})[:：]\s*([\s\S]*)$/); var t=m?('<b>'+e(m[1])+'</b> '+e(m[2])):e(x); return (i?'<div class="cc-flow-ar">↓</div>':'')+'<div class="cc-flow-st"><span class="cc-flow-n">'+(i+1)+'</span><span class="cc-flow-t">'+t+'</span></div>'; }).join(''); return _st('<div class="cc-flow">'+h+'</div>'); });
   // [2026-08-07] 수식 블록 [eq]…[/eq] → 가운데 정렬 <div class="cc-eq">. 분수는 {분자 / 분모}.
   // index-4-learn.js 에서 verbatim 이식 — 고칠 땐 두 곳을 같이 고칠 것.
   s = s.replace(/\[eq\][ \t]*\r?\n?([\s\S]*?)\r?\n?[ \t]*\[\/eq\]/g, function(_m, inner){
@@ -1958,7 +2009,12 @@ function renderMath(text, allowBareFraction){
   s = s.replace(/\^(\([^)]*\)|\u0001[^\u0003]*\u0003|[A-Za-z0-9]+)/g, function(m,g){ return '<sup>'+g.replace(/^\(|\)$/g,'')+'</sup>'; });
   s = s.replace(/_([A-Za-z0-9]+)/g, '<sub>$1</sub>');
   s = s.replace(/\u0001([^\u0002]+)\u0002([^\u0003]+)\u0003/g, '<span class="frac"><span class="fn">$1</span><span class="fd">$2</span></span>');
-  s = s.replace(/\u0007(\d+)\u0008/g, function(m,i){ return _stash[+i]||''; });
+  /* [2026-10-17] 가운뎃점(ㆍ·) 뒤에서 줄을 바꿀 수 있게 — 크리스 「개행시 단어만 안 끊기게 꽉 채워야지」.
+     word-break:keep-all 이라 「전기차충전ㆍ소규모전력중개ㆍ재생에너지전기공급을」이 한 낱말로 묶여 통째로 다음 줄로 넘어가 앞줄이 비었다. */
+  s = s.replace(/([ㆍ·・])(?!\s)/g, '$1<wbr>');
+  /* [2026-10-17] ㉠~㉻ 를 표시 칸으로 — 지문에선 색 칩, 해설에선 누르면 지문의 같은 표시로 올라간다(크리스 「㉠·㉡ 표시를 눈에 띄게」). */
+  s = s.replace(/([㉠-㉻])/g, '<span class="mk" data-mk="$1">$1</span>');
+  for(var _k=0; _k<3 && /\u0007\d+\u0008/.test(s); _k++) s = s.replace(/\u0007(\d+)\u0008/g, function(m,i){ return _stash[+i]||''; });   // 짝·순서도 안에 밑줄이 들어 있으면 두 겹 — 다 풀릴 때까지
   s = s.replace(/\u0004/g, '/');
   return s;
 }
@@ -1983,6 +2039,36 @@ function rmCx(text, q){
 }
 // q 본문에서 ○로 시작하는 연속 줄을 문단 불릿으로(원문 텍스트 보존, 보이는 모양만 정리). ○ 없으면 그대로 통과.
 var _JDOT='<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 5px 0 2px;position:relative;top:-1px">\u25CF</span>';
+/* [2026-10-17] 긴 지문 보기 좋게 — 줄 첫머리의 <제목> 마다 칸을 나누고 제목을 굵은 머리로(크리스 「〈제목〉마다 칸 나누기」).
+   제목이 하나도 없으면 원문 그대로 둔다. 공문서 칸은 「수신 · 제목」 앞에서 줄을 바꾼다. 데이터(jaryo)는 손대지 않는다. */
+function _jaryoSections(html){
+  var lines=String(html==null?'':html).split('\n'), secs=[], cur={ti:null, body:[]}, hit=0;
+  lines.forEach(function(ln){
+    var m=ln.match(/^\s*(?:&lt;|<)([^&<>]{1,40})(?:&gt;|>)\s*(.*)$/);   // 지문의 <제목> 은 날글자로 들어오기도, &lt; 로 들어오기도 한다
+    if(m){ hit++; if(cur.ti!==null||cur.body.join('').trim()) secs.push(cur); cur={ti:m[1], body:m[2]?[m[2]]:[]}; }
+    else cur.body.push(ln);
+  });
+  secs.push(cur);
+  if(!hit) return html;
+  return secs.map(function(sc){
+    var bd=sc.body.join('\n').replace(/^\n+|\n+$/g,'');
+    if(sc.ti && /공문/.test(sc.ti)) bd=bd.replace(/\s(수신|제목)\s/g, function(_m,k){ return '\n<b class="jr-k">'+k+'</b> '; });
+    if(sc.ti===null) return bd;
+    var mono=/SQL|코드|릴레이션|테이블|프로그램|의사\s*코드/i.test(sc.ti) ? ' jr-mono' : '';
+    // [2026-10-17] 릴레이션·테이블 칸은 진짜 표로 — 띄어쓰기로 맞춘 열은 폰 글꼴에서 한글 폭이 달라 어긋났다(크리스 2026-10-17 화면).
+    //   두 칸 이상 띄운 곳을 열 경계로 읽고, 열 수가 같은 줄이 둘 이상 이어지면 표로 바꾼다. 첫 줄 한 낱말(릴레이션 이름)은 표 위 머리로 둔다.
+    if(/릴레이션|테이블/.test(sc.ti)){
+      var L=bd.split('\n'), nm='', rows=[];
+      L.forEach(function(x){ var c=x.trim().split(/\s{2,}/); if(c.length>=2) rows.push(c); else if(x.trim()&&!rows.length) nm=x.trim(); });
+      if(rows.length>=2 && rows.every(function(r){return r.length===rows[0].length;})){
+        var th='<tr>'+rows[0].map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr>';
+        var tb=rows.slice(1).map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('');
+        return '<div class="jr-sec"><div class="jr-sec-ti">'+sc.ti+(nm?' · '+nm:'')+'</div><div class="jr-tbl"><table><thead>'+th+'</thead><tbody>'+tb+'</tbody></table></div></div>';
+      }
+    }   // 코드·표 칸은 고정폭 — 띄어쓰기로 맞춘 열이 줄을 선다
+    return '<div class="jr-sec'+mono+'"><div class="jr-sec-ti">'+sc.ti+'</div><div class="jr-sec-bd">'+bd+'</div></div>';
+  }).join('');
+}
 function _jaryoDots(html){ return String(html==null?'':html).replace(/\u25CB\s*/g,_JDOT); }
 // [ADD 2026-07] 현가/연금 계수 블록을 표로 렌더 (index.html verbatim 이식)
 function _coefParse(inner){
@@ -2382,7 +2468,7 @@ function renderQuestionBlock(q){
     } else if(parseBlankStmts(jr.jaryo).length>=2){
       jaryoHTML=jaryoBlanksHTML(jr.jaryo,q);
     } else {
-      jaryoHTML='<div class="jaryo">'+_jaryoDots(rm(jr.jaryo,q).replace(/ \/ /g,'<br>'))+'</div>';
+      jaryoHTML='<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(jr.jaryo,q).replace(/ \/ /g,'<br>')))+'</div>';
     }
   }
   return progBar+'<div class="qstem"><div class="qhead"><div class="qnum">'+(pvIdx+1)+'</div>'+impB+timeB+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,true):tpSwap(stemHTML(rm(_stemQ,q)),q.id))+'</div></div>'+
