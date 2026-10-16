@@ -398,10 +398,9 @@ async function goToCard(qid, certHint){
       try{ console.info('[레벨업 딥링크] 진입 cert='+certHint+' subs='+JSON.stringify(_subs)+' isMcq='+((typeof isMcqCert==='function')?isMcqCert(certHint):'?')); }catch(_){}
       /* [2026-10-17] 전 과목 레벨업 자료를 다 받은 뒤에 찾느라 5초가 들었다 — 문항은 아래서 Firestore 로 바로 읽으므로 자료는 뒤에서 받고,
          캐시 길(직독 실패)에서만 기다린다. 과목도 id 앞머리(hm2mgmt ↔ hm2_mgmt)가 맞는 것부터 읽는다. */
+      /* 재어 보니 같은 문서를 SDK 로 두 번째 읽으면 4.3초(처음은 0.2초) — 자료 받기가 먼저 읽으면 문항 찾기가 늘 느린 쪽에 걸린다. 그래서 문항을 먼저 읽고 자료는 그 뒤에 받는다. */
       var _adAll=null;
-      if(typeof loadAdaptiveSubject==='function'){
-        try{ _adAll=Promise.all(_subs.map(function(code){ return loadAdaptiveSubject(certHint, code).catch(function(){return null;}); })); }catch(_){}
-      }
+      function _adStart(){ if(_adAll||typeof loadAdaptiveSubject!=='function') return _adAll; try{ _adAll=Promise.all(_subs.map(function(code){ return loadAdaptiveSubject(certHint, code).catch(function(){return null;}); })); }catch(_){} return _adAll; }
       try{ var _qh=String(qid).split('_')[0]; _subs=_subs.slice().sort(function(x,y){ return (String(y).replace(/_/g,'')===_qh)-(String(x).replace(/_/g,'')===_qh); }); }catch(_){}
       // variantPool 전 과목에서 문항 찾기
       var _found=null, _foundSub=null, _poolInfo=[];
@@ -425,7 +424,7 @@ async function goToCard(qid, certHint){
           }catch(_){}
         }
       }
-      if(!_found && _adAll){ try{ await _adAll; }catch(_){} }
+      if(!_found){ try{ await _adStart(); }catch(_){} }
       if(!_found && typeof AD_DATA!=='undefined'){
         for(var vi=0; vi<_subs.length; vi++){
           var _b=AD_DATA[certHint+'|'+_subs[vi]];
@@ -459,6 +458,7 @@ async function goToCard(qid, certHint){
         }
       }
       if(!_found){ try{ console.warn('[레벨업 딥링크] 문항 못찾음 qid='+qid+' cert='+certHint+' subs='+JSON.stringify(_subs)+' pools='+_poolInfo.join(' / ')); }catch(_){} }
+      if(_found){ try{ _adStart(); }catch(_){} }   // 자료는 뒤에서 받는다(기다리지 않음)
       if(_found){   // 단독 1문항 리뷰로 띄움 (채점·레벨변동 없이 문항+해설 확인)
         mqSub=_foundSub; mqSet=0; mqMode='all';
         mqReview=true; mqDiag=false; mqLevelUp=false; mqGather=false; mqConcept=false; mqInReview=true;
