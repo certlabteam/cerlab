@@ -1462,6 +1462,9 @@ function renderMcqExam(root){
     var isCombo=isComboQuestion(q.opts, q);
     var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
+    if(comboOK){ var _ansTxt=ansN.map(function(n){ return n+'번'+((q.opts&&q.opts[n-1])?'('+q.opts[n-1]+')':''); }).join(' · ');
+      var _bd=' <span class="eo-badge">✅ 정답 '+_ansTxt+'</span>';
+      var _ni=body.lastIndexOf('<div class="note">'); if(_ni>=0){ var _ne=body.indexOf('</div>',_ni); if(_ne>0) body=body.slice(0,_ne)+_bd+body.slice(_ne); } }
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
     var blankStmts=(!comboOK && !isCV)?parseBlankStmts(q.q):[];   // 괄호빈칸 짝맞추기
@@ -1489,7 +1492,7 @@ function renderMcqExam(root){
         var sv=splitVerdict(ex);
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
         var inAns = ansLabels.indexOf(s.k)>=0;
-        var ansTag = inAns ? ' <span class="eo-badge">✅ 정답</span>' : '';
+        var ansTag = '';   // [2026-10-17] 진술 옆엔 옳음/옳지 않음만 — 정답은 선지에 붙는 말(크리스 「진술 ㄱ ㄴ ㄷ 하나씩 우측에 정답은 안맞아」)
         var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
@@ -1504,7 +1507,8 @@ function renderMcqExam(root){
         var lab=cCirc[n-1]||('('+n+')');
         return '<div class="eo-q">정답 보기 '+lab+'. '+rm((q.opts&&q.opts[n-1])||'',q)+' '+pickVerdict+' <span class="eo-badge">✅ 정답</span></div>';
       }).join('');
-      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">'+(stemNeg?'옳지 않은 지문들의 조합이다.':'정답 지문들의 조합이다.')+'</div></div></div>';
+      /* [2026-10-17] 맨 밑 정답 조합 줄은 뺀다 — 맨 위 간단 해설 끝에 정답을 붙인다(크리스 「맨위에 있으니 맨밑에 정답보기 … 이건 뺄까 · 정답 딱지는 맨 위에 하나 · 간단 해설 끝에」) */
+      if(!comboOK) body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0">'+comboLine+'<div class="eo-a">'+(stemNeg?'옳지 않은 지문들의 조합이다.':'정답 지문들의 조합이다.')+'</div></div></div>';
     } else if(isCV && !(_apairs && _asegs && _asegs.length>=2)){
       // 조합 변형형: 정답 보기 1칸만. 정답칸 예시를 보기에 나온 항목별로(중복제거) 한 줄씩 풀이.
       var cvIdx=ansN[0]-1;
