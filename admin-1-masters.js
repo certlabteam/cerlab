@@ -1396,7 +1396,7 @@ async function cpatchValidate(){
         if(e.o!=null){ hasField=true;
           if(!Array.isArray(e.o)) errs.push('o 배열 아님');
           else { var oArr=(q.exp&&q.exp.o)||[];
-            if(oArr.length && e.o.length!==oArr.length && !(e.comboByOpt===true && e.o.length===(q.opts||[]).length) && !(e.comboByStmt===true && e.o.length>=2 && e.o.length<(q.opts||[]).length))   /* comboByStmt: 조합형을 ㄱㄴㄷ 진술마다로 되돌림(크리스 「선지마다 설명해주고 옳음 그름 쓰고 … 이런식으로 햇었잖아」) */ errs.push('o 길이 '+e.o.length+'≠exp.o '+oArr.length);   // comboByOpt: 조합형 해설을 ㄱㄴㄷ 진술마다 → 선지마다로 바꿀 때만 선지 수로(크리스 「선지(1~4번)마다」)
+            if(oArr.length && e.o.length!==oArr.length && !(e.comboByOpt===true && e.o.length===(q.opts||[]).length) && !(e.comboByStmt===true && e.o.length>=2 && e.o.length<=(q.opts||[]).length))   /* comboByStmt: 조합형을 ㄱㄴㄷ 진술마다로 되돌림(크리스 「선지마다 설명해주고 옳음 그름 쓰고 … 이런식으로 햇었잖아」) */ errs.push('o 길이 '+e.o.length+'≠exp.o '+oArr.length);   // comboByOpt: 조합형 해설을 ㄱㄴㄷ 진술마다 → 선지마다로 바꿀 때만 선지 수로(크리스 「선지(1~4번)마다」)
             e.o.forEach(function(t,i){
               var emptyNew=(typeof t!=='string'||!String(t).trim());
               var origHad=(oArr[i]!=null && String(oArr[i]).replace(/<[^>]+>/g,'').trim()!=='');
