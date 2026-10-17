@@ -462,7 +462,7 @@ var _qcCptExemptCerts = (typeof _qcCptExemptCerts!=='undefined') ? _qcCptExemptC
 function qualityGate(questions){
   var block=[], warn=[];
   _qcCptQuestionUse={};
-  /* [2026-10-17] 레벨업 변형(id 에 _lv_ · 끝 _L1~_L5/_01~_05)은 한 바탕 문항의 난이도 갈래라 같은 개념을 쓰는 게 정상 — 한 문항으로 센다(Codex 질의 · 헤드방 정함). */var _famSeen={};(questions||[]).forEach(function(q){var id=String((q&&q.id)||''),fam=/_lv_/.test(id)?id.replace(/_(?:L)?\d{1,2}$/i,''):id;var refs=((q&&q.exp)||{}).cpt||[],once={};refs.forEach(function(r){r=String(r);if(once[r])return;once[r]=1;var k=r+'|'+fam;if(_famSeen[k])return;_famSeen[k]=1;_qcCptQuestionUse[r]=(_qcCptQuestionUse[r]||0)+1;});});
+  /* [2026-10-17] 레벨업 변형(id 끝 _L1~_L9, 또는 _lv_ 문항의 끝 _01~_05)은 한 바탕 문항의 난이도 갈래라 같은 개념을 쓰는 게 정상 — 한 문항으로 센다(Codex 질의 · 헤드방 정함). */var _famSeen={};(questions||[]).forEach(function(q){var id=String((q&&q.id)||''),fam=/_L[1-9]$/i.test(id)?id.replace(/_L[1-9]$/i,''):(/_lv_/.test(id)?id.replace(/_\d{1,2}$/,''):id);var refs=((q&&q.exp)||{}).cpt||[],once={};refs.forEach(function(r){r=String(r);if(once[r])return;once[r]=1;var k=r+'|'+fam;if(_famSeen[k])return;_famSeen[k]=1;_qcCptQuestionUse[r]=(_qcCptQuestionUse[r]||0)+1;});});
   if(_qcGateBypass && !_qcBypassWarned){ _qcBypassWarned=true;
     try{ if(typeof console!=='undefined') console.warn('[QC] \u26a0\ufe0f _qcGateBypass=true \u2014 \uac80\uc218 \ud544\uc218\ud1b5\uacfc \uc5c6\uc774 \uc5c5\ub85c\ub4dc \uac15\ud589 \uc911. \uc815\ube44 \ud6c4 false \ubcf5\uad6c \ud544\uc694.'); }catch(e){}
   }
