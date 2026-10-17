@@ -1549,7 +1549,7 @@ function renderMcqExam(root){
         var raw=oArr[i]||'';
         var sv=splitVerdict(stripRepeatedOpt(raw, st.t));
         var termTag = term ? ' <span class="eo-badge">\u2192 '+rm(term,q)+'</span>' : '';
-        var head='<div class="eo-q">'+st.k+'. '+rm(st.t,q)+termTag+'</div>';
+        var head='<div class="eo-q">( '+st.k+' )'+termTag+'</div>';  /* [2026-10-18] 빈칸 뒤 문장은 안 붙인다 — 크리스 「(ㄱ) (ㄴ) 이렇게만하고 개별해설하면되지 ㄴ 뒤엔 왜 문장이 붙어」 */
         var a1=(sv.rest||raw) ? '<div class="eo-a">'+rm(sv.rest||raw,q)+'</div>' : '';
         var exTxt=(exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
         return '<div class="eo">'+head+a1+exTxt+'</div>';
