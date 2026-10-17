@@ -442,6 +442,8 @@ function renderMath(text, allowBareFraction){
   //   그래서 라벨을 화살표 위 가운데로 맞춘 패딩이 통째로 사라져 첫 줄만 왼쪽으로 밀렸다(기존 68건 중 7건).
   //   여는/닫는 태그 옆의 줄바꿈 하나만 걷어내고 들여쓰기는 그대로 둔다.
   s = s.replace(/\[dia\][ \t]*\r?\n?([\s\S]*?)\r?\n?[ \t]*\[\/dia\]/g, function(_m, inner){ var body=String(inner).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\r?\n/g,"<br>"); return _st('<pre class="cc-dia">'+body+'</pre>'); });
+  /* [2026-10-17] 루트 √(…)·√숫자 → 괄호 안을 덮는 가로줄 — 글자 「√(3²+3²)」 그대로 나와 깨져 보였다(크리스 「루트 깨졌다」). 안쪽은 아래 변환(첨자 등)을 그대로 탄다. */
+  s = s.replace(/√\(((?:[^()]|\([^()]*\))*)\)/g, function(_m, inner){ return _st('<span class="sqrt"><span class="sq-r">√</span><span class="sq-b">')+inner+_st('</span></span>'); }).replace(/√([0-9]+(?:\.[0-9]+)?)/g, function(_m, n){ return _st('<span class="sqrt"><span class="sq-r">√</span><span class="sq-b">')+n+_st('</span></span>'); });
   s = s.replace(/\[u\]/g, function(){ return _st('<span class="ul">'); }).replace(/\[\/u\]/g, function(){ return _st('</span>'); });   // 밑줄 — 짝·순서도 안에서도 쓰게 먼저 바꾼다
   /* [2026-10-17] 짝 블록 [pair]틀린 것|맞는 것[/pair] → 위(✕)·화살표·아래(○)로 짝을 맞춘다 — 크리스 「원문 고침 위 아래로 짝이 맞게 화살표로 보여줄까? 지금 산만해보여」 「O x도 위아래 짝이 맞게」.
      [dia] 는 고정폭이라 긴 문장이 폰에서 옆으로 넘친다 — 이 칸은 줄을 접는다. 통째로 stash 해 아래 변환에 안 걸린다. */
