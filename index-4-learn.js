@@ -940,6 +940,8 @@ function blankPairTerms(opt){
 function jaryoBlanksHTML(jaryoText, q){
   var bs=parseBlankStmts(jaryoText);
   if(bs.length<2) return null;
+  /* [2026-10-18] 한 문장 안에 빈칸이 이어지면(「2. ( ㄱ ), ( ㄴ ) 및 …」) 줄로 쪼개지 않는다 — 빈칸 뒤가 쉼표뿐이라 ( ㄱ ), 한 줄이 따로 떴다(크리스 「보기 괄호 ㄱ 다음에 왜 빈공간이」 re2 publiclaw22_50). */
+  if(bs.slice(0,-1).some(function(st){ return st.t.replace(/[\s,，·및와과]/g,'').length<2; })) return null;
   /* [2026-08-22] 두 가지를 고친다.
      ① 첫 빈칸 앞 도입부가 통째로 사라졌다. parseBlankStmts 는 ( ㄱ ) 뒤부터만 잘라 주므로
         그 앞 글("사업주는 사업장에 … 사업주 또는")이 화면에서 없어져 문항이 성립하지 않았다.

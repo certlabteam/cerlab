@@ -2284,6 +2284,7 @@ function blankPairTerms(opt){
 function jaryoBlanksHTML(jaryoText, q){
   var bs=parseBlankStmts(jaryoText);
   if(bs.length<2) return null;
+  if(bs.slice(0,-1).some(function(st){ return st.t.replace(/[\s,，·및와과]/g,'').length<2; })) return null;
   /* [2026-08-22] index-4-learn.js 와 같은 수정 — 첫 빈칸 앞 도입부 살리기 + ' / ' 를 <br> 로. */
   var s=String(jaryoText||''), m=s.match(/\(\s*[ㄱ-ㅎ]\s*\)/);
   var lead=m?s.slice(0,m.index).trim():'';
