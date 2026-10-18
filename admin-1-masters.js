@@ -1427,6 +1427,8 @@ async function cpatchValidate(){
         if(e.ans!=null){ hasField=true; _cpAnsErrs(e,q).forEach(function(m){ errs.push(m); }); }
         // [2026-10-17] 계산형 칸 — approach·principle·tip·recall(글) · exSum(글 배열). 크리스 「계산형은 선지 다 해설하는거 아니잖아」 — SQL 실행 결과 같은 문항을 계산형 꼴로 바꾼다.
         ['approach','principle','tip','recall'].forEach(function(k){ if(e[k]!=null){ hasField=true; if(typeof e[k]!=='string'||!e[k].trim()) errs.push(k+' 글이 비었거나 글이 아님'); } });
+        // [2026-10-18] mn — 문항 exp.mn(암기코드 참조) 바꾸기·떼기. 「mn://…」 글 배열이거나 빈 배열(크리스 「최철무제 무리수 · 표가 나을듯」 civil22_50)
+        if(e.mn!=null){ hasField=true; if(!Array.isArray(e.mn)||e.mn.some(function(x){ return typeof x!=='string'||!/^mn:\/\/mn_[a-z0-9_]+$/.test(x); })) errs.push('mn 은 「mn://mn_…」 글 배열(떼려면 [])'); }
         if(e.exSum!=null){ hasField=true; if(!Array.isArray(e.exSum)||!e.exSum.length||e.exSum.some(function(x){return typeof x!=='string';})) errs.push('exSum 은 글 배열'); }
         if(e.calcConvert===true){ var _oc=(e.o||[]).filter(function(x){return x&&String(x).trim();}).length; if(_oc!==1) errs.push('calcConvert 는 o 에 정답 칸 하나만 남겨야 함('+_oc+'칸)'); if(e.o && !String(e.o[parseInt(q.ans,10)-1]||'').trim()) errs.push('calcConvert: 정답 칸 o 가 비었음'); if(!e.ex||!e.exSum) errs.push('calcConvert 는 ex(풀이 단계)·exSum(요약풀이)이 같이 와야 함'); }
         // [2026-10-17] jaryo — 지문에 밑줄 표시 [u]…[/u] 만 더하거나 빼게 한다(크리스 「ㄱ 부터 ㄹ 이 어디까지인지는 밑줄로」). 표시를 걷어 낸 글자가 지금 지문과 한 글자라도 다르면 막는다.
@@ -1447,7 +1449,7 @@ async function cpatchValidate(){
       else {
         okN++; ss.ok++;
         okMap[rec.home+'||'+e.id]={ rec:rec, cpt:(e.cpt!=null?e.cpt:null), o:(e.o!=null?e.o:null), ex:(e.ex!=null?e.ex:null), q:(e.q!=null?e.q:null), opts:(e.opts!=null?e.opts:null),
-          s:(e.s!=null?e.s:null), calc:{approach:e.approach,principle:e.principle,tip:e.tip,recall:e.recall,exSum:e.exSum,convert:e.calcConvert===true}, jaryo:(e.jaryo!=null?e.jaryo:null), noEx:(e.noEx!=null?e.noEx:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
+          s:(e.s!=null?e.s:null), mn:(e.mn!=null?e.mn:null), calc:{approach:e.approach,principle:e.principle,tip:e.tip,recall:e.recall,exSum:e.exSum,convert:e.calcConvert===true}, jaryo:(e.jaryo!=null?e.jaryo:null), noEx:(e.noEx!=null?e.noEx:null), ans:(e.ans!=null?e.ans:null), ansFrom:(e.ans!=null?q.ans:null), docId:G.docId, id:e.id,
           basis:(e.ans!=null?(e['근거']||e.basis||null):null), log:(e.ans!=null?String(e['로그']||e.log||''):null) };
         if(e.o!=null) cntO++; if(e.ex!=null) cntEx++; if(e.q!=null||e.opts!=null) cntSp++; if(e.ans!=null) cntAns++;
       }
@@ -1506,6 +1508,7 @@ async function cpatchApply(tok){
     if(it.jaryo!=null){ q.jaryo=it.jaryo; }
     if(it.calc){ ['approach','principle','tip','recall','exSum'].forEach(function(k){ if(it.calc[k]!=null){ q.exp=q.exp||{}; q.exp[k]=it.calc[k]; } }); }
     if(it.calc && it.calc.convert){ q.calc=true; }   // [2026-10-18] calcConvert 면 문항 calc 표시도 true 로 — calc:false 가 남아 있으면 계산형 꼴로 안 그려졌다(크리스 「이것도 계산형인거야 계산형 스타일로」 re2 taxreg23_4)
+    if(it.mn!=null){ q.exp=q.exp||{}; if(it.mn.length) q.exp.mn=it.mn; else delete q.exp.mn; }
     if(it.noEx!=null){ q.exp=q.exp||{}; if(it.noEx) q.exp.noEx=true; else delete q.exp.noEx; }
     if(it.ans!=null){ q.ans=it.ans; _cpAnsAudit.push({docId:it.docId, home:rec.home, id:it.id, before:it.ansFrom, after:it.ans, 근거:it.basis, 로그:it.log}); }
     touched[rec.home]=true;
