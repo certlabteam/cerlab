@@ -1503,6 +1503,9 @@ function renderMcqExam(root){
       body+='<div class="exp-opts">'+stmts.map(function(s,i){
         var raw=oArr[i]||'';
         var ex=stripRepeatedOpt(raw, s.t);
+        /* [2026-10-18] 해설 첫머리의 진술 기호·판정 꼬리표(「ㄷ [옳음] …」 「ㄷ …」)는 지운다 — 기호와 배지가 바로 위에 이미 있다(크리스 「해설에 ㄷ 옳음 반복 필요없어」 re2 rct_move_02) */
+        ex=String(ex||'').replace(/^\s*[\u3131-\u314e]?\s*[\[(\uff08\u3010]\s*(옳음|옳지\s*않음|맞음|틀림|정답|오답)\s*[\])\uff09\u3011]\s*/,'');
+        if(ex.charAt(0)===s.k && /^.[.\s]/.test(ex) && !/^.\s*[은는이가을를의]/.test(ex)) ex=ex.replace(/^.[.\s]\s*/,'');
         var sv=splitVerdict(ex);
         var inAns = ansLabels.indexOf(s.k)>=0;
         /* [2026-10-18] 판정은 해설 글이 아니라 정답 조합에서 정한다 — 해설에서 「…옳다」 맺음을 뺐더니 배지가 사라지거나(ㄴ) 「역할이다」 같은 말이 배지로 떴다(ㄱ)(크리스 「선지 ㄱㄴㄷ 옳음 옳지않음 표시」 re2 publiclaw23_10).
