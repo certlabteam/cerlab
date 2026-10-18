@@ -525,7 +525,7 @@ function isEconQ(q){
   return /^e\d/.test(id);   // e22_1, e26_2 …
 }
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
-function rm(text, q){ return renderMath(text, isEconQ(q)); }
+function rm(text, q){ return renderMath(text, isEconQ(q)).replace(/(\d|\d\s)(m|cm|km)([23])(?![0-9A-Za-z])/g, '$1$2<sup>$3</sup>'); }   /* [2026-10-18] 원문 「145.450m2」 같은 넓이·부피 단위를 윗첨자로(크리스 「제곱미터 윗첨자가 없네」 「m2 말이야」 re2 taxreg23_4) — 숫자 바로 뒤 m2·m3·cm2·km2 만. 원문 글자는 그대로 둔다 */
 /* [2026-08-23] 해설(exp.o) 전용 — 줄바꿈을 살린다.
    데이터에는 ①②③ 단계마다 
  이 들어 있는데 rm 은 그대로 흘려 버려 한 문단으로 뭉쳤다.
