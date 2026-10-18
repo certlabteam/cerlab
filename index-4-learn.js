@@ -1126,6 +1126,8 @@ function markComboStmts(scope, addOX){
     if(hasTag){
       // 태그 섞인 자료: 기존 줄 기준 처리(안전)
       var mk=/^\s*([\u3131-\u3141])[.\s·)\]]/;
+      /* [2026-10-18] 한 줄에 「ㄱ. … ㄴ. … ㄷ. …」 가 이어 붙은 자료는 줄이 하나라 통째로 한 진술이 됐다 — 마커 앞에서 줄을 나눈다(크리스 「문제보기 ㄱㄴㄷ각 개행」 re2 publiclaw23_10). */
+      html=html.replace(/([^\n])\s+([\u3131-\u3141])\.(?=\s)/g, '$1\n$2.');
       var lines=html.split(/\r?\n/);
       if(!lines.some(function(l){ return mk.test(l); })){ el.dataset.oxed=1; return; }
       var groups=[], cur=null;
@@ -1502,8 +1504,13 @@ function renderMcqExam(root){
         var raw=oArr[i]||'';
         var ex=stripRepeatedOpt(raw, s.t);
         var sv=splitVerdict(ex);
-        var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
         var inAns = ansLabels.indexOf(s.k)>=0;
+        /* [2026-10-18] 판정은 해설 글이 아니라 정답 조합에서 정한다 — 해설에서 「…옳다」 맺음을 뺐더니 배지가 사라지거나(ㄴ) 「역할이다」 같은 말이 배지로 떴다(ㄱ)(크리스 「선지 ㄱㄴㄷ 옳음 옳지않음 표시」 re2 publiclaw23_10).
+           발문이 「옳은 것/업무를 고른」이면 정답에 든 진술이 옳음, 「옳지 않은/틀린」이면 정답에 든 진술이 옳지 않음. */
+        var _stN=/(옳지\s*않|옳지않|적절하지\s*않|적절하지않|틀린|틀리는|아닌\s*것|해당하지\s*않)/.test(String(q.q||'').split(/ㄱ\s*[.．]/)[0]);
+        if(!/옳|틀|맞다|적절/.test(sv.v||'')) sv={v:'',vc:'',rest:ex.trim()};
+        var _isO = inAns!==_stN;
+        var verdictTag = ' <span class="eo-verdict '+(_isO?'eo-grn':'eo-red')+'">'+(_isO?'옳음':'옳지 않음')+'</span>';
         var ansTag = '';   // [2026-10-17] 진술 옆엔 옳음/옳지 않음만 — 정답은 선지에 붙는 말(크리스 「진술 ㄱ ㄴ ㄷ 하나씩 우측에 정답은 안맞아」)
         var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
