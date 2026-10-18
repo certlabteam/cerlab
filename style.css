@@ -104,7 +104,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;margin:8px 0}
 .tbl-wrap table.jtbl{width:max-content;min-width:100%;margin:0}
 /* [2026-10-18] 긴 칸이 한 줄로 늘어 가로 스크롤이 너무 길었다 — 칸 너비를 묶고 줄바꿈(크리스 「너무 스크롤이 길어」 「2번째 열 … 개행을 좀해야지」 re1 civil22_50) */
-.tbl-wrap table.jtbl th,.tbl-wrap table.jtbl td{max-width:12em;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.tbl-wrap table.jtbl{width:100%}   /* [2026-10-18] 표를 화면 폭에 맞춘다 — max-content 면 3열도 옆으로 밀렸다(크리스 civil22_50 화면) · 표는 3~4열 규칙(판정잣대) */
+.tbl-wrap table.jtbl th,.tbl-wrap table.jtbl td{white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
 .jtbl-html table{max-width:100%}
 @media (max-width:480px){ .tbl-wrap th,.tbl-wrap td{padding:4px 6px;font-size:14px;white-space:nowrap} }
 .mnem-desc{font-size:14px;font-weight:400;color:#5E4A2A;line-height:1.75;margin-top:4px}
