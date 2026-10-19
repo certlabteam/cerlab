@@ -1568,7 +1568,7 @@ function renderMcqExam(root){
         var verdictTag = ' <span class="eo-verdict '+(_isO?'eo-grn':'eo-red')+'">'+(_isO?'옳음':'옳지 않음')+'</span>';
         var _cat=_comboCatOf(q, ansN, s.k); if(_cat) verdictTag=' <span class="eo-verdict '+(_cat.i?'eo-red':'eo-grn')+'">'+_cat.n+'</span>';   // [2026-10-19] 분류형은 옳음/옳지 않음 대신 갈래 이름 — 앞 갈래 녹색·뒤 갈래 빨강(크리스 「저량 유량 색상 다르게 써야지 녹색 빨간색 쓰던거 써」)
         var ansTag = '';   // [2026-10-17] 진술 옆엔 옳음/옳지 않음만 — 정답은 선지에 붙는 말(크리스 「진술 ㄱ ㄴ ㄷ 하나씩 우측에 정답은 안맞아」)
-        var _stT=String(s.t||'').replace(/\s*\[[^\[\]\n]+\/[^\[\]\n]+\]\s*$/,'');   // [2026-10-19] 마지막 진술(ㅂ)에 발문 끝 머리표 「[유량변수 / 저량변수]」가 붙어 나왔다
+        var _stT=String(s.t||'').replace(/\s*\[[^\[\]\n]+\/[^\[\]\n]+\]\s*$/,'').replace(/\s*\/\s*$/,'');   /* [2026-10-19] 원문 진술 구분자 「/」가 진술 끝에 붙어 「… / 옳음」으로 보였다(호텔관리사 h21_12) */   // [2026-10-19] 마지막 진술(ㅂ)에 발문 끝 머리표 「[유량변수 / 저량변수]」가 붙어 나왔다
         var q1='<div class="eo-q">'+s.k+'. '+rm(_stT,q)+verdictTag+ansTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
