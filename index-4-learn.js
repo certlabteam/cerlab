@@ -919,7 +919,7 @@ function splitStmtMarkers(text){
   var stmts=[];
   for(var i=0;i<hits.length;i++){
     var end=(i+1<hits.length)?hits[i+1].mAt:s.length;
-    stmts.push({k:hits[i].k, t:s.slice(hits[i].tAt, end).replace(/\s+/g,' ').trim()});
+    stmts.push({k:hits[i].k, t:s.slice(hits[i].tAt, end).replace(/\s+/g,' ').trim().replace(/\s*\/$/,'')});   // [2026-10-20] 진술 끝에 딸려 든 원문 구분자 「/」는 뗀다(호텔관리사 h21_26 「푸드 마일스(food miles) /」)
   }
   return {intro:intro, stmts:stmts};
 }
