@@ -277,7 +277,7 @@ function renderMcqHome(root){
     html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico">✅</span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
   }
   }
-  html+='<div class="sec-lbl">기출 문제 <span style="font-weight:600;color:#888780">· 회차별 실제 시험 문제</span></div>';   // [2026-10-19] 크리스 「관광법규 위에 기출 문제 라고 타이틀 넣고」 — 아래 「레벨업 문제」와 짝
+  html+='<div class="sec-lbl">기출 문제</div><div class="sec-desc">회차별로 실제 시험에 나온 문제입니다.</div>';   // [2026-10-19] 크리스 「관광법규 위에 기출 문제 라고 타이틀 넣고」 — 아래 「레벨업 문제」와 짝
   curOrder().forEach(id=>{
     const s=curQB()[id]; const open=!!mqOpen[id];
     const total=s.sets.reduce((a,st)=>a+st.questions.length,0);
@@ -327,7 +327,8 @@ function renderMcqHome(root){
         +'<span class="b-go" style="margin-left:8px;flex-shrink:0">5문제 풀기</span></div></div>';
     });
     if(_luRows){
-      html+='<div class="sec-lbl">레벨업 문제 <span style="font-weight:600;color:#888780">· 기출을 바꿔 만든 '+_luSum.toLocaleString()+'문항 · 5문제씩 이어서'+(ltDone(mqCert)?'':' · 레벨테스트 후 약점부터')+'</span></div>'+_luRows;
+      /* [2026-10-19] 크리스 「레벨업 문제라고 타이틀」 「그 밑에 레벨업이 뭔지 설명 한줄」 「5문제씩 이어서는 우측 버튼과 중복이니 빼자」 */
+      html+='<div class="sec-lbl">레벨업 문제</div><div class="sec-desc">기출에 나온 개념을 바꿔 묻는 '+_luSum.toLocaleString()+'문항으로, 같은 개념을 다른 각도에서 다시 풀어 실력을 굳힙니다'+(ltDone(mqCert)?'':' · 레벨테스트 후 약점부터')+'.</div>'+_luRows;
     }
   }
   root.innerHTML=html;

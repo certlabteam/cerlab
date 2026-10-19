@@ -574,6 +574,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .mcq-result button{background:#0C447C;color:#fff;border:none;border-radius:12px;padding:12px 20px;font-size:14px;font-weight:800;cursor:pointer}
 /* 과목 아코디언 (원본 감평사 방식) */
 #mcqView .sec-lbl{font-size:12px;font-weight:700;color:#94A3B8;letter-spacing:1.5px;text-transform:uppercase;padding:8px 0 6px}
+#mcqView .sec-desc{font-size:14px;line-height:1.5;color:#64748B;margin:-2px 0 8px}   /* [2026-10-19] 제목 밑 설명 한 줄 */
 #mcqView .mcq-exam-title{font-size:20px;font-weight:800;color:#0C447C;margin:2px 2px 14px;display:flex;align-items:center;gap:4px}
 #mcqView .exam-home-back{background:none;border:none;color:#0C447C;padding:2px;margin-left:-4px;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0;border-radius:8px}
 #mcqView .exam-home-back:active{background:#EAF0F8}
