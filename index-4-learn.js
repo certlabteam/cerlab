@@ -287,7 +287,7 @@ function splitVerdict(ex){
   return {v:v, vc:verdictColor(v), rest:String(rest).replace(/\s*\(정답\)/g,'')};   // (정답) 글자는 ✅ 정답 딱지와 겹쳐 뺀다
 }
 // 판정 배지 표시 문구를 표준 축(옳음/옳지 않음)으로 정규화 — 표시 전용(로직 verdictIsO는 원본 v 사용)
-function verdictLabel(v){ if(!v) return v; if(/옳지|적절하지|부적절|틀리|틀린/.test(v)) return '옳지 않음'; if(/옳다|적절하다|맞다/.test(v)) return '옳음'; return v; }
+function verdictLabel(v){ if(!v) return v; if(/옳지|적절하지|부적절|틀리|틀린/.test(v)) return '옳지 않음'; if(/옳다|적절하다|맞다/.test(v)) return '옳음'; if(/해당하지\s*않|해당되지\s*않/.test(v)) return '해당하지 않음'; if(/해당한다|해당된다/.test(v)) return '해당'; return v; }   // [2026-10-19] 「해당하는 것은 모두 몇 개」 개수형 배지(intro25_18)
 // O/X 자가체크 → 실제 정답 판정 비교 (1단계)
 function verdictIsO(v){
   if(!v) return null;
@@ -1548,7 +1548,7 @@ function renderMcqExam(root){
       }).join('')+'</div>';
       var trueCount=cStmts.reduce(function(acc,t,i){ var sv2=splitVerdict(oArr[i]||''); return acc+(verdictIsO(sv2.v)===true?1:0); },0);
       var ansOpt=(q.opts&&q.opts[ansN[0]-1])||'';
-      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">옳은 것 '+trueCount+'개 → 정답 '+(ansN[0])+'번'+(ansOpt?'('+rm(ansOpt,q)+')':'')+'</div></div></div>';
+      body+='<div class="exp-opts" style="margin-top:4px"><div class="eo" style="padding-top:10px;border-top:1px dashed #E2E8F0"><div class="eo-q">'+(/해당하는\s*것|해당되는\s*것/.test(String(q.q||''))?'해당하는 것 ':'옳은 것 ')+trueCount+'개 → 정답 '+(ansN[0])+'번'+(ansOpt?'('+rm(ansOpt,q)+')':'')+'</div></div></div>';
     } else if(comboOK){
       // 콤보: ㄱㄴㄷㄹ 지문별 펼침 (exp.o는 지문 순서). 정답 지문에 ✅, 맨 아래 정답 보기 조합 줄.
       var ansLabels=ansN.map(function(n){ return (q.opts&&q.opts[n-1])?q.opts[n-1]:''; }).join(' ');  // 정답 보기에 포함된 지문 마커
