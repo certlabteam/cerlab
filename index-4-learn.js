@@ -1066,6 +1066,8 @@ function _comboCatOf(q, ansN, k){ try{
   var first=(q.opts||[]).map(function(o){ var x=String(o||'').match(nm); return x?x[1]:''; }).filter(Boolean)[0]||m[1];
   var nmK=mk.indexOf(k)>=0 ? m[1] : other; return nmK ? {n:nmK, i:(nmK===first?0:1)} : '';
 }catch(e){ return ''; } }
+/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 「그래야 학습자가 이해가 되지」 intro25_7) */
+function _jrHdr(t){ return String(t==null?'':t).replace(/^\s*\[\s*([^\[\]\/\n]+?)\s*\/\s*([^\[\]\/\n]+?)\s*\]\s*$/m,'[$1]\u00a0/\u00a0[$2]'); }
 function _conceptChain(q, field){
   var e=q&&q.exp; if(!e || !Array.isArray(e.cpt) || !e.cpt.length) return [];
   var out=[]; e.cpt.forEach(function(r){ var c=cptResolve(r); if(c){ var v=c[field]; if(v){ (Array.isArray(v)?v:[v]).forEach(function(x){ if(x!=null) out.push(x); }); } } }); return out;
@@ -1381,7 +1383,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(String(jaryo).replace(/^\s*\[\s*([^\[\]\/\n]+?)\s*\/\s*([^\[\]\/\n]+?)\s*\]\s*$/m,'[$1]\u00a0/\u00a0[$2]'),q).replace(/ \/ /g,'<br>')))/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 intro25_7) */+'</div>':'')+imgBlock(q)+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(_jrHdr(jaryo),q).replace(/ \/ /g,'<br>')))/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 intro25_7) */+'</div>':'')+imgBlock(q)+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
@@ -1734,7 +1736,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview):tpSwap(_jaryoDots(stemHTML(rm(_stemQ,q))),q.id))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(jr.jaryo,q).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(_jrHdr(jr.jaryo),q).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
