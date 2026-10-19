@@ -1156,8 +1156,8 @@ function countStemHTML(rawStem, q, withOX){
   // 2025 제36회 학개론 40번: 정답 공개 뒤에만 각 연결의 판정을 바로 붙인다.
   var _countMarks=(q&&q.id==='intro25_40')?['옳지 않음','옳지 않음','옳음','옳지 않음','옳음','옳지 않음','옳지 않음']:[];
   var rows=sp.stmts.map(function(t,i){
-    var oxb=withOX?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
-    var judged=(!withOX&&_countMarks[i])?'<span class="count-judgment '+(_countMarks[i]==='옳음'?'is-correct':'is-wrong')+'">'+_countMarks[i]+'</span>':'';
+    var oxb=withOX&&!_countMarks.length?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
+    var judged=_countMarks[i]?'<span class="count-judgment '+(_countMarks[i]==='옳음'?'is-correct':'is-wrong')+'">'+_countMarks[i]+'</span>':'';
     // [2026-08-06] 인라인 style(line-height:1·vertical-align:middle)이 CSS를 눌러, 두 줄 진술에서
     //   점이 첫 줄이 아니라 진술 세로 가운데(≈둘째 줄)에 붙었다. 정렬은 style.css 의 .qbul/.qbul-m 에서만 잡는다.
     return '<div class="qbul"><span class="qbul-m">●</span><span class="qbul-t">'+rm(t,q)+judged+oxb+'</span></div>';
