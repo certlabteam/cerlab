@@ -1381,7 +1381,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(jaryo,q).replace(/ \/ /g,'<br>')))+'</div>':'')+imgBlock(q)+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(String(jaryo).replace(/^\s*\[\s*([^\[\]\/\n]+?)\s*\/\s*([^\[\]\/\n]+?)\s*\]\s*$/m,'[$1]\u00a0/\u00a0[$2]'),q).replace(/ \/ /g,'<br>')))/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 intro25_7) */+'</div>':'')+imgBlock(q)+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
