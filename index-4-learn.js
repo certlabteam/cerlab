@@ -527,7 +527,20 @@ function isEconQ(q){
   return /^e\d/.test(id);   // e22_1, e26_2 …
 }
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
-function rm(text, q){ return renderMath(text, isEconQ(q)).replace(/(^|[^A-Za-z0-9_])(m|cm|km)([23])(?![0-9A-Za-z_])/g, '$1$2<sup>$3</sup>'); }   /* [2026-10-18] 원문 「145.450m2」 같은 넓이·부피 단위를 윗첨자로(크리스 「제곱미터 윗첨자가 없네」 「m2 말이야」 re2 taxreg23_4) — 숫자 바로 뒤 m2·m3·cm2·km2 만. 원문 글자는 그대로 둔다 */
+/* [2026-10-19] 「…다」로 맺지 않는 문장 끝에는 마침표를 찍지 않는다 — 「정답은 2번.」 → 「정답은 2번」, 「단가 2,500,000원/m².」 → 마침표 없음(크리스 「문장이 뭐뭐다 이렇게 맺음말로 끝나지 않을때는 마침표를 넣지말자」 intro24_37).
+   「다」「요」 끝·「…다(제5조).」 처럼 괄호 앞이 「다」인 것·줄머리 번호표(1. ㄱ. A.)·소수점·말줄임은 그대로 둔다. 화면 전용 — 원문은 안 바꾼다. */
+function _dropNonFinalDot(h){ try{ h=String(h==null?'':h);
+  return h.replace(/([^\s>.])((?:<\/[a-zA-Z]+>)*)\.(?=\s|$|<)/g, function(m, c, tags, off){
+    if(c==='다'||c==='요') return m;
+    var before=h.slice(0, off+1).replace(/<[^>]*>/g,'');
+    if(c===')'){ var t=before.replace(/\s*\([^()]*\)$/,''); if(/[다요]$/.test(t)) return m; }
+    var line=before.split(/\n/).pop();
+    var raw=h.slice(0, off+1); var cut=Math.max(raw.lastIndexOf('<br'), raw.lastIndexOf('<div'), raw.lastIndexOf('<p'), raw.lastIndexOf('<li'), raw.lastIndexOf('\n'));
+    var seg=(cut>=0? raw.slice(cut) : raw).replace(/^<[^>]*>/,'').replace(/<[^>]*>/g,'');
+    if(/^\s*[0-9A-Za-z\u3131-\u314E\uAC00-\uD7A3]{1,2}$/.test(seg) || /^\s*[0-9A-Za-z\u3131-\u314E\uAC00-\uD7A3]{1,2}$/.test(line)) return m;
+    return c+tags; });
+}catch(e){ return h; } }
+function rm(text, q){ return _dropNonFinalDot(renderMath(text, isEconQ(q)).replace(/(^|[^A-Za-z0-9_])(m|cm|km)([23])(?![0-9A-Za-z_])/g, '$1$2<sup>$3</sup>')); }   /* [2026-10-18] 원문 「145.450m2」 같은 넓이·부피 단위를 윗첨자로(크리스 「제곱미터 윗첨자가 없네」 「m2 말이야」 re2 taxreg23_4) — 숫자 바로 뒤 m2·m3·cm2·km2 만. 원문 글자는 그대로 둔다 */
 /* [2026-08-23] 해설(exp.o) 전용 — 줄바꿈을 살린다.
    데이터에는 ①②③ 단계마다 
  이 들어 있는데 rm 은 그대로 흘려 버려 한 문단으로 뭉쳤다.
