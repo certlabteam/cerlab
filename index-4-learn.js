@@ -1153,11 +1153,14 @@ function splitCountStmts(text){
 function countStemHTML(rawStem, q, withOX){
   var sp=splitCountStmts(rawStem);
   var head=sp.head ? '<div class="qpara">'+rm(sp.head,q)+'</div>' : '';
+  // 2025 제36회 학개론 40번: 정답 공개 뒤에만 각 연결의 판정을 바로 붙인다.
+  var _countMarks=(q&&q.id==='intro25_40')?['옳지 않음','옳지 않음','옳음','옳지 않음','옳음','옳지 않음','옳지 않음']:[];
   var rows=sp.stmts.map(function(t,i){
     var oxb=withOX?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
+    var judged=(!withOX&&_countMarks[i])?'<span class="count-judgment '+(_countMarks[i]==='옳음'?'is-correct':'is-wrong')+'">'+_countMarks[i]+'</span>':'';
     // [2026-08-06] 인라인 style(line-height:1·vertical-align:middle)이 CSS를 눌러, 두 줄 진술에서
     //   점이 첫 줄이 아니라 진술 세로 가운데(≈둘째 줄)에 붙었다. 정렬은 style.css 의 .qbul/.qbul-m 에서만 잡는다.
-    return '<div class="qbul"><span class="qbul-m">●</span><span class="qbul-t">'+rm(t,q)+oxb+'</span></div>';
+    return '<div class="qbul"><span class="qbul-m">●</span><span class="qbul-t">'+rm(t,q)+judged+oxb+'</span></div>';
   }).join('');
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
@@ -1730,8 +1733,9 @@ function renderMcqExam(root){
   }
   const curSubj=(function(){ var _sc=(q&&q._subj)?q._subj:''; if(!_sc) return ''; try{ var _qb=qbOf(mqCert)[_sc]; return (_qb&&_qb.name)||_sc; }catch(_){ return _sc; } })();   // 혼합과목(복습·진단·SR) 현재 문항 과목명(코드→한글) → 헤더로
   const subjTag='';                         // 카드 안 과목 배지는 제거(헤더로 옮김)
+  const countTypeTag=isCountType(q)?'<span class="qcount-type">개수 구하기</span>':'';
   const relearnBadge=(mqLevelUp && !mqInReview && _luRelearn && _luRelearn[q.id])?'<span class="imp" style="background:#EAF2FB;color:#0C447C;border-color:#C7DBF2">🔁 복습</span>':'';
-  const tags=subjTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q)+relearnBadge;
+  const tags=subjTag+countTypeTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q)+relearnBadge;
   const guessOn=!!mqGuess[q.id];
   const guessToggle = mqInReview
     ? (guessOn?'<span class="guess-tag-r">🎲 찍음</span>':'')
