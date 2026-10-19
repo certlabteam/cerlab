@@ -1396,7 +1396,7 @@ async function cpatchValidate(){
         if(e.o!=null){ hasField=true;
           if(!Array.isArray(e.o)) errs.push('o 배열 아님');
           else { var oArr=(q.exp&&q.exp.o)||[];
-            if(oArr.length && e.o.length!==oArr.length && !(e.comboByOpt===true && e.o.length===(q.opts||[]).length) && !(e.comboByStmt===true && e.o.length>=2 && e.o.length<=Math.max((q.opts||[]).length, (String(q.q||'').match(/(^|\n)\s*[\u3131-\u314E]\s*\./g)||[]).length)))   /* [2026-10-19] 진술이 선지보다 많은 조합형(ㄱ~ㅂ 6개 · 선지 5개)도 진술 수만큼 받는다(크리스 「이런문제는 ㄱㄴㄷㄹ ㅁ ㅂ 하나식 설명하면되잖아」 intro25_7) */   /* comboByStmt: 조합형을 ㄱㄴㄷ 진술마다로 되돌림(크리스 「선지마다 설명해주고 옳음 그름 쓰고 … 이런식으로 햇었잖아」) */ errs.push('o 길이 '+e.o.length+'≠exp.o '+oArr.length);   // comboByOpt: 조합형 해설을 ㄱㄴㄷ 진술마다 → 선지마다로 바꿀 때만 선지 수로(크리스 「선지(1~4번)마다」)
+            if(oArr.length && e.o.length!==oArr.length && !(e.comboByOpt===true && e.o.length===(q.opts||[]).length) && !(e.comboByStmt===true && e.o.length>=2 && e.o.length<=Math.max((q.opts||[]).length, (String(q.q||'').match(/(^|\n)\s*[\u3131-\u314E]\s*\./g)||[]).length, (String(q.q||'').match(/(^|\n)\s*[\u00B7\u2022\u25CB]\s*/g)||[]).length)))   /* [2026-10-19] 진술이 선지보다 많은 조합형(ㄱ~ㅂ 6개 · 선지 5개)·개수형(「·」「○」 머리 7개 · intro25_40)도 진술 수만큼 받는다(크리스 「이런문제는 ㄱㄴㄷㄹ ㅁ ㅂ 하나식 설명하면되잖아」 intro25_7) */   /* comboByStmt: 조합형을 ㄱㄴㄷ 진술마다로 되돌림(크리스 「선지마다 설명해주고 옳음 그름 쓰고 … 이런식으로 햇었잖아」) */ errs.push('o 길이 '+e.o.length+'≠exp.o '+oArr.length);   // comboByOpt: 조합형 해설을 ㄱㄴㄷ 진술마다 → 선지마다로 바꿀 때만 선지 수로(크리스 「선지(1~4번)마다」)
             e.o.forEach(function(t,i){
               var emptyNew=(typeof t!=='string'||!String(t).trim());
               var origHad=(oArr[i]!=null && String(oArr[i]).replace(/<[^>]+>/g,'').trim()!=='');
