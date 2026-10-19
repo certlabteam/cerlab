@@ -163,7 +163,7 @@ function _qcViolations(q){
       /* [2026-10-17] 기준 표 [tbl]·기간 화살표 [span]·짝 [pair] 은 선지마다 같게 두는 칸이라 되풀이로 세지 않는다 */
       t.replace(/\[(tbl|span|pair)\][^]*?\[\/\1\]/g,'').split(/[.。](?:\s|$)/).map(function(x){return x.trim();}).filter(function(x){return x.length>=20;}).forEach(function(sn){ if(_seen[sn]!==undefined && _seen[sn]!==i) v.push({kind:'warn',field:'ex',idx:i,code:'TXT_FILLER',msg:'예시 '+(_seen[sn]+1)+'번과 같은 문장을 되풀이 — 길이 채우기 문장은 빼고 그 보기의 장면을 쓴다',text:sn}); else _seen[sn]=i; }); }); }
   /* 판정 빠짐 — 해설 끝에 판정이 없으면 앱 딱지(옳음/옳지 않음)가 안 붙는다(크리스 「옳음 옳지 않음 없네」 · gov9arch 2026 2번 4번 선지 「…구조와 다르다.」). */
-  if(!isSAq && !_isCalcQ(q) && !(q.type==='COMBO'||q.type==='PAIR'||((q.opts||[]).length>=2&&(q.opts||[]).every(function(x){ return /^[\sㄱ-ㅎ,，·]+$/.test(String(x||'')); }))) && _qcOn('gichul','O_NO_VERDICT')) o.forEach(function(t,i){ t=String(t||'').replace(/<[^>]+>/g,'').trim(); if(!t)return;
+  if(!isSAq && !_isCalcQ(q) && !(q.type==='COMBO'||q.type==='PAIR'||(q.exp&&q.exp.comboByStmt===true)||((q.opts||[]).length>=2&&(q.opts||[]).every(function(x){ return /^[\sㄱ-ㅎ,，·\[\]\/]+$/.test(String(x||'').replace(/^[\uAC00-\uD7A3A-Za-z]{2,}\s*[-\u2013:]\s*/,'')); }))) && _qcOn('gichul','O_NO_VERDICT')) o.forEach(function(t,i){ t=String(t||'').replace(/<[^>]+>/g,'').trim(); if(!t)return;
     if(!/(옳다|옳지\s*않다|적절하다|적절하지\s*않다|해당한다|해당하지\s*않는다|맞다|틀리다|(사항|장점|단점|특징|특성|원칙|요건|기능|역할|요소|조건|방법|내용|성격|사례|효과|목적|대상)(이다|이\s*아니다|가\s*아니다))\s*(\(정답\))?[.。]?\s*$/.test(t))
       v.push({kind:'warn',field:'o',idx:i,code:'O_NO_VERDICT',msg:'해설 끝에 판정이 없다 — 「따라서 옳다/옳지 않다」(또는 발문 말)로 맺어야 앱이 옳음/옳지 않음 딱지를 붙인다',text:t}); });
   /* 어학 — 선지가 영어 낱말·구인데 그 보기 예시에 그 영어가 없다(크리스 「이게 뭐냐」 · 甲이 단어를 회의록에 적었다는 예시). 예시는 단어·숙어 풀이나 문맥 단서 대 보기로 쓴다. */
@@ -241,8 +241,9 @@ function _qcViolations(q){
   if(em(exp.s))   v.push({kind:'block',field:'s',idx:0,code:'EMDASH',msg:'\uc694\uc57d(s)\uc5d0 em\ub300\uc2dc(\u2014) \uae08\uc9c0',text:exp.s});
   if(isMCQ && !isCalc && !Array.isArray(q.ans)){ /* 전항·복수정답(ans 배열)은 정오 축 무효 → 종결형 면제 */
     var _isCountQ=String((q&&q.type)||'').toUpperCase()==='COUNT'; /* [FIX 2026-07-16] COUNT(개수형)은 정답칸이 "N개라 정답이다"로 끝나 옳다/옳지않다 종결이 없음 — VERDICT 오탐 제외 */
+  /* [2026-10-19] 분류형 조합(「[ㄱ, ㄴ, ㄹ] / [ㄷ, ㅁ, ㅂ]」·「위탁관리방식 - ㄴ, ㄹ, ㅁ, ㅂ」 보기, 진술 해설을 「…이므로 저량이다」 처럼 갈래 이름으로 맺음)과 comboByStmt 표시 문항도 조합형으로 보아 VERDICT·O_NO_VERDICT 를 걸지 않는다(크리스 「유량이다 저량이다 라고 표현되어야해 옳다 옳지 않다가 아니라」 intro25_7) */
   /* [2026-10-18] 조합형(ㄱㄴㄷ 고르기)·빈칸짝은 앱이 정답 조합에서 옳음/옳지 않음을 정한다 — 해설에 판정 맺음을 되풀이하지 않는다(크리스 「굳이 반복할 필요 없어」). 그래서 VERDICT·O_NO_VERDICT 를 이 꼴엔 걸지 않는다. */
-  var _cbq=(q.type==='COMBO'||q.type==='PAIR'||((q.opts||[]).length>=2&&(q.opts||[]).every(function(x){ return /^[\sㄱ-ㅎ,，·]+$/.test(String(x||'')); })));
+  var _cbq=(q.type==='COMBO'||q.type==='PAIR'||(q.exp&&q.exp.comboByStmt===true)||((q.opts||[]).length>=2&&(q.opts||[]).every(function(x){ return /^[\sㄱ-ㅎ,，·\[\]\/]+$/.test(String(x||'').replace(/^[\uAC00-\uD7A3A-Za-z]{2,}\s*[-\u2013:]\s*/,'')); })));
   o.forEach(function(t,i){ if(t&&String(t).trim()&&!_isCountQ&&!_cbq&&!_qgVerdict(t)) v.push({kind:'block',field:'o',idx:i,code:'VERDICT',msg:'\uc885\uacb0\uc5b4 \uc5c6\uc74c(\uc633\ub2e4/\uc633\uc9c0 \uc54a\ub2e4\ub85c \uc548 \ub9fa\uc74c \u2192 O/X \ubc30\uc9c0 \ub204\ub77d)',text:t}); });
   }
   if(cards.length){ cards.forEach(function(c,j){ if(!(c&&c.cx&&String(c.cx).trim())) v.push({kind:'block',field:'card',idx:j,code:'CARD_CX_EMPTY',msg:'\uac1c\ub150\uce74\ub4dc '+(j+1)+' cx(\uc608\uc2dc) \ube48\uce78',text:(c&&c.t)||''}); }); }
