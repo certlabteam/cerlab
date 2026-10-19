@@ -386,6 +386,8 @@ function isComboQuestion(opts, q){
   for(var i=0;i<opts.length;i++){
     var o=String(opts[i]||'').trim();
     if(!o) return false;
+    /* [2026-10-19] 「[ㄱ, ㄴ, ㄹ] / [ㄷ, ㅁ, ㅂ]」 처럼 묶음 괄호를 두른 보기, 「자기관리방식 - ㄱ, ㄴ, ㄷ, ㄹ」 처럼 앞에 이름표를 단 보기도 조합형이다 — 못 알아봐 ㄱ~ㅂ 진술 해설이 선지 1~5번 자리에 붙었다(크리스 「ㄱ ㄴ ㄷ ㄹ ㅁ 하나식 설명하라니까」 intro25_7·intro23_32) */
+    o=o.replace(/^[\uAC00-\uD7A3A-Za-z]{2,}\s*[-\u2013:]\s*(?=[\u3131-\u314E])/,'').replace(/[\[\]()]/g,'').trim();
     if(o.length>14){                              // 마커 조합은 짧음(일반 서술 보기 배제)
       if(!q) return false;
       if(_longOK===null) _longOK=_longComboOK(opts, q);
