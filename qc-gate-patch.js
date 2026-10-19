@@ -61,6 +61,7 @@
       if(!_QC_DEFAULTS.gichul.O_NO_ANSMARK) _QC_DEFAULTS.gichul.O_NO_ANSMARK={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_BY_OPT) _QC_DEFAULTS.gichul.COMBO_BY_OPT={on:true};
       if(!_QC_DEFAULTS.gichul.CALC_HALF) _QC_DEFAULTS.gichul.CALC_HALF={on:true};
+      if(!_QC_DEFAULTS.gichul.CALC_NO_MATH) _QC_DEFAULTS.gichul.CALC_NO_MATH={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH) _QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISSING)  _QC_DEFAULTS.gichul.COMBO_ANS_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED) _QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED={on:true};
@@ -451,6 +452,17 @@
         var _exN = 0; (Array.isArray(_ce.ex)?_ce.ex:[]).forEach(function(x){ if(x&&String(x).trim()) _exN++; });
         if(!_flag) v.push({kind:'block',field:'calc',idx:0,code:'CALC_HALF',msg:'계산형 칸(approach·principle·exSum)이 있는데 calcConvert:true 가 없다 — 앱이 계산형으로 안 그린다',text:''});
         if(_exN<2) v.push({kind:'block',field:'ex',idx:0,code:'CALC_HALF',msg:'계산형인데 상세풀이 단계(ex)가 '+_exN+'칸 — 단계 제목·설명·→ 식 을 ↓ 로 나눠 2단계 이상',text:''});
+      }
+    }catch(_){}
+
+    /* [2026-10-20] CALC_NO_MATH — 계산이 하나도 없는데 계산형 꼴(접근·원리·요약풀이·상세풀이)로 쓴 것을 막는다.
+       크리스 「이건 단순 년도라 계산형아니야」(hotelmgr h22_29 관광 법규 제정 순서 — 연도만 늘어놓았다). 숫자 사이 셈 기호(× ÷ + − * /)가 — 「= 1975년」 같은 값 적기는 셈이 아니다 — 요약풀이·상세풀이 어디에도 없으면 보통 꼴로 쓴다. */
+    try{
+      var _ce2=(q&&q.exp)||{};
+      var _isC2=(q&&q.calc===true)||_ce2.calcConvert===true||!!(_ce2.approach||_ce2.principle||(_ce2.exSum&&_ce2.exSum.length));
+      if(_on('gichul','CALC_NO_MATH') && _isC2){
+        var _tx2=[].concat(_ce2.exSum||[], _ce2.ex||[]).join(' ');
+        if(!/\d[\d,.]*\s*(?:[가-힣%]{0,3})\s*[×xX*÷\/+\-−]\s*(?:[가-힣]{1,4}\s*)?\(?\s*\d|[A-Za-z0-9)]\s*[×*÷\/+\-−=]\s*[A-Za-z(]|[√^]/.test(_tx2)) v.push({kind:'block',field:'calc',idx:0,code:'CALC_NO_MATH',msg:'계산형 꼴인데 셈(× ÷ + − =)이 하나도 없다 — 연도·사실만 맞추는 문항은 계산형이 아니다. 선지마다 o·ex 를 쓰는 보통 꼴로',text:''});
       }
     }catch(_){}
 
