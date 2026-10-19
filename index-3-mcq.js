@@ -277,7 +277,7 @@ function renderMcqHome(root){
     html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico">✅</span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
   }
   }
-  html+='<div class="sec-lbl">과목 선택</div>';
+  html+='<div class="sec-lbl">기출 문제 <span style="font-weight:600;color:#888780">· 회차별 실제 시험 문제</span></div>';   // [2026-10-19] 크리스 「관광법규 위에 기출 문제 라고 타이틀 넣고」 — 아래 「레벨업 문제」와 짝
   curOrder().forEach(id=>{
     const s=curQB()[id]; const open=!!mqOpen[id];
     const total=s.sets.reduce((a,st)=>a+st.questions.length,0);
