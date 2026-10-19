@@ -1610,7 +1610,7 @@ function renderMcqExam(root){
       var bTerms=blankPairTerms((q.opts && q.opts[ansN[0]-1])||'');
       body+='<div class="exp-opts">'+blankStmts.map(function(st,i){
         var term=bTerms[st.k]||'';
-        var raw=oArr[i]||'';
+        var raw=String(oArr[i]||'').replace(/^\s*\(\s*[\u3131-\u314E]\s*\)\s*(?:\u2192|->)\s*[^:\uFF1A]{1,30}[:\uFF1A]\s*/,'');   // [2026-10-19] 머리 「( ㄱ ) → 1년」을 해설 첫머리에 되풀이한 것은 뗀다(h21_16)
         var sv=splitVerdict(stripRepeatedOpt(raw, st.t));
         var termTag = term ? ' <span class="eo-badge">\u2192 '+rm(term,q)+'</span>' : '';
         var head='<div class="eo-q">( '+st.k+' )'+termTag+'</div>';  /* [2026-10-18] 빈칸 뒤 문장은 안 붙인다 — 크리스 「(ㄱ) (ㄴ) 이렇게만하고 개별해설하면되지 ㄴ 뒤엔 왜 문장이 붙어」 */
