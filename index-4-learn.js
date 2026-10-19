@@ -1533,7 +1533,7 @@ function renderMcqExam(root){
       var _ni=body.lastIndexOf('<div class="note">'); if(_ni>=0){ var _ne=body.indexOf('</div>',_ni); if(_ne>0) body=body.slice(0,_ne)+_bd+body.slice(_ne); } }
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
     var isCV=!comboOK && isComboVariant(q);   // 조합 변형형(정답 묶음 1개만)
-    var blankStmts=(!comboOK && !isCV)?parseBlankStmts(q.q):[];   // 괄호빈칸 짝맞추기
+    var blankStmts=(!comboOK && !isCV)?(function(){ var _b=parseBlankStmts(q.q); if(_b.length<2 && q.jaryo) _b=parseBlankStmts(q.jaryo); return _b; })():[];   // 괄호빈칸 짝맞추기 — [2026-10-19] 빈칸이 자료 상자(jaryo)에 있으면 거기서 찾는다(호텔관리사 h21_16 · 빈칸 해설이 선지 1·2번 자리에 붙었다)
     var _apairs=(!comboOK && !isCountType(q) && !(blankStmts.length>=2 && oFilled===blankStmts.length)) ? _assignPairs(q) : null;
     var _asegs=_apairs ? _splitExpByMarker(oArr[(ansArr(q.ans)[0]||1)-1]||'', _apairs.map(function(p){return p.k;})) : null;
     if(isCountType(q)){
