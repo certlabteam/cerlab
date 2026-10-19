@@ -1059,11 +1059,12 @@ function _comboCatOf(q, ansN, k){ try{
   var hm=String(q.q||'').match(/\[\s*([^\[\]\/\n]+?)\s*\/\s*([^\[\]\/\n]+?)\s*\]\s*$/);
   var gs=a.split('/');
   if(hm && gs.length===2){ var g0=gs[0].match(/[\u3131-\u314E]/g)||[], g1=gs[1].match(/[\u3131-\u314E]/g)||[];
-    if(g0.length && g1.length){ if(g0.indexOf(k)>=0) return hm[1]; if(g1.indexOf(k)>=0) return hm[2]; } return ''; }
+    if(g0.length && g1.length){ if(g0.indexOf(k)>=0) return {n:hm[1], i:0}; if(g1.indexOf(k)>=0) return {n:hm[2], i:1}; } return ''; }
   var nm=/^\s*([\uAC00-\uD7A3A-Za-z]{2,})\s*[-\u2013:]\s*/, m=a.match(nm); if(!m) return '';
   var other=(q.opts||[]).map(function(o){ var x=String(o||'').match(nm); return x?x[1]:''; }).filter(function(n){ return n && n!==m[1]; })[0]||'';
   var mk=a.slice(m[0].length).match(/[\u3131-\u314E]/g)||[];
-  return mk.indexOf(k)>=0 ? m[1] : other;
+  var first=(q.opts||[]).map(function(o){ var x=String(o||'').match(nm); return x?x[1]:''; }).filter(Boolean)[0]||m[1];
+  var nmK=mk.indexOf(k)>=0 ? m[1] : other; return nmK ? {n:nmK, i:(nmK===first?0:1)} : '';
 }catch(e){ return ''; } }
 function _conceptChain(q, field){
   var e=q&&q.exp; if(!e || !Array.isArray(e.cpt) || !e.cpt.length) return [];
@@ -1551,9 +1552,10 @@ function renderMcqExam(root){
         if(!/옳|틀|맞다|적절/.test(sv.v||'')) sv={v:'',vc:'',rest:ex.trim()};
         var _isO = inAns!==_stN;
         var verdictTag = ' <span class="eo-verdict '+(_isO?'eo-grn':'eo-red')+'">'+(_isO?'옳음':'옳지 않음')+'</span>';
-        var _cat=_comboCatOf(q, ansN, s.k); if(_cat) verdictTag=' <span class="eo-verdict" style="color:#1D4ED8;background:#EFF6FF">'+_cat+'</span>';   // [2026-10-19] 분류형은 옳음/옳지 않음 대신 분류 이름
+        var _cat=_comboCatOf(q, ansN, s.k); if(_cat) verdictTag=' <span class="eo-verdict '+(_cat.i?'eo-red':'eo-grn')+'">'+_cat.n+'</span>';   // [2026-10-19] 분류형은 옳음/옳지 않음 대신 갈래 이름 — 앞 갈래 녹색·뒤 갈래 빨강(크리스 「저량 유량 색상 다르게 써야지 녹색 빨간색 쓰던거 써」)
         var ansTag = '';   // [2026-10-17] 진술 옆엔 옳음/옳지 않음만 — 정답은 선지에 붙는 말(크리스 「진술 ㄱ ㄴ ㄷ 하나씩 우측에 정답은 안맞아」)
-        var q1='<div class="eo-q">'+s.k+'. '+rm(s.t,q)+verdictTag+ansTag+'</div>';
+        var _stT=String(s.t||'').replace(/\s*\[[^\[\]\n]+\/[^\[\]\n]+\]\s*$/,'');   // [2026-10-19] 마지막 진술(ㅂ)에 발문 끝 머리표 「[유량변수 / 저량변수]」가 붙어 나왔다
+        var q1='<div class="eo-q">'+s.k+'. '+rm(_stT,q)+verdictTag+ansTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
         return '<div class="eo">'+q1+a1+exTxt+'</div>';
