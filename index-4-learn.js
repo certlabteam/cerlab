@@ -380,15 +380,17 @@ function _longComboOK(opts, q){
 function isComboQuestion(opts, q){
   // 보기들이 ㄱ/ㄴ/ㄷ/ㄹ/ㅁ·가/나/다/라/마 조합(+구분자)으로만 이루어진 문제인지
   if(!Array.isArray(opts) || opts.length<2) return false;
+  /* [2026-10-20] 순서 맞추기 보기(「ㄴ → ㄱ → ㄹ」)는 해설을 진술마다 쓴 문항(exp.comboByStmt)만 조합형으로 본다 — 다른 시험 순서형 30여 개는 선지마다 해설이 달려 있어 모두 조합형으로 보면 짝이 흐트러진다(h22_29 · 크리스 「1234 선지랑 선지 해설 다 없애자」) */
+  if(q && q.exp && q.exp.comboByStmt===true && opts.every(function(x){ return /^[ㄱ-ㅎ㉠-㉩\s,·、ㆍ\/→>\-]+$/.test(String(x||'').trim()) && /→|>/.test(String(x||'')); })) return true;
   var _longOK=null;   // 14자 초과 보기가 나올 때만 한 번 계산(q 가 있을 때)
-  var markerOnly=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ/→>\-]+$/;   // [2026-10-20] 순서 맞추기 「ㄴ → ㄱ → ㄹ」도 조합형(h22_29 · 크리스 「1234 선지랑 선지 해설 다 없애자」)   // 한글 자모/조합 마커 + 구분자 ([2026-07-20] 원문자 ㉠~㉩ 추가)
+  var markerOnly=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자 ([2026-07-20] 원문자 ㉠~㉩ 추가)
   var hasJamo=/[ㄱ-ㅎ㉠-㉩]/, comboCnt=0, ok=0;
   for(var i=0;i<opts.length;i++){
     var o=String(opts[i]||'').trim();
     if(!o) return false;
     /* [2026-10-19] 「[ㄱ, ㄴ, ㄹ] / [ㄷ, ㅁ, ㅂ]」 처럼 묶음 괄호를 두른 보기, 「자기관리방식 - ㄱ, ㄴ, ㄷ, ㄹ」 처럼 앞에 이름표를 단 보기도 조합형이다 — 못 알아봐 ㄱ~ㅂ 진술 해설이 선지 1~5번 자리에 붙었다(크리스 「ㄱ ㄴ ㄷ ㄹ ㅁ 하나식 설명하라니까」 intro25_7·intro23_32) */
     o=o.replace(/^[\uAC00-\uD7A3A-Za-z]{2,}\s*[-\u2013:]\s*(?=[\u3131-\u314E])/,'').replace(/[\[\]()]/g,'').trim();
-    if(o.replace(/[\s,·、ㆍ\/→>\-]/g,'').length>14){   // 마커 조합은 짧음(일반 서술 보기 배제) — [2026-10-19] 띄어쓰기·쉼표는 빼고 잰다(「ㄱ, ㄴ, ㄹ / ㄷ, ㅁ, ㅂ」 가 17자라 떨어졌다)
+    if(o.replace(/[\s,·、ㆍ\/]/g,'').length>14){   // 마커 조합은 짧음(일반 서술 보기 배제) — [2026-10-19] 띄어쓰기·쉼표는 빼고 잰다(「ㄱ, ㄴ, ㄹ / ㄷ, ㅁ, ㅂ」 가 17자라 떨어졌다)
       if(!q) return false;
       if(_longOK===null) _longOK=_longComboOK(opts, q);
       if(!_longOK) return false;
