@@ -519,7 +519,7 @@ function grpSanitizeSvg(svg){
 }
 function grpRenderOne(g){
   /* [2026-10-18] 그래프 「읽는 법」은 그림(SVG) 안 9.5px 글이라 폰에서 너무 작았다 — g.note 가 있으면 그림 밖 글(문제 글씨 크기)로 그린다(크리스 「그래프 읽는법 글씨 너무 작아」) */
-  if(g && g.svg && String(g.svg).indexOf('<svg')>=0) return '<div class="grp-box">'+grpSanitizeSvg(g.svg)+(g.note?'<p class="imgnote grp-note">'+tblEsc(String(g.note)).split(String.fromCharCode(10)).join('<br>')+'</p>':'')+'</div>';
+  if(g && g.svg && String(g.svg).indexOf('<svg')>=0) return '<div class="grp-box">'+grpSanitizeSvg(g.svg)+(g.note?'<div class="cc-ex grp-note"><b class="grp-note-ti">읽는 법</b><br>'+tblEsc(String(g.note)).split(String.fromCharCode(10)).join('<br>')+'</div>':'')+'</div>';
   return '';   // 파라미터형(type/params)은 렌더러 추후 — 지금은 표시 안 함
 }
 // "grp://id" → 그래프 HTML. 객체(svg 포함)면 인라인. 깨진 참조는 로드 완료 후에만 ⚠️.

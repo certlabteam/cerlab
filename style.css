@@ -385,7 +385,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .qbul-m{flex:0 0 auto;color:#94A3B8;font-size:12px;line-height:4.2}#mcqView .qbul-t{flex:1;min-width:0;font-weight:500;white-space:normal;display:flow-root}#mcqView .qstem .qtext{margin-bottom:0;max-height:34dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}#mcqView .qstem{background:#fff;border:none;border-radius:12px;padding:14px 14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}#mcqView .qstem .qhead{margin-bottom:8px}.qimg{margin:0 0 14px}.qimg img{max-width:100%;height:auto;border:1px solid #E5E7EB;border-radius:8px;background:#fff;display:block;margin:0 auto}
 /* [2026-08-29] 「읽는 법」. 그림 안에 있을 때는 폭따라 17~23px 로 널뛰었다. 선지와 같은 13.5px 로 붙박는다. */
 .imgnote{margin:-8px 0 14px;padding:0 2px;font-size:14px;line-height:1.62;color:#64748B;font-weight:500;white-space:pre-wrap}
-.grp-box .grp-note{margin:8px 0 4px;text-align:left;color:#475569}   /* [2026-10-19] 그래프 읽는 법은 왼쪽 맞춤(가운데면 줄마다 들쭉날쭉) */
+.grp-box .grp-note{margin:8px 0 4px;text-align:left}   /* 예시 글(cc-ex)과 같은 글씨·왼쪽 정렬 · 맨 위 「읽는 법」 제목 */   /* [2026-10-19] 그래프 읽는 법은 왼쪽 맞춤(가운데면 줄마다 들쭉날쭉) */
 #mcqView .opts{display:flex;flex-direction:column;gap:8px;padding:0}
 #mcqView .opt{display:flex;align-items:flex-start;gap:10px;background:#fff;border:none;border-radius:12px;padding:12px 12px;cursor:pointer;outline:none;box-shadow:0 1px 2px rgba(15,23,42,.06)}#mcqView .opt:last-child{border-bottom:none}
 #mcqView .opt:focus{outline:none}
