@@ -388,7 +388,7 @@ function isComboQuestion(opts, q){
     if(!o) return false;
     /* [2026-10-19] 「[ㄱ, ㄴ, ㄹ] / [ㄷ, ㅁ, ㅂ]」 처럼 묶음 괄호를 두른 보기, 「자기관리방식 - ㄱ, ㄴ, ㄷ, ㄹ」 처럼 앞에 이름표를 단 보기도 조합형이다 — 못 알아봐 ㄱ~ㅂ 진술 해설이 선지 1~5번 자리에 붙었다(크리스 「ㄱ ㄴ ㄷ ㄹ ㅁ 하나식 설명하라니까」 intro25_7·intro23_32) */
     o=o.replace(/^[\uAC00-\uD7A3A-Za-z]{2,}\s*[-\u2013:]\s*(?=[\u3131-\u314E])/,'').replace(/[\[\]()]/g,'').trim();
-    if(o.length>14){                              // 마커 조합은 짧음(일반 서술 보기 배제)
+    if(o.replace(/[\s,·、ㆍ\/]/g,'').length>14){   // 마커 조합은 짧음(일반 서술 보기 배제) — [2026-10-19] 띄어쓰기·쉼표는 빼고 잰다(「ㄱ, ㄴ, ㄹ / ㄷ, ㅁ, ㅂ」 가 17자라 떨어졌다)
       if(!q) return false;
       if(_longOK===null) _longOK=_longComboOK(opts, q);
       if(!_longOK) return false;
@@ -930,7 +930,8 @@ function parseJaryoStmts(qt, explicitJaryo){
   // [FIX] 조합형이 표(explicit jaryo)를 함께 가지면 splitJaryo가 표를 자료로 잡아
   //       표 안에서 ㄱㄴㄷ 진술을 못 찾는다(진술은 발문 qt에 있음).
   //       → 자료에 진술 마커가 없고 explicit jaryo가 있을 때만 발문 qt에서 재탐색.
-  if(!st.length && explicitJaryo!=null && String(explicitJaryo).trim()!==''){
+  /* [2026-10-19] 발문 끝 「[유량변수 / 저량변수]」 같은 머리표도 자료로 잡혀 진술을 0개로 셌다 — 자료에 진술이 없으면 늘 발문에서 다시 찾는다(크리스 「ㄱ ㄴ ㄷ ㄹ ㅁ 하나식 설명하라니까」 intro25_7) */
+  if(!st.length){
     st=splitStmtMarkers(String(qt||'')).stmts;
   }
   return st;
