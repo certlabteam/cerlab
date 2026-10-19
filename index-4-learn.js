@@ -485,7 +485,7 @@ function renderMath(text, allowBareFraction){
   // (00c) 태그 밖 수학 부등호 < > → 엔티티(오파싱 방지)
   s = s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
   /* [2026-10-19] 「정답은 ④.」 의 원번호는 「4번」으로 — 「4. 」로 바꾸면 뒤 마침표와 겹쳐 「4..」가 되고 번호 목록처럼 줄이 끊겼다(크리스 「정답은 4번 이렇게 끝내면 되는데 4.. 왜 이렇게하지?」 intro25_37) */
-  s = s.replace(/(정답(?:은|는|:)?\s*(?:<b>|<strong>)?\s*)([\u2460-\u2473])/g, function(_m, pre, c){ return pre+(c.charCodeAt(0)-9311)+'번'; });
+  s = s.replace(/(정답(?:은|는|:)?\s*[^\s\u2460-\u2473]{0,24}?)([\u2460-\u2473])/g, function(_m, pre, c){ return pre+(c.charCodeAt(0)-9311)+'번'; });
   s = s.replace(/[\u2460-\u2473]\s*/g, function(m){ return (m.charCodeAt(0)-9311)+'. '; });   // ①②③ 원번호 → 1. 2. 3. (답답함 완화)
   // (1) 괄호 분수 (a/b) 숫자/숫자 [전 과목]
   s = s.replace(/\((\d+)\/(\d+)\)/g, '\u0001$1\u0002$2\u0003');
@@ -662,9 +662,11 @@ function _tpRegionRe(region){
 }
 function tpPrepQ(q){ try{ if(!q||!q.id||!TP_MAP[q.id]) return q&&q.q; var m=TP_MAP[q.id], str=(q.q==null?"":String(q.q));
     if(!m.region) return str;
-    if(str.indexOf(m.region)>=0) return str.replace(m.region,_TP_SENT);
-    var re=_tpRegionRe(m.region); if(re.test(str)) return str.replace(re,_TP_SENT);
+    if(str.indexOf(m.region)>=0) return _tpDropBr(str.replace(m.region,_TP_SENT));
+    var re=_tpRegionRe(m.region); if(re.test(str)) return _tpDropBr(str.replace(re,_TP_SENT));
     return str; }catch(e){ return q&&q.q; } }
+/* [2026-10-19] 표로 바뀐 자리를 감싼 「[ … ]」 는 같이 지운다 — 표 위아래에 대괄호만 남았다(크리스 「문제보기 표 위아래 대괄호 없애」 intro25_16) */
+function _tpDropBr(str){ var i=str.indexOf(_TP_SENT); if(i<0) return str; var a=str.slice(0,i).replace(/\[\s*$/,''), b=str.slice(i+_TP_SENT.length).replace(/^\s*\]/,''); return (a.length<i&&b.length<str.length-i-_TP_SENT.length)? a+_TP_SENT+b : str; }
 function tpSwap(html,qid){ try{ if(!qid||!TP_MAP[qid]) return html; var h=String(html==null?"":html);
     if(h.indexOf(_TP_SENT)<0) return html; try{ if(typeof itvEnsureCSS==='function') itvEnsureCSS(); }catch(_e){}   /* [2026-09-26] .qtbl 규칙은 itvEnsureCSS 안에만 있어 인터랙티브가 안 그려진 화면에는 표 스타일이 없었다 — 표를 끼울 때 한 번 주입(idempotent) */ return h.replace(_TP_SENT, "<div class=\"qtbl-wrap\">"+TP_MAP[qid].html+"</div>"); }catch(e){ return html; } }
 function stemHTML(html){
