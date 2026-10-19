@@ -1593,7 +1593,10 @@ function clRouteFromHash(){
     try{ await enterCert(cs.cert); }catch(_){}
     if(!_fast){ try{ if(typeof loadExam==='function') await loadExam(cs.cert); }catch(_){} }
     var qb=(typeof qbOf==='function')?qbOf(cs.cert):null, sub=qb&&qb[cs.sub]; if(!sub||!sub.sets) return false;
-    var si=sub.sets.findIndex(function(s){return s.label===cs.lab;}); if(si<0) return false;
+    var si=sub.sets.findIndex(function(s){return s.label===cs.lab;});
+    /* [2026-10-19] 둘째 회차부터는 뒤에서 붙는다 — 색인엔 섰는데 회차 목록엔 아직 없어 링크가 첫 화면에 멈췄다(호텔경영사 hb24a_law_001). 5초까지 기다린다 */
+    for(var _w2=0; si<0 && _w2<33; _w2++){ await new Promise(function(r){ setTimeout(r,150); }); qb=(typeof qbOf==='function')?qbOf(cs.cert):null; sub=qb&&qb[cs.sub]; if(sub&&sub.sets) si=sub.sets.findIndex(function(s){return s.label===cs.lab;}); }
+    if(si<0) return false;
     var qi=sub.sets[si].questions.findIndex(function(x){return x&&x.id===qid;}); if(qi<0) return false;
     // [2026-08-11] 주관식(2차)은 객관식 렌더러로 열면 안 된다 — resumeMcqExam 은 보기·정답 기준이라
     //   asks/outline 문항에서 화면이 깨진다. 주관식 시험이면 startSubjExam 으로 회차에 들어가 그 문제로 옮긴다.
