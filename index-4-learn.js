@@ -593,6 +593,8 @@ function _noteWithTr(q){
 /* [2026-10-17] 예시 첫머리 「예를 들어 / 예컨대 / 가령」은 「예)」 표시와 겹쳐 뗀다 — 크리스 「예를 들어 또 중복 · 예)가 있잖아」 */
 function _exTrim(t){ return String(t==null?'':t).trim().replace(/^(예를\s*들어|예를\s*들면|예컨대|가령)\s*[,，]?\s*/,''); }
 function _jaryoDots(html){
+  /* [2026-10-19] 자료 상자 보기 좋게(크리스 「문제보기 보기 좋게」 intro24_37) — 「- 」로 시작하는 줄은 한 칸 들여 묶음 아래 항목으로, 「• 대상토지」「• 거래사례」처럼 콜론 없는 짧은 머리줄은 굵게. 글자는 그대로 */
+  html=String(html==null?'':html).replace(/(^|\n|<br>)- /g,'$1&emsp;- ').replace(/(^|\n|<br>)([•·∙])\s*([^:：\n<]{1,14})(?=\n|<br>|$)/g,'$1$2 <b>$3</b>');
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
   return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 4px 0 2px;position:relative;top:-1px">\u25CF</span>');
 }
