@@ -1153,14 +1153,12 @@ function splitCountStmts(text){
 function countStemHTML(rawStem, q, withOX){
   var sp=splitCountStmts(rawStem);
   var head=sp.head ? '<div class="qpara">'+rm(sp.head,q)+'</div>' : '';
-  // 2025 제36회 학개론 40번: 정답 공개 뒤에만 각 연결의 판정을 바로 붙인다.
-  var _countMarks=(q&&q.id==='intro25_40')?['옳지 않음','옳지 않음','옳음','옳지 않음','옳음','옳지 않음','옳지 않음']:[];
+  // 각 진술은 기존 O/X 버튼만 사용한다.
   var rows=sp.stmts.map(function(t,i){
-    var oxb=withOX&&!_countMarks.length?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
-    var judged=_countMarks[i]?'<span class="count-judgment '+(_countMarks[i]==='옳음'?'is-correct':'is-wrong')+'">'+_countMarks[i]+'</span>':'';
+    var oxb=withOX?('<span class="jr-ox" data-oxk="b'+i+'"><button type="button" class="jox jox-o" onclick="joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="joxToggle(this)">X</button></span>'):'';
     // [2026-08-06] 인라인 style(line-height:1·vertical-align:middle)이 CSS를 눌러, 두 줄 진술에서
     //   점이 첫 줄이 아니라 진술 세로 가운데(≈둘째 줄)에 붙었다. 정렬은 style.css 의 .qbul/.qbul-m 에서만 잡는다.
-    return '<div class="qbul"><span class="qbul-m">●</span><span class="qbul-t">'+rm(t,q)+judged+oxb+'</span></div>';
+    return '<div class="qbul"><span class="qbul-m">●</span><span class="qbul-t">'+rm(t,q)+oxb+'</span></div>';
   }).join('');
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
