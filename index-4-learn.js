@@ -484,6 +484,8 @@ function renderMath(text, allowBareFraction){
   s = s.replace(/<\/?[A-Za-z][A-Za-z0-9]*(?:\s[^<>]*)?\/?>/g, _st);
   // (00c) 태그 밖 수학 부등호 < > → 엔티티(오파싱 방지)
   s = s.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  /* [2026-10-19] 「정답은 ④.」 의 원번호는 「4번」으로 — 「4. 」로 바꾸면 뒤 마침표와 겹쳐 「4..」가 되고 번호 목록처럼 줄이 끊겼다(크리스 「정답은 4번 이렇게 끝내면 되는데 4.. 왜 이렇게하지?」 intro25_37) */
+  s = s.replace(/(정답(?:은|는|:)?\s*(?:<b>|<strong>)?\s*)([\u2460-\u2473])/g, function(_m, pre, c){ return pre+(c.charCodeAt(0)-9311)+'번'; });
   s = s.replace(/[\u2460-\u2473]\s*/g, function(m){ return (m.charCodeAt(0)-9311)+'. '; });   // ①②③ 원번호 → 1. 2. 3. (답답함 완화)
   // (1) 괄호 분수 (a/b) 숫자/숫자 [전 과목]
   s = s.replace(/\((\d+)\/(\d+)\)/g, '\u0001$1\u0002$2\u0003');
@@ -525,7 +527,7 @@ function isEconQ(q){
   return /^e\d/.test(id);   // e22_1, e26_2 …
 }
 // 문항 텍스트 렌더: renderMath 적용(경제면 맨분수 허용)
-function rm(text, q){ return renderMath(text, isEconQ(q)).replace(/(\d|\d\s)(m|cm|km)([23])(?![0-9A-Za-z])/g, '$1$2<sup>$3</sup>'); }   /* [2026-10-18] 원문 「145.450m2」 같은 넓이·부피 단위를 윗첨자로(크리스 「제곱미터 윗첨자가 없네」 「m2 말이야」 re2 taxreg23_4) — 숫자 바로 뒤 m2·m3·cm2·km2 만. 원문 글자는 그대로 둔다 */
+function rm(text, q){ return renderMath(text, isEconQ(q)).replace(/(^|[^A-Za-z0-9_])(m|cm|km)([23])(?![0-9A-Za-z_])/g, '$1$2<sup>$3</sup>'); }   /* [2026-10-18] 원문 「145.450m2」 같은 넓이·부피 단위를 윗첨자로(크리스 「제곱미터 윗첨자가 없네」 「m2 말이야」 re2 taxreg23_4) — 숫자 바로 뒤 m2·m3·cm2·km2 만. 원문 글자는 그대로 둔다 */
 /* [2026-08-23] 해설(exp.o) 전용 — 줄바꿈을 살린다.
    데이터에는 ①②③ 단계마다 
  이 들어 있는데 rm 은 그대로 흘려 버려 한 문단으로 뭉쳤다.
@@ -594,6 +596,8 @@ function _noteWithTr(q){
 function _exTrim(t){ return String(t==null?'':t).trim().replace(/^(예를\s*들어|예를\s*들면|예컨대|가령)\s*[,，]?\s*/,''); }
 function _jaryoDots(html){
   /* [2026-10-19] 자료 상자 보기 좋게(크리스 「문제보기 보기 좋게」 intro24_37) — 「- 」로 시작하는 줄은 한 칸 들여 묶음 아래 항목으로, 「• 대상토지」「• 거래사례」처럼 콜론 없는 짧은 머리줄은 굵게. 글자는 그대로 */
+  /* [2026-10-19] 표를 감싼 「[ … ]」 대괄호는 지운다 — 원문 시험지의 표 테두리 흔적(크리스 「표 위아래 대괄호 불필요」 intro25_16) */
+  html=String(html==null?'':html).replace(/\[\s*(?:<br\s*\/?>|\n)*\s*(<(?:div[^>]*>\s*)?<table)/g,'$1').replace(/(<\/table>(?:\s*<\/div>)?)\s*(?:<br\s*\/?>|\n)*\s*\]/g,'$1');
   html=String(html==null?'':html).replace(/(^|\n|<br>)- /g,'$1&emsp;- ').replace(/(^|\n|<br>)([•·∙])\s*([^:：\n<]{1,14})(?=\n|<br>|$)/g,'$1$2 <b>$3</b>');
   // 자료(선행학습) ○ 마커 → 작은 중앙점(줄 세로 가운데 정렬). 큰 빈 동그라미 대체.
   return String(html==null?'':html).replace(/\u25CB\s*/g,'<span class="jr-dot" style="display:inline-block;color:#94A3B8;font-size:.6em;line-height:1;vertical-align:middle;margin:0 4px 0 2px;position:relative;top:-1px">\u25CF</span>');
