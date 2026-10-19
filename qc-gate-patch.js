@@ -59,6 +59,7 @@
       if(!_QC_DEFAULTS.gichul.EX_UNDER90)   _QC_DEFAULTS.gichul.EX_UNDER90={on:true,minChars:90};
       if(!_QC_DEFAULTS.gichul.CPT_MISSING)  _QC_DEFAULTS.gichul.CPT_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.O_NO_ANSMARK) _QC_DEFAULTS.gichul.O_NO_ANSMARK={on:true};
+      if(!_QC_DEFAULTS.gichul.COMBO_BY_OPT) _QC_DEFAULTS.gichul.COMBO_BY_OPT={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH) _QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISSING)  _QC_DEFAULTS.gichul.COMBO_ANS_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED) _QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED={on:true};
@@ -373,6 +374,19 @@
         }
       }
     }
+
+    /* [2026-10-19] COMBO_BY_OPT — 조합형(ㄱㄴㄷ 고르기)인데 해설 o 를 선지(1~4번)마다 썼으면 막는다.
+       크리스 「조합형 하나씩 해설해야지」 「왜 자꾸 이거 틀리냐」 — 규칙이 판정잣대 글로만 있어 학개론·호텔경영사에서 되풀이됐다(intro25_7 · hb21a_law_012).
+       꼴: comboByStmt:true · o/ex 는 진술 수만큼 진술 순서대로 · s 는 「정답은 N번이다」 한 줄. */
+    try{
+      var _cbStmt = (q&&q.exp&&q.exp.comboByStmt===true);
+      var _stTxt = String((q&&q.q)||'') + '\n' + String((q&&q.jaryo)||'');
+      var _stN = (_stTxt.match(/(^|\n|\s)[\u3131-\u314E]\s*[.\uFF0E]/g)||[]).length;
+      var _oN = 0; for(var _k2=0;_k2<o.length;_k2++){ if(o[_k2]&&String(o[_k2]).trim()) _oN++; }
+      if(_on('gichul','COMBO_BY_OPT') && _isCombo && _stN>=2 && _oN>=2 && _oN!==_stN)
+        v.push({kind:'block',field:'o',idx:0,code:'COMBO_BY_OPT',
+          msg:'조합형인데 해설이 진술(ㄱ·ㄴ·ㄷ…)마다가 아니다 — comboByStmt:true · o 를 진술 '+_stN+'개만큼 · 맨 위 s 는 정답 한 줄 (지금 o '+_oN+'칸'+(_cbStmt?'':' · comboByStmt 없음')+')',text:String(o[0]||'').slice(0,40)});
+    }catch(_){}
 
     /* [2026-08-25] 조합형은 정답칸 검사가 통째로 없었다 — 여기서 막는다.
        O_NO_ANSMARK 를 조합형에서 뺐고(90449c2), qc-core 의 ANS_VERDICT_MISMATCH 도
