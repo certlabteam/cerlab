@@ -1731,7 +1731,7 @@ function renderMcqExam(root){
   }
   const curSubj=(function(){ var _sc=(q&&q._subj)?q._subj:''; if(!_sc) return ''; try{ var _qb=qbOf(mqCert)[_sc]; return (_qb&&_qb.name)||_sc; }catch(_){ return _sc; } })();   // 혼합과목(복습·진단·SR) 현재 문항 과목명(코드→한글) → 헤더로
   const subjTag='';                         // 카드 안 과목 배지는 제거(헤더로 옮김)
-  const countTypeTag=isCountType(q)?'<span class="qcount-type">개수 구하기</span>':'';
+  const countTypeTag='';   // [2026-10-19] 「개수 구하기」 머리 배지는 뺀다(크리스 「개수 구하기라고 타이틀 넣은것도 빼」 intro25_40)
   const relearnBadge=(mqLevelUp && !mqInReview && _luRelearn && _luRelearn[q.id])?'<span class="imp" style="background:#EAF2FB;color:#0C447C;border-color:#C7DBF2">🔁 복습</span>':'';
   const tags=subjTag+countTypeTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q)+relearnBadge;
   const guessOn=!!mqGuess[q.id];
