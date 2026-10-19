@@ -1544,7 +1544,7 @@ function renderMcqExam(root){
         var raw=oArr[i]||'';
         var sv=splitVerdict(stripRepeatedOpt(raw, t));
         var verdictTag = sv.v ? ' <span class="eo-verdict '+sv.vc+'">'+verdictLabel(sv.v)+'</span>' : '';
-        var q1='<div class="eo-q"><span class="qbul-m" style="margin-right:6px">●</span>'+rm(t,q)+verdictTag+'</div>';   // [2026-10-20] 진술 앞 기호를 문제 보기(countStemHTML)와 같은 점으로 — 크리스 「원 ㅇ 하지말고 점 찍자」 「문제보기에서 쓴거」
+        var q1='<div class="eo-q">○ '+rm(t,q)+verdictTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
         return '<div class="eo">'+q1+a1+'</div>';
       }).join('')+'</div>';
