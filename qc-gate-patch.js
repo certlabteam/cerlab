@@ -381,7 +381,7 @@
     try{
       var _cbStmt = (q&&q.exp&&q.exp.comboByStmt===true);
       var _stTxt = String((q&&q.q)||'') + '\n' + String((q&&q.jaryo)||'');
-      var _stN = (_stTxt.match(/(^|\n|\s)[\u3131-\u314E]\s*[.\uFF0E]/g)||[]).length;
+      var _stSet = {}; (_stTxt.match(/(^|\n|\s)[\u3131-\u314E]\s*[.\uFF0E]/g)||[]).forEach(function(m){ _stSet[m.replace(/[^\u3131-\u314E]/g,'')]=1; }); var _stN = Object.keys(_stSet).length;   // 기호 종류로 센다 — q 와 jaryo 에 같은 진술이 두 번 있어도 한 번
       var _oN = 0; for(var _k2=0;_k2<o.length;_k2++){ if(o[_k2]&&String(o[_k2]).trim()) _oN++; }
       if(_on('gichul','COMBO_BY_OPT') && _isCombo && _stN>=2 && _oN>=2 && _oN!==_stN)
         v.push({kind:'block',field:'o',idx:0,code:'COMBO_BY_OPT',
