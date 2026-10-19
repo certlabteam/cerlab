@@ -1130,12 +1130,23 @@ function isCountType(q){
   if(!/몇\s*개/.test(String(q.q||''))) return false;
   return (String(q.q||'').match(/○/g)||[]).length>=2;
 }
-// q에서 첫 ○부터 ○ 마커로 진술 분리(인라인·줄단위 모두) → {head, stmts[]}. q 글자 불변(렌더타임 파서).
+// q에서 ○ 또는 줄 첫머리 ·/• 마커로 진술 분리 → {head, stmts[]}. q 글자 불변(렌더타임 파서).
 function splitCountStmts(text){
   var s=String(text||''); var i=s.indexOf('○');
-  if(i<0) return {head:s.trim(), stmts:[]};
-  var head=s.slice(0,i).trim();
-  var stmts=s.slice(i).split('○').map(function(t){return t.trim();}).filter(function(t){return t;});
+  if(i>=0){
+    var head=s.slice(0,i).trim();
+    var stmts=s.slice(i).split('○').map(function(t){return t.trim();}).filter(function(t){return t;});
+    return {head:head, stmts:stmts};
+  }
+  var lines=s.split(/\r?\n/), first=-1;
+  for(var n=0;n<lines.length;n++){ if(/^\s*[·•]\s*/.test(lines[n])){ first=n; break; } }
+  if(first<0) return {head:s.trim(), stmts:[]};
+  var head=lines.slice(0,first).join('\n').trim(), stmts=[];
+  lines.slice(first).forEach(function(line){
+    if(/^\s*[·•]\s*/.test(line)) stmts.push(line.replace(/^\s*[·•]\s*/, '').trim());
+    else if(stmts.length && line.trim()) stmts[stmts.length-1]+=' '+line.trim();
+  });
+  stmts=stmts.filter(Boolean);
   return {head:head, stmts:stmts};
 }
 // 개수형 스템: 질문머리 + ○진술 각 줄(withOX면 진술별 O/X data-oxk=b+i). 선지(1개~5개)는 opts에서 답 선택만.
