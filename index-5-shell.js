@@ -1569,7 +1569,9 @@ function clRouteFromHash(){
     }
     try{ if(typeof loadedExams!=='undefined' && !loadedExams[cert] && typeof loadOneSubject==='function' && typeof loadManifest==='function'){
       await loadManifest(); var _ex=(MANIFEST.exams||[]).find(function(e){return e.id===cert;});
-      var _sb=_ex && (_ex.type||'mcq')==='mcq' && (_ex.subjects||[]).find(function(s){ return String(qid).indexOf('_'+s.code+'_')>=0; });
+      var _sb=_ex && (_ex.type||'mcq')==='mcq' && (_ex.subjects||[]).find(function(s){ return String(qid).indexOf('_'+s.code+'_')>=0; })
+        /* [2026-10-19] id 가 과목 코드를 안 품는 시험(공인중개사 intro25_5 · 과목 re1_intro)은 빠른 길을 못 타 시험 전체를 받았다 — 판을 올릴 때마다 처음부터 다시 받아 링크가 안 넘어가는 듯 느렸다(크리스 「링크 눌러도 이동안해」 「느린걸지도」). 과목 코드 끝 마디(intro)로 id 머리를 맞춘다 */
+        || (_ex.subjects||[]).find(function(s){ var t=String(s.code||'').split('_').pop(); return t.length>=3 && new RegExp('^'+t+'\\d').test(String(qid)); });
       if(_sb){ await loadOneSubject(_ex,_sb); if(typeof rebuildQid==='function') rebuildQid(); _fast=!!(typeof MCQ_QID2CS!=='undefined' && MCQ_QID2CS[qid]); }
     } }catch(_){ _fast=false; }
     var _full=null; try{ if(typeof loadExam==='function') _full=loadExam(cert); }catch(_){}
