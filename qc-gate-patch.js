@@ -60,6 +60,7 @@
       if(!_QC_DEFAULTS.gichul.CPT_MISSING)  _QC_DEFAULTS.gichul.CPT_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.O_NO_ANSMARK) _QC_DEFAULTS.gichul.O_NO_ANSMARK={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_BY_OPT) _QC_DEFAULTS.gichul.COMBO_BY_OPT={on:true};
+      if(!_QC_DEFAULTS.gichul.CALC_HALF) _QC_DEFAULTS.gichul.CALC_HALF={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH) _QC_DEFAULTS.gichul.COMBO_ANS_MISMATCH={on:true};
       if(!_QC_DEFAULTS.gichul.COMBO_ANS_MISSING)  _QC_DEFAULTS.gichul.COMBO_ANS_MISSING={on:true};
       if(!_QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED) _QC_DEFAULTS.gichul.OT_SKIP_ON_FILLED={on:true};
@@ -440,6 +441,19 @@
        필드가 차 있어도 본문이 줄글이면 학생은 어디서 무엇이 바뀌는지 못 짚는다.
        라이브 실측 684문항 중 셋을 다 갖춘 것은 263뿐이었다(감평사 230·공인중개사1차 32).
        ↓ 는 단계가 둘 이상일 때만 센다(한 단계짜리 풀이는 사이줄이 없는 게 맞다). */
+    /* [2026-10-19] CALC_HALF — 계산형 칸(approach·principle·exSum)은 썼는데 앱이 계산형으로 그리지 못하는 꼴을 막는다.
+       크리스 「계산형 5단계 어디갔니」(hotelbiz hb21a_acct_029) — calcConvert 가 없어 q.calc 가 안 서고, ex(상세풀이 단계)도 비어 요약풀이·상세풀이·최종정리가 안 나왔다. */
+    try{
+      var _ce = (q&&q.exp)||{};
+      var _hasCalcF = !!(_ce.approach || _ce.principle || (_ce.exSum&&_ce.exSum.length));
+      if(_on('gichul','CALC_HALF') && _hasCalcF){
+        var _flag = (q&&q.calc===true) || _ce.calcConvert===true || (q&&q.type==='CALC');
+        var _exN = 0; (Array.isArray(_ce.ex)?_ce.ex:[]).forEach(function(x){ if(x&&String(x).trim()) _exN++; });
+        if(!_flag) v.push({kind:'block',field:'calc',idx:0,code:'CALC_HALF',msg:'계산형 칸(approach·principle·exSum)이 있는데 calcConvert:true 가 없다 — 앱이 계산형으로 안 그린다',text:''});
+        if(_exN<2) v.push({kind:'block',field:'ex',idx:0,code:'CALC_HALF',msg:'계산형인데 상세풀이 단계(ex)가 '+_exN+'칸 — 단계 제목·설명·→ 식 을 ↓ 로 나눠 2단계 이상',text:''});
+      }
+    }catch(_){}
+
     if(_on('gichul','CALC_EX_NOSTEP') && isCalc && ex.length){
       /* 단계 표시는 시험마다 갈린다 — ①②③ 과 「1단계」 두 관례가 모두 쓰인다.
          ⚠ 처음엔 ①②③ 만 보다가 경영지도사 100 · 소방 · 건강운동을 통째로 오탐했다.
