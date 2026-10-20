@@ -835,7 +835,7 @@ function cptmRenderConcept(c){
     if(it.cx&&String(it.cx).trim()) row+='<div class="cc-ex">'+tblmCell(String(it.cx).trim(),true)+'</div>';
     return row;
   }).join('');
-  var box='<div class="concept-box"><div class="ti">개념설명</div>'+(rows||'<div class="concept-row" style="color:#A89C8E">(카드 없음)</div>')+'</div>';
+  var box='<div class="concept-box"><div class="ti">개념</div>'+(rows||'<div class="concept-row" style="color:#A89C8E">(카드 없음)</div>')+'</div>';
   var mnRefs=Array.isArray(c.mn)?c.mn:[], tblRefs=Array.isArray(c.tbl)?c.tbl:[], grpRefs=Array.isArray(c.grp)?c.grp:[];
   var out=box;
   if(mnRefs.length)  out+='<div class="asset-ti">묶인 암기코드</div>'+mnRefs.map(cptmMnBox).join('');

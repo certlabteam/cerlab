@@ -269,7 +269,7 @@
         +(c.def?'<div>'+esc(c.def)+'</div>':'')+'</div>';
       if(exTxt) row+='<div class="cc-ex">'+esc(exTxt)+'</div>';
       return row; }).join('');
-    return '<div class="concept-box"><div class="concept-ti">개념설명</div>'+rows+'</div>'+_subjAskWidget();
+    return '<div class="concept-box"><div class="concept-ti">개념</div>'+rows+'</div>'+_subjAskWidget();
   }
   function bindConcepts(v, exam, qi){ var q=exam.questions[qi]; if(!(q.concepts&&q.concepts.length)) return;
     v.querySelectorAll('.concept-row.cpt-col .crow-h').forEach(function(h){ h.onclick=function(e){ if(e&&e.target&&e.target.closest&&e.target.closest('.subj-copy')) return; h.parentNode.classList.toggle('open'); }; });

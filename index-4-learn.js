@@ -1079,7 +1079,7 @@ function conceptBoxHTML(c){
   if(!Array.isArray(c) || !c.length) return '';
   const rows=c.map(it=> (it&&it.t)?('<div class="cc-row"><b style="display:block;margin-bottom:2px">'+it.t+'</b>'+(it.d||'')+'</div>'):'').join('');
   if(!rows) return '';
-  return '<div class="concept-box"><div class="concept-ti">개념설명</div>'+rows+'</div>';
+  return '<div class="concept-box"><div class="concept-ti">개념</div>'+rows+'</div>';
 }
 // 개념 카드 HTML: exp.learn 있으면 그걸로, 없으면 exp.c로 폴백
 function conceptCardHTML(q){
@@ -1703,7 +1703,7 @@ function renderMcqExam(root){
     }
     var _cc=_conceptCards(q); if(_cc.length){
       var _aiCards=[];
-      body+='<div class="concept-box"><div class="concept-ti">개념설명</div>'+_cc.map(function(it,ci){
+      body+='<div class="concept-box"><div class="concept-ti">개념</div>'+_cc.map(function(it,ci){
         if(!it||!it.t) return '';
         var _aiOff=(typeof AI_OFF!=='undefined' && AI_OFF);
         var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span>'+(_aiOff?'':'<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:12px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button>')+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
