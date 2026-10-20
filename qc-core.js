@@ -139,6 +139,7 @@ function _qcViolations(q){
   /* E1 — 이름이 보기에는 있는데 그 보기의 해설·예시에는 빠졌는지 경고한다. */
   if(!isSAq && _qcOn('gichul','O_CORE_NAME_MISSING')) opts.forEach(function(opt,i){
     var names=_qcCoreNames(opt); if(!names.length)return;
+    if(exp.oneExp===true && !String(o[i]||'').trim()) return;   /* [2026-10-20] 해설 하나 꼴은 빈 선지 칸을 보지 않는다 */
     var body=String(o[i]||'')+' '+String(ex[i]||''), missing=names.filter(function(n){return !_qcHasCoreName(body,n);});
     if(missing.length)v.push({kind:'warn',field:'o',idx:i,code:'O_CORE_NAME_MISSING',msg:'보기 핵심 이름/용어 '+missing.slice(0,4).join('·')+' 이 대응 해설·예시에 그대로 없음 — 대명사 대신 이름을 적는다',text:opt});
   });
