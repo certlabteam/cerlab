@@ -874,7 +874,7 @@ function _qcExtraRules(q){
   /* (n) 예시 커버리지 — 해설(o)이 달린 보기/진술마다 장면 예시(exp.ex) 100% 필요(§A-7).
      o·ex는 같은 축(SC/NEG=보기, COMBO=진술)에 정렬되므로 opts가 아니라 '채워진 o 수' 대비 '채워진 ex 수'로 판정(정렬 안전).
      예시 전무=EX_MISSING(경고), 일부만=EX_COVERAGE(참고). */
-  if(_sScene){   /* 해설·예시는 보기마다 100% — noEx 예외는 거뒀다(크리스 2026-10-16 「해설 예시는 다 들어가야한다 100%」) */
+  if(_sScene && !(exp.oneExp===true && exp.noEx===true)){   /* [2026-10-20] 해설 하나 꼴(시기·기간 문항)은 예시도 뺀다 — 크리스 「예시도 필요 없을듯 이런건」 */ /* 해설·예시는 보기마다 100% — noEx 예외는 거뒀다(크리스 2026-10-16 「해설 예시는 다 들어가야한다 100%」) */
     var _oF2=0; o.forEach(function(t){ if(t&&String(t).trim()) _oF2++; });
     var _exF2=0; ex.forEach(function(t){ if(t&&String(t).trim()) _exF2++; });
     if(_oF2>0){

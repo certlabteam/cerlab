@@ -136,6 +136,7 @@
   function _qcExMissing(q){
     var v=[], exp=(q&&q.exp)||{}, o=exp.o||[], ex=exp.ex||[];
     if(!_on('gichul','EX_MISSING')) return v;
+    if(exp.oneExp===true && exp.noEx===true) return v;   // [2026-10-20] 해설 하나 꼴(시기·기간 문항)은 예시 없음(크리스 「예시도 필요 없을듯 이런건」)
     var opts=(q&&Array.isArray(q.opts))?q.opts:[];
     var isSAq=Array.isArray(q&&q.blanks)&&q.blanks.length;
     var oFilled=o.filter(function(x){return x&&String(x).trim();}).length;
