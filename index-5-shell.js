@@ -469,6 +469,8 @@ async function goToCard(qid, certHint){
         mqSub=_foundSub; mqSet=0; mqMode='all';
         mqReview=true; mqDiag=false; mqLevelUp=false; mqGather=false; mqConcept=false; mqInReview=true;
         mqList=[_found]; mqReviewList=[_found]; mqReviewMode='all'; mqIdx=0; mqAns={}; mqGuess={}; mqShow={}; mqShow[_found.id]=true;
+        /* [2026-10-20] 링크가 빠른 길(_lv_)로 오면 시험 목록을 읽기 전에 enterCert 가 돌아 isMcqCert 가 거짓 — 문항은 그렸는데 화면이 숨김으로 남았다(크리스 「링크안떠」 hotelmgr/ht1_lv_basic_01). 띄울 때 화면을 직접 연다 */
+        try{ document.getElementById('mcqView').classList.remove('hidden'); document.getElementById('homeView').classList.add('hidden'); mqCert=certHint; }catch(_){}
         mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); return;
       }
       // 혹시 sets(기출)에 있으면 기존 경로로
