@@ -383,6 +383,8 @@ function isComboQuestion(opts, q){
   if(!Array.isArray(opts) || opts.length<2) return false;
   /* [2026-10-20] 순서 맞추기 보기(「ㄴ → ㄱ → ㄹ」)는 해설을 진술마다 쓴 문항(exp.comboByStmt)만 조합형으로 본다 — 다른 시험 순서형 30여 개는 선지마다 해설이 달려 있어 모두 조합형으로 보면 짝이 흐트러진다(h22_29 · 크리스 「1234 선지랑 선지 해설 다 없애자」) */
   if(q && q.exp && q.exp.comboByStmt===true && opts.every(function(x){ return /^[ㄱ-ㅎ㉠-㉩\s,·、ㆍ\/→>\-]+$/.test(String(x||'').trim()) && /→|>/.test(String(x||'')); })) return true;
+  /* [2026-10-21] 짝 맞추기 보기(「ㄱ: 고흥, ㄴ: 이문진」)도 진술마다 쓴 문항이면 조합형 — ㄱ 해설이 선지 1번 머리 밑에 붙었다(t21_2 · 크리스 「ㄱ ㄴ 각각 하나씩 설명하면 끝이잖아」) */
+  if(q && q.exp && q.exp.comboByStmt===true && opts.every(function(x){ var s=String(x||'').trim(); return /^[ㄱ-ㅎ㉠-㉩]\s*[:：]/.test(s) && (s.match(/[ㄱ-ㅎ㉠-㉩]\s*[:：]/g)||[]).length>=2; })) return true;
   var _longOK=null;   // 14자 초과 보기가 나올 때만 한 번 계산(q 가 있을 때)
   var markerOnly=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자 ([2026-07-20] 원문자 ㉠~㉩ 추가)
   var hasJamo=/[ㄱ-ㅎ㉠-㉩]/, comboCnt=0, ok=0;
