@@ -76,7 +76,7 @@ function _qgQuotedSpec(s,minW,minC){
 
 /* ---- [추출] _isCalcQ · _qcViolations · qualityGate (admin__20 4263-4374) ---- */
 // 엔진 _isCalcQ 이식 — 계산형 = oFilled 1칸 & (그래프 or 풀이단계). 단순 oFilled===1 아님(COMBO 결론 오인 방지)
-function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.indexOf('calc:')===0) return true; if(q.calc===false) return false; /* [FIX 2026-07-12] 인간이 calc:false로 명시한 문항(SA 단답형 등) 존중 — oFilled=1+장면예시로 자동 계산형 오인되어 CALC_NO_FORMULA/CALC_OLD_FORMAT 등 오탐되던 문제 해결 */ var _tyCalc=String((q&&q.type)||'').toUpperCase(); if(q.calc!==true && (_tyCalc==='PAIR'||_tyCalc==='MATCH'||_tyCalc==='ORDER')) return false; /* [FIX 2026-07-15] 짝짓기/매칭/순서형은 산술이 없어 계산형이 될 수 없음 — oFilled=1+단계형 ex로 계산형 렌더 오인되던 문제(intro23_3 등) 차단. COUNT/COMBO는 LQ 같은 진짜 계산형이 있어 제외 */
+function _isCalcQ(q){ if(!q) return false; if(typeof q.id==='string'&&q.id.indexOf('calc:')===0) return true; if(q.calc===false || (q.exp&&q.exp.oneExp===true)) return false; /* [2026-10-20] 해설 하나 꼴(exp.oneExp)은 계산형 아님 */ /* [FIX 2026-07-12] 인간이 calc:false로 명시한 문항(SA 단답형 등) 존중 — oFilled=1+장면예시로 자동 계산형 오인되어 CALC_NO_FORMULA/CALC_OLD_FORMAT 등 오탐되던 문제 해결 */ var _tyCalc=String((q&&q.type)||'').toUpperCase(); if(q.calc!==true && (_tyCalc==='PAIR'||_tyCalc==='MATCH'||_tyCalc==='ORDER')) return false; /* [FIX 2026-07-15] 짝짓기/매칭/순서형은 산술이 없어 계산형이 될 수 없음 — oFilled=1+단계형 ex로 계산형 렌더 오인되던 문제(intro23_3 등) 차단. COUNT/COMBO는 LQ 같은 진짜 계산형이 있어 제외 */
   var o=(q.exp&&q.exp.o)||[]; var oF=o.filter(function(x){return x&&String(x).trim();}).length; if(oF!==1) return false;
   var hg=q.exp&&q.exp.graph&&String(q.exp.graph).trim(); var ex=(q.exp&&q.exp.ex)||[]; var hs=ex.filter(function(x){return x&&String(x).trim();}).length>0;
   return !!(hg||hs); }
