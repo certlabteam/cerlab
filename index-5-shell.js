@@ -1610,7 +1610,13 @@ function clRouteFromHash(){
       return true;
     }
     if(typeof resumeMcqExam!=='function' || typeof renderMCQ!=='function') return false;
-    resumeMcqExam(cs.sub, si); mqIdx=qi; renderMCQ(); try{ window.scrollTo(0,0); }catch(_){}
+    resumeMcqExam(cs.sub, si);
+    /* [2026-10-21] 회차가 뒤에서 붙으면 sets 차례가 밀려 si 가 다른 회차를 가리킬 수 있다 — 번호(qi)만 믿으면 다른 회차의 같은 번호 문항이 떴다
+       (기출1번방 curator/c25_29 → 다른 회차 29번). 문제 목록에서 id 로 다시 찾고, 없으면 회차를 id 로 다시 찾아 들어간다. */
+    var _k=(typeof mqList!=='undefined'&&mqList)?mqList.findIndex(function(x){return x&&x.id===qid;}):-1;
+    if(_k<0){ var _q2=qbOf(cs.cert), _s2=_q2&&_q2[cs.sub]; var _si2=_s2&&_s2.sets?_s2.sets.findIndex(function(st){ return (st.questions||[]).some(function(x){return x&&x.id===qid;}); }):-1;
+      if(_si2>=0){ resumeMcqExam(cs.sub, _si2); _k=(mqList||[]).findIndex(function(x){return x&&x.id===qid;}); } }
+    mqIdx=_k>=0?_k:qi; renderMCQ(); try{ window.scrollTo(0,0); }catch(_){}
     return true;
   }
   var _done=false;
