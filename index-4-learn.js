@@ -254,19 +254,27 @@ function imgBlock(q){
   if(q.imgnote) h += '<p class="imgnote">'+mqEsc(q.imgnote)+'</p>';
   return h;
 }
-async function resolveImages(scope){
-  const els=(scope||document).querySelectorAll('img[data-imgkey]');
-  for(const el of els){
-    const k=el.getAttribute('data-imgkey'); if(!k) continue;
-    el.removeAttribute('data-imgkey');
-    try{
-      let b64=imgCache[k];
-      if(!b64){ try{ var _raw=localStorage.getItem('img:'+k); if(_raw){ var _w=JSON.parse(_raw); if(_w && _w.d && (!IMG_TTL_MS || (Date.now()-(_w.__ts||0))<=IMG_TTL_MS)) b64=_w.d; } }catch(_){} }   // 구 포맷(raw)·TTL초과·파싱실패 → miss로 처리하여 최신본 재요청
-      if(!b64){ const d=await db.collection('images').doc(k).get(); if(d.exists && d.data().data){ b64=d.data().data; try{ localStorage.setItem('img:'+k, JSON.stringify({__ts:Date.now(), d:b64})); }catch(_){} } }
-      if(b64){ imgCache[k]=b64; el.src=b64; }
-    }catch(_){}
-  }
+/* [2026-10-22] 그림이 느리다(크리스 「문제보기 이미지 뜨는게 느리다」 한국사) — 한 장씩 차례로 받던 것을 한꺼번에 받고,
+   같은 그림을 두 번 부르지 않게 받는 중인 것을 묶고, 다음 문항 셋의 그림을 미리 받아 둔다. */
+const _imgInflight={};
+function _imgFetch(k){
+  if(imgCache[k]) return Promise.resolve(imgCache[k]);
+  try{ var _raw=localStorage.getItem('img:'+k); if(_raw){ var _w=JSON.parse(_raw); if(_w && _w.d && (!IMG_TTL_MS || (Date.now()-(_w.__ts||0))<=IMG_TTL_MS)){ imgCache[k]=_w.d; return Promise.resolve(_w.d); } } }catch(_){}
+  if(_imgInflight[k]) return _imgInflight[k];
+  _imgInflight[k]=db.collection('images').doc(k).get().then(function(d){ var b64=(d.exists && d.data().data)||''; if(b64){ imgCache[k]=b64; try{ localStorage.setItem('img:'+k, JSON.stringify({__ts:Date.now(), d:b64})); }catch(_){} } return b64; }).catch(function(){ return ''; }).finally(function(){ delete _imgInflight[k]; });
+  return _imgInflight[k];
 }
+async function resolveImages(scope){
+  const els=Array.prototype.slice.call((scope||document).querySelectorAll('img[data-imgkey]'));
+  await Promise.all(els.map(function(el){
+    const k=el.getAttribute('data-imgkey'); if(!k) return null;
+    el.removeAttribute('data-imgkey');
+    return _imgFetch(k).then(function(b64){ if(b64) el.src=b64; });
+  }));
+}
+function _imgKeysOf(q){ var out=[]; var add=function(v){ if(typeof v!=='string'||!v) return; if(v.indexOf('img://')===0) out.push(v.slice(6)); else if(!/^(https?:)?\/\/|^\/|^data:|^blob:/.test(v) && /^[A-Za-z0-9_\-]+$/.test(v)) out.push(v); };
+  if(!q) return out; add(q.img); var oi=q.optImg; if(Array.isArray(oi)) oi.forEach(add); else if(oi&&typeof oi==='object') Object.keys(oi).forEach(function(k){ add(oi[k]); }); return out; }
+function _imgPrefetch(qs, idx){ try{ for(var i=idx+1;i<=idx+3&&i<(qs||[]).length;i++) _imgKeysOf(qs[i]).forEach(function(k){ if(!imgCache[k]) _imgFetch(k); }); }catch(_){} }
 // 해설 줄 판정 색 (빨강 우선 → 초록 → 중립). '정답'은 '정답이다'만 초록(결론단일 중립 유지)
 function splitVerdict(ex){
   // 해설 끝의 판정어(옳다/옳지 않다 등)를 분리 → {v:판정, vc:색클래스, rest:교정문}
@@ -1765,7 +1773,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   expFold(root, q);   // 해설 접기(위 함수 머리글)
-  resolveImages(root); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
+  resolveImages(root); _imgPrefetch(qs, mqIdx); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
   /* [2026-09-26] 시험이 바뀔 때 GA4 에 page_view 를 한 번 보낸다.
