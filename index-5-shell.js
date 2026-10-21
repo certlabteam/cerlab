@@ -696,13 +696,24 @@ function mqAutoResume(){
 var MANIFEST=null;          // manifest/exams 1회 캐시
 var QB_META_COUNT={};       // [2026-10-15] 시험→과목→전체 문항 수(banks 머리 문서 count)
 var loadedExams={};         // 시험별 로드 완료 플래그
+/* Firestore REST 문서를 SDK data() 꼴로 — 시각 값은 toDate()/toMillis() 를 붙여 SDK 와 같이 쓰게 */
+function _fsRestVal(v){ if(!v) return null; if('stringValue' in v) return v.stringValue; if('integerValue' in v) return Number(v.integerValue); if('doubleValue' in v) return v.doubleValue; if('booleanValue' in v) return v.booleanValue; if('nullValue' in v) return null;
+  if('timestampValue' in v){ var d=new Date(v.timestampValue); return {toDate:function(){return d;}, toMillis:function(){return d.getTime();}, seconds:Math.floor(d.getTime()/1000), nanoseconds:0}; }
+  if('arrayValue' in v) return (v.arrayValue.values||[]).map(_fsRestVal); if('mapValue' in v){ var o={}, f=v.mapValue.fields||{}; for(var k in f) o[k]=_fsRestVal(f[k]); return o; } return null; }
+function _fsRestDoc(path){ try{ var op=firebase.app().options||{}; if(!window.fetch||!op.apiKey||!op.projectId) return Promise.resolve(null);
+  return fetch('https://firestore.googleapis.com/v1/projects/'+op.projectId+'/databases/(default)/documents/'+path+'?key='+op.apiKey).then(function(r){ return r.ok?r.json():null; }).then(function(j){ return (j&&j.fields)?_fsRestVal({mapValue:{fields:j.fields}}):null; }).catch(function(){ return null; }); }catch(_){ return Promise.resolve(null); } }
 async function loadManifest(){
   if(MANIFEST) return MANIFEST;
   if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
-  const mSnap=await db.collection('manifest').doc('exams').get();
-  if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
-  MANIFEST=mSnap.data();
-  try{ var _pc=await db.collection('config').doc('pricing').get(); if(_pc.exists) _pricingCfg=_pc.data(); }catch(_){}
+  /* [2026-10-22] 링크로 들어오면 데이터 연결이 보안 확인(App Check) 토큰을 기다리느라 1.5초 넘게 쉬었다 — 시험 목록·가격은 공개 문서라 REST 로 바로 받는다(크리스 「문항 자료는 바로 받기」). 못 받으면 SDK 로 */
+  var _rest=await Promise.all([_fsRestDoc('manifest/exams'), _fsRestDoc('config/pricing')]).catch(function(){ return [null,null]; });
+  if(_rest[0]){ MANIFEST=_rest[0]; if(_rest[1]) _pricingCfg=_rest[1]; }
+  else {
+    const mSnap=await db.collection('manifest').doc('exams').get();
+    if(!mSnap.exists){ throw new Error('manifest/exams 문서 없음'); }
+    MANIFEST=mSnap.data();
+    try{ var _pc=await db.collection('config').doc('pricing').get(); if(_pc.exists) _pricingCfg=_pc.data(); }catch(_){}
+  }
   try{ buildCertRegistry(MANIFEST); }catch(e){ console.error('buildCertRegistry 실패', e); }   // 매니페스트 기반 새 시험 동적 등록(기존 7개는 무변경·확장만)
   try{ applyCertIcons(); }catch(_){}   // config/pricing.certIcon(관리자 지정) → 홈 카드 아이콘 반영
   try{ if(typeof reorderCertCards==='function') reorderCertCards(); }catch(_){}
