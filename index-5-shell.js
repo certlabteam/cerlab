@@ -917,7 +917,7 @@ function _addCertCard(ex, type){
 var _examDateMs = null;   // {cert: ms} 다음 시험일(미래 회차 우선)
 async function loadExamSchedules(_retry){
   if(!firebaseReady || !db){ if((_retry||0)<5){ setTimeout(function(){ loadExamSchedules((_retry||0)+1); }, 500); } return; }
-  try{ if(firebase && firebase.appCheck) await firebase.appCheck().getToken(); }catch(_){}   // 모바일: App Check 토큰 발급 기다린 뒤 읽기(토큰 늦으면 permission denied)
+  try{ if(firebase && firebase.appCheck) await Promise.race([firebase.appCheck().getToken(), new Promise(function(r){ setTimeout(r,300); })]);   /* 2026-10-22 App Check 를 늦게 켜서 — 켜지기 전엔 기다리지 않는다 */ }catch(_){}   // 모바일: App Check 토큰 발급 기다린 뒤 읽기(토큰 늦으면 permission denied)
   try{
     var snap = await db.collection('examSchedules').get();
     var map = {}, now = Date.now();

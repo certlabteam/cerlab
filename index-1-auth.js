@@ -10,10 +10,14 @@ const firebaseConfig = {
 let auth = null, db = null, storage = null, googleProvider = null, firebaseReady = false, fbFunctions = null;
 try {
   firebase.initializeApp(firebaseConfig);
-  firebase.appCheck().activate(
-    new firebase.appCheck.ReCaptchaV3Provider('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2'),
-    true
-  );
+  /* [2026-10-22] App Check(reCAPTCHA 350KB)를 첫 화면이 뜬 뒤로 미룬다 — 폰에서 처음 열 때 첫 화면과 다퉜다(크리스 「미루자」).
+     규칙은 아직 「감시만」이라 그 몇 초의 요청은 통계에 「확인 안 됨」으로만 찍힌다. 규칙을 조일 땐 첫 화면 자료(manifest·banks·images)를 공개 읽기로 둘 것 */
+  (function(){ var _acOn=false; function _acGo(){ if(_acOn) return; _acOn=true; try{ firebase.appCheck().activate(new firebase.appCheck.ReCaptchaV3Provider('6LeSfSQtAAAAAAycXeNoC1nMdIjMAdkh61qT_Dh2'), true); }catch(e){ console.warn('appCheck', e); } }
+    window._appCheckGo=_acGo;
+    var _later=function(){ setTimeout(_acGo, 3000); };
+    if(document.readyState==='complete') _later(); else window.addEventListener('load', _later, {once:true});
+    setTimeout(_acGo, 9000);   // load 가 늦어도 9초엔 켠다
+  })();
   auth = firebase.auth();
   db = firebase.firestore();
   try{ db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }catch(e){ console.warn('firestore settings', e); }

@@ -593,7 +593,7 @@ function _officialExamMs(cert){
 var _crowdVotes = {};   // {cert: {date: count}}
 async function loadCrowdExamVotes(cert){
   if(typeof firebaseReady==='undefined' || !firebaseReady || typeof db==='undefined' || !db || !cert) return;
-  try{ if(typeof firebase!=='undefined' && firebase.appCheck) await firebase.appCheck().getToken(); }catch(_){}
+  try{ if(typeof firebase!=='undefined' && firebase.appCheck) await Promise.race([firebase.appCheck().getToken(), new Promise(function(r){ setTimeout(r,300); })]);   /* 2026-10-22 App Check 를 늦게 켜서 — 켜지기 전엔 기다리지 않는다 */ }catch(_){}
   try{ var doc=await db.collection('examDateVotes').doc(cert).get(); _crowdVotes[cert]=(doc.exists?(doc.data()||{}):{}); }catch(_){}
 }
 function _crowdExamMs(cert){
