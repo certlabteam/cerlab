@@ -267,7 +267,11 @@ function _imgFetch(k){
   try{ var _raw=localStorage.getItem('img:'+k); if(_raw){ var _w=JSON.parse(_raw); if(_w && _w.d && (!IMG_TTL_MS || (Date.now()-(_w.__ts||0))<=IMG_TTL_MS)){ imgCache[k]=_w.d; return Promise.resolve(_w.d); } } }catch(_){}
   if(_imgInflight[k]) return _imgInflight[k];
   _imgInflight[k]=_imgCacheGet(k).then(function(hit){ if(hit){ imgCache[k]=hit; return hit; }
-    return db.collection('images').doc(k).get().then(function(d){ var b64=(d.exists && d.data().data)||''; if(b64){ imgCache[k]=b64; _imgCachePut(k,b64); } return b64; }); })
+    /* [2026-10-22 저녁] SDK 연결이 시험 자료를 받느라 바빠 그림이 문항보다 11초 늦게 떴다 — 그림은 REST 주소로 바로 받는다(못 받으면 SDK) */
+    var _sdk=function(){ return db.collection('images').doc(k).get().then(function(d){ return (d.exists && d.data().data)||''; }); };
+    var _rest=function(){ var key=(firebase.app().options||{}).apiKey, pid=(firebase.app().options||{}).projectId; if(!key||!pid||!window.fetch) return _sdk();
+      return fetch('https://firestore.googleapis.com/v1/projects/'+pid+'/databases/(default)/documents/images/'+encodeURIComponent(k)+'?key='+key+'&mask.fieldPaths=data').then(function(r){ if(!r.ok) throw new Error('rest '+r.status); return r.json(); }).then(function(j){ return (j&&j.fields&&j.fields.data&&j.fields.data.stringValue)||''; }).catch(function(){ return _sdk(); }); };
+    return _rest().then(function(b64){ if(b64){ imgCache[k]=b64; _imgCachePut(k,b64); } return b64; }); })
     .catch(function(){ return ''; }).finally(function(){ delete _imgInflight[k]; });
   return _imgInflight[k];
 }
@@ -286,7 +290,8 @@ var _imgPrefetchedLists=(typeof WeakSet!=='undefined')?new WeakSet():null;
 function _imgPrefetch(qs, idx){ try{ for(var i=idx+1;i<=idx+3&&i<(qs||[]).length;i++) _imgKeysOf(qs[i]).forEach(function(k){ if(!imgCache[k]) _imgFetch(k); });
   if(!qs||!_imgPrefetchedLists||_imgPrefetchedLists.has(qs)) return; _imgPrefetchedLists.add(qs);
   var rest=[]; qs.forEach(function(q){ _imgKeysOf(q).forEach(function(k){ if(!imgCache[k]) rest.push(k); }); });
-  var run=function(){ var k=rest.shift(); if(!k) return; _imgFetch(k).then(run, run); }; setTimeout(function(){ for(var n=0;n<4;n++) run(); }, 800);
+  var _cn=navigator.connection||{}; if(_cn.saveData || /(^|-)2g|3g/.test(String(_cn.effectiveType||''))) return;   /* 느린 망에서는 회차 전부 미리 받기가 지금 볼 그림과 다툰다 — 다음 셋만 */
+  var run=function(){ var k=rest.shift(); if(!k) return; _imgFetch(k).then(run, run); }; setTimeout(function(){ for(var n=0;n<2;n++) run(); }, 1500);
 }catch(_){} }
 // 해설 줄 판정 색 (빨강 우선 → 초록 → 중립). '정답'은 '정답이다'만 초록(결론단일 중립 유지)
 function splitVerdict(ex){
