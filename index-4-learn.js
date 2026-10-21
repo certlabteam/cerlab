@@ -1542,7 +1542,9 @@ function renderMcqExam(root){
     var _isCalc = (q.calc===true) ? (oFilled>=1) : (q.calc===false || (q.exp&&q.exp.oneExp===true)) ? false :   /* [2026-10-20] 해설 하나 꼴(exp.oneExp, 단순 기간 문항)은 계산형 화면으로 보내지 않는다 */ (q.type==='CALC' ? (oFilled>=1) : (oFilled===1));   // calc 축 우선 → 없으면 type=CALC → 없으면 oFilled 폴백(하위호환)
     if(q.exp && q.exp.s && !(q.exp.exSum&&q.exp.exSum.length)) body+=_noteWithTr(q);
     var isCombo=isComboQuestion(q.opts, q);
-    var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
+    var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];
+    /* [2026-10-22] 한국사처럼 〈보기〉 ㄱ~ㄹ 이 문제 그림 안에만 있어 글에서 진술을 못 찾으면, 진술마다 쓴 해설(comboByStmt)은 선지에 나온 자모 차례로 머리를 삼아 그린다(크리스 「ㄱㄴㄷㄹ 하나씩 해설해줘야지」 ksh76_34) */
+    if(isCombo && !stmts.length && q.exp && q.exp.comboByStmt===true){ var _jm={}; (q.opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ㉠-㉭]/g)||[]).forEach(function(c){ _jm[c]=1; }); }); stmts=Object.keys(_jm).sort().map(function(c){ return {k:c, t:''}; }); }   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     if(comboOK){ var _ansTxt=ansN.map(function(n){ return n+'번'+((q.opts&&q.opts[n-1])?'('+q.opts[n-1]+')':''); }).join(' · ');
       var _bd=' <span class="eo-badge">✅ 정답 '+_ansTxt+'</span>';
