@@ -1046,10 +1046,8 @@ async function loadOneSubject(ex, sub){
           얹기();                                  // 첫 회차로 화면부터 세운다
           if(meta.shards.length>1){
             (async function(){                     // 나머지는 뒤에서
-              for(let i=1;i<meta.shards.length;i++){
-                const pd=await _bankGet(뿌리+meta.shards[i]);
-                if(pd && Array.isArray(pd.questions)){ 누적.push.apply(누적,pd.questions); 얹기(); }
-              }
+              /* [2026-10-22] 나머지 회차를 하나씩 차례로 받아, 링크 문항이 뒤 회차에 있으면 앞 회차를 다 기다렸다 — 한꺼번에 받고 오는 대로 얹는다 */
+              await Promise.all(meta.shards.slice(1).map(function(sid){ return _bankGet(뿌리+sid).then(function(pd){ if(pd && Array.isArray(pd.questions)){ 누적.push.apply(누적,pd.questions); 얹기(); } }).catch(function(){}); }));
               // 다 온 뒤에만 캐시에 넣는다. 반쪽을 넣으면 다음에도 반쪽이 된다.
               try{
                 const 온것={ version:meta.version, cert:meta.cert, subject:meta.subject,
