@@ -257,11 +257,18 @@ function imgBlock(q){
 /* [2026-10-22] 그림이 느리다(크리스 「문제보기 이미지 뜨는게 느리다」 한국사) — 한 장씩 차례로 받던 것을 한꺼번에 받고,
    같은 그림을 두 번 부르지 않게 받는 중인 것을 묶고, 다음 문항 셋의 그림을 미리 받아 둔다. */
 const _imgInflight={};
+/* [2026-10-22 저녁] 그림을 localStorage(5MB)에 넣으면 30장쯤에서 가득 차 그 뒤로 조용히 안 남았다 — Cache Storage(한도 큼)에 둔다. 못 쓰면 종전대로 localStorage */
+var _imgCachePromise=null;
+function _imgCacheOpen(){ if(_imgCachePromise) return _imgCachePromise; try{ _imgCachePromise=(window.caches&&caches.open)?caches.open('certlab-img-v1').then(function(c){ try{ if(c && !localStorage.getItem('imgLsPurged1')){ for(var i=localStorage.length-1;i>=0;i--){ var kk=localStorage.key(i); if(kk&&kk.indexOf('img:')===0) localStorage.removeItem(kk); } localStorage.setItem('imgLsPurged1','1'); } }catch(_){} return c; }).catch(function(){ return null; }):Promise.resolve(null);   /* 옛 localStorage 그림은 한 번 비운다 — 5MB 를 채워 다른 저장까지 막았다 */ }catch(_){ _imgCachePromise=Promise.resolve(null); } return _imgCachePromise; }
+function _imgCacheGet(k){ return _imgCacheOpen().then(function(c){ if(!c) return ''; return c.match('/__img/'+encodeURIComponent(k)).then(function(r){ if(!r) return ''; var ts=+(r.headers.get('x-ts')||0); if(IMG_TTL_MS && ts && (Date.now()-ts)>IMG_TTL_MS) return ''; return r.text(); }); }).catch(function(){ return ''; }); }
+function _imgCachePut(k,b64){ _imgCacheOpen().then(function(c){ if(c) return c.put('/__img/'+encodeURIComponent(k), new Response(b64,{headers:{'x-ts':String(Date.now()),'content-type':'text/plain'}})); }).catch(function(){}); }
 function _imgFetch(k){
   if(imgCache[k]) return Promise.resolve(imgCache[k]);
   try{ var _raw=localStorage.getItem('img:'+k); if(_raw){ var _w=JSON.parse(_raw); if(_w && _w.d && (!IMG_TTL_MS || (Date.now()-(_w.__ts||0))<=IMG_TTL_MS)){ imgCache[k]=_w.d; return Promise.resolve(_w.d); } } }catch(_){}
   if(_imgInflight[k]) return _imgInflight[k];
-  _imgInflight[k]=db.collection('images').doc(k).get().then(function(d){ var b64=(d.exists && d.data().data)||''; if(b64){ imgCache[k]=b64; try{ localStorage.setItem('img:'+k, JSON.stringify({__ts:Date.now(), d:b64})); }catch(_){} } return b64; }).catch(function(){ return ''; }).finally(function(){ delete _imgInflight[k]; });
+  _imgInflight[k]=_imgCacheGet(k).then(function(hit){ if(hit){ imgCache[k]=hit; return hit; }
+    return db.collection('images').doc(k).get().then(function(d){ var b64=(d.exists && d.data().data)||''; if(b64){ imgCache[k]=b64; _imgCachePut(k,b64); } return b64; }); })
+    .catch(function(){ return ''; }).finally(function(){ delete _imgInflight[k]; });
   return _imgInflight[k];
 }
 async function resolveImages(scope){
@@ -274,7 +281,13 @@ async function resolveImages(scope){
 }
 function _imgKeysOf(q){ var out=[]; var add=function(v){ if(typeof v!=='string'||!v) return; if(v.indexOf('img://')===0) out.push(v.slice(6)); else if(!/^(https?:)?\/\/|^\/|^data:|^blob:/.test(v) && /^[A-Za-z0-9_\-]+$/.test(v)) out.push(v); };
   if(!q) return out; add(q.img); var oi=q.optImg; if(Array.isArray(oi)) oi.forEach(add); else if(oi&&typeof oi==='object') Object.keys(oi).forEach(function(k){ add(oi[k]); }); return out; }
-function _imgPrefetch(qs, idx){ try{ for(var i=idx+1;i<=idx+3&&i<(qs||[]).length;i++) _imgKeysOf(qs[i]).forEach(function(k){ if(!imgCache[k]) _imgFetch(k); }); }catch(_){} }
+/* 다음 문항 셋은 바로, 그 회차의 나머지 그림은 넷씩 뒤에서 받아 둔다(한 번만) */
+var _imgPrefetchedLists=(typeof WeakSet!=='undefined')?new WeakSet():null;
+function _imgPrefetch(qs, idx){ try{ for(var i=idx+1;i<=idx+3&&i<(qs||[]).length;i++) _imgKeysOf(qs[i]).forEach(function(k){ if(!imgCache[k]) _imgFetch(k); });
+  if(!qs||!_imgPrefetchedLists||_imgPrefetchedLists.has(qs)) return; _imgPrefetchedLists.add(qs);
+  var rest=[]; qs.forEach(function(q){ _imgKeysOf(q).forEach(function(k){ if(!imgCache[k]) rest.push(k); }); });
+  var run=function(){ var k=rest.shift(); if(!k) return; _imgFetch(k).then(run, run); }; setTimeout(function(){ for(var n=0;n<4;n++) run(); }, 800);
+}catch(_){} }
 // 해설 줄 판정 색 (빨강 우선 → 초록 → 중립). '정답'은 '정답이다'만 초록(결론단일 중립 유지)
 function splitVerdict(ex){
   // 해설 끝의 판정어(옳다/옳지 않다 등)를 분리 → {v:판정, vc:색클래스, rest:교정문}
