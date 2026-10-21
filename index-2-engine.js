@@ -634,7 +634,7 @@ function itvEnsureCSS(){
     '.itv-tl-nav{flex:none;width:34px;height:30px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;font-size:12px;cursor:pointer;color:#334155}',
     '.itv-tl-top{position:sticky;top:0;z-index:5;background:#fff;padding:6px 0 4px;border-bottom:1px solid #EEF2F7}',
     '.itv-tl-cur{font-size:12px;color:#C0392B;font-weight:700;margin-top:4px;text-align:center}',
-    '.itv-tl-list{margin-top:10px;max-height:60vh;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}',
+    '.itv-tl-list{margin-top:10px;max-height:50vh;overflow-y:auto;overscroll-behavior:auto;padding-right:2px}',
     '.itv-tl-tip{display:none}',
     '.itv-ev{border:1px solid #E2E8F0;border-left:3px solid #E2E8F0;border-radius:12px;padding:10px 12px;margin:8px 0;background:#fff;scroll-margin-top:100px;transition:border-color .2s,background .2s}',
     '.itv-ev.on{border-left-color:#C0392B;background:#FFF7F5}',
