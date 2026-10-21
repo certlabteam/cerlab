@@ -514,6 +514,7 @@ function itvResolve(ref){
   if(ref && typeof ref==='object' && ref.template) return itvRenderOne(ref);
   if(typeof ref==='string' && ref.indexOf('itv://')===0){
     var id=ref.slice(6), it=_itvCache[id];
+    if(!it && typeof _mMiss==='function') _mMiss('interactives', id);
     if(!it) return _itvLoaded?'<div class="tbl-broken">⚠️ 인터랙티브 참조 오류: itv://'+_itvEsc(id)+' (마스터에 없음)</div>':'';
     return itvRenderOne(Object.assign({id:id}, it));
   }

@@ -706,7 +706,6 @@ async function loadManifest(){
   if(MANIFEST) return MANIFEST;
   if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
   /* [2026-10-22] 링크로 들어오면 데이터 연결이 보안 확인(App Check) 토큰을 기다리느라 1.5초 넘게 쉬었다 — 시험 목록·가격은 공개 문서라 REST 로 바로 받는다(크리스 「문항 자료는 바로 받기」). 못 받으면 SDK 로 */
-  try{ _bakedBanks(); }catch(_){}   // 구운 문항 목록을 manifest 와 나란히 받기 시작
   var _rest=await Promise.all([_fsRestDoc('manifest/exams'), _fsRestDoc('config/pricing')]).catch(function(){ return [null,null]; });
   if(_rest[0]){ MANIFEST=_rest[0]; if(_rest[1]) _pricingCfg=_rest[1]; }
   else {
@@ -984,21 +983,8 @@ function _decodeFsValue(v){
   return null;
 }
 function _decodeFsFields(fields){ var o={}; for(var k in fields){ o[k]=_decodeFsValue(fields[k]); } return o; }
-/* [2026-10-22] 문항도 매일 구운 파일(masters/b/…)에서 받는다 — Firestore 읽기를 학습 기록에만 남긴다(크리스 「문항·그림 다 파일로」).
-   manifest 의 그 과목 버전이 구울 때와 같을 때만 쓴다. 넣기가 버전을 올리므로 낮에 넣은 글은 종전대로 Firestore 에서 받는다 */
-var _bakedBanksP=null;
-function _bakedBanks(){ if(!_bakedBanksP){ var d=new Date(); _bakedBanksP=fetch('masters/_banks.json?d='+(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }); } return _bakedBanksP; }
-async function _bankBaked(docId){
-  try{ var bi=await _bakedBanks(); if(!bi||!bi.files||!bi.files[docId]||!MANIFEST) return null;
-    var p=String(docId).split('__'), ex=(MANIFEST.exams||[]).find(function(e){ return e.id===p[0]; });
-    var now=ex&&ex.versions&&ex.versions[p[1]], then=bi.versions&&bi.versions[p[0]]&&bi.versions[p[0]][p[1]];
-    if(now==null || now!==then) return null;
-    var r=await fetch('masters/'+bi.files[docId]+'?v='+encodeURIComponent(bi.bakedAt||'')); return r.ok? await r.json() : null;
-  }catch(_){ return null; }
-}
-async function _bankGet(docId){               // 구운 파일 → REST → SDK 폴백(안전망)
+async function _bankGet(docId){               // REST 우선, 실패 시 SDK 폴백(안전망)
   var _dbg=/[?&]dbg=1/.test(location.search), _t0=Date.now();
-  var _b=await _bankBaked(docId); if(_b) return _b;
   var d=await _bankRestGet(docId);
   if(d){ if(_dbg && typeof clToast==='function') clToast('REST OK '+((Date.now()-_t0)/1000).toFixed(1)+'s'); return d; }
   if(_dbg && typeof clToast==='function') clToast('REST 실패\u2192SDK 폴백');
@@ -1097,23 +1083,11 @@ async function loadOneSubject(ex, sub){
 var loadingExams={};   // 진행 중인 로드 Promise(동시호출 중복 방지)
 var _mastersPromise=null;
 // 공유 마스터 4종(개념/표/그래프/암기) 단일 로드 promise. 받았으면 즉시 통과(각 로더가 promise 가드).
-/* [2026-10-22] 모음 전체 .get() 대신 매일 22시에 구운 masters/<시험>.json 을 받는다 — concepts 가 26,857장이 되어
-   접속 한 번에 읽기 2.9만, 10월 Firestore 비용이 9월의 6.5배였다(scripts/bake-masters.mjs). 굽기 뒤에 생긴 카드는
-   문항 화면 _mastersFor 가 id 로 하나씩 받는다. 이미 받은 것(REST 로 받은 더 새 값)은 덮지 않는다 */
-var _mastersByExam={};
-function _bakedGet(name){
-  var d=new Date(), v=d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
-  return fetch('masters/'+encodeURIComponent(name)+'.json?d='+v).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; });
-}
-function _bakedPut(cache, src, fix){ if(!src||!cache) return; Object.keys(src).forEach(function(k){ if(!cache[k]){ var x=src[k]; if(fix) fix(x); cache[k]=x; } }); }
-function ensureMasters(examId){
-  if(!_mastersPromise) _mastersPromise=_bakedGet('_common').then(function(d){ if(!d) return;
-    _bakedPut(_grpCache, d.graphs); if(typeof _itvCache!=='undefined') _bakedPut(_itvCache, d.interactives); });
-  if(!examId) return _mastersPromise;
-  if(!_mastersByExam[examId]) _mastersByExam[examId]=_bakedGet(examId).then(function(d){ if(!d) return;
-    _bakedPut(_cptCache, d.concepts); _bakedPut(_mnemCache, d.mnemonics);
-    _bakedPut(_tblCache, d.tables, function(t){ if(t && typeof t.rows==='string'){ try{ t.rows=JSON.parse(t.rows); }catch(e){ t.rows=[]; } } }); });
-  return Promise.all([_mastersPromise, _mastersByExam[examId]]);
+/* [2026-10-22] 마스터 모음 전체(.get())를 받지 않는다 — concepts 26,857장을 접속마다 읽어 10월 Firestore 비용이 9월의 6.5배였다.
+   화면에 걸린 id 만 cptResolve·tblResolve·mnResolve·grpResolve·itvResolve 가 그때 하나씩 받는다(_mGet · index-2-engine.js) */
+function ensureMasters(){
+  if(!_mastersPromise) _mastersPromise=Promise.resolve();
+  return _mastersPromise;
 }
 /* ===== [임시] 로딩 성능 측정: ?perf=1 접속 시에만 동작 (측정 후 제거) ===== */
 var PERF=false; try{ if(/[?&]perf=1/.test(location.search)){ PERF=true; localStorage.setItem('certlab_perf','1'); } else if(localStorage.getItem('certlab_perf')==='1'){ PERF=true; } }catch(e){}
@@ -1124,7 +1098,7 @@ async function loadExam(examId){
   loadingExams[examId]=(async()=>{
     await loadManifest();
     // 마스터 4종(개념/표/그래프/암기)은 문제 목록 표시엔 불필요 → 백그라운드 로드(해설·개념 렌더 때만 필요)
-    var _mp=ensureMasters(examId);
+    var _mp=ensureMasters();
     const ex=(MANIFEST.exams||[]).find(e=>e.id===examId);
     if(!ex){ loadedExams[examId]=true; return; }
     var _t0=PERF?((window.performance&&performance.now)?performance.now():Date.now()):0;

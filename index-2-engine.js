@@ -444,6 +444,7 @@ function tblResolve(ref){
   if(ref && typeof ref==='object' && (Array.isArray(ref.headers)||ref.html)) return renderTbl(ref);
   if(typeof ref==='string' && ref.indexOf('tbl://')===0){
     var id=ref.slice(6), t=_tblCache[id];
+    if(!t) _mMiss('tables', id);
     if(!t) return _tblLoaded ? '<div class="tbl-broken">⚠️ 표 참조 오류: tbl://'+tblEsc(id)+' (마스터에 없음)</div>' : '';
     return renderTbl(t);
   }
@@ -494,11 +495,29 @@ function loadConcepts(){
   return _cptPromise;
 }
 // cpt id(또는 "cpt://id") → 마스터 개념 {id,name,cards,...} | null. 미해석은 null(깨진 참조).
+/* [2026-10-22] 마스터는 모음 전체를 받지 않고 화면에 걸린 id 만 그때 하나씩 받는다 — concepts 26,857장 전체 읽기로
+   10월 Firestore 비용이 9월의 6.5배였다(크리스 「그록 방법」: Firestore 에 두고 필요한 것만). 받으면 한 번 다시 그린다 */
+var _mGetReq={};
+function _mGet(col, id){
+  var k=col+'/'+id; if(_mGetReq[k]) return _mGetReq[k];
+  var C={concepts:_cptCache, tables:_tblCache, mnemonics:_mnemCache, graphs:_grpCache, interactives:(typeof _itvCache!=='undefined'?_itvCache:null)}[col];
+  _mGetReq[k]=(typeof _fsRestDoc==='function' && C ? _fsRestDoc(col+'/'+encodeURIComponent(id)) : Promise.resolve(null)).then(function(d){
+    if(!d) return null; if(col==='tables' && typeof d.rows==='string'){ try{ d.rows=JSON.parse(d.rows); }catch(e){ d.rows=[]; } }
+    if(!C[id]) C[id]=d; return C[id]; }).catch(function(){ return null; });
+  return _mGetReq[k];
+}
+var _mMissT=null;
+function _mMiss(col, id){
+  if(!id || _mGetReq[col+'/'+id]) return;
+  _mGet(col, id).then(function(d){ if(!d) return; clearTimeout(_mMissT); _mMissT=setTimeout(function(){ try{
+    if(typeof renderMCQ==='function' && typeof mqScreen!=='undefined' && mqScreen!=='home') renderMCQ(); }catch(e){} }, 250); });
+}
 function cptResolve(ref){
   if(!ref) return null;
   var id=(typeof ref==='string' && ref.indexOf('cpt://')===0) ? ref.slice(6) : ref;
   var c=_cptCache[id];
-  return c ? Object.assign({id:id}, c) : null;
+  if(!c){ _mMiss('concepts', id); return null; }
+  return Object.assign({id:id}, c);
 }
 function tblSanitizeHtml(html){
   var s=String(html||'');
@@ -527,6 +546,7 @@ function grpResolve(ref){
   if(ref && typeof ref==='object' && ref.svg) return grpRenderOne(ref);
   if(typeof ref==='string' && ref.indexOf('grp://')===0){
     var id=ref.slice(6), g=_grpCache[id];
+    if(!g) _mMiss('graphs', id);
     if(!g) return _grpLoaded ? '<div class="tbl-broken">⚠️ 그래프 참조 오류: grp://'+tblEsc(id)+' (마스터에 없음)</div>' : '';
     return grpRenderOne(g);
   }
@@ -926,6 +946,7 @@ function mnResolve(mn){
   if(typeof mn==='string' && mn.indexOf('mn://')===0){
     var id=mn.slice(5), m=_mnemCache[id];
     if(m) return norm(m);
+    _mMiss('mnemonics', id);
     return {boxes:[], code:'', desc:'', broken:_mnemLoaded, ref:id};   // 로드 완료 후에도 없으면 깨진 참조
   }
   if(mn && typeof mn==='object') return norm(mn);
