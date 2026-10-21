@@ -1035,6 +1035,8 @@ async function loadOneSubject(ex, sub){
                                name:meta.name, questions:누적.slice() });
           try{ if(typeof rebuildQid==='function') rebuildQid(); }catch(_){}
         };
+        /* [2026-10-22] 링크로 들어왔으면 그 문항이 든 회차를 맨 먼저 받는다 — 한국사는 첫 회차(26/8)부터 받아 링크한 25/10 이 늦게 왔다. 회차 이름의 숫자가 문항 id 앞 숫자와 맞는 것을 고른다(ksh76 ↔ 제76회 · t22 ↔ 2022년) */
+        try{ var _dl=window._dlWant; if(_dl && _dl.cert===ex.id && _dl.qid){ var _qn=(String(_dl.qid).match(/^[A-Za-z]+(\d{2,4})/)||[])[1]; if(_qn){ var _hit=meta.shards.findIndex(function(sh){ var ns=String(sh).match(/\d{2,4}/g)||[]; return ns.some(function(n){ return n===_qn || n.slice(-2)===_qn.slice(-2) && n.length===4 && _qn.length===2; }); }); if(_hit>0){ meta.shards=[meta.shards[_hit]].concat(meta.shards.filter(function(_x,_i){ return _i!==_hit; })); } } } }catch(_){}
         const 첫=await _bankGet(뿌리+meta.shards[0]);
         if(첫 && Array.isArray(첫.questions)) 누적.push.apply(누적, 첫.questions);
         if(!누적.length){
@@ -1640,6 +1642,7 @@ function clRouteFromHash(){
     if(ready){
       _done=true;
       var _viaQuery = (location.hash||'').indexOf('#q/')!==0;
+      try{ window._dlWant={cert:w.cert, qid:w.qid}; }catch(_){}
       Promise.resolve(openQ(w.cert, w.qid)).then(function(ok){
         /* 쿼리로 들어왔으면 열린 뒤 주소를 해시 형태로 정리한다 —
            ?q= 가 남아 있으면 앱이 앞으로 나올 때마다 이 문항으로 되돌아간다. */
