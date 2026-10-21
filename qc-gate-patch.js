@@ -582,6 +582,8 @@
       try{ v = v.filter(function(x){ if(x.code!=='EX_NONAME'&&x.code!=='EX_NO_SUBJECT_FIRST'&&x.code!=='EX_NOT_GAP_FIRST') return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/비유하(면|자면|건대)/.test(String(ex[x.idx]||'')); }); }catch(e){}
       /* [2026-10-21] 역사·인물 예시는 실제 인물·연도가 주인공이라 甲乙丙이 없다(AGENTS.md 3절 「역사=실제 유적·인물」) —
          예시에 「976년」「15세기」처럼 연도·세기가 있으면 EX_NONAME 면제(국사 레벨업 「경종은 976년 시정전시과를…」 14칸이 막혔다) */
+      /* [2026-10-22] 판정어만 따로 떨어진 꼴 「…없다. 옳지 않다.」 — 「그러므로 옳다.」「…없으므로 옳지 않다.」로 잇는다(기출1번방 한국사 54칸) */
+      try{ var _oo=(q&&q.exp&&q.exp.o)||[]; _oo.forEach(function(t,i){ t=String(t||'').trim(); if(/[다요]\.\s*(옳다|옳지\s*않다)(\(정답\))?\.?$/.test(t)) v.push({kind:'warn',field:'o',idx:i,code:'O_VERDICT_DETACHED',msg:'판정어가 앞 문장과 떨어져 홀로 있음 — 「…이므로 옳지 않다.」 또는 「그러므로 옳다.」로 잇는다',text:t,sev:'WARNING',track:'data'}); }); }catch(e){}
       /* 그날 저녁: 연도가 없는 박물관·관광지 실제 장면도 막혔다(curator cu_lv_s1_003 · 기출1번방) — 크리스 「역사는 굳이 갑을병정 넣지 말고」 「개론은 갑을병정이 잘 안맞네」로 실제 인물·장소 장면이 기본이 됐으니 EX_NONAME 은 끈다 */
       try{ v = v.filter(function(x){ return x.code!=='EX_NONAME'; }); }catch(e){}
       /* [엔진 #15 · 2026-08-01] 같은 자리에 같은 코드가 두 번 붙는 것을 막는다.
