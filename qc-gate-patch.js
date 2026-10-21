@@ -582,7 +582,8 @@
       try{ v = v.filter(function(x){ if(x.code!=='EX_NONAME'&&x.code!=='EX_NO_SUBJECT_FIRST'&&x.code!=='EX_NOT_GAP_FIRST') return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/비유하(면|자면|건대)/.test(String(ex[x.idx]||'')); }); }catch(e){}
       /* [2026-10-21] 역사·인물 예시는 실제 인물·연도가 주인공이라 甲乙丙이 없다(AGENTS.md 3절 「역사=실제 유적·인물」) —
          예시에 「976년」「15세기」처럼 연도·세기가 있으면 EX_NONAME 면제(국사 레벨업 「경종은 976년 시정전시과를…」 14칸이 막혔다) */
-      try{ v = v.filter(function(x){ if(x.code!=='EX_NONAME') return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/(\d{3,4}년|\d{1,2}세기|기원전)/.test(String(ex[x.idx]||'')); }); }catch(e){}
+      /* 그날 저녁: 연도가 없는 박물관·관광지 실제 장면도 막혔다(curator cu_lv_s1_003 · 기출1번방) — 크리스 「역사는 굳이 갑을병정 넣지 말고」 「개론은 갑을병정이 잘 안맞네」로 실제 인물·장소 장면이 기본이 됐으니 EX_NONAME 은 끈다 */
+      try{ v = v.filter(function(x){ return x.code!=='EX_NONAME'; }); }catch(e){}
       /* [엔진 #15 · 2026-08-01] 같은 자리에 같은 코드가 두 번 붙는 것을 막는다.
          `EX_MISSING`·`O_SHORT` 는 **코어에도 같은 이름의 구현이 있다**(qc-core.js:586·593).
          스코프가 서로 달라(코어는 _sScene 로 OX형·특정 type 을 빼고, 여기는 계산 신호 휴리스틱을 더 본다)
