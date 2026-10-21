@@ -1815,6 +1815,7 @@ async function startCardPayment(){
     if(!o.orderId || !(o.payableAmount>0)) throw new Error('주문을 만들지 못했어요.');
     // 3) 결제창 — 돌아올 곳은 우리 쪽 pay-result.html
     var back=location.origin+'/pay-result.html';
+    if(typeof TossPayments==='undefined'){ await new Promise(function(res,rej){ var t=0, iv=setInterval(function(){ if(typeof TossPayments!=='undefined'){ clearInterval(iv); res(); } else if(++t>100){ clearInterval(iv); rej(new Error('결제 모듈을 못 불러왔어요. 잠시 뒤 다시 눌러 주세요.')); } },100); }); }   /* 2026-10-22 토스 스크립트를 async 로 미뤄서 — 다 받기 전에 눌렀으면 10초까지 기다린다 */
     await TossPayments(TOSS_CLIENT_KEY).requestPayment('카드', {
       amount:o.payableAmount,
       orderId:o.orderId,

@@ -78,7 +78,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 </script>
 <script defer src="subjective.js?v=43a6cf86"></script>
 <!-- [2026-09-17] 토스페이먼츠 결제창 SDK(v1). 서버 승인이 /v1/payments/confirm 이라 같은 v1 을 쓴다. -->
-<script src="https://js.tosspayments.com/v1/payment"></script>
+<script async src="https://js.tosspayments.com/v1/payment"></script><!-- 2026-10-22 async: 결제할 때만 쓴다 — 첫 화면을 멈추고 받던 것 -->
 <style>
 /* [2026-09-02] 카카오 로그인 단추.
    구글 단추가 margin-bottom:12px 이라, 카카오도 같은 값을 줘서
@@ -770,7 +770,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=7412e6f1"></script>
+<script defer src="index-1-auth.js?v=4d11bcc3"></script>
 <script defer src="index-2-engine.js?v=b10e2976"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
