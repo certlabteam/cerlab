@@ -287,6 +287,25 @@ function _imgKeysOf(q){ var out=[]; var add=function(v){ if(typeof v!=='string'|
   if(!q) return out; add(q.img); var oi=q.optImg; if(Array.isArray(oi)) oi.forEach(add); else if(oi&&typeof oi==='object') Object.keys(oi).forEach(function(k){ add(oi[k]); }); return out; }
 /* 다음 문항 셋은 바로, 그 회차의 나머지 그림은 넷씩 뒤에서 받아 둔다(한 번만) */
 var _imgPrefetchedLists=(typeof WeakSet!=='undefined')?new WeakSet():null;
+/* [2026-10-22] 개념 카드·연표가 해설보다 몇 초 늦게 붙었다 — 카드 모음 전체(수천 장)를 다 받은 뒤에야 그렸다(크리스 「당겨」).
+   지금 문항·다음 문항에 걸린 카드·연표·암기·표만 REST 로 바로 받아 넣고, 지금 문항이 그대로면 한 번 다시 그린다. 전체 모음은 종전대로 뒤에서 받는다 */
+var _mInflight={};
+function _mRest(col, id){ var key=col+'/'+id; if(_mInflight[key]) return _mInflight[key];
+  _mInflight[key]=(typeof _fsRestDoc==='function'?_fsRestDoc(col+'/'+encodeURIComponent(id)):Promise.resolve(null)).catch(function(){ return null; }); return _mInflight[key]; }
+function _mIds(v, pfx){ var out=[]; (Array.isArray(v)?v:(v?[v]:[])).forEach(function(x){ if(typeof x!=='string'||!x) return; out.push(x.indexOf(pfx)===0?x.slice(pfx.length):x); }); return out; }
+function _mastersFor(q, rerender){
+  try{ if(!q||!q.exp) return; var e=q.exp, jobs=[];
+    var cptIds=_mIds(e.cpt,'cpt://'); (e.ot||[]).forEach(function(t){ if(t&&t.cpt) cptIds=cptIds.concat(_mIds(t.cpt,'cpt://')); });
+    var itvIds=_mIds(e.itv,'itv://');
+    var putC=function(c,id){ if(!c) return; _cptCache[id]=c; var sub=[]; _mIds(c.mn,'mn://').forEach(function(m){ if(typeof _mnemCache!=='undefined' && !_mnemCache[m]) sub.push(_mRest('mnemonics',m).then(function(d){ if(d){ _mnemCache[m]=d; return 1; } })); });
+      _mIds(c.tbl,'tbl://').forEach(function(t){ if(typeof _tblCache!=='undefined' && !_tblCache[t]) sub.push(_mRest('tables',t).then(function(d){ if(d){ if(typeof d.rows==='string'){ try{ d.rows=JSON.parse(d.rows); }catch(_){ d.rows=[]; } } _tblCache[t]=d; return 1; } })); });
+      return Promise.all(sub).then(function(){ return 1; }); };
+    cptIds.forEach(function(id){ if(typeof _cptCache!=='undefined' && !_cptCache[id]) jobs.push(_mRest('concepts',id).then(function(c){ return putC(c,id); })); });
+    itvIds.forEach(function(id){ if(typeof _itvCache!=='undefined' && !_itvCache[id]) jobs.push(_mRest('interactives',id).then(function(d){ if(d){ _itvCache[id]=d; return 1; } })); });
+    if(!jobs.length) return;
+    Promise.all(jobs).then(function(r){ if(!rerender || !r.some(Boolean)) return; if(typeof mqCurId!=='undefined' && mqCurId===q.id && typeof renderMCQ==='function' && ((typeof mqShow!=='undefined' && mqShow[q.id]) || (typeof mqInReview!=='undefined' && mqInReview))) renderMCQ(); }).catch(function(){});
+  }catch(_){}
+}
 function _imgPrefetch(qs, idx){ try{ for(var i=idx+1;i<=idx+3&&i<(qs||[]).length;i++) _imgKeysOf(qs[i]).forEach(function(k){ if(!imgCache[k]) _imgFetch(k); });
   if(!qs||!_imgPrefetchedLists||_imgPrefetchedLists.has(qs)) return; _imgPrefetchedLists.add(qs);
   var rest=[]; qs.forEach(function(q){ _imgKeysOf(q).forEach(function(k){ if(!imgCache[k]) rest.push(k); }); });
@@ -1793,7 +1812,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   expFold(root, q);   // 해설 접기(위 함수 머리글)
-  resolveImages(root); _imgPrefetch(qs, mqIdx); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
+  resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
   /* [2026-09-26] 시험이 바뀔 때 GA4 에 page_view 를 한 번 보낸다.
