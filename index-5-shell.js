@@ -706,6 +706,7 @@ async function loadManifest(){
   if(MANIFEST) return MANIFEST;
   if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
   /* [2026-10-22] 링크로 들어오면 데이터 연결이 보안 확인(App Check) 토큰을 기다리느라 1.5초 넘게 쉬었다 — 시험 목록·가격은 공개 문서라 REST 로 바로 받는다(크리스 「문항 자료는 바로 받기」). 못 받으면 SDK 로 */
+  try{ _bakedBanks(); }catch(_){}   // 구운 문항 목록을 manifest 와 나란히 받기 시작
   var _rest=await Promise.all([_fsRestDoc('manifest/exams'), _fsRestDoc('config/pricing')]).catch(function(){ return [null,null]; });
   if(_rest[0]){ MANIFEST=_rest[0]; if(_rest[1]) _pricingCfg=_rest[1]; }
   else {
@@ -983,8 +984,21 @@ function _decodeFsValue(v){
   return null;
 }
 function _decodeFsFields(fields){ var o={}; for(var k in fields){ o[k]=_decodeFsValue(fields[k]); } return o; }
-async function _bankGet(docId){               // REST 우선, 실패 시 SDK 폴백(안전망)
+/* [2026-10-22] 문항도 매일 구운 파일(masters/b/…)에서 받는다 — Firestore 읽기를 학습 기록에만 남긴다(크리스 「문항·그림 다 파일로」).
+   manifest 의 그 과목 버전이 구울 때와 같을 때만 쓴다. 넣기가 버전을 올리므로 낮에 넣은 글은 종전대로 Firestore 에서 받는다 */
+var _bakedBanksP=null;
+function _bakedBanks(){ if(!_bakedBanksP){ var d=new Date(); _bakedBanksP=fetch('masters/_banks.json?d='+(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())).then(function(r){ return r.ok?r.json():null; }).catch(function(){ return null; }); } return _bakedBanksP; }
+async function _bankBaked(docId){
+  try{ var bi=await _bakedBanks(); if(!bi||!bi.files||!bi.files[docId]||!MANIFEST) return null;
+    var p=String(docId).split('__'), ex=(MANIFEST.exams||[]).find(function(e){ return e.id===p[0]; });
+    var now=ex&&ex.versions&&ex.versions[p[1]], then=bi.versions&&bi.versions[p[0]]&&bi.versions[p[0]][p[1]];
+    if(now==null || now!==then) return null;
+    var r=await fetch('masters/'+bi.files[docId]+'?v='+encodeURIComponent(bi.bakedAt||'')); return r.ok? await r.json() : null;
+  }catch(_){ return null; }
+}
+async function _bankGet(docId){               // 구운 파일 → REST → SDK 폴백(안전망)
   var _dbg=/[?&]dbg=1/.test(location.search), _t0=Date.now();
+  var _b=await _bankBaked(docId); if(_b) return _b;
   var d=await _bankRestGet(docId);
   if(d){ if(_dbg && typeof clToast==='function') clToast('REST OK '+((Date.now()-_t0)/1000).toFixed(1)+'s'); return d; }
   if(_dbg && typeof clToast==='function') clToast('REST 실패\u2192SDK 폴백');

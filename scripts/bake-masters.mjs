@@ -104,6 +104,38 @@ for (const [ex, acc] of Object.entries(per)) {
   idx.exams[ex] = { concepts: Object.keys(c).length, tables: Object.keys(t).length, mnemonics: Object.keys(m).length, kb: Math.round(body.length / 1024) };
 }
 fs.writeFileSync(path.join(OUT, '_common.json'), JSON.stringify({ graphs, interactives }));
+
+/* 문항(banks) — 문서마다 파일 하나. 앱은 manifest 의 과목 버전이 구울 때와 같을 때만 이 파일을 쓴다
+   (넣기가 manifest 버전을 올리므로 낮에 넣은 글은 Firestore 에서 받는다) */
+const mf = fv({ mapValue: { fields: (await (await fetch(BASE + 'manifest/exams?key=' + KEY)).json()).fields } });
+const mver = {};
+for (const ex of mf.exams || []) mver[ex.id] = ex.versions || {};
+const hash = s => { let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.codePointAt(0), 16777619) >>> 0; return h.toString(36); };
+const safe = s => s.replace(/[^A-Za-z0-9_\-]/g, '').slice(0, 60) + '_' + hash(s);
+fs.rmSync(path.join(OUT, 'b'), { recursive: true, force: true });
+fs.mkdirSync(path.join(OUT, 'b'), { recursive: true });
+const bidx = { bakedAt: idx.bakedAt, versions: mver, files: {} };
+for (const [id, d] of Object.entries(banks)) {
+  const f = 'b/' + safe(id) + '.json';
+  fs.writeFileSync(path.join(OUT, f), JSON.stringify(d));
+  bidx.files[id] = f;
+}
+fs.writeFileSync(path.join(OUT, '_banks.json'), JSON.stringify(bidx));
+
+/* 그림(images) — data:… base64 를 그대로 파일로 푼다. 바꾼 그림은 다음 굽기까지 옛것이 나가니, 그림을 갈면 굽기를 한 번 돌린다 */
+const images = await listAll('images');
+fs.rmSync(path.join(OUT, 'img'), { recursive: true, force: true });
+fs.mkdirSync(path.join(OUT, 'img'), { recursive: true });
+const iidx = {};
+for (const [k, d] of Object.entries(images)) {
+  const m = /^data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,(.+)$/s.exec(d.data || '');
+  if (!m || !/^[A-Za-z0-9_\-]+$/.test(k)) continue;
+  const ext = m[1] === 'svg+xml' ? 'svg' : m[1].replace('jpeg', 'jpg');
+  fs.writeFileSync(path.join(OUT, 'img', k + '.' + ext), Buffer.from(m[2], 'base64'));
+  iidx[k] = ext;
+}
+fs.writeFileSync(path.join(OUT, '_img.json'), JSON.stringify({ bakedAt: idx.bakedAt, ext: iidx }));
+console.log('문항', Object.keys(bidx.files).length, '· 그림', Object.keys(iidx).length, '/', Object.keys(images).length);
 fs.writeFileSync(path.join(OUT, '_index.json'), JSON.stringify(idx, null, 1));
 console.log('구움', Object.keys(idx.exams).length, '시험 ·', Math.round((Date.now() - t0) / 1000), '초');
 for (const [ex, n] of Object.entries(idx.exams).sort((a, b) => b[1].kb - a[1].kb).slice(0, 12)) console.log(' ', ex, n);

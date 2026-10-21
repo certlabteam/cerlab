@@ -262,11 +262,17 @@ var _imgCachePromise=null;
 function _imgCacheOpen(){ if(_imgCachePromise) return _imgCachePromise; try{ _imgCachePromise=(window.caches&&caches.open)?caches.open('certlab-img-v1').then(function(c){ try{ if(c && !localStorage.getItem('imgLsPurged1')){ for(var i=localStorage.length-1;i>=0;i--){ var kk=localStorage.key(i); if(kk&&kk.indexOf('img:')===0) localStorage.removeItem(kk); } localStorage.setItem('imgLsPurged1','1'); } }catch(_){} return c; }).catch(function(){ return null; }):Promise.resolve(null);   /* 옛 localStorage 그림은 한 번 비운다 — 5MB 를 채워 다른 저장까지 막았다 */ }catch(_){ _imgCachePromise=Promise.resolve(null); } return _imgCachePromise; }
 function _imgCacheGet(k){ return _imgCacheOpen().then(function(c){ if(!c) return ''; return c.match('/__img/'+encodeURIComponent(k)).then(function(r){ if(!r) return ''; var ts=+(r.headers.get('x-ts')||0); if(IMG_TTL_MS && ts && (Date.now()-ts)>IMG_TTL_MS) return ''; return r.text(); }); }).catch(function(){ return ''; }); }
 function _imgCachePut(k,b64){ _imgCacheOpen().then(function(c){ if(c) return c.put('/__img/'+encodeURIComponent(k), new Response(b64,{headers:{'x-ts':String(Date.now()),'content-type':'text/plain'}})); }).catch(function(){}); }
+var _imgBakedP=null;
+function _imgBakedUrl(k){
+  if(!_imgBakedP){ var d=new Date(); _imgBakedP=(window.fetch?fetch('masters/_img.json?d='+(d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate())).then(function(r){ return r.ok?r.json():null; }):Promise.resolve(null)).catch(function(){ return null; }); }
+  return _imgBakedP.then(function(ix){ var e=ix&&ix.ext&&ix.ext[k]; return e? 'masters/img/'+k+'.'+e+'?v='+encodeURIComponent(ix.bakedAt||'') : ''; }).catch(function(){ return ''; });
+}
 function _imgFetch(k){
   if(imgCache[k]) return Promise.resolve(imgCache[k]);
   try{ var _raw=localStorage.getItem('img:'+k); if(_raw){ var _w=JSON.parse(_raw); if(_w && _w.d && (!IMG_TTL_MS || (Date.now()-(_w.__ts||0))<=IMG_TTL_MS)){ imgCache[k]=_w.d; return Promise.resolve(_w.d); } } }catch(_){}
   if(_imgInflight[k]) return _imgInflight[k];
-  _imgInflight[k]=_imgCacheGet(k).then(function(hit){ if(hit){ imgCache[k]=hit; return hit; }
+  /* [2026-10-22] 구운 그림(masters/img/…)이 있으면 그 주소를 바로 쓴다 — Firestore 읽기 0. 없는 그림(굽기 뒤에 넣은 것)만 아래 길로 */
+  _imgInflight[k]=_imgBakedUrl(k).then(function(u){ if(u){ imgCache[k]=u; return u; } return _imgCacheGet(k); }).then(function(hit){ if(hit){ imgCache[k]=hit; return hit; }
     /* [2026-10-22 저녁] SDK 연결이 시험 자료를 받느라 바빠 그림이 문항보다 11초 늦게 떴다 — 그림은 REST 주소로 바로 받는다(못 받으면 SDK) */
     var _sdk=function(){ return db.collection('images').doc(k).get().then(function(d){ return (d.exists && d.data().data)||''; }); };
     var _rest=function(){ var key=(firebase.app().options||{}).apiKey, pid=(firebase.app().options||{}).projectId; if(!key||!pid||!window.fetch) return _sdk();
