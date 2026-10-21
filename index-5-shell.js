@@ -994,7 +994,8 @@ async function _bankRestGet(docId){
   try{
     var url='https://firestore.googleapis.com/v1/projects/'+firebaseConfig.projectId+'/databases/(default)/documents/banks/'+encodeURIComponent(docId)+'?key='+firebaseConfig.apiKey;
     var headers={};
-    try{ if(firebase && firebase.appCheck){ var t=await firebase.appCheck().getToken(); if(t && t.token) headers['X-Firebase-AppCheck']=t.token; } }catch(_){}
+    /* [2026-10-22] 토큰을 받을 때까지(reCAPTCHA) 1.5초를 기다렸다 — 공개 문서라 50ms 안에 있으면 붙이고 없으면 그냥 받는다(크리스 「문항 자료는 바로 받기」) */
+    try{ if(firebase && firebase.appCheck){ var t=await Promise.race([firebase.appCheck().getToken(), new Promise(function(r){ setTimeout(function(){ r(null); },50); })]); if(t && t.token) headers['X-Firebase-AppCheck']=t.token; } }catch(_){}
     var res=await fetch(url,{headers:headers});
     if(!res.ok) return null;                 // 404=문서없음 등
     var j=await res.json();
