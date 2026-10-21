@@ -1129,7 +1129,7 @@ function applyBank(ex,sub,doc){
     if(!qb||!qb[sub.code]) return;
     const byset={},order=[];
     /* [2026-10-22] 한국사는 회차 번호 대신 「연/월」로 보인다 — 크리스 「25/3 <- 이런식으로 표현하자 · 25년3월이란 뜻이야」(기출1번방). 문항의 set 칸은 불변이라 그대로 두고 화면 목록 이름만 바꾼다. 76회 날짜는 공식 공고 재확인 필요 */
-    const _KSH_YM={'74':'25/5','75':'25/8','76':'25/10','77':'26/2','78':'26/5','79':'26/8'};
+    const _KSH_YM={'74':'25/5','75':'25/8','76':'25/10','77':'26/2','78':'26/5','79':'26/8','80':'26/10'};
     const _labOf=function(st){ if(ex.id!=='koreanhistory') return st; var m=String(st).match(/제(\d+)회/); return (m&&_KSH_YM[m[1]])||st; };
     qs.forEach(q=>{ const lab=_labOf(q.set||'기출'); if(!byset[lab]){byset[lab]=[];order.push(lab);} const it={id:q.id,q:q.q,opts:q.opts,ans:q.ans,star:q.star,time:q.time,exp:q.exp}; if(q.img)it.img=q.img; if(q.imgnote)it.imgnote=q.imgnote; if(q.optImg)it.optImg=q.optImg; if(q.mn)it.mn=q.mn; if(q.jaryo)it.jaryo=q.jaryo; if(Array.isArray(q.blanks)&&q.blanks.length){ it.blanks=q.blanks; it.type='SA'; } else if(q.type && q.type!=='SA')it.type=q.type; if(q.calc!=null)it.calc=q.calc; if(q.set)it.set=q.set; /* [2026-07-20] 자료(표)·type(개수형 렌더)·calc(계산형)·set(오답노트 회차) 필드 보존. pol·fig는 앱 엔진 미사용이라 제외.
       [2026-08-25] blanks 를 실어 준다 — 한국어교육 113번(교수안 작성)처럼 객관식 은행에 섞인 주관식(SA) 문항이 있다.
