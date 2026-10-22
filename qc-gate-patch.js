@@ -363,6 +363,8 @@
         }
         _isCombo = (_ok===opts.length && _cnt>=1);
       }
+      // 2026-10-22 진술별 해설(comboByStmt)은 o 가 선지가 아니라 ㄱ~ㄹ 진술 차례다 — 「ㄱ: 고흥, ㄴ: 이문진」 꼴 짝 맞추기 선지는 위 셈(14자)에 안 걸려 정답 칸 대신 진술에서 (정답)을 찾았다(기출1번방 ksh_lv_contemporary_013·029·031)
+      if(exp && exp.comboByStmt) _isCombo = true;
     }catch(_){}
     if(_on('gichul','O_NO_ANSMARK') && !isCalc && !_isCombo && opts.length){
       var oFilled=0; for(var k=0;k<o.length;k++){ if(o[k]&&String(o[k]).trim()) oFilled++; }
