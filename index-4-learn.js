@@ -1257,9 +1257,12 @@ function markComboStmts(scope, addOX){
   });
 }
 // 이미지형 조합형(지문이 이미지에 있는 경우): 이미지 아래 ㄱㄴㄷㄹ O/X 줄
+/* [2026-10-22] 짝 맞추기 선지(「ㄱ: 생산·분배·소비, ㄴ: 사회통제」)는 빈칸에 들어갈 말을 고르는 것이라 옳고 그름이 없다 — O/X 칸을 그리지 않는다(크리스 「ㄱㄴ ox는 아니고」 sw20_2_52). 해설의 ㄱ·ㄴ 머리는 그대로 */
+function _isPairOpts(q){ try{ var o=(q&&q.opts)||[]; return o.length>=2 && o.every(function(x){ return /^\s*[ㄱ-ㅎ]\s*[:：]/.test(String(x||'')); }); }catch(_){ return false; } }
 function imgComboOXRow(q){
   try{
     if(mqInReview) return '';
+    if(_isPairOpts(q)) return '';
     if(!isComboQuestion(q.opts, q)) return '';
     if(q && q.jaryo && /<table/i.test(String(q.jaryo))) return '';   // [2026-07-20] 문제보기가 표면 표 안 O/X 칸(injectTableOX)으로 처리 → 아래 줄 억제
     if(parseJaryoStmts(q.q, q.jaryo).length) return '';     // 자료 텍스트에 지문 있으면 기존(지문별) 방식 ([2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 0으로 읽혀 O/X 줄이 중복 렌더됐다)
@@ -1814,7 +1817,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   expFold(root, q);   // 해설 접기(위 함수 머리글)
-  resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); markComboStmts(root, !mqInReview && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
+  resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); markComboStmts(root, !mqInReview && !_isPairOpts(q) && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
   /* [2026-09-26] 시험이 바뀔 때 GA4 에 page_view 를 한 번 보낸다.
