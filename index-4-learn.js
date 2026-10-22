@@ -429,7 +429,7 @@ function isComboQuestion(opts, q){
   /* [2026-10-20] 순서 맞추기 보기(「ㄴ → ㄱ → ㄹ」)는 해설을 진술마다 쓴 문항(exp.comboByStmt)만 조합형으로 본다 — 다른 시험 순서형 30여 개는 선지마다 해설이 달려 있어 모두 조합형으로 보면 짝이 흐트러진다(h22_29 · 크리스 「1234 선지랑 선지 해설 다 없애자」) */
   if(q && q.exp && q.exp.comboByStmt===true && opts.every(function(x){ return /^[ㄱ-ㅎ㉠-㉩\s,·、ㆍ\/→>\-]+$/.test(String(x||'').trim()) && /→|>/.test(String(x||'')); })) return true;
   /* [2026-10-21] 짝 맞추기 보기(「ㄱ: 고흥, ㄴ: 이문진」)도 진술마다 쓴 문항이면 조합형 — ㄱ 해설이 선지 1번 머리 밑에 붙었다(t21_2 · 크리스 「ㄱ ㄴ 각각 하나씩 설명하면 끝이잖아」) */
-  if(q && q.exp && q.exp.comboByStmt===true && opts.every(function(x){ var s=String(x||'').trim(); return /^[ㄱ-ㅎ㉠-㉩]\s*[:：]/.test(s) && (s.match(/[ㄱ-ㅎ㉠-㉩]\s*[:：]/g)||[]).length>=2; })) return true;
+  if(q && q.exp && q.exp.comboByStmt===true && opts.every(function(x){ var s=String(x||'').trim(); return /^[ㄱ-ㅎ㉠-㉩A-E]\s*[:：]/.test(s) && (s.match(/(?:^|[,\s])[ㄱ-ㅎ㉠-㉩A-E]\s*[:：]/g)||[]).length>=2; })) return true;   // [2026-10-22] 「A: 지역적 자치성, B: …」 영문 대문자 짝도(크리스 「A B 하나씩만 설명」 sw24_2_52) — 글자+콜론 꼴만 보니 SWOT 같은 낱말 속 대문자는 안 잡힌다
   var _longOK=null;   // 14자 초과 보기가 나올 때만 한 번 계산(q 가 있을 때)
   var markerOnly=/^[ㄱ-ㅎ㉠-㉩가나다라마바사아\s,·、ㆍ/]+$/;   // 한글 자모/조합 마커 + 구분자 ([2026-07-20] 원문자 ㉠~㉩ 추가)
   var hasJamo=/[ㄱ-ㅎ㉠-㉩]/, comboCnt=0, ok=0;
@@ -1258,7 +1258,7 @@ function markComboStmts(scope, addOX){
 }
 // 이미지형 조합형(지문이 이미지에 있는 경우): 이미지 아래 ㄱㄴㄷㄹ O/X 줄
 /* [2026-10-22] 짝 맞추기 선지(「ㄱ: 생산·분배·소비, ㄴ: 사회통제」)는 빈칸에 들어갈 말을 고르는 것이라 옳고 그름이 없다 — O/X 칸을 그리지 않는다(크리스 「ㄱㄴ ox는 아니고」 sw20_2_52). 해설의 ㄱ·ㄴ 머리는 그대로 */
-function _isPairOpts(q){ try{ var o=(q&&q.opts)||[]; return o.length>=2 && o.every(function(x){ return /^\s*[ㄱ-ㅎ]\s*[:：]/.test(String(x||'')); }); }catch(_){ return false; } }
+function _isPairOpts(q){ try{ var o=(q&&q.opts)||[]; return o.length>=2 && o.every(function(x){ return /^\s*[ㄱ-ㅎA-E]\s*[:：]/.test(String(x||'')); }); }catch(_){ return false; } }
 function imgComboOXRow(q){
   try{
     if(mqInReview) return '';
@@ -1549,7 +1549,7 @@ function renderMcqExam(root){
     return;
   }
   const sel=mqAns[q.id]; const showExp=mqShow[q.id]; const isMulti=Array.isArray(q.ans);
-  const optOX = !mqInReview && !isComboQuestion(q.opts, q) && !isCountType(q);   // 일반형 보기에 O/X(조합형=자료 ㄱㄴㄷ, 개수형=○ 진술에 부착)
+  const optOX = !mqInReview && !isComboQuestion(q.opts, q) && !_isPairOpts(q) && !isCountType(q);   // 일반형 보기에 O/X(조합형=자료 ㄱㄴㄷ, 개수형=○ 진술에 부착)
   const optHTML=q.opts.map((o,i)=>{const n=i+1; let cls='opt';
     if(showExp){ if(ansArr(q.ans).includes(n))cls+=' cor'; else if(sel===n)cls+=' wr'; else cls+=' dim'; }
     else if(sel===n)cls+=' sel';
@@ -1586,7 +1586,7 @@ function renderMcqExam(root){
     var isCombo=isComboQuestion(q.opts, q);
     var stmts = isCombo ? parseJaryoStmts(q.q, q.jaryo) : [];
     /* [2026-10-22] 한국사처럼 〈보기〉 ㄱ~ㄹ 이 문제 그림 안에만 있어 글에서 진술을 못 찾으면, 진술마다 쓴 해설(comboByStmt)은 선지에 나온 자모 차례로 머리를 삼아 그린다(크리스 「ㄱㄴㄷㄹ 하나씩 해설해줘야지」 ksh76_34) */
-    if(isCombo && !stmts.length && q.exp && q.exp.comboByStmt===true){ var _jm={}; (q.opts||[]).forEach(function(o){ (String(o).match(/[ㄱ-ㅎ㉠-㉭]/g)||[]).forEach(function(c){ _jm[c]=1; }); }); stmts=Object.keys(_jm).sort().map(function(c){ return {k:c, t:''}; }); }   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
+    if(isCombo && !stmts.length && q.exp && q.exp.comboByStmt===true){ var _jm={}; (q.opts||[]).forEach(function(o){ (_isPairOpts(q) ? (String(o).match(/(?:^|[,\s])([ㄱ-ㅎ㉠-㉭A-E])(?=\s*[:：])/g)||[]).map(function(x){ return x.replace(/[,\s]/g,''); }) : (String(o).match(/[ㄱ-ㅎ㉠-㉭]/g)||[])).forEach(function(c){ _jm[c]=1; }); }); stmts=Object.keys(_jm).sort().map(function(c){ return {k:c, t:''}; }); }   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     if(comboOK){ var _ansTxt=ansN.map(function(n){ return n+'번'+((q.opts&&q.opts[n-1])?'('+q.opts[n-1]+')':''); }).join(' · ');
       var _bd=' <span class="eo-badge">✅ 정답 '+_ansTxt+'</span>';
