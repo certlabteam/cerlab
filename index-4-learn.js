@@ -585,6 +585,8 @@ function _dropNonFinalDot(h){ try{ h=String(h==null?'':h);
   return h.replace(/([^\s>.])((?:<\/[a-zA-Z]+>)*)\.(?=\s|$|<)/g, function(m, c, tags, off){
     if(c==='다'||c==='요') return m;
     var before=h.slice(0, off+1).replace(/<[^>]*>/g,'');
+    // [2026-10-22] 영문 이름 머리글자 「N. Gilbert」「A. Bandura」의 점은 지우지 않는다 — 「(N Gilbert & H Specht)」로 나왔다(기출1번방 sw20_2_52)
+    if(/[A-Z]/.test(c) && !tags && /(^|[^A-Za-z])[A-Z]$/.test(before)) return m;
     if(c===')'){ var t=before.replace(/\s*\([^()]*\)$/,''); if(/[다요]$/.test(t)) return m; }
     var line=before.split(/\n/).pop();
     var raw=h.slice(0, off+1); var cut=Math.max(raw.lastIndexOf('<br'), raw.lastIndexOf('<div'), raw.lastIndexOf('<p'), raw.lastIndexOf('<li'), raw.lastIndexOf('\n'));
