@@ -609,6 +609,9 @@
       try{ v = _qgAdd(v, _qcTrailConn(q)); }catch(e){}
       try{ v = _qgAdd(v, _qcOSlot(q)); }catch(e){}
       try{ v = _qgAdd(v, _qcRuleDoc(q)); }catch(e){}
+      /* [2026-10-22] 순서도 예시 「[flow]칸|칸|칸[/flow]\n= 개념 (한 마디)」는 짧은 칸과 두 줄이 꼴이다 — 크리스 「해설 예시 말로 들어서 못하겠는데 화살표 등으로 시각화」 「순서도 + 한 줄」(sw20_1_50 통과).
+         글자 수·문장 수·여러 줄·예시끼리 닮음 잣대는 그 칸에 안 맞아 레벨업 25문항이 243건으로 막혔다(기출1번방 사회복지사 1급 s2). 그 예시 원소만 면제 */
+      try{ v = v.filter(function(x){ if(x.field!=='ex' || ['EX_FEW_SENT','EX_UNDER90','EX_SHORT','EX_MULTILINE','EX_STEPS_NOBR','EX_EX_ECHO'].indexOf(x.code)<0) return true; var ex=(q&&q.exp&&q.exp.ex)||[]; return !/\[flow\][\s\S]*?\[\/flow\]/.test(String(ex[x.idx]||'')); }); }catch(e){}
       return v;
     };
     /* [GATE-1 2026-08-01] 전역 _qcViolations 도 같이 갈아끼운다.
