@@ -102,24 +102,31 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- 로딩표시_중복클릭막기 — 공용 조각(_공용/로딩표시_중복클릭막기)을 서트랩에 맞춤 · 크리스 2026-10-22 「서트랩이랑 짐매니저 일구미도 만들라그래」.
      서트랩은 요청 대부분이 사람이 기다리지 않는 뒤 받기(다음 회차·그림 미리 받기·개념카드·실시간 연결)라 Firestore·토큰·보안확인·분석·뒤 보너스·AI(제 진행 표시 있음)는 뺀다.
      남는 것: 결제·쿠폰·포인트 같은 서버 함수 + 로그인 단추(누르는 즉시 덮개 · 두 번째 누름 막기). 구글 창을 닫고 돌아오면·20초 지나면 걷힌다 -->
+<div id="clLoadBar" style="display:none; position:fixed; top:0; left:0; right:0; height:3px; z-index:99999; overflow:hidden; pointer-events:none;"><div style="height:100%; width:40%; background:#2563EB; animation:clBarRun 1s ease-in-out infinite;"></div></div>
 <div id="clLoading" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(23,33,47,.25); align-items:center; justify-content:center;" role="status" aria-live="polite" aria-label="불러오는 중">
-  <img src="/icon-192.png?v=d368aace" alt="" style="width:56px; height:56px; border-radius:16px; box-shadow:0 8px 24px rgba(23,33,47,.25); animation:clLoadingSpin .9s linear infinite;">
+  <img src="/icon-192.png?v=d368aace" alt="" style="width:56px; height:56px; border-radius:16px; box-shadow:0 8px 24px rgba(23,33,47,.25); animation:clLoadingBreath 1.4s ease-in-out infinite;">
 </div>
-<style>@keyframes clLoadingSpin { to { transform:rotate(360deg); } } @media (prefers-reduced-motion: reduce) { #clLoading img { animation:none !important; } }</style>
+<style>@keyframes clLoadingBreath { 0%,100% { transform:scale(.88); opacity:.55; } 50% { transform:scale(1.04); opacity:1; } } @keyframes clBarRun { 0% { transform:translateX(-100%); } 100% { transform:translateX(260%); } } @media (prefers-reduced-motion: reduce) { #clLoading img, #clLoadBar div { animation:none !important; } }</style>
 <script>
 (function () {
   var cover = document.getElementById("clLoading");
-  var reqs = 0, loggingIn = false, loginTimer = null;
+  var bar = document.getElementById("clLoadBar");
+  var reqs = 0, gets = 0, loggingIn = false, loginTimer = null;
   var on = function () { cover.style.display = "flex"; };
   var off = function () { if (reqs <= 0 && !loggingIn) { reqs = 0; cover.style.display = "none"; } };
+  var barOff = function () { if (gets <= 0) { gets = 0; bar.style.display = "none"; } };
   var endLogin = function () { loggingIn = false; clearTimeout(loginTimer); off(); };
-  window.clLoading = { on: on, off: off, endLogin: endLogin, state: function () { return { reqs: reqs, loggingIn: loggingIn }; } };
+  window.clLoading = { on: on, off: off, endLogin: endLogin, state: function () { return { reqs: reqs, gets: gets, loggingIn: loggingIn }; } };
   var skip = /firestore\.googleapis\.com|firebaseinstallations|firebaselogging|identitytoolkit|securetoken|recaptcha|appcheck|google-analytics|googletagmanager|gstatic|claimAppBonus|claimReferralReward|initializeMember|bindReferral|gradeSubjective|explainConcept|\/masters\/|kakao\.com/;
   if (!window.fetch) return;
   var origFetch = window.fetch.bind(window);
   window.fetch = function (url, opt) {
     var s = String((url && url.url) || url || "");
     if (skip.test(s)) return origFetch(url, opt);
+    /* [2026-10-23] 크리스 「이렇게 가고 다른 세션에도 알려」 — 불러오기(GET)는 맨 위 얇은 막대만(화면은 눌림), 두 번 누르면 안 되는 쓰기(POST·결제·쿠폰)는 덮개(로고 숨쉬기) */
+    var m = String((opt && opt.method) || (url && url.method) || "GET").toUpperCase();
+    if (m === "GET") { gets++; var tb = setTimeout(function () { bar.style.display = "block"; }, 300);
+      return origFetch(url, opt).finally(function () { clearTimeout(tb); gets--; barOff(); }); }
     reqs++;
     var t = setTimeout(on, 300);
     return origFetch(url, opt).finally(function () { clearTimeout(t); reqs--; off(); });
@@ -133,7 +140,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     clearTimeout(loginTimer); loginTimer = setTimeout(endLogin, 20000);
     setTimeout(function () { window.addEventListener("focus", function f() { window.removeEventListener("focus", f); setTimeout(endLogin, 800); }); }, 500);
   }, true);
-  window.addEventListener("pageshow", function (e) { if (!e.persisted) return; loggingIn = false; reqs = 0; cover.style.display = "none"; });
+  window.addEventListener("pageshow", function (e) { if (!e.persisted) return; loggingIn = false; reqs = 0; gets = 0; cover.style.display = "none"; bar.style.display = "none"; });
 })();
 </script>
 <!-- 인앱 브라우저 안내 팝업 -->
