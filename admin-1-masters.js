@@ -1013,7 +1013,7 @@ async function cptmImport(){
   var _st0=document.getElementById('cptmImpStatus'); if(_st0 && _hasAdd && _cptmImpData.length>400){ _st0.style.color='#475569'; _st0.textContent='기존 개념 불러와 비교 중… (전체 세트라 수 초 걸립니다)'; }
   var _ex=_hasAdd?await _loadExistingByIds('concepts', _cptmImpData.map(function(x){return String(x.id);})):{};
   var _dn=function(a,pfx){ return (Array.isArray(a)?a:[]).map(function(x){ x=String(x).trim(); return x.indexOf(pfx+'://')===0?x:(pfx+'://'+x.replace(/^.*?:\/\//,'')); }).sort(); };
-  var _dsig=function(o){ o=o||{}; return JSON.stringify({name:o.name||'',note:o.note||'',cards:o.cards||[],certs:(o.certs||[]).slice().sort(),keywords:(o.keywords||[]).slice().sort(),mn:_dn(o.mn,'mn'),tbl:_dn(o.tbl,'tbl'),grp:_dn(o.grp,'grp')}); };
+  var _dsig=function(o){ o=o||{}; return JSON.stringify({name:o.name||'',note:o.note||'',cards:o.cards||[],certs:(o.certs||[]).slice().sort(),keywords:(o.keywords||[]).slice().sort(),mn:_dn(o.mn,'mn'),tbl:_dn(o.tbl,'tbl'),grp:_dn(o.grp,'grp'),itv:_dn(o.itv,'itv')}); };
   if(_hasAdd){ if(!_impPreviewConfirm('개념 '+_cptmImpData.length+'개 적재', _ex, _cptmImpData, 'id', ['cards','mn','tbl','grp','certs','keywords'], /^cpt_[a-z0-9_]+$/)) return; }
   if(_hasDel){ if(!confirm('개념 '+_cptmImpDelete.length+'개 삭제(고아 정리) — 되돌릴 수 없습니다. 계속?')) return; }
   var ok=0, fail=0, del=0, _skip=0;
@@ -1024,14 +1024,14 @@ async function cptmImport(){
     if(_ex[id] && _dsig(it)===_dsig(_ex[id])){ _skip++; continue; }
     var norm=function(a,pfx){ return (Array.isArray(a)?a:[]).map(function(x){ x=String(x).trim(); return x.indexOf(pfx+'://')===0?x:(pfx+'://'+x.replace(/^.*?:\/\//,'')); }); };
     var rec={ name:it.name||'', cards:Array.isArray(it.cards)?it.cards:[],
-      mn:norm(it.mn,'mn'), tbl:norm(it.tbl,'tbl'), grp:norm(it.grp,'grp'),
+      mn:norm(it.mn,'mn'), tbl:norm(it.tbl,'tbl'), grp:norm(it.grp,'grp'), itv:norm(it.itv,'itv'),   // [2026-10-23] 개념에 인터랙티브(연표)도 — 앱은 _conceptChain(q,'itv')로 이미 그리는데 넣는 길이 없었다(크리스 「국사는 연도표 마스터 있지 않나」)
       keywords:Array.isArray(it.keywords)?it.keywords:[], certs:Array.isArray(it.certs)?it.certs:[],
       note:it.note||'', updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-    _impPreserve(rec, it, _ex[id], ['name','note','certs','keywords','cards','mn','tbl','grp']);
+    _impPreserve(rec, it, _ex[id], ['name','note','certs','keywords','cards','mn','tbl','grp','itv']);
     // [클로버 방지] 링크 배열을 빈 값으로 명시해도 기존 링크는 지우지 않는다(미지정=보존).
     //  → 표·그래프·인터랙티브 등 종류별 개념파일을 순서 상관없이 층층이 올려도 앞 링크가 안 지워짐.
     //  링크를 실제로 비우려면 편집기(cptmSave)에서 지운다. 대량 업로드로는 빈 배열이 삭제로 처리되지 않음.
-    if(_ex[id]){ ['mn','tbl','grp'].forEach(function(f){ if((!rec[f]||!rec[f].length) && Array.isArray(_ex[id][f]) && _ex[id][f].length) rec[f]=_ex[id][f]; }); }
+    if(_ex[id]){ ['mn','tbl','grp','itv'].forEach(function(f){ if((!rec[f]||!rec[f].length) && Array.isArray(_ex[id][f]) && _ex[id][f].length) rec[f]=_ex[id][f]; }); }
     (function(_id,_rec){ _ops.push({ref:db.collection('concepts').doc(_id), data:_rec, after:function(){ _cptmAll[_id]=_cacheRec(_rec); }}); })(id,rec);
   }
   var _r=await _qbWrite(_ops, function(n,t){var _s=document.getElementById('cptmImpStatus'); if(_s){_s.style.color='#475569';_s.innerHTML='처리 중… <b>'+n+'</b>/'+t;}}); ok+=_r.ok; fail+=_r.fail;
