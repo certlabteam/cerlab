@@ -140,6 +140,7 @@ function _qcViolations(q){
   if(!isSAq && _qcOn('gichul','O_CORE_NAME_MISSING')) opts.forEach(function(opt,i){
     var names=_qcCoreNames(opt); if(!names.length)return;
     if(exp.oneExp===true && !String(o[i]||'').trim()) return;   /* [2026-10-20] 해설 하나 꼴은 빈 선지 칸을 보지 않는다 */
+    if(exp.comboByStmt===true) return;   /* [2026-10-27] 조합형 진술별 해설(o 가 선지가 아니라 진술 ㄱ·ㄴ 차례)은 선지 이름을 o[i] 에서 찾지 않는다(ycounselor3 yc324_1_88 오탐) */
     var body=String(o[i]||'')+' '+String(ex[i]||''), missing=names.filter(function(n){return !_qcHasCoreName(body,n);});
     if(missing.length)v.push({kind:'warn',field:'o',idx:i,code:'O_CORE_NAME_MISSING',msg:'보기 핵심 이름/용어 '+missing.slice(0,4).join('·')+' 이 대응 해설·예시에 그대로 없음 — 대명사 대신 이름을 적는다',text:opt});
   });
