@@ -1588,13 +1588,15 @@ function clRouteFromHash(){
     }
     try{ if(typeof loadedExams!=='undefined' && !loadedExams[cert] && typeof loadOneSubject==='function' && typeof loadManifest==='function'){
       await loadManifest(); var _ex=(MANIFEST.exams||[]).find(function(e){return e.id===cert;});
-      var _sb=_ex && (_ex.type||'mcq')==='mcq' && (_ex.subjects||[]).find(function(s){ return String(qid).indexOf('_'+s.code+'_')>=0; })
+      /* [2026-10-28] 링크에 과목을 붙여 보내면(?q=시험/문항&s=과목) 그 과목만 먼저 받는다 — id 에 과목 코드가 없는 시험(청소년상담사 yc125_1_58)은 35회차를 다 받아 12초 걸렸다(크리스 「링크에 과목 붙이기」) */
+      var _sHint=''; try{ _sHint=new URLSearchParams(location.search||'').get('s')||''; }catch(_){}
+      var _sb=_ex && (_ex.type||'mcq')==='mcq' && (_sHint && (_ex.subjects||[]).find(function(s){ return s.code===_sHint; }) || (_ex.subjects||[]).find(function(s){ return String(qid).indexOf('_'+s.code+'_')>=0; }))
         /* [2026-10-19] id 가 과목 코드를 안 품는 시험(공인중개사 intro25_5 · 과목 re1_intro)은 빠른 길을 못 타 시험 전체를 받았다 — 판을 올릴 때마다 처음부터 다시 받아 링크가 안 넘어가는 듯 느렸다(크리스 「링크 눌러도 이동안해」 「느린걸지도」). 과목 코드 끝 마디(intro)로 id 머리를 맞춘다 */
         || (_ex.subjects||[]).find(function(s){ var t=String(s.code||'').split('_').pop(); return t.length>=3 && new RegExp('^'+t+'\\d').test(String(qid)); });
       if(_sb){ await loadOneSubject(_ex,_sb); if(typeof rebuildQid==='function') rebuildQid(); _fast=!!(typeof MCQ_QID2CS!=='undefined' && MCQ_QID2CS[qid]); }
     } }catch(_){ _fast=false; }
     var _full=null; try{ if(typeof loadExam==='function') _full=loadExam(cert); }catch(_){}
-    if(!_fast){ try{ await _full; }catch(_){} }
+    if(!_fast && !_sHint){ try{ await _full; }catch(_){} }   // [2026-10-28] 과목을 받은 링크는 시험 전체를 기다리지 않는다 — 회차가 뒤에서 붙으면 아래 5초 다시 보기가 잡는다
     var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
     /* [2026-10-17] 회차가 뒤에서 조금씩 붙어 링크를 받는 순간엔 색인에 없을 때가 있다 — 그러면 레벨업 길(goToCard)로 빠져
        마스터 자료를 다 기다리느라 6~9초 걸렸다(크리스 「왜 못고쳐」 → 함수 시각을 재서 찾음). 기출 문항이면 곧 색인에 선다 — 0.15초마다 다시 보고, 5초 안에 안 서면 그때 레벨업 길로. */
