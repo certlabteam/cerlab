@@ -1592,8 +1592,6 @@ function clRouteFromHash(){
         /* [2026-10-19] id 가 과목 코드를 안 품는 시험(공인중개사 intro25_5 · 과목 re1_intro)은 빠른 길을 못 타 시험 전체를 받았다 — 판을 올릴 때마다 처음부터 다시 받아 링크가 안 넘어가는 듯 느렸다(크리스 「링크 눌러도 이동안해」 「느린걸지도」). 과목 코드 끝 마디(intro)로 id 머리를 맞춘다 */
         || (_ex.subjects||[]).find(function(s){ var t=String(s.code||'').split('_').pop(); return t.length>=3 && new RegExp('^'+t+'\\d').test(String(qid)); });
       if(_sb){ await loadOneSubject(_ex,_sb); if(typeof rebuildQid==='function') rebuildQid(); _fast=!!(typeof MCQ_QID2CS!=='undefined' && MCQ_QID2CS[qid]); }
-      /* [2026-10-28] id 로 과목을 못 정하면(청소년상담사 1급 yc125_1_58 — 7과목 35회차를 다 받아 휴대폰에서 12초 · 크리스 「링크 안 뜨는데 서트랩 전체 문제인듯」) 과목을 하나씩 받다가 찾으면 바로 띄운다 */
-      else if(_ex && (_ex.type||'mcq')==='mcq'){ for(var _si0=0; _si0<(_ex.subjects||[]).length && !_fast; _si0++){ try{ await loadOneSubject(_ex,_ex.subjects[_si0]); }catch(_){ } if(typeof rebuildQid==='function') rebuildQid(); _fast=!!(typeof MCQ_QID2CS!=='undefined' && MCQ_QID2CS[qid]); } }
     } }catch(_){ _fast=false; }
     var _full=null; try{ if(typeof loadExam==='function') _full=loadExam(cert); }catch(_){}
     if(!_fast){ try{ await _full; }catch(_){} }
