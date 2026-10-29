@@ -54,6 +54,7 @@ for (const cert of order) {
     const e = q && q.exp || {};
     return q && !q.hidden && !q.img && !q.jaryo && !q.calc && typeof q.ans === 'number'
       && Array.isArray(q.opts) && q.opts.length >= 4 && q.opts.length <= 5 && String(q.q).length <= 120
+      && q.opts.every((x) => String(x).length <= 30)   // 선지가 길면 첫 화면 카드가 너무 길어진다(크리스 「공간 활용도」)
       && Array.isArray(e.o) && e.o.length === q.opts.length && e.o.every(Boolean)
       && Array.isArray(e.ex) && e.ex.length === q.opts.length && e.ex.every(Boolean) && e.s;
   });
