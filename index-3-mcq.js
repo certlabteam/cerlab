@@ -222,7 +222,12 @@ function renderMCQ(){
    #mcqRoot 에 글자 크기 fs1·fs2 를 걸고, 문제 화면 머리줄에 「가+」 단추를 하나 더한다. 기본(보통)은 지금 크기 그대로. */
 var MQ_FS_NAMES=['보통','크게','아주 크게'];
 function mqFsGet(){ try{ var v=+localStorage.getItem('certlab_fs'); return (v>=0&&v<=2)?v:0; }catch(_){ return 0; } }
-function mqFontStep(d){ var v=Math.max(0,Math.min(2,mqFsGet()+d));   /* [2026-10-29] 크리스 「크기 - + 버튼 넣자」 — 하나로 도는 단추 대신 작게·크게 둘 */ try{ localStorage.setItem('certlab_fs', String(v)); }catch(_){} var root=document.getElementById('mcqRoot'); if(root) mqFontAfter(root); }
+function mqFontStep(d){ var v=Math.max(0,Math.min(2,mqFsGet()+d));   /* [2026-10-29] 크리스 「크기 - + 버튼 넣자」 — 하나로 도는 단추 대신 작게·크게 둘 */ try{ localStorage.setItem('certlab_fs', String(v)); }catch(_){} var root=document.getElementById('mcqRoot'); if(root) mqFontAfter(root); mqFsSync(); }
+/* [2026-10-29] 크리스 「어디든 할 수 있게 헤더에」 「가 - + 이렇게」 — 헤더 단추(#hdFs)와 문제 머리줄이 같은 저장값. 문제 밖 화면은 zoom 으로 키운다(style.css html.fs1/fs2) */
+function mqFsHtml(fs){ return '<span class="fsb-l" aria-hidden="true">가</span><button type="button" aria-label="글자 작게" onclick="mqFontStep(-1)"'+(fs===0?' disabled':'')+'>−</button><button type="button" aria-label="글자 크게" onclick="mqFontStep(1)"'+(fs===2?' disabled':'')+'>+</button>'; }
+function mqFsSync(){ var fs=mqFsGet(), h=document.documentElement; h.classList.toggle('fs1', fs===1); h.classList.toggle('fs2', fs===2);
+  var b=document.getElementById('hdFs'); if(b){ b.innerHTML=mqFsHtml(fs); b.setAttribute('aria-label','글자 크기 '+MQ_FS_NAMES[fs]); } }
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', mqFsSync); else mqFsSync();
 function mqFontAfter(root){
   var fs=mqFsGet();
   root.classList.toggle('fs1', fs===1); root.classList.toggle('fs2', fs===2);
@@ -230,8 +235,7 @@ function mqFontAfter(root){
   if(mqScreen!=='exam') return;
   var hd=root.querySelector('.exam-sticky .exam-hd'); if(!hd) return;
   var w=document.createElement('span'); w.className='mq-fsb'; w.setAttribute('role','group'); w.setAttribute('aria-label','글자 크기 '+MQ_FS_NAMES[fs]);
-  w.innerHTML='<button type="button" aria-label="글자 작게"'+(fs===0?' disabled':'')+'>가−</button><button type="button" aria-label="글자 크게"'+(fs===2?' disabled':'')+'>가+</button>';
-  w.children[0].onclick=function(){ mqFontStep(-1); }; w.children[1].onclick=function(){ mqFontStep(1); }; hd.appendChild(w);
+  w.innerHTML=mqFsHtml(fs); hd.appendChild(w);
 }
 /* 「오늘 할 일」 단추 — 회차는 들어올 때 다시 정렬돼 번호가 바뀐다(index-5-shell.js sets.sort). 그래서 이름으로 찾아 연다 */
 function mqTodoGo(id, enc, mode){

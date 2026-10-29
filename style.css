@@ -1419,3 +1419,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .event-badge{flex-direction:row;gap:4px;padding:4px 10px;border-radius:999px;border-width:1px}
 .event-badge .eb-l2{display:none}
 .lp-adv i{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:#EFF6FD;font-size:16px;line-height:1;margin-bottom:6px}
+/* [2026-10-29] 글자 크기 「가 − +」 — 헤더(#hdFs)·문제 머리줄 같은 모양 · 문제 밖 화면은 통째로 키운다 */
+.mq-fsb .fsb-l{display:flex;align-items:center;padding:0 2px 0 10px;font-size:14px;font-weight:800;color:#185FA5}
+.mq-fsb button{font-size:16px;line-height:1;padding:4px 8px}
+#hdFs{margin-left:0}
+html.fs1 #homeView,html.fs1 #communityView,html.fs1 #myPageView{zoom:1.1}
+html.fs2 #homeView,html.fs2 #communityView,html.fs2 #myPageView{zoom:1.2}
+@media (max-width:420px){.header{padding-left:16px;padding-right:16px;gap:8px}.header-right{gap:6px}#hdFs .fsb-l{padding-left:8px}#hdFs button{padding:4px 6px}.header .btn-login{padding:6px 12px}}
