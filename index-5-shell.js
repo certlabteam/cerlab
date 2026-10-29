@@ -283,7 +283,7 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   setTimeout(function(){ if(typeof reorderCertCards==='function') reorderCertCards(); }, 2500);   // 모바일 느린 렌더 대비 늦은 재정렬
   syncPlanMirror(); updateAuthBar();
 }
-async function enterCert(id, noGate){
+async function enterCert(id, noGate, noWait){
   // 객관식 시험 풀던 중 다른 시험으로 전환 시에도 오답노트·진행상황 반영
   if(typeof mqScreen!=='undefined' && mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag){
     if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
@@ -342,7 +342,9 @@ async function enterCert(id, noGate){
   }
   // (2026-07-02) 게스트 후킹 전체화면 강제 제거 — 시험 탭하면 바로 기출/과목 화면(레벨테스트는 대시보드 내 "무료 레벨테스트" 버튼으로). 무료 10문제 한도는 canAccess로 유지.
   // lazy 로드: 이 시험 데이터가 아직 없으면 로딩 표시 후 받음(캐시 있으면 거의 즉시)
-  if(!loadedExams[id]){
+  /* [2026-10-29] 레벨업 링크는 문항 하나만 보면 되니 시험 전체 회차를 기다리지 않는다(noWait) — 느린 망 15.7초(크리스 폰 「안 열려」 두 번). 회차는 뒤에서 받는다 */
+  if(!loadedExams[id] && noWait && id!=='bodybuilding'){ try{ await loadManifest(); }catch(_){} }   // 시험 목록(과목 코드)만 받고 간다 — 회차는 홈으로 갈 때 받는다(같이 받으면 느린 망을 나눠 써 더 늦었다)
+  else if(!loadedExams[id]){
     var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
     if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px"><button onclick="goHome()" aria-label="홈" style="border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1">←</button><span style="font-size:16px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
     try{ await loadExam(id); }
@@ -390,7 +392,7 @@ async function goToCard(qid, certHint){
   // ★ 레벨업(변형) 문항 딥링크: 변형 풀(variantPool)을 로드해 찾고, 단독 리뷰로 띄움(검수용)
   // isMcqCert 게이트 제거 — sport2 등 manifest 등록 시험이 아직 MCQ로 인식 안 돼도 진입 후 조회하도록.
   if(certHint && certHint!=='bodybuilding'){
-    try{ await enterCert(certHint, true); }catch(_){}
+    try{ await enterCert(certHint, true, /_lv_/.test(String(qid))); }catch(_){}
     try{
       var _qb=null; try{ _qb=(typeof MCQ_EXAMS!=='undefined' && MCQ_EXAMS[certHint])?MCQ_EXAMS[certHint].qb:null; }catch(_){}
       var _subs=_qb?Object.keys(_qb):[];
@@ -471,12 +473,15 @@ async function goToCard(qid, certHint){
         mqList=[_found]; mqReviewList=[_found]; mqReviewMode='all'; mqIdx=0; mqAns={}; mqGuess={}; mqShow={}; mqShow[_found.id]=true;
         /* [2026-10-20] 링크가 빠른 길(_lv_)로 오면 시험 목록을 읽기 전에 enterCert 가 돌아 isMcqCert 가 거짓 — 문항은 그렸는데 화면이 숨김으로 남았다(크리스 「링크안떠」 hotelmgr/ht1_lv_basic_01). 띄울 때 화면을 직접 연다 */
         try{ document.getElementById('mcqView').classList.remove('hidden'); document.getElementById('homeView').classList.add('hidden'); mqCert=certHint; }catch(_){}
-        mqScreen='exam'; renderMCQ(); window.scrollTo(0,0); return;
+        mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
+        try{ if(!loadedExams[certHint] && typeof loadExam==='function') loadExam(certHint).catch(function(){}); }catch(_){}   // 문항을 띄운 뒤에 회차를 받는다 — 뒤로 가면 시험 화면이 비지 않게
+        return;
       }
       // 혹시 sets(기출)에 있으면 기존 경로로
       var cs2=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
       if(cs2){ var qb2=qbOf(cs2.cert), so2=qb2&&qb2[cs2.sub]; if(so2&&so2.sets){ for(var s2=0;s2<so2.sets.length;s2++){ var i2=so2.sets[s2].questions.findIndex(function(q){return q&&q.id===qid;}); if(i2!==-1){ resumeMcqExam(cs2.sub,s2); mqIdx=i2; mqShow={}; renderMCQ(); window.scrollTo(0,0); return; } } } }
     }catch(_){}
+    try{ if(!loadedExams[certHint] && typeof loadExam==='function'){ await loadExam(certHint); if(typeof mqScreen!=='undefined' && mqScreen==='home') renderMCQ(); } }catch(_){}   // 못 찾았으면 시험 화면이 비지 않게 회차를 받는다
     return;   // 시험엔 진입했으나 못 찾음 — 메인 유지
   }
   // cert 힌트가 생체 아닌 다른 시험이면, 생체 폴백 대신 그 시험 화면으로
@@ -1256,7 +1261,8 @@ loadManifest().then(async ()=>{
   let firstExam=null;
   try{ const a=JSON.parse(localStorage.getItem('certlab_mcq_active')||'null'); if(a&&a.cert) firstExam=a.cert; }catch(_){}
   if(!firstExam && typeof getLastCert==='function') firstExam=getLastCert();
-  if(firstExam && MANIFEST && (MANIFEST.exams||[]).some(e=>e.id===firstExam)){
+  /* [2026-10-29] 링크로 들어왔으면 미리 받기를 건너뛴다 — 링크가 먼저 그 시험을 「마지막 본 시험」으로 적어, 레벨업 문항 하나 보려는데 회차 40여 개를 같이 받아 느린 망을 막았다 */
+  if(firstExam && !(typeof _urlHasRoute==='function' && _urlHasRoute()) && MANIFEST && (MANIFEST.exams||[]).some(e=>e.id===firstExam)){
     try{ await loadExam(firstExam); }catch(e){ console.error('첫 시험 로드 실패',e); }
   }
   rebuildQid();
