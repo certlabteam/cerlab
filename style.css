@@ -8,7 +8,7 @@
 body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR','Segoe UI',sans-serif;min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;word-break:keep-all;overflow-wrap:break-word}
 :root{--line:#E8E4DF;--warn:#F59E0B;--info:#3B82F6;--accent:#1D9E75;--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#8A8A84;--text:#1F1F1D;--text2:#5C5C58;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:16px;--radius-sm:12px}
 .header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
-.event-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:12px;padding:4px 8px;line-height:1.2;flex-shrink:0;animation:ebPulse 2.2s ease-in-out infinite}
+.event-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:12px;padding:4px 8px;line-height:1.2;flex-shrink:0}
 @keyframes ebPulse{0%,100%{box-shadow:0 0 0 0 rgba(242,178,60,0)}50%{box-shadow:0 0 8px 1px rgba(242,178,60,.5)}}
 .event-badge .eb-l1{font-size:12px;font-weight:800;color:#A8650A;white-space:nowrap}
 .event-badge .eb-l2{font-size:12px;font-weight:700;color:#B5730C;white-space:nowrap}
@@ -1394,3 +1394,40 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .tr-row+.tr-row{margin-top:6px}
 .tr-row>b{flex:0 0 auto;min-width:40px;text-align:center;font-size:12px;font-weight:800;background:#E2E8F0;color:#334155;border-radius:4px;padding:0 5px;margin-top:2px}
 .tr-src{white-space:pre-wrap;color:#334155}
+/* [2026-10-29] 첫 화면 예시 카드 — 글씨 한 단계(크리스 「지금 랜딩 형태 내용 그대로」라 나머지는 예전 그대로) */
+.lp-card .lp-q{font-size:18px;line-height:28px}
+.lp-card .lp-tip{font-size:14px}
+.lp-card .lp-opt{font-size:16px}
+.lp-card .lp-exp{font-size:16px;line-height:24px}
+/* [2026-10-29] 문제 화면 글자 크기(모든 객관식 · 크리스 「글씨 키우는 기능은 넣자」) — 기본은 지금 그대로, 「가+」 크게(fs1)·아주 크게(fs2) */
+#mcqView #mcqRoot.fs1 .qtext,#mcqView #mcqRoot.fs1 .opt .otxt{font-size:16px}
+#mcqView #mcqRoot.fs1 .exp .note,#mcqView #mcqRoot.fs1 .exp-opts .eo-q,#mcqView #mcqRoot.fs1 .exp-opts .eo-a{font-size:16px}
+#mcqView #mcqRoot.fs2 .qtext,#mcqView #mcqRoot.fs2 .opt .otxt{font-size:18px}
+#mcqView #mcqRoot.fs2 .exp .note,#mcqView #mcqRoot.fs2 .exp-opts .eo-q,#mcqView #mcqRoot.fs2 .exp-opts .eo-a{font-size:18px}
+.mq-fsb{margin-left:auto;flex:0 0 auto;display:inline-flex;border:1.5px solid #185FA5;border-radius:999px;overflow:hidden}
+.mq-fsb button{font:inherit;font-size:14px;font-weight:800;color:#185FA5;background:#fff;border:0;padding:4px 10px;cursor:pointer;white-space:nowrap}
+.mq-fsb button+button{border-left:1px solid #B5D4F4}
+.mq-fsb button[disabled]{color:#B5D4F4;cursor:default}
+#mcqView #mcqRoot.fs1 .jaryo,#mcqView #mcqRoot.fs1 .qbul-t{font-size:16px}
+#mcqView #mcqRoot.fs2 .jaryo,#mcqView #mcqRoot.fs2 .qbul-t{font-size:18px}
+/* [2026-10-29] 첫 화면 예시 — 공간 아끼기(크리스 「예) 밑으로 개행」「문제 번호도 원을 쳐서 공간 많이 차지」): 예) 는 글 앞에 붙이고, 선지 번호는 동그라미 없이 */
+.lp-card .lp-ex span{display:inline;margin:0 4px 0 0}
+.lp-card .lp-opt .lp-n{width:auto;height:auto;background:none;border-radius:0;font-size:14px;color:#185FA5}
+.lp-card .lp-opt{padding:10px 12px}
+.lp-card .lp-o b.eo-red{color:#A32D2D}.lp-card .lp-o b.eo-grn{color:#0F6E56}.lp-card .lp-o .eo-badge{margin:0 4px 0 0}
+/* [2026-10-29] 머리줄 환급 배지·첫 화면 아이콘 조절(크리스 「아이콘이나 환급 이벤트 이런 거 좀 조절해서」) — 배지는 깜빡임 끄고 한 줄로 작게, 장점 아이콘은 작은 동그라미 칸에 */
+.event-badge{flex-direction:row;gap:4px;padding:4px 10px;border-radius:999px;border-width:1px}
+.event-badge .eb-l2{display:none}
+.lp-adv i{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:#EFF6FD;font-size:16px;line-height:1;margin-bottom:6px}
+/* [2026-10-29] 글자 크기 「가 − +」 — 헤더(#hdFs)·문제 머리줄 같은 모양 · 문제 밖 화면은 통째로 키운다 */
+.mq-fsb .fsb-l{display:flex;align-items:center;padding:0 2px 0 10px;font-size:14px;font-weight:800;color:#185FA5}
+.mq-fsb button{font-size:16px;line-height:1;padding:4px 8px}
+#hdFs{margin-left:0}
+html.fs1 #homeView,html.fs1 #communityView,html.fs1 #myPageView{zoom:1.1}
+html.fs2 #homeView,html.fs2 #communityView,html.fs2 #myPageView{zoom:1.2}
+@media (max-width:420px){.header{padding-left:16px;padding-right:16px;gap:8px}.header-right{gap:6px}#hdFs .fsb-l{padding-left:8px}#hdFs button{padding:4px 6px}.header .btn-login{padding:6px 12px}}
+html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 크게 볼 때 시험 칸 이름이 잘리지 않게 2칸씩(크리스 「시험칸 글자 줄여」) */
+/* 글자 크기 단추는 회색·하얀 바탕(크리스 「너무 다 파란색인데」 「가운데 하얀색」) */
+.mq-fsb{border-color:#D3D1C7;background:#fff}.mq-fsb .fsb-l,.mq-fsb button{color:#5F5E5A;background:#fff}.mq-fsb button+button{border-left-color:#E5E3DC}.mq-fsb button[disabled]{color:#C9C6BC}
+.lp-cta.lp-cta2{background:linear-gradient(135deg,#1D9E75,#0F6E56)}   /* 아래 「시험 고르고 무료로 시작」은 민트 — 위 단추(민트→남색)와 구분(크리스 「민트로?」 「바꿔봐」) */
+.event-badge{background:#fff;border-color:#D3D1C7}.event-badge .eb-l1{color:#0C447C;font-weight:500}   /* 환급 배지 · 굵기도 뺌(「환급 볼드도 빼」) · 그라데이션(음영) 뺌 — 크리스 「헤더 환급은 음영뺀게 낫다」 */

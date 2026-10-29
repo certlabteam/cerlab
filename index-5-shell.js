@@ -1409,22 +1409,46 @@ function lpGoList(which){
  *   (2026-10-14 실측: 10개 중 8개 — 내년 일정이 아직 안 들어옴) 날짜를 모르는 칸은 많이 찾는 시험으로 채우고 D-day 를 안 붙인다. */
 var LP_POP=['realestate1','realestate2','appraiser','housing','koreanhistory','sport2'];
 var LP_SHORT={realestate1:'중개사 1차',realestate2:'중개사 2차',appraiser:'감평사',housing:'주택관리사',koreanhistory:'한국사',sport2:'생체2급 필기'};
+var _lpOrder=null;
 function lpChips(){
+  if(_lpOrder===null && window.fetch){ _lpOrder={}; fetch('lp-order.json',{cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).then(function(d){ if(d&&Array.isArray(d.order)){ _lpOrder=d; lpChips(); } }).catch(function(){}); }
   var box=document.querySelector('#lpWrap .lp-chips'); if(!box) return;
   var ex=(MANIFEST&&MANIFEST.exams)||[], has=function(c){ return !ex.length || ex.some(function(e){ return e&&e.id===c; }); };
   var lab=function(c){ if(LP_SHORT[c]) return LP_SHORT[c]; var e=ex.filter(function(x){ return x&&x.id===c; })[0]; return (e&&(e.label||e.name))||c; };
   var now=Date.now(), dm=(typeof _examDateMs!=='undefined'&&_examDateMs)||{};
-  var dated=Object.keys(dm).filter(function(c){ return dm[c]>=now && has(c); }).sort(function(a,b){ return dm[a]-dm[b]; });
-  var list=dated.concat(LP_POP.filter(function(c){ return dated.indexOf(c)<0 && has(c); })).slice(0,6);
+  /* [2026-10-29 크리스 「밑에 시험 3개는 뭐야」] 날짜 모르는 칸은 고정 목록 말고 진척판 시험일 순서(lp-order.json · _도구/랜딩순서.py)로 채운다 */
+  var od=(_lpOrder&&_lpOrder.d)||{}; dm=Object.assign({},dm);
+  Object.keys(od).forEach(function(c){ var m=Date.parse(od[c]+'T00:00:00+09:00'); if(!(dm[c]>=now) && m>=now) dm[c]=m; });
+  var list=Object.keys(dm).filter(function(c){ return dm[c]>=now && has(c); }).sort(function(a,b){ return dm[a]-dm[b]; });
+  ((_lpOrder&&_lpOrder.order)||[]).concat(LP_POP).forEach(function(c){ if(list.indexOf(c)<0 && has(c) && !(od[c] && !(dm[c]>=now))) list.push(c); });   // 시험이 지난 칸은 뺀다
+  list=list.slice(0,6);
   box.innerHTML='<span>시험이 가까운 것부터 · 누르면 바로 시작</span>'+list.map(function(c){
     var d=dm[c]>=now ? Math.ceil((dm[c]-now)/864e5) : null;
     return '<button type="button" onclick="lpGo(\''+c+'\')">'+cmEsc(lab(c))+(d!=null?'<small>D-'+d+'</small>':'')+'</button>';
   }).join('');
 }
 function lpGo(cert){ lpTrack('LandingCTA', { which:'chip', cert:cert }); if(typeof enterCert==='function') enterCert(cert); }
+/* [2026-10-29] 「해설은 이렇게 나와요」를 날마다 바뀌는 예시(lp-sample.json · scripts/lp-sample.mjs 가 굽는다)로 — 크리스 「그날 기준 우선순위 높은 걸로 자동으로」.
+   없거나 깨지면 index.html 의 고정 예시 그대로. 판정 딱지는 발문 축(해당함/옳음…), 예시 표시는 「예)」. */
+function lpSampleLoad(){
+  var card=document.getElementById('lpSample'); if(!card || !window.fetch) return;
+  fetch('lp-sample.json',{cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).then(function(d){
+    if(!d || !Array.isArray(d.opts) || !Array.isArray(d.o) || typeof d.ans!=='number') return;
+    var esc=function(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+    var s=String(d.q||''), neg=/해당하지\s*않|해당되지\s*않|옳지\s*않|틀린|적절하지\s*않|아닌\s*것/.test(s), byFit=/해당/.test(s)||!/옳|틀|적절|맞는/.test(s);
+    var tag=function(i){ var isA=(i+1===d.ans), good=(isA!==neg); return byFit?(good?'해당함':'해당하지 않음'):(good?'옳음':'옳지 않음'); };
+    var h='<div class="lp-src">'+esc(d.setLabel||'')+' '+esc(d.certName||'')+(d.n?' '+d.n+'번':'')+' · 실제 해설 그대로</div><div class="lp-q">'+esc(d.q)+'</div><div class="lp-tip">답을 눌러 보세요 · 보기마다 해설과 예)가 나와요</div>';
+    d.opts.forEach(function(o,i){
+      h+='<button type="button" class="lp-opt" data-i="'+i+'" onclick="lpPick('+i+')"><span class="lp-n">'+(i+1)+'</span>'+esc(o)+'</button>'
+        +'<div class="lp-exp hidden" id="lpExp'+i+'"><div class="lp-o"><b class="'+(((i+1===d.ans)!==neg)?'eo-grn':'eo-red')+'">'+tag(i)+'</b>'+(i+1===d.ans?'<span class="eo-badge">✅ 정답</span>':'')+' '+esc(d.o[i])+'</div>'+(d.ex&&d.ex[i]?'<div class="lp-ex"><span>예)</span>'+esc(d.ex[i])+'</div>':'')+'</div>';
+    });
+    window._lpAns=d.ans-1; card.innerHTML=h;
+  }).catch(function(){});
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', lpSampleLoad); else lpSampleLoad();
 function lpPick(i){
   document.querySelectorAll('#lpWrap .lp-opt').forEach(function(b){
-    var k=+b.getAttribute('data-i'); b.classList.toggle('on', k===i); b.classList.toggle('ok', k===0); });
+    var k=+b.getAttribute('data-i'); b.classList.toggle('on', k===i); b.classList.toggle('ok', k===(window._lpAns!=null?window._lpAns:0)); });
   document.querySelectorAll('#lpWrap .lp-exp').forEach(function(x, k){ x.classList.toggle('hidden', k!==i); });
   lpTrack('LandingSample', { pick:i+1 });
 }

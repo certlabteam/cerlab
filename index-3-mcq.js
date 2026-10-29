@@ -206,6 +206,7 @@ function renderMCQ(){
       localStorage.setItem('certlab_mcq_active', JSON.stringify({cert:mqCert,sub:mqSub,set:mqSet,ts:Date.now()}));
     } else { localStorage.removeItem('certlab_mcq_active'); }
   }catch(_){}
+  var _r=(function(){
   if(mqScreen==='subjexam') return renderSubjExam(root);
   if(mqScreen==='lt2') return renderLt2(root);
   if(mqScreen==='lu2') return renderLu2(root);
@@ -213,6 +214,28 @@ function renderMCQ(){
   if(mqScreen==='oxlearn') return renderOxLearn(root);
   if(mqScreen==='luhist') return renderLuHist(root);
   return renderMcqHome(root);
+  })();
+  mqFontAfter(root);
+  return _r;
+}
+/* [2026-10-29] 문제 화면 글자 크기 단추 — 모든 객관식 시험(크리스 「지금 서비스에서 글씨 키우는 기능은 넣자」). 그리는 내용·단추·함수는 그대로.
+   #mcqRoot 에 글자 크기 fs1·fs2 를 걸고, 문제 화면 머리줄에 「가+」 단추를 하나 더한다. 기본(보통)은 지금 크기 그대로. */
+var MQ_FS_NAMES=['보통','크게','아주 크게'];
+function mqFsGet(){ try{ var v=+localStorage.getItem('certlab_fs'); return (v>=0&&v<=2)?v:0; }catch(_){ return 0; } }
+function mqFontStep(d){ var v=Math.max(0,Math.min(2,mqFsGet()+d));   /* [2026-10-29] 크리스 「크기 - + 버튼 넣자」 — 하나로 도는 단추 대신 작게·크게 둘 */ try{ localStorage.setItem('certlab_fs', String(v)); }catch(_){} var root=document.getElementById('mcqRoot'); if(root) mqFontAfter(root); mqFsSync(); }
+/* [2026-10-29] 크리스 「어디든 할 수 있게 헤더에」 「가 - + 이렇게」 — 헤더 단추(#hdFs)와 문제 머리줄이 같은 저장값. 문제 밖 화면은 zoom 으로 키운다(style.css html.fs1/fs2) */
+function mqFsHtml(fs){ return '<span class="fsb-l" aria-hidden="true">가</span><button type="button" aria-label="글자 작게" onclick="mqFontStep(-1)"'+(fs===0?' disabled':'')+'>−</button><button type="button" aria-label="글자 크게" onclick="mqFontStep(1)"'+(fs===2?' disabled':'')+'>+</button>'; }
+function mqFsSync(){ var fs=mqFsGet(), h=document.documentElement; h.classList.toggle('fs1', fs===1); h.classList.toggle('fs2', fs===2);
+  var b=document.getElementById('hdFs'); if(b){ b.innerHTML=mqFsHtml(fs); b.setAttribute('aria-label','글자 크기 '+MQ_FS_NAMES[fs]); } }
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', mqFsSync); else mqFsSync();
+function mqFontAfter(root){
+  var fs=mqFsGet();
+  root.classList.toggle('fs1', fs===1); root.classList.toggle('fs2', fs===2);
+  var old=root.querySelector('.mq-fsb'); if(old) old.remove();
+  if(mqScreen!=='exam') return;
+  var hd=root.querySelector('.exam-sticky .exam-hd'); if(!hd) return;
+  var w=document.createElement('span'); w.className='mq-fsb'; w.setAttribute('role','group'); w.setAttribute('aria-label','글자 크기 '+MQ_FS_NAMES[fs]);
+  w.innerHTML=mqFsHtml(fs); hd.appendChild(w);
 }
 /* 「오늘 할 일」 단추 — 회차는 들어올 때 다시 정렬돼 번호가 바뀐다(index-5-shell.js sets.sort). 그래서 이름으로 찾아 연다 */
 function mqTodoGo(id, enc, mode){

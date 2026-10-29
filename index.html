@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"></noscript><!-- 2026-10-22 글꼴 목록이 첫 화면 그리기를 막지 않게 — 받는 대로 바꿔 끼운다 -->
-<link rel="stylesheet" href="style.css?v=4d6a2466">
+<link rel="stylesheet" href="style.css?v=dd67f1ff">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -178,6 +178,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   </div>
   <div class="header-right">
     <button class="home-btn hidden" id="certSwitch" onclick="goHome()" aria-label="홈" title="홈">🏠<span id="certSwitchName" class="sr-hide"></span></button>
+    <span class="mq-fsb" id="hdFs" role="group" aria-label="글자 크기"></span>
     <a class="event-badge" id="eventBadge" href="#" style="display:none" aria-label="합격 환급 이벤트 보기">
       <span class="eb-l1">🎉 100% 환급</span>
       <span class="eb-l2">합격 이벤트</span>
@@ -220,13 +221,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
         <div><i>🎯</i><b>내 실력부터 확인하세요</b><span>가입 없이 풀고, 로그인 한 번이면 예상점수와 약점</span></div>
         <div><i>🔁</i><b>틀린 개념만 다시 훈련</b><span>약점 개념마다 변형문제 5개씩</span></div>
         <div><i>🧠</i><b>잊기 전에 다시 복습</b><span>망각곡선 자동 복습과 오답노트</span></div>
-        <div><i>🎧</i><b>내 방식대로 외우세요</b><span>OX·암기 코드·음성 학습부터 시험장 인쇄까지</span></div>
+        <div><i>🎧</i><b>내 방식대로 외우세요</b><span>OX·암기 코드로 내 방식대로</span></div>
         <div><i>🆓</i><b>무료로 풀어 보고 결정</b><span>레벨테스트와 기출 50문제는 무료</span></div>
       </div>
     </div>
     <div class="lp-sec">
       <div class="lp-label">해설은 이렇게 나와요</div>
-      <div class="lp-card">
+      <div class="lp-card" id="lpSample">
         <div class="lp-src">2025년 공인중개사 1차 기출(제36회) 2번 · 실제 해설 그대로</div>
         <div class="lp-q">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</div>
         <div class="lp-tip">보기를 눌러 보세요</div>
@@ -819,9 +820,9 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=a0b7f8f5"></script>
-<script defer src="index-3-mcq.js?v=d7e9cb18"></script>
+<script defer src="index-3-mcq.js?v=e8a02163"></script>
 <script defer src="index-4-learn.js?v=78c84360"></script>
-<script defer src="index-5-shell.js?v=0cbbbb3c"></script>
+<script defer src="index-5-shell.js?v=7ed9057b"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov as-page hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
