@@ -1431,3 +1431,4 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 .mq-fsb{border-color:#D3D1C7;background:#fff}.mq-fsb .fsb-l,.mq-fsb button{color:#5F5E5A;background:#fff}.mq-fsb button+button{border-left-color:#E5E3DC}.mq-fsb button[disabled]{color:#C9C6BC}
 .lp-cta.lp-cta2{background:linear-gradient(135deg,#1D9E75,#0F6E56)}   /* 아래 「시험 고르고 무료로 시작」은 민트 — 위 단추(민트→남색)와 구분(크리스 「민트로?」 「바꿔봐」) */
 .event-badge{background:#fff;border-color:#D3D1C7}.event-badge .eb-l1{color:#0C447C;font-weight:500}   /* 환급 배지 · 굵기도 뺌(「환급 볼드도 빼」) · 그라데이션(음영) 뺌 — 크리스 「헤더 환급은 음영뺀게 낫다」 */
+.lp-chips button small{font-weight:500}   /* D-day 굵기 뺌 — 크리스 「디데이표시도 음영빼자」 */

@@ -772,7 +772,7 @@ function passPlanHTML(cert, paid){
   var official=_officialExamMs(cert)!=null;
   var ddayChip;
   if(dl!=null){
-    ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:800;color:#C0392B;background:#FCEBEB;padding:2px 10px;border-radius:999px;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+((official && _examGuess[cert])?' 예상':'')+(official?'':' ✎')+'</span>';
+    ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:500;color:#C0392B;padding:2px 0;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+((official && _examGuess[cert])?' 예상':'')+(official?'':' ✎')+'</span>';
   } else {
     ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:12px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 10px;border-radius:999px;cursor:pointer">📅 시험일 등록 →</span>';
   }
