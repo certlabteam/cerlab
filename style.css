@@ -1441,3 +1441,6 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView #mcqRoot.ui-new.fs2 .exp .note,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-q,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-a{font-size:20px}
 .mq-fsb{margin-left:auto;flex:0 0 auto;font:inherit;font-size:14px;font-weight:700;color:#185FA5;background:#fff;border:1.5px solid #185FA5;border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
 .mq-fsb b{font-weight:900}.mq-fsb span{font-weight:500}
+#mcqView #mcqRoot.ui-new .jaryo,#mcqView #mcqRoot.ui-new .qbul-t{font-size:16px}
+#mcqView #mcqRoot.ui-new.fs1 .jaryo,#mcqView #mcqRoot.ui-new.fs1 .qbul-t{font-size:18px}
+#mcqView #mcqRoot.ui-new.fs2 .jaryo,#mcqView #mcqRoot.ui-new.fs2 .qbul-t{font-size:20px}
