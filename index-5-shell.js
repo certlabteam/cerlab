@@ -720,6 +720,13 @@ async function loadManifest(){
   if(typeof loadExamSchedules==='function') loadExamSchedules();   // 시험일 읽어 D-day 정렬(가까운 순, 없음/지남=맨밑)
   return MANIFEST;
 }
+/* [2026-10-29] 새 시험 안·문제 화면 시범 스위치 — manifest 시험 칸 newUi:true 인 시험만(처음엔 공인중개사 1차 · 크리스 「일단 공인중개사 1차만」).
+   ?newui=1 을 주소에 붙이면 다른 시험도 미리 볼 수 있다(관리·검토용). 꺼지면 예전 화면 그대로. */
+function uiNew(cert){
+  try{ if(/[?&]newui=1/.test(location.search)) return true; }catch(_){}
+  var ex=(MANIFEST && MANIFEST.exams || []).find(function(e){ return e && e.id===cert; });
+  return !!(ex && ex.newUi===true);
+}
 // ===== 매니페스트 주도 시험 등록 (1단계: 확장 전용) =====
 // 기존 하드코딩 7개(MCQ_EXAMS 등)는 그대로 두고, 매니페스트에만 있는 새 시험을 런타임 생성.
 // 호출 멱등 — 같은 cert는 한 번만 등록. additive(기존 이용권·설정 안 건드림).
