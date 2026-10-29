@@ -1426,3 +1426,6 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 html.fs1 #homeView,html.fs1 #communityView,html.fs1 #myPageView{zoom:1.1}
 html.fs2 #homeView,html.fs2 #communityView,html.fs2 #myPageView{zoom:1.2}
 @media (max-width:420px){.header{padding-left:16px;padding-right:16px;gap:8px}.header-right{gap:6px}#hdFs .fsb-l{padding-left:8px}#hdFs button{padding:4px 6px}.header .btn-login{padding:6px 12px}}
+html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 크게 볼 때 시험 칸 이름이 잘리지 않게 2칸씩(크리스 「시험칸 글자 줄여」) */
+/* 글자 크기 단추는 회색·하얀 바탕(크리스 「너무 다 파란색인데」 「가운데 하얀색」) */
+.mq-fsb{border-color:#D3D1C7;background:#fff}.mq-fsb .fsb-l,.mq-fsb button{color:#5F5E5A;background:#fff}.mq-fsb button+button{border-left-color:#E5E3DC}.mq-fsb button[disabled]{color:#C9C6BC}
