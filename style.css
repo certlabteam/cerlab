@@ -1422,25 +1422,16 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .lp-search:focus-within{border-color:#185FA5}
 .lp-search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;outline:none;color:#1F1F1D}
 .lp-rows.lp-qa div{display:block}
-/* [2026-10-29] 새 화면 시범(공인중개사 1차 · #mcqRoot.ui-new) — 그리는 내용은 같고 모양만: 글씨 한 단계 크게 · 오늘 할 일 카드 크게 · 글자 크기 단추(fs1·fs2) */
-#mcqRoot.ui-new .mcq-exam-title{font-size:24px}
-#mcqRoot.ui-new .sr-banner{margin:12px 14px 8px;padding:20px;border-radius:16px}
-#mcqRoot.ui-new .sr-banner-l b{font-size:20px}
-#mcqRoot.ui-new .sr-banner .sr-exam{font-size:16px}
-#mcqRoot.ui-new .sr-banner-go{font-size:16px;font-weight:800;background:#fff;color:#185FA5;border-radius:12px;padding:10px 14px}
-#mcqRoot.ui-new .oxl-banner{border-radius:16px}
-#mcqRoot.ui-new .sec-lbl{font-size:20px}
-#mcqRoot.ui-new .sec-desc{font-size:14px}
-#mcqRoot.ui-new .snm{font-size:16px}
-#mcqView #mcqRoot.ui-new .qtext{font-size:18px;white-space:pre-line}
-#mcqView #mcqRoot.ui-new .opt .otxt{font-size:18px}
-#mcqView #mcqRoot.ui-new .exp .note,#mcqView #mcqRoot.ui-new .exp-opts .eo-q,#mcqView #mcqRoot.ui-new .exp-opts .eo-a{font-size:16px}
-#mcqView #mcqRoot.ui-new.fs1 .qtext,#mcqView #mcqRoot.ui-new.fs1 .opt .otxt{font-size:20px}
-#mcqView #mcqRoot.ui-new.fs1 .exp .note,#mcqView #mcqRoot.ui-new.fs1 .exp-opts .eo-q,#mcqView #mcqRoot.ui-new.fs1 .exp-opts .eo-a{font-size:18px}
-#mcqView #mcqRoot.ui-new.fs2 .qtext,#mcqView #mcqRoot.ui-new.fs2 .opt .otxt{font-size:24px}
-#mcqView #mcqRoot.ui-new.fs2 .exp .note,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-q,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-a{font-size:20px}
+/* [2026-10-29] 새 화면 시범(공인중개사 1차 · #mcqRoot.ui-new) — 기본 크기·간격은 지금 화면 그대로(크리스 「공간 활용도가 많이 떨어지는데」), 「가+」 크게(fs1)·아주 크게(fs2)만 */
+#mcqView #mcqRoot.ui-new.fs1 .qtext,#mcqView #mcqRoot.ui-new.fs1 .opt .otxt{font-size:16px}
+#mcqView #mcqRoot.ui-new.fs1 .exp .note,#mcqView #mcqRoot.ui-new.fs1 .exp-opts .eo-q,#mcqView #mcqRoot.ui-new.fs1 .exp-opts .eo-a{font-size:16px}
+#mcqView #mcqRoot.ui-new.fs2 .qtext,#mcqView #mcqRoot.ui-new.fs2 .opt .otxt{font-size:18px}
+#mcqView #mcqRoot.ui-new.fs2 .exp .note,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-q,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-a{font-size:18px}
 .mq-fsb{margin-left:auto;flex:0 0 auto;font:inherit;font-size:14px;font-weight:700;color:#185FA5;background:#fff;border:1.5px solid #185FA5;border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
 .mq-fsb b{font-weight:900}.mq-fsb span{font-weight:500}
-#mcqView #mcqRoot.ui-new .jaryo,#mcqView #mcqRoot.ui-new .qbul-t{font-size:16px}
-#mcqView #mcqRoot.ui-new.fs1 .jaryo,#mcqView #mcqRoot.ui-new.fs1 .qbul-t{font-size:18px}
-#mcqView #mcqRoot.ui-new.fs2 .jaryo,#mcqView #mcqRoot.ui-new.fs2 .qbul-t{font-size:20px}
+#mcqView #mcqRoot.ui-new.fs1 .jaryo,#mcqView #mcqRoot.ui-new.fs1 .qbul-t{font-size:16px}
+#mcqView #mcqRoot.ui-new.fs2 .jaryo,#mcqView #mcqRoot.ui-new.fs2 .qbul-t{font-size:18px}
+/* [2026-10-29] 첫 화면 예시 — 공간 아끼기(크리스 「예) 밑으로 개행」「문제 번호도 원을 쳐서 공간 많이 차지」): 예) 는 글 앞에 붙이고, 선지 번호는 동그라미 없이 */
+.lp-card .lp-ex span{display:inline;margin:0 4px 0 0}
+.lp-card .lp-opt .lp-n{width:auto;height:auto;background:none;border-radius:0;font-size:14px;color:#185FA5}
+.lp-card .lp-opt{padding:10px 12px}
