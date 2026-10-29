@@ -215,19 +215,19 @@ function renderMCQ(){
   if(mqScreen==='luhist') return renderLuHist(root);
   return renderMcqHome(root);
   })();
-  mqUiNewAfter(root);
+  mqFontAfter(root);
   return _r;
 }
-/* [2026-10-29] 새 화면 시범(공인중개사 1차 · uiNew) — 그리는 내용·단추·함수는 그대로 두고 모양만 바꾼다(크리스 「기존 기능을 없애거나 변경한 거 없는지」).
-   #mcqRoot 에 ui-new 와 글자 크기 fs0~2 를 걸고, 문제 화면 머리줄에 「가+」 단추를 하나 더한다. 꺼진 시험은 아무것도 안 바뀐다. */
+/* [2026-10-29] 문제 화면 글자 크기 단추 — 모든 객관식 시험(크리스 「지금 서비스에서 글씨 키우는 기능은 넣자」). 그리는 내용·단추·함수는 그대로.
+   #mcqRoot 에 글자 크기 fs1·fs2 를 걸고, 문제 화면 머리줄에 「가+」 단추를 하나 더한다. 기본(보통)은 지금 크기 그대로. */
 var MQ_FS_NAMES=['보통','크게','아주 크게'];
 function mqFsGet(){ try{ var v=+localStorage.getItem('certlab_fs'); return (v>=0&&v<=2)?v:0; }catch(_){ return 0; } }
-function mqFontCycle(){ var v=(mqFsGet()+1)%3; try{ localStorage.setItem('certlab_fs', String(v)); }catch(_){} var root=document.getElementById('mcqRoot'); if(root) mqUiNewAfter(root); }
-function mqUiNewAfter(root){
-  var on=(typeof uiNew==='function') && uiNew(mqCert), fs=on?mqFsGet():0;
-  root.classList.toggle('ui-new', on); root.classList.toggle('fs1', on&&fs===1); root.classList.toggle('fs2', on&&fs===2);
+function mqFontCycle(){ var v=(mqFsGet()+1)%3; try{ localStorage.setItem('certlab_fs', String(v)); }catch(_){} var root=document.getElementById('mcqRoot'); if(root) mqFontAfter(root); }
+function mqFontAfter(root){
+  var fs=mqFsGet();
+  root.classList.toggle('fs1', fs===1); root.classList.toggle('fs2', fs===2);
   var old=root.querySelector('.mq-fsb'); if(old) old.remove();
-  if(!on || mqScreen!=='exam') return;
+  if(mqScreen!=='exam') return;
   var hd=root.querySelector('.exam-sticky .exam-hd'); if(!hd) return;
   var b=document.createElement('button'); b.type='button'; b.className='mq-fsb'; b.setAttribute('aria-label','글자 크기'); b.onclick=mqFontCycle;
   b.innerHTML='가<b>+</b> <span>'+MQ_FS_NAMES[fs]+'</span>'; hd.appendChild(b);

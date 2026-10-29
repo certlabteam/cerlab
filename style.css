@@ -1422,15 +1422,15 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .lp-search:focus-within{border-color:#185FA5}
 .lp-search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;outline:none;color:#1F1F1D}
 .lp-rows.lp-qa div{display:block}
-/* [2026-10-29] 새 화면 시범(공인중개사 1차 · #mcqRoot.ui-new) — 기본 크기·간격은 지금 화면 그대로(크리스 「공간 활용도가 많이 떨어지는데」), 「가+」 크게(fs1)·아주 크게(fs2)만 */
-#mcqView #mcqRoot.ui-new.fs1 .qtext,#mcqView #mcqRoot.ui-new.fs1 .opt .otxt{font-size:16px}
-#mcqView #mcqRoot.ui-new.fs1 .exp .note,#mcqView #mcqRoot.ui-new.fs1 .exp-opts .eo-q,#mcqView #mcqRoot.ui-new.fs1 .exp-opts .eo-a{font-size:16px}
-#mcqView #mcqRoot.ui-new.fs2 .qtext,#mcqView #mcqRoot.ui-new.fs2 .opt .otxt{font-size:18px}
-#mcqView #mcqRoot.ui-new.fs2 .exp .note,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-q,#mcqView #mcqRoot.ui-new.fs2 .exp-opts .eo-a{font-size:18px}
+/* [2026-10-29] 문제 화면 글자 크기(모든 객관식 · 크리스 「글씨 키우는 기능은 넣자」) — 기본은 지금 그대로, 「가+」 크게(fs1)·아주 크게(fs2) */
+#mcqView #mcqRoot.fs1 .qtext,#mcqView #mcqRoot.fs1 .opt .otxt{font-size:16px}
+#mcqView #mcqRoot.fs1 .exp .note,#mcqView #mcqRoot.fs1 .exp-opts .eo-q,#mcqView #mcqRoot.fs1 .exp-opts .eo-a{font-size:16px}
+#mcqView #mcqRoot.fs2 .qtext,#mcqView #mcqRoot.fs2 .opt .otxt{font-size:18px}
+#mcqView #mcqRoot.fs2 .exp .note,#mcqView #mcqRoot.fs2 .exp-opts .eo-q,#mcqView #mcqRoot.fs2 .exp-opts .eo-a{font-size:18px}
 .mq-fsb{margin-left:auto;flex:0 0 auto;font:inherit;font-size:14px;font-weight:700;color:#185FA5;background:#fff;border:1.5px solid #185FA5;border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
 .mq-fsb b{font-weight:900}.mq-fsb span{font-weight:500}
-#mcqView #mcqRoot.ui-new.fs1 .jaryo,#mcqView #mcqRoot.ui-new.fs1 .qbul-t{font-size:16px}
-#mcqView #mcqRoot.ui-new.fs2 .jaryo,#mcqView #mcqRoot.ui-new.fs2 .qbul-t{font-size:18px}
+#mcqView #mcqRoot.fs1 .jaryo,#mcqView #mcqRoot.fs1 .qbul-t{font-size:16px}
+#mcqView #mcqRoot.fs2 .jaryo,#mcqView #mcqRoot.fs2 .qbul-t{font-size:18px}
 /* [2026-10-29] 첫 화면 예시 — 공간 아끼기(크리스 「예) 밑으로 개행」「문제 번호도 원을 쳐서 공간 많이 차지」): 예) 는 글 앞에 붙이고, 선지 번호는 동그라미 없이 */
 .lp-card .lp-ex span{display:inline;margin:0 4px 0 0}
 .lp-card .lp-opt .lp-n{width:auto;height:auto;background:none;border-radius:0;font-size:14px;color:#185FA5}
