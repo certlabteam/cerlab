@@ -379,7 +379,7 @@ var CERT_IC_IMG={ gov9:'gov', bodybuilding:'medal', sport2:'medal', hesm:'dumbbe
   gov9labor:'hardhat', gov9prosec:'doc_seal', gov9railpol:'train', gov9tax:'receipt_calc', gov9welfare:'heart_hands', gov9stat:'barchart', gov9elect:'ballot', gov9probation:'dove',
   gov9agri:'rice', gov9arch:'crane', gov9chem:'flask', gov9civil:'bridge', gov9comp:'laptop', gov9elctron:'antenna', gov9elec:'lightning', gov9env:'recycle', gov9forest:'pine',
   gov9infosec:'shield_lock', gov9land:'garden', gov9mech:'gear', gov9safety:'siren', gov9data:'database' };
-function certIcHTML(id, emo){ var k=CERT_IC_IMG[id]; return k?'<img src="icons/'+k+'.png" alt="" class="cert-ic-img">':(emo||''); }
+function certIcHTML(id, emo){ var k=CERT_IC_IMG[id]; return k?'<img src="icons/'+k+'.png" loading="lazy" alt="" class="cert-ic-img">':(emo||''); }
 function _certIcon(cert){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&_pricingCfg.certIcon&&_pricingCfg.certIcon[cert]) || CERT_ICONS[cert] || ''; }
 function applyCertIcons(){ try{
   var ids=Object.keys(CERT_ICONS);
@@ -1798,6 +1798,10 @@ async function startCardPayment(){
   if(typeof pwaStandalone==='function' && pwaStandalone()) return;   // [2026-10-14] 앱(TWA)에서는 토스 결제를 띄우지 않는다 — 플레이 정책
   if(!currentUser){ showLoginPopup(); return; }
   if(!firebaseReady || !fbFunctions){ alert('지금은 결제를 열 수 없어요. 잠시 후 다시 시도해 주세요.'); return; }
+  if(typeof TossPayments!=='function'){   // [2026-10-29] 토스 결제 코드는 결제할 때 받는다(첫 화면에서 안 받음) — 받고 나서 확인
+    if(!document.getElementById('tossJs')){ var _tj=document.createElement('script'); _tj.id='tossJs'; _tj.src='https://js.tosspayments.com/v1/payment'; document.head.appendChild(_tj); }
+    for(var _tw=0; _tw<100 && typeof TossPayments!=='function'; _tw++) await new Promise(function(r){ setTimeout(r,100); });
+  }
   if(typeof TossPayments!=='function'){ alert('결제창을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.'); return; }
   /* ★★ [2026-10-12] 고른 값이 **지금 파는 표에 없으면** 표의 기본값으로 맞춘다.
    *   `selectedPlanDays` 의 초기값이 56(옛 주 단위)인데, 이용권 팝업을 한 번도 안 열면
@@ -1831,6 +1835,7 @@ async function startCardPayment(){
     if(!o.orderId || !(o.payableAmount>0)) throw new Error('주문을 만들지 못했어요.');
     // 3) 결제창 — 돌아올 곳은 우리 쪽 pay-result.html
     var back=location.origin+'/pay-result.html';
+    if(typeof TossPayments==='undefined' && !document.getElementById('tossJs')){ var _tj=document.createElement('script'); _tj.id='tossJs'; _tj.src='https://js.tosspayments.com/v1/payment'; document.head.appendChild(_tj); }   // 결제할 때 받는다(2026-10-29)
     if(typeof TossPayments==='undefined'){ await new Promise(function(res,rej){ var t=0, iv=setInterval(function(){ if(typeof TossPayments!=='undefined'){ clearInterval(iv); res(); } else if(++t>100){ clearInterval(iv); rej(new Error('결제 모듈을 못 불러왔어요. 잠시 뒤 다시 눌러 주세요.')); } },100); }); }   /* 2026-10-22 토스 스크립트를 async 로 미뤄서 — 다 받기 전에 눌렀으면 10초까지 기다린다 */
     await TossPayments(TOSS_CLIENT_KEY).requestPayment('카드', {
       amount:o.payableAmount,

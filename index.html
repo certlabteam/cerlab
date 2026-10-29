@@ -6,7 +6,7 @@
 <meta name="naver-site-verification" content="b0c8051f34afc49ab3bbe1f95955181cf9fdc615" />
 <meta name="google-site-verification" content="LQQCOeoEz2XvqNfY0Lmx0vGuf0gaS8iiyjxbZjIHorY" />
 <!-- Google Analytics (GA4) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RPZRZQ779J"></script>
+<script>/* [2026-10-29] 분석 코드는 페이지가 뜬 뒤 받는다 — 느린 망에서 앱 코드와 같이 받아 링크가 늦게 열렸다 */window.addEventListener('load',function(){setTimeout(function(){var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-RPZRZQ779J';document.head.appendChild(s);},1500);});</script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
@@ -78,7 +78,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 </script>
 <script defer src="subjective.js?v=43a6cf86"></script>
 <!-- [2026-09-17] 토스페이먼츠 결제창 SDK(v1). 서버 승인이 /v1/payments/confirm 이라 같은 v1 을 쓴다. -->
-<script async src="https://js.tosspayments.com/v1/payment"></script><!-- 2026-10-22 async: 결제할 때만 쓴다 — 첫 화면을 멈추고 받던 것 -->
+<!-- 2026-10-29 토스 결제 코드는 결제할 때 받는다(index-1-auth.js) — 예전엔 async 로 첫 화면과 같이 받았다 -->
 <style>
 /* [2026-09-02] 카카오 로그인 단추.
    구글 단추가 margin-bottom:12px 이라, 카카오도 같은 값을 줘서
@@ -200,7 +200,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <section class="lp hidden" id="lpWrap">
     <div class="lp-hero">
       <!-- [2026-10-14 크리스] 「캐릭터 들어갈 자리 만들어놓고」 — 캐릭터가 나오기 전엔 로고, 나오면 lp-char.png 로 갈아 끼운다(png 는 1년 캐시라 ?v 를 바꿀 것) -->
-      <img class="lp-char" id="lpChar" src="lp-char.png?v=f6f3df70" alt="서트랩 캐릭터" width="72" height="72">
+      <img class="lp-char" id="lpChar" src="lp-char-144.png" alt="서트랩 캐릭터" width="72" height="72">
       <div class="lp-pain">기출, 정답만 외우지 마세요</div>
       <h1 class="lp-h1">자격증 기출문제, 무료 레벨테스트로<br>내 점수부터 확인하세요</h1>
       <p class="lp-sub">62개 자격증 기출 · 보기마다 해설과 장면 예시&nbsp;· <span style="white-space:nowrap">망각곡선 자동 복습</span></p>
@@ -217,12 +217,12 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="lp-sec">
       <div class="lp-label">서트랩이 다른 점</div>
       <div class="lp-adv">
-        <div><i><img src="icons/book.png" alt="" width="24" height="24"></i><b>정답만 말하지 않아요</b><span>보기마다 해설과 실제 생활 속 예시까지</span></div>
-        <div><i><img src="icons/target.png" alt="" width="24" height="24"></i><b>내 실력부터 확인하세요</b><span>가입 없이 풀고, 로그인 한 번이면 예상점수와 약점</span></div>
-        <div><i><img src="icons/repeat.png" alt="" width="24" height="24"></i><b>틀린 개념만 다시 훈련</b><span>약점 개념마다 변형문제 5개씩</span></div>
-        <div><i><img src="icons/brain.png" alt="" width="24" height="24"></i><b>잊기 전에 다시 복습</b><span>망각곡선 자동 복습과 오답노트</span></div>
-        <div><i><img src="icons/headphones.png" alt="" width="24" height="24"></i><b>내 방식대로 외우세요</b><span>OX·암기 코드로 내 방식대로</span></div>
-        <div><i><img src="icons/gift.png" alt="" width="24" height="24"></i><b>무료로 풀어 보고 결정</b><span>레벨테스트와 기출 50문제는 무료</span></div>
+        <div><i><img src="icons/book.png" loading="lazy" alt="" width="24" height="24"></i><b>정답만 말하지 않아요</b><span>보기마다 해설과 실제 생활 속 예시까지</span></div>
+        <div><i><img src="icons/target.png" loading="lazy" alt="" width="24" height="24"></i><b>내 실력부터 확인하세요</b><span>가입 없이 풀고, 로그인 한 번이면 예상점수와 약점</span></div>
+        <div><i><img src="icons/repeat.png" loading="lazy" alt="" width="24" height="24"></i><b>틀린 개념만 다시 훈련</b><span>약점 개념마다 변형문제 5개씩</span></div>
+        <div><i><img src="icons/brain.png" loading="lazy" alt="" width="24" height="24"></i><b>잊기 전에 다시 복습</b><span>망각곡선 자동 복습과 오답노트</span></div>
+        <div><i><img src="icons/headphones.png" loading="lazy" alt="" width="24" height="24"></i><b>내 방식대로 외우세요</b><span>OX·암기 코드로 내 방식대로</span></div>
+        <div><i><img src="icons/gift.png" loading="lazy" alt="" width="24" height="24"></i><b>무료로 풀어 보고 결정</b><span>레벨테스트와 기출 50문제는 무료</span></div>
       </div>
     </div>
     <div class="lp-sec">
@@ -260,37 +260,37 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <div class="home-label" id="homeExamList">시험 선택</div>
   <div class="cert-cards">
     <div class="cert-card" id="certCard-bodybuilding" onclick="enterCert('bodybuilding')">
-      <div class="cert-ic"><img src="icons/medal.png" alt="" class="cert-ic-img"></div>
+      <div class="cert-ic"><img src="icons/medal.png" loading="lazy" alt="" class="cert-ic-img"></div>
       <div class="cert-meta"><div class="nm">스포츠지도사 실기·구술</div><div class="ds">구술시험 대비 플래시카드 · 5과목</div><span class="tag">플래시카드</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" id="certCard-appraiser" onclick="enterCert('appraiser')">
-      <div class="cert-ic"><img src="icons/ruler.png" alt="" class="cert-ic-img"></div>
+      <div class="cert-ic"><img src="icons/ruler.png" loading="lazy" alt="" class="cert-ic-img"></div>
       <div class="cert-meta"><div class="nm">감정평가사 1차</div><div class="ds">객관식 모의고사 · 5과목 460문항</div><span class="tag">모의고사</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" id="certCard-realestate1" onclick="enterCert('realestate1')">
-      <div class="cert-ic"><img src="icons/house.png" alt="" class="cert-ic-img"></div>
+      <div class="cert-ic"><img src="icons/house.png" loading="lazy" alt="" class="cert-ic-img"></div>
       <div class="cert-meta"><div class="nm">공인중개사 1차</div><div class="ds">객관식 · 부동산학개론 · 민법및민사특별법</div><span class="tag soon" id="certTag-realestate1">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" id="certCard-realestate2" onclick="enterCert('realestate2')">
-      <div class="cert-ic"><img src="icons/office_key.png" alt="" class="cert-ic-img"></div>
+      <div class="cert-ic"><img src="icons/office_key.png" loading="lazy" alt="" class="cert-ic-img"></div>
       <div class="cert-meta"><div class="nm">공인중개사 2차</div><div class="ds">객관식 · 중개사법령 · 공법 · 공시법령및세법</div><span class="tag soon" id="certTag-realestate2">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" id="certCard-koreanhistory" onclick="enterCert('koreanhistory')">
-      <div class="cert-ic"><img src="icons/scroll.png" alt="" class="cert-ic-img"></div>
+      <div class="cert-ic"><img src="icons/scroll.png" loading="lazy" alt="" class="cert-ic-img"></div>
       <div class="cert-meta"><div class="nm">한국사능력검정시험(심화)</div><div class="ds">객관식 5지선다 · 회차별 기출 50문항</div><span class="tag soon" id="certTag-koreanhistory">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" id="certCard-housing" onclick="enterCert('housing')">
-      <div class="cert-ic"><img src="icons/apt_wrench.png" alt="" class="cert-ic-img"></div>
+      <div class="cert-ic"><img src="icons/apt_wrench.png" loading="lazy" alt="" class="cert-ic-img"></div>
       <div class="cert-meta"><div class="nm">주택관리사 1차</div><div class="ds">객관식 · 회계원리 · 공동주택시설개론 · 민법</div><span class="tag soon" id="certTag-housing">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
     <div class="cert-card" id="certCard-housing2" onclick="enterCert('housing2')">
-      <div class="cert-ic"><img src="icons/apt_wrench.png" alt="" class="cert-ic-img"></div>
+      <div class="cert-ic"><img src="icons/apt_wrench.png" loading="lazy" alt="" class="cert-ic-img"></div>
       <div class="cert-meta"><div class="nm">주택관리사 2차</div><div class="ds">객관식+주관식 · 주택관리관계법규 · 공동주택관리실무</div><span class="tag soon" id="certTag-housing2">준비 중</span></div>
       <div class="cert-go">›</div>
     </div>
@@ -334,13 +334,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <div class="card-area" id="cardArea"></div>
 <div class="rate-row" id="rateRow"></div>
 <div class="bottom-bar">
-  <button class="bar-btn" id="modeNew" onclick="setSrMode('new')"><img src="icons/new_badge.png" alt="" class="bi">신규</button>
-  <button class="bar-btn" id="modeReview" onclick="setSrMode('review')"><img src="icons/repeat.png" alt="" class="bi">복습</button>
-  <button class="bar-btn" id="modeMix" onclick="setSrMode('mix')"><img src="icons/books.png" alt="" class="bi">혼합</button>
-  <button class="bar-btn" onclick="shuffle()"><img src="icons/dice.png" alt="" class="bi">섞기</button>
-  <button class="bar-btn" onclick="openPrintSheet()"><img src="icons/printer.png" alt="" class="bi">인쇄</button>
+  <button class="bar-btn" id="modeNew" onclick="setSrMode('new')"><img src="icons/new_badge.png" loading="lazy" alt="" class="bi">신규</button>
+  <button class="bar-btn" id="modeReview" onclick="setSrMode('review')"><img src="icons/repeat.png" loading="lazy" alt="" class="bi">복습</button>
+  <button class="bar-btn" id="modeMix" onclick="setSrMode('mix')"><img src="icons/books.png" loading="lazy" alt="" class="bi">혼합</button>
+  <button class="bar-btn" onclick="shuffle()"><img src="icons/dice.png" loading="lazy" alt="" class="bi">섞기</button>
+  <button class="bar-btn" onclick="openPrintSheet()"><img src="icons/printer.png" loading="lazy" alt="" class="bi">인쇄</button>
 </div>
-<div class="bb-dock" id="bbDock" role="toolbar" aria-label="카드 넘기기"><button type="button" id="bbDockPrev" onclick="navigate(-1)" aria-label="이전 카드">‹<span>이전</span></button><button type="button" id="bbDockPlay" onclick="ttsToggle()" aria-label="듣기"><img src="icons/speaker.png" alt="" class="bdi"><span>듣기</span></button><button type="button" class="bb-dock-main" onclick="flipCard()" aria-label="뒤집기">↻<span>뒤집기</span></button><button type="button" id="bbDockNext" onclick="navigate(1)" aria-label="다음 카드">›<span>다음</span></button><button type="button" id="bbDockFs" onclick="bbFontCycle()" aria-label="글자 크기">가<span id="bbDockFsN">보통</span></button></div>
+<div class="bb-dock" id="bbDock" role="toolbar" aria-label="카드 넘기기"><button type="button" id="bbDockPrev" onclick="navigate(-1)" aria-label="이전 카드">‹<span>이전</span></button><button type="button" id="bbDockPlay" onclick="ttsToggle()" aria-label="듣기"><img src="icons/speaker.png" loading="lazy" alt="" class="bdi"><span>듣기</span></button><button type="button" class="bb-dock-main" onclick="flipCard()" aria-label="뒤집기">↻<span>뒤집기</span></button><button type="button" id="bbDockNext" onclick="navigate(1)" aria-label="다음 카드">›<span>다음</span></button><button type="button" id="bbDockFs" onclick="bbFontCycle()" aria-label="글자 크기">가<span id="bbDockFsN">보통</span></button></div>
 </div>
 <div class="cert-view hidden" id="subjectiveView"><div id="subjHeader"></div><div id="subjMount"></div></div>
 <!-- AI 첨삭 기록 모달 -->
@@ -815,7 +815,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=1a04b209"></script>
+<script defer src="index-1-auth.js?v=e75f436b"></script>
 <script defer src="index-2-engine.js?v=42f84fca"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
