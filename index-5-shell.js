@@ -1409,20 +1409,24 @@ function lpGoList(which){
  *   (2026-10-14 실측: 10개 중 8개 — 내년 일정이 아직 안 들어옴) 날짜를 모르는 칸은 많이 찾는 시험으로 채우고 D-day 를 안 붙인다. */
 var LP_POP=['realestate1','realestate2','appraiser','housing','koreanhistory','sport2'];
 var LP_SHORT={realestate1:'중개사 1차',realestate2:'중개사 2차',appraiser:'감평사',housing:'주택관리사',koreanhistory:'한국사',sport2:'생체2급 필기'};
+var _lpOrder=null;
 function lpChips(){
+  if(_lpOrder===null && window.fetch){ _lpOrder={}; fetch('lp-order.json',{cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).then(function(d){ if(d&&Array.isArray(d.order)){ _lpOrder=d; lpChips(); } }).catch(function(){}); }
   var box=document.querySelector('#lpWrap .lp-chips'); if(!box) return;
   var ex=(MANIFEST&&MANIFEST.exams)||[], has=function(c){ return !ex.length || ex.some(function(e){ return e&&e.id===c; }); };
   var lab=function(c){ if(LP_SHORT[c]) return LP_SHORT[c]; var e=ex.filter(function(x){ return x&&x.id===c; })[0]; return (e&&(e.label||e.name))||c; };
   var now=Date.now(), dm=(typeof _examDateMs!=='undefined'&&_examDateMs)||{};
-  var dated=Object.keys(dm).filter(function(c){ return dm[c]>=now && has(c); }).sort(function(a,b){ return dm[a]-dm[b]; });
-  var list=dated.concat(LP_POP.filter(function(c){ return dated.indexOf(c)<0 && has(c); })).slice(0,6);
+  /* [2026-10-29 크리스 「밑에 시험 3개는 뭐야」] 날짜 모르는 칸은 고정 목록 말고 진척판 시험일 순서(lp-order.json · _도구/랜딩순서.py)로 채운다 */
+  var od=(_lpOrder&&_lpOrder.d)||{}; dm=Object.assign({},dm);
+  Object.keys(od).forEach(function(c){ var m=Date.parse(od[c]+'T00:00:00+09:00'); if(!(dm[c]>=now) && m>=now) dm[c]=m; });
+  var list=Object.keys(dm).filter(function(c){ return dm[c]>=now && has(c); }).sort(function(a,b){ return dm[a]-dm[b]; });
+  ((_lpOrder&&_lpOrder.order)||[]).concat(LP_POP).forEach(function(c){ if(list.indexOf(c)<0 && has(c) && !(od[c] && !(dm[c]>=now))) list.push(c); });   // 시험이 지난 칸은 뺀다
+  list=list.slice(0,6);
   box.innerHTML='<span>시험이 가까운 것부터 · 누르면 바로 시작</span>'+list.map(function(c){
     var d=dm[c]>=now ? Math.ceil((dm[c]-now)/864e5) : null;
     return '<button type="button" onclick="lpGo(\''+c+'\')">'+cmEsc(lab(c))+(d!=null?'<small>D-'+d+'</small>':'')+'</button>';
   }).join('');
 }
-/* [2026-10-29] 첫 화면 시험 찾기 — 아래 시험 카드 목록을 이름으로 거른다(새 자료 읽기 없음) */
-function lpFilter(v){ var k=String(v||'').replace(/\s+/g,'').toLowerCase(); var n=0; document.querySelectorAll('.cert-card').forEach(function(c){ if(c.dataset.lpDisp===undefined) c.dataset.lpDisp=c.style.display||''; var hit=!k || String(c.textContent||'').replace(/\s+/g,'').toLowerCase().indexOf(k)>=0; c.style.display=hit?c.dataset.lpDisp:'none'; if(hit && c.dataset.lpDisp!=='none') n++; });   /* 원래 숨긴 카드(숨김 시험·묶음)는 지워도 그대로 둔다 */ if(k){ var l=document.getElementById('homeExamList'); if(l&&l.scrollIntoView) l.scrollIntoView({block:'start',behavior:'smooth'}); } return n; }
 function lpGo(cert){ lpTrack('LandingCTA', { which:'chip', cert:cert }); if(typeof enterCert==='function') enterCert(cert); }
 /* [2026-10-29] 「해설은 이렇게 나와요」를 날마다 바뀌는 예시(lp-sample.json · scripts/lp-sample.mjs 가 굽는다)로 — 크리스 「그날 기준 우선순위 높은 걸로 자동으로」.
    없거나 깨지면 index.html 의 고정 예시 그대로. 판정 딱지는 발문 축(해당함/옳음…), 예시 표시는 「예)」. */

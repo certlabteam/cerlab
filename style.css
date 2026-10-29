@@ -8,7 +8,7 @@
 body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR','Segoe UI',sans-serif;min-height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;word-break:keep-all;overflow-wrap:break-word}
 :root{--line:#E8E4DF;--warn:#F59E0B;--info:#3B82F6;--accent:#1D9E75;--pink:#B5D4F4;--pink2:#85B7EB;--pink3:#185FA5;--peach:#B5D4F4;--peach2:#85B7EB;--mint:#9FE1CB;--mint2:#1D9E75;--purple:#9CC3EE;--purple2:#0C447C;--yellow:#FAC775;--bg:#FDF8F5;--surface:#FFFFFF;--surface2:#EFF6FD;--muted:#8A8A84;--text:#1F1F1D;--text2:#5C5C58;--wrong:#E24B4A;--wrong-bg:#FCEBEB;--radius:16px;--radius-sm:12px}
 .header{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #B5D4F4}
-.event-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:12px;padding:4px 8px;line-height:1.2;flex-shrink:0;animation:ebPulse 2.2s ease-in-out infinite}
+.event-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-decoration:none;background:linear-gradient(135deg,#FFF4E0,#FFE4C2);border:1.5px solid #F2B23C;border-radius:12px;padding:4px 8px;line-height:1.2;flex-shrink:0}
 @keyframes ebPulse{0%,100%{box-shadow:0 0 0 0 rgba(242,178,60,0)}50%{box-shadow:0 0 8px 1px rgba(242,178,60,.5)}}
 .event-badge .eb-l1{font-size:12px;font-weight:800;color:#A8650A;white-space:nowrap}
 .event-badge .eb-l2{font-size:12px;font-weight:700;color:#B5730C;white-space:nowrap}
@@ -1394,34 +1394,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .tr-row+.tr-row{margin-top:6px}
 .tr-row>b{flex:0 0 auto;min-width:40px;text-align:center;font-size:12px;font-weight:800;background:#E2E8F0;color:#334155;border-radius:4px;padding:0 5px;margin-top:2px}
 .tr-src{white-space:pre-wrap;color:#334155}
-/* [2026-10-29] 새 첫 화면(시안 certlab 컨텐츠/_디자인/시안_20261029) — 글씨 한 단계 크게 · 장점은 장면으로 · 기능 소개 · 시험 찾기 */
-.lp-hero .lp-pain{color:#5A6B7C;background:#fff;border:1px solid #E6EEF8}
-.lp-hero .lp-char{width:96px;height:96px}
-.lp-hero .lp-h1{font-size:30px;line-height:40px;font-weight:900;color:#1F1F1D}
-.lp-h1 em{font-style:normal;color:#185FA5}
-.lp-hero .lp-sub{font-size:16px;line-height:24px}
-.lp-hero .lp-free{font-size:14px}
-.lp .lp-label{font-size:20px}
+/* [2026-10-29] 첫 화면 예시 카드 — 글씨 한 단계(크리스 「지금 랜딩 형태 내용 그대로」라 나머지는 예전 그대로) */
 .lp-card .lp-q{font-size:18px;line-height:28px}
 .lp-card .lp-tip{font-size:14px}
 .lp-card .lp-opt{font-size:16px}
 .lp-card .lp-exp{font-size:16px;line-height:24px}
-.lp-scene{background:#fff;border:1px solid #E6EEF8;border-radius:16px;padding:16px;margin-top:8px}
-.lp-k{font-size:16px;font-weight:800;color:#1D9E75;margin-bottom:8px;word-break:keep-all}
-.lp-rows{background:#FDF8F5;border-radius:12px;padding:12px;font-size:14px;line-height:20px;display:flex;flex-direction:column;gap:6px;word-break:keep-all}
-.lp-rows div{display:flex;justify-content:space-between;gap:8px}
-.lp-rows .ok{color:#1D9E75}.lp-rows .no{color:#E24B4A}
-.lp-chip{display:inline-block;font-size:12px;font-weight:800;color:#185FA5;background:#EFF6FD;border-radius:999px;padding:2px 8px;margin-right:4px}
-.lp-chip.m{color:#1D9E75;background:#E6F4EF}
-.lp-scene p{font-size:14px;line-height:20px;color:#5A6B7C;margin:8px 0 0;word-break:keep-all}
-.lp-feat{background:#fff;border:1px solid #E6EEF8;border-radius:12px;padding:12px 16px;margin-top:8px}
-.lp-feat b{display:block;font-size:16px;color:#0C447C}
-.lp-feat span{display:block;font-size:14px;line-height:20px;color:#5A6B7C;margin-top:4px;word-break:keep-all}
-.lp-feat em{font-style:normal;color:#C0392B;font-weight:800}
-.lp-search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #E6EEF8;border-radius:12px;padding:12px 14px}
-.lp-search:focus-within{border-color:#185FA5}
-.lp-search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;outline:none;color:#1F1F1D}
-.lp-rows.lp-qa div{display:block}
 /* [2026-10-29] 문제 화면 글자 크기(모든 객관식 · 크리스 「글씨 키우는 기능은 넣자」) — 기본은 지금 그대로, 「가+」 크게(fs1)·아주 크게(fs2) */
 #mcqView #mcqRoot.fs1 .qtext,#mcqView #mcqRoot.fs1 .opt .otxt{font-size:16px}
 #mcqView #mcqRoot.fs1 .exp .note,#mcqView #mcqRoot.fs1 .exp-opts .eo-q,#mcqView #mcqRoot.fs1 .exp-opts .eo-a{font-size:16px}
@@ -1438,3 +1415,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .lp-card .lp-opt .lp-n{width:auto;height:auto;background:none;border-radius:0;font-size:14px;color:#185FA5}
 .lp-card .lp-opt{padding:10px 12px}
 .lp-card .lp-o b.eo-red{color:#A32D2D}.lp-card .lp-o b.eo-grn{color:#0F6E56}.lp-card .lp-o .eo-badge{margin:0 4px 0 0}
+/* [2026-10-29] 머리줄 환급 배지·첫 화면 아이콘 조절(크리스 「아이콘이나 환급 이벤트 이런 거 좀 조절해서」) — 배지는 깜빡임 끄고 한 줄로 작게, 장점 아이콘은 작은 동그라미 칸에 */
+.event-badge{flex-direction:row;gap:4px;padding:4px 10px;border-radius:999px;border-width:1px}
+.event-badge .eb-l2{display:none}
+.lp-adv i{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:#EFF6FD;font-size:16px;line-height:1;margin-bottom:6px}
