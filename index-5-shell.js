@@ -1424,9 +1424,27 @@ function lpChips(){
 /* [2026-10-29] 첫 화면 시험 찾기 — 아래 시험 카드 목록을 이름으로 거른다(새 자료 읽기 없음) */
 function lpFilter(v){ var k=String(v||'').replace(/\s+/g,'').toLowerCase(); var n=0; document.querySelectorAll('.cert-card').forEach(function(c){ if(c.dataset.lpDisp===undefined) c.dataset.lpDisp=c.style.display||''; var hit=!k || String(c.textContent||'').replace(/\s+/g,'').toLowerCase().indexOf(k)>=0; c.style.display=hit?c.dataset.lpDisp:'none'; if(hit && c.dataset.lpDisp!=='none') n++; });   /* 원래 숨긴 카드(숨김 시험·묶음)는 지워도 그대로 둔다 */ if(k){ var l=document.getElementById('homeExamList'); if(l&&l.scrollIntoView) l.scrollIntoView({block:'start',behavior:'smooth'}); } return n; }
 function lpGo(cert){ lpTrack('LandingCTA', { which:'chip', cert:cert }); if(typeof enterCert==='function') enterCert(cert); }
+/* [2026-10-29] 「해설은 이렇게 나와요」를 날마다 바뀌는 예시(lp-sample.json · scripts/lp-sample.mjs 가 굽는다)로 — 크리스 「그날 기준 우선순위 높은 걸로 자동으로」.
+   없거나 깨지면 index.html 의 고정 예시 그대로. 판정 딱지는 발문 축(해당함/옳음…), 예시 표시는 「예)」. */
+function lpSampleLoad(){
+  var card=document.getElementById('lpSample'); if(!card || !window.fetch) return;
+  fetch('lp-sample.json',{cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).then(function(d){
+    if(!d || !Array.isArray(d.opts) || !Array.isArray(d.o) || typeof d.ans!=='number') return;
+    var esc=function(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+    var s=String(d.q||''), neg=/해당하지\s*않|해당되지\s*않|옳지\s*않|틀린|적절하지\s*않|아닌\s*것/.test(s), byFit=/해당/.test(s)||!/옳|틀|적절|맞는/.test(s);
+    var tag=function(i){ var isA=(i+1===d.ans), good=(isA!==neg); return byFit?(good?'해당함':'해당하지 않음'):(good?'옳음':'옳지 않음'); };
+    var h='<div class="lp-src">'+esc(d.setLabel||'')+' '+esc(d.certName||'')+(d.n?' '+d.n+'번':'')+' · 실제 해설 그대로</div><div class="lp-q">'+esc(d.q)+'</div><div class="lp-tip">답을 눌러 보세요 · 보기마다 해설과 예)가 나와요</div>';
+    d.opts.forEach(function(o,i){
+      h+='<button type="button" class="lp-opt" data-i="'+i+'" onclick="lpPick('+i+')"><span class="lp-n">'+(i+1)+'</span>'+esc(o)+'</button>'
+        +'<div class="lp-exp hidden" id="lpExp'+i+'"><div class="lp-o"><b>'+tag(i)+(i+1===d.ans?' · 정답':'')+'</b> '+esc(d.o[i])+'</div>'+(d.ex&&d.ex[i]?'<div class="lp-ex"><span>예)</span>'+esc(d.ex[i])+'</div>':'')+'</div>';
+    });
+    window._lpAns=d.ans-1; card.innerHTML=h;
+  }).catch(function(){});
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', lpSampleLoad); else lpSampleLoad();
 function lpPick(i){
   document.querySelectorAll('#lpWrap .lp-opt').forEach(function(b){
-    var k=+b.getAttribute('data-i'); b.classList.toggle('on', k===i); b.classList.toggle('ok', k===0); });
+    var k=+b.getAttribute('data-i'); b.classList.toggle('on', k===i); b.classList.toggle('ok', k===(window._lpAns!=null?window._lpAns:0)); });
   document.querySelectorAll('#lpWrap .lp-exp').forEach(function(x, k){ x.classList.toggle('hidden', k!==i); });
   lpTrack('LandingSample', { pick:i+1 });
 }

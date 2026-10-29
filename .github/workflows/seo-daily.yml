@@ -49,9 +49,13 @@ jobs:
       # css·js 는 손대지 않으므로 버전 쿼리를 올릴 까닭이 없다. 한 번 넣어 봤다가
       # 자산이 그대로인데 해시만 26군데 뒤집혔다(윈도우 CRLF ↔ 러너 LF).
 
+      # [2026-10-29] 첫 화면 「해설은 이렇게 나와요」 예시를 우선순위 높은 완료 시험 문항으로(크리스). 실패해도 SEO 는 계속.
+      - name: 첫 화면 예시 문항
+        run: node scripts/lp-sample.mjs || true
+
       - name: 바뀐 것이 있으면 커밋
         run: |
-          git add -A seo sitemap.xml robots.txt llms.txt
+          git add -A seo sitemap.xml robots.txt llms.txt lp-sample.json
           if git diff --cached --quiet; then
             echo "바뀐 것이 없습니다. 넘어갑니다."
             exit 0
