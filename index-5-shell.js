@@ -1436,7 +1436,7 @@ function lpSampleLoad(){
     var h='<div class="lp-src">'+esc(d.setLabel||'')+' '+esc(d.certName||'')+(d.n?' '+d.n+'번':'')+' · 실제 해설 그대로</div><div class="lp-q">'+esc(d.q)+'</div><div class="lp-tip">답을 눌러 보세요 · 보기마다 해설과 예)가 나와요</div>';
     d.opts.forEach(function(o,i){
       h+='<button type="button" class="lp-opt" data-i="'+i+'" onclick="lpPick('+i+')"><span class="lp-n">'+(i+1)+'</span>'+esc(o)+'</button>'
-        +'<div class="lp-exp hidden" id="lpExp'+i+'"><div class="lp-o"><b>'+tag(i)+(i+1===d.ans?' · 정답':'')+'</b> '+esc(d.o[i])+'</div>'+(d.ex&&d.ex[i]?'<div class="lp-ex"><span>예)</span>'+esc(d.ex[i])+'</div>':'')+'</div>';
+        +'<div class="lp-exp hidden" id="lpExp'+i+'"><div class="lp-o"><b class="'+(((i+1===d.ans)!==neg)?'eo-grn':'eo-red')+'">'+tag(i)+'</b>'+(i+1===d.ans?'<span class="eo-badge">✅ 정답</span>':'')+' '+esc(d.o[i])+'</div>'+(d.ex&&d.ex[i]?'<div class="lp-ex"><span>예)</span>'+esc(d.ex[i])+'</div>':'')+'</div>';
     });
     window._lpAns=d.ans-1; card.innerHTML=h;
   }).catch(function(){});

@@ -1427,11 +1427,14 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView #mcqRoot.fs1 .exp .note,#mcqView #mcqRoot.fs1 .exp-opts .eo-q,#mcqView #mcqRoot.fs1 .exp-opts .eo-a{font-size:16px}
 #mcqView #mcqRoot.fs2 .qtext,#mcqView #mcqRoot.fs2 .opt .otxt{font-size:18px}
 #mcqView #mcqRoot.fs2 .exp .note,#mcqView #mcqRoot.fs2 .exp-opts .eo-q,#mcqView #mcqRoot.fs2 .exp-opts .eo-a{font-size:18px}
-.mq-fsb{margin-left:auto;flex:0 0 auto;font:inherit;font-size:14px;font-weight:700;color:#185FA5;background:#fff;border:1.5px solid #185FA5;border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
-.mq-fsb b{font-weight:900}.mq-fsb span{font-weight:500}
+.mq-fsb{margin-left:auto;flex:0 0 auto;display:inline-flex;border:1.5px solid #185FA5;border-radius:999px;overflow:hidden}
+.mq-fsb button{font:inherit;font-size:14px;font-weight:800;color:#185FA5;background:#fff;border:0;padding:4px 10px;cursor:pointer;white-space:nowrap}
+.mq-fsb button+button{border-left:1px solid #B5D4F4}
+.mq-fsb button[disabled]{color:#B5D4F4;cursor:default}
 #mcqView #mcqRoot.fs1 .jaryo,#mcqView #mcqRoot.fs1 .qbul-t{font-size:16px}
 #mcqView #mcqRoot.fs2 .jaryo,#mcqView #mcqRoot.fs2 .qbul-t{font-size:18px}
 /* [2026-10-29] 첫 화면 예시 — 공간 아끼기(크리스 「예) 밑으로 개행」「문제 번호도 원을 쳐서 공간 많이 차지」): 예) 는 글 앞에 붙이고, 선지 번호는 동그라미 없이 */
 .lp-card .lp-ex span{display:inline;margin:0 4px 0 0}
 .lp-card .lp-opt .lp-n{width:auto;height:auto;background:none;border-radius:0;font-size:14px;color:#185FA5}
 .lp-card .lp-opt{padding:10px 12px}
+.lp-card .lp-o b.eo-red{color:#A32D2D}.lp-card .lp-o b.eo-grn{color:#0F6E56}.lp-card .lp-o .eo-badge{margin:0 4px 0 0}
