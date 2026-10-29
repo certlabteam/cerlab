@@ -1421,6 +1421,8 @@ function lpChips(){
     return '<button type="button" onclick="lpGo(\''+c+'\')">'+cmEsc(lab(c))+(d!=null?'<small>D-'+d+'</small>':'')+'</button>';
   }).join('');
 }
+/* [2026-10-29] 첫 화면 시험 찾기 — 아래 시험 카드 목록을 이름으로 거른다(새 자료 읽기 없음) */
+function lpFilter(v){ var k=String(v||'').replace(/\s+/g,'').toLowerCase(); var n=0; document.querySelectorAll('.cert-card').forEach(function(c){ if(c.dataset.lpDisp===undefined) c.dataset.lpDisp=c.style.display||''; var hit=!k || String(c.textContent||'').replace(/\s+/g,'').toLowerCase().indexOf(k)>=0; c.style.display=hit?c.dataset.lpDisp:'none'; if(hit && c.dataset.lpDisp!=='none') n++; });   /* 원래 숨긴 카드(숨김 시험·묶음)는 지워도 그대로 둔다 */ if(k){ var l=document.getElementById('homeExamList'); if(l&&l.scrollIntoView) l.scrollIntoView({block:'start',behavior:'smooth'}); } return n; }
 function lpGo(cert){ lpTrack('LandingCTA', { which:'chip', cert:cert }); if(typeof enterCert==='function') enterCert(cert); }
 function lpPick(i){
   document.querySelectorAll('#lpWrap .lp-opt').forEach(function(b){

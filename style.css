@@ -1394,3 +1394,31 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .tr-row+.tr-row{margin-top:6px}
 .tr-row>b{flex:0 0 auto;min-width:40px;text-align:center;font-size:12px;font-weight:800;background:#E2E8F0;color:#334155;border-radius:4px;padding:0 5px;margin-top:2px}
 .tr-src{white-space:pre-wrap;color:#334155}
+/* [2026-10-29] 새 첫 화면(시안 certlab 컨텐츠/_디자인/시안_20261029) — 글씨 한 단계 크게 · 장점은 장면으로 · 기능 소개 · 시험 찾기 */
+.lp-hero .lp-pain{color:#5A6B7C;background:#fff;border:1px solid #E6EEF8}
+.lp-hero .lp-char{width:96px;height:96px}
+.lp-hero .lp-h1{font-size:30px;line-height:40px;font-weight:900;color:#1F1F1D}
+.lp-h1 em{font-style:normal;color:#185FA5}
+.lp-hero .lp-sub{font-size:16px;line-height:24px}
+.lp-hero .lp-free{font-size:14px}
+.lp .lp-label{font-size:20px}
+.lp-card .lp-q{font-size:18px;line-height:28px}
+.lp-card .lp-tip{font-size:14px}
+.lp-card .lp-opt{font-size:16px}
+.lp-card .lp-exp{font-size:16px;line-height:24px}
+.lp-scene{background:#fff;border:1px solid #E6EEF8;border-radius:16px;padding:16px;margin-top:8px}
+.lp-k{font-size:16px;font-weight:800;color:#1D9E75;margin-bottom:8px;word-break:keep-all}
+.lp-rows{background:#FDF8F5;border-radius:12px;padding:12px;font-size:14px;line-height:20px;display:flex;flex-direction:column;gap:6px;word-break:keep-all}
+.lp-rows div{display:flex;justify-content:space-between;gap:8px}
+.lp-rows .ok{color:#1D9E75}.lp-rows .no{color:#E24B4A}
+.lp-chip{display:inline-block;font-size:12px;font-weight:800;color:#185FA5;background:#EFF6FD;border-radius:999px;padding:2px 8px;margin-right:4px}
+.lp-chip.m{color:#1D9E75;background:#E6F4EF}
+.lp-scene p{font-size:14px;line-height:20px;color:#5A6B7C;margin:8px 0 0;word-break:keep-all}
+.lp-feat{background:#fff;border:1px solid #E6EEF8;border-radius:12px;padding:12px 16px;margin-top:8px}
+.lp-feat b{display:block;font-size:16px;color:#0C447C}
+.lp-feat span{display:block;font-size:14px;line-height:20px;color:#5A6B7C;margin-top:4px;word-break:keep-all}
+.lp-feat em{font-style:normal;color:#C0392B;font-weight:800}
+.lp-search{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #E6EEF8;border-radius:12px;padding:12px 14px}
+.lp-search:focus-within{border-color:#185FA5}
+.lp-search input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;outline:none;color:#1F1F1D}
+.lp-rows.lp-qa div{display:block}
