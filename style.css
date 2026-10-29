@@ -1432,7 +1432,5 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 .lp-cta.lp-cta2{background:linear-gradient(135deg,#1D9E75,#0F6E56)}   /* 아래 「시험 고르고 무료로 시작」은 민트 — 위 단추(민트→남색)와 구분(크리스 「민트로?」 「바꿔봐」) */
 .event-badge{background:#fff;border-color:#D3D1C7}.event-badge .eb-l1{color:#0C447C;font-weight:500}   /* 환급 배지 · 굵기도 뺌(「환급 볼드도 빼」) · 그라데이션(음영) 뺌 — 크리스 「헤더 환급은 음영뺀게 낫다」 */
 .lp-chips button small{font-weight:500}   /* D-day 굵기 뺌 — 크리스 「디데이표시도 음영빼자」 */
-/* [2026-10-29] 암기코드 듣기 🔊 — 상자 오른쪽 위 */
-.mn-box,.mnem-sec .learn-section-body{position:relative}.mn-say{float:right;margin:-6px 0 0 8px;width:32px;height:32px;border:1px solid #F5E6C8;border-radius:999px;background:#fff;font-size:16px;line-height:1;cursor:pointer}.mn-say.on{background:#FFF4E0;border-color:#F2B23C}
 .oxl-banner.au-banner{background:#fff;border:1px solid #E6EEF8;color:#0C447C}.au-banner .oxl-banner-sub{color:#5A6B7C}.au-banner .oxl-banner-ico{font-size:20px}   /* 암기코드 듣기 띠 — 흰 카드(빨강·초록 띠와 구분) */
 .au-banner{flex-direction:column;align-items:stretch;gap:10px}.au-top{display:flex;align-items:center;gap:10px;cursor:pointer}.au-top b{display:block}.au-opts{display:flex;gap:8px;flex-wrap:wrap}.au-seg{display:inline-flex;border:1px solid #D3D1C7;border-radius:999px;overflow:hidden;background:#fff}.au-seg button{font:inherit;font-size:12px;font-weight:500;color:#5F5E5A;background:#fff;border:0;padding:6px 12px;cursor:pointer}.au-seg button+button{border-left:1px solid #E5E3DC}.au-seg button.on{background:#185FA5;color:#fff;font-weight:700}

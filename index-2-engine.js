@@ -976,7 +976,7 @@ function buildMnemonic(card){
     var inner=cards.map(function(cd,i){
       var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
       var sep=i>0?'<div class="mnem-box-sep"></div>':'';
-      return sep+auMnBtn(cd.mid)+num+mnChantHTML(cd.code,'mnem-chant',cd.kind)+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'');
+      return sep+num+mnChantHTML(cd.code,'mnem-chant',cd.kind)+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'');
     }).join('');
     return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
       +'<div class="learn-section-body">'+inner+'</div></div>';
@@ -1352,19 +1352,13 @@ function auLoad(){ if(AU_IDX||!window.fetch) return; AU_IDX={}; fetch('audio/ind
 auLoad();
 function auSex(){ return ttsVoiceSel==='male'?'남':'여'; }
 function auHasCard(id){ var l=AU_IDX&&AU_IDX.card&&AU_IDX.card[SR_CERT]; return !!(l&&id&&l.indexOf(id)>=0); }
-function auStop(){ if(auEl){ try{ auEl.pause(); }catch(_){} auEl.onended=auEl.onerror=auEl.ontimeupdate=null; auEl=null; } document.querySelectorAll('.mn-say.on').forEach(function(b){ b.classList.remove('on'); b.textContent='🔊'; }); }
+function auStop(){ if(auEl){ try{ auEl.pause(); }catch(_){} auEl.onended=auEl.onerror=auEl.ontimeupdate=null; auEl=null; } }
 function auPlay(src, onend, ontime, onfail){   // onfail: 재생이 막히면(파일 없음·자동재생 막힘) — 없으면 onend
   auStop(); var a=new Audio(src); auEl=a;
   a.onended=function(){ if(auEl===a){ auEl=null; onend&&onend(); } };
   a.onerror=function(){ if(auEl===a){ auEl=null; (onfail||onend)&&(onfail||onend)(); } };
   if(ontime) a.ontimeupdate=function(){ ontime(a); };
   var p=a.play(); if(p&&p.catch) p.catch(function(){ if(auEl===a){ auEl=null; (onfail||onend)&&(onfail||onend)(); } });
-}
-function auMnBtn(mid){ return (mid&&AU_IDX&&AU_IDX._mn&&AU_IDX._mn[mid])?'<button type="button" class="mn-say" onclick="event.stopPropagation();auMnSay(this,\''+mid+'\')" aria-label="암기코드 듣기">🔊</button>':''; }
-function auMnSay(b, mid){
-  var on=b.classList.contains('on'); auStop(); if(on) return;
-  b.classList.add('on'); b.textContent='⏸';
-  auPlay('audio/mn/'+mid+'_'+auSex()+'.mp3', function(){ b.classList.remove('on'); b.textContent='🔊'; });
 }
 const TTS_RATES=[1.0,1.25,1.5];
 function ttsLoadVoices(){
