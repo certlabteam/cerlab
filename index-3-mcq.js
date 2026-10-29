@@ -272,7 +272,7 @@ function auMnBanner(cert){
   if(!all) return '';   // 푼 문제에 걸린 암기코드가 하나도 없으면 띠를 안 보인다
   var on=!!(auList && auEl), male=(typeof ttsVoiceSel!=='undefined'&&ttsVoiceSel==='male');
   var seg=function(a,b,isB,fa,fb){ return '<span class="au-seg"><button type="button" class="'+(isB?'':'on')+'" onclick="event.stopPropagation();'+fa+'">'+a+'</button><button type="button" class="'+(isB?'on':'')+'" onclick="event.stopPropagation();'+fb+'">'+b+'</button></span>'; };
-  return '<div class="oxl-banner au-banner"><div class="au-top" onclick="auMnAll()"><span class="oxl-banner-ico">'+(on?'⏸':'🎧')+'</span><div><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">'+(ids.length?('암기코드 '+ids.length+'개 · 누르면 차례로 들려줘요'):'틀린 문제에 걸린 암기코드가 없어요')+'</span></div></div>'
+  return '<div class="oxl-banner au-banner"><div class="au-top" onclick="auMnAll()"><span class="oxl-banner-ico">'+(on?'⏸':'<img src="icons/headphones.png" alt="" class="ic-img">')+'</span><div><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">'+(ids.length?('암기코드 '+ids.length+'개 · 누르면 차례로 들려줘요'):'틀린 문제에 걸린 암기코드가 없어요')+'</span></div></div>'
     +'<div class="au-opts">'+seg('틀린 문제','푼 문제 전체',sc==='all',"auScopeSet('wrong')","auScopeSet('all')")+seg('여성','남성',male,"auVoiceSet('female')","auVoiceSet('male')")+'</div></div>';
 }
 function auMnAll(){
@@ -342,9 +342,9 @@ function renderMcqHome(root){
   if(!_isSubjCert(mqCert)){
   var _oxN=oxLearnCount(mqCert);
   if(_oxN>0){
-    html+='<div class="oxl-banner" onclick="oxLearnGo()"><div class="oxl-banner-l"><span class="oxl-banner-ico">🔴</span><div><b>OX개념 학습하기</b><span class="oxl-banner-sub">내가 틀린 OX진술 '+_oxN+'개 · 진술별 개념 복습</span></div></div><div class="oxl-banner-go">'+_oxN+'개 →</div></div>';
+    html+='<div class="oxl-banner" onclick="oxLearnGo()"><div class="oxl-banner-l"><span class="oxl-banner-ico"><img src="icons/xmark.png" alt="" class="ic-img"></span><div><b>OX개념 학습하기</b><span class="oxl-banner-sub">내가 틀린 OX진술 '+_oxN+'개 · 진술별 개념 복습</span></div></div><div class="oxl-banner-go">'+_oxN+'개 →</div></div>';
   } else {
-    html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico">✅</span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
+    html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico"><img src="icons/check.png" alt="" class="ic-img"></span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
   }
   }
   html+=auMnBanner(mqCert);
@@ -815,14 +815,14 @@ function passPlanHTML(cert, paid){
   var head='<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #EDE4D9;position:sticky;top:0;z-index:2">'
     /* [2026-10-15 크리스 「합격 플랜인데 <- 버튼이 없어」] 머무는 화면은 페이지 꼴 — 왼쪽 ← 로 돌아간다(UIUX_모바일 4부 나 「‹ 이전」) */
     +'<button onclick="closePassPlan()" aria-label="뒤로" style="width:44px;height:44px;margin:-8px 0 -8px -8px;border:0;background:none;font-size:24px;color:#2C2C2A;cursor:pointer">←</button>'
-    +'<span style="font-size:18px;font-weight:800;color:#3C3C3A;flex:1;min-width:0">🎯 합격 플랜</span></div>';
+    +'<span style="font-size:18px;font-weight:800;color:#3C3C3A;flex:1;min-width:0"><img src="icons/lv_target.png" alt="" class="ic-img ic-in"> 합격 플랜</span></div>';
 
   var official=_officialExamMs(cert)!=null;
   var ddayChip;
   if(dl!=null){
     ddayChip='<span '+(official?'':'onclick="editExamDate(\''+cert+'\')" ')+'style="margin-left:auto;font-size:12px;font-weight:500;color:#C0392B;padding:2px 0;cursor:'+(official?'default':'pointer')+'">'+(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료')+((official && _examGuess[cert])?' 예상':'')+(official?'':' ✎')+'</span>';
   } else {
-    ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:12px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 10px;border-radius:999px;cursor:pointer">📅 시험일 등록 →</span>';
+    ddayChip='<span onclick="editExamDate(\''+cert+'\')" style="margin-left:auto;font-size:12px;font-weight:800;color:#185FA5;background:#EAF1FB;padding:4px 10px;border-radius:999px;cursor:pointer"><img src="icons/calendar.png" alt="" class="ic-img ic-in ic-sm"> 시험일 등록 →</span>';
   }
   /*
    * '하루 20문제' 가 박혀 있었다. 시험이 열흘 남았든 석 달 남았든 같은 숫자라

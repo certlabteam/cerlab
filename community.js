@@ -463,7 +463,11 @@ async function cmLoadNoticeBar(){
     if(!_cmNbItems.length){ bar.classList.add('hidden'); if(_cmNbTimer){clearInterval(_cmNbTimer);_cmNbTimer=null;} return; }
     bar.classList.remove('hidden');
     var roll=document.getElementById('cmNbRoll');
-    roll.innerHTML=_cmNbItems.map(function(it,i){ return '<div class="cm-nb-line'+(i===0?' on':'')+'">'+cmEsc(it.title)+'</div>'; }).join('');
+    /* [2026-10-29] 크리스 「롤린배너쪽도 다시 디자인」 — 줄 앞 이모지 대신 그록 아이콘 + 종류 이름표(공지·합격후기·혜택) */
+    var NB_KIND={notice:['speaker','공지'], review:['trophy','합격후기'], invite:['gift','혜택'], app:['gift','앱 혜택']};
+    roll.innerHTML=_cmNbItems.map(function(it,i){
+      var k=NB_KIND[it.board]||['speaker','공지'], t=String(it.title||'').replace(/^(?:[\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D\s]|[\uD83C-\uDBFF][\uDC00-\uDFFF])+/,'').replace(/^합격후기 · /,'');
+      return '<div class="cm-nb-line'+(i===0?' on':'')+'"><img src="icons/'+k[0]+'.png" alt="" class="cm-nb-ic"><span class="cm-nb-tag cm-nb-'+it.board+'">'+k[1]+'</span><span class="cm-nb-t">'+cmEsc(t)+'</span></div>'; }).join('');
     _cmNbIdx=0;
     if(_cmNbTimer){ clearInterval(_cmNbTimer); _cmNbTimer=null; }
     if(_cmNbItems.length>1){
