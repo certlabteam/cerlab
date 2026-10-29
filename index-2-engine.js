@@ -989,7 +989,7 @@ function buildLearnHTML(card){
   const L=card.learn;
   const panelInner=((L||card.img)?buildLearnPanel(L||{}, card.img):'')+mnHTML;
   if(!panelInner) return '';
-  const btnLabel=learnOpen?'📖 학습 노트 닫기 ▲':'📖 학습 노트 보기 ▼';
+  const btnLabel=learnOpen?'학습 노트 닫기 ▲':'학습 노트 보기 ▼';
   const panelDisplay=learnOpen?'':'display:none';
   return '<div class="learn-btn-wrap"><button class="learn-btn" onclick="toggleLearn()">'+btnLabel+'</button></div>'
     +'<div class="learn-panel" id="learnPanel" style="'+panelDisplay+'">'
@@ -1033,7 +1033,7 @@ function toggleLearn(){
   const panel=document.getElementById('learnPanel');
   const btns=document.querySelectorAll('.learn-btn');
   if(panel)panel.style.display=learnOpen?'block':'none';
-  btns.forEach(b=>{b.textContent=learnOpen?'📖 학습 노트 닫기 ▲':'📖 학습 노트 보기 ▼';});
+  btns.forEach(b=>{b.textContent=learnOpen?'학습 노트 닫기 ▲':'학습 노트 보기 ▼';});
 }
 
 function renderCard(){
@@ -1065,7 +1065,7 @@ function renderCard(){
   const starCount=card.star||0;
   const starDot=starCount>0?'<div class="star-dot">'+impLabel(starCount)+'</div>':'';
   const learnHTML=(function(){try{return buildLearnHTML(card);}catch(e){console.error('learn 렌더 오류',e);return '';}})();
-  const reportBtn=`<button class="report-btn" onclick="openReport()">⚠️ 문제 오류 신고</button>`;
+  const reportBtn=`<button class="report-btn" onclick="openReport()"><img src="icons/warning.png" alt="" class="ri">문제 오류 신고</button>`;
   const hintText=isFlipped?'':'탭해서 답 확인 💫';
   area.innerHTML=
     '<div class="card-navwrap">'
@@ -1091,15 +1091,15 @@ function renderCard(){
   if(rateRow){
     if(!isFlipped){
       rateRow.innerHTML=
-        '<button class="rb rb-wrong" onclick="flipCard()">❌<span>틀림</span><i>답 보기</i></button>'
-        +'<button class="rb rb-vague" onclick="flipCard()">🤔<span>애매함</span><i>답 보기</i></button>'
-        +'<button class="rb rb-ok" onclick="rate(2)">✅<span>정확함</span><i>바로 통과</i></button>';
+        '<button class="rb rb-wrong" onclick="flipCard()"><img src="icons/xmark.png" alt="" class="rbi"><span>틀림</span><i>답 보기</i></button>'
+        +'<button class="rb rb-vague" onclick="flipCard()"><img src="icons/question.png" alt="" class="rbi"><span>애매함</span><i>답 보기</i></button>'
+        +'<button class="rb rb-ok" onclick="rate(2)"><img src="icons/check.png" alt="" class="rbi"><span>정확함</span><i>바로 통과</i></button>';
     } else {
       const dl=srCorrectInterval((srGet(card)&&srGet(card).st||0)+1);
       rateRow.innerHTML=
-        '<button class="rb rb-wrong" onclick="rate(0)">❌<span>틀림</span><i>내일 다시</i></button>'
-        +'<button class="rb rb-vague" onclick="rate(1)">🤔<span>애매함</span><i>'+srVagueInterval()+'일 후</i></button>'
-        +'<button class="rb rb-ok" onclick="rate(2)">✅<span>정확함</span><i>'+dl+'일 후</i></button>';
+        '<button class="rb rb-wrong" onclick="rate(0)"><img src="icons/xmark.png" alt="" class="rbi"><span>틀림</span><i>내일 다시</i></button>'
+        +'<button class="rb rb-vague" onclick="rate(1)"><img src="icons/question.png" alt="" class="rbi"><span>애매함</span><i>'+srVagueInterval()+'일 후</i></button>'
+        +'<button class="rb rb-ok" onclick="rate(2)"><img src="icons/check.png" alt="" class="rbi"><span>정확함</span><i>'+dl+'일 후</i></button>';
     }
   }
 }
@@ -1426,6 +1426,7 @@ function ttsStop(){
 }
 function ttsUpdateBtn(){
   const b=document.getElementById('audioPlay'); if(b) b.innerHTML=ttsPlaying?'⏸ 정지':'🔊 듣기';
+  const d=document.getElementById('bbDockPlay'); if(d){ d.innerHTML='<img src="icons/'+(ttsPlaying?'pause':'speaker')+'.png" alt="" class="bdi"><span>'+(ttsPlaying?'정지':'듣기')+'</span>'; d.classList.toggle('on',ttsPlaying); }
   if(b) b.classList.toggle('on',ttsPlaying);
 }
 function ttsToggleVoice(){

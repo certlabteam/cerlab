@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"></noscript><!-- 2026-10-22 글꼴 목록이 첫 화면 그리기를 막지 않게 — 받는 대로 바꿔 끼운다 -->
-<link rel="stylesheet" href="style.css?v=f82e61f9">
+<link rel="stylesheet" href="style.css?v=976d5785">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -334,13 +334,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <div class="card-area" id="cardArea"></div>
 <div class="rate-row" id="rateRow"></div>
 <div class="bottom-bar">
-  <button class="bar-btn" id="modeNew" onclick="setSrMode('new')">🆕 신규</button>
-  <button class="bar-btn" id="modeReview" onclick="setSrMode('review')">🔁 복습</button>
-  <button class="bar-btn" id="modeMix" onclick="setSrMode('mix')">🔀 혼합</button>
-  <button class="bar-btn" onclick="shuffle()">🎲 섞기</button>
-  <button class="bar-btn" onclick="openPrintSheet()">🖨️ 인쇄</button>
+  <button class="bar-btn" id="modeNew" onclick="setSrMode('new')"><img src="icons/new_badge.png" alt="" class="bi">신규</button>
+  <button class="bar-btn" id="modeReview" onclick="setSrMode('review')"><img src="icons/repeat.png" alt="" class="bi">복습</button>
+  <button class="bar-btn" id="modeMix" onclick="setSrMode('mix')"><img src="icons/books.png" alt="" class="bi">혼합</button>
+  <button class="bar-btn" onclick="shuffle()"><img src="icons/dice.png" alt="" class="bi">섞기</button>
+  <button class="bar-btn" onclick="openPrintSheet()"><img src="icons/printer.png" alt="" class="bi">인쇄</button>
 </div>
-<div class="bb-dock" id="bbDock" role="toolbar" aria-label="카드 넘기기"><button type="button" id="bbDockPrev" onclick="navigate(-1)" aria-label="이전 카드">‹<span>이전</span></button><button type="button" onclick="ttsToggle()" aria-label="듣기">🔊<span>듣기</span></button><button type="button" class="bb-dock-main" onclick="flipCard()" aria-label="뒤집기">↻<span>뒤집기</span></button><button type="button" id="bbDockNext" onclick="navigate(1)" aria-label="다음 카드">›<span>다음</span></button><button type="button" id="bbDockFs" onclick="bbFontCycle()" aria-label="글자 크기">가<span id="bbDockFsN">보통</span></button></div>
+<div class="bb-dock" id="bbDock" role="toolbar" aria-label="카드 넘기기"><button type="button" id="bbDockPrev" onclick="navigate(-1)" aria-label="이전 카드">‹<span>이전</span></button><button type="button" id="bbDockPlay" onclick="ttsToggle()" aria-label="듣기"><img src="icons/speaker.png" alt="" class="bdi"><span>듣기</span></button><button type="button" class="bb-dock-main" onclick="flipCard()" aria-label="뒤집기">↻<span>뒤집기</span></button><button type="button" id="bbDockNext" onclick="navigate(1)" aria-label="다음 카드">›<span>다음</span></button><button type="button" id="bbDockFs" onclick="bbFontCycle()" aria-label="글자 크기">가<span id="bbDockFsN">보통</span></button></div>
 </div>
 <div class="cert-view hidden" id="subjectiveView"><div id="subjHeader"></div><div id="subjMount"></div></div>
 <!-- AI 첨삭 기록 모달 -->
@@ -816,7 +816,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
 <script defer src="index-1-auth.js?v=1a04b209"></script>
-<script defer src="index-2-engine.js?v=c7e3ce2a"></script>
+<script defer src="index-2-engine.js?v=42f84fca"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=a0b7f8f5"></script>
