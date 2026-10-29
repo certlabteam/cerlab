@@ -368,11 +368,23 @@ const ALL_CERTS = ['bodybuilding','appraiser','realestate1','realestate2','korea
 const CERT_LABELS = { bodybuilding:'스포츠지도사 실기·구술', appraiser:'감평사', realestate1:'중개사 1차', realestate2:'중개사 2차', koreanhistory:'한국사', housing:'주택관리사', housing2:'주택관리사 2차' };
 const CERT_FULLNAMES = { bodybuilding:'스포츠지도사 실기·구술', appraiser:'감정평가사', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', koreanhistory:'한국사능력검정시험(심화)', housing:'주택관리사 1차', housing2:'주택관리사 2차' };
 const CERT_ICONS = { bodybuilding:'💪', appraiser:'📐', realestate1:'🏠', realestate2:'🏢', koreanhistory:'📜', housing:'🏢', housing2:'🏢', sport2:'🏅', laborattorney1:'⚖️', firemanager1:'🧯', hesm:'🏃' };
+/* [2026-10-29] 그록 통일 아이콘(icons/*.png · _도구/그록/아이콘자르기.py) — 크리스 「서트랩 아이콘 그록이 통일되게」. 표에 없는 시험은 예전 이모지. */
+var CERT_IC_IMG={ gov9:'gov', bodybuilding:'medal', sport2:'medal', hesm:'dumbbell', nscacpt:'dumbbell', appraiser:'ruler', appraiser2:'ruler', realestate1:'house', realestate2:'office_key',
+  koreanhistory:'scroll', housing:'apt_wrench', housing2:'apt_wrench', laborattorney1:'scale', firemanager1:'extinguisher', fireedu:'extinguisher', franchise:'shop', consultant:'briefcase',
+  tourguide:'map_pin', tourinterp:'map_pin', hotelmgr:'hotel', hotelbiz:'hotel', hotelservice:'bell', ohadvisor:'stethoscope', waterfac1:'water', waterfac2:'water', waterfac3:'water',
+  curator:'frame', socialworker1:'heart_hands', surveyor:'anchor', measurer:'scale', tallyman:'checklist', logistics:'truck', lossadjuster:'rice', agriqual:'rice',
+  ycounselor1:'counsel', ycounselor2:'counsel', ycounselor3:'counsel', youthguide1:'compass', youthguide2:'compass', youthguide3:'compass', klat:'speech_book',
+  securityguard:'shield_check', patent:'bulb', fishery:'fish', adminagent:'doc_seal', auctioneer:'gavel', customs:'customs_box', heritage:'heritage_gate', isafety:'hardhat',
+  techadvisor:'tools', taxaccountant:'receipt_calc', gov9admin:'gov', gov9career:'briefcase', gov9correct:'scale', gov9customs:'customs_box', gov9edu:'school', gov9immig:'passport',
+  gov9labor:'hardhat', gov9prosec:'doc_seal', gov9railpol:'train', gov9tax:'receipt_calc', gov9welfare:'heart_hands', gov9stat:'barchart', gov9elect:'ballot', gov9probation:'dove',
+  gov9agri:'rice', gov9arch:'crane', gov9chem:'flask', gov9civil:'bridge', gov9comp:'laptop', gov9elctron:'antenna', gov9elec:'lightning', gov9env:'recycle', gov9forest:'pine',
+  gov9infosec:'shield_lock', gov9land:'garden', gov9mech:'gear', gov9safety:'siren', gov9data:'database' };
+function certIcHTML(id, emo){ var k=CERT_IC_IMG[id]; return k?'<img src="icons/'+k+'.png" alt="" class="cert-ic-img">':(emo||''); }
 function _certIcon(cert){ return (typeof _pricingCfg!=='undefined'&&_pricingCfg&&_pricingCfg.certIcon&&_pricingCfg.certIcon[cert]) || CERT_ICONS[cert] || ''; }
 function applyCertIcons(){ try{
   var ids=Object.keys(CERT_ICONS);
   if(typeof _pricingCfg!=='undefined'&&_pricingCfg&&_pricingCfg.certIcon) Object.keys(_pricingCfg.certIcon).forEach(function(k){ if(ids.indexOf(k)<0) ids.push(k); });
-  ids.forEach(function(id){ var ic=_certIcon(id); if(!ic) return; var card=document.getElementById('certCard-'+id); if(!card) return; var el=card.querySelector('.cert-ic'); if(el) el.textContent=ic; });
+  ids.forEach(function(id){ var ic=_certIcon(id); if(!ic) return; var card=document.getElementById('certCard-'+id); if(!card) return; var el=card.querySelector('.cert-ic'); if(el && !CERT_IC_IMG[id]) el.textContent=ic; });
 }catch(_){}}
 const LT_CERT_NAMES = { appraiser:'감정평가사 1차', realestate1:'공인중개사 1차', realestate2:'공인중개사 2차', housing:'주택관리사 1차', housing2:'주택관리사 2차', koreanhistory:'한국사 심화', sport2:'스포츠지도사 2급', laborattorney1:'공인노무사 1차', firemanager1:'소방시설관리사 1차', hesm:'건강운동관리사 1차' };
 function ltCertName(c){ return LT_CERT_NAMES[c] || (typeof CERT_FULLNAMES!=='undefined' && CERT_FULLNAMES[c]) || (typeof certLabel==='function'?certLabel(c):c); }

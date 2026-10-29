@@ -1434,3 +1434,5 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 .lp-chips button small{font-weight:500}   /* D-day 굵기 뺌 — 크리스 「디데이표시도 음영빼자」 */
 .oxl-banner.au-banner{background:#fff;border:1px solid #E6EEF8;color:#0C447C}.au-banner .oxl-banner-sub{color:#5A6B7C}.au-banner .oxl-banner-ico{font-size:20px}   /* 암기코드 듣기 띠 — 흰 카드(빨강·초록 띠와 구분) */
 .au-banner{flex-direction:column;align-items:stretch;gap:10px}.au-top{display:flex;align-items:center;gap:10px;cursor:pointer}.au-top b{display:block}.au-opts{display:flex;gap:8px;flex-wrap:wrap}.au-seg{display:inline-flex;border:1px solid #D3D1C7;border-radius:999px;overflow:hidden;background:#fff}.au-seg button{font:inherit;font-size:12px;font-weight:500;color:#5F5E5A;background:#fff;border:0;padding:6px 12px;cursor:pointer}.au-seg button+button{border-left:1px solid #E5E3DC}.au-seg button.on{background:#185FA5;color:#fff;font-weight:700}
+/* 그록 통일 아이콘 — 칸 바탕은 CSS, 그림은 투명 PNG */
+.cert-ic-img{width:40px;height:40px;display:block}.cert-gbody .cert-ic-img{width:32px;height:32px}.lp-adv i img{width:24px;height:24px;display:block}

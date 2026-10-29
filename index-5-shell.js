@@ -541,7 +541,7 @@ function openFirstRunPicker(){
     var ms = dm[id];
     var ic = c.querySelector('.cert-ic'), nm = c.querySelector('.nm'), ds = c.querySelector('.ds');
     return { id:id, i:i,
-             ic: ic ? ic.textContent : '📘',
+             ic: ic ? ic.innerHTML : '📘',   // 그록 아이콘(img)도 그대로 옮긴다
              nm: nm ? nm.textContent : id,
              ds: ds ? ds.textContent : '',
              k: (ms!=null && ms>=now) ? ms : Infinity };
@@ -561,7 +561,7 @@ function openFirstRunPicker(){
     '#frPickList{overflow-y:auto;padding:8px 10px 4px}',
     '.frPickIt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px 12px;border:0;background:transparent;font:inherit;cursor:pointer;border-radius:12px}',
     '.frPickIt:hover,.frPickIt:focus-visible{background:#EFF4F8;outline:none}',
-    '.frPickIt .ic{font-size:24px;flex:0 0 auto;line-height:1}',
+    '.frPickIt .ic{font-size:24px;flex:0 0 auto;line-height:1}.frPickIt .ic img{width:28px;height:28px;display:block}',
     '.frPickIt .tx{min-width:0}',
     '.frPickIt .n{font-size:16px;font-weight:700;color:#16202B}',
     '.frPickIt .d{font-size:14px;color:#6B7A88;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
@@ -621,7 +621,7 @@ function openFirstRunPicker(){
     }
     hit.forEach(function(r){
       var b  = document.createElement('button'); b.type='button'; b.className='frPickIt';
-      var ic = document.createElement('span'); ic.className='ic'; ic.textContent = r.ic;
+      var ic = document.createElement('span'); ic.className='ic'; ic.innerHTML = r.ic;
       var tx = document.createElement('span'); tx.className='tx';
       var n  = document.createElement('div'); n.className='n'; n.textContent = r.nm;
       var d  = document.createElement('div'); d.className='d'; d.textContent = r.ds;
@@ -882,7 +882,7 @@ function _certGroupEl(gid){
   el=document.createElement('div');
   el.className='cert-group'; el.id='certGroup-'+gid;
   el.innerHTML='<div class="cert-card cert-ghd" onclick="toggleCertGroup(\''+gid+'\')">'
-    +'<div class="cert-ic">'+g.icon+'</div>'
+    +'<div class="cert-ic">'+certIcHTML(gid,g.icon)+'</div>'
     +'<div class="cert-meta"><div class="nm">'+mqEsc(g.name)+'</div>'
     +'<div class="ds" id="certGroupDs-'+gid+'">'+mqEsc(g.desc||'')+'</div>'
     +'<span class="tag">모의고사</span></div>'
@@ -906,7 +906,7 @@ function _addCertCard(ex, type){
     var card=document.createElement('div');
     card.className='cert-card'; card.id='certCard-'+id;
     card.setAttribute('onclick', "enterCert('"+id+"')");
-    card.innerHTML='<div class="cert-ic">'+icon+'</div>'
+    card.innerHTML='<div class="cert-ic">'+certIcHTML(id,icon)+'</div>'
       +'<div class="cert-meta"><div class="nm">'+mqEsc(ex.name||id)+'</div><div class="ds">'+mqEsc(desc)+'</div>'
       +'<span class="'+tagCls+'" id="certTag-'+id+'">'+tagTxt+'</span></div>'
       +'<div class="cert-go">›</div>';
