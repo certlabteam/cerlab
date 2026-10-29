@@ -250,7 +250,9 @@ function mqTodoGo(id, enc, mode){
 var auQmn={}, auList=null, auPos=0;
 function auScope(){ try{ return localStorage.getItem('certlab_mnscope')==='all'?'all':'wrong'; }catch(_){ return 'wrong'; } }   // 크리스 「틀린거 푼문제 전체 셀렉버튼으로」
 function auQmnLoad(cert){
-  if(auQmn[cert]!==undefined || !window.fetch) return; auQmn[cert]=null;
+  if(auQmn[cert]!==undefined || !window.fetch) return;
+  if(typeof AU_IDX!=='undefined' && AU_IDX && Array.isArray(AU_IDX.qmn) && AU_IDX.qmn.indexOf(cert)<0){ auQmn[cert]={}; return; }   // 암기코드 녹음이 없는 시험은 안 받는다(404 막기)
+  auQmn[cert]=null;
   fetch('audio/qmn/'+cert+'.json').then(function(r){ return r.ok?r.json():{}; }).then(function(j){ auQmn[cert]=j||{};
     if(Object.keys(auQmn[cert]).length && mqCert===cert && mqScreen==='home' && typeof renderMCQ==='function') renderMCQ(); }).catch(function(){ auQmn[cert]={}; });
 }
