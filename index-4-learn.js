@@ -1090,7 +1090,7 @@ function mnBoxHTML(mn){
   if(!cards.length || cards[0].broken) return '';
   return cards.map(function(cd,i){
     var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
-    return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
+    return '<div class="mn-box'+(i>0?' mn-box-extra':'')+'">'+auMnBtn(cd.mid)+(i===0?'<div class="mn-ti">암기코드</div>':'')+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
   }).join('');
 }
 // exp.cpt(참조 개념) → 마스터 카드 펼침. 없으면 exp.c(인라인) 폴백. (개념 마스터 마이그레이션 이중지원)
@@ -1756,7 +1756,7 @@ function renderMcqExam(root){
         var extra=i>0?' mn-box-extra':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':'';
         if(cd.broken){ body+='<div class="mn-box'+extra+'">'+ti+'<div class="mn-code" style="color:#A32D2D;font-size:14px">⚠️ 참조 오류: mn://'+cd.ref+' (마스터에 없음)</div></div>'; return; }
         var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
-        body+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
+        body+='<div class="mn-box'+extra+'">'+auMnBtn(cd.mid)+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
       });
     }
     var _cc=_conceptCards(q); if(_cc.length){

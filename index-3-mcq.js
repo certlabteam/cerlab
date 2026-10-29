@@ -244,6 +244,45 @@ function mqTodoGo(id, enc, mode){
   if(j<0){ renderMCQ(); return; }
   if(mode==='resume') resumeMcqExam(id,j); else startMcqExam(id,j,'all');
 }
+/* [2026-10-29] 푼 문제 암기코드 모아 듣기 — 크리스 「암기코드는 푼 문제 모아서 듣는기능이 있어야되는데」.
+   audio/qmn/<시험>.json(문항 → 녹음된 암기코드, _도구/음성올리기.py 가 만든다)과 내 풀이 기록(srProgress)으로
+   틀린 문제 것부터, 최근 푼 순으로 이어 들려준다. 목소리는 생체 카드와 같은 여·남 설정(certlab_voice). */
+var auQmn={}, auList=null, auPos=0;
+function auQmnLoad(cert){
+  if(auQmn[cert]!==undefined || !window.fetch) return; auQmn[cert]=null;
+  fetch('audio/qmn/'+cert+'.json').then(function(r){ return r.ok?r.json():{}; }).then(function(j){ auQmn[cert]=j||{};
+    if(Object.keys(auQmn[cert]).length && mqCert===cert && mqScreen==='home' && typeof renderMCQ==='function') renderMCQ(); }).catch(function(){ auQmn[cert]={}; });
+}
+function auMnIds(cert){
+  var m=auQmn[cert]; if(!m) return [];
+  var pre=cert+'|', rows=[];
+  Object.keys(srProgress||{}).forEach(function(k){ if(k.indexOf(pre)!==0) return; var p=srProgress[k], id=k.slice(pre.length);
+    if(p && p.rc>0 && m[id]) rows.push({id:id, bad:(p.res===0||p.w)?1:0, lr:p.lr||0}); });
+  rows.sort(function(a,b){ return (b.bad-a.bad)||(b.lr-a.lr); });
+  var out=[], seen={}; rows.forEach(function(r){ m[r.id].forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push(x); } }); });
+  return out;
+}
+function auMnBanner(cert){
+  if(_isSubjCert(cert)) return '';
+  auQmnLoad(cert); var ids=auMnIds(cert); if(!ids.length) return '';
+  var on=!!(auList && auEl), sex=(typeof ttsVoiceSel!=='undefined'&&ttsVoiceSel==='male')?'👨 남성':'👩 여성';
+  return '<div class="oxl-banner au-banner" onclick="auMnAll()"><div class="oxl-banner-l"><span class="oxl-banner-ico">'+(on?'⏸':'🎧')+'</span><div><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">푼 문제에 나온 암기코드 '+ids.length+'개 · 틀린 문제 것부터</span></div></div>'
+    +'<button type="button" class="audio-opt" onclick="event.stopPropagation();auVoiceFlip()">'+sex+'</button></div>';
+}
+function auMnAll(){
+  if(auList && auEl){ auList=null; auStop(); renderMCQ(); return; }
+  auList=auMnIds(mqCert); auPos=0; if(!auList.length) return; auNext();
+}
+function auNext(){
+  if(!auList || auPos>=auList.length){ auList=null; if(mqScreen==='home') renderMCQ(); return; }
+  auPlay('audio/mn/'+auList[auPos]+'_'+auSex()+'.mp3', function(){ if(!auList) return; auPos++; setTimeout(auNext, 700); }, null, function(){ auList=null; if(mqScreen==='home') renderMCQ(); });
+  if(mqScreen==='home') renderMCQ();
+}
+function auVoiceFlip(){
+  ttsVoiceSel = ttsVoiceSel==='female'?'male':'female';
+  try{ localStorage.setItem('certlab_voice', ttsVoiceSel); }catch(_){}
+  if(auList && auEl){ var l=auList, i=auPos; auStop(); auList=l; auPos=i; auNext(); } else if(mqScreen==='home') renderMCQ();
+}
 function renderMcqHome(root){
   let html='';
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name) || (_isSubjCert(mqCert)?certLabel(mqCert):'') || '';
@@ -300,6 +339,7 @@ function renderMcqHome(root){
     html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico">✅</span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
   }
   }
+  html+=auMnBanner(mqCert);
   html+='<div class="sec-lbl">기출 문제</div><div class="sec-desc">회차별로 실제 시험에 나온 문제입니다.</div>';   // [2026-10-19] 크리스 「관광법규 위에 기출 문제 라고 타이틀 넣고」 — 아래 「레벨업 문제」와 짝
   curOrder().forEach(id=>{
     const s=curQB()[id]; const open=!!mqOpen[id];

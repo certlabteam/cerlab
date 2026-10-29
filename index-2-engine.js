@@ -945,7 +945,7 @@ function mnResolve(mn){
   }
   if(typeof mn==='string' && mn.indexOf('mn://')===0){
     var id=mn.slice(5), m=_mnemCache[id];
-    if(m) return norm(m);
+    if(m){ var _n=norm(m); _n.id=id; return _n; }
     _mMiss('mnemonics', id);
     return {boxes:[], code:'', desc:'', broken:_mnemLoaded, ref:id};   // 로드 완료 후에도 없으면 깨진 참조
   }
@@ -961,7 +961,7 @@ function mnBoxCards(_r){
   boxes.forEach(function(bx,bi){
     var code=bx.code||'', desc=bx.desc||'';
     if(!code && !desc) return;
-    cards.push({code:code, desc:desc, kind:_r.kind, num:''});
+    cards.push({code:code, desc:desc, kind:_r.kind, num:'', mid:(cards.length===0&&_r.id)||''});
   });
   return cards;
 }
@@ -976,7 +976,7 @@ function buildMnemonic(card){
     var inner=cards.map(function(cd,i){
       var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
       var sep=i>0?'<div class="mnem-box-sep"></div>':'';
-      return sep+num+mnChantHTML(cd.code,'mnem-chant',cd.kind)+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'');
+      return sep+auMnBtn(cd.mid)+num+mnChantHTML(cd.code,'mnem-chant',cd.kind)+'<span class="mnem-code">'+cd.code+'</span>'+(cd.desc?'<div class="mnem-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'');
     }).join('');
     return '<div class="learn-section mnem-sec"><div class="learn-section-title mnem-ti">암기코드</div>'
       +'<div class="learn-section-body">'+inner+'</div></div>';
@@ -1344,6 +1344,28 @@ function refresh(){buildBar();buildStarBar();updateStats();updateSrBanner();upda
 
 /* ===== 음성 듣기 (브라우저 TTS) ===== */
 let ttsPlaying=false, ttsRate=1.0, ttsVoiceSel='female', ttsKoVoices=[];
+try{ if(localStorage.getItem('certlab_voice')==='male') ttsVoiceSel='male'; }catch(_){}
+/* [2026-10-29] 미리 녹음한 목소리(구글 Chirp3 HD 여 Aoede · 남 Orus) — 크리스 「음성작업 끝 단추만들어 넣어」.
+   audio/index.json 에 있는 것만 mp3 로 틀고, 없으면 예전처럼 브라우저 TTS. 파일은 _도구/음성올리기.py 가 옮긴다. */
+var AU_IDX=null, auEl=null;
+function auLoad(){ if(AU_IDX||!window.fetch) return; AU_IDX={}; fetch('audio/index.json').then(function(r){ return r.ok?r.json():{}; }).then(function(j){ AU_IDX=j||{}; AU_IDX._mn={}; (AU_IDX.mn||[]).forEach(function(x){ AU_IDX._mn[x]=1; }); }).catch(function(){}); }
+auLoad();
+function auSex(){ return ttsVoiceSel==='male'?'남':'여'; }
+function auHasCard(id){ var l=AU_IDX&&AU_IDX.card&&AU_IDX.card[SR_CERT]; return !!(l&&id&&l.indexOf(id)>=0); }
+function auStop(){ if(auEl){ try{ auEl.pause(); }catch(_){} auEl.onended=auEl.onerror=auEl.ontimeupdate=null; auEl=null; } document.querySelectorAll('.mn-say.on').forEach(function(b){ b.classList.remove('on'); b.textContent='🔊'; }); }
+function auPlay(src, onend, ontime, onfail){   // onfail: 재생이 막히면(파일 없음·자동재생 막힘) — 없으면 onend
+  auStop(); var a=new Audio(src); auEl=a;
+  a.onended=function(){ if(auEl===a){ auEl=null; onend&&onend(); } };
+  a.onerror=function(){ if(auEl===a){ auEl=null; (onfail||onend)&&(onfail||onend)(); } };
+  if(ontime) a.ontimeupdate=function(){ ontime(a); };
+  var p=a.play(); if(p&&p.catch) p.catch(function(){ if(auEl===a){ auEl=null; (onfail||onend)&&(onfail||onend)(); } });
+}
+function auMnBtn(mid){ return (mid&&AU_IDX&&AU_IDX._mn&&AU_IDX._mn[mid])?'<button type="button" class="mn-say" onclick="event.stopPropagation();auMnSay(this,\''+mid+'\')" aria-label="암기코드 듣기">🔊</button>':''; }
+function auMnSay(b, mid){
+  var on=b.classList.contains('on'); auStop(); if(on) return;
+  b.classList.add('on'); b.textContent='⏸';
+  auPlay('audio/mn/'+mid+'_'+auSex()+'.mp3', function(){ b.classList.remove('on'); b.textContent='🔊'; });
+}
 const TTS_RATES=[1.0,1.25,1.5];
 function ttsLoadVoices(){
   try{ ttsKoVoices=(speechSynthesis.getVoices()||[]).filter(v=>/ko(-|_)?KR|korean|한국/i.test(v.lang+' '+v.name)); }catch(_){}
@@ -1369,8 +1391,8 @@ function ttsSpeak(text, onend){
   speechSynthesis.speak(u);
 }
 function ttsToggle(){
-  if(!('speechSynthesis' in window)){ alert('이 브라우저는 음성 읽기를 지원하지 않습니다.'); return; }
   if(ttsPlaying){ ttsStop(); return; }
+  if(!('speechSynthesis' in window) && !(filtered.length && auHasCard(filtered[current]&&filtered[current].id))){ alert('이 브라우저는 음성 읽기를 지원하지 않습니다.'); return; }
   if(!filtered.length) return;
   ttsPlaying=true; ttsUpdateBtn();
   ttsPlayCurrent();
@@ -1381,6 +1403,14 @@ function ttsPlayCurrent(){
   const card=filtered[current];
   // 화면도 답면으로 보여주며 진행
   isFlipped=false; renderCard();
+  if(auHasCard(card.id)){   // 질문 → 쉼 → 답이 한 파일. 질문 길이만큼 지나면 답면으로 넘긴다
+    const qn=(card.q||'').length, an=(card.a||'').length, cut=qn/Math.max(1,qn+an);
+    auPlay('audio/card/'+SR_CERT+'/'+card.id+'_'+auSex()+'.mp3', ()=>{
+      if(!ttsPlaying) return;
+      if(current<filtered.length-1){ current++; setTimeout(ttsPlayCurrent, 600); } else { ttsStop(); }
+    }, a=>{ if(!isFlipped && a.duration && a.currentTime>a.duration*cut){ isFlipped=true; renderCard(); } }, ()=>ttsStop());
+    return;
+  }
   ttsSpeak(card.q, ()=>{
     if(!ttsPlaying) return;
     setTimeout(()=>{
@@ -1396,6 +1426,7 @@ function ttsPlayCurrent(){
 }
 function ttsStop(){
   ttsPlaying=false;
+  auStop();
   try{ speechSynthesis.cancel(); }catch(_){}
   ttsUpdateBtn();
 }
@@ -1405,6 +1436,7 @@ function ttsUpdateBtn(){
 }
 function ttsToggleVoice(){
   ttsVoiceSel = ttsVoiceSel==='female'?'male':'female';
+  try{ localStorage.setItem('certlab_voice', ttsVoiceSel); }catch(_){}
   const b=document.getElementById('audioVoice'); if(b) b.innerHTML=ttsVoiceSel==='female'?'👩 여성':'👨 남성';
   if(ttsPlaying){ ttsStop(); }   // 목소리 바꾸면 정지(다시 재생)
 }
