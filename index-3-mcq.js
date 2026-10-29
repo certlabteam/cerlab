@@ -248,26 +248,32 @@ function mqTodoGo(id, enc, mode){
    audio/qmn/<시험>.json(문항 → 녹음된 암기코드, _도구/음성올리기.py 가 만든다)과 내 풀이 기록(srProgress)으로
    틀린 문제 것부터, 최근 푼 순으로 이어 들려준다. 목소리는 생체 카드와 같은 여·남 설정(certlab_voice). */
 var auQmn={}, auList=null, auPos=0;
+function auScope(){ try{ return localStorage.getItem('certlab_mnscope')==='all'?'all':'wrong'; }catch(_){ return 'wrong'; } }   // 크리스 「틀린거 푼문제 전체 셀렉버튼으로」
 function auQmnLoad(cert){
   if(auQmn[cert]!==undefined || !window.fetch) return; auQmn[cert]=null;
   fetch('audio/qmn/'+cert+'.json').then(function(r){ return r.ok?r.json():{}; }).then(function(j){ auQmn[cert]=j||{};
     if(Object.keys(auQmn[cert]).length && mqCert===cert && mqScreen==='home' && typeof renderMCQ==='function') renderMCQ(); }).catch(function(){ auQmn[cert]={}; });
 }
-function auMnIds(cert){
+function auMnIds(cert, sc){
   var m=auQmn[cert]; if(!m) return [];
   var pre=cert+'|', rows=[];
   Object.keys(srProgress||{}).forEach(function(k){ if(k.indexOf(pre)!==0) return; var p=srProgress[k], id=k.slice(pre.length);
     if(p && p.rc>0 && m[id]) rows.push({id:id, bad:(p.res===0||p.w)?1:0, lr:p.lr||0}); });
+  if((sc||auScope())==='wrong') rows=rows.filter(function(r){ return r.bad; });
   rows.sort(function(a,b){ return (b.bad-a.bad)||(b.lr-a.lr); });
   var out=[], seen={}; rows.forEach(function(r){ m[r.id].forEach(function(x){ if(!seen[x]){ seen[x]=1; out.push(x); } }); });
   return out;
 }
 function auMnBanner(cert){
   if(_isSubjCert(cert)) return '';
-  auQmnLoad(cert); var ids=auMnIds(cert); if(!ids.length) return '';
-  var on=!!(auList && auEl), sex=(typeof ttsVoiceSel!=='undefined'&&ttsVoiceSel==='male')?'👨 남성':'👩 여성';
-  return '<div class="oxl-banner au-banner" onclick="auMnAll()"><div class="oxl-banner-l"><span class="oxl-banner-ico">'+(on?'⏸':'🎧')+'</span><div><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">푼 문제에 나온 암기코드 '+ids.length+'개 · 틀린 문제 것부터</span></div></div>'
-    +'<button type="button" class="audio-opt" onclick="event.stopPropagation();auVoiceFlip()">'+sex+'</button></div>';
+  auQmnLoad(cert); if(!auQmn[cert]) return '';
+  var sc=auScope(), ids=auMnIds(cert);
+  var all=auMnIds(cert,'all').length;
+  if(!all) return '';   // 푼 문제에 걸린 암기코드가 하나도 없으면 띠를 안 보인다
+  var on=!!(auList && auEl), male=(typeof ttsVoiceSel!=='undefined'&&ttsVoiceSel==='male');
+  var seg=function(a,b,isB,fa,fb){ return '<span class="au-seg"><button type="button" class="'+(isB?'':'on')+'" onclick="event.stopPropagation();'+fa+'">'+a+'</button><button type="button" class="'+(isB?'on':'')+'" onclick="event.stopPropagation();'+fb+'">'+b+'</button></span>'; };
+  return '<div class="oxl-banner au-banner"><div class="au-top" onclick="auMnAll()"><span class="oxl-banner-ico">'+(on?'⏸':'🎧')+'</span><div><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">'+(ids.length?('암기코드 '+ids.length+'개 · 누르면 차례로 들려줘요'):'틀린 문제에 걸린 암기코드가 없어요')+'</span></div></div>'
+    +'<div class="au-opts">'+seg('틀린 문제','푼 문제 전체',sc==='all',"auScopeSet('wrong')","auScopeSet('all')")+seg('여성','남성',male,"auVoiceSet('female')","auVoiceSet('male')")+'</div></div>';
 }
 function auMnAll(){
   if(auList && auEl){ auList=null; auStop(); renderMCQ(); return; }
@@ -278,6 +284,8 @@ function auNext(){
   auPlay('audio/mn/'+auList[auPos]+'_'+auSex()+'.mp3', function(){ if(!auList) return; auPos++; setTimeout(auNext, 700); }, null, function(){ auList=null; if(mqScreen==='home') renderMCQ(); });
   if(mqScreen==='home') renderMCQ();
 }
+function auScopeSet(v){ try{ localStorage.setItem('certlab_mnscope', v); }catch(_){} if(auList){ auList=null; auStop(); } renderMCQ(); }
+function auVoiceSet(v){ if(ttsVoiceSel!==v) auVoiceFlip(); }
 function auVoiceFlip(){
   ttsVoiceSel = ttsVoiceSel==='female'?'male':'female';
   try{ localStorage.setItem('certlab_voice', ttsVoiceSel); }catch(_){}
