@@ -113,8 +113,8 @@ function cmOpenWrite(){
   document.getElementById('cmDetail').classList.add('hidden');
   document.getElementById('cmWrite').classList.remove('hidden');
   var bsel=document.getElementById('cmwBoard');
-  var opts='<option value="review">🔥 합격 후기</option><option value="sugg">🙋 건의사항</option>';
-  if(cmIsAdmin()) opts+='<option value="notice">📢 공지사항</option>';
+  var opts='<option value="review">합격 후기</option><option value="sugg">건의사항</option>';
+  if(cmIsAdmin()) opts+='<option value="notice">공지사항</option>';
   bsel.innerHTML=opts;
   bsel.value=(cmBoard==='notice'&&!cmIsAdmin())?'review':cmBoard;
   var csel=document.getElementById('cmwCert');

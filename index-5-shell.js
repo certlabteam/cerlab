@@ -218,7 +218,7 @@ function mqOpenReview(mode,idx){
   if(mode==='wrong') list = mqResultQs.filter(q=>mqResultAns[q.id]!==undefined && !isCorr(q.ans,mqResultAns[q.id]));
   else if(mode==='unans') list = mqResultQs.filter(q=>mqResultAns[q.id]===undefined);
   else list = mqResultQs.slice();
-  if(!list.length){ alert(mode==='unans'?'미응답 문항이 없습니다. 모두 푸셨어요! 👍':'오답이 없습니다. 모두 맞히셨어요! 🎉'); return; }
+  if(!list.length){ alert(mode==='unans'?'미응답 문항이 없습니다. 모두 푸셨어요!':'오답이 없습니다. 모두 맞히셨어요!'); return; }
   mqReviewList=list; mqReviewMode=mode; mqInReview=true;
   mqAns=Object.assign({},mqResultAns);
   mqShow={}; list.forEach(q=>{ mqShow[q.id]=true; });   // 정답·해설 항상 펼침
@@ -1333,18 +1333,18 @@ function _pushShowBanner(){
       +'#pushBanner{pointer-events:auto;width:100%;max-width:440px;background:#fff;border-radius:16px;box-shadow:0 8px 30px rgba(31,41,55,.18);padding:16px 16px 14px;animation:pbUp .42s cubic-bezier(.22,1,.36,1)}'
       +'@keyframes pbUp{from{transform:translateY(130%);opacity:.3}to{transform:translateY(0);opacity:1}}'
       +'#pushBanner .pb-top{display:flex;gap:12px;align-items:flex-start}'
-      +'#pushBanner .pb-ic{flex:0 0 44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#EEF0FF,#E0E4FF);display:flex;align-items:center;justify-content:center;font-size:24px}'
+      +'#pushBanner .pb-ic{flex:0 0 44px;height:44px;border-radius:12px;background:#EEF4FC;display:flex;align-items:center;justify-content:center}'
       +'#pushBanner .pb-title{font-size:16px;font-weight:800;color:#1F2937;margin:1px 0 2px}'
       +'#pushBanner .pb-desc{font-size:14px;color:#6B7280;line-height:1.5}'
       +'#pushBanner .pb-x{flex:0 0 auto;border:none;background:none;color:#C3C9D4;font-size:20px;cursor:pointer;line-height:1;padding:0 2px}'
       +'#pushBanner .pb-btns{display:flex;gap:8px;margin-top:12px}'
       +'#pushBanner .pb-btns button{flex:1;border:none;border-radius:12px;padding:10px;font-size:14px;font-weight:800;cursor:pointer}'
       +'#pushBanner .pb-later{background:#F1F3F7;color:#8A93A3}'
-      +'#pushBanner .pb-allow{background:linear-gradient(135deg,#5B6CF0,#4453D6);color:#fff}';
+      +'#pushBanner .pb-allow{background:#185FA5;color:#fff}';
     document.head.appendChild(st);
   }
   var wrap=document.createElement('div'); wrap.id='pushBannerWrap';
-  wrap.innerHTML='<div id="pushBanner"><div class="pb-top"><div class="pb-ic">🔁</div>'
+  wrap.innerHTML='<div id="pushBanner"><div class="pb-top"><div class="pb-ic"><img src="icons/repeat.png" alt="" class="ic-img"></div>'
     +'<div style="flex:1;min-width:0"><div class="pb-title">복습 알림 받을까요?</div>'
     +'<div class="pb-desc">복습할 문제가 쌓이면 알려드려요. 까먹기 전에 콕 짚어 챙겨드릴게요.</div></div>'
     +'<button class="pb-x" onclick="_pushDismiss()">×</button></div>'
@@ -1864,9 +1864,9 @@ function mpShowEnts(){
   /* [2026-10-15] 플레이 결제가 붙은 앱(TWA)에선 이 단추를 보인다 — 숨기면 앱 안에서 이용권 창을 열 길이 무료 한도뿐이다(크리스 「결제창이 안뜬다」) */
   var _payCls = (typeof _playReady === 'function' && _playReady()) ? '' : ' class="web-pay-only"';
   h += '<div'+_payCls+' style="margin:14px 16px 0"><button onclick="showPlanPopup()" '
-    +  'style="width:100%;padding:12px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;'
+    +  'style="width:100%;padding:12px;background:#185FA5;color:#fff;'
     +  'border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">'
-    +  '🎫 ' + cmEsc(certFull(activeCertId())||'') + ' 이용권 구매·연장</button>'
+    +  '<img src="icons/card.png" alt="" class="ic-img ic-in"> ' + cmEsc(certFull(activeCertId())||'') + ' 이용권 구매·연장</button>'
     +  '<div style="margin-top:6px;font-size:12px;color:#8A7D6E;text-align:center">'
     +  '지금 보고 있는 시험의 이용권을 삽니다. 다른 시험은 그 시험으로 옮긴 뒤 눌러 주세요.</div></div>';
   box.innerHTML = h;
