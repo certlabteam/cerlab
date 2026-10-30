@@ -1467,21 +1467,22 @@ function examCount(){
 }
 function featureCompareHTML(totalTxt){
   // 무료/유료 2장 카드. 같은 순서의 줄끼리 같은 기능(아이콘으로 매칭).
+  const ico=function(name){return '<img src="icons/'+name+'.png" alt="" class="ic-img ic-in"> ';};
   const free=[
-    '📄 50문제 체험',
-    '📚 기출·해설 <b class="cmp-warn">△ 체험분</b>',
-    '📈 예상점수 <b class="cmp-warn">△ 체험분</b>',
-    '🧠 복습 <b class="cmp-warn">△ 제한</b>',
-    '🔊 음성·암기 <b class="cmp-warn">△ 체험분</b>',
-    '💾 학습기록 <b class="cmp-no">✕ 종료</b>'
+    ico('book')+'50문제 체험',
+    ico('books')+'기출·해설 <b class="cmp-warn">△ 체험분</b>',
+    ico('chart_up')+'예상점수 <b class="cmp-warn">△ 체험분</b>',
+    ico('repeat')+'복습 <b class="cmp-warn">△ 제한</b>',
+    ico('speaker')+'음성·암기 <b class="cmp-warn">△ 체험분</b>',
+    ico('database')+'학습기록 <b class="cmp-no">✕ 종료</b>'
   ];
   const paid=[
-    '📄 전체 '+totalTxt+' <b>✓</b>',
-    '📚 전 과목 기출·해설 <b>✓</b>',
-    '📈 예상점수 전체 <b>✓</b>',
-    '🧠 무제한 복습 <b>✓</b>',
-    '🔊 음성·암기 <b>✓</b>',
-    '💾 학습기록 계속 <b>✓</b>'
+    ico('book')+'전체 '+totalTxt+' <b>✓</b>',
+    ico('books')+'전 과목 기출·해설 <b>✓</b>',
+    ico('chart_up')+'예상점수 전체 <b>✓</b>',
+    ico('repeat')+'무제한 복습 <b>✓</b>',
+    ico('speaker')+'음성·암기 <b>✓</b>',
+    ico('database')+'학습기록 계속 <b>✓</b>'
   ];
   return '<div class="cmp2">'
     + '<div class="cmp2-card cmp2-free"><div class="cmp2-h">무료 체험</div>'
@@ -1852,7 +1853,7 @@ async function startCardPayment(){
     else if(/보유 포인트가 부족/.test(m) && mileApplyOn) alert('조금 전에 연 결제창이 포인트를 잡아 두고 있어요(30분 뒤 풀려요).\n지금 바로 결제하려면 「보유 포인트 사용」을 끄고 다시 눌러 주세요.');
     else alert('결제를 시작하지 못했어요.\n' + m);
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent='💳 카드로 결제'; recalcPay(); }
+    if(btn){ btn.disabled=false; btn.innerHTML='<img src="icons/card.png" alt="" class="ic-img ic-in"> 카드로 결제'; recalcPay(); }
   }
 }
 

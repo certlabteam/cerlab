@@ -131,11 +131,11 @@ const SUBJS=['보디빌딩규정','스포츠인권·윤리','운동생리학','�
 const BB_CAT={ se:'스포츠인권·윤리' };
 const ALL_SUBJS=['전체',...SUBJS];
 const MILESTONES=[
-  {n:45,stars:'⭐⭐',msg:'좋은 출발이에요! 계속 달려봐요 🏃\u200d♀️'},
-  {n:100,stars:'⭐⭐⭐',msg:'100문제 돌파! 정말 대단해요 🎉'},
-  {n:200,stars:'🌟🌟🌟',msg:'200문제! 실력이 쑥쑥 크고 있어요 💪'},
-  {n:300,stars:'✨✨✨✨',msg:'300문제! 합격이 보이기 시작했어요 👑'},
-  {n:1000,stars:'🏆🏆🏆🏆🏆',msg:'1000문제 완전 정복! 당신은 전설입니다 🥇'},
+  {n:45,stars:'★★',msg:'좋은 출발이에요! 계속 달려봐요'},
+  {n:100,stars:'★★★',msg:'100문제 돌파! 정말 대단해요'},
+  {n:200,stars:'★★★',msg:'200문제! 실력이 쑥쑥 크고 있어요'},
+  {n:300,stars:'★★★★',msg:'300문제! 합격이 보이기 시작했어요'},
+  {n:1000,stars:'★★★★★',msg:'1000문제 완전 정복! 당신은 전설입니다'},
 ];
 const passedMilestones=new Set();
 const D=[];
@@ -1209,7 +1209,7 @@ function updateSrBanner(){
   const el=document.getElementById('srBanner'); if(!el) return;
   const due=srTodayCount(); const dl=srDaysLeft();
   const dtxt=dl!=null?(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료'):'';
-  el.innerHTML='<div class="sr-banner-l"><b>'+(dtxt?dtxt+' · ':'')+'오늘 복습 '+due+'개</b>'
+  el.innerHTML='<img src="icons/repeat.png" alt="" class="home-action-ico"><div class="sr-banner-l"><b>'+(dtxt?dtxt+' · ':'')+'오늘 복습 '+due+'개</b>'
     +'<span class="sr-exam" onclick="event.stopPropagation();srEditExam()">시험일 '+(srExamOverride[SR_CERT]||SR_DEFAULT_EXAM[SR_CERT]||'미설정')+' ✎</span></div>'
     +'<div class="sr-banner-go">'+(srMode==='review'?'복습 중':'복습 시작')+' →</div>';
 }
