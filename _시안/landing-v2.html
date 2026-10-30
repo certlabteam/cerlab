@@ -14,7 +14,8 @@
     .v2-section{padding:64px max(20px,calc((100% - 960px)/2));background:#fff}
     .v2-section:nth-of-type(even){background:#F6F8FB}
     .v2-inner{max-width:960px;margin:0 auto}
-    .v2-kicker{display:inline-block;margin-bottom:16px;color:#185FA5;font-size:14px;font-weight:800;letter-spacing:0}
+    .v2-kicker{display:inline-flex;align-items:center;gap:8px;margin-bottom:16px;color:#185FA5;font-size:14px;font-weight:800;letter-spacing:0}
+    .v2-kicker img{width:24px;height:24px;object-fit:contain}
     .v2 h1,.v2 h2,.v2 h3,.v2 p{margin:0}
     .v2 h1{font-size:36px;line-height:1.24;font-weight:800;letter-spacing:-.02em;color:#0C447C;word-break:keep-all}
     .v2 h1 em{font-style:normal;color:#185FA5}
@@ -29,14 +30,15 @@
     .v2-hero .v2-inner{max-width:720px}
     .v2-hero .v2-lead{margin-top:20px!important}
     .v2-hero .v2-cta{margin-top:28px;min-width:260px}
-    .v2-checks{display:flex;justify-content:center;gap:10px 22px;flex-wrap:wrap;margin:18px 0 0;padding:0;list-style:none}
-    .v2-checks li{font-size:14px;color:#3A4A5E;white-space:nowrap}
-    .v2-checks li::before{content:'✓';font-weight:800;color:#0F6E56;margin-right:6px}
+    .v2-checks{display:flex;justify-content:center;gap:12px;flex-wrap:nowrap;margin:18px 0 0;padding:0;list-style:none}
+    .v2-checks li{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#3A4A5E;white-space:nowrap}
+    .v2-checks img{width:16px;height:16px;object-fit:contain;flex:none}
     .v2-diagnosis-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:28px}
     .v2-diagnosis-item{display:flex;align-items:flex-start;gap:12px;min-width:0;padding:20px;border-radius:16px;background:#fff;border:1px solid #E2E8F0}
     .v2-diagnosis-item p{font-size:16px;line-height:1.6;color:#2B3A4B}
-    .v2-diagnosis-mark{display:grid;place-items:center;flex:0 0 30px;width:30px;height:30px;border:2px solid #B9D2EF;border-radius:50%;color:transparent;font-size:18px;font-weight:800;transition:background .25s,border-color .25s,color .25s}
-    .v2-diagnosis-item.is-on .v2-diagnosis-mark{background:#185FA5;border-color:#185FA5;color:#fff}
+    .v2-diagnosis-mark{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border:2px solid #B9D2EF;border-radius:50%;opacity:.45;transition:background .25s,border-color .25s,opacity .25s}
+    .v2-diagnosis-mark img{width:20px;height:20px;object-fit:contain}
+    .v2-diagnosis-item.is-on .v2-diagnosis-mark{background:#E8F3FF;border-color:#185FA5;opacity:1}
     .v2-claim{font-size:20px;line-height:1.5;font-weight:800;color:#185FA5;margin:20px 0 24px!important}
     .v2-sample{max-width:760px;padding:24px;border-radius:18px;border:1px solid #DCE8F3;background:#fff}
     .v2-sample-src{font-size:12px;color:#6B7A8C;margin-bottom:12px!important}
@@ -60,15 +62,23 @@
     .v2-benefit img{width:32px;height:32px;object-fit:contain;flex:0 0 auto}
     .v2-benefit p{font-size:14px;line-height:1.65;color:#52677E;margin-top:4px!important}
     .v2-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:30px;margin:30px 0}
-    .v2-step-num{display:block;font-size:30px;line-height:1;color:#185FA5;font-weight:800;margin-bottom:12px}
+    .v2-step-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .v2-step-head img{width:32px;height:32px;object-fit:contain}
+    .v2-step-num{display:block;font-size:30px;line-height:1;color:#185FA5;font-weight:800}
     .v2-step p{font-size:14px;line-height:1.65;color:#52677E;margin-top:6px!important}
-    .v2-prices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:28px 0 22px}
-    .v2-price{padding:22px;border-radius:16px;border:1px solid #DCE8F3;background:#fff;min-width:0}
-    .v2-price-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-    .v2-price-name{font-size:16px;font-weight:800;color:#0C447C}
-    .v2-price-main{font-size:24px;font-weight:800;color:#185FA5;white-space:nowrap}
-    .v2-price-term{font-size:12px;color:#6B7A8C;margin-top:3px!important}
-    .v2-price-more{font-size:14px;line-height:1.7;color:#3A4A5E;margin-top:14px!important}
+    .v2-free{max-width:760px;padding:24px;border-radius:16px;border:1px solid #DCE8F3;background:#fff;margin-top:28px}
+    .v2-free h3{display:flex;align-items:center;gap:10px}
+    .v2-free h3 img{width:32px;height:32px;object-fit:contain}
+    .v2-free ul{list-style:none;margin:14px 0 0;padding:0}
+    .v2-free li{display:flex;align-items:flex-start;gap:8px;margin-top:10px;font-size:16px;line-height:1.6;color:#3A4A5E}
+    .v2-free li img{width:20px;height:20px;object-fit:contain;flex:none;margin-top:3px}
+    .v2-pay{max-width:760px;margin-top:26px}
+    .v2-pay h3{margin-bottom:10px}
+    .v2-pay table{width:100%;border-collapse:collapse}
+    .v2-pay th,.v2-pay td{padding:10px 0;font-size:16px;line-height:1.5}
+    .v2-pay th{text-align:left;font-weight:700;color:#3A4A5E}
+    .v2-pay td{text-align:right;font-weight:800;color:#185FA5;white-space:nowrap}
+    .v2-pay .v2-note{margin-top:12px!important}
     .v2-price-link{font-size:14px;color:#185FA5;font-weight:700}
     .v2-faq{max-width:760px;margin-top:24px}
     .v2-faq details{padding:14px 0}
@@ -88,7 +98,7 @@
     @media(max-width:640px){
       .v2-section{padding:64px 20px}
       .v2 h1{font-size:30px}
-      .v2-diagnosis-list,.v2-benefits,.v2-steps,.v2-prices{grid-template-columns:1fr}
+      .v2-diagnosis-list,.v2-benefits,.v2-steps{grid-template-columns:1fr}
       .v2-diagnosis-list{gap:10px}
       .v2-benefits{gap:26px}
       .v2-steps{gap:26px}
@@ -100,7 +110,8 @@
       .v2-compare tbody td{display:flex;width:100%;gap:10px;padding:3px 0;font-size:14px}
       .v2-compare tbody td::before{content:attr(data-label);display:block;flex:0 0 48px;color:#185FA5;font-size:12px;font-weight:800}
       .v2-sample{padding:18px}
-      .v2-price{padding:20px}
+      .v2-free{padding:20px}
+      .v2-checks{gap:6px}
       .v2-hero .v2-cta,.v2-last .v2-cta{width:100%;min-width:0}
     }
     @media(prefers-reduced-motion:reduce){.v2-diagnosis-mark{transition:none}}
@@ -110,35 +121,35 @@
 <main class="v2">
   <section class="v2-section v2-hero">
     <div class="v2-inner">
-      <span class="v2-kicker">서트랩 · CertLab</span>
+      <span class="v2-kicker"><img src="../icons/new_badge.png" alt="">서트랩 · CertLab</span>
       <h1>자격증 기출문제, 무료 레벨테스트로<br><em>내 점수부터 확인하세요</em></h1>
       <p class="v2-lead">보기마다 답의 이유를 읽고<br>틀린 개념은 다시 풀어 보고<br>시험 전에 내 약점을 확인하세요.</p>
       <a class="v2-cta" href="../index.html#homeExamList">무료 레벨테스트 시작</a>
       <ul class="v2-checks">
-        <li>가입 없이 문제부터</li><li>보기별 해설</li><li>실제로 맞는 것만</li>
+        <li><img src="../icons/check.png" alt="">가입 없이 문제부터</li><li><img src="../icons/book.png" alt="">보기별 해설</li><li><img src="../icons/books.png" alt="">78개 시험</li>
       </ul>
     </div>
   </section>
 
   <section class="v2-section" id="self-check">
     <div class="v2-inner">
-      <span class="v2-kicker">자가진단</span>
+      <span class="v2-kicker"><img src="../icons/question.png" alt="">자가진단</span>
       <h2>이런 공부, 낯설지 않나요?</h2>
       <div class="v2-diagnosis-list">
-        <div class="v2-diagnosis-item"><span class="v2-diagnosis-mark" aria-hidden="true">✓</span><p>기출을 풀었는데 왜 틀렸는지는 놓치고 넘어간다.</p></div>
-        <div class="v2-diagnosis-item"><span class="v2-diagnosis-mark" aria-hidden="true">✓</span><p>며칠 뒤 같은 개념이 나오면 다시 헷갈린다.</p></div>
-        <div class="v2-diagnosis-item"><span class="v2-diagnosis-mark" aria-hidden="true">✓</span><p>시험까지 남은 동안 어디부터 보완할지 모르겠다.</p></div>
+        <div class="v2-diagnosis-item"><span class="v2-diagnosis-mark" aria-hidden="true"><img src="../icons/check.png" alt=""></span><p>기출을 풀었는데 왜 틀렸는지는 놓치고 넘어간다.</p></div>
+        <div class="v2-diagnosis-item"><span class="v2-diagnosis-mark" aria-hidden="true"><img src="../icons/check.png" alt=""></span><p>며칠 뒤 같은 개념이 나오면 다시 헷갈린다.</p></div>
+        <div class="v2-diagnosis-item"><span class="v2-diagnosis-mark" aria-hidden="true"><img src="../icons/check.png" alt=""></span><p>시험까지 남은 동안 어디부터 보완할지 모르겠다.</p></div>
       </div>
     </div>
   </section>
 
   <section class="v2-section" id="real-explanation">
     <div class="v2-inner">
-      <span class="v2-kicker">기출, 정답만 외우지 마세요</span>
+      <span class="v2-kicker"><img src="../icons/book.png" alt="">기출, 정답만 외우지 마세요</span>
       <h2>틀린 보기까지 이해하면<br>다음 문제를 보는 눈이 달라집니다.</h2>
       <p class="v2-claim">답 하나보다, 보기마다 틀린 이유가 중요합니다.</p>
       <div class="v2-sample">
-        <p class="v2-sample-src">2025년 공인중개사 1차 기출(제36회) 2번 · 현재 랜딩 해설</p>
+        <p class="v2-sample-src">2025년 공인중개사 1차 기출(제36회) 2번 · 실제 해설</p>
         <p class="v2-sample-question">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</p>
         <p class="v2-sample-hint">보기를 누르면 해설과 장면 예시가 열립니다.</p>
         <button class="v2-opt" type="button" data-i="0" aria-expanded="false"><b>1</b>부동산 임대 및 공급업</button>
@@ -157,7 +168,7 @@
 
   <section class="v2-section" id="compare">
     <div class="v2-inner">
-      <span class="v2-kicker">비교</span>
+      <span class="v2-kicker"><img src="../icons/scale.png" alt="">비교</span>
       <h2>나에게 맞는 공부 방식은?</h2>
       <table class="v2-compare">
         <colgroup><col style="width:24%"><col style="width:24%"><col style="width:24%"><col style="width:28%"></colgroup>
@@ -175,7 +186,7 @@
 
   <section class="v2-section" id="benefits">
     <div class="v2-inner">
-      <span class="v2-kicker">서트랩이 다른 점</span>
+      <span class="v2-kicker"><img src="../icons/target.png" alt="">서트랩이 다른 점</span>
       <h2>이해하고, 약점을 찾고,<br>잊기 전에 다시 봅니다.</h2>
       <div class="v2-benefits">
         <div class="v2-benefit"><img src="../icons/target.png" alt=""><div><h3>내 수준부터 확인하세요</h3><p>문제는 가입 없이 시작하고, 로그인하면 예상점수와 약점을 봅니다.</p></div></div>
@@ -183,18 +194,18 @@
         <div class="v2-benefit"><img src="../icons/brain.png" alt=""><div><h3>잊기 전에 다시 복습</h3><p>망각곡선 자동복습과 오답노트로 놓친 것을 이어 봅니다.</p></div></div>
         <div class="v2-benefit"><img src="../icons/headphones.png" alt=""><div><h3>내 방식대로 외우세요</h3><p>OX 진술과 암기코드를 보고, 듣고, 다시 확인합니다.</p></div></div>
       </div>
-      <p class="v2-note">2026-10-31 라이브 기준 · manifest 78개 시험 · 해당 banks 358과목에 담긴 학습 문항 41,191개.</p>
+      <p class="v2-note">78개 시험 · 41,191문항(10-31 기준)</p>
     </div>
   </section>
 
   <section class="v2-section" id="steps">
     <div class="v2-inner">
-      <span class="v2-kicker">시작하기</span>
+      <span class="v2-kicker"><img src="../icons/checklist.png" alt="">시작하기</span>
       <h2>세 단계로 시작하세요</h2>
       <div class="v2-steps">
-        <div class="v2-step"><span class="v2-step-num">01</span><h3>시험 고르기</h3><p>준비하는 시험을 고르면 해당 기출과 레벨테스트로 갑니다.</p></div>
-        <div class="v2-step"><span class="v2-step-num">02</span><h3>문제 풀기</h3><p>가입 없이 문제부터 풀고 보기별 해설을 확인합니다.</p></div>
-        <div class="v2-step"><span class="v2-step-num">03</span><h3>결과 확인하기</h3><p>카카오 또는 구글로 로그인하면 예상점수와 약점을 볼 수 있습니다.</p></div>
+        <div class="v2-step"><div class="v2-step-head"><img src="../icons/books.png" alt=""><span class="v2-step-num">01</span></div><h3>시험 고르기</h3><p>준비하는 시험을 고르면 해당 기출과 레벨테스트로 갑니다.</p></div>
+        <div class="v2-step"><div class="v2-step-head"><img src="../icons/checklist.png" alt=""><span class="v2-step-num">02</span></div><h3>문제 풀기</h3><p>가입 없이 문제부터 풀고 보기별 해설을 확인합니다.</p></div>
+        <div class="v2-step"><div class="v2-step-head"><img src="../icons/chart_up.png" alt=""><span class="v2-step-num">03</span></div><h3>결과 확인하기</h3><p>카카오 또는 구글로 로그인하면 예상점수와 약점을 볼 수 있습니다.</p></div>
       </div>
       <a class="v2-cta" href="../index.html#homeExamList">무료 레벨테스트 시작</a>
     </div>
@@ -202,16 +213,28 @@
 
   <section class="v2-section" id="pricing">
     <div class="v2-inner">
-      <span class="v2-kicker">이용권</span>
+      <span class="v2-kicker"><img src="../icons/gift.png" alt="">이용권</span>
       <h2>무료로 풀어 보고 결정하세요</h2>
       <p class="v2-copy">이용권은 시험 1종에 적용됩니다. 시험마다 적용 등급이 달라 결제 전 해당 시험의 이용권 화면에서 확인할 수 있습니다.</p>
-      <div class="v2-prices">
-        <div class="v2-price"><div class="v2-price-head"><span class="v2-price-name">라이트</span><strong class="v2-price-main">6,900원</strong></div><p class="v2-price-term">30일 이용권</p><p class="v2-price-more">90일 17,000원 · 180일 29,000원<br>365일 49,000원</p></div>
-        <div class="v2-price"><div class="v2-price-head"><span class="v2-price-name">스탠다드</span><strong class="v2-price-main">9,900원</strong></div><p class="v2-price-term">30일 이용권</p><p class="v2-price-more">90일 25,000원 · 180일 45,000원<br>365일 79,000원</p></div>
-        <div class="v2-price"><div class="v2-price-head"><span class="v2-price-name">프리미엄</span><strong class="v2-price-main">14,900원</strong></div><p class="v2-price-term">30일 이용권</p><p class="v2-price-more">90일 39,000원 · 180일 69,000원<br>365일 119,000원</p></div>
-        <div class="v2-price"><div class="v2-price-head"><span class="v2-price-name">프리미엄 플러스</span><strong class="v2-price-main">24,900원</strong></div><p class="v2-price-term">30일 이용권</p><p class="v2-price-more">90일 64,000원 · 180일 110,000원<br>365일 190,000원</p></div>
+      <div class="v2-free">
+        <h3><img src="../icons/gift.png" alt="">무료로 시작</h3>
+        <ul>
+          <li><img src="../icons/check.png" alt="">레벨테스트 · 예상점수 무료</li>
+          <li><img src="../icons/check.png" alt="">시험마다 기출 50문제 무료 체험</li>
+          <li><img src="../icons/check.png" alt="">친구를 초대하면 친구도 나도 9,900포인트</li>
+        </ul>
       </div>
-      <p class="v2-note">2026-10-31 라이브 config/pricing 기준 · 부가가치세 포함. 실제 적용 등급과 결제 금액은 앱에서 확인합니다.</p>
+      <div class="v2-pay web-pay-only">
+        <h3>30일 이용권</h3>
+        <table><tbody>
+          <tr><th scope="row">라이트</th><td>6,900원</td></tr>
+          <tr><th scope="row">스탠다드</th><td>9,900원</td></tr>
+          <tr><th scope="row">프리미엄</th><td>14,900원</td></tr>
+          <tr><th scope="row">프리미엄 플러스</th><td>24,900원</td></tr>
+        </tbody></table>
+        <p class="v2-note">90·180·365일은 이용권 화면에서</p>
+      </div>
+      <p class="v2-note">부가가치세 포함. 실제 적용 등급과 결제 금액은 이용권 화면에서 확인하세요.</p>
       <p class="v2-copy"><a class="v2-price-link" href="../pricing.html">이용권 가격 자세히 보기 →</a></p>
       <a class="v2-cta" href="../index.html#homeExamList" style="margin-top:24px">무료 레벨테스트 시작</a>
     </div>
@@ -219,11 +242,11 @@
 
   <section class="v2-section" id="questions">
     <div class="v2-inner">
-      <span class="v2-kicker">자주 묻는 질문</span>
+      <span class="v2-kicker"><img src="../icons/chat.png" alt="">자주 묻는 질문</span>
       <h2>시작 전에 궁금한 점</h2>
       <div class="v2-faq">
         <details><summary>가입하지 않고도 풀 수 있나요?</summary><p>네. 문제는 가입 없이 시작할 수 있습니다. 예상점수와 약점 결과를 보려면 카카오 또는 구글 로그인이 필요합니다.</p></details>
-        <details><summary>무료 체험은 어디까지인가요?</summary><p>가입 없이 문제부터 풀어 볼 수 있습니다. 회원가입 첫날에는 최대 50문항을 무료로 풀 수 있고, 이후 무료 문항 수는 앱 안내에 따릅니다.</p></details>
+        <details><summary>무료 체험은 어디까지인가요?</summary><p>가입 없이 문제부터 풀어 볼 수 있습니다. 시험마다 기출 50문제를 무료로 체험할 수 있습니다.</p></details>
         <details><summary>이용권 하나로 모든 시험을 볼 수 있나요?</summary><p>이용권은 선택한 시험 1종에 적용됩니다. 기간과 금액은 위 가격표와 해당 시험의 이용권 화면에서 확인할 수 있습니다.</p></details>
         <details><summary>환불 기준은 어디서 보나요?</summary><p>구매 전에 <a href="../pricing.html">이용권 상품·가격</a>과 <a href="../terms.html">이용약관</a>에서 확인할 수 있습니다.</p></details>
       </div>
@@ -232,7 +255,7 @@
 
   <section class="v2-section v2-last" id="last-start">
     <div class="v2-inner">
-      <span class="v2-kicker">오늘의 기출, 내일의 실력</span>
+      <span class="v2-kicker"><img src="../icons/trophy.png" alt="">오늘의 기출, 내일의 실력</span>
       <h2>준비하는 시험부터 골라 보세요</h2>
       <p class="v2-copy">문제는 먼저 풀어 보고, 결과를 볼 때 로그인하면 됩니다.</p>
       <a class="v2-cta" href="../index.html#homeExamList">무료 레벨테스트 시작</a>
