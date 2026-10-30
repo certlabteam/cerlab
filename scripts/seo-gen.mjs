@@ -126,7 +126,7 @@ function splitPage(cert, subject, round, sid, chunk, all, start, part, total) {
     + '<span>' + (part + 1) + ' / ' + total + '</span>'
     + (part + 1 < total ? '<a href="' + pageName(pg.fname, part + 1) + '">다음 문항 →</a>' : '')
     + '</nav>' : '';
-  html = html.replace('</style>', '.page-summary{margin:8px 0 16px;padding:12px 14px;background:#fff;border:1px solid #dbeafe;border-radius:10px}.page-summary h2{font-size:15px;margin:0 0 5px;color:#0C447C}.page-summary p{font-size:13px;margin:3px 0}.pager{display:flex;justify-content:space-between;gap:8px;margin:18px 0}.pager a{color:#0C447C;font-weight:700}.pager span{color:#64748b}</style>')
+  html = html.replace('</style>', '.page-summary{margin:8px 0 16px;padding:12px 14px;background:#fff;border:1px solid #dbeafe;border-radius:10px}.page-summary h2{font-size:15px;margin:0 0 5px;color:#0C447C}.page-summary p{font-size:13px;margin:3px 0}.pager{display:flex;justify-content:space-between;gap:8px;margin:18px 0}.pager a{color:#0C447C;font-weight:700}.pager span{color:#64748b}ol.opts{list-style:none;padding-left:0}</style>')
     .replace(/(<p class="sub">[\s\S]*?<\/p>)/, '$1\n' + summary)
     .replace('<footer>', pager + '\n<footer>');
   return { fname, html };
@@ -160,7 +160,10 @@ function markdownGuide(file) {
     paragraph.push(line);
   }
   flush();
-  const html = '<!doctype html><html lang="ko"><head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>' + seoEsc(meta.title) + ' | CertLab</title>\n<meta name="description" content="' + seoEsc(meta.description) + '">\n<link rel="canonical" href="' + url + '">\n<style>body{font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;max-width:760px;margin:0 auto;padding:20px 16px;line-height:1.7;color:#1e293b}a{color:#0C447C}h1{font-size:23px}h2{font-size:19px;margin-top:28px}h3{font-size:17px}h4{font-size:15px}li{margin:6px 0}</style>\n</head><body>\n<nav><a href="index-' + meta.exam + '.html">' + seoEsc(seoCertName(meta.exam)) + ' 기출문제</a></nav>\n<h1>' + seoEsc(meta.title) + '</h1>\n<p>' + seoEsc(meta.description) + '</p>\n' + body.join('\n') + '\n<footer><a href="index-' + meta.exam + '.html">' + seoEsc(seoCertName(meta.exam)) + ' 기출문제 목록으로</a></footer>\n</body></html>';
+  const certName = seoEsc(seoCertName(meta.exam));
+  const hubCss = seoCertHub(meta.exam, [], {}).html.match(/<style>([\s\S]*?)<\/style>/)[1];
+  const guideCss = '.guide-desc{color:#64748b;font-size:14px;margin:0 0 14px}.guide-body{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-top:8px}.guide-body h2{font-size:19px;margin:20px 0 8px}.guide-body h3{font-size:17px;margin:18px 0 6px}.guide-body h4{font-size:15px;margin:16px 0 5px}.guide-body h2:first-child{margin-top:0}.guide-body p{margin:8px 0 12px}.guide-body ul{list-style:disc;padding-left:20px}.guide-body li{margin:6px 0}';
+  const html = '<!doctype html><html lang="ko"><head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>' + seoEsc(meta.title) + ' | CertLab</title>\n<meta name="description" content="' + seoEsc(meta.description) + '">\n<link rel="canonical" href="' + url + '">\n<style>' + hubCss + guideCss + '</style>\n</head><body>\n<div class="bc"><a href="index.html">CertLab 기출문제</a> › <a href="index-' + meta.exam + '.html">' + certName + '</a></div>\n<h1>' + seoEsc(meta.title) + '</h1>\n<p class="guide-desc">' + seoEsc(meta.description) + '</p>\n<a class="cta" href="https://certlab.ai.kr/#' + meta.exam + '">▶ CertLab에서 풀어보기</a>\n<article class="guide-body">\n' + body.join('\n') + '\n</article>\n<footer><p>© CertLab(서트랩) · <a href="index-' + meta.exam + '.html">' + certName + ' 기출문제 모음</a> · <a href="index.html">전체 자격증 모음</a></p></footer>\n</body></html>';
   return { fname, html, cert: meta.exam, title: meta.title };
 }
 
@@ -187,13 +190,13 @@ function realestateHub(cert, fnames, labels, banks, variantCounts, conceptCounts
       + (preview ? '<h3>' + (rated.length >= 3 ? '정답률 낮은 문제 3개' : '미리 보는 문제 3개') + '</h3><ol>' + preview + '</ol>' : '') + '</section>';
   }).join('\n');
   const faqs = [
-    ['합격 기준은 어떻게 되나요?', '1·2차 모두 매 과목 40점 이상, 전 과목 평균 60점 이상입니다. 세부 선발 기준은 시행 공고를 확인하세요.'],
+    ['합격 기준은 어떻게 되나요?', '1·2차 모두 매 과목 40점 이상, 전 과목 평균 60점 이상입니다.'],
     ['시험과목은 몇 개입니까?', '이 ' + (cert === 'realestate1' ? '1차' : '2차') + ' 기출 목록에는 ' + subjects.length + '개 과목이 있습니다.'],
     ['몇 년치 기출문제를 볼 수 있나요?', years.length ? years[0] + '~' + years.at(-1) + '년, ' + rounds.length + '개 회차를 볼 수 있습니다.' : '이 목록의 회차별 기출문제를 볼 수 있습니다.'],
     ['보기별 해설도 있나요?', '문항에 작성된 보기별 해설과 개념을 기출문제 아래에 함께 표시합니다.']
   ];
   const faq = '<section class="faq"><h2>자주 묻는 질문</h2>' + faqs.map(([q, a]) => '<h3>' + seoEsc(q) + '</h3><p>' + seoEsc(a) + '</p>').join('')
-    + '<p><a href="https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&amp;joBrNo=00&amp;joNo=0010&amp;lsiSeq=288933&amp;urlMode=lsScJoRltInfoR">합격 기준: 공인중개사법 시행령 제10조</a></p></section>';
+    + '<p>자세한 기준은 시행 공고를 확인하세요.</p></section>';
   const guideLinks = guides.length ? '<section><h2>공인중개사 학습 글</h2><ul>' + guides.map(g => '<li><a href="' + g.fname + '">' + seoEsc(g.title) + '</a></li>').join('') + '</ul></section>' : '';
   const css = '.subject-card{background:#fff;border:1px solid #dbeafe;border-radius:12px;padding:15px;margin:15px 0}.subject-card h2{margin:0 0 8px;font-size:18px}.subject-card h3{font-size:15px;margin:14px 0 6px}.subject-card p{margin:7px 0}.subject-card ol{padding-left:20px}.subject-card li{margin:12px 0}.subject-card li span{color:#475569}.faq{margin-top:28px}.faq h3{font-size:15px;margin:15px 0 3px}.faq p{margin:0 0 8px}';
   let html = base.html.replace('</style>', css + '</style>');
