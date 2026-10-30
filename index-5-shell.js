@@ -1218,6 +1218,7 @@ function clHandleBack(){
   if(ov){ ov.classList.add('hidden'); return true; }
   if(typeof activeCert!=='undefined' && activeCert){
     if(typeof isMcqCert==='function' && isMcqCert(activeCert) && typeof mqScreen!=='undefined'){
+      if(mqScreen==='mnlist'){ if(typeof auMnListBack==='function') auMnListBack(); return true; }
       if(mqInReview){ if(typeof mqBackToResult==='function') mqBackToResult(); return true; }
       if(mqScreen==='result'){ if(typeof mqBackHome==='function') mqBackHome(); return true; }
       if(mqScreen==='luhist'){ if(typeof luHistBack==='function'){ luHistBack(); } else if(typeof mqBackHome==='function'){ mqBackHome(); } return true; }
