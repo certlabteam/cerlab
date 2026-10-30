@@ -275,10 +275,10 @@ function auMnBanner(cert){
   if(!all) return '';   // 푼 문제에 걸린 암기코드가 하나도 없으면 띠를 안 보인다
   var on=!!auList, male=(typeof ttsVoiceSel!=='undefined'&&ttsVoiceSel==='male');
   var seg=function(a,b,isB,fa,fb){ return '<span class="au-seg"><button type="button" class="'+(isB?'':'on')+'" onclick="event.stopPropagation();'+fa+'">'+a+'</button><button type="button" class="'+(isB?'on':'')+'" onclick="event.stopPropagation();'+fb+'">'+b+'</button></span>'; };
-  return '<div class="oxl-banner au-banner"><div class="au-top"><span class="oxl-banner-ico"><img src="icons/headphones.png" alt="" class="ic-img"></span><div class="au-title" onclick="auMnAll()"><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">'+(ids.length?('암기코드 '+ids.length+'개 · 누르면 차례로 들려줘요'):'틀린 문제에 걸린 암기코드가 없어요')+'</span></div>'+auMnPlayButton(on)+'</div>'
-    +'<div class="au-opts">'+seg('틀린 문제','푼 문제 전체',sc==='all',"auScopeSet('wrong')","auScopeSet('all')")+seg('여성','남성',male,"auVoiceSet('female')","auVoiceSet('male')")+'<button type="button" class="au-view" onclick="auMnListOpen()"><img src="icons/notebook.png" alt=""> 보기</button></div></div>';
+  return '<div class="oxl-banner au-banner"><div class="au-top"><span class="oxl-banner-ico"><img src="icons/headphones.png" alt="" class="ic-img"></span><div class="au-title" onclick="auMnAll()"><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">'+(ids.length?('암기코드 '+ids.length+'개 · 누르면 차례로 들려줘요'):'틀린 문제에 걸린 암기코드가 없어요')+'</span></div>'+auMnPlayButton(on)+'<button type="button" class="au-view" onclick="auMnListOpen()" aria-label="암기코드 보기"><img src="icons/notebook.png" alt=""></button></div>'
+    +'<div class="au-opts">'+seg('틀린 문제','푼 문제 전체',sc==='all',"auScopeSet('wrong')","auScopeSet('all')")+seg('여성','남성',male,"auVoiceSet('female')","auVoiceSet('male')")+'</div></div>';
 }
-function auMnPlayButton(on){ return '<button type="button" class="au-play" onclick="event.stopPropagation();auMnAll()" aria-label="암기코드 '+(on?'정지':'재생')+'"><img src="icons/'+(on?'pause':'play')+'.png" alt="">'+(on?'정지':'재생')+'</button>'; }
+function auMnPlayButton(on){ return '<button type="button" class="au-play" onclick="event.stopPropagation();auMnAll()" aria-label="암기코드 '+(on?'정지':'재생')+'"><img src="icons/'+(on?'pause':'play')+'.png" alt=""></button>'; }
 function auMnAll(){
   if(auList){ auList=null; auStop(); renderMCQ(); return; }
   auList=auMnIds(mqCert); auPos=0; if(!auList.length){ auList=null; return; } auNext();
