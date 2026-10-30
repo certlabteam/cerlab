@@ -90,11 +90,11 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 @media (prefers-reduced-motion:reduce){.mk-diag li::before,.mk-diag li::after{transition:none!important}}
 /* 2판 — 닥카처럼: 칸 사이 여백 크게 · 칸마다 이름표 + 큰 제목 · 줄 대신 바탕색 번갈아 · 상자는 자가진단·실제 답글만 */
 .mk2 .lp-hero{padding:40px 20px 56px;gap:16px}
-.mk2 .lp-hero h1{font-size:34px;line-height:1.25;letter-spacing:-.03em;margin:0}
+.mk2 .lp-hero h1{font-size:24px;line-height:1.25;letter-spacing:-.03em;margin:0}
 .mk2 .lp-hero h1 em{font-style:normal;color:var(--main)}
-.mk2 .lp-hero p{font-size:17px;line-height:1.6;margin:0}
+.mk2 .lp-hero p{font-size:16px;line-height:1.6;margin:0}
 .mk2 .lp-sec{padding:64px 20px;border-top:0;gap:16px}
-.mk2 .lp-sec h2{font-size:26px;line-height:1.3;letter-spacing:-.02em}
+.mk2 .lp-sec h2{font-size:20px;line-height:1.3;letter-spacing:-.02em}
 .mk2 .mk-alt{background:var(--soft2)}
 .mk-label{justify-self:start;font-size:13px;font-weight:700;color:var(--main);background:var(--soft);border-radius:999px;padding:5px 12px}
 .lp-hero .mk-label{justify-self:center}
@@ -113,7 +113,7 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 .mk2 .mk-cmp{background:var(--card);border-radius:12px}
 .mk2 .lp-plans{margin-top:4px}
 .mk2 .mk-last{padding:72px 20px;gap:18px}
-.mk2 .mk-last h2{font-size:28px}
+.mk2 .mk-last h2{font-size:20px}
 .mk2 .lp-foot{border-top:1px solid var(--hair)}
 .lp-kick-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 2px!important}.lp-kick-row img{flex:none}
 .mk-label img{width:20px;height:20px;vertical-align:middle}
@@ -128,6 +128,46 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 .lp-chips button{width:100%;min-width:0;border:1.5px solid #B5D4F4;background:#fff;color:#185FA5;border-radius:12px;padding:8px 4px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:20px}
 .lp-chips button small{display:block;font-size:12px;font-weight:800;color:#C2620C;line-height:16px}
 .lp-chips button small{font-weight:500}
+/* 앱 style.css의 #mcqView 문제·보기·해설 규칙 중 샘플에 쓰는 것만 #sample로 옮김. */
+#sample .qhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+#sample .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none}
+#sample .qtext{font-size:14px;font-weight:500;line-height:1.62;color:#0F172A;white-space:pre-wrap;margin-bottom:14px}
+#sample .qstem{background:#F8FAFC;border:1px solid #DCE5EF;border-radius:12px;padding:14px 14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+#sample .qstem .qhead{margin-bottom:8px}
+#sample .qstem .qtext{margin-bottom:0;max-height:34dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#sample .imp{font-size:12px;font-weight:800;color:#C87A00;background:#FFF9F0;border:1px solid #FFEDBA;padding:2px 8px;border-radius:6px;letter-spacing:-.3px}
+#sample .tmark{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid}
+#sample .tmark.t2{color:#185FA5;background:#E6F1FB;border-color:#B5D4F4}
+#sample .opts{display:flex;flex-direction:column;gap:8px;padding:0}
+#sample .opt{display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:12px 12px;cursor:pointer;outline:none;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+#sample .opt:last-child{border-bottom:1px solid #E2E8F0}
+#sample .opt:focus{outline:none}
+#sample .opt .onum{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:#F1F5F9;color:#475569;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+#sample .opt .otxt{font-size:14px;line-height:1.62;color:#0F172A;font-weight:500;flex:1;display:flow-root}
+#sample .opt.sel{background:#EFF5FC}#sample .opt.sel .onum{color:#0C447C;background:#DBEAFE}
+#sample .opt.cor{background:#F0FDF4}
+#sample .opt.cor .onum{color:#15803D;background:#DCFCE7}
+#sample .opt.cor .otxt{color:#15803D}
+#sample .opt.wr{background:#FEF2F2}
+#sample .opt.wr .onum{color:#B91C1C;background:#FEE2E2}
+#sample .opt.wr .otxt{color:#B91C1C}
+#sample .opt.dim{opacity:.55}
+#sample .exp{margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 14px}
+#sample .exp-note-hd{font-size:16px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
+#sample .exp-note-hd::before{content:'📚 '}
+#sample .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+#sample .exp-ti{font-size:14px;font-weight:800;color:#0F172A}
+#sample .exp-st{font-size:14px;font-weight:800}
+#sample .exp-opts{display:flex;flex-direction:column;gap:0}
+#sample .exp-opts .eo{font-size:14px;line-height:1.72;margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed #E2E8F0}
+#sample .exp-opts .eo:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+#sample .exp-opts .eo-q{color:#1E293B;font-weight:600;margin-bottom:6px}
+#sample .exp-opts .eo-a{color:#475569;line-height:1.72;padding-left:2px}
+#sample .exp-opts .eo-verdict{font-size:12px;font-weight:700;margin-left:6px;white-space:nowrap}
+#sample .exp-opts .eo-verdict.eo-red{color:#A32D2D}
+#sample .exp-opts .eo-ex{margin-top:6px;padding:8px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:14px;line-height:1.65;color:#5E4A2A}
+#sample .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:4px}
+#sample .eo-badge{font-size:12px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 6px;margin-left:4px;vertical-align:middle}
 @media(max-width:479px){
   #compare .mk-cmp{display:block;background:transparent}
   #compare .mk-cmp thead{display:none}
@@ -179,21 +219,24 @@ body{background:var(--outer)}
     <span class="mk-label mk-dot">기출, 정답만 외우지 마세요</span>
     <h2>틀린 보기까지 이해하면<br>다음 문제를 보는 눈이 달라집니다.</h2>
     <p class="mk-lead">답 하나보다, 보기마다 틀린 이유가 중요합니다.</p>
-      <article class="ex-card" id="sample">
-        <p class="real-top">2025년 공인중개사 1차 기출(제36회) 2번</p>
-        <p class="ex-review">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</p>
-        <p class="lp-note">보기를 누르면 해설과 장면 예시가 열립니다.</p>
-        <button class="chip" type="button" data-i="0" aria-expanded="false"><b>1</b>부동산 임대 및 공급업</button>
-        <div class="ex-reply" hidden><p><strong>정답</strong> 부동산 임대 및 공급업은 부동산 관련 서비스업이 아니라 그와 나란한 별도의 중분류라, 관련 서비스업에 해당하지 않으므로 옳지 않다(정답).</p><p><strong>장면 예시</strong> 甲은 자기 이름으로 된 오피스텔 여러 채를 세놓아 다달이 임대료를 거두는데, 이 일은 거래를 옆에서 돕는 중개나 자문과 달리 부동산을 직접 갖고 굴리는 업종으로 분류된다.</p></div>
-        <button class="chip" type="button" data-i="1" aria-expanded="false"><b>2</b>부동산 중개 및 대리업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 중개 및 대리업은 사거나 빌리려는 사람을 연결해 거래를 도와주는 일이라, 부동산을 직접 빌려주거나 공급하지 않는 '관련 서비스업'에 속한다. 해당하는 것이므로 옳다.</p><p><strong>장면 예시</strong> 甲이 집을 사려는 사람과 팔려는 사람을 이어 주고 계약을 도와 수수료를 받는 중개 일을 하며, 직접 집을 빌려주거나 공급하지 않고 거래만 거들어 주는 서비스를 제공한다.</p></div>
-        <button class="chip" type="button" data-i="2" aria-expanded="false"><b>3</b>부동산 감정평가업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 감정평가업은 부동산의 값이 얼마인지 전문적으로 매겨 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속한다. 해당하는 것이므로 옳다.</p><p><strong>장면 예시</strong> 甲이 대상 부동산이 얼마짜리인지 전문적으로 값을 매겨 주는 감정평가 일을 하며, 부동산을 직접 사고팔지는 않고 거래와 이용을 옆에서 돕는 서비스를 제공한다.</p></div>
-        <button class="chip" type="button" data-i="3" aria-expanded="false"><b>4</b>부동산 투자 자문업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 투자 자문업은 어디에 어떻게 투자할지 조언해 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속하므로 옳다.</p><p><strong>장면 예시</strong> 甲이 어느 지역 어떤 상가에 어떻게 돈을 넣으면 좋을지 조언해 주는 투자 자문 일을 하며, 부동산을 직접 굴리지 않고 판단만 거드는 서비스를 판다.</p></div>
-        <button class="chip" type="button" data-i="4" aria-expanded="false"><b>5</b>부동산 분양 대행업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 분양 대행업은 새로 지은 건물을 대신 팔아 주는 일이라, 공급 자체가 아니라 그 거래를 돕는 관련 서비스업에 속하므로 옳다.</p><p><strong>장면 예시</strong> 甲이 새로 지은 아파트를 시행사 대신 나서서 팔아 주는 분양대행 일을 맡아, 건물을 직접 공급하는 것이 아니라 그 거래가 성사되도록 옆에서 돕는다.</p></div>
-      </article>
+      <!-- 라이브 banks/realestate1__re1_intro__2025년 기출(제36회) · intro25_2의 q/opts/ans/exp.o/exp.ex -->
+      <div id="sample" aria-label="기출문제 해설 예시">
+        <div class="qstem"><div class="qhead"><div class="qnum">2</div><span class="imp">★5</span><span class="tmark t2">⌛ 보통</span></div><div class="qtext">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</div></div>
+        <div class="qcard"><div class="opts">
+          <div class="opt" role="button" tabindex="0" data-i="1" aria-pressed="false"><div class="onum">1</div><div class="otxt">부동산 임대 및 공급업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="2" aria-pressed="false"><div class="onum">2</div><div class="otxt">부동산 중개 및 대리업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="3" aria-pressed="false"><div class="onum">3</div><div class="otxt">부동산 감정평가업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="4" aria-pressed="false"><div class="onum">4</div><div class="otxt">부동산 투자 자문업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="5" aria-pressed="false"><div class="onum">5</div><div class="otxt">부동산 분양 대행업</div></div>
+        </div>
+        <div class="exp" hidden><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st">정답 1번</span></div><div class="exp-opts">
+          <div class="eo"><div class="eo-q">1. 부동산 임대 및 공급업 <span class="eo-verdict eo-red">해당하지 않음</span> <span class="eo-badge">✅ 정답</span></div><div class="eo-a">부동산 임대 및 공급업은 부동산을 소유·개발해 공급하거나 임대하는 부동산업이다. 부동산 관련 서비스업으로 분류되는 활동이 아니므로 해당하지 않는다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>주택 개발업체가 토지를 매입해 공동주택을 짓고, 완공 뒤 세대별 분양 대금을 받는다. 보유한 상가를 임대하면 매달 임차인이 낸 임대료가 수입으로 들어온다. 이렇게 직접 짓고 팔거나 빌려주는 일은 한국표준산업분류에서 부동산 임대 및 공급업으로 묶이고, 중개·감정평가·관리 같은 부동산 관련 서비스업과는 다른 갈래다.</div></div>
+          <div class="eo"><div class="eo-q">2. 부동산 중개 및 대리업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 중개 및 대리업은 거래 당사자를 이어 매매·임대차 계약을 돕는 서비스다. 부동산 관련 서비스업에 해당하므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>공인중개사가 매도인과 매수인의 조건을 조율하고 계약 체결을 중개하면 부동산 거래를 돕는 서비스가 제공된다. 이런 중개·대리 활동은 부동산 관련 서비스업으로 분류된다.</div></div>
+          <div class="eo"><div class="eo-q">3. 부동산 감정평가업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 감정평가업은 부동산의 경제적 가치를 조사하고 평가하는 서비스다. 부동산 이용·거래를 지원하는 관련 서비스업이므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>감정평가법인이 담보 대출을 신청한 상가의 위치와 임대수익, 주변 거래 사례를 조사해 평가액을 낸다. 금융기관은 평가액과 대출자의 상환 능력을 함께 살펴 담보 한도를 정한다.</div></div>
+          <div class="eo"><div class="eo-q">4. 부동산 투자 자문업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 투자 자문업은 부동산 투자 판단에 필요한 정보와 의견을 제공하는 서비스다. 부동산 관련 서비스업에 포함되므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>투자 자문사가 임대용 건물의 공실률과 임대료 전망을 분석해 투자 위험을 설명한다. 부동산 투자 의사결정을 지원하는 자문 활동은 부동산 관련 서비스업이다.</div></div>
+          <div class="eo"><div class="eo-q">5. 부동산 분양 대행업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 분양 대행업은 공급자를 대신해 분양 홍보와 계약 절차를 지원하는 서비스다. 부동산 공급 자체와 구별되는 관련 서비스업이므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>분양 대행사가 시행사의 의뢰를 받아 견본주택을 안내하고 계약 서류 제출을 지원한다. 부동산을 직접 공급하는 시행사와 구별되는 분양 대행 서비스가 분양 절차와 계약 준비를 지원한다.</div></div>
+        </div></div></div>
+      </div>
   </section>
 
   <section class="lp-sec mk-alt" id="compare">
@@ -286,12 +329,22 @@ if (dg) {
     io.observe(dg);
   } else dg.classList.add('on');
 }
-const optionButtons = [...document.querySelectorAll('#sample button[data-i]')];
-optionButtons.forEach((button, index) => button.addEventListener('click', () => {
-  optionButtons.forEach((other, otherIndex) => {
-    const picked = otherIndex === index;
-    other.setAttribute('aria-expanded', String(picked));
-    other.nextElementSibling.hidden = !picked;
+const sample = document.querySelector('#sample');
+const optionButtons = [...sample.querySelectorAll('.opt')];
+function pickSample(n){
+  optionButtons.forEach((option) => {
+    const i = Number(option.dataset.i);
+    option.classList.toggle('cor', i === 1);
+    option.classList.toggle('wr', i === n && i !== 1);
+    option.classList.toggle('dim', i !== n && i !== 1);
+    option.setAttribute('aria-pressed', String(i === n));
   });
-}));
+  sample.querySelector('.exp').hidden = false;
+}
+optionButtons.forEach((option) => {
+  option.addEventListener('click', () => pickSample(Number(option.dataset.i)));
+  option.addEventListener('keydown', (event) => {
+    if(event.key === 'Enter' || event.key === ' '){ event.preventDefault(); option.click(); }
+  });
+});
 </script></body></html>
