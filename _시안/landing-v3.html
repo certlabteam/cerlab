@@ -120,6 +120,7 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 #benefits .mk-trust li::before{content:none}
 #benefits .mk-trust li{padding-left:56px}.mk-trust li img{position:absolute;left:0;top:0;width:40px;height:40px;padding:8px;border-radius:999px;background:var(--soft);object-fit:contain}   /* 작은 아이콘은 점으로 · 큰 것만 지금 랜딩처럼 옅은 원 안에(크리스 「아이콘 작은건 점만 찍기로」) */
 .ex-card .chip b{margin-right:8px}
+.mk-shots{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:4px 20px 8px}.mk-shots figure{margin:0;flex:none;scroll-snap-align:start;display:grid;gap:8px;justify-items:center}.mk-shots img{width:240px;height:auto;border-radius:16px;box-shadow:var(--lift);border:1px solid var(--line)}.mk-shots figcaption{font-size:14px;color:var(--muted)}
 .ex-card .ex-review img,.mk-cmp thead img{vertical-align:middle}
 /* 실제 랜딩 style.css 의 .lp-chips 규칙과 시험 칸 마크업을 복사했다. */
 .lp-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
@@ -178,21 +179,11 @@ body{background:var(--outer)}
     <span class="mk-label mk-dot">기출, 정답만 외우지 마세요</span>
     <h2>틀린 보기까지 이해하면<br>다음 문제를 보는 눈이 달라집니다.</h2>
     <p class="mk-lead">답 하나보다, 보기마다 틀린 이유가 중요합니다.</p>
-      <article class="ex-card" id="sample">
-        <p class="real-top">2025년 공인중개사 1차 기출(제36회) 2번</p>
-        <p class="ex-review">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</p>
-        <p class="lp-note">보기를 누르면 해설과 장면 예시가 열립니다.</p>
-        <button class="chip" type="button" data-i="0" aria-expanded="false"><b>1</b>부동산 임대 및 공급업</button>
-        <div class="ex-reply" hidden><p><strong>정답</strong> 부동산 임대 및 공급업은 부동산 관련 서비스업이 아니라 그와 나란한 별도의 중분류라, 관련 서비스업에 해당하지 않으므로 옳지 않다(정답).</p><p><strong>장면 예시</strong> 甲은 자기 이름으로 된 오피스텔 여러 채를 세놓아 다달이 임대료를 거두는데, 이 일은 거래를 옆에서 돕는 중개나 자문과 달리 부동산을 직접 갖고 굴리는 업종으로 분류된다.</p></div>
-        <button class="chip" type="button" data-i="1" aria-expanded="false"><b>2</b>부동산 중개 및 대리업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 중개 및 대리업은 사거나 빌리려는 사람을 연결해 거래를 도와주는 일이라, 부동산을 직접 빌려주거나 공급하지 않는 '관련 서비스업'에 속한다. 해당하는 것이므로 옳다.</p><p><strong>장면 예시</strong> 甲이 집을 사려는 사람과 팔려는 사람을 이어 주고 계약을 도와 수수료를 받는 중개 일을 하며, 직접 집을 빌려주거나 공급하지 않고 거래만 거들어 주는 서비스를 제공한다.</p></div>
-        <button class="chip" type="button" data-i="2" aria-expanded="false"><b>3</b>부동산 감정평가업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 감정평가업은 부동산의 값이 얼마인지 전문적으로 매겨 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속한다. 해당하는 것이므로 옳다.</p><p><strong>장면 예시</strong> 甲이 대상 부동산이 얼마짜리인지 전문적으로 값을 매겨 주는 감정평가 일을 하며, 부동산을 직접 사고팔지는 않고 거래와 이용을 옆에서 돕는 서비스를 제공한다.</p></div>
-        <button class="chip" type="button" data-i="3" aria-expanded="false"><b>4</b>부동산 투자 자문업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 투자 자문업은 어디에 어떻게 투자할지 조언해 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속하므로 옳다.</p><p><strong>장면 예시</strong> 甲이 어느 지역 어떤 상가에 어떻게 돈을 넣으면 좋을지 조언해 주는 투자 자문 일을 하며, 부동산을 직접 굴리지 않고 판단만 거드는 서비스를 판다.</p></div>
-        <button class="chip" type="button" data-i="4" aria-expanded="false"><b>5</b>부동산 분양 대행업</button>
-        <div class="ex-reply" hidden><p><strong>정답 아님</strong> 부동산 분양 대행업은 새로 지은 건물을 대신 팔아 주는 일이라, 공급 자체가 아니라 그 거래를 돕는 관련 서비스업에 속하므로 옳다.</p><p><strong>장면 예시</strong> 甲이 새로 지은 아파트를 시행사 대신 나서서 팔아 주는 분양대행 일을 맡아, 건물을 직접 공급하는 것이 아니라 그 거래가 성사되도록 옆에서 돕는다.</p></div>
-      </article>
+      <div class="mk-shots">   <!-- 실제 앱 화면(10-31 라이브에서 찍음 · 크리스 「실제화면을 보여주자」) -->
+        <figure><img src="real-q.jpg" width="240" alt="서트랩 문제 화면 — 공인중개사 1차 2025년 2번"><figcaption>문제 풀기</figcaption></figure>
+        <figure><img src="real-exp.jpg" width="240" alt="서트랩 해설 화면 — 보기마다 해설과 예시"><figcaption>보기마다 해설 · 예시</figcaption></figure>
+      </div>
+      <p class="lp-note">2025년 공인중개사 1차(제36회) 2번 · 실제 앱 화면</p>
   </section>
 
   <section class="lp-sec mk-alt" id="compare">
