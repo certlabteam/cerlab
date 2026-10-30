@@ -676,20 +676,20 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .mcq-result .rbtns button{white-space:nowrap;padding:12px 8px;font-size:14px}
 #mcqView .mcq-result .ghost{background:#fff;color:#475569;border:1.5px solid #E2E8F0}
 /* ===== 자동복습 UI ===== */
-.sr-banner{margin:10px 14px 4px;padding:12px 14px;background:linear-gradient(135deg,#185FA5,#0C447C);border-radius:12px;color:#fff;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
-.sr-banner-l{display:flex;flex-direction:column;gap:2px;text-align:left}
+.sr-banner{margin:10px 14px 4px;padding:12px 14px;background:#fff;border:1px solid #E6EEF8;border-radius:12px;color:#0C447C;display:flex;align-items:center;gap:10px;cursor:pointer}
+.sr-banner-l{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px;text-align:left}
 .sr-banner-l b{font-size:14px}
-.sr-exam{font-size:12px;opacity:.9;text-decoration:underline}
-.sr-banner-go{font-size:12px;font-weight:700;background:#fff;color:#185FA5;padding:6px 12px;border-radius:999px;white-space:nowrap}
+.sr-exam{font-size:12px;color:#5A6B7C}
+.sr-banner-go{font-size:12px;font-weight:700;background:#EEF4FC;color:#185FA5;padding:6px 10px;border-radius:999px;white-space:nowrap}
 /* OX진술 학습 */
-.oxl-banner{margin:10px 14px 4px;padding:12px 14px;background:linear-gradient(135deg,#B23A48,#8C2A36);border-radius:12px;color:#fff;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
-.oxl-banner-l{display:flex;align-items:center;gap:10px;text-align:left}
+.oxl-banner{margin:10px 14px 4px;padding:12px 14px;background:#fff;border:1px solid #E6EEF8;border-radius:12px;color:#0C447C;display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer}
+.oxl-banner-l{display:flex;flex:1;min-width:0;align-items:center;gap:10px;text-align:left}
 .oxl-banner-ico{font-size:18px}
 .oxl-banner-l b{font-size:14px;display:block}
-.oxl-banner-sub{font-size:12px;opacity:.9;display:block;margin-top:2px}
-.oxl-banner-go{font-size:12px;font-weight:800;background:#fff;color:#B23A48;padding:6px 12px;border-radius:999px;white-space:nowrap}
-.oxl-banner-promo{background:linear-gradient(135deg,#1D9E75,#0F6E56)}
-.oxl-banner-promo .oxl-banner-go{color:#0F6E56}
+.oxl-banner-sub{font-size:12px;color:#5A6B7C;display:block;margin-top:2px}
+.oxl-banner-go{font-size:12px;font-weight:800;background:#EEF4FC;color:#185FA5;padding:6px 10px;border-radius:999px;white-space:nowrap}
+.oxl-banner-promo .oxl-banner-go{background:#E6F4EF;color:#0F6E56}
+.home-action{margin:10px 14px 4px;padding:12px 14px;background:#fff;border:1px solid #E6EEF8;border-radius:12px;color:#0C447C;display:flex;align-items:center;gap:10px;cursor:pointer}.home-action-main{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}.home-action-text{flex:1;min-width:0}.home-action-text b,.home-plan b{display:block;font-size:14px;color:#0C447C}.home-action-text span{display:block;margin-top:2px;font-size:12px;color:#5A6B7C}.home-action-ico{width:28px;height:28px;object-fit:contain;flex:0 0 28px}.home-action-result{display:flex;align-items:center;gap:4px;padding:7px 9px;border:1px solid #B9D2EF;border-radius:9px;background:#EEF4FC;color:#0C447C;font-size:12px;font-weight:800;cursor:pointer}.home-action-result img{width:18px;height:18px}.home-action-go{margin-left:auto;color:#185FA5;font-size:18px}.home-plan{margin:10px 0 2px}
 .oxl-wrap{padding:8px 14px 40px;text-align:left}
 .oxl-top{display:flex;align-items:center;gap:10px;margin:6px 0 14px}
 .oxl-back{background:#F1F5F9;border:none;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;color:#475569;cursor:pointer}
@@ -818,7 +818,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .anal-bar{flex:1;height:9px;background:#F0E7DE;border-radius:999px;overflow:hidden}
 .anal-fill{height:100%;border-radius:999px;transition:width .4s}
 .anal-pct{font-size:12px;font-weight:700;color:#6E6256;width:40px;text-align:right}
-.anal-weak{margin-top:10px;font-size:12px;color:#A32D2D;background:#FCEBEB;border-radius:12px;padding:8px 10px;line-height:1.5}
+.anal-weak{margin-top:10px;font-size:12px;color:#A32D2D;background:#fff;border:1px solid #E24B4A;border-radius:12px;padding:8px 10px;line-height:1.5}
 .anal-note{margin-top:8px;font-size:12px;color:#B4A99C}
 .install-btn{background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4;border-radius:999px;font-size:12px;font-weight:800;padding:6px 10px;cursor:pointer;white-space:nowrap}
 .install-btn:hover{background:#d8e9fa}

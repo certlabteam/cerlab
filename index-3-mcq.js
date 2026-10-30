@@ -322,9 +322,9 @@ function renderMcqHome(root){
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name) || (_isSubjCert(mqCert)?certLabel(mqCert):'') || '';
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
-  if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:10px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:10px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:12px;padding:8px 6px;font-size:12px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
+  if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div class="home-action home-level"><div class="home-action-main" onclick="startLevelUp()"><img src="icons/lightning.png" alt="" class="home-action-ico"><div class="home-action-text"><b>'+_luTitle+'</b><span>'+_luSub+'</span></div></div><button type="button" class="home-action-result" onclick="luHistGo()"><img src="icons/barchart.png" alt="">결과</button></div>'; }
   if(typeof lt2Has==='function' && lt2Has(mqCert) && ltDone(mqCert)){
-    html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="startLt2LevelUp()"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">\u26A1</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">\uB808\uBCA8\uC5C5 \uBB38\uC81C\uD480\uAE30</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">\uC57D\uD55C \uACFC\uBAA9\uBD80\uD130 \uC790\uB3D9\uC73C\uB85C \uC774\uC5B4\uC11C</div></div><div style="font-size:16px;color:#185FA5">\u2192</div></div>';
+    html+='<div class="home-action home-level" onclick="startLt2LevelUp()"><img src="icons/lightning.png" alt="" class="home-action-ico"><div class="home-action-text"><b>레벨업 문제풀기</b><span>약한 과목부터 자동으로 이어서</span></div><span class="home-action-go">→</span></div>';
   }
   const dueAll=srDueReviewable(mqCert);
   const due=Math.min(dueAll, REVIEW_MCQ_CAP);
@@ -344,7 +344,7 @@ function renderMcqHome(root){
           return {t:'다음 회차 풀기', s:sb.name+' · '+sb.sets[j].label, go:"mqTodoGo('"+ord[i]+"','"+encodeURIComponent(sb.sets[j].label)+"','all')", b:'풀기 시작 →'}; } }
     return rv;
   })();
-  html+='<div class="sr-banner" onclick="'+_todo.go+'"><div class="sr-banner-l"><b>'+mqEsc(_todo.t)+'</b><span class="sr-exam">'+mqEsc(_todo.s)+'</span></div><div class="sr-banner-go">'+_todo.b+'</div></div>';
+  html+='<div class="sr-banner" onclick="'+_todo.go+'"><img src="icons/repeat.png" alt="" class="home-action-ico"><div class="sr-banner-l"><b>'+mqEsc(_todo.t)+'</b><span class="sr-exam">'+mqEsc(_todo.s)+'</span></div><div class="sr-banner-go">'+_todo.b+'</div></div>';
   // ▼ 약점개념카드 보류: exp.c가 문항 단위라 OX(진술 단위)·정답오답으로 집계 시 무관한 개념까지 잡힘.
   //   데이터방이 진술별 개념 태그를 붙인 뒤 재개. 재개 시 아래 false→mqWeakCache.length 로 복원.
   mqWeakCache=[];
@@ -662,7 +662,7 @@ function mcqAnalysisCard(cert){
     return head+body;
   }).join('');
   let noteHTML='';
-  if(v && v.status==='fail' && v.failFloor && v.failFloor.length) noteHTML='<div class="anal-weak">⚠️ <b>'+v.failFloor.map(p=>p.name).join(', ')+'</b> 과락(40점 미만)이에요.</div>';
+  if(v && v.status==='fail' && v.failFloor && v.failFloor.length) noteHTML='<div class="anal-weak"><img src="icons/warning.png" alt="" class="ic-img ic-in"> <b>'+v.failFloor.map(p=>p.name).join(', ')+'</b> 과락(40점 미만)이에요.</div>';
   noteHTML+='<div class="anal-note">예상점수 · 합격 기준 '+passRule(cert).label+' · 레벨은 문제 풀면서 자동 조정</div>';
   return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
     +'<div class="anal-score">'+predHTML+'</div>'
@@ -907,7 +907,7 @@ function _planUpsell(){
   w.onclick=function(e){ if(e.target===w) document.body.removeChild(w); };
 }
 function _passPlanEntryHTML(cert){
-  return '<div onclick="openPassPlan()" style="margin:10px 0 2px;border-radius:12px;background:#0C447C;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer"><span style="font-size:16px">🎯</span><span style="flex:1;font-size:14px;font-weight:800">합격 플랜 확인하기</span><span style="font-size:16px">→</span></div>';
+  return '<div class="home-action home-plan" onclick="openPassPlan()"><img src="icons/lv_target.png" alt="" class="home-action-ico"><b>합격 플랜 확인하기</b><span class="home-action-go">→</span></div>';
 }
 function _analLockWrap(cert, inner){ return inner; }   // 블러 제거 — 다 보여주고 풀기 버튼(_planTopicGo)에서 게이트
 
