@@ -62,12 +62,19 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"></noscript><!-- 2026-10-22 글꼴 목록이 첫 화면 그리기를 막지 않게 — 받는 대로 바꿔 끼운다 -->
-<link rel="stylesheet" href="style.css?v=fad98753">
+<link rel="stylesheet" href="style.css?v=8a91676f">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
      120KB 를 받고 768ms 를 끌고 있었다. 광고를 다시 켜면 그때 되살린다. -->
 
+<script>
+/* [2026-10-31] 메타 픽셀 되살림 — SEO방이 서트랩 광고(토·일)를 다시 켠다(크리스 「되살리기 — 늦게 받기」).
+   9-02 에 뺀 이유(120KB·768ms)를 피하려고 화면이 다 뜬 뒤 1초 있다가 받는다. 그 전에 부른 clTrack 은 fbq 큐에 쌓였다가 나간다. */
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}(window,document);
+fbq('init','975416015293680');fbq('track','PageView');
+window.addEventListener('load',function(){setTimeout(function(){var t=document.createElement('script');t.async=true;t.src='https://connect.facebook.net/en_US/fbevents.js';document.head.appendChild(t);},1000);});
+</script>
 <!-- End Meta Pixel Code -->
 <!-- CertLab → Meta 전환 이벤트 헬퍼 (fbq 미로드 시 무시) -->
 <script>

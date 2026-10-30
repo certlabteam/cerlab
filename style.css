@@ -377,7 +377,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .mq-prog .track.prog-drag .bar::after{content:"";position:absolute;right:0;top:50%;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:2.5px solid #185FA5;box-shadow:0 1px 3px rgba(15,23,42,.3)}
 #mcqView .qcard{background:none;border:none;border-radius:0;padding:0;margin-bottom:80px}
 #mcqView .qhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-#mcqView .qnum{font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+#mcqView .qnum{flex:none;font-size:12px;font-weight:800;color:#fff;background:#0F172A;width:25px;height:25px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 #mcqView .qmulti{font-size:12px;font-weight:800;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;padding:2px 8px;border-radius:6px}
 #mcqView .qsubj{font-size:12px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;padding:2px 8px;border-radius:6px}
 #mcqView .qcount-type{font-size:12px;font-weight:700;color:#475569;background:#F1F5F9;border:1px solid #CBD5E1;padding:2px 8px;border-radius:6px}
