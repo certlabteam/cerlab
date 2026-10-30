@@ -393,7 +393,7 @@ function ltCertName(c){ return LT_CERT_NAMES[c] || (typeof CERT_FULLNAMES!=='und
 const REFUND = {
   page:'#post/LOk5j9wje78LqxRt34SW', badge:'합격 환급',
   // [2026-10-12] 6월 현금 환급(계좌번호 메일) 문구가 남아 있던 것을 지금 방식(포인트 자동 적립)으로 맞췄다 — 공지 글과 같은 말
-  bannerLine:'🎉 합격하면 결제금액 100% 포인트로',
+  bannerLine:'합격하면 결제금액 100% 포인트로',
   bannerSub:'CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제하신 금액만큼 포인트로 돌려드려요. (급수가 있는 시험은 가장 높은 급수 달성 시)',
   popTitle:'합격하면 결제금액 100% 포인트로!',
   popSub:'CertLab로 공부하고 <b>합격하면 결제하신 금액만큼 포인트</b>로 돌려드려요. (급수가 있는 시험은 가장 높은 급수 달성 시) <b>자격증별 선착순 30명!</b>',
@@ -1093,11 +1093,11 @@ function shareReferral(source){
  * 코드가 없으면(게스트) 빈 문자열 — 그쪽은 로그인 팝업이 따로 받는다. */
 function _refShareBlockHTML(source){
   if(!myReferralCode) return '';
-  return '<div style="margin:10px 0;padding:12px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;text-align:center">'
-    + '<div style="font-size:14px;font-weight:700;color:#7A5A18;margin-bottom:2px">🎁 친구 초대하면 한 달 무료</div>'
+  return '<div style="margin:10px 0;padding:12px;background:#fff;border:1px solid #E6EEF8;border-radius:12px;text-align:center">'
+    + '<div style="font-size:14px;font-weight:700;color:#0C447C;margin-bottom:2px"><img src="icons/gift.png" alt="" class="ic-img ic-in"> 친구 초대하면 한 달 무료</div>'
     + '<div style="font-size:14px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
       + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값'+((typeof pwaStandalone==='function'&&pwaStandalone())?'':' · 포인트로 전액 결제')+')<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
-    + '<button onclick="shareReferral(\''+(source||'limit')+'\')" style="width:100%;padding:12px;background:#FEE500;color:#191600;'
+    + '<button onclick="shareReferral(\''+(source||'limit')+'\')" style="width:100%;padding:12px;background:#1D9E75;color:#fff;'
       + 'border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">'
       + '친구에게 보내기</button></div>';
 }
@@ -1200,6 +1200,13 @@ function showLoginPopup(mode='default') {
   const popup = document.getElementById('loginPopup');
   const title = document.getElementById('loginTitle');
   const sub = document.getElementById('loginSub');
+  popup.classList.remove('welcome-mode');
+  var welcomeSub=document.getElementById('welcomeSub'); if(welcomeSub) welcomeSub.hidden=true;
+  var more=document.getElementById('loginMore'); if(more) more.open=false;
+  var loginRow=popup.querySelector('.login-row'); if(loginRow) loginRow.style.display='';
+  var emailWrap=document.getElementById('emailAuthWrap'); if(emailWrap) emailWrap.style.display='';
+  var later=popup.querySelector('.auth-sheet-close'); if(later){ later.textContent='나중에'; later.style.background=''; later.style.color=''; }
+  title.innerHTML = '<img src="icons/gift.png" alt="" class="ic-img ic-in"> CertLab';
   if (mode === 'guest_limit') {
     /*
      * '내일 오세요' 로 끝내지 않는다.
@@ -1208,10 +1215,8 @@ function showLoginPopup(mode='default') {
      * 것은 부족함이 아니라 '이 속도로는 시험날까지 못 끝난다' 는 계산이다.
      * 시험일을 알면 그 셈을 대신 해서 보여 준다.
      */
-    title.textContent = '🎁 가입하면 오늘 몰아서 풀 수 있어요';
     sub.textContent = _limitMsg('가입하면 오늘 '+(typeof _firstDayDaily==='function'?_firstDayDaily():50)+'문제까지 이어서 풀 수 있고, 학습 기록도 남아요.');
   } else {
-    title.textContent = '📚 CertLab';
     sub.textContent = '로그인하시면 모든 기능을 쓰실 수 있습니다.';
   }
   if(typeof updateEventBanner==='function') updateEventBanner();
@@ -1348,7 +1353,7 @@ function updateEventBanner(){
   var b=document.getElementById('loginRefundBanner'); if(!b) return;
   var ev=REFUND;
   b.style.display='';
-  var ti=document.getElementById('loginRbTi'); if(ti) ti.innerHTML=ev.bannerLine+'<span class="rb-tag">선착순 30명</span>';
+  var ti=document.getElementById('loginRbTi'); if(ti) ti.textContent=ev.bannerLine;
   var sb=document.getElementById('loginRbSub'); if(sb) sb.innerHTML=ev.bannerSub;
   var dt=document.getElementById('refundDetail'); if(dt) dt.innerHTML=ev.popSteps;
 }
@@ -1369,18 +1374,20 @@ function maybeShowRefundPopup(){
         var nm=cert?((typeof CERT_FULLNAMES!=='undefined'&&CERT_FULLNAMES[cert])?CERT_FULLNAMES[cert]:''):'';
         var allN=(typeof totalQuestionCountAll==='function')?totalQuestionCountAll():0;
         var ex=(typeof examCount==='function')?examCount():0;
-        var line1 = (cert && cn>0) ? '📘 지금 보는 '+(nm||'시험')+' <b>'+cn.toLocaleString()+'문제</b>' : '';
-        var line2 = (ex>0&&allN>0) ? '🎓 CertLab 전체 '+ex+'개 시험 · 총 <b>'+allN.toLocaleString()+'문제</b>' : '';
+        var line1 = (cert && cn>0) ? '<img src="icons/book.png" alt="" class="ic-img ic-in"> 지금 보는 '+(nm||'시험')+' <b>'+cn.toLocaleString()+'문제</b>' : '';
+        var line2 = (ex>0&&allN>0) ? '<img src="icons/medal.png" alt="" class="ic-img ic-in"> CertLab 전체 '+ex+'개 시험 · 총 <b>'+allN.toLocaleString()+'문제</b>' : '';
         rs.innerHTML = [line1,line2].filter(Boolean).join('<br>');
         rs.style.display = rs.innerHTML ? '' : 'none';
       }
     }catch(_){}
     try{
-      var _t=document.getElementById('refundTitle'); if(_t) _t.textContent=ev.popTitle;
-      var _s=document.getElementById('refundSub'); if(_s) _s.innerHTML=ev.popSub;
+      var _t=document.getElementById('refundTitle'); if(_t) _t.textContent='합격 100% 포인트 환급';
+      var _s=document.getElementById('refundSub'); if(_s) _s.textContent='합격 인증하면 결제금액 전액을 포인트로 돌려드려요.';
+      var _full=document.getElementById('refundFullSub'); if(_full) _full.innerHTML=ev.popSub;
       var _st=document.getElementById('refundSteps'); if(_st) _st.innerHTML=ev.popSteps;
       var _l=document.getElementById('refundLink'); if(_l){ if(ev.page){ _l.setAttribute('href',ev.page); _l.style.display=''; } else { _l.style.display='none'; } }
     }catch(_){}
+    var _more=document.getElementById('refundMoreDetails'); if(_more) _more.open=false;
     p.classList.remove('hidden');
   }catch(_){}
 }
@@ -1467,21 +1474,22 @@ function examCount(){
 }
 function featureCompareHTML(totalTxt){
   // 무료/유료 2장 카드. 같은 순서의 줄끼리 같은 기능(아이콘으로 매칭).
+  const ico=function(name){return '<img src="icons/'+name+'.png" alt="" class="ic-img ic-in"> ';};
   const free=[
-    '📄 50문제 체험',
-    '📚 기출·해설 <b class="cmp-warn">△ 체험분</b>',
-    '📈 예상점수 <b class="cmp-warn">△ 체험분</b>',
-    '🧠 복습 <b class="cmp-warn">△ 제한</b>',
-    '🔊 음성·암기 <b class="cmp-warn">△ 체험분</b>',
-    '💾 학습기록 <b class="cmp-no">✕ 종료</b>'
+    ico('book')+'50문제 체험',
+    ico('books')+'기출·해설 <b class="cmp-warn">△ 체험분</b>',
+    ico('chart_up')+'예상점수 <b class="cmp-warn">△ 체험분</b>',
+    ico('repeat')+'복습 <b class="cmp-warn">△ 제한</b>',
+    ico('speaker')+'음성·암기 <b class="cmp-warn">△ 체험분</b>',
+    ico('database')+'학습기록 <b class="cmp-no">✕ 종료</b>'
   ];
   const paid=[
-    '📄 전체 '+totalTxt+' <b>✓</b>',
-    '📚 전 과목 기출·해설 <b>✓</b>',
-    '📈 예상점수 전체 <b>✓</b>',
-    '🧠 무제한 복습 <b>✓</b>',
-    '🔊 음성·암기 <b>✓</b>',
-    '💾 학습기록 계속 <b>✓</b>'
+    ico('book')+'전체 '+totalTxt+' <b>✓</b>',
+    ico('books')+'전 과목 기출·해설 <b>✓</b>',
+    ico('chart_up')+'예상점수 전체 <b>✓</b>',
+    ico('repeat')+'무제한 복습 <b>✓</b>',
+    ico('speaker')+'음성·암기 <b>✓</b>',
+    ico('database')+'학습기록 계속 <b>✓</b>'
   ];
   return '<div class="cmp2">'
     + '<div class="cmp2-card cmp2-free"><div class="cmp2-h">무료 체험</div>'
@@ -1492,26 +1500,26 @@ function featureCompareHTML(totalTxt){
 }
 function _togglePayUI(show){
   /* ★ [2026-10-14] #btnCardPay(토스 카드 결제)가 빠져 있어 앱(TWA)에서도 카드 결제 단추가 보였다 — 플레이 정책 위반 자리. 더한다. */
-  var els=['.plan-cards','.discount-row','.bank-info','.pay-ref-line','#mileUseBox','#depositorName','#btnPayment','#btnCardPay','.payment-note'];
+  var els=['.plan-cards','.plan-more','.discount-row','.bank-info','.pay-ref-line','#mileUseBox','#depositorName','#btnPayment','#btnCardPay','.payment-note'];
   els.forEach(function(sel){ document.querySelectorAll(sel).forEach(function(el){ el.style.display=show?'':'none'; }); });
   if(!show){ var m=document.querySelector('.discount-msg'); if(m) m.style.display='none'; }
 }
 function showAppWebPay(){
   _togglePayUI(false);
-  var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🎯 멤버십 이용권';
+  var t=document.getElementById('planSheetTitle'); if(t) t.innerHTML='<img src="icons/target.png" alt="" class="ic-img ic-in"> 멤버십 이용권';
   var sub=document.getElementById('planSub'); if(sub) sub.textContent='맞춤 합격플랜과 무제한 문제풀이는 멤버십에서 이용할 수 있어요.';
   var st=document.getElementById('planStats');
   /* [2026-10-14] 플레이 정책 — 앱 안에서 바깥(웹) 결제로 이끄는 말을 쓰지 않는다(안티 스티어링).
    *   크리스 「앱스토어 결제 가잖아 · 일구미처럼」 → 구글 플레이 결제를 붙일 때까지 앱에서는 안내만 한다. */
   if(st) st.innerHTML='<div style="text-align:center;padding:16px 8px;font-size:14px;color:#3A4A5E;line-height:1.9">이용권이 있으면 모든 문제와 해설을<br>제한 없이 볼 수 있어요.<br><span style="font-size:12px;color:#8A7D6E">앱 안 결제는 곧 열려요.</span></div>'
-    +'<button onclick="hidePlanPopup()" style="width:100%;padding:12px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button>';
+    +'<button onclick="hidePlanPopup()" style="width:100%;padding:12px;margin-top:6px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button>';
   _planPopupShow();
 }
 function showAppDailyDone(){
   _togglePayUI(false);
-  var t=document.getElementById('planSheetTitle'); if(t) t.textContent='🌙 오늘 무료 학습 완료!';
+  var t=document.getElementById('planSheetTitle'); if(t) t.innerHTML='<img src="icons/checklist.png" alt="" class="ic-img ic-in"> 오늘 무료 학습 완료!';
   var sub=document.getElementById('planSub'); if(sub) sub.textContent=_limitMsg('내일 다시 오면 새 문제로 이어서 풀 수 있어요.');
-  var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:14px;color:#3A4A5E;line-height:1.9">💪 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요 🙌</div>'+_refShareBlockHTML()+'<button onclick="hidePlanPopup()" style="width:100%;padding:12px;margin-top:6px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button>';
+  var st=document.getElementById('planStats'); if(st) st.innerHTML='<div style="text-align:center;padding:20px 8px;font-size:14px;color:#3A4A5E;line-height:1.9"><img src="icons/check.png" alt="" class="ic-img ic-in"> 매일 꾸준히가 합격의 지름길!<br>오늘도 수고했어요</div>'+_refShareBlockHTML()+'<button onclick="hidePlanPopup()" style="width:100%;padding:12px;margin-top:6px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button>';
   _planPopupShow();
 }
 function showPlanPopup(membership) {
@@ -1524,7 +1532,7 @@ function showPlanPopup(membership) {
   _togglePayUI(true);
   _playMode(_inApp);   // [2026-10-14] 앱이면 구글 플레이 결제만(토스·포인트·할인코드 숨김)
   const titleEl = document.getElementById('planSheetTitle');
-  if (titleEl) titleEl.textContent = membership ? `🎯 멤버십 이용권` : `🎯 합격까지 가는 가장 빠른 길`;
+  if (titleEl) titleEl.innerHTML = '<img src="icons/target.png" alt="" class="ic-img ic-in"> '+(membership?'멤버십 이용권':'합격까지 가는 가장 빠른 길');
   /* ★★ [2026-10-12] **어느 시험 이용권인지 적는다.** 마이페이지에서 바로 열 수 있게 되면서
    *   「무료 한도가 끝나 뜬 팝업」이 아니라 맥락 없이 열리는 때가 생겼다. 시험 이름이 없으면
    *   엉뚱한 시험을 결제할 수 있다(크리스 2026-10-12 지적). 돈이 잘못 나가는 자리라 꼭 보인다. */
@@ -1547,12 +1555,12 @@ function showPlanPopup(membership) {
    *   친구 초대는 결제 단추 위 한 줄(.pay-ref-line)이 맡는다. 비교표의 「무료는 체험분」은 끝 한 줄로. */
   const stats = document.getElementById('planStats');
   if (stats) {
-    const ben=['📚 '+(n>0?'전체 '+totalTxt:'전체 기출')+' · 보기마다 해설',
-               '🎯 레벨테스트 + 레벨업 — 약점만 5문제씩',
-               '🔁 변형문제 · OX진술 학습',
-               '📈 예상점수 · 약점 분석',
-               '🧠 망각곡선 자동복습 · 오답노트',
-               '🔊 음성 · 암기 · 학습기록 계속'];
+    const ben=['<img src="icons/books.png" alt="" class="ic-img ic-in"> '+(n>0?'전체 '+totalTxt:'전체 기출')+' · 보기마다 해설',
+               '<img src="icons/target.png" alt="" class="ic-img ic-in"> 레벨테스트 + 레벨업 — 약점만 5문제씩',
+               '<img src="icons/repeat.png" alt="" class="ic-img ic-in"> 변형문제 · OX진술 학습',
+               '<img src="icons/chart_up.png" alt="" class="ic-img ic-in"> 예상점수 · 약점 분석',
+               '<img src="icons/brain.png" alt="" class="ic-img ic-in"> 망각곡선 자동복습 · 오답노트',
+               '<img src="icons/speaker.png" alt="" class="ic-img ic-in"> 음성 · 암기 · 학습기록 계속'];
     stats.innerHTML = '<div class="plan-ben"><div class="plan-ben-h">이용권으로 열리는 것</div>'
       + ben.map(function(t){ return '<div class="plan-ben-li"><span>'+t+'</span><b>✓</b></div>'; }).join('')
       + '<div class="plan-ben-free">무료 체험은 50문제까지예요. 체험이 끝나면 학습기록도 멈춰요.</div></div>';
@@ -1575,27 +1583,16 @@ function _payViewLog(){
     db.collection('users').doc(currentUser.uid).update(u).catch(function(){});
   }catch(_){}
 }
-function _planPopupShow(){ var pp=document.getElementById('planPopup'); if(!pp) return; _hideNudges(); var ov=document.getElementById('passPlanOverlay'); pp.style.zIndex=(ov && ov.style.display==='block')?'9300':''; pp.classList.remove('hidden'); _payViewLog(); }  /* [FIX 2026-07] 합격플랜 전체화면(z9000) 위로 결제팝업을 올려 가려짐 방지 */
+function _planPopupShow(){ var pp=document.getElementById('planPopup'); if(!pp) return; var more=document.getElementById('planMore'); if(more) more.open=false; _hideNudges(); var ov=document.getElementById('passPlanOverlay'); pp.style.zIndex=(ov && ov.style.display==='block')?'9300':''; pp.classList.remove('hidden'); _payViewLog(); }  /* [FIX 2026-07] 합격플랜 전체화면(z9000) 위로 결제팝업을 올려 가려짐 방지 */
 function hidePlanPopup() { var pp=document.getElementById('planPopup'); if(pp){ pp.classList.add('hidden'); pp.style.zIndex=''; } }
 
 function showWelcomePopup() {
   const popup = document.getElementById('loginPopup');
-  document.getElementById('loginTitle').textContent = '🎉 환영합니다!';
-  document.getElementById("loginSub").textContent = "50문제 무료 체험이 시작되었습니다. 지금 바로 학습해보세요!";
-  document.querySelector('.auth-features').innerHTML = `
-    <div class="auth-feature-item">전체 기출문제 + 상세 해설</div>
-    <div class="auth-feature-item">자동복습 & 오답노트</div>
-    <div class="auth-feature-item">레벨테스트·예상점수 무료</div>
-    <div class="auth-feature-item">50문제 무료 체험!</div>
-    <div class="welcome-mile">🎁 가입 축하 <b>1,000P</b> 포인트 지급! <span>(1년 안에 사용)</span><br>
-      친구를 초대해 친구가 문제 30개를 풀면 <b>친구도 나도 9,900P</b>(한 달 이용권 값) · 친구가 결제하면 그 값의 절반도 포인트로 (1년 유효)
-      <div class="ref-link-box"><input id="refLinkInputW" readonly value="${myReferralCode?myReferralLink():'-'}"><button onclick="copyReferralLinkW(event)">링크 복사</button></div>
-    </div>`;
-  { var _lr=document.querySelector('#loginPopup .login-row'); if(_lr) _lr.style.display='none'; }   // [2026-10-15] 환영 창엔 로그인 단추 줄을 숨긴다(예전엔 첫 .btn-google-login 이 환급 창 단추라 엉뚱한 것을 숨겼다)
-  document.querySelector('.auth-sheet-close').textContent='학습 시작하기!';
-  document.querySelector('.auth-sheet-close').style.background='linear-gradient(135deg,#185FA5,#0C447C)';
-  document.querySelector('.auth-sheet-close').style.color='#fff';
-  if(typeof updateEventBanner==='function') updateEventBanner();
+  popup.classList.add('welcome-mode');
+  document.getElementById('loginTitle').innerHTML = '<img src="icons/gift.png" alt="" class="ic-img ic-in"> 환영합니다!';
+  var welcomeSub=document.getElementById('welcomeSub'); if(welcomeSub){ welcomeSub.textContent='50문제 무료 체험이 시작되었습니다.'; welcomeSub.hidden=false; }
+  var more=document.getElementById('loginMore'); if(more) more.open=false;
+  var later=popup.querySelector('.auth-sheet-close'); if(later){ later.textContent='학습 시작'; later.style.background='#185FA5'; later.style.color='#fff'; }
   _hideNudges();   // 떠 있는 잔소리 배너를 치우고 이 팝업만 남긴다
   popup.classList.remove('hidden');
 }
@@ -1653,7 +1650,7 @@ function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days)
 function renderPlanCards(cert){
   const set=plansFor(cert), box=document.querySelector('.plan-cards'); if(!box) return;
   box.innerHTML=set.map((pl,i)=>{
-    const badge=pl.pop?('<div class="plan-badge-pop"'+(pl.green?' style="background:linear-gradient(135deg,#1D9E75,#0C447C)"':'')+'>'+pl.pop+'</div>'):'';
+    const badge=pl.pop?('<div class="plan-badge-pop"'+(pl.green?' style="background:#1D9E75"':'')+'>'+pl.pop+'</div>'):'';
     return '<div class="plan-card" id="plan'+pl.d+'" onclick="selectPlan('+pl.d+','+pl.p+')">'+badge
       +'<div class="plan-card-top"><span class="plan-card-name">'+pl.name+'</span>'
       +'<span class="plan-card-price">'+pl.p.toLocaleString()+'원</span></div>'
@@ -1673,7 +1670,7 @@ function renderMileUse(){
   const box=document.getElementById('mileUseBox'); if(!box) return;
   const bal=mileageBalance(myMileageLots);
   if(bal<=0){ box.innerHTML=''; mileApplyOn=false; return; }
-  box.innerHTML='<label class="mile-use"><input type="checkbox" id="mileChk" '+(mileApplyOn?'checked':'')+' onchange="onMileToggle()"> 💰 보유 포인트 <b>'+bal.toLocaleString()+'P</b> 사용</label>';
+  box.innerHTML='<label class="mile-use"><input type="checkbox" id="mileChk" '+(mileApplyOn?'checked':'')+' onchange="onMileToggle()"> <img src="icons/medal.png" alt="" class="ic-img ic-in"> 보유 포인트 <b>'+bal.toLocaleString()+'P</b> 사용</label>';
 }
 function onMileToggle(){ const c=document.getElementById('mileChk'); mileApplyOn=!!(c&&c.checked); recalcPay(); }
 /* [2026-10-12] 포인트 한도가 없어졌다(전액 가능). 카드로 낼 돈이 남으면 토스 최소 100원 이상이어야 해서
@@ -1688,9 +1685,9 @@ function recalcPay(){
   const card=document.getElementById('btnCardPay');
   const price0=selectedPlanPrice||0, applied0=_pointsFor(price0), payable0=price0-applied0;
   if(card && !card.disabled){
-    card.textContent = (price0>0 && payable0<=0) ? '💰 포인트 '+applied0.toLocaleString()+'P로 바로 시작'
-      : applied0>0 ? '💳 '+payable0.toLocaleString()+'원 카드 결제 (포인트 '+applied0.toLocaleString()+'P 사용)'
-      : '💳 카드로 결제';
+    card.innerHTML = '<img src="icons/card.png" alt="" class="ic-img ic-in"> '+((price0>0 && payable0<=0) ? '포인트 '+applied0.toLocaleString()+'P로 바로 시작'
+      : applied0>0 ? payable0.toLocaleString()+'원 카드 결제 (포인트 '+applied0.toLocaleString()+'P 사용)'
+      : '카드로 결제');
   }
   const btn=document.getElementById('btnPayment'); if(!btn) return;
   const price=selectedPlanPrice||0;
@@ -1749,7 +1746,7 @@ var PLAY_BILLING='https://play.google.com/billing';
  *   앱이 넘겨 주는 referrer android-app://kr.certlab.app 를 세션에 적어 둔 clInApp() 로 가른다. */
 function _playReady(){ return (typeof clInApp==='function' && clInApp()) && ('getDigitalGoodsService' in window) && ('PaymentRequest' in window); }
 function _playMode(on){
-  ['#btnCardPay','#mileUseBox','.discount-row','.pay-ref-line','.payment-note'].forEach(function(sel){
+  ['#btnCardPay','#mileUseBox','.plan-more','.discount-row','.pay-ref-line','.payment-note'].forEach(function(sel){
     document.querySelectorAll(sel).forEach(function(el){ el.style.display = on ? 'none' : ''; }); });
   var b=document.getElementById('btnPlayPay'); if(b) b.style.display = on ? '' : 'none';
   if(on) _playRestore();
@@ -1852,7 +1849,7 @@ async function startCardPayment(){
     else if(/보유 포인트가 부족/.test(m) && mileApplyOn) alert('조금 전에 연 결제창이 포인트를 잡아 두고 있어요(30분 뒤 풀려요).\n지금 바로 결제하려면 「보유 포인트 사용」을 끄고 다시 눌러 주세요.');
     else alert('결제를 시작하지 못했어요.\n' + m);
   }finally{
-    if(btn){ btn.disabled=false; btn.textContent='💳 카드로 결제'; recalcPay(); }
+    if(btn){ btn.disabled=false; btn.innerHTML='<img src="icons/card.png" alt="" class="ic-img ic-in"> 카드로 결제'; recalcPay(); }
   }
 }
 
@@ -2181,32 +2178,34 @@ function showPtModal(kind, points, certLabel){
   var _prio={refbound:80, referral:70, appbonus:70, appintro:50}[kind];
   if(_prio && !_popNow){ popOffer('pt_'+kind+'_'+points, _prio, function(){ return showPtModal(kind, points, certLabel); }); return; }
   var ic=document.getElementById('ptModalIc'), ti=document.getElementById('ptModalTi'), sub=document.getElementById('ptModalSub');
+  var icName={referral:'gift',appintro:'laptop',appbonus:'medal',refbound:'heart_hands',earn:'medal'}[kind]||'repeat';
+  ic.innerHTML='<img src="icons/'+icName+'.png" alt="" class="popup-hero-ico">';
   /* [2026-10-15] 앱(TWA)에선 「포인트로 결제」를 말하지 않고 안내글 링크도 숨긴다 — 앱 결제는 구글 플레이라 포인트가 안 들고(플레이 정책),
    *   링크는 새 창 대신 앱 안에서 열려 게시글이 문제 화면 밑에 붙었다(크리스 폰 2026-10-15). */
   var _app=(typeof pwaStandalone==='function' && pwaStandalone());
   var _use=_app ? '' : ' 이용권 결제에 전액 쓸 수 있어요.';
   var _gl=ov.querySelector('a[onclick="ptGoGuide()"]'); if(_gl && _gl.parentNode) _gl.parentNode.style.display=_app?'none':'';
   if(kind==='referral'){
-    ic.textContent='🎁'; ti.textContent='추천 보상 '+points.toLocaleString()+'포인트!';
+    ti.textContent='추천 보상 '+points.toLocaleString()+'포인트!';
     sub.textContent='친구 초대 보상이에요.'+_use+' (1P = 1원 · 유효기간 1년)';
   } else if(kind==='appintro'){
-    ic.textContent='📲'; ti.textContent='앱 첫 로그인 혜택';
+    ti.textContent='앱 첫 로그인 혜택';
     sub.textContent='앱에서 문제를 '+APP_BONUS_NEED+'개 풀면 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 드려요.'+(_app?'':' 포인트로 이용권을 전액 결제할 수 있어요.');
   } else if(kind==='appbonus'){
-    ic.textContent='🎉'; ti.textContent='앱 혜택 '+points.toLocaleString()+'포인트!';
+    ti.textContent='앱 혜택 '+points.toLocaleString()+'포인트!';
     sub.textContent='앱으로 공부해 주셔서 고마워요.'+_use+' (1P = 1원 · 유효기간 1년)';
   } else if(kind==='refbound'){
-    ic.textContent='🤝'; ti.textContent='친구 초대로 가입했어요!';
+    ti.textContent='친구 초대로 가입했어요!';
     sub.textContent='문제를 '+REF_SOLVE_NEED+'개 풀면 나도, 초대한 친구도 '+points.toLocaleString()+'포인트(한 달 이용권 값)를 받아요.';
   } else if(kind==='earn'){
-    ic.textContent='💰'; ti.textContent=points.toLocaleString()+'포인트 적립되었어요';
+    ti.textContent=points.toLocaleString()+'포인트 적립되었어요';
     if(certLabel && points>1000){
       sub.textContent='합격 후기 보상! '+certLabel+' 결제금액 '+points.toLocaleString()+'원 전액 환급이에요. (유효기간 1년)';
     } else {
       sub.textContent='이용권 결제에 사용할 수 있어요. (1P = 1원 · 유효기간 1년)';
     }
   } else {
-    ic.textContent='↩️'; ti.textContent=points.toLocaleString()+'포인트가 차감되었어요';
+    ti.textContent=points.toLocaleString()+'포인트가 차감되었어요';
     sub.textContent='글을 삭제해서 적립됐던 포인트가 회수됐어요.';
   }
   ov.classList.remove('hidden');

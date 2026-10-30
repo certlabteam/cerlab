@@ -131,11 +131,11 @@ const SUBJS=['보디빌딩규정','스포츠인권·윤리','운동생리학','�
 const BB_CAT={ se:'스포츠인권·윤리' };
 const ALL_SUBJS=['전체',...SUBJS];
 const MILESTONES=[
-  {n:45,stars:'⭐⭐',msg:'좋은 출발이에요! 계속 달려봐요 🏃\u200d♀️'},
-  {n:100,stars:'⭐⭐⭐',msg:'100문제 돌파! 정말 대단해요 🎉'},
-  {n:200,stars:'🌟🌟🌟',msg:'200문제! 실력이 쑥쑥 크고 있어요 💪'},
-  {n:300,stars:'✨✨✨✨',msg:'300문제! 합격이 보이기 시작했어요 👑'},
-  {n:1000,stars:'🏆🏆🏆🏆🏆',msg:'1000문제 완전 정복! 당신은 전설입니다 🥇'},
+  {n:45,stars:'★★',msg:'좋은 출발이에요! 계속 달려봐요'},
+  {n:100,stars:'★★★',msg:'100문제 돌파! 정말 대단해요'},
+  {n:200,stars:'★★★',msg:'200문제! 실력이 쑥쑥 크고 있어요'},
+  {n:300,stars:'★★★★',msg:'300문제! 합격이 보이기 시작했어요'},
+  {n:1000,stars:'★★★★★',msg:'1000문제 완전 정복! 당신은 전설입니다'},
 ];
 const passedMilestones=new Set();
 const D=[];
@@ -620,7 +620,7 @@ function itvEnsureCSS(){
     '.itv-bound{position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed #5B6B82;pointer-events:none;z-index:2}',
     '.itv-seg .sl{font-weight:800;color:#1f2d3d}.itv-seg .sq{font-weight:700}.itv-seg .sp{font-size:12px;color:#64748B;font-weight:600}',
     '.itv-mb.fifo .itv-seg{background:#E7F0FB}.itv-mb.wavg .itv-seg{background:#E6F4EF}',
-    '.itv-kept{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(148,163,184,.20),rgba(148,163,184,.20) 5px,rgba(148,163,184,.32) 5px,rgba(148,163,184,.32) 10px);transition:left .3s ease,width .3s ease;pointer-events:none}',
+    '.itv-kept{position:absolute;top:0;bottom:0;background:rgba(148,163,184,.24);transition:left .3s ease,width .3s ease;pointer-events:none}',
     '.itv-div{position:absolute;top:-2px;bottom:-2px;width:2px;background:#C0392B;transition:left .3s ease;pointer-events:none}',
     '.itv-div:after{content:"";position:absolute;left:-4px;top:50%;width:10px;height:10px;margin-top:-4px;background:#C0392B;border-radius:50%}',
     '.itv-cmp{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0 4px;table-layout:fixed}',
@@ -1209,7 +1209,7 @@ function updateSrBanner(){
   const el=document.getElementById('srBanner'); if(!el) return;
   const due=srTodayCount(); const dl=srDaysLeft();
   const dtxt=dl!=null?(dl>0?'D-'+dl:dl===0?'D-DAY':'시험종료'):'';
-  el.innerHTML='<div class="sr-banner-l"><b>'+(dtxt?dtxt+' · ':'')+'오늘 복습 '+due+'개</b>'
+  el.innerHTML='<img src="icons/repeat.png" alt="" class="home-action-ico"><div class="sr-banner-l"><b>'+(dtxt?dtxt+' · ':'')+'오늘 복습 '+due+'개</b>'
     +'<span class="sr-exam" onclick="event.stopPropagation();srEditExam()">시험일 '+(srExamOverride[SR_CERT]||SR_DEFAULT_EXAM[SR_CERT]||'미설정')+' ✎</span></div>'
     +'<div class="sr-banner-go">'+(srMode==='review'?'복습 중':'복습 시작')+' →</div>';
 }
@@ -1295,10 +1295,10 @@ function showComplete(){
   const wrongN=filtered.filter(c=>c.w).length;
   const correct=total-wrongN;
   const pct=Math.round(correct/total*100);
-  const emoji=pct>=80?'🏆':pct>=60?'💪':'📚';
-  document.getElementById('ovIcon').textContent=emoji;
+  const icon=pct>=80?'trophy':pct>=60?'medal':'books';
+  document.getElementById('ovIcon').innerHTML='<img src="icons/'+icon+'.png" alt="" class="popup-hero-ico">';
   document.getElementById('ovTitle').textContent=(currentSubj==='__2026__'?'2026 기출':currentSubj)+' 완료!';
-  document.getElementById('ovSub').textContent=total+'문제를 모두 학습했어요 🌸';
+  document.getElementById('ovSub').textContent=total+'문제를 모두 학습했어요';
   document.getElementById('ovStats').innerHTML=
     '<div class="ov-stat"><div class="v">'+total+'</div><div class="l">전체</div></div>'
     +'<div class="ov-stat w"><div class="v">'+wrongN+'</div><div class="l">오답</div></div>'
@@ -1306,9 +1306,9 @@ function showComplete(){
   const subjIdx=SUBJS.indexOf(currentSubj);
   const nextSubj=subjIdx>=0&&subjIdx<SUBJS.length-1?SUBJS[subjIdx+1]:null;
   let btns='';
-  if(wrongN>0)btns+='<button class="ov-btn ov-wrong" onclick="startWrongReview()">❌ 오답 '+wrongN+'개 복습하기</button>';
+  if(wrongN>0)btns+='<button class="ov-btn ov-wrong" onclick="startWrongReview()"><img src="icons/xmark.png" alt="" class="ic-img ic-in"> 오답 '+wrongN+'개 복습하기</button>';
   if(nextSubj)btns+='<button class="ov-btn ov-next" onclick="goNext(\''+nextSubj+'\')">다음 과목: '+nextSubj+' →</button>';
-  btns+='<button class="ov-btn ov-retry" onclick="retrySubj()">🔄 처음부터 다시</button>';
+  btns+='<button class="ov-btn ov-retry" onclick="retrySubj()"><img src="icons/repeat.png" alt="" class="ic-img ic-in"> 처음부터 다시</button>';
   document.getElementById('ovBtns').innerHTML=btns;
   document.getElementById('completeOv').classList.remove('hidden');
 }

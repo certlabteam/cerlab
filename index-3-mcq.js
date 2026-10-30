@@ -61,7 +61,7 @@ function _sp2OpenPicker(cb){
           return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid '+(on?'#185FA5':'#E8E8E8')+';border-radius:12px;margin-bottom:8px;cursor:pointer;background:'+(on?'#EAF2FC':'#fff')+'"><input type="checkbox" data-c="'+c+'" '+(on?'checked':'')+' style="width:18px;height:18px;accent-color:#185FA5"><span style="font-size:14px;font-weight:700;color:#2C2C2A">'+mqEsc(nm)+'</span></label>';
         }).join('')+'</div>'
       +'<div style="text-align:center;font-size:14px;font-weight:800;color:'+(n===5?'#15793F':'#A32D2D')+';margin:4px 0 12px">'+n+' / 5 \uC120\uD0DD\uB428</div>'
-      +'<button id="sp2Go" '+(n===5?'':'disabled')+' style="width:100%;background:'+(n===5?'linear-gradient(135deg,#185FA5,#0C447C)':'#C9C2B8')+';color:#fff;border:none;border-radius:12px;padding:12px;font-size:16px;font-weight:800;cursor:'+(n===5?'pointer':'not-allowed')+'">'+(n===5?'\uC120\uD0DD \uC644\uB8CC':'5\uACFC\uBAA9\uC744 \uC120\uD0DD\uD558\uC138\uC694')+'</button>';
+      +'<button id="sp2Go" '+(n===5?'':'disabled')+' style="width:100%;background:'+(n===5?'#185FA5':'#94A3B8')+';color:#fff;border:none;border-radius:12px;padding:12px;font-size:16px;font-weight:800;cursor:'+(n===5?'pointer':'not-allowed')+'">'+(n===5?'\uC120\uD0DD \uC644\uB8CC':'5\uACFC\uBAA9\uC744 \uC120\uD0DD\uD558\uC138\uC694')+'</button>';
     ov.querySelectorAll('input[type=checkbox]').forEach(function(chk){ chk.onchange=function(){ var c=chk.getAttribute('data-c'); if(chk.checked){ if(cnt()>=5){ chk.checked=false; return; } sel[c]=true; } else { delete sel[c]; } render(); }; });
     var go=document.getElementById('sp2Go'); if(go) go.onclick=function(){ var arr=Object.keys(sel).filter(function(k){return sel[k];}); if(arr.length!==5) return; _sp2Set(arr); ov.remove(); if(typeof cb==='function') cb(); };
   }
@@ -211,6 +211,7 @@ function renderMCQ(){
   if(mqScreen==='lt2') return renderLt2(root);
   if(mqScreen==='lu2') return renderLu2(root);
   if(mqScreen==='exam') return renderMcqExam(root);
+  if(mqScreen==='mnlist') return renderMnList(root);
   if(mqScreen==='oxlearn') return renderOxLearn(root);
   if(mqScreen==='luhist') return renderLuHist(root);
   return renderMcqHome(root);
@@ -247,7 +248,7 @@ function mqTodoGo(id, enc, mode){
 /* [2026-10-29] 푼 문제 암기코드 모아 듣기 — 크리스 「암기코드는 푼 문제 모아서 듣는기능이 있어야되는데」.
    audio/qmn/<시험>.json(문항 → 녹음된 암기코드, _도구/음성올리기.py 가 만든다)과 내 풀이 기록(srProgress)으로
    틀린 문제 것부터, 최근 푼 순으로 이어 들려준다. 목소리는 생체 카드와 같은 여·남 설정(certlab_voice). */
-var auQmn={}, auList=null, auPos=0;
+var auQmn={}, auList=null, auPos=0, auMnScrollPos=-1;
 function auScope(){ try{ return localStorage.getItem('certlab_mnscope')==='all'?'all':'wrong'; }catch(_){ return 'wrong'; } }   // 크리스 「틀린거 푼문제 전체 셀렉버튼으로」
 function auQmnLoad(cert){
   if(auQmn[cert]!==undefined || !window.fetch) return;
@@ -272,21 +273,44 @@ function auMnBanner(cert){
   var sc=auScope(), ids=auMnIds(cert);
   var all=auMnIds(cert,'all').length;
   if(!all) return '';   // 푼 문제에 걸린 암기코드가 하나도 없으면 띠를 안 보인다
-  var on=!!(auList && auEl), male=(typeof ttsVoiceSel!=='undefined'&&ttsVoiceSel==='male');
+  var on=!!auList, male=(typeof ttsVoiceSel!=='undefined'&&ttsVoiceSel==='male');
   var seg=function(a,b,isB,fa,fb){ return '<span class="au-seg"><button type="button" class="'+(isB?'':'on')+'" onclick="event.stopPropagation();'+fa+'">'+a+'</button><button type="button" class="'+(isB?'on':'')+'" onclick="event.stopPropagation();'+fb+'">'+b+'</button></span>'; };
-  return '<div class="oxl-banner au-banner"><div class="au-top" onclick="auMnAll()"><span class="oxl-banner-ico">'+(on?'⏸':'<img src="icons/headphones.png" alt="" class="ic-img">')+'</span><div><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">'+(ids.length?('암기코드 '+ids.length+'개 · 누르면 차례로 들려줘요'):'틀린 문제에 걸린 암기코드가 없어요')+'</span></div></div>'
+  return '<div class="oxl-banner au-banner"><div class="au-top"><span class="oxl-banner-ico"><img src="icons/headphones.png" alt="" class="ic-img"></span><div class="au-title" onclick="auMnAll()"><b>'+(on?'암기코드 듣는 중 '+(auPos+1)+'/'+auList.length:'암기코드 듣기')+'</b><span class="oxl-banner-sub">'+(ids.length?('암기코드 '+ids.length+'개 · 누르면 차례로 들려줘요'):'틀린 문제에 걸린 암기코드가 없어요')+'</span></div>'+auMnPlayButton(on)+'<button type="button" class="au-view" onclick="auMnListOpen()" aria-label="암기코드 보기"><img src="icons/notebook.png" alt=""></button></div>'
     +'<div class="au-opts">'+seg('틀린 문제','푼 문제 전체',sc==='all',"auScopeSet('wrong')","auScopeSet('all')")+seg('여성','남성',male,"auVoiceSet('female')","auVoiceSet('male')")+'</div></div>';
 }
+function auMnPlayButton(on){ return '<button type="button" class="au-play" onclick="event.stopPropagation();auMnAll()" aria-label="암기코드 '+(on?'정지':'재생')+'"><img src="icons/'+(on?'pause':'play')+'.png" alt=""></button>'; }
 function auMnAll(){
-  if(auList && auEl){ auList=null; auStop(); renderMCQ(); return; }
-  auList=auMnIds(mqCert); auPos=0; if(!auList.length) return; auNext();
+  if(auList){ auList=null; auStop(); renderMCQ(); return; }
+  auList=auMnIds(mqCert); auPos=0; if(!auList.length){ auList=null; return; } auNext();
 }
 function auNext(){
-  if(!auList || auPos>=auList.length){ auList=null; if(mqScreen==='home') renderMCQ(); return; }
-  auPlay('audio/mn/'+auList[auPos]+'_'+auSex()+'.mp3', function(){ if(!auList) return; auPos++; setTimeout(auNext, 700); }, null, function(){ auList=null; if(mqScreen==='home') renderMCQ(); });
-  if(mqScreen==='home') renderMCQ();
+  if(!auList || auPos>=auList.length){ auList=null; if(mqScreen==='home'||mqScreen==='mnlist') renderMCQ(); return; }
+  var playingList=auList;
+  auPlay('audio/mn/'+auList[auPos]+'_'+auSex()+'.mp3', function(){ if(auList!==playingList) return; auPos++; setTimeout(function(){ if(auList===playingList) auNext(); }, 700); }, null, function(){ if(auList!==playingList) return; auList=null; if(mqScreen==='home'||mqScreen==='mnlist') renderMCQ(); });
+  if(mqScreen==='home'||mqScreen==='mnlist') renderMCQ();
 }
 function auScopeSet(v){ try{ localStorage.setItem('certlab_mnscope', v); }catch(_){} if(auList){ auList=null; auStop(); } renderMCQ(); }
+function auMnListOpen(){
+  mqScreen='mnlist'; auMnScrollPos=-1; renderMCQ(); window.scrollTo(0,0);
+  var cert=mqCert, ids=auMnIds(cert), missing=ids.filter(function(id){ return !_mnemCache[id]; });
+  if(missing.length) Promise.all(missing.map(function(id){ return _mGet('mnemonics',id); })).then(function(){ if(mqCert===cert && mqScreen==='mnlist') renderMCQ(); });
+}
+function auMnListBack(){ mqScreen='home'; renderMCQ(); window.scrollTo(0,0); }
+function renderMnList(root){
+  var ids=auMnIds(mqCert), on=!!auList, current=on?auList[auPos]:null;
+  var html='<div class="au-list-head"><button type="button" class="au-list-back" onclick="auMnListBack()" aria-label="뒤로">←</button><b>암기코드 '+ids.length+'개</b>'+auMnPlayButton(on)+'</div><div class="au-list-body">';
+  if(!ids.length) html+='<div class="au-list-empty">이 범위에 암기코드가 없어요.</div>';
+  ids.forEach(function(id,i){
+    var card=_mnemCache[id]?mnBoxHTML('mn://'+id):'<div class="au-list-loading">암기코드를 불러오는 중…</div>';
+    html+='<div id="au-mn-'+i+'" class="au-list-card'+(id===current?' playing':'')+'">'+card+'</div>';
+  });
+  root.innerHTML=html+'</div>';
+  if(current && auMnScrollPos!==auPos){
+    auMnScrollPos=auPos;
+    var at=ids.indexOf(current);
+    if(at>=0) requestAnimationFrame(function(){ if(mqScreen==='mnlist'){ var el=document.getElementById('au-mn-'+at); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); } });
+  }
+}
 function auVoiceSet(v){ if(ttsVoiceSel!==v) auVoiceFlip(); }
 function auVoiceFlip(){
   ttsVoiceSel = ttsVoiceSel==='female'?'male':'female';
@@ -298,9 +322,9 @@ function renderMcqHome(root){
   const examNm=(MCQ_EXAMS[mqCert]&&MCQ_EXAMS[mqCert].name) || (_isSubjCert(mqCert)?certLabel(mqCert):'') || '';
   if(examNm) html+='<div class="mcq-exam-title"><button class="exam-home-back" onclick="showHome()" aria-label="시험 종류로">'+BACK_ARROW+'</button>'+examNm+'</div>';
   html+=mcqAnalysisCard(mqCert);
-  if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:10px"><div onclick="startLevelUp()" style="flex:1;display:flex;align-items:center;gap:10px;cursor:pointer"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">⚡</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">'+_luTitle+'</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">'+_luSub+'</div></div></div><div onclick="luHistGo()" style="flex-shrink:0;background:#fff;color:#0C447C;border:1.5px solid #B9D2EF;border-radius:12px;padding:8px 6px;font-size:12px;font-weight:800;text-align:center;width:52px;line-height:1.3;cursor:pointer">📊<br>결과</div></div>'; }
+  if(adHasData(mqCert) && ltDone(mqCert)){ var _luR=luHasResume(mqCert); var _luTitle=_luR?'레벨업 이어풀기':'레벨업 문제풀기'; var _luSub=_luR?(mqEsc((luResumeAll[mqCert]&&luResumeAll[mqCert].subName)||'')+' · 이어서 풀기'):'약한 단원 5문제씩 · 자동으로 이어서'; html+='<div class="home-action home-level"><div class="home-action-main" onclick="startLevelUp()"><img src="icons/lightning.png" alt="" class="home-action-ico"><div class="home-action-text"><b>'+_luTitle+'</b><span>'+_luSub+'</span></div></div><button type="button" class="home-action-result" onclick="luHistGo()"><img src="icons/barchart.png" alt="">결과</button></div>'; }
   if(typeof lt2Has==='function' && lt2Has(mqCert) && ltDone(mqCert)){
-    html+='<div style="margin:10px 14px 4px;border-radius:16px;border:2px solid #185FA5;background:linear-gradient(135deg,#EAF2FC,#E0ECFA);padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="startLt2LevelUp()"><div style="width:40px;height:40px;border-radius:12px;background:#185FA5;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">\u26A1</div><div style="flex:1"><div style="font-size:16px;font-weight:800;color:#0C447C">\uB808\uBCA8\uC5C5 \uBB38\uC81C\uD480\uAE30</div><div style="font-size:12px;color:#3F6FA3;margin-top:2px;font-weight:600">\uC57D\uD55C \uACFC\uBAA9\uBD80\uD130 \uC790\uB3D9\uC73C\uB85C \uC774\uC5B4\uC11C</div></div><div style="font-size:16px;color:#185FA5">\u2192</div></div>';
+    html+='<div class="home-action home-level" onclick="startLt2LevelUp()"><img src="icons/lightning.png" alt="" class="home-action-ico"><div class="home-action-text"><b>레벨업 문제풀기</b><span>약한 과목부터 자동으로 이어서</span></div><span class="home-action-go">→</span></div>';
   }
   const dueAll=srDueReviewable(mqCert);
   const due=Math.min(dueAll, REVIEW_MCQ_CAP);
@@ -320,7 +344,7 @@ function renderMcqHome(root){
           return {t:'다음 회차 풀기', s:sb.name+' · '+sb.sets[j].label, go:"mqTodoGo('"+ord[i]+"','"+encodeURIComponent(sb.sets[j].label)+"','all')", b:'풀기 시작 →'}; } }
     return rv;
   })();
-  html+='<div class="sr-banner" onclick="'+_todo.go+'"><div class="sr-banner-l"><b>'+mqEsc(_todo.t)+'</b><span class="sr-exam">'+mqEsc(_todo.s)+'</span></div><div class="sr-banner-go">'+_todo.b+'</div></div>';
+  html+='<div class="sr-banner" onclick="'+_todo.go+'"><img src="icons/repeat.png" alt="" class="home-action-ico"><div class="sr-banner-l"><b>'+mqEsc(_todo.t)+'</b><span class="sr-exam">'+mqEsc(_todo.s)+'</span></div><div class="sr-banner-go">'+_todo.b+'</div></div>';
   // ▼ 약점개념카드 보류: exp.c가 문항 단위라 OX(진술 단위)·정답오답으로 집계 시 무관한 개념까지 잡힘.
   //   데이터방이 진술별 개념 태그를 붙인 뒤 재개. 재개 시 아래 false→mqWeakCache.length 로 복원.
   mqWeakCache=[];
@@ -638,7 +662,7 @@ function mcqAnalysisCard(cert){
     return head+body;
   }).join('');
   let noteHTML='';
-  if(v && v.status==='fail' && v.failFloor && v.failFloor.length) noteHTML='<div class="anal-weak">⚠️ <b>'+v.failFloor.map(p=>p.name).join(', ')+'</b> 과락(40점 미만)이에요.</div>';
+  if(v && v.status==='fail' && v.failFloor && v.failFloor.length) noteHTML='<div class="anal-weak"><img src="icons/warning.png" alt="" class="ic-img ic-in"> <b>'+v.failFloor.map(p=>p.name).join(', ')+'</b> 과락(40점 미만)이에요.</div>';
   noteHTML+='<div class="anal-note">예상점수 · 합격 기준 '+passRule(cert).label+' · 레벨은 문제 풀면서 자동 조정</div>';
   return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
     +'<div class="anal-score">'+predHTML+'</div>'
@@ -871,7 +895,7 @@ function _planUpsell(){
   var w=document.createElement('div'); w.style.cssText='position:fixed;inset:0;z-index:9200;background:rgba(20,14,8,.45);display:flex;align-items:center;justify-content:center;padding:0 24px';
   w.innerHTML='<div style="background:#fff;border-radius:16px;padding:20px;text-align:center;max-width:300px;width:100%">'
     +'<button class="popup-x" id="_pupX" aria-label="닫기">✕</button>'
-    +'<div style="font-size:30px;margin-bottom:8px">🔒</div>'
+    +'<div class="popup-hero"><img src="icons/shield_lock.png" alt="" class="popup-hero-ico"></div>'
     +'<div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:6px">맞춤 합격 플랜은 멤버십</div>'
     +'<div style="font-size:14px;color:#5F5A52;line-height:1.6;margin-bottom:14px">오늘의 1순위 학습, 과목별 약점 전체,<br>무제한 문제풀이까지 — 멤버십으로 합격까지 한 번에.</div>'
     +'<button id="_pupBuy" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:12px 0;border-radius:12px;width:100%;cursor:pointer">멤버십 구매하기</button>'
@@ -883,7 +907,7 @@ function _planUpsell(){
   w.onclick=function(e){ if(e.target===w) document.body.removeChild(w); };
 }
 function _passPlanEntryHTML(cert){
-  return '<div onclick="openPassPlan()" style="margin:10px 0 2px;border-radius:12px;background:#0C447C;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer"><span style="font-size:16px">🎯</span><span style="flex:1;font-size:14px;font-weight:800">합격 플랜 확인하기</span><span style="font-size:16px">→</span></div>';
+  return '<div class="home-action home-plan" onclick="openPassPlan()"><img src="icons/lv_target.png" alt="" class="home-action-ico"><b>합격 플랜 확인하기</b><span class="home-action-go">→</span></div>';
 }
 function _analLockWrap(cert, inner){ return inner; }   // 블러 제거 — 다 보여주고 풀기 버튼(_planTopicGo)에서 게이트
 
@@ -994,14 +1018,14 @@ function _ltRenderResultGate(M){
   if(!document.getElementById('ltgCss')){
     var st=document.createElement('style'); st.id='ltgCss';
     st.textContent='.ltg-wrap{max-width:440px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 22px rgba(31,41,55,.1)}'
-      +'.ltg-top{background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;padding:24px 20px 28px;text-align:center}'
+      +'.ltg-top{background:#185FA5;color:#fff;padding:24px 20px 28px;text-align:center}'
       +'.ltg-done{font-size:12px;opacity:.85;margin-bottom:6px}.ltg-h{font-size:20px;font-weight:900;margin:2px 0 4px}.ltg-sc{font-size:14px;opacity:.9}'
       +'.ltg-blurwrap{position:relative;padding:16px 20px;min-height:230px}'
       +'.ltg-blur{filter:blur(6px);opacity:.55;pointer-events:none}'
       +'.ltg-card{background:#F7F9FC;border:1px solid #E8EEF5;border-radius:12px;padding:12px;margin-bottom:8px}'
       +'.ltg-nm{font-size:14px;font-weight:800;color:#1F2937;margin-bottom:6px}'
-      +'.ltg-bar{height:9px;border-radius:99px;background:#E2E8F0;overflow:hidden}.ltg-bar>div{height:100%;background:linear-gradient(90deg,#5B8DEF,#185FA5)}'
-      +'.ltg-gate{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.96) 40%)}'
+      +'.ltg-bar{height:9px;border-radius:99px;background:#E2E8F0;overflow:hidden}.ltg-bar>div{height:100%;background:#185FA5}'
+      +'.ltg-gate{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:rgba(255,255,255,.94)}'
       +'.ltg-lock{font-size:28px;margin-bottom:8px}.ltg-gt{font-size:18px;font-weight:900;color:#1F2937;margin-bottom:6px}'
       +'.ltg-gs{font-size:14px;color:#6B7280;line-height:1.55;margin-bottom:16px}'
       +'.ltg-btn{width:100%;max-width:330px;display:flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1.5px solid #DADCE0;border-radius:12px;padding:14px;font-size:16px;font-weight:800;color:#3C4043;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06)}'
@@ -1052,13 +1076,13 @@ function _ltHookingScreen(cert){
   var metric=isGrade?'예상 급수':'예상 점수';
   if(!document.getElementById('lthCss')){
     var st=document.createElement('style'); st.id='lthCss';
-    st.textContent='.lth-wrap{max-width:420px;margin:0 auto;text-align:center;padding:38px 24px 28px;background:linear-gradient(165deg,#F4F8FF,#EAF1FB);border-radius:16px}'
-      +'.lth-badge{display:inline-block;background:#FFE9B8;color:#9A6800;font-size:12px;font-weight:800;padding:6px 14px;border-radius:999px;margin-bottom:16px}'
+    st.textContent='.lth-wrap{max-width:420px;margin:0 auto;text-align:center;padding:38px 24px 28px;background:#fff;border:1px solid #E6EEF8;border-radius:16px}'
+      +'.lth-badge{display:inline-block;background:#E6F4EF;color:#0F6E56;font-size:12px;font-weight:800;padding:6px 14px;border-radius:999px;margin-bottom:16px}'
       +'.lth-ttl{font-size:23px;font-weight:900;color:#1F2937;line-height:1.32;margin-bottom:12px}.lth-hl{color:#185FA5}'
       +'.lth-desc{font-size:14px;color:#6B7280;line-height:1.6;margin-bottom:8px}'
       +'.lth-free{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:14px 0 24px}'
       +'.lth-free span{background:#fff;border:1px solid #DCE6F2;color:#3E5168;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px}'
-      +'.lth-cta{width:100%;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(24,95,165,.32)}'
+      +'.lth-cta{width:100%;background:#185FA5;color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:800;cursor:pointer}'
       +'.lth-note{font-size:12px;color:#9AA1AD;margin-top:12px}'
       +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:420px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
     document.head.appendChild(st);
@@ -1200,10 +1224,10 @@ function _ltShowGateModal(cert){
     p.className='auth-popup hidden'; p.id='ltGatePopup';
     p.innerHTML='<div class="auth-sheet" style="text-align:center;max-width:340px">'
       +'<button class="popup-x" onclick="_ltCloseGate()" aria-label="닫기">✕</button>'
-      +'<div style="font-size:36px;line-height:1;margin:6px 0 2px">🎯</div>'
+       +'<div class="popup-hero"><img src="icons/target.png" alt="" class="popup-hero-ico"></div>'
       +'<div class="auth-sheet-title">레벨 테스트가 필요해요</div>'
       +'<div class="auth-sheet-sub">먼저 레벨 테스트로 약점을 측정해야 맞춤 학습이 시작돼요.<br><span style="color:#8A7D6E;font-size:12px">한 번만 · 이어풀기 가능</span></div>'
-      +'<button class="btn-google-login" onclick="_ltGateGo()" style="text-decoration:none;justify-content:center;background:linear-gradient(135deg,#185FA5,#0C447C);color:#fff;border:none;width:100%">레벨 테스트 하러가기</button>'
+       +'<button class="btn-google-login" onclick="_ltGateGo()" style="text-decoration:none;justify-content:center;background:#185FA5;color:#fff;border:none;width:100%">레벨 테스트 하러가기</button>'
       +'</div>';
     document.body.appendChild(p);
     p.addEventListener('click', function(e){ if(e.target===p) _ltCloseGate(); });
@@ -1358,7 +1382,7 @@ function _luToConcept(sub,si,idx){ mqLevelUp=false; startConceptStudy(sub,si,idx
 function luRenderPopup(changes){
   var up=changes.filter(function(c){return c.up;}), main=up.length?up[0]:changes[0];
   var root=document.getElementById('mcqRoot'); if(!root){ luLoadRound(false); return; }
-  var col=main.up?'#2E9B5E':'#946200', em=main.up?'🎉':'💪', ti=main.up?'레벨 업!':'아쉬웠어요';
+  var col=main.up?'#1D9E75':'#5A6B7C', em=main.up?'trophy':'repeat', ti=main.up?'레벨 업!':'아쉬웠어요';
   var chg='<div style="font-size:16px;font-weight:800;color:'+col+';margin:12px 0 4px">'+mqEsc(main.sub)+' · '+mqEsc(main.topic)+'  Lv'+main.from+' → Lv'+main.to+'</div>';
   var more=changes.length-1, extra=more>0?'<div style="font-size:12px;color:#8A7D6E;margin-top:4px">그 외 '+more+'개 단원도 변동됐어요</div>':'';
   var desc=main.up?'약했던 단원이 한 단계 올라갔어요.':'다지면 다시 올라가요.';
@@ -1368,16 +1392,16 @@ function luRenderPopup(changes){
     side='<button onclick="luFinish(\'\')" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#F1F5F9;color:#475569;cursor:pointer">결과 보기</button>';
   } else {
     var loc=_luTopicConceptLoc(mqCert, main.subCode, main.tcode);
-    if(loc) side='<button onclick="_luToConcept(\''+main.subCode+'\','+loc.si+','+loc.idx+')" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#FFF4E0;color:#92600C;cursor:pointer">📖 개념 다지기</button>';
+    if(loc) side='<button onclick="_luToConcept(\''+main.subCode+'\','+loc.si+','+loc.idx+')" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#EEF4FC;color:#0C447C;cursor:pointer"><img src="icons/book.png" alt="" class="ic-img ic-in"> 개념 다지기</button>';
   }
-  root.innerHTML='<div class="mcq-result" style="text-align:center;padding:28px 20px"><div style="font-size:42px">'+em+'</div><div style="font-size:20px;font-weight:800;margin:8px 0 4px">'+ti+'</div>'+chg+'<div style="font-size:14px;color:#5F5E5A">'+desc+'</div>'+extra+'<div style="display:flex;gap:8px;margin-top:20px;max-width:320px;margin-left:auto;margin-right:auto">'+side+'<button onclick="luLoadRound(false)" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#0C447C;color:#fff;cursor:pointer">계속 풀기</button></div></div>';
+  root.innerHTML='<div class="mcq-result" style="text-align:center;padding:28px 20px"><div class="popup-hero"><img src="icons/'+em+'.png" alt="" class="popup-hero-ico"></div><div style="font-size:20px;font-weight:800;margin:8px 0 4px">'+ti+'</div>'+chg+'<div style="font-size:14px;color:#5F5E5A">'+desc+'</div>'+extra+'<div style="display:flex;gap:8px;margin-top:20px;max-width:320px;margin-left:auto;margin-right:auto">'+side+'<button onclick="luLoadRound(false)" style="flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:800;border:none;background:#0C447C;color:#fff;cursor:pointer">계속 풀기</button></div></div>';
   window.scrollTo(0,0);
 }
 function _infoModal(html){
   return new Promise(function(res){
     var ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px';
-    ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.25)"><button class="popup-x" aria-label="닫기">✕</button>'+html+'<button style="margin-top:16px;width:100%;padding:12px;background:linear-gradient(135deg,#1D9E75,#0C447C);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button></div>';
+    ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 16px 44px rgba(0,0,0,.25)"><button class="popup-x" aria-label="닫기">✕</button>'+html+'<button style="margin-top:16px;width:100%;padding:12px;background:#185FA5;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">확인</button></div>';
     ov.querySelectorAll('button').forEach(function(b){ b.onclick=function(){ if(ov.parentNode) ov.parentNode.removeChild(ov); res(); }; });
     document.body.appendChild(ov);
   });
@@ -1389,13 +1413,13 @@ async function _eloInfoPopups(qs, wasTimeUp){
     (qs||[]).forEach(function(q){ if(q&&q.id&&typeof eloState!=='undefined'&&eloState&&eloState._expSeen&&eloState._expSeen[mqCert+'|'+q.id]===t) sawExp=true; });
     if(sawExp && !localStorage.getItem('certlab_info_expElo')){
       try{ localStorage.setItem('certlab_info_expElo','1'); }catch(_){}
-      await _infoModal('<div style="font-size:36px;margin-bottom:8px">📖</div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>');
+      await _infoModal('<div class="popup-hero"><img src="icons/book.png" alt="" class="popup-hero-ico"></div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">해설을 먼저 본 문제예요</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">정답을 보고 푼 문제는 <b>오답으로 처리</b>돼요.<br>레벨이 내려가고 복습에 다시 나옵니다.<br>먼저 풀고 나서 해설을 보면 정상 반영돼요!</div>');
     }
     var hadUnans=false;
     (qs||[]).forEach(function(q){ if(q&&q.id&&mqResultAns[q.id]===undefined) hadUnans=true; });
     if(wasTimeUp && hadUnans && !localStorage.getItem('certlab_info_timeoutElo')){
       try{ localStorage.setItem('certlab_info_timeoutElo','1'); }catch(_){}
-      await _infoModal('<div style="font-size:36px;margin-bottom:8px">⏰</div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">시간 안에 못 푼 문제</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">시간 안에 못 푼 문제는 <b>오답으로 처리</b>돼요.<br>다음엔 시간 안에 도전해봐요!</div>');
+      await _infoModal('<div class="popup-hero"><img src="icons/calendar.png" alt="" class="popup-hero-ico"></div><div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:8px">시간 안에 못 푼 문제</div><div style="font-size:14px;color:#3A4A5E;line-height:1.75">시간 안에 못 푼 문제는 <b>오답으로 처리</b>돼요.<br>다음엔 시간 안에 도전해봐요!</div>');
     }
   }catch(_){}
 }
@@ -1612,15 +1636,15 @@ function luToggleCardSub(sub){ luCardOpen[sub]=!luCardOpen[sub]; renderMCQ(); }
 // 한국사 등급 게이지: 과락선 없이 등급선 3개(3급60·2급70·1급80), 채움·배지 동→은→금
 function _luGradeGaugeHTML(cert, ap, v){
   var p=Math.max(0,Math.min(100,ap.predicted));
-  var gradeGrad={'1급':'linear-gradient(90deg,#34A865,#15803D)','2급':'linear-gradient(90deg,#5B8DEF,#2563EB)','3급':'linear-gradient(90deg,#F0A93E,#D97706)'};
-  var fillGrad=(v.gradeName&&gradeGrad[v.gradeName])||'linear-gradient(90deg,#B7BFC9,#94A3B8)';
+  var gradeColor={'1급':'#1D9E75','2급':'#185FA5','3급':'#64748B'};
+  var fillGrad=(v.gradeName&&gradeColor[v.gradeName])||'#94A3B8';
   var pillBg, pillCol, pillTxt;
   if(v.gradeName){
-    pillBg=(v.gradeName==='1급')?'#E7F6EC':(v.gradeName==='2급')?'#E8F0FE':'#FEF3E2';
-    pillCol=v.gradeColor; pillTxt=v.medal+' '+v.gradeName+'권'+(v.nextName?(' \u00B7 '+v.nextName+'까지 '+v.nextGap+'점'):'');
+    pillBg=(v.gradeName==='1급')?'#E6F4EF':(v.gradeName==='2급')?'#EEF4FC':'#F1F5F9';
+    pillCol=gradeColor[v.gradeName]; pillTxt='<img src="icons/medal.png" alt="" class="ic-img ic-in"> '+v.gradeName+'권'+(v.nextName?(' \u00B7 '+v.nextName+'까지 '+v.nextGap+'점'):'');
   } else { pillBg='#F1F5F9'; pillCol='#64748B'; pillTxt=(v.nextName||'3급')+'까지 '+(v.nextGap!=null?v.nextGap:'')+'점'; }
   var marks=((passRule(cert).grades)||[]).map(function(gr){
-    return '<span class="lu-g-grade" style="left:'+gr.min+'%;background:'+gr.color+'"></span><span class="lu-g-glab" style="left:'+gr.min+'%;color:'+gr.color+'">'+gr.g+' '+gr.min+'</span>';
+    return '<span class="lu-g-grade" style="left:'+gr.min+'%;background:'+(gradeColor[gr.g]||'#64748B')+'"></span><span class="lu-g-glab" style="left:'+gr.min+'%;color:'+(gradeColor[gr.g]||'#64748B')+'">'+gr.g+' '+gr.min+'</span>';
   }).join('');
   return '<div class="lu-gauge-wrap">'
     +'<div class="lu-g-cap"><span class="lu-g-pill" style="background:'+pillBg+';color:'+pillCol+'">'+pillTxt+'</span></div>'
@@ -1639,9 +1663,9 @@ function _luGaugeHTML(cert, ap, v){
   var fillGrad, pillBg, pillCol, pillTxt;
   var isFloorFail = (v.status==='fail' && v.failFloor && v.failFloor.length);
   var gap = ap.predicted - pass;
-  if(isFloorFail){ fillGrad='linear-gradient(90deg,#E8635F,#E24B4A)'; pillBg='#FDECEC'; pillCol='#C0392B'; pillTxt='\u26A0\uFE0F '+v.failFloor.map(function(x){return mqEsc(x.name);}).join(', ')+' \uACFC\uB77D \uC704\uD5D8'; }
-  else if(gap>=0){ fillGrad=(v.status==='safe')?'linear-gradient(90deg,#3FB873,#2E9B5E)':'linear-gradient(90deg,#F0B43E,#E0A52E)'; pillBg=(v.status==='safe')?'#E9F7EF':'#FFF6E6'; pillCol=(v.status==='safe')?'#1E7A45':'#946200'; pillTxt='\uD569\uACA9\uC120 +'+gap+'\uC810'; }
-  else { fillGrad='linear-gradient(90deg,#E8635F,#E24B4A)'; pillBg='#FFF1E0'; pillCol='#C2620C'; pillTxt='\uD569\uACA9\uAE4C\uC9C0 '+Math.abs(gap)+'\uC810'; }
+  if(isFloorFail){ fillGrad='#E24B4A'; pillBg='#FDECEC'; pillCol='#C0392B'; pillTxt='<img src="icons/warning.png" alt="" class="ic-img ic-in"> '+v.failFloor.map(function(x){return mqEsc(x.name);}).join(', ')+' \uACFC\uB77D \uC704\uD5D8'; }
+  else if(gap>=0){ fillGrad=(v.status==='safe')?'#1D9E75':'#185FA5'; pillBg=(v.status==='safe')?'#E6F4EF':'#EEF4FC'; pillCol=(v.status==='safe')?'#0F6E56':'#0C447C'; pillTxt='\uD569\uACA9\uC120 +'+gap+'\uC810'; }
+  else { fillGrad='#64748B'; pillBg='#F1F5F9'; pillCol='#475569'; pillTxt='\uD569\uACA9\uAE4C\uC9C0 '+Math.abs(gap)+'\uC810'; }
   var floorMk = floor>0 ? '<span class="lu-g-floor" data-l="\uACFC\uB77D '+floor+'" style="left:'+floor+'%"></span>' : '';
   return '<div class="lu-gauge-wrap">'
     +'<div class="lu-g-cap"><span class="lu-g-pill" style="background:'+pillBg+';color:'+pillCol+'">'+pillTxt+'</span></div>'
