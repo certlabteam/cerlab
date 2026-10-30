@@ -24,7 +24,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 /* seo-core.js — admin.html과 공유하는 생성 로직 단일 출처 */
 const {
   SEO_SUBJ_OVERRIDE, seoRound, seoPage, seoHub, seoSitemap, seoRobots, seoLlms, seoReadAllBanks,
-  seoCertOfFname, seoAddNav, seoCertHub
+  seoCertOfFname, seoAddNav, seoCertHub, seoCertName, seoEsc
 } = require(path.join(ROOT, 'seo-core.js'));
 
 /* index.html / admin-1-masters.js 와 동일한 공개 웹 config */
@@ -72,6 +72,134 @@ function 옛사이트맵날짜() {
     if (e.code === 'ENOENT') return {};   // 첫 실행 — 사이트맵이 아직 없다
     throw e;                              // 그 밖의 읽기 오류는 숨기지 않는다
   }
+}
+
+const MAX_PAGE_SIZE = 40;
+const BASE = 'https://certlab.ai.kr/seo/';
+const pageName = (fname, part) => part === 0 ? fname : fname.replace(/\.html$/, '-p' + (part + 1) + '.html');
+const plain = value => String(value || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+function mdInline(value) {
+  const source = String(value);
+  const link = /\[([^\]]+)\]\((https:\/\/[^\s)]+|[a-z0-9][a-z0-9./#-]*)\)/g;
+  let out = '', from = 0, match;
+  while ((match = link.exec(source))) {
+    out += seoEsc(source.slice(from, match.index));
+    out += '<a href="' + seoEsc(match[2]) + '">' + seoEsc(match[1]) + '</a>';
+    from = link.lastIndex;
+  }
+  return out + seoEsc(source.slice(from));
+}
+
+function pageSummary(cert, subject, round, chunk, all, start, part, total) {
+  const yearInSet = String(chunk[0]?.set || '').match(/20\d{2}/)?.[0];
+  const year = yearInSet || ((cert === 'realestate1' || cert === 'realestate2') && round ? String(1989 + Number(round)) : '');
+  const label = [year && year + '년', round && '(' + round + '회)', subject].filter(Boolean).join(' ');
+  const withExp = chunk.filter(q => (q.exp?.o || []).some(Boolean) || (q.exp?.c || []).length || (q.exp?.ex || []).some(Boolean)).length;
+  const concepts = new Map();
+  for (const q of chunk) for (const card of q.exp?.c || []) {
+    const name = plain(card?.t);
+    if (name) concepts.set(name, (concepts.get(name) || 0) + 1);
+  }
+  const top = [...concepts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko')).slice(0, 3).map(([name]) => name);
+  const rates = chunk.map((q, i) => ({ n: start + i + 1, rate: q.correctRate ?? q.accuracy ?? q.correct_rate }))
+    .filter(x => typeof x.rate === 'number' && Number.isFinite(x.rate) && x.rate >= 0 && x.rate <= 100)
+    .sort((a, b) => a.rate - b.rate).slice(0, 5);
+  const lines = [label + ' · ' + chunk.length + '문항' + (total > 1 ? ' (전체 ' + all.length + '문항 중 ' + (part + 1) + '/' + total + ')' : ''),
+    (start + 1) + '~' + (start + chunk.length) + '번 · 보기별 해설 ' + withExp + '문항'];
+  const neg = chunk.filter(q => /옳지 않은|틀린|아닌 것/.test(plain(q.q))).length;
+  const combo = chunk.filter(q => /ㄱ[\s\S]*ㄴ/.test(String(q.q || '') + ' ' + String(q.jaryo || ''))).length;
+  if (neg || combo) lines.push('틀린 것 고르기 ' + neg + '문항 · ㄱㄴ 조합형 ' + combo + '문항');
+  if (top.length) lines.push('자주 나온 개념: ' + top.join(' · '));
+  if (rates.length) lines.push('정답률 낮은 문항: ' + rates.map(x => x.n + '번').join(' · '));
+  return '<section class="page-summary" aria-label="이 쪽 요약"><h2>이 쪽 요약</h2>'
+    + lines.map(x => '<p>' + seoEsc(x) + '</p>').join('') + '</section>';
+}
+
+function splitPage(cert, subject, round, sid, chunk, all, start, part, total) {
+  const label = total > 1 ? subject + ' ' + (start + 1) + '~' + (start + chunk.length) + '번' : subject;
+  const pg = seoPage(cert, label, round, sid, chunk);
+  const fname = pageName(pg.fname, part);
+  let html = pg.html.replaceAll(BASE + pg.fname, BASE + fname);
+  const summary = pageSummary(cert, subject, round, chunk, all, start, part, total);
+  const pager = total > 1 ? '<nav class="pager" aria-label="문항 페이지">'
+    + (part ? '<a href="' + pageName(pg.fname, part - 1) + '">← 이전 문항</a>' : '')
+    + '<span>' + (part + 1) + ' / ' + total + '</span>'
+    + (part + 1 < total ? '<a href="' + pageName(pg.fname, part + 1) + '">다음 문항 →</a>' : '')
+    + '</nav>' : '';
+  html = html.replace('</style>', '.page-summary{margin:8px 0 16px;padding:12px 14px;background:#fff;border:1px solid #dbeafe;border-radius:10px}.page-summary h2{font-size:15px;margin:0 0 5px;color:#0C447C}.page-summary p{font-size:13px;margin:3px 0}.pager{display:flex;justify-content:space-between;gap:8px;margin:18px 0}.pager a{color:#0C447C;font-weight:700}.pager span{color:#64748b}</style>')
+    .replace(/(<p class="sub">[\s\S]*?<\/p>)/, '$1\n' + summary)
+    .replace('<footer>', pager + '\n<footer>');
+  return { fname, html };
+}
+
+function markdownGuide(file) {
+  const source = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const lines = source.split('\n');
+  const meta = {};
+  for (let i = 0; i < 3; i++) {
+    const m = lines[i]?.match(/^(title|description|exam):\s*(.+)$/);
+    if (!m || meta[m[1]]) throw new Error('글 머리 3줄은 title·description·exam 순서여야 합니다: ' + file);
+    meta[m[1]] = m[2].trim();
+  }
+  if (!meta.title || !meta.description || !meta.exam || !lines[0].startsWith('title:') || !lines[1].startsWith('description:') || !lines[2].startsWith('exam:')) throw new Error('글 머리 누락: ' + file);
+  const slug = path.basename(file, '.md');
+  if (!/^[a-z0-9]+-[a-z0-9-]+$/.test(slug) || !slug.startsWith(meta.exam + '-')) throw new Error('글 파일명과 exam 불일치: ' + file);
+  const fname = 'guide-' + slug + '.html';
+  const url = BASE + fname;
+  const body = [];
+  let paragraph = [];
+  let list = [];
+  const flush = () => { if (paragraph.length) { body.push('<p>' + mdInline(paragraph.join(' ')) + '</p>'); paragraph = []; } if (list.length) { body.push('<ul>' + list.map(x => '<li>' + mdInline(x) + '</li>').join('') + '</ul>'); list = []; } };
+  for (const raw of lines.slice(3)) {
+    const line = raw.trim();
+    if (!line) { flush(); continue; }
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) { flush(); body.push('<h' + Math.min(heading[1].length + 1, 4) + '>' + mdInline(heading[2]) + '</h' + Math.min(heading[1].length + 1, 4) + '>'); continue; }
+    if (line.startsWith('- ')) { if (paragraph.length) flush(); list.push(line.slice(2)); continue; }
+    if (list.length) flush();
+    paragraph.push(line);
+  }
+  flush();
+  const html = '<!doctype html><html lang="ko"><head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>' + seoEsc(meta.title) + ' | CertLab</title>\n<meta name="description" content="' + seoEsc(meta.description) + '">\n<link rel="canonical" href="' + url + '">\n<style>body{font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;max-width:760px;margin:0 auto;padding:20px 16px;line-height:1.7;color:#1e293b}a{color:#0C447C}h1{font-size:23px}h2{font-size:19px;margin-top:28px}h3{font-size:17px}h4{font-size:15px}li{margin:6px 0}</style>\n</head><body>\n<nav><a href="index-' + meta.exam + '.html">' + seoEsc(seoCertName(meta.exam)) + ' 기출문제</a></nav>\n<h1>' + seoEsc(meta.title) + '</h1>\n<p>' + seoEsc(meta.description) + '</p>\n' + body.join('\n') + '\n<footer><a href="index-' + meta.exam + '.html">' + seoEsc(seoCertName(meta.exam)) + ' 기출문제 목록으로</a></footer>\n</body></html>';
+  return { fname, html, cert: meta.exam, title: meta.title };
+}
+
+function realestateHub(cert, fnames, labels, banks, variantCounts, conceptCounts, guides) {
+  const base = seoCertHub(cert, fnames, labels);
+  const subjects = banks.filter(b => b.data.cert === cert);
+  const rounds = [...new Set(subjects.flatMap(b => (b.data.questions || []).map(q => seoRound(q.set)).filter(Boolean)))].map(Number).sort((a, b) => a - b);
+  const years = rounds.map(r => 1989 + r);
+  const intro = '공인중개사 ' + (cert === 'realestate1' ? '1차' : '2차') + ' 기출문제 '
+    + (years.length ? years[0] + '~' + years.at(-1) + '(' + rounds[0] + '~' + rounds.at(-1) + '회)' : '')
+    + ' · 과목당 ' + (subjects[0] ? (subjects[0].data.questions || []).length : 0) + '문항 · 보기별 해설';
+  const cards = subjects.map(b => {
+    const sid = b.data.subject, name = b.subjName || labels[cert + '-' + rounds[0] + '-' + sid + '.html'] || sid;
+    const qs = b.data.questions || [];
+    const concepts = new Set(qs.flatMap(q => (q.exp?.c || []).map(c => plain(c?.t)).filter(Boolean)));
+    const links = rounds.map(r => ({ r, f: cert + '-' + r + '-' + sid + '.html' })).filter(x => fnames.includes(x.f))
+      .map(x => '<a href="' + x.f + '">' + (1989 + x.r) + '년 ' + x.r + '회 기출문제</a>').join(' · ');
+    const candidates = qs.filter(q => typeof q.ans === 'number' && q.opts?.[q.ans - 1] && (q.exp?.o?.[q.ans - 1] || q.exp?.s));
+    const rated = candidates.filter(q => typeof (q.correctRate ?? q.accuracy ?? q.correct_rate) === 'number');
+    const picked = (rated.length >= 3 ? rated.sort((a, b) => (a.correctRate ?? a.accuracy ?? a.correct_rate) - (b.correctRate ?? b.accuracy ?? b.correct_rate)) : candidates).slice(0, 3);
+    const preview = picked.map(q => '<li><b>' + seoEsc(plain(q.q).slice(0, 130)) + '</b><br>정답 ' + q.ans + '번 · ' + seoEsc(plain(q.opts[q.ans - 1]).slice(0, 90))
+      + '<br><span>' + seoEsc(plain(q.exp?.o?.[q.ans - 1] || q.exp?.s).slice(0, 140)) + '</span> <a href="https://certlab.ai.kr/?q=' + encodeURIComponent(cert + '/' + q.id) + '">서트랩에서 풀어 보기 →</a></li>').join('');
+    return '<section class="subject-card"><h2>' + seoEsc(name) + '</h2><p>' + links + '</p><p>개념 ' + (conceptCounts[cert + '|' + sid] || concepts.size) + '개 연결 · 변형문제 ' + (variantCounts[cert + '|' + sid] || 0) + '개</p>'
+      + (preview ? '<h3>' + (rated.length >= 3 ? '정답률 낮은 문제 3개' : '미리 보는 문제 3개') + '</h3><ol>' + preview + '</ol>' : '') + '</section>';
+  }).join('\n');
+  const faqs = [
+    ['합격 기준은 어떻게 되나요?', '1·2차 모두 매 과목 40점 이상, 전 과목 평균 60점 이상입니다. 세부 선발 기준은 시행 공고를 확인하세요.'],
+    ['시험과목은 몇 개입니까?', '이 ' + (cert === 'realestate1' ? '1차' : '2차') + ' 기출 목록에는 ' + subjects.length + '개 과목이 있습니다.'],
+    ['몇 년치 기출문제를 볼 수 있나요?', years.length ? years[0] + '~' + years.at(-1) + '년, ' + rounds.length + '개 회차를 볼 수 있습니다.' : '이 목록의 회차별 기출문제를 볼 수 있습니다.'],
+    ['보기별 해설도 있나요?', '문항에 작성된 보기별 해설과 개념을 기출문제 아래에 함께 표시합니다.']
+  ];
+  const faq = '<section class="faq"><h2>자주 묻는 질문</h2>' + faqs.map(([q, a]) => '<h3>' + seoEsc(q) + '</h3><p>' + seoEsc(a) + '</p>').join('')
+    + '<p><a href="https://www.law.go.kr/LSW/lsSideInfoP.do?docCls=jo&amp;joBrNo=00&amp;joNo=0010&amp;lsiSeq=288933&amp;urlMode=lsScJoRltInfoR">합격 기준: 공인중개사법 시행령 제10조</a></p></section>';
+  const guideLinks = guides.length ? '<section><h2>공인중개사 학습 글</h2><ul>' + guides.map(g => '<li><a href="' + g.fname + '">' + seoEsc(g.title) + '</a></li>').join('') + '</ul></section>' : '';
+  const css = '.subject-card{background:#fff;border:1px solid #dbeafe;border-radius:12px;padding:15px;margin:15px 0}.subject-card h2{margin:0 0 8px;font-size:18px}.subject-card h3{font-size:15px;margin:14px 0 6px}.subject-card p{margin:7px 0}.subject-card ol{padding-left:20px}.subject-card li{margin:12px 0}.subject-card li span{color:#475569}.faq{margin-top:28px}.faq h3{font-size:15px;margin:15px 0 3px}.faq p{margin:0 0 8px}';
+  let html = base.html.replace('</style>', css + '</style>');
+  html = html.replace(/<p>회차별·과목별로 [\s\S]*?<\/p>/, '<p>' + seoEsc(intro) + '</p>');
+  html = html.replace(/<ul>[\s\S]*?<\/ul>/, cards + guideLinks + faq);
+  return { fname: base.fname, html };
 }
 
 async function main() {
@@ -123,9 +251,24 @@ async function main() {
   banks.forEach(b => qtot += ((b.data.questions || []).length));
   console.log('bank ' + banks.length + '개 · 문항 ' + qtot.toLocaleString() + '개. 페이지 생성 중…');
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10); // 한국 날짜
   const files = [];
   const SEO_LABELS = {};
+
+  const guideDir = path.join(ROOT, 'seo-src', 'guide');
+  const guides = fs.existsSync(guideDir) ? fs.readdirSync(guideDir).filter(name => name.endsWith('.md') && !name.startsWith('_')).sort()
+    .map(name => markdownGuide(path.join(guideDir, name))) : [];
+  const guideByCert = {};
+  for (const guide of guides) (guideByCert[guide.cert] ||= []).push(guide);
+
+  const variantCounts = {}, conceptCounts = {};
+  for (const b of banks.filter(b => b.data.cert === 'realestate1' || b.data.cert === 'realestate2')) {
+    const cert = b.data.cert, sid = b.data.subject;
+    const [variantSnap, mapSnap] = await Promise.all(['variantq', 'map'].map(kind => db.collection('adaptive').doc(cert + '__' + sid + '__' + kind).get()));
+    const parse = snap => { if (!snap.exists) return {}; const raw = snap.data(); return raw && typeof raw.payload === 'string' ? JSON.parse(raw.payload) : raw; };
+    variantCounts[cert + '|' + sid] = (parse(variantSnap).questions || []).filter(q => q && !q.hidden).length;
+    conceptCounts[cert + '|' + sid] = new Set((parse(mapSnap).mapping || []).map(x => x.topic).filter(Boolean)).size;
+  }
 
   /* --- admin-3-qc.js seoGenerate() 와 동일한 순회 --- */
   /*
@@ -142,10 +285,17 @@ async function main() {
     for (const q of qs) { const r = seoRound(q.set) || '__none'; (groups[r] = groups[r] || []).push(q); }
     for (const r in groups) {
       const rr = (r === '__none') ? null : r;
-      const pg = seoPage(cert, subjName, rr, sid, groups[r]);
-      pages.set(pg.fname, pg.html);
-      files.push(pg.fname);
-      SEO_LABELS[pg.fname] = subjName;
+      const all = groups[r];
+      const total = Math.ceil(all.length / MAX_PAGE_SIZE);
+      const chunkSize = Math.ceil(all.length / total);
+      for (let part = 0; part < total; part++) {
+        const start = part * chunkSize;
+        const chunk = all.slice(start, start + chunkSize);
+        const pg = splitPage(cert, subjName, rr, sid, chunk, all, start, part, total);
+        pages.set(pg.fname, pg.html);
+        files.push(pg.fname);
+        SEO_LABELS[pg.fname] = subjName + (total > 1 ? ' ' + (start + 1) + '~' + (start + chunk.length) + '번' : '');
+      }
     }
   }
 
@@ -155,15 +305,40 @@ async function main() {
   const hubFiles = [];
   for (const cert of Object.keys(byCert)) {
     const list = byCert[cert];
-    for (const f of list) write('seo/' + f, seoAddNav(pages.get(f), cert, f, list, SEO_LABELS));
-    const ch = seoCertHub(cert, list, SEO_LABELS);
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      // 전체 목록은 index-시험.html에 두고 문항 쪽에는 가까운 이웃만 둔다.
+      const near = list.slice(Math.max(0, i - 3), i + 4);
+      write('seo/' + f, seoAddNav(pages.get(f), cert, f, near, SEO_LABELS));
+    }
+    const ch = cert === 'realestate1' || cert === 'realestate2'
+      ? realestateHub(cert, list, SEO_LABELS, banks, variantCounts, conceptCounts, guideByCert[cert] || [])
+      : seoCertHub(cert, list, SEO_LABELS);
+    if (cert !== 'realestate1' && cert !== 'realestate2' && guideByCert[cert]?.length) {
+      const links = guideByCert[cert].map(g => '<li><a href="' + g.fname + '">' + seoEsc(g.title) + '</a></li>').join('');
+      ch.html = ch.html.replace('<footer>', '<section><h2>' + seoEsc(seoCertName(cert)) + ' 학습 글</h2><ul>' + links + '</ul></section><footer>');
+    }
     write('seo/' + ch.fname, ch.html);
     hubFiles.push(ch.fname);
   }
 
+  for (const guide of guides) {
+    if (!byCert[guide.cert]) throw new Error('글 exam에 해당하는 시험이 없습니다: ' + guide.cert);
+    write('seo/' + guide.fname, guide.html);
+  }
+
+  /* 이전 생성에서 남은 분할·글 쪽은 더 이상 링크되지 않도록 치운다. */
+  const expected = new Set(files.concat(hubFiles, ['index.html'], guides.map(g => g.fname)));
+  for (const name of fs.readdirSync(path.join(ROOT, 'seo'))) {
+    if (/^(?:guide-.*|.*-p\d+)\.html$/.test(name) && !expected.has(name)) {
+      fs.unlinkSync(path.join(ROOT, 'seo', name));
+    }
+  }
+
   const urls = ['https://certlab.ai.kr/seo/index.html']
     .concat(hubFiles.map(f => 'https://certlab.ai.kr/seo/' + f))
-    .concat(files.map(f => 'https://certlab.ai.kr/seo/' + f));
+    .concat(files.map(f => 'https://certlab.ai.kr/seo/' + f))
+    .concat(guides.map(g => 'https://certlab.ai.kr/seo/' + g.fname));
   /* 허브는 쪽 목록만 보고 자격증을 센다. 자격증 허브 주소는 빼고 넘긴다. */
   write('seo/index.html', seoHub(['https://certlab.ai.kr/seo/index.html'].concat(files.map(f => 'https://certlab.ai.kr/seo/' + f)), SEO_LABELS));
   /* ★ 바뀐 쪽만 오늘 날짜를 준다.
@@ -182,7 +357,7 @@ async function main() {
 
   console.log('');
   console.log('✅ 완료');
-  console.log('  seo/*.html  : ' + files.length + '장 (+ 자격증 허브 ' + hubFiles.length + ' + 메인 허브 1)');
+  console.log('  seo/*.html  : ' + files.length + '장 (+ 자격증 허브 ' + hubFiles.length + ' + 메인 허브 1 + 글 ' + guides.length + ')');
   console.log('  문항        : ' + qtot.toLocaleString() + '개');
   console.log('  sitemap URL : ' + urls.length + '개 (lastmod ' + today + ')');
   console.log('  robots.txt · llms.txt 갱신');
