@@ -121,6 +121,18 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 #benefits .mk-trust li img{position:absolute;left:0;top:0;width:32px;height:32px;object-fit:contain}
 .ex-card .chip b{margin-right:8px}
 .ex-card .ex-review img,.mk-cmp thead img{vertical-align:middle}
+@media(max-width:479px){
+  #compare .mk-cmp{display:block;background:transparent}
+  #compare .mk-cmp thead{display:none}
+  #compare .mk-cmp tbody{display:block}
+  #compare .mk-cmp tr{display:block;margin-bottom:16px;background:var(--card);border-radius:12px;overflow:hidden}
+  #compare .mk-cmp tr:last-child{margin-bottom:0}
+  #compare .mk-cmp th,#compare .mk-cmp td{display:block;text-align:left;border-bottom:0}
+  #compare .mk-cmp tbody th{padding:12px;font-size:16px;color:var(--ink)}
+  #compare .mk-cmp td{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:9px 12px}
+  #compare .mk-cmp td::before{content:attr(data-label);color:var(--muted);font-weight:600}
+  #compare .mk-cmp td.me{background:var(--soft);font-weight:700}
+}
 
 body{background:var(--outer)}
 #app{padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
@@ -151,7 +163,7 @@ body{background:var(--outer)}
     <h2>틀린 보기까지 이해하면<br>다음 문제를 보는 눈이 달라집니다.</h2>
     <p class="mk-lead">답 하나보다, 보기마다 틀린 이유가 중요합니다.</p>
       <article class="ex-card" id="sample">
-        <p class="real-top">2025년 공인중개사 1차 기출(제36회) 2번 · 실제 해설</p>
+        <p class="real-top">2025년 공인중개사 1차 기출(제36회) 2번</p>
         <p class="ex-review">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</p>
         <p class="lp-note">보기를 누르면 해설과 장면 예시가 열립니다.</p>
         <button class="chip" type="button" data-i="0" aria-expanded="false"><b>1</b>부동산 임대 및 공급업</button>
@@ -173,10 +185,10 @@ body{background:var(--outer)}
     <div class="mk-cmp-wrap"><table class="mk-cmp">
       <thead><tr><th>살펴볼 점</th><th>학원</th><th>인강</th><th class="me"><img src="../icons/target.png" width="20" height="20" alt=""> 서트랩</th></tr></thead>
       <tbody>
-        <tr><th>언제 공부하나</th><td>정해진 수업 일정에 따라</td><td>강의 영상을 볼 수 있을 때</td><td class="me">원하는 때 문제를 골라</td></tr>
-        <tr><th>틀린 개념 다시</th><td>수업·자료에서 직접 찾아 복습</td><td>해당 강의를 찾아 재생</td><td class="me">오답과 관련 개념을 다시 풀기</td></tr>
-        <tr><th>내 약점 진단</th><td>모의고사·상담 등 과정마다 다름</td><td>강좌별 제공 방식이 다름</td><td class="me">레벨테스트 후 로그인하면 예상점수·약점 확인</td></tr>
-        <tr><th>비용 형식</th><td>학원 과정별 수강료</td><td>강좌별 이용료</td><td class="me">무료 체험 뒤 시험별 이용권</td></tr>
+        <tr><th>언제 공부하나</th><td data-label="학원">정해진 수업 일정에 따라</td><td data-label="인강">강의 영상을 볼 수 있을 때</td><td class="me" data-label="서트랩">원하는 때 문제를 골라</td></tr>
+        <tr><th>틀린 개념 다시</th><td data-label="학원">수업·자료에서 직접 찾아 복습</td><td data-label="인강">해당 강의를 찾아 재생</td><td class="me" data-label="서트랩">오답과 관련 개념을 다시 풀기</td></tr>
+        <tr><th>내 약점 진단</th><td data-label="학원">모의고사·상담 등 과정마다 다름</td><td data-label="인강">강좌별 제공 방식이 다름</td><td class="me" data-label="서트랩">레벨테스트 후 로그인하면 예상점수·약점 확인</td></tr>
+        <tr><th>비용 형식</th><td data-label="학원">학원 과정별 수강료</td><td data-label="인강">강좌별 이용료</td><td class="me" data-label="서트랩">무료 체험 뒤 시험별 이용권</td></tr>
       </tbody></table></div>
     <p class="lp-note">학원·인강은 과정과 강좌에 따라 제공 방식이 달라질 수 있습니다.</p>
   </section>
