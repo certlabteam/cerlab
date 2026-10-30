@@ -101,7 +101,7 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 .mk-dot::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--main);margin-right:7px;vertical-align:2px}
 .mk-lead{margin:0;color:var(--muted);font-size:16px;line-height:1.6}
 .mk2 .mk-diag li{box-shadow:none;border:1px solid var(--line);padding:16px 16px 16px 46px}
-.mk2 .mk-diag li::before{top:18px}.mk2 .mk-diag li::after{top:20px}
+.mk2 .mk-diag li{line-height:1.5}.mk2 .mk-diag li::before{top:calc(16px + .75em - 9px)}.mk2 .mk-diag li::after{top:calc(18px + .75em - 9px)}   /* 첫 줄 가운데에 맞춤(크리스 「체크박스랑 글자시작 높이 달라」) */
 .mk2 .mk-trust,.mk2 .mk-steps{gap:22px;margin-top:4px}
 .mk2 .mk-trust li,.mk2 .mk-steps li{background:none;box-shadow:none;border-radius:0;padding:0 0 0 36px;position:relative}
 .mk2 .mk-trust li::before{content:"✓";position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--soft);color:var(--main);font-weight:800;font-size:14px;display:grid;place-items:center}
