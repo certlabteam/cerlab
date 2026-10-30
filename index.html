@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"></noscript><!-- 2026-10-22 글꼴 목록이 첫 화면 그리기를 막지 않게 — 받는 대로 바꿔 끼운다 -->
-<link rel="stylesheet" href="style.css?v=52125444">
+<link rel="stylesheet" href="style.css?v=fad98753">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -546,8 +546,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   <div class="auth-sheet" style="text-align:center">
     <button class="popup-x" onclick="closeRefundPopup('day')" aria-label="닫기">✕</button>
     <div class="popup-hero"><img src="icons/gift.png" alt="" class="popup-hero-ico"></div>
-    <div class="auth-sheet-title" id="refundTitle">합격하면 결제금액 100% 포인트로!</div>
-    <div class="auth-sheet-sub" id="refundSub">CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제금액만큼 <b>포인트</b>로 돌려드려요. <b>자격증별 선착순 30명!</b></div>
+    <div class="auth-sheet-title" id="refundTitle">합격 100% 포인트 환급</div>
+    <div class="auth-sheet-sub" id="refundSub">합격 인증하면 결제금액 전액을 포인트로 돌려드려요.</div>
+    <div class="refund-actions">
+      <details class="refund-more" id="refundMoreDetails">
+        <summary>자세히 보기</summary>
+        <div class="refund-more-body">
+          <div id="refundFullSub">CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제금액만큼 <b>포인트</b>로 돌려드려요. <b>자격증별 선착순 30명!</b></div>
     <div class="refund-banner" style="animation:none;text-align:left">
       <div class="rb-sub" id="refundSteps" style="margin-top:0">
         ① 큐넷·한능검 등에서 합격 화면 캡처<br>
@@ -562,10 +567,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       ✓ 레벨테스트·예상점수 무료<br>
       ✓ 음성 듣기 · 암기코드
     </div>
-    <a class="btn-google-login" id="refundLink" href="#" onclick="closeRefundPopup('day')" style="text-decoration:none;justify-content:center;background:#185FA5;color:#fff;border:none">자세히 보기 →</a>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('day')">닫기</button>
-      <button class="auth-sheet-close" style="flex:1;margin:0" onclick="closeRefundPopup('week')">7일간 보지 않기</button>
+          <a class="refund-page-link" id="refundLink" href="#" onclick="closeRefundPopup('day')">환급 안내 페이지 보기 →</a>
+        </div>
+      </details>
+      <div class="refund-close-group">
+        <button class="auth-sheet-close" onclick="closeRefundPopup('day')">닫기</button>
+        <button class="refund-week" onclick="closeRefundPopup('week')">7일간 보지 않기</button>
+      </div>
     </div>
   </div>
 </div>
@@ -587,19 +595,22 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <div class="auth-popup hidden" id="loginPopup">
   <div class="auth-sheet">
     <button class="popup-x" onclick="hideLoginPopup()" aria-label="닫기">✕</button>
-    <div class="auth-sheet-title" id="loginTitle"><img src="icons/target.png" alt="" class="ic-img ic-in"> 로그인하면 무료체험 계속!</div>
-    <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
+    <div class="auth-sheet-title" id="loginTitle"><img src="icons/gift.png" alt="" class="ic-img ic-in"> CertLab</div>
+    <div class="auth-sheet-sub" id="welcomeSub" hidden>50문제 무료 체험이 시작되었습니다.</div>
     <div class="refund-banner" id="loginRefundBanner">
-      <div class="rb-ti" id="loginRbTi"><img src="icons/gift.png" alt="" class="ic-img ic-in"> 합격하면 결제금액 100% 포인트로<span class="rb-tag">선착순 30명</span></div>
+      <div class="rb-ti" id="loginRbTi">합격하면 결제금액 100% 포인트로</div>
+    </div>
+    <details class="popup-more" id="loginMore">
+      <summary>자세히 ▾</summary>
+      <div class="popup-more-body">
+        <div class="auth-sheet-sub" id="loginSub">로그인 후 모든 문제를 계속 학습할 수 있습니다.</div>
       <div class="rb-sub" id="loginRbSub">CertLab로 공부하고 합격하면, 합격후기에 인증 사진을 붙여 올리는 즉시 결제금액만큼 포인트로 돌려드려요.</div>
-      <button class="rb-more" onclick="toggleRefundDetail()">자세히 ▾</button>
-      <div class="rb-detail hidden" id="refundDetail">
+      <div class="rb-detail" id="refundDetail">
         ① 합격 확인 화면 캡처<br>
         ② 커뮤니티 「합격후기」에 CertLab 활용 후기를 쓰고 캡처 사진 붙여 올리기<br>
         ③ 후기 게시 동의 (마케팅·웹사이트 게시 가능)<br>
         → 올리는 즉시 결제금액만큼 포인트 자동 적립 (1P=1원 · 다음 이용권 결제에 사용)
       </div>
-    </div>
     <div class="auth-features">
       <div class="feat-now" id="loginFeatCount">전체 기출문제 + 상세 해설</div>
       <div class="feat-all" id="loginFeatAll"></div>
@@ -610,6 +621,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
         <div class="auth-feat-cell"><img src="icons/database.png" alt="" class="ic-img ic-in"> 학습 기록 저장</div>
       </div>
     </div>
+      </div>
+    </details>
     <!-- ★ [2026-10-15 크리스] 「로그인 버튼도 좌측 카톡 우측 구글로 반반씩 하는 형태로 통일해」(다매·일구미와 같은 꼴) -->
     <div class="login-row">
       <button class="btn-kakao-login" onclick="signInWithKakao()">
@@ -727,6 +740,9 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
         <div class="plan-card-desc">28일 전체 이용</div>
       </div>
     </div>
+    <details class="plan-more" id="planMore">
+      <summary>할인코드 · 유의사항 <span>▾</span></summary>
+      <div class="plan-more-body">
     <div class="discount-wrap">
       <div class="discount-label"><img src="icons/card.png" alt="" class="ic-img ic-in"> 할인코드가 있으신가요?</div>
       <div class="discount-row">
@@ -791,6 +807,8 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="pay-ref-line" onclick="if(myReferralCode){shareReferral('pay')}else{showLoginPopup()}"
       style="margin:0 0 10px;padding:10px 12px;background:#FFF8EC;border:1px solid #F0DCBC;border-radius:12px;font-size:14px;color:#7A5A18;line-height:1.6;cursor:pointer;text-align:center">
        <img src="icons/gift.png" alt="" class="ic-img ic-in"> 친구를 초대하면 친구도 나도 <b>9,900P</b> · 포인트로 전액 결제돼요 <u>친구에게 보내기</u></div>
+      </div>
+    </details>
     <div id="mileUseBox"></div>
     <!-- ★ 입금자 이름은 계좌이체용이라 같이 숨긴다. 카드 결제는 안 쓴다. -->
     <input id="depositorName" hidden placeholder="입금자 이름을 입력하세요" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid #E8E8E8;font-size:14px;outline:none;margin-bottom:10px;font-family:inherit">
@@ -815,7 +833,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=4dfb7dbf"></script>
+<script defer src="index-1-auth.js?v=6442a2a1"></script>
 <script defer src="index-2-engine.js?v=519700c1"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
