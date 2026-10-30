@@ -168,17 +168,24 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 #sample .exp-opts .eo-ex{margin-top:6px;padding:8px 10px;background:#FFF6E9;border:1px solid #F1D9A8;border-radius:8px;font-size:14px;line-height:1.65;color:#5E4A2A}
 #sample .exp-opts .eo-ex .eo-ex-ti{font-weight:800;color:#8A5A00;margin-right:4px}
 #sample .eo-badge{font-size:12px;font-weight:800;color:#15803D;background:#DCFCE7;border-radius:8px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+.mk-exams h3{margin:0;font-size:16px;line-height:1.5}
+.mk-exam-field{display:grid;gap:8px}
+.mk-exam-field b{font-size:14px}
+.mk-exam-chips{display:flex;flex-wrap:wrap;gap:6px 8px}
+.mk-exam-chips span{padding:4px 8px;border-radius:999px;background:var(--soft2);font-size:12px;line-height:1.5}
+.mk-exams{gap:16px}
 @media(max-width:479px){
   #compare .mk-cmp{display:block;background:transparent}
   #compare .mk-cmp thead{display:none}
   #compare .mk-cmp tbody{display:block}
-  #compare .mk-cmp tr{display:block;margin-bottom:16px;background:var(--card);border-radius:12px;overflow:hidden}
+  #compare .mk-cmp tr{display:flex;flex-direction:column;margin-bottom:16px;background:var(--card);border-radius:12px;overflow:hidden;padding:12px;gap:6px}
   #compare .mk-cmp tr:last-child{margin-bottom:0}
   #compare .mk-cmp th,#compare .mk-cmp td{display:block;text-align:left;border-bottom:0}
-  #compare .mk-cmp tbody th{padding:12px;font-size:16px;color:var(--ink)}
-  #compare .mk-cmp td{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:9px 12px}
-  #compare .mk-cmp td::before{content:attr(data-label);color:var(--muted);font-weight:600}
-  #compare .mk-cmp td.me{background:var(--soft);font-weight:700}
+  #compare .mk-cmp tbody th{order:0;padding:0;font-size:16px;color:var(--ink)}
+  #compare .mk-cmp td{order:2;padding:0;font-size:12px;color:var(--muted)}
+  #compare .mk-cmp td::before{content:attr(data-label) ' · ';font-weight:600}
+  #compare .mk-cmp td.me{order:1;background:none;color:var(--main);font-size:16px;font-weight:700;padding:6px 0}
+  #compare .mk-cmp td.me::before{content:'✓';display:inline-grid;place-items:center;width:20px;height:20px;margin-right:8px;border-radius:50%;background:var(--main);color:var(--on-main);font-size:12px;vertical-align:middle}
 }
 
 body{background:var(--outer)}
@@ -262,14 +269,14 @@ body{background:var(--outer)}
       <li><img src="../icons/brain.png" alt=""><b>잊기 전에 다시 복습</b><span>망각곡선 자동복습과 오답노트로 놓친 것을 이어 봅니다.</span></li>
       <li><img src="../icons/headphones.png" alt=""><b>내 방식대로 외우세요</b><span>OX 진술과 암기코드를 보고, 듣고, 다시 확인합니다.</span></li>
     </ul>
-    <article class="ex-card">
-      <b>78개 시험 · 41,191문항(10-31 기준)</b>
-      <p class="ex-review"><b>부동산·주택</b> · 공인중개사 1·2차 · 주택관리사 1·2차 · 감정평가사 1·2차</p>
-      <p class="ex-review"><b>관광·호텔</b> · 국내여행안내사 · 관광통역안내사 · 호텔관리사 · 호텔서비스사 · 호텔경영사</p>
-      <p class="ex-review"><b>9급 국가공무원</b> · 일반행정 · 세무 · 관세 등 28개 직렬</p>
-      <p class="ex-review"><b>안전·시설</b> · 소방시설관리사 · 산업안전지도사 · 소방안전교육사 · 정수시설운영관리사</p>
-      <p class="ex-review"><b>경영·법률</b> · 경영지도사 · 기술지도사 · 가맹거래사 · 변리사 · 관세사 · 세무사</p>
-      <p class="ex-review"><b>교육·복지·체육</b> · 한국사 · 사회복지사 1급 · 청소년지도사 · 스포츠지도사 2급 등</p>
+    <article class="ex-card mk-exams">
+      <h3>78개 시험 · 41,191문항(10-31 기준)</h3>
+      <div class="mk-exam-field"><b>부동산·주택</b><div class="mk-exam-chips"><span>공인중개사 1·2차</span><span>주택관리사 1·2차</span><span>감정평가사 1·2차</span></div></div>
+      <div class="mk-exam-field"><b>관광·호텔</b><div class="mk-exam-chips"><span>국내여행안내사</span><span>관광통역안내사</span><span>호텔관리사</span><span>호텔서비스사</span><span>호텔경영사</span></div></div>
+      <div class="mk-exam-field"><b>9급 국가공무원</b><div class="mk-exam-chips"><span>일반행정</span><span>세무</span><span>관세 등 28개 직렬</span></div></div>
+      <div class="mk-exam-field"><b>안전·시설</b><div class="mk-exam-chips"><span>소방시설관리사</span><span>산업안전지도사</span><span>소방안전교육사</span><span>정수시설운영관리사</span></div></div>
+      <div class="mk-exam-field"><b>경영·법률</b><div class="mk-exam-chips"><span>경영지도사</span><span>기술지도사</span><span>가맹거래사</span><span>변리사</span><span>관세사</span><span>세무사</span></div></div>
+      <div class="mk-exam-field"><b>교육·복지·체육</b><div class="mk-exam-chips"><span>한국사</span><span>사회복지사 1급</span><span>청소년지도사</span><span>스포츠지도사 2급 등</span></div></div>
     </article>
   </section>
 
