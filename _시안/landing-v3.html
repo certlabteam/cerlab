@@ -121,6 +121,12 @@ button.primary,.button.primary{background:var(--main);border-color:var(--main);c
 #benefits .mk-trust li{padding-left:56px}.mk-trust li img{position:absolute;left:0;top:0;width:40px;height:40px;padding:8px;border-radius:999px;background:var(--soft);object-fit:contain}   /* 작은 아이콘은 점으로 · 큰 것만 지금 랜딩처럼 옅은 원 안에(크리스 「아이콘 작은건 점만 찍기로」) */
 .ex-card .chip b{margin-right:8px}
 .ex-card .ex-review img,.mk-cmp thead img{vertical-align:middle}
+/* 실제 랜딩 style.css 의 .lp-chips 규칙과 시험 칸 마크업을 복사했다. */
+.lp-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.lp-chips span{grid-column:1/-1;font-size:12px;color:#8A7D6E;text-align:center}
+.lp-chips button{width:100%;min-width:0;border:1.5px solid #B5D4F4;background:#fff;color:#185FA5;border-radius:12px;padding:8px 4px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:20px}
+.lp-chips button small{display:block;font-size:12px;font-weight:800;color:#C2620C;line-height:16px}
+.lp-chips button small{font-weight:500}
 @media(max-width:479px){
   #compare .mk-cmp{display:block;background:transparent}
   #compare .mk-cmp thead{display:none}
@@ -146,6 +152,16 @@ body{background:var(--outer)}
     <p>보기마다 답의 이유를 읽고<br>틀린 개념은 다시 풀어 보고<br>시험 전에 내 약점을 확인하세요.</p>
     <div class="mk-pos" data-pos="hero"><div class="lp-login"><a class="button primary" href="../index.html#homeExamList">무료 레벨테스트 시작</a></div></div>
     <ul class="mk-checks"><li>가입 없이 문제부터</li><li>보기별 해설</li><li>78개 시험</li></ul>
+    <!-- 2026-10-31 기준 라이브 manifest/exams의 시험 이름 + examSchedules/lp-order.json의 시험일. 실제 랜딩 적용 때는 index-5-shell.js의 lpChips()가 동적으로 채운다. -->
+    <div class="lp-chips"><span>시험이 가까운 것부터 · 누르면 바로 시작</span>
+      <button type="button" onclick="lpGo('realestate1')">중개사 1차<small>D-day</small></button>
+      <button type="button" onclick="lpGo('realestate2')">중개사 2차<small>D-day</small></button>
+      <button type="button" onclick="lpGo('tourguide')">국내여행안내사<small>D-7</small></button>
+      <button type="button" onclick="lpGo('hotelmgr')">호텔관리사<small>D-7</small></button>
+      <button type="button" onclick="lpGo('hotelservice')">호텔서비스사<small>D-7</small></button>
+      <button type="button" onclick="lpGo('hotelbiz')">호텔경영사 1차<small>D-7</small></button>
+    </div>
+    <a href="../index.html#homeExamList">전체 시험 보기 →</a>
   </section>
 
   <section class="lp-sec mk-alt" id="self-check">
@@ -202,7 +218,15 @@ body{background:var(--outer)}
       <li><img src="../icons/brain.png" alt=""><b>잊기 전에 다시 복습</b><span>망각곡선 자동복습과 오답노트로 놓친 것을 이어 봅니다.</span></li>
       <li><img src="../icons/headphones.png" alt=""><b>내 방식대로 외우세요</b><span>OX 진술과 암기코드를 보고, 듣고, 다시 확인합니다.</span></li>
     </ul>
-    <p class="lp-note">78개 시험 · 41,191문항(10-31 기준)</p>
+    <article class="ex-card">
+      <b>78개 시험 · 41,191문항(10-31 기준)</b>
+      <p class="ex-review"><b>부동산·주택</b> · 공인중개사 1·2차 · 주택관리사 1·2차 · 감정평가사 1·2차</p>
+      <p class="ex-review"><b>관광·호텔</b> · 국내여행안내사 · 관광통역안내사 · 호텔관리사 · 호텔서비스사 · 호텔경영사</p>
+      <p class="ex-review"><b>9급 국가공무원</b> · 일반행정 · 세무 · 관세 등 28개 직렬</p>
+      <p class="ex-review"><b>안전·시설</b> · 소방시설관리사 · 산업안전지도사 · 소방안전교육사 · 정수시설운영관리사</p>
+      <p class="ex-review"><b>경영·법률</b> · 경영지도사 · 기술지도사 · 가맹거래사 · 변리사 · 관세사 · 세무사</p>
+      <p class="ex-review"><b>교육·복지·체육</b> · 한국사 · 사회복지사 1급 · 청소년지도사 · 스포츠지도사 2급 등</p>
+    </article>
   </section>
 
   <section class="lp-sec mk-alt" id="steps">
@@ -253,6 +277,7 @@ body{background:var(--outer)}
   </footer>
 </div></div>
 <script>
+function lpGo(cert){ location.href='../index.html#'+encodeURIComponent(cert); }
 const dg = document.querySelector('.mk-diag');
 if (dg) {
   if ('IntersectionObserver' in window) {
