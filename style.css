@@ -1624,7 +1624,7 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 #lpWrap #sample .opt.dim{opacity:.55}
 #lpWrap #sample .exp{margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 14px}
 #lpWrap #sample .exp-note-hd{font-size:16px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
-#lpWrap #sample .exp-note-hd::before{content:'📚 '}
+#lpWrap #sample .exp-note-hd::before{content:'';display:inline-block;width:20px;height:20px;margin-right:6px;vertical-align:middle;background:url('icons/books.png') center/contain no-repeat}
 #lpWrap #sample .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
 #lpWrap #sample .exp-ti{font-size:14px;font-weight:800;color:#0F172A}
 #lpWrap #sample .exp-st{font-size:14px;font-weight:800}
@@ -1659,5 +1659,9 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 }
 #lpWrap .mk-label{font-size:12px}
 #lpWrap .lp-all-link{border:0;background:none;min-height:0;padding:0;color:var(--main);font-size:14px;font-weight:700;text-decoration:underline}
+/* 화면의 장식 이모지는 emoji-ui.js가 그록 그림 또는 작은 점으로 바꾼다. */
+.cl-emoji-icon{display:inline-block;width:20px;height:20px;object-fit:contain;vertical-align:middle;flex:none}
+.cl-emoji-icon.cl-emoji-large{width:32px;height:32px}
+.cl-emoji-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cl-dot,#185FA5);vertical-align:2px;margin-right:4px;flex:none}
 #lpWrap{width:calc(100% + 32px);max-width:none;margin:0 -16px}
 @media(max-width:420px){body:has(#lpWrap:not(.hidden)) .header{padding-left:8px;padding-right:8px;gap:2px}}
