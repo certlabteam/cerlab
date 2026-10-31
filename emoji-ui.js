@@ -2,14 +2,19 @@
 (function(){
   var icons={
     '⚠':'warning','⚠️':'warning','🤖':'robot','⚡':'lightning','🔥':'flame',
-    '📋':'checklist','📊':'barchart','💪':'dumbbell','💡':'bulb','🎯':'target',
+    '📋':'clipboard','📊':'barchart','💪':'dumbbell','💡':'bulb','🎯':'target',
     '📘':'book','💬':'chat','🔊':'speaker','📢':'speaker','🏢':'office_key',
     '📚':'books','🎁':'gift','🔒':'shield_lock','🏠':'house','🏆':'trophy',
     '🔄':'repeat','🚨':'siren','📐':'ruler','📜':'scroll','🏅':'medal',
     '⚖️':'scale','🧯':'extinguisher','🏃':'dumbbell','🎓':'school','📖':'book',
     '⚙':'gear','🥇':'medal','🥈':'medal','🥉':'medal','📄':'doc_seal',
     '🏛':'gov','🃏':'flip','📝':'notebook','🧠':'brain','🆕':'new_badge','🖨️':'printer',
-    '🔁':'repeat','❤️':'heart_hands','📉':'barchart','✅':'check','❌':'xmark'
+    '🔁':'repeat','❤️':'heart_hands','📉':'barchart','✅':'check','❌':'xmark',
+    '🎉':'party','👍':'thumb_up','👎':'thumb_down','👁️':'eye','✍️':'writing',
+    '✏️':'pencil','🔗':'link','⏱':'stopwatch','⌛':'hourglass','📌':'pin',
+    '👏':'clap','✨':'sparkle','🌸':'flower','💫':'star_trail','🏁':'flag',
+    '🔎':'search','💰':'moneybag','📲':'phone_out','🔀':'shuffle','✂':'scissors',
+    '🎟':'ticket','🎬':'clapper','🤔':'thinking'
   };
   var dots={'🔴':'#DC2626','🟡':'#E0A52E','🟢':'#1D9E75','⬜':'#94A3B8',
             '👩':'#185FA5','👨':'#185FA5','🙋':'#185FA5','🙂':'#185FA5'};
@@ -35,7 +40,7 @@
         fragment.appendChild(document.createTextNode(emoji)); continue;
       }
       var beside=!!(value.slice(0,start).trim() || value.slice(at).trim());
-      var color=dots[emoji] || (size<=16 && beside ? 'currentColor' : '');
+      var color=dots[emoji] || (size<=16 && beside && emoji!=='📋' ? 'currentColor' : '');
       if(color){
         var dot=document.createElement('span');
         dot.className='cl-emoji-dot';dot.style.setProperty('--cl-dot',color);
