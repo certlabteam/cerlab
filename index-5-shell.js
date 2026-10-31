@@ -1435,30 +1435,34 @@ function lpChips(){
   }).join('');
 }
 function lpGo(cert){ lpTrack('LandingCTA', { which:'chip', cert:cert }); if(typeof enterCert==='function') enterCert(cert); }
-/* [2026-10-29] 「해설은 이렇게 나와요」를 날마다 바뀌는 예시(lp-sample.json · scripts/lp-sample.mjs 가 굽는다)로 — 크리스 「그날 기준 우선순위 높은 걸로 자동으로」.
-   없거나 깨지면 index.html 의 고정 예시 그대로. 판정 딱지는 발문 축(해당함/옳음…), 예시 표시는 「예)」. */
-function lpSampleLoad(){
-  var card=document.getElementById('lpSample'); if(!card || !window.fetch) return;
-  fetch('lp-sample.json',{cache:'no-cache'}).then(function(r){ return r.ok?r.json():null; }).then(function(d){
-    if(!d || !Array.isArray(d.opts) || !Array.isArray(d.o) || typeof d.ans!=='number') return;
-    var esc=function(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
-    var s=String(d.q||''), neg=/해당하지\s*않|해당되지\s*않|옳지\s*않|틀린|적절하지\s*않|아닌\s*것/.test(s), byFit=/해당/.test(s)||!/옳|틀|적절|맞는/.test(s);
-    var tag=function(i){ var isA=(i+1===d.ans), good=(isA!==neg); return byFit?(good?'해당함':'해당하지 않음'):(good?'옳음':'옳지 않음'); };
-    var h='<div class="lp-src">'+esc(d.setLabel||'')+' '+esc(d.certName||'')+(d.n?' '+d.n+'번':'')+' · 실제 해설 그대로</div><div class="lp-q">'+esc(d.q)+'</div><div class="lp-tip">답을 눌러 보세요 · 보기마다 해설과 예)가 나와요</div>';
-    d.opts.forEach(function(o,i){
-      h+='<button type="button" class="lp-opt" data-i="'+i+'" onclick="lpPick('+i+')"><span class="lp-n">'+(i+1)+'</span>'+esc(o)+'</button>'
-        +'<div class="lp-exp hidden" id="lpExp'+i+'"><div class="lp-o"><b class="'+(((i+1===d.ans)!==neg)?'eo-grn':'eo-red')+'">'+tag(i)+'</b>'+(i+1===d.ans?'<span class="eo-badge">✅ 정답</span>':'')+' '+esc(d.o[i])+'</div>'+(d.ex&&d.ex[i]?'<div class="lp-ex"><span>예)</span>'+esc(d.ex[i])+'</div>':'')+'</div>';
+/* 랜딩 샘플: 실제 문제 화면처럼 고른 보기와 정답을 표시하고 전체 보기 해설을 연다. */
+function lpSampleInit(){
+  var sample=document.querySelector('#lpWrap #sample'); if(!sample) return;
+  var opts=sample.querySelectorAll('.opt');
+  function pick(n){
+    opts.forEach(function(opt){
+      var i=Number(opt.getAttribute('data-i'));
+      opt.classList.toggle('cor',i===1);
+      opt.classList.toggle('wr',i===n && i!==1);
+      opt.classList.toggle('dim',i!==n && i!==1);
+      opt.setAttribute('aria-pressed',String(i===n));
     });
-    window._lpAns=d.ans-1; card.innerHTML=h;
-  }).catch(function(){});
+    sample.querySelector('.exp').hidden=false;
+    lpTrack('LandingSample',{pick:n});
+  }
+  opts.forEach(function(opt){
+    opt.addEventListener('click',function(){pick(Number(opt.getAttribute('data-i')));});
+    opt.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();opt.click();}});
+  });
+  var diag=document.querySelector('#lpWrap .mk-diag');
+  if(diag){
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(entries){if(entries.some(function(e){return e.isIntersecting;})){diag.classList.add('on');io.disconnect();}},{threshold:.6});
+      io.observe(diag);
+    }else diag.classList.add('on');
+  }
 }
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', lpSampleLoad); else lpSampleLoad();
-function lpPick(i){
-  document.querySelectorAll('#lpWrap .lp-opt').forEach(function(b){
-    var k=+b.getAttribute('data-i'); b.classList.toggle('on', k===i); b.classList.toggle('ok', k===(window._lpAns!=null?window._lpAns:0)); });
-  document.querySelectorAll('#lpWrap .lp-exp').forEach(function(x, k){ x.classList.toggle('hidden', k!==i); });
-  lpTrack('LandingSample', { pick:i+1 });
-}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',lpSampleInit); else lpSampleInit();
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(lpSync, 0); });
 // 프로필 메뉴: 홈 화면에 추가
 async function addToHome(e){

@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"></noscript><!-- 2026-10-22 글꼴 목록이 첫 화면 그리기를 막지 않게 — 받는 대로 바꿔 끼운다 -->
-<link rel="stylesheet" href="style.css?v=8a91676f">
+<link rel="stylesheet" href="style.css?v=84085a17">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -201,64 +201,136 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <div class="cm-nb-roll" id="cmNbRoll"></div>
     <span class="cm-nb-arr">›</span>
   </div>
-  <!-- [2026-10-14] 랜딩 — 로그인 안 한 처음 손님에게만(lpSync). 크리스 「서트랩도 랜딩 페이지 만들자」 → 메뉴 「짧은 랜딩 + 바로 시험 목록」.
-       의견: 일구미(진짜 화면·바로 해 보기·네 단계 재기) · 다매(가입 없이 쓰는 것을 맨 위에) · SEO방(검색어 · 「무료로 시작」) · 공용 UIUX_모바일 4부 가.
-       숫자는 2026-10-14 실측(manifest 시험 62 · seo/ 686장 qitem 31,470 · adaptive 레벨업 5,937). 근거 없는 주장 금지. -->
+  <!-- 로그인 전 랜딩. 회원 상태와 시험 칸은 lpSync()/lpChips()가 관리한다. -->
   <section class="lp hidden" id="lpWrap">
-    <div class="lp-hero">
-      <!-- [2026-10-14 크리스] 「캐릭터 들어갈 자리 만들어놓고」 — 캐릭터가 나오기 전엔 로고, 나오면 lp-char.png 로 갈아 끼운다(png 는 1년 캐시라 ?v 를 바꿀 것) -->
-      <img class="lp-char" id="lpChar" src="lp-char-144.png" alt="서트랩 캐릭터" width="72" height="72">
-      <div class="lp-pain">기출, 정답만 외우지 마세요</div>
-      <h1 class="lp-h1">자격증 기출문제, 무료 레벨테스트로<br>내 점수부터 확인하세요</h1>
-      <p class="lp-sub">62개 자격증 기출 · 보기마다 해설과 장면 예시&nbsp;· <span style="white-space:nowrap">망각곡선 자동 복습</span></p>
-      <button type="button" class="lp-cta" onclick="lpGoList('hero')">무료 레벨테스트 시작</button>
-      <div class="lp-free">가입 없이 문제부터 · 결과는 로그인 한 번 · 카드 등록 없음</div>
-      <div class="lp-chips"><span>시험을 고르면 바로 시작</span>
-        <button type="button" onclick="lpGo('realestate1')">공인중개사 1차</button>
-        <button type="button" onclick="lpGo('appraiser')">감정평가사</button>
-        <button type="button" onclick="lpGo('housing')">주택관리사</button>
-        <button type="button" onclick="lpGo('koreanhistory')">한국사</button>
+    <div class="landing mk2">
+  <header class="lp-top"><svg width="28" height="28" viewBox="6 5 68 70" aria-hidden="true"><path d="M62 26 A24 24 0 1 0 62 54" stroke="#185FA5" stroke-width="18" fill="none" stroke-linecap="round"/><circle cx="52" cy="40" r="4.5" fill="#1D9E75"/></svg><b class="wordmark">서트랩<i> · CertLab</i></b></header>
+  <section class="lp-hero">
+    <div class="lp-kick-row"><img id="lpChar" src="lp-char-144.png" width="72" height="72" alt="서트랩 캐릭터"><span class="mk-label mk-dot">서트랩 · CertLab</span></div>
+    <h1>자격증 기출문제, 무료 레벨테스트로<br><em>내 점수부터 확인하세요</em></h1>
+    <p>보기마다 답의 이유를 읽고<br>틀린 개념은 다시 풀어 보고<br>시험 전에 내 약점을 확인하세요.</p>
+    <div class="mk-pos" data-pos="hero"><div class="lp-login"><button type="button" class="button primary" onclick="lpGoList('hero')">무료 레벨테스트 시작</button></div></div>
+    <ul class="mk-checks"><li>가입 없이 문제부터</li><li>보기별 해설</li><li>78개 시험</li></ul>
+    <!-- 시험 칸은 lpChips()가 날짜와 manifest로 여섯 개를 채운다. -->
+    <div class="lp-chips"><span>시험이 가까운 것부터 · 누르면 바로 시작</span></div>
+    <button type="button" class="lp-all-link" onclick="lpGoList('all')">전체 시험 보기 →</button>
+  </section>
+
+  <section class="lp-sec mk-alt" id="self-check">
+    <span class="mk-label mk-dot">자가진단</span>
+    <h2>이런 공부, 낯설지 않나요?</h2>
+    <ul class="mk-diag">
+      <li>기출을 풀었는데 왜 틀렸는지는 놓치고 넘어간다.</li>
+      <li>며칠 뒤 같은 개념이 나오면 다시 헷갈린다.</li>
+      <li>시험까지 남은 동안 어디부터 보완할지 모르겠다.</li>
+    </ul>
+  </section>
+
+  <section class="lp-sec" id="real-explanation">
+    <span class="mk-label mk-dot">기출, 정답만 외우지 마세요</span>
+    <h2>틀린 보기까지 이해하면<br>다음 문제를 보는 눈이 달라집니다.</h2>
+    <p class="mk-lead">답 하나보다, 보기마다 틀린 이유가 중요합니다.</p>
+      <!-- 라이브 banks/realestate1__re1_intro__2025년 기출(제36회) · intro25_2의 q/opts/ans/exp.o/exp.ex -->
+      <div id="sample" aria-label="기출문제 해설 예시">
+        <div class="qstem"><div class="qhead"><div class="qnum">2</div><span class="imp">★5</span><span class="tmark t2">⌛ 보통</span></div><div class="qtext">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</div></div>
+        <div class="qcard"><div class="opts">
+          <div class="opt" role="button" tabindex="0" data-i="1" aria-pressed="false"><div class="onum">1</div><div class="otxt">부동산 임대 및 공급업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="2" aria-pressed="false"><div class="onum">2</div><div class="otxt">부동산 중개 및 대리업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="3" aria-pressed="false"><div class="onum">3</div><div class="otxt">부동산 감정평가업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="4" aria-pressed="false"><div class="onum">4</div><div class="otxt">부동산 투자 자문업</div></div>
+          <div class="opt" role="button" tabindex="0" data-i="5" aria-pressed="false"><div class="onum">5</div><div class="otxt">부동산 분양 대행업</div></div>
+        </div>
+        <div class="exp" hidden><div class="exp-note-hd">학습 노트</div><div class="exp-hd"><span class="exp-ti">해설</span><span class="exp-st">정답 1번</span></div><div class="exp-opts">
+          <div class="eo"><div class="eo-q">1. 부동산 임대 및 공급업 <span class="eo-verdict eo-red">해당하지 않음</span> <span class="eo-badge">✅ 정답</span></div><div class="eo-a">부동산 임대 및 공급업은 부동산을 소유·개발해 공급하거나 임대하는 부동산업이다. 부동산 관련 서비스업으로 분류되는 활동이 아니므로 해당하지 않는다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>주택 개발업체가 토지를 매입해 공동주택을 짓고, 완공 뒤 세대별 분양 대금을 받는다. 보유한 상가를 임대하면 매달 임차인이 낸 임대료가 수입으로 들어온다. 이렇게 직접 짓고 팔거나 빌려주는 일은 한국표준산업분류에서 부동산 임대 및 공급업으로 묶이고, 중개·감정평가·관리 같은 부동산 관련 서비스업과는 다른 갈래다.</div></div>
+          <div class="eo"><div class="eo-q">2. 부동산 중개 및 대리업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 중개 및 대리업은 거래 당사자를 이어 매매·임대차 계약을 돕는 서비스다. 부동산 관련 서비스업에 해당하므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>공인중개사가 매도인과 매수인의 조건을 조율하고 계약 체결을 중개하면 부동산 거래를 돕는 서비스가 제공된다. 이런 중개·대리 활동은 부동산 관련 서비스업으로 분류된다.</div></div>
+          <div class="eo"><div class="eo-q">3. 부동산 감정평가업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 감정평가업은 부동산의 경제적 가치를 조사하고 평가하는 서비스다. 부동산 이용·거래를 지원하는 관련 서비스업이므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>감정평가법인이 담보 대출을 신청한 상가의 위치와 임대수익, 주변 거래 사례를 조사해 평가액을 낸다. 금융기관은 평가액과 대출자의 상환 능력을 함께 살펴 담보 한도를 정한다.</div></div>
+          <div class="eo"><div class="eo-q">4. 부동산 투자 자문업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 투자 자문업은 부동산 투자 판단에 필요한 정보와 의견을 제공하는 서비스다. 부동산 관련 서비스업에 포함되므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>투자 자문사가 임대용 건물의 공실률과 임대료 전망을 분석해 투자 위험을 설명한다. 부동산 투자 의사결정을 지원하는 자문 활동은 부동산 관련 서비스업이다.</div></div>
+          <div class="eo"><div class="eo-q">5. 부동산 분양 대행업 <span class="eo-verdict eo-red">옳지 않음</span></div><div class="eo-a">부동산 분양 대행업은 공급자를 대신해 분양 홍보와 계약 절차를 지원하는 서비스다. 부동산 공급 자체와 구별되는 관련 서비스업이므로 이 선택지는 옳지 않다.</div><div class="eo-ex"><span class="eo-ex-ti">예)</span>분양 대행사가 시행사의 의뢰를 받아 견본주택을 안내하고 계약 서류 제출을 지원한다. 부동산을 직접 공급하는 시행사와 구별되는 분양 대행 서비스가 분양 절차와 계약 준비를 지원한다.</div></div>
+        </div></div></div>
       </div>
+  </section>
+
+  <section class="lp-sec mk-alt" id="compare">
+    <span class="mk-label mk-dot">비교</span>
+    <h2>나에게 맞는 공부 방식은?</h2>
+    <div class="mk-cmp-wrap"><table class="mk-cmp">
+      <thead><tr><th>살펴볼 점</th><th>학원</th><th>인강</th><th class="me">서트랩</th></tr></thead>
+      <tbody>
+        <tr><th>언제 공부하나</th><td data-label="학원">정해진 수업 일정에 따라</td><td data-label="인강">강의 영상을 볼 수 있을 때</td><td class="me" data-label="서트랩">원하는 때 문제를 골라</td></tr>
+        <tr><th>틀린 개념 다시</th><td data-label="학원">수업·자료에서 직접 찾아 복습</td><td data-label="인강">해당 강의를 찾아 재생</td><td class="me" data-label="서트랩">오답과 관련 개념을 다시 풀기</td></tr>
+        <tr><th>내 약점 진단</th><td data-label="학원">모의고사·상담 등 과정마다 다름</td><td data-label="인강">강좌별 제공 방식이 다름</td><td class="me" data-label="서트랩">레벨테스트 후 로그인하면 예상점수·약점 확인</td></tr>
+        <tr><th>비용 형식</th><td data-label="학원">학원 과정별 수강료</td><td data-label="인강">강좌별 이용료</td><td class="me" data-label="서트랩">무료 체험 뒤 시험별 이용권</td></tr>
+      </tbody></table></div>
+    <p class="lp-note">학원·인강은 과정과 강좌에 따라 제공 방식이 달라질 수 있습니다.</p>
+  </section>
+
+  <section class="lp-sec" id="benefits">
+    <span class="mk-label mk-dot">서트랩이 다른 점</span>
+    <h2>이해하고, 약점을 찾고,<br>잊기 전에 다시 봅니다.</h2>
+    <ul class="mk-trust">
+      <li><img src="icons/target.png" alt=""><b>내 수준부터 확인하세요</b><span>문제는 가입 없이 시작하고, 로그인하면 예상점수와 약점을 봅니다.</span></li>
+      <li><img src="icons/repeat.png" alt=""><b>틀린 개념만 다시 훈련</b><span>오답을 모으고, 같은 개념을 바꿔 묻는 문제로 다시 확인합니다.</span></li>
+      <li><img src="icons/brain.png" alt=""><b>잊기 전에 다시 복습</b><span>망각곡선 자동복습과 오답노트로 놓친 것을 이어 봅니다.</span></li>
+      <li><img src="icons/headphones.png" alt=""><b>내 방식대로 외우세요</b><span>OX 진술과 암기코드를 보고, 듣고, 다시 확인합니다.</span></li>
+    </ul>
+    <article class="ex-card mk-exams">
+      <h3>78개 시험 · 41,191문항(10-31 기준)</h3>
+      <div class="mk-exam-field"><b>부동산·주택</b><div class="mk-exam-chips"><span>공인중개사 1·2차</span><span>주택관리사 1·2차</span><span>감정평가사 1·2차</span></div></div>
+      <div class="mk-exam-field"><b>관광·호텔</b><div class="mk-exam-chips"><span>국내여행안내사</span><span>관광통역안내사</span><span>호텔관리사</span><span>호텔서비스사</span><span>호텔경영사</span></div></div>
+      <div class="mk-exam-field"><b>9급 국가공무원</b><div class="mk-exam-chips"><span>일반행정</span><span>세무</span><span>관세 등 28개 직렬</span></div></div>
+      <div class="mk-exam-field"><b>안전·시설</b><div class="mk-exam-chips"><span>소방시설관리사</span><span>산업안전지도사</span><span>소방안전교육사</span><span>정수시설운영관리사</span></div></div>
+      <div class="mk-exam-field"><b>경영·법률</b><div class="mk-exam-chips"><span>경영지도사</span><span>기술지도사</span><span>가맹거래사</span><span>변리사</span><span>관세사</span><span>세무사</span></div></div>
+      <div class="mk-exam-field"><b>교육·복지·체육</b><div class="mk-exam-chips"><span>한국사</span><span>사회복지사 1급</span><span>청소년지도사</span><span>스포츠지도사 2급 등</span></div></div>
+    </article>
+  </section>
+
+  <section class="lp-sec mk-alt" id="steps">
+    <span class="mk-label mk-dot">시작하기</span>
+    <h2>세 단계로 시작하세요</h2>
+    <ol class="mk-steps">
+      <li><b>시험 고르기</b><span>준비하는 시험을 고르면 해당 기출과 레벨테스트로 갑니다.</span></li>
+      <li><b>문제 풀기</b><span>가입 없이 문제부터 풀고 보기별 해설을 확인합니다.</span></li>
+      <li><b>결과 확인하기</b><span>카카오 또는 구글로 로그인하면 예상점수와 약점을 볼 수 있습니다.</span></li>
+    </ol>
+    <div class="mk-pos lp-end" data-pos="steps"><div class="lp-login"><button type="button" class="button primary" onclick="lpGoList('steps')">무료 레벨테스트 시작</button></div></div>
+  </section>
+
+  <section class="lp-sec" id="pricing">
+    <span class="mk-label mk-dot">이용권</span>
+    <h2>무료로 풀어 보고 결정하세요</h2>
+    <p class="mk-lead">이용권은 시험 1종에 적용됩니다. 시험마다 적용 등급이 달라 결제 전 해당 시험의 이용권 화면에서 확인할 수 있습니다.</p>
+    <article class="ex-card"><b>무료로 시작</b><p class="ex-review">레벨테스트 · 예상점수 무료</p><p class="ex-review">시험마다 기출 50문제 무료 체험</p><p class="ex-review">친구를 초대하면 친구도 나도 9,900포인트</p></article>
+    <div class="web-pay-only"><div class="mk-cmp-wrap"><table class="mk-cmp">
+      <thead><tr><th>30일 이용권</th><th class="me">가격</th></tr></thead>
+      <tbody><tr><th>라이트</th><td class="me">6,900원</td></tr><tr><th>스탠다드</th><td class="me">9,900원</td></tr><tr><th>프리미엄</th><td class="me">14,900원</td></tr><tr><th>프리미엄 플러스</th><td class="me">24,900원</td></tr></tbody>
+    </table></div><p class="lp-note">90·180·365일은 이용권 화면에서</p></div>
+    <p class="lp-note">부가가치세 포함. 실제 적용 등급과 결제 금액은 이용권 화면에서 확인하세요.</p>
+    <div class="mk-pos lp-end" data-pos="price"><div class="lp-login"><button type="button" class="button primary" onclick="lpGoList('price')">무료 레벨테스트 시작</button></div></div>
+  </section>
+
+  <section class="lp-sec mk-alt" id="questions">
+    <span class="mk-label mk-dot">자주 묻는 질문</span>
+    <h2>시작 전에 궁금한 점</h2>
+    <dl class="lp-faq">
+      <dt>가입하지 않고도 풀 수 있나요?</dt><dd>네. 문제는 가입 없이 시작할 수 있습니다. 예상점수와 약점 결과를 보려면 카카오 또는 구글 로그인이 필요합니다.</dd>
+      <dt>무료 체험은 어디까지인가요?</dt><dd>가입 없이 문제부터 풀어 볼 수 있습니다. 시험마다 기출 50문제를 무료로 체험할 수 있습니다.</dd>
+      <dt>이용권 하나로 모든 시험을 볼 수 있나요?</dt><dd>이용권은 선택한 시험 1종에 적용됩니다. 기간과 금액은 위 가격표와 해당 시험의 이용권 화면에서 확인할 수 있습니다.</dd>
+      <dt>환불 기준은 어디서 보나요?</dt><dd>구매 전에 <a href="pricing.html">이용권 상품·가격</a>과 <a href="terms.html">이용약관</a>에서 확인할 수 있습니다.</dd>
+    </dl>
+  </section>
+
+  <section class="lp-sec lp-end mk-last" id="last-start">
+    <h2>준비하는 시험부터 골라 보세요</h2>
+    <p class="mk-lead">문제는 먼저 풀어 보고, 결과를 볼 때 로그인하면 됩니다.</p>
+    <div class="mk-pos lp-end" data-pos="last"><div class="lp-login"><button type="button" class="button primary" onclick="lpGoList('last')">무료 레벨테스트 시작</button></div></div>
+  </section>
+
+  <footer class="lp-foot">
+    <p class="tagline">CertLab · 서트랩</p>
+    <p><a href="about.html">회사소개</a> · <a href="pricing.html">이용권 상품·가격</a> · <a href="terms.html">이용약관</a> · <a href="privacy.html">개인정보 취급방침</a></p>
+    <p>상호명: 일구미 · 대표자: 박성환 · 사업자등록번호: 317-10-03471<br>충청남도 공주시 정안면 하정안길 10-21 · 010-2822-3590 · certlab.team@gmail.com</p>
+  </footer>
     </div>
-    <!-- [2026-10-14 크리스] 「서트랩 장점들 소개하는 형태로 일구미처럼」 — 있는 기능만 · 제목·차례는 GPT(이해→진단→약점→기억→내 방식→무료) · 그록·일구미 의견과 견줘 고름 -->
-    <div class="lp-sec">
-      <div class="lp-label">서트랩이 다른 점</div>
-      <div class="lp-adv">
-        <div><i><img src="icons/book.png" loading="lazy" alt="" width="24" height="24"></i><b>정답만 말하지 않아요</b><span>보기마다 해설과 실제 생활 속 예시까지</span></div>
-        <div><i><img src="icons/target.png" loading="lazy" alt="" width="24" height="24"></i><b>내 실력부터 확인하세요</b><span>가입 없이 풀고, 로그인 한 번이면 예상점수와 약점</span></div>
-        <div><i><img src="icons/repeat.png" loading="lazy" alt="" width="24" height="24"></i><b>틀린 개념만 다시 훈련</b><span>약점 개념마다 변형문제 5개씩</span></div>
-        <div><i><img src="icons/brain.png" loading="lazy" alt="" width="24" height="24"></i><b>잊기 전에 다시 복습</b><span>망각곡선 자동 복습과 오답노트</span></div>
-        <div><i><img src="icons/headphones.png" loading="lazy" alt="" width="24" height="24"></i><b>내 방식대로 외우세요</b><span>OX·암기 코드로 내 방식대로</span></div>
-        <div><i><img src="icons/gift.png" loading="lazy" alt="" width="24" height="24"></i><b>무료로 풀어 보고 결정</b><span>레벨테스트와 기출 50문제는 무료</span></div>
-      </div>
-    </div>
-    <div class="lp-sec">
-      <div class="lp-label">해설은 이렇게 나와요</div>
-      <div class="lp-card" id="lpSample">
-        <div class="lp-src">2025년 공인중개사 1차 기출(제36회) 2번 · 실제 해설 그대로</div>
-        <div class="lp-q">한국표준산업분류(KSIC)에 따라 부동산업을 분류할 경우 부동산관련 서비스업에 해당하지 않는 것은?</div>
-        <div class="lp-tip">보기를 눌러 보세요</div>
-        <button type="button" class="lp-opt" data-i="0" onclick="lpPick(0)"><span class="lp-n">1</span>부동산 임대 및 공급업</button><div class="lp-exp hidden" id="lpExp0"><div class="lp-o"><b>정답</b> 부동산 임대 및 공급업은 부동산 관련 서비스업이 아니라 그와 나란한 별도의 중분류라, 관련 서비스업에 해당하지 않으므로 옳지 않다(정답).</div><div class="lp-ex"><span>장면 예시</span>甲은 자기 이름으로 된 오피스텔 여러 채를 세놓아 다달이 임대료를 거두는데, 이 일은 거래를 옆에서 돕는 중개나 자문과 달리 부동산을 직접 갖고 굴리는 업종으로 분류된다.</div></div><button type="button" class="lp-opt" data-i="1" onclick="lpPick(1)"><span class="lp-n">2</span>부동산 중개 및 대리업</button><div class="lp-exp hidden" id="lpExp1"><div class="lp-o"><b>정답 아님</b> 부동산 중개 및 대리업은 사거나 빌리려는 사람을 연결해 거래를 도와주는 일이라, 부동산을 직접 빌려주거나 공급하지 않는 &#x27;관련 서비스업&#x27;에 속한다. 해당하는 것이므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 집을 사려는 사람과 팔려는 사람을 이어 주고 계약을 도와 수수료를 받는 중개 일을 하며, 직접 집을 빌려주거나 공급하지 않고 거래만 거들어 주는 서비스를 제공한다.</div></div><button type="button" class="lp-opt" data-i="2" onclick="lpPick(2)"><span class="lp-n">3</span>부동산 감정평가업</button><div class="lp-exp hidden" id="lpExp2"><div class="lp-o"><b>정답 아님</b> 부동산 감정평가업은 부동산의 값이 얼마인지 전문적으로 매겨 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속한다. 해당하는 것이므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 대상 부동산이 얼마짜리인지 전문적으로 값을 매겨 주는 감정평가 일을 하며, 부동산을 직접 사고팔지는 않고 거래와 이용을 옆에서 돕는 서비스를 제공한다.</div></div><button type="button" class="lp-opt" data-i="3" onclick="lpPick(3)"><span class="lp-n">4</span>부동산 투자 자문업</button><div class="lp-exp hidden" id="lpExp3"><div class="lp-o"><b>정답 아님</b> 부동산 투자 자문업은 어디에 어떻게 투자할지 조언해 주는 일이라, 거래·이용을 돕는 관련 서비스업에 속하므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 어느 지역 어떤 상가에 어떻게 돈을 넣으면 좋을지 조언해 주는 투자 자문 일을 하며, 부동산을 직접 굴리지 않고 판단만 거드는 서비스를 판다.</div></div><button type="button" class="lp-opt" data-i="4" onclick="lpPick(4)"><span class="lp-n">5</span>부동산 분양 대행업</button><div class="lp-exp hidden" id="lpExp4"><div class="lp-o"><b>정답 아님</b> 부동산 분양 대행업은 새로 지은 건물을 대신 팔아 주는 일이라, 공급 자체가 아니라 그 거래를 돕는 관련 서비스업에 속하므로 옳다.</div><div class="lp-ex"><span>장면 예시</span>甲이 새로 지은 아파트를 시행사 대신 나서서 팔아 주는 분양대행 일을 맡아, 건물을 직접 공급하는 것이 아니라 그 거래가 성사되도록 옆에서 돕는다.</div></div>
-      </div>
-    </div>
-    <div class="lp-sec">
-      <div class="lp-nums">
-        <div><b>62</b><span>자격증</span></div>
-        <div><b>31,470</b><span>기출 문항</span></div>
-        <div><b>5,937</b><span>레벨업 변형문항</span></div>
-      </div>
-      <div class="lp-cap">2026년 10월 기준 · 기출 문항은 공개 기출 페이지에 실린 수</div>
-    </div>
-    <div class="lp-sec">
-      <div class="lp-label">무료로 이만큼</div>
-      <ul class="lp-list">
-        <li>레벨테스트 · 예상점수 무료</li>
-        <li>시험마다 기출 50문제 무료 체험</li>
-        <li class="web-pay-only">더 풀려면 30일 이용권 6,900원부터(시험마다 다름)</li>
-        <li>친구를 초대하면 친구도 나도 9,900포인트</li>
-      </ul>
-    </div>
-    <button type="button" class="lp-cta lp-cta2" onclick="lpGoList('bottom')">시험 고르고 무료로 시작</button>
   </section>
   <div class="home-hero" id="homeHero">
     <h1>내 합격 점수, AI가 미리 알려드려요</h1>
@@ -847,7 +919,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="itv-render.js?v=a0b7f8f5"></script>
 <script defer src="index-3-mcq.js?v=b7623ecd"></script>
 <script defer src="index-4-learn.js?v=78c84360"></script>
-<script defer src="index-5-shell.js?v=2b9c8a2e"></script>
+<script defer src="index-5-shell.js?v=c5817fd8"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov as-page hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
