@@ -423,8 +423,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .jox-x.on{background:#FCEBEB;border-color:#E24B4A;color:#C0322F}
 #mcqView .opt-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}#mcqView .qbul .jr-ox{float:right;display:inline-flex;gap:14px;margin:1px 0 0 8px}
 #mcqView .exp{margin-top:14px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 14px}
-#mcqView .exp-note-hd{font-size:16px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
-#mcqView .exp-note-hd::before{content:'📚 '}
+#mcqView .exp-note-hd{display:flex;align-items:center;gap:6px;font-size:16px;font-weight:800;color:#0C447C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D6E2F5}
+#mcqView .exp-note-hd::before{content:'';flex:none;width:20px;height:20px;background:url('icons/books.png') center/contain no-repeat}
 #mcqView .exp-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
 #mcqView .exp-ti{font-size:14px;font-weight:800;color:#0F172A}
 #mcqView .exp-st{font-size:14px;font-weight:800}
@@ -622,15 +622,15 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 /* 중요도(별)·소요시간 뱃지 */
 #mcqView .imp{font-size:12px;font-weight:800;color:#C87A00;background:#FFF9F0;border:1px solid #FFEDBA;padding:2px 8px;border-radius:6px;letter-spacing:-.3px}
 #mcqView .guess-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#8A6D1F;background:#FFF9EC;border:1.5px solid #F1D9A8;padding:4px 10px;border-radius:999px;cursor:pointer;flex-shrink:0}
-#mcqView .mq-report{margin-left:auto;display:inline-flex;align-items:center;font-size:12px;font-weight:700;color:#A86A2E;background:#FFF7EF;border:1.5px solid #F1D9A8;padding:4px 10px;border-radius:999px;cursor:pointer;flex-shrink:0}
-#mcqView .mq-report+.guess-toggle{margin-left:8px}
+#mcqView .mq-report{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#A86A2E;background:#FFF7EF;border:1.5px solid #F1D9A8;padding:4px 10px;border-radius:999px;cursor:pointer;flex-shrink:0}
+#mcqView .mq-report+.guess-toggle{margin-left:auto}
 #mcqView .go-concept{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#0C447C;background:#EAF2FB;border:1.5px solid #BBD6F2;padding:8px 14px;border-radius:999px;cursor:pointer;margin:0 0 10px}
 #mcqView .go-concept:active{transform:scale(.97)}
 #mcqView .mq-report:active{transform:scale(.96)}
 #mcqView .guess-toggle .gdot{width:8px;height:8px;border-radius:50%;background:#D9C28F}
 #mcqView .guess-toggle.on{background:#FAC775;border-color:#E0A52E;color:#4B2000}
 #mcqView .guess-toggle.on .gdot{background:#fff}
-#mcqView .guess-tag-r{margin-left:auto;font-size:12px;font-weight:800;color:#4B2000;background:#FAC775;border:1px solid #E0A52E;padding:2px 8px;border-radius:999px;flex-shrink:0}
+#mcqView .guess-tag-r{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#4B2000;background:#FAC775;border:1px solid #E0A52E;padding:2px 8px;border-radius:999px;flex-shrink:0}
 #mcqView .guess-hint{font-size:12px;color:#B97A12;background:#FFF9EC;border:1px dashed #F1D9A8;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5}
 #mcqView .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 2px;line-height:1.05;text-indent:0;white-space:normal}
 #mcqView .frac .fn{border-bottom:1.4px solid currentColor;padding:0 2px;font-size:0.8em}
@@ -639,7 +639,10 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView sup{font-size:0.7em;vertical-align:super;line-height:0}
 #mcqView .b-learn{background:#EAF0F9;color:#0C447C;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer}
 #mcqView .learn-hd{display:flex;align-items:center;gap:8px;margin:14px 0 12px}
-#mcqView .learn-step{font-size:12px;font-weight:800;color:#fff;background:#0C447C;padding:4px 12px;border-radius:999px}
+#mcqView .learn-step{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#fff;background:#0C447C;padding:4px 12px;border-radius:999px}
+#mcqView .mq-ico{display:inline-block;flex:none;width:16px;height:16px;object-fit:contain;vertical-align:middle}
+#mcqView .mq-ico-lg{width:20px;height:20px}
+#mcqView .qstem .qhead{flex-wrap:wrap}
 #mcqView .learn-num{font-size:12px;color:#94A3B8;font-weight:700;margin-left:auto}
 #mcqView .lcard{background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:16px 16px;margin-bottom:16px}
 #mcqView .ltitle{font-size:18px;font-weight:800;color:#0C447C;margin-bottom:14px;line-height:1.4}
