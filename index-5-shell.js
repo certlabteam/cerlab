@@ -1680,11 +1680,24 @@ function clRouteFromHash(){
       _done=true;
       var _viaQuery = (location.hash||'').indexOf('#q/')!==0;
       try{ window._dlWant={cert:w.cert, qid:w.qid}; }catch(_){}
-      Promise.resolve(openQ(w.cert, w.qid)).then(function(ok){
-        /* 쿼리로 들어왔으면 열린 뒤 주소를 해시 형태로 정리한다 —
-           ?q= 가 남아 있으면 앱이 앞으로 나올 때마다 이 문항으로 되돌아간다. */
-        if(ok && _viaQuery){ try{ history.replaceState(null,'',location.pathname+'#q/'+encodeURIComponent(w.cert)+'/'+encodeURIComponent(w.qid)); }catch(_){} }
-      }).catch(function(){});
+      /* [2026-11-02] 로그인한 폰에서 링크가 문제 대신 시험 홈에 멈췄다(크리스 텔레그램 호텔관리사 h21_2).
+         못 열면 끝이었고, 열린 뒤 로그인·자료 로드 쪽이 화면을 덮어써도 되돌리지 않았다.
+         못 열었거나 10초 안에 문제 화면이 사라지면 다시 연다. 사람이 화면을 건드렸으면 그대로 둔다. */
+      var _again=0, _touched=false;
+      try{ document.addEventListener('pointerdown', function(){ _touched=true; }, {once:true, capture:true}); }catch(_){}
+      function _retry(){ if(_again>=3 || _touched) return; _again++; setTimeout(_go, 1500); }
+      function _gone(){ var c=qWanted(); return !_touched && c && c.cert===w.cert && c.qid===w.qid && typeof mqScreen!=='undefined' && (typeof activeCert==='undefined' || activeCert!==w.cert || (mqScreen!=='exam' && mqScreen!=='subjexam')); }
+      function _go(){
+        Promise.resolve(openQ(w.cert, w.qid)).catch(function(){ return false; }).then(function(ok){
+          /* 쿼리로 들어왔으면 열린 뒤 주소를 해시 형태로 정리한다 —
+             ?q= 가 남아 있으면 앱이 앞으로 나올 때마다 이 문항으로 되돌아간다. */
+          if(ok && _viaQuery){ try{ history.replaceState(null,'',location.pathname+'#q/'+encodeURIComponent(w.cert)+'/'+encodeURIComponent(w.qid)); }catch(_){} }
+          if(!ok){ _retry(); return; }
+          var _t0=_again;
+          [1000,3000,6000,10000].forEach(function(ms){ setTimeout(function(){ if(_again===_t0 && _gone()) _retry(); }, ms); });
+        });
+      }
+      _go();
       return;
     }
     if(n>0) setTimeout(function(){ tryQ(n-1); }, 300);   // firebase·뱅크 로드 대기
