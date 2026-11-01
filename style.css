@@ -1694,9 +1694,13 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 @media(max-width:359px){#eventBadge{width:28px!important;padding:0!important;flex:0 0 28px}.event-badge .eb-l1{font-size:0!important}.event-badge .cl-emoji-dot{margin-right:0}}
 
 /* 폰 실측: 작은 화면에서 잘린 시험 이름과 짧은 누름 영역만 보정한다. */
-@media(max-width:390px){#lpWrap .lp-chips{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:359px){#lpWrap .lp-chips{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){
+  #lpWrap .lp-chips button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;height:auto!important;min-height:64px!important;padding:8px 4px!important;white-space:normal!important;word-break:break-all;text-overflow:clip}
+  #lpWrap .lp-chips button small{white-space:nowrap}
+}
 @media(max-width:768px){
-  .brand-area,#cmNoticeBar,.anal-diag,#mcqView .mcq-result .rbtns button{min-height:44px}
+  .brand-area,#cmNoticeBar,.anal-diag,#mcqView .mcq-result .rbtns button,.cm-write{min-height:44px}
   .header .btn-login,.mq-fsb button,#mcqView .exam-home-link,#lpWrap .lp-all-link,.cm-tab{position:relative}
   .header .btn-login::after,.cm-tab::after{content:"";position:absolute;inset:-10px 0}
   #mcqView .exam-home-link::after{content:"";position:absolute;inset:-15px 0}
