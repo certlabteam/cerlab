@@ -636,7 +636,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .qhead .mq-report .mq-ico,#mcqView .qhead .guess-toggle .mq-ico{width:20px;height:20px}
 #mcqView .qhead .imp,#mcqView .qhead .tmark,#mcqView .qhead .mq-mst{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;padding-right:6px}
 #mcqView .qhead .mq-mst{margin-right:0}
-#mcqView .go-concept{display:inline-flex;align-items:center;gap:4px;height:28px;font-size:14px;font-weight:700;color:#0C447C;background:#F1F5F9;border:1px solid #CBD5E1;box-shadow:none;padding:0 8px;border-radius:6px;cursor:pointer;margin:0 0 10px;position:relative}
+#mcqView .go-concept{display:inline-flex;align-items:center;gap:4px;height:28px;font-size:12px;font-weight:700;color:#0C447C;background:#F1F5F9;border:1px solid #CBD5E1;box-shadow:none;padding:0 8px;border-radius:6px;cursor:pointer;margin:0 0 10px;position:relative}
 #mcqView .go-concept .mq-ico{width:20px;height:20px}
 #mcqView .go-concept:active{transform:scale(.97)}
 #mcqView .mq-report:active{transform:scale(.96)}
