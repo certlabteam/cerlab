@@ -310,7 +310,7 @@
     +'#subjMount .swc{font-size:11px;color:#94A3B8;font-weight:500}'
     +'#subjMount .b-go{background:#0C447C;color:#fff;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer}'
     +'#subjMount .sec-lbl{font-size:12px;font-weight:700;color:#94A3B8;margin:2px 2px 10px}'
-    +'#subjMount .exam-back{background:#F1F5F9;border:none;color:#334155;cursor:pointer;width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0;font-size:18px;margin-bottom:12px}'
+    +'#subjMount .exam-back{margin-bottom:12px}'
     +'#subjMount .s-hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}#subjMount .s-hd .t{font-size:18px;font-weight:800;color:#0C447C}'
     +'#subjMount .qstem{background:#fff;border-radius:14px;padding:14px 15px;margin-bottom:14px;box-shadow:0 1px 3px rgba(15,23,42,.07)}'
     +'#subjMount .qhead{display:flex;align-items:center;gap:8px;margin-bottom:11px}'
@@ -331,7 +331,7 @@
       wrap.appendChild(c); });
     return wrap; }
   function buildList(exam, setFilter){ _injectSkin(); var wrap=document.createElement('div');
-    if(setFilter!=null && _sets(exam).length>1){ var b=document.createElement('button'); b.className='exam-back'; b.setAttribute('data-back','1'); b.textContent='‹'; b.title='회차 목록'; b.onclick=function(){ _curSet=null; _renderRoot(exam); }; wrap.appendChild(b); }
+    if(setFilter!=null && _sets(exam).length>1){ var b=document.createElement('button'); b.className='exam-back'; b.setAttribute('data-back','1'); b.innerHTML=BACK_ARROW; b.title='회차 목록'; b.onclick=function(){ _curSet=null; _renderRoot(exam); }; wrap.appendChild(b); }
     var card=document.createElement('div'); card.className='scard';
     var hd='<div class="scard-hd"><span class="sdot"></span><span class="snm">'+esc(setFilter!=null?String(setFilter):(exam.name||'문제'))+'</span></div>';
     var body='<div class="scard-body">';
@@ -351,7 +351,7 @@
     var refHtml=(q.refs&&q.refs.length)?('<details class="subj-refbox" open><summary class="rt" style="cursor:pointer;list-style:none;font-size:13px">💡 참조문헌 힌트 <span style="font-weight:400;color:#94A3B8">(실제 시험엔 안 나와요)</span></summary>'
       +q.refs.map(function(r){return '<div class="ri"><b>'+esc(r.law)+' '+esc(r.art)+'</b>'+(r.title?' ('+esc(r.title)+')':'')+'</div>';}).join('')+'</details>'):'';
     _injectSkin(); _injectSubjFont();
-    v.innerHTML='<button class="exam-back" data-back="1">‹</button>'
+    v.innerHTML='<button class="exam-back" data-back="1">'+BACK_ARROW+'</button>'
       +'<div class="qstem"><div class="qhead"><span class="qnum">'+_localNum(exam,qi)+'</span>'
       +(_setOf(q)?('<span class="qsubj">'+esc(String(_setOf(q)))+'</span>'):'')
       +'<span class="scard-set-label">'+(q.pt||'')+'점</span></div>'

@@ -346,7 +346,7 @@ async function enterCert(id, noGate, noWait){
   if(!loadedExams[id] && noWait && id!=='bodybuilding'){ try{ await loadManifest(); }catch(_){} }   // 시험 목록(과목 코드)만 받고 간다 — 회차는 홈으로 갈 때 받는다(같이 받으면 느린 망을 나눠 써 더 늦었다)
   else if(!loadedExams[id]){
     var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
-    if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px"><button onclick="goHome()" aria-label="홈" style="border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1">←</button><span style="font-size:16px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
+    if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:10px;max-width:440px;margin:0 auto 10px;padding:2px"><button class="ui-back" onclick="goHome()" aria-label="홈">'+BACK_ARROW+'</button><span style="font-size:16px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
     try{ await loadExam(id); }
     catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
     if(id==='bodybuilding'){ cards=[...D]; filtered=[...cards]; current=0; }

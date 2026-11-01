@@ -75,7 +75,7 @@ let mqScreen='home', mqOpen={}, mqSub='', mqSet=0, mqIdx=0, mqAns={}, mqShow={},
 let mqOXLearned={}, mqOXTs={};   // OX진술 학습: {qid:{진술키:1}} 완료표시 / {qid:ts} 최근순 정렬용
 let mqTimer=null, mqTimeLeft=0, mqTimeUp=false, mqTimeUpIdx=-1;
 let mqPaused=false;
-const BACK_ARROW='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+const BACK_ARROW='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
 let mqOverTimer=null, mqOverStart=0, mqOvertimeSec=0, mqOvertimeCount=0;  // 시간종료 후 경과시간(초)/푼 문항 수
 function mqStopOverTimer(){ if(mqOverTimer){ clearInterval(mqOverTimer); mqOverTimer=null; } if(mqOverStart){ mqOvertimeSec+=Math.floor((Date.now()-mqOverStart)/1000); mqOverStart=0; } }
 function mqOverElapsed(){ return mqOvertimeSec + (mqOverStart?Math.floor((Date.now()-mqOverStart)/1000):0); }
@@ -298,7 +298,7 @@ function auMnListOpen(){
 function auMnListBack(){ mqScreen='home'; renderMCQ(); window.scrollTo(0,0); }
 function renderMnList(root){
   var ids=auMnIds(mqCert), on=!!auList, current=on?auList[auPos]:null;
-  var html='<div class="au-list-head"><button type="button" class="au-list-back" onclick="auMnListBack()" aria-label="뒤로">←</button><b>암기코드 '+ids.length+'개</b>'+auMnPlayButton(on)+'</div><div class="au-list-body">';
+  var html='<div class="au-list-head"><button type="button" class="au-list-back" onclick="auMnListBack()" aria-label="뒤로">'+BACK_ARROW+'</button><b>암기코드 '+ids.length+'개</b>'+auMnPlayButton(on)+'</div><div class="au-list-body">';
   if(!ids.length) html+='<div class="au-list-empty">이 범위에 암기코드가 없어요.</div>';
   ids.forEach(function(id,i){
     var card=_mnemCache[id]?mnBoxHTML('mn://'+id):'<div class="au-list-loading">암기코드를 불러오는 중…</div>';
@@ -842,7 +842,7 @@ function passPlanHTML(cert, paid){
 
   var head='<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #EDE4D9;position:sticky;top:0;z-index:2">'
     /* [2026-10-15 크리스 「합격 플랜인데 <- 버튼이 없어」] 머무는 화면은 페이지 꼴 — 왼쪽 ← 로 돌아간다(UIUX_모바일 4부 나 「‹ 이전」) */
-    +'<button onclick="closePassPlan()" aria-label="뒤로" style="width:44px;height:44px;margin:-8px 0 -8px -8px;border:0;background:none;font-size:24px;color:#2C2C2A;cursor:pointer">←</button>'
+    +'<button class="ui-back" onclick="closePassPlan()" aria-label="뒤로">'+BACK_ARROW+'</button>'
     +'<span style="font-size:18px;font-weight:800;color:#3C3C3A;flex:1;min-width:0"><img src="icons/lv_target.png" alt="" class="ic-img ic-in"> 합격 플랜</span></div>';
 
   var official=_officialExamMs(cert)!=null;
@@ -994,7 +994,7 @@ function _ltRenderResultGate(M){
   }).join('')+'<div class="ltg-card"><div class="ltg-nm">'+metric+' · 약점 토픽</div><div class="ltg-bar"><div style="width:58%"></div></div></div>';
   var host=document.getElementById('mcqView')||document.body;
   var box=document.getElementById('mcqRoot');
-  var html='<div class="lt-nav"><button class="lt-nav-back" onclick="goHome()" aria-label="홈">←</button><span>레벨테스트</span></div>'
+  var html='<div class="lt-nav"><button class="lt-nav-back" onclick="goHome()" aria-label="홈">'+BACK_ARROW+'</button><span>레벨테스트</span></div>'
     +'<div class="ltg-wrap">'
     +'<div class="ltg-top"><div class="ltg-done">레벨테스트 완료 🎉</div><div class="ltg-h">결과가 준비됐어요</div>'
       +'<div class="ltg-sc">'+_totN+'문제 · '+subs.length+'과목 채점 완료</div></div>'
@@ -1034,7 +1034,7 @@ function _ltRenderResultGate(M){
       +'.ltg-kakao{background:#FEE500;border-color:#FEE500;color:#191600}.ltg-k{font-size:16px}'
       +'.ltg-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:360px}.ltg-row .ltg-btn{min-width:0;height:48px;padding:0 8px;border-radius:12px;font-size:16px;font-weight:700;white-space:nowrap;box-shadow:none}.ltg-row .ltg-btn:not(.ltg-kakao){border:1px solid #DADCE0;color:#1F1F1F}'
       +'.ltg-g{font-size:18px;font-weight:900;color:#4285F4}.ltg-note{font-size:12px;color:#9AA1AD;margin-top:10px}'
-      +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:440px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
+      +'.lt-nav{display:flex;align-items:center;gap:10px;max-width:440px;margin:0 auto 10px;padding:2px}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
     document.head.appendChild(st);
   }
   window.scrollTo(0,0);
@@ -1086,10 +1086,10 @@ function _ltHookingScreen(cert){
       +'.lth-free span{background:#fff;border:1px solid #DCE6F2;color:#3E5168;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px}'
       +'.lth-cta{width:100%;background:#185FA5;color:#fff;border:none;border-radius:12px;padding:16px;font-size:16px;font-weight:800;cursor:pointer}'
       +'.lth-note{font-size:12px;color:#9AA1AD;margin-top:12px}'
-      +'.lt-nav{display:flex;align-items:center;gap:6px;max-width:420px;margin:0 auto 10px;padding:2px}.lt-nav-back{border:none;background:none;font-size:24px;color:#0C447C;cursor:pointer;padding:0 6px;line-height:1}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
+      +'.lt-nav{display:flex;align-items:center;gap:10px;max-width:420px;margin:0 auto 10px;padding:2px}.lt-nav>span{font-size:16px;font-weight:800;color:#1F2937}';
     document.head.appendChild(st);
   }
-  root.innerHTML='<div class="lt-nav"><button class="lt-nav-back" onclick="goHome()" aria-label="홈">←</button><span>레벨테스트</span></div>'
+  root.innerHTML='<div class="lt-nav"><button class="lt-nav-back" onclick="goHome()" aria-label="홈">'+BACK_ARROW+'</button><span>레벨테스트</span></div>'
     +'<div class="lth-wrap">'
     +'<div class="lth-badge">🎁 100% 무료 · 가입 없이 바로</div>'
     +'<div class="lth-ttl">'+mqEsc(nm)+'<br><span class="lth-hl">무료 레벨테스트</span></div>'

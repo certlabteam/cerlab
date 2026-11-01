@@ -62,7 +62,7 @@ gtag('config', 'G-RPZRZQ779J', {
      dynamic-subset 이라 쓰는 글자만 내려받는다 (CSS 53KB). -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"></noscript><!-- 2026-10-22 글꼴 목록이 첫 화면 그리기를 막지 않게 — 받는 대로 바꿔 끼운다 -->
-<link rel="stylesheet" href="style.css?v=4fde6411">
+<link rel="stylesheet" href="style.css?v=80fe45b6">
 <link rel="stylesheet" href="subjective-responsive.css?v=8f0f9a1e">
 <!-- Meta Pixel Code -->
 <!-- [2026-09-02] 메타 픽셀을 뺐다. 광고를 다 껐으므로 값을 안 하는데
@@ -83,7 +83,7 @@ window.clTrackCustom = function(name, params){ try{ if(window.fbq) fbq('trackCus
 window._clLeadFired = false;
 window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLeadFired = true; clTrack('Lead', { content_name: cert||'', content_category:'quiz_start' }); };
 </script>
-<script defer src="subjective.js?v=43a6cf86"></script>
+<script defer src="subjective.js?v=c3acc693"></script>
 <!-- [2026-09-17] 토스페이먼츠 결제창 SDK(v1). 서버 승인이 /v1/payments/confirm 이라 같은 v1 을 쓴다. -->
 <!-- 2026-10-29 토스 결제 코드는 결제할 때 받는다(index-1-auth.js) — 예전엔 async 로 첫 화면과 같이 받았다 -->
 <style>
@@ -376,7 +376,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
   </div>
 </div>
 <div class="cert-view hidden" id="bodybuildingView">
-<div class="bb-topbar"><button class="bb-home-back" onclick="showHome()" aria-label="시험 종류로" title="시험 종류로"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button></div>
+<div class="bb-topbar"><button class="bb-home-back" onclick="showHome()" aria-label="시험 종류로" title="시험 종류로"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button></div>
 <div id="bbAnalysis"></div>
 <div class="sr-banner" id="srBanner" onclick="srBannerClick()"></div>
 <div class="subjects-wrap">
@@ -789,7 +789,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <div class="auth-popup hidden" id="planPopup">
   <div class="auth-sheet">
     <!-- [2026-10-15 크리스] 「이것도 팝업 말고 페이지로 … 좀 깔끔하게 다듬어봐」 — 위에 ← 줄, 가격·결제를 위로, 장점은 결제 단추 아래 한 칸 -->
-    <div class="plan-top"><button onclick="hidePlanPopup()" aria-label="뒤로">←</button><span>이용권</span></div>
+    <div class="plan-top"><button class="ui-back" onclick="hidePlanPopup()" aria-label="뒤로">←</button><span>이용권</span></div>
     <div class="plan-sheet-title" id="planSheetTitle"><img src="icons/calendar.png" alt="" class="ic-img ic-in"> 무료 체험 완료!</div>
     <!-- ★ 어느 시험 이용권인지 — 마이페이지에서 바로 열면 맥락이 없어 엉뚱한 시험을 결제할 수 있다 -->
     <div id="planCertName" style="margin:2px 0 8px;padding:4px 12px;display:inline-block;border-radius:999px;background:#EEF4FB;color:#0C447C;font-size:14px;font-weight:700"></div>
@@ -917,9 +917,9 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=a0b7f8f5"></script>
-<script defer src="index-3-mcq.js?v=5b433e4f"></script>
-<script defer src="index-4-learn.js?v=95df192c"></script>
-<script defer src="index-5-shell.js?v=2cc90ef2"></script>
+<script defer src="index-3-mcq.js?v=17ed7174"></script>
+<script defer src="index-4-learn.js?v=97f2ab0e"></script>
+<script defer src="index-5-shell.js?v=a263a709"></script>
 <script defer src="tour.js?v=64edf288"></script>
 
 <div class="pr-ov as-page hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">

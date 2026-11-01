@@ -879,7 +879,7 @@ function oxLearnComplete(qid){
 }
 function renderOxLearn(root){
   var cards=oxLearnCards(mqCert);
-  var html='<div class="oxl-wrap"><div class="oxl-top"><button class="oxl-back" onclick="oxLearnBack()">‹ 홈</button><div class="oxl-title">OX진술 학습</div><div class="oxl-cnt">'+cards.reduce(function(s,c){return s+c.wrong.length;},0)+'개</div></div>';
+  var html='<div class="oxl-wrap"><div class="oxl-top"><button class="oxl-back" onclick="oxLearnBack()" aria-label="홈">'+BACK_ARROW+'</button><div class="oxl-title">OX진술 학습</div><div class="oxl-cnt">'+cards.reduce(function(s,c){return s+c.wrong.length;},0)+'개</div></div>';
   if(!cards.length){
     html+='<div class="oxl-empty">틀린 OX진술이 없어요.<br>문제 풀 때 보기 옆 O/X 자가체크에서 틀린 진술이 여기 모여요.</div></div>';
     root.innerHTML=html; return;
