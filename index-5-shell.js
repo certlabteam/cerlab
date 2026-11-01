@@ -1759,8 +1759,8 @@ function mpRenderHome(){
     + (_isApp ? _mpRow('앱', '앱으로 쓰는 중 ✓', '', 'still')
               : _mpRow(_isAnd ? '앱 설치하기' : '홈 화면에 추가', _isAnd ? '앱 첫 로그인 혜택 9,900P' : '', 'addToHome(event)', 'go'))
     + _mpRow('로그아웃', '', 'signOut()', '')
-    + _mpRow('회원 탈퇴', '', 'showDeletePopup()', 'danger-text')
-    +'</nav>';
+    +'</nav>'
+    +'<button type="button" class="my-delete-link" onclick="showDeletePopup()">회원 탈퇴</button>';
   mpPushStateLoad();
 }
 function mpShowInvite(){
