@@ -1709,6 +1709,6 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 /* 뒤로 화살표: 보이는 28px, 위아래 누름 44px. */
 :is(button,a):is(.ui-back,.exam-back,.exam-home-back,.bb-home-back,.page-back,.cm-back,.au-list-back,.oxl-back,.lt-nav-back){display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0;margin-left:-4px;border:0;border-radius:0;background:none;box-shadow:none;color:#185FA5;font-size:22px;font-weight:600;line-height:1;cursor:pointer;position:relative;-webkit-tap-highlight-color:transparent}
 :is(button,a):is(.ui-back,.exam-back,.exam-home-back,.bb-home-back,.page-back,.cm-back,.au-list-back,.oxl-back,.lt-nav-back):active{color:#0C447C}
-:is(button,a):is(.ui-back,.exam-back,.exam-home-back,.bb-home-back,.page-back,.cm-back,.au-list-back,.oxl-back,.lt-nav-back)::after{content:"";position:absolute;inset:-8px 0}
+:is(button,a):is(.ui-back,.exam-back,.exam-home-back,.bb-home-back,.page-back,.cm-back,.au-list-back,.oxl-back,.lt-nav-back)::after{content:"";position:absolute;inset:-8px}
 :is(button,a):is(.ui-back,.exam-back,.exam-home-back,.bb-home-back,.page-back,.cm-back,.au-list-back,.oxl-back,.lt-nav-back) svg{width:22px;height:22px;flex:none}
 button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left:16px;margin:0;z-index:101}
