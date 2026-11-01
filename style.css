@@ -605,17 +605,23 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .b-wr{color:#B91C1C;background:#FEF2F2;border:1.5px solid #FECACA;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 #mcqView .b-un{color:#7A4E00;background:#FFF7E6;border:1.5px solid #F1D9A8;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
 /* 시험 헤더 */
-#mcqView .exam-hd{display:flex;align-items:center;gap:10px;padding:10px 0 6px}
-#mcqView .exam-ti{flex:1;min-width:0}
-#mcqView .etim{font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;color:#0F172A;background:#F8FAFC;padding:4px 10px;border-radius:8px;border:1.5px solid #E2E8F0;letter-spacing:1px;flex-shrink:0}
+#mcqView .exam-hd{display:grid;grid-template-columns:32px minmax(0,1fr) 32px auto auto;grid-template-rows:32px 32px;align-items:center;column-gap:6px;row-gap:2px;padding:4px 0}
+#mcqView .exam-ti{display:contents}
+#mcqView .exam-ti .nm{grid-column:2/-1;grid-row:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mcqView .exam-ti .st{grid-column:1/3;grid-row:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mcqView .exam-hd .exam-back{grid-column:1;grid-row:1}
+#mcqView .exam-hd .etim-pause{grid-column:3;grid-row:2}
+#mcqView .exam-hd .etim{grid-column:4;grid-row:2}
+#mcqView .exam-hd .mq-fsb{grid-column:5;grid-row:2;margin-left:0}
+#mcqView .etim{font-size:14px;font-weight:900;font-variant-numeric:tabular-nums;color:#0F172A;background:#F8FAFC;padding:4px 8px;border-radius:8px;border:1.5px solid #E2E8F0;letter-spacing:1px;flex-shrink:0}
 #mcqView .etim.over{color:#C2410C;border-color:#FED7AA;background:#FFF7ED;animation:none}
 #mcqView .etim.done{color:#64748B;border-color:#E2E8F0;background:#F8FAFC;font-size:14px;animation:none}
 #mcqView .etim.red{color:#DC2626;border-color:#FECACA;background:#FEF2F2;animation:mqbl .8s ease-in-out infinite}
-#mcqView .etim-pause{background:#F1F5F9;border:none;color:#334155;font-size:16px;width:34px;height:34px;border-radius:8px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
+#mcqView .etim-pause{background:#F1F5F9;border:none;color:#334155;font-size:16px;width:32px;height:32px;border-radius:8px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0}
 #mcqView .etim-pause.on{background:#E6F1FB;color:#185FA5}
 #mcqView .etim.paused{color:#94A3B8;border-color:#CBD5E1;border-style:dashed;background:#F1F5F9;animation:none}
 @keyframes mqbl{0%,100%{opacity:1}50%{opacity:.45}}
-#mcqView .exam-back{background:#F1F5F9;border:none;color:#334155;cursor:pointer;flex-shrink:0;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:0}
+#mcqView .exam-back{background:#F1F5F9;border:none;color:#334155;cursor:pointer;flex-shrink:0;width:32px;height:32px;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:0}
 #mcqView .exam-back:active{background:#E2E8F0}
 #mcqView .exam-ti .nm{font-size:14px;font-weight:800;color:#0F172A;line-height:1.2}
 #mcqView .exam-ti .st{font-size:12px;color:#64748B;font-weight:600}
