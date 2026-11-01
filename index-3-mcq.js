@@ -645,10 +645,10 @@ function mcqAnalysisCard(cert){
   const LVTX={1:'#A32D2D',2:'#A32D2D',3:'#946200',4:'#1E6B41',5:'#1E6B41'};
   const order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
   const subsHTML=(cert==='sport2'?_sp2BtnHTML():'')+order.map(function(sub){
-    var lv=luSubjectLevel(cert,sub); if(lv==null) return '';
+     var ps=ap.per.find(function(p){return p.code===sub;}), lv=ps&&ps.level; if(lv==null) return '';
     var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, open=!!luCardOpen[sub];
     var pill='<span style="font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;background:'+LVBG[lv]+';color:'+LVTX[lv]+'">Lv '+lv+'</span>';
-    var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:14px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:12px;font-weight:600;color:#B4A99C;margin-left:4px">'+_luTierName(lv)+'</span></span><button onclick="event.stopPropagation();'+(_isLt2?('startLt2LevelUp(\''+sub+'\')'):('luStartSub(\''+sub+'\')'))+'" style="flex:0 0 auto;font-size:12px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:2px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:12px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
+     var head='<div onclick="luToggleCardSub(\''+sub+'\')" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-top:1px solid #F1ECE4;cursor:pointer"><span style="flex:1;font-size:14px;font-weight:700;color:#3C3C3A">'+mqEsc(nm)+'<span style="font-size:12px;font-weight:600;color:#B4A99C;margin-left:4px">'+_luTierName(lv)+'</span>'+(ps.decay?'<small style="font-size:12px;color:#B4A99C;margin-left:4px">-'+ps.decay+'점</small>':'')+'</span><button onclick="event.stopPropagation();'+(_isLt2?('startLt2LevelUp(\''+sub+'\')'):('luStartSub(\''+sub+'\')'))+'" style="flex:0 0 auto;font-size:12px;font-weight:800;color:#185FA5;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:999px;padding:2px 10px;cursor:pointer">레벨업</button>'+pill+'<span style="font-size:12px;color:#B4A99C;display:inline-block;transform:rotate('+(open?'180':'0')+'deg)">▼</span></div>';
     var body='';
     if(open){
       var sc=luTopicScores(cert,sub), tmap=topicNameMap(cert,sub), rows='';
@@ -663,7 +663,9 @@ function mcqAnalysisCard(cert){
   }).join('');
   let noteHTML='';
   if(v && v.status==='fail' && v.failFloor && v.failFloor.length) noteHTML='<div class="anal-weak"><img src="icons/warning.png" alt="" class="ic-img ic-in"> <b>'+v.failFloor.map(p=>p.name).join(', ')+'</b> 과락(40점 미만)이에요.</div>';
-  noteHTML+='<div class="anal-note">예상점수 · 합격 기준 '+passRule(cert).label+' · 레벨은 문제 풀면서 자동 조정</div>';
+   var idle=ap.per.filter(function(p){return p.decay>0;}).sort(function(a,b){return b.days-a.days;})[0];
+   if(idle) noteHTML+='<div class="anal-note">공부 안 한 지 '+idle.days+'일 · -'+idle.decay+'점(다시 풀면 돌아와요)</div>';
+   noteHTML+='<div class="anal-note">예상점수 · 합격 기준 '+passRule(cert).label+' · 레벨은 문제 풀면서 자동 조정</div>';
   return '<div class="anal-card"><div class="anal-top"><b>📊 내 예상점수 &amp; 레벨</b></div>'
     +'<div class="anal-score">'+predHTML+'</div>'
     +((v && ap.predicted!=null)?_luGaugeHTML(cert,ap,v):'')
@@ -1604,13 +1606,23 @@ function adSubjectScoreRaw(cert,sub){ var sc=luTopicScores(cert,sub), tmap=topic
   // [2026-07-20] 주관식(lt2): summary 키(ltSubject: s2·s3…)와 qb 코드(sj0·sj1…)가 달라 과목 '이름'으로 매칭
   if(!e){ var nm=(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||null; if(nm){ for(var k in rec.summary){ if(rec.summary[k]&&rec.summary[k].name===nm){ e=rec.summary[k]; break; } } } }
   if(e&&typeof e.score==='number') return e.score; } }catch(e){} return null; }
-function luSubjectLevel(cert,sub){ var raw=adSubjectScoreRaw(cert,sub); return raw==null?null:AE.scoreToLevel(raw); }
+function luSubjectLevel(cert,sub){ var p=adPredicted(cert).per.find(function(x){return x.code===sub;}); return p?p.level:null; }
 // 환산표 자리(회차 실측 보정 전: 항등). 이후 회차 실점수로 보정 지점.
 function eloToExamScore(score){ if(score==null) return null; return Math.round(Math.max(0,Math.min(100,score))); }
+function adSubjectIdleDays(cert,sub){
+  var group=qbOf(cert)[sub], last=0;
+  if(!group) return null;
+  (group.sets||[]).forEach(function(st){ (st.questions||[]).forEach(function(q){
+    var p=q&&srProgress[cert+'|'+q.id];
+    if(p&&p.rc>0&&Number(p.lr)>last) last=Number(p.lr);
+  }); });
+  return last?Math.max(0,Math.floor((Date.now()-last)/86400000)):null;
+}
+function adIdleDecay(days){ return days==null||days<=3?0:Math.min(20,Math.round(20*(1-Math.exp(-(days-3)/22)))); }
 // 4-c 예상점수: 토픽 Elo→과목→환산→예상점수
 function adPredicted(cert){
   var order=(typeof curOrder==='function')?curOrder():Object.keys(qbOf(cert));
-  var per=order.map(function(sub){ var raw=adSubjectScoreRaw(cert,sub); return {code:sub, name:(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, score:(raw==null?null:eloToExamScore(raw)), level:(raw==null?null:AE.scoreToLevel(raw))}; });
+  var per=order.map(function(sub){ var raw=adSubjectScoreRaw(cert,sub), days=adSubjectIdleDays(cert,sub), decay=raw==null?0:adIdleDecay(days), score=raw==null?null:Math.max(0,eloToExamScore(raw)-decay); return {code:sub, name:(qbOf(cert)[sub]&&qbOf(cert)[sub].name)||sub, score:score, level:(score==null?null:AE.scoreToLevel(score)), days:days, decay:decay}; });
   var valid=per.filter(function(p){return p.score!=null;});
   var predicted=valid.length?Math.round(valid.reduce(function(a,p){return a+p.score;},0)/valid.length):null;
   return {per:per, valid:valid, predicted:predicted, notMeasured:per.filter(function(p){return p.score==null;})};
