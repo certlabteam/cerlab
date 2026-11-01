@@ -626,18 +626,20 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .exam-ti .nm{font-size:14px;font-weight:800;color:#0F172A;line-height:1.2}
 #mcqView .exam-ti .st{font-size:12px;color:#64748B;font-weight:600}
 /* 중요도(별)·소요시간 뱃지 */
-#mcqView .imp{font-size:12px;font-weight:800;color:#C87A00;background:none;border:0;box-shadow:none;padding:2px 6px;border-radius:6px;letter-spacing:-.3px}
+#mcqView .imp{font-size:14px;font-weight:800;color:#C87A00;background:none;border:0;box-shadow:none;padding:2px 6px;letter-spacing:-.3px}
 #mcqView .imp.imp-relearn{color:#0C447C}
-#mcqView .guess-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#8A6D1F;background:none;border:0;box-shadow:none;padding:4px 8px;min-height:44px;border-radius:999px;cursor:pointer;flex-shrink:0;white-space:nowrap}
-#mcqView .mq-report{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:#A86A2E;background:none;border:0;box-shadow:none;padding:0;border-radius:12px;cursor:pointer;flex-shrink:0}
+#mcqView .guess-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:28px;font-size:12px;font-weight:700;color:#8A6D1F;background:#F1F5F9;border:1px solid #CBD5E1;box-shadow:none;padding:0 8px;border-radius:6px;cursor:pointer;flex-shrink:0;white-space:nowrap;position:relative}
+#mcqView .mq-report{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;color:#A86A2E;background:#F1F5F9;border:1px solid #CBD5E1;box-shadow:none;padding:0;border-radius:6px;cursor:pointer;flex-shrink:0;position:relative}
 #mcqView .mq-report+.guess-toggle{margin-left:0}
+#mcqView .mq-report::after,#mcqView .guess-toggle::after,#mcqView .go-concept::after{content:"";position:absolute;top:-8px;bottom:-8px;left:0;right:0}
 #mcqView .qhead .mq-ico{width:16px;height:16px}
 #mcqView .qhead .imp,#mcqView .qhead .tmark,#mcqView .qhead .mq-mst{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;padding-right:6px}
 #mcqView .qhead .mq-mst{margin-right:0}
-#mcqView .go-concept{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#0C447C;background:none;border:0;box-shadow:none;padding:8px 14px;min-height:44px;border-radius:999px;cursor:pointer;margin:0 0 10px}
+#mcqView .go-concept{display:inline-flex;align-items:center;gap:6px;height:28px;font-size:14px;font-weight:700;color:#0C447C;background:#F1F5F9;border:1px solid #CBD5E1;box-shadow:none;padding:0 8px;border-radius:6px;cursor:pointer;margin:0 0 10px;position:relative}
+#mcqView .go-concept .mq-ico{width:16px;height:16px}
 #mcqView .go-concept:active{transform:scale(.97)}
 #mcqView .mq-report:active{transform:scale(.96)}
-#mcqView .guess-toggle.on{background:none;border:0;box-shadow:none;color:#4B2000;font-weight:800}
+#mcqView .guess-toggle.on{color:#4B2000;font-weight:800}
 #mcqView .guess-tag-r{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#4B2000;background:#FAC775;border:1px solid #E0A52E;padding:2px 8px;border-radius:999px;flex-shrink:0}
 #mcqView .guess-hint{font-size:12px;color:#B97A12;background:#FFF9EC;border:1px dashed #F1D9A8;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5}
 #mcqView .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 2px;line-height:1.05;text-indent:0;white-space:normal}
@@ -679,7 +681,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .ltrap .lsec-t .lico{background:#FFE4CC;color:#C2410C}
 #mcqView .ltrap .lsec-d{color:#7C2D12}
 #mcqView .solve-btn{width:100%;background:#0C447C;color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;margin-top:6px}
-#mcqView .tmark{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;border:0;background:none;box-shadow:none}
+#mcqView .tmark{font-size:14px;font-weight:700;padding:2px 8px;border:0;background:none;box-shadow:none}
 #mcqView .tmark.t1{color:#15803D}
 #mcqView .tmark.t2{color:#185FA5}
 #mcqView .tmark.t3{color:#B91C1C}
