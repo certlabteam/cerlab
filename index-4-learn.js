@@ -1401,7 +1401,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
   var guessOn=!!mqGuess[qid];
   var guessToggle = mqInReview ? (guessOn?'<span class="guess-tag-r"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> \uCC0D\uC74C</span>':'')
     : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+qid+'\')"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> \uCC0D\uC5C8\uC5B4\uC694</button>';
-  var mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+qid+'\')" title="\uBB38\uC81C \uC624\uB958 \uC2E0\uACE0"><img class="mq-ico" src="icons/warning.png" alt=""> \uC2E0\uACE0</button>';
+  var mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+qid+'\')" aria-label="문제 오류 신고" title="문제 오류 신고"><img class="mq-ico" src="icons/warning.png" alt=""></button>';
   var inputs=q.blanks.map(function(b){
     var v=(ansObj[b.label]!=null)?String(ansObj[b.label]):'';
     var ok=showExp?saBlankOK(b,v):null;
@@ -1805,7 +1805,7 @@ function renderMcqExam(root){
     ? (guessOn?'<span class="guess-tag-r"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> 찍음</span>':'')
     : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+q.id+'\')"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> 찍었어요</button>';
   const guessHint = (!mqInReview && guessOn) ? '<div class="guess-hint">확신이 없거나 <b>찍었을 때</b> 켜세요. 맞아도 <b>복습에 다시 나와요.</b></div>' : '';
-  const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고"><img class="mq-ico" src="icons/warning.png" alt=""> 신고 의견</button>';
+  const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" aria-label="문제 오류 신고" title="문제 오류 신고"><img class="mq-ico" src="icons/warning.png" alt=""></button>';
   const conceptGoBtn = (!mqInReview && !mqDiag && !mqConcept && (mqLevelUp ? _qHasConcept(q) : setConceptReady(mqCert,mqSub,mqSet))) ? '<button class="go-concept" onclick="goConceptFromQuestion()"><img class="mq-ico mq-ico-lg" src="icons/book.png" alt=""> 선행학습</button>' : '';
   root.innerHTML=
     '<div class="exam-sticky">'+

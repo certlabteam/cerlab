@@ -628,7 +628,7 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 /* 중요도(별)·소요시간 뱃지 */
 #mcqView .imp{font-size:12px;font-weight:800;color:#C87A00;background:#FFF9F0;border:1px solid #FFEDBA;padding:2px 6px;border-radius:6px;letter-spacing:-.3px}
 #mcqView .guess-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#8A6D1F;background:#FFF9EC;border:1.5px solid #F1D9A8;padding:4px 8px;min-height:44px;border-radius:999px;cursor:pointer;flex-shrink:0;white-space:nowrap}
-#mcqView .mq-report{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#A86A2E;background:#FFF7EF;border:1.5px solid #F1D9A8;padding:4px 8px;min-height:44px;border-radius:999px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+#mcqView .mq-report{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:#A86A2E;background:#FFF7EF;border:1.5px solid #F1D9A8;padding:0;border-radius:12px;cursor:pointer;flex-shrink:0}
 #mcqView .mq-report+.guess-toggle{margin-left:0}
 #mcqView .qhead .mq-ico{width:16px;height:16px}
 #mcqView .qhead .imp,#mcqView .qhead .tmark,#mcqView .qhead .mq-mst{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;padding-right:6px}
