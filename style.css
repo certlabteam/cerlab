@@ -919,14 +919,13 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .cm-empty{text-align:center;color:#888780;font-size:14px;padding:40px 16px;line-height:1.6}
 .cm-loading{text-align:center;color:#185FA5;font-size:14px;padding:28px 0;font-weight:600}
 .cm-admin-note{background:#EEF4FC;border-left:3px solid #2E6FBE;border-radius:6px;padding:8px 10px;font-size:12px;color:#28425E;margin-bottom:10px;line-height:1.5}
-.cm-enter{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #B5D4F4;border-radius:12px;padding:14px;margin-top:12px;cursor:pointer}
+.cm-enter{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #B5D4F4;border-radius:12px;padding:14px;margin:12px 0 16px;cursor:pointer;text-align:left}
 .cm-enter .ico{font-size:24px}
 .cm-enter .t{font-size:16px;font-weight:700;color:#0C447C}
 .cm-enter .d{font-size:12px;color:#888780;margin-top:2px}
-.cm-enter-txt{min-width:0}
-.cm-enter-r{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
-.cm-enter-badge{font-size:14px;font-weight:700;color:#0F6E56;background:#E7F6F0;border:1px solid #BBE6D6;border-radius:999px;padding:2px 8px;white-space:nowrap;line-height:1.3}
-.cm-enter .go{color:#bbb;font-size:18px}
+.cm-enter-txt{min-width:0;flex:1}
+.cm-enter-badge{display:table;font-size:14px;font-weight:700;color:#0F6E56;background:#E7F6F0;border:1px solid #BBE6D6;border-radius:999px;padding:2px 8px;white-space:nowrap;line-height:1.3;margin-top:6px}
+.cm-enter .go{color:#bbb;font-size:18px;margin-left:auto;flex:none}
 
 /* 커뮤니티 상세/추천/댓글 (3단계) */
 .cm-del-btn{margin-left:auto;font-size:12px;color:#E24B4A;background:#FFF0F0;border:1px solid #F7C1C1;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:600}
@@ -1687,5 +1686,9 @@ html.fs1 .lp-chips,html.fs2 .lp-chips{grid-template-columns:repeat(2,1fr)}   /* 
 :is(button,a):is(.anal-diag,.b-go,.button,.btn-inapp-chrome,.btn-login,.btn-payment,.btn-report-submit,.cl-dlg-ok,.clt-next,.cm-submit,.cm-write,.lth-cta,.ms-close,.ov-btn,.oxl-done,.pb-allow,.pr-go,.psucc-ok,.solve-btn,.subj-ai,.subj-grade,.weak-go,.lp-cta,.kakaopay-send,.toss-send),button:is(#_pupBuy,#lt2Next,#lu2Next,#sp2Go),#mcqView .mcq-result .rbtns button,button[style*="background:#185FA5" i],button[style*="background:#0C447C" i],button[style*="background:#1D9E75" i]{border-radius:6px!important;box-shadow:none!important;background-image:none!important}
 .cm-vote.up.on{background:#185FA5!important;border-color:#185FA5!important;color:#fff!important}.cm-vote.down.on{background:#888780!important;border-color:#888780!important;color:#fff!important}
 .cm-vote-row,.report-types,.pr-chips,.subj-btns,.cl-dlg-btns,.btn-row{column-gap:14px!important}
-@media(max-width:420px){.cm-enter{flex-wrap:wrap;gap:6px 10px}.cm-enter-txt{flex:1 1 calc(100% - 38px)}.cm-enter-r{width:100%;justify-content:flex-end}}
+/* 배너 안 글자 단추와 과목 열기 화살표도 같은 작은 단추 기준을 쓴다. */
+:is(.sr-banner-go,.oxl-banner-go,.cert-switch,.anal-rediag,.install-btn,.btn-logout,.ref-acc-btn,.rate-prev,.subj-add,#lpWrap .chip,#mcqView .sub-btn,#mcqView .scard-arrow,#subjMount .scard-arrow,#subjMount .mq-report,.exp-foldbar button,.ref-link-box button,.soon-wrap .back){position:relative;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;height:28px!important;min-height:28px!important;padding:0 8px!important;font-size:12px!important;font-weight:700!important;background:#F1F5F9!important;background-image:none!important;border:1px solid #CBD5E1!important;border-radius:6px!important;box-shadow:none!important;white-space:nowrap}
+:is(.sr-banner-go,.oxl-banner-go,.cert-switch,.anal-rediag,.install-btn,.btn-logout,.ref-acc-btn,.rate-prev,.subj-add,#lpWrap .chip,#mcqView .sub-btn,#mcqView .scard-arrow,#subjMount .scard-arrow,#subjMount .mq-report,.exp-foldbar button,.ref-link-box button,.soon-wrap .back)::after{content:"";position:absolute;top:-8px;bottom:-8px;left:0;right:0}
+:is(#mcqView .scard-arrow,#subjMount .scard-arrow){width:28px!important;flex:0 0 28px!important;padding:0!important}
+.pwa-banner-go,.cm-cmt-input button{border-radius:6px!important;box-shadow:none!important;background-image:none!important}
 @media(max-width:359px){#eventBadge{width:28px!important;padding:0!important;flex:0 0 28px}.event-badge .eb-l1{font-size:0!important}.event-badge .cl-emoji-dot{margin-right:0}}
