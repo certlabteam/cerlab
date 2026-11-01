@@ -474,9 +474,8 @@ async function cmLoadNoticeBar(){
       _cmNbTimer=setInterval(function(){
         var lines=roll.querySelectorAll('.cm-nb-line'); if(lines.length<2) return;
         var cur=lines[_cmNbIdx]; _cmNbIdx=(_cmNbIdx+1)%lines.length; var nx=lines[_cmNbIdx];
-        cur.classList.remove('on'); cur.classList.add('out');
-        nx.classList.remove('out'); nx.classList.add('on');
-        setTimeout(function(){ cur.classList.remove('out'); },500);
+        cur.classList.remove('on');
+        nx.classList.add('on');
       },3000);
     }
   }catch(e){ console.warn('cmLoadNoticeBar',e); bar.classList.add('hidden'); }

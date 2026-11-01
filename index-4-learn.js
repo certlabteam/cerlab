@@ -1399,9 +1399,9 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
   var curSubj=(q&&q._subj)?q._subj:'';
   var tags=(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q);
   var guessOn=!!mqGuess[qid];
-  var guessToggle = mqInReview ? (guessOn?'<span class="guess-tag-r"><img class="mq-ico" src="icons/dice.png" loading="lazy" alt=""> \uCC0D\uC74C</span>':'')
-    : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+qid+'\')"><span class="gdot"></span><img class="mq-ico" src="icons/dice.png" loading="lazy" alt=""> \uCC0D\uC5C8\uC5B4\uC694</button>';
-  var mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+qid+'\')" title="\uBB38\uC81C \uC624\uB958 \uC2E0\uACE0"><img class="mq-ico" src="icons/warning.png" loading="lazy" alt=""> \uC2E0\uACE0</button>';
+  var guessToggle = mqInReview ? (guessOn?'<span class="guess-tag-r"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> \uCC0D\uC74C</span>':'')
+    : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+qid+'\')"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> \uCC0D\uC5C8\uC5B4\uC694</button>';
+  var mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+qid+'\')" title="\uBB38\uC81C \uC624\uB958 \uC2E0\uACE0"><img class="mq-ico" src="icons/warning.png" alt=""> \uC2E0\uACE0</button>';
   var inputs=q.blanks.map(function(b){
     var v=(ansObj[b.label]!=null)?String(ansObj[b.label]):'';
     var ok=showExp?saBlankOK(b,v):null;
@@ -1536,7 +1536,7 @@ function renderMcqExam(root){
         '<div class="exam-ti"><div class="nm">선행학습</div><div class="st">'+(sets[mqSet]?sets[mqSet].label:'')+'</div></div></div>'+
       '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
       '</div>'+
-      '<div class="learn-hd"><span class="learn-step"><img class="mq-ico" src="icons/book.png" loading="lazy" alt=""> 선행학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
+      '<div class="learn-hd"><span class="learn-step"><img class="mq-ico" src="icons/book.png" alt=""> 선행학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
       '<div class="lcard">'+conceptCardHTML(q)+
         '<button class="solve-btn" onclick="mqConceptSolve()">이 개념으로 문제 풀기 →</button></div>';
     resolveImages(root);
@@ -1799,11 +1799,11 @@ function renderMcqExam(root){
   const tags=subjTag+countTypeTag+(mqInReview?mcqMasteryBadge(q):'')+impBadge(q)+timeBadge(q)+relearnBadge;
   const guessOn=!!mqGuess[q.id];
   const guessToggle = mqInReview
-    ? (guessOn?'<span class="guess-tag-r"><img class="mq-ico" src="icons/dice.png" loading="lazy" alt=""> 찍음</span>':'')
-    : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+q.id+'\')"><span class="gdot"></span><img class="mq-ico" src="icons/dice.png" loading="lazy" alt=""> 찍었어요</button>';
+    ? (guessOn?'<span class="guess-tag-r"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> 찍음</span>':'')
+    : '<button class="guess-toggle'+(guessOn?' on':'')+'" onclick="mqToggleGuess(\''+q.id+'\')"><img class="mq-ico mq-ico-dice" src="icons/dice.png" alt=""> 찍었어요</button>';
   const guessHint = (!mqInReview && guessOn) ? '<div class="guess-hint">확신이 없거나 <b>찍었을 때</b> 켜세요. 맞아도 <b>복습에 다시 나와요.</b></div>' : '';
-  const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고"><img class="mq-ico" src="icons/warning.png" loading="lazy" alt=""> 신고 의견</button>';
-  const conceptGoBtn = (!mqInReview && !mqDiag && !mqConcept && (mqLevelUp ? _qHasConcept(q) : setConceptReady(mqCert,mqSub,mqSet))) ? '<button class="go-concept" onclick="goConceptFromQuestion()"><img class="mq-ico mq-ico-lg" src="icons/book.png" loading="lazy" alt=""> 선행학습</button>' : '';
+  const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" title="문제 오류 신고"><img class="mq-ico" src="icons/warning.png" alt=""> 신고 의견</button>';
+  const conceptGoBtn = (!mqInReview && !mqDiag && !mqConcept && (mqLevelUp ? _qHasConcept(q) : setConceptReady(mqCert,mqSub,mqSet))) ? '<button class="go-concept" onclick="goConceptFromQuestion()"><img class="mq-ico mq-ico-lg" src="icons/book.png" alt=""> 선행학습</button>' : '';
   root.innerHTML=
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="뒤로">'+BACK_ARROW+'</button>'+
