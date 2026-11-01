@@ -1,0 +1,32 @@
+{
+  "saf23_s5_4": {
+    "cpt": [
+      "cpt_gov9safety_toolbox"
+    ]
+  },
+  "saf23_s5_7": {
+    "cpt": [
+      "cpt_gov9safety_multiuse"
+    ]
+  },
+  "saf23_s5_8": {
+    "cpt": [
+      "cpt_gov9safety_lewin"
+    ]
+  },
+  "saf23_s5_9": {
+    "cpt": [
+      "cpt_gov9safety_fatigue"
+    ]
+  },
+  "saf23_s5_11": {
+    "cpt": [
+      "cpt_gov9safety_accident_rates"
+    ]
+  },
+  "saf23_s5_19": {
+    "cpt": [
+      "cpt_gov9safety_inspection"
+    ]
+  }
+}

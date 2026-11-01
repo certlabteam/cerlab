@@ -1,0 +1,32 @@
+{
+  "saf24_s5_1": {
+    "cpt": [
+      "cpt_gov9safety_zero"
+    ]
+  },
+  "saf24_s5_4": {
+    "cpt": [
+      "cpt_gov9safety_accident_rates"
+    ]
+  },
+  "saf24_s5_5": {
+    "cpt": [
+      "cpt_gov9safety_chemical"
+    ]
+  },
+  "saf24_s5_14": {
+    "cpt": [
+      "cpt_gov9safety_inspection"
+    ]
+  },
+  "saf24_s5_19": {
+    "cpt": [
+      "cpt_gov9safety_fatigue"
+    ]
+  },
+  "saf24_s5_20": {
+    "cpt": [
+      "cpt_gov9safety_backup"
+    ]
+  }
+}

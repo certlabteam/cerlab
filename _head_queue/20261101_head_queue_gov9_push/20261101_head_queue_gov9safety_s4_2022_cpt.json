@@ -1,0 +1,22 @@
+{
+  "saf22_s4_3": {
+    "cpt": [
+      "cpt_gov9safety_complexity"
+    ]
+  },
+  "saf22_s4_8": {
+    "cpt": [
+      "cpt_gov9safety_fine_dust"
+    ]
+  },
+  "saf22_s4_16": {
+    "cpt": [
+      "cpt_gov9safety_disaster_events"
+    ]
+  },
+  "saf22_s4_19": {
+    "cpt": [
+      "cpt_gov9safety_collapse"
+    ]
+  }
+}

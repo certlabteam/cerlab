@@ -1,0 +1,10 @@
+9급 개념 연결 — 넣는 순서 (라이브 미반영)
+
+1. 20261101_head_queue_gov9_concepts.json: 새 개념카드 36장 (마스터넣기.py 개념)
+2. 20261101_head_queue_gov9_push 폴더의 샤드별 JSON 18개: 밀기.py --누구 서트랩헤드방
+   각 파일은 {문항id: {cpt: [개념id]}} 꼴이며 exp의 다른 칸은 건드리지 않는다.
+   각 샤드에 입력할 docId는 파일명 시험/과목/연도에서 <시험>__<과목>__<연도>년 기출.
+3. 사전 diff gate: 18개 파일 모두 신규 위반 0. 새 개념카드를 먼저 넣은 뒤 문항을 넣는다.
+
+연결 수: gov9land s4 6, gov9infosec s4 4, gov9safety s4 19, gov9safety s5 18.
+표본: lnd22_s4_20, ifs22_s4_10, saf22_s4_3, saf22_s5_19.

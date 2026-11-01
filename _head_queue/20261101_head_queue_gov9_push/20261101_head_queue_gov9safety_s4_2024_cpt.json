@@ -1,0 +1,22 @@
+{
+  "saf24_s4_2": {
+    "cpt": [
+      "cpt_gov9safety_dhs"
+    ]
+  },
+  "saf24_s4_7": {
+    "cpt": [
+      "cpt_gov9safety_quarantelli"
+    ]
+  },
+  "saf24_s4_8": {
+    "cpt": [
+      "cpt_gov9safety_gilbert"
+    ]
+  },
+  "saf24_s4_13": {
+    "cpt": [
+      "cpt_gov9safety_fine_dust"
+    ]
+  }
+}

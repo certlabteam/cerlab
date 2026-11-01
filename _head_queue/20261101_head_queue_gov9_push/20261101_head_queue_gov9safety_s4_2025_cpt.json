@@ -1,0 +1,22 @@
+{
+  "saf25_s4_1": {
+    "cpt": [
+      "cpt_gov9safety_comfort"
+    ]
+  },
+  "saf25_s4_4": {
+    "cpt": [
+      "cpt_gov9safety_redundancy"
+    ]
+  },
+  "saf25_s4_8": {
+    "cpt": [
+      "cpt_gov9safety_fema"
+    ]
+  },
+  "saf25_s4_19": {
+    "cpt": [
+      "cpt_gov9safety_relief"
+    ]
+  }
+}
