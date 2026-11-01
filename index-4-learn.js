@@ -1510,7 +1510,10 @@ function renderMcqExam(root){
   const sets=subObj?subObj.sets:[];
   const examName=mqGather?('약점: '+mqGatherLabel):mqDiag?'레벨 테스트':mqReview?'오늘의 복습':subObj.name;
   /* [2026-10-21] 회차가 뒤에서 붙으면 sets 차례가 밀려 sets[mqSet] 이 다른 회차를 가리켰다 — 머리에 「2023년 기출 · 2022년 기출」(t22_29). 지금 풀고 있는 목록(mqList)이 든 회차로 mqSet 을 바로잡는다(풀이 저장도 그 회차로 간다) */
-  if(!mqGather&&!mqDiag&&!mqReview&&sets.length&&mqList&&!(sets[mqSet]&&sets[mqSet].questions===mqList)){ var _fi=sets.findIndex(function(st){ return st&&st.questions===mqList; }); if(_fi>=0) mqSet=_fi; }
+  if(!mqGather&&!mqDiag&&!mqReview&&sets.length&&mqList&&mqList.length&&!(sets[mqSet]&&sets[mqSet].questions===mqList)){
+    var _fi=sets.findIndex(function(st){ return st&&(st.questions===mqList||mqList.every(function(item){ return item&&st.questions.some(function(q){return q.id===item.id;}); })); });
+    if(_fi>=0) mqSet=_fi;
+  }
   const examSet=mqGather?(mqList?mqList.length+'문항 모아풀기':'모아풀기'):mqDiag?'실력 측정':mqReview?'자동복습':(sets[mqSet]?sets[mqSet].label:'');
   const qs=mqQuestions(); if(mqIdx>=qs.length)mqIdx=qs.length-1; if(mqIdx<0)mqIdx=0;
   const q=qs[mqIdx]; const pct=Math.round((mqIdx+1)/qs.length*100);
@@ -1518,7 +1521,7 @@ function renderMcqExam(root){
   // [2026-07-20] 문제 상단 컨텍스트: 몇 회 기출(혼합 모드에서) + 단원명(과목 상세목차) → 헤더 .st 뒤에 덧붙임
   const qCtx=(function(){ if(!q) return ''; var parts=[]; try{
       var cs=(typeof MCQ_QID2CS!=='undefined')&&MCQ_QID2CS[q.id];
-      if(cs&&cs.lab&&cs.lab!==examSet) parts.push(cs.lab);                       // 복습·모아풀기 등 혼합 모드에서 원 회차 표시
+      if(cs&&cs.lab&&cs.lab!==examSet&&(mqGather||mqDiag||mqReview||mqLevelUp)) parts.push(cs.lab); // 혼합 모드에서만 원 회차 표시
       var _sc=(q&&q._subj)?q._subj:mqSub;
       var info=(typeof adLookup==='function')&&adLookup(mqCert,_sc,q.id);
       if(info&&info.topic&&typeof topicNameMap==='function'){
