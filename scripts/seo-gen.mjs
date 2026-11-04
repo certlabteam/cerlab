@@ -45,6 +45,11 @@ const firebaseConfig = {
 const 바뀐것 = new Set();
 
 function write(rel, text) {
+  if (rel.startsWith('seo/') && rel.endsWith('.html')) {
+    const link = '<p style="white-space:nowrap"><a href="https://ilgumi.com/" style="color:inherit;font-size:inherit">일구미 · 사장님 리뷰 답글</a></p>';
+    if (!text.includes('</footer>')) throw new Error('SEO 쪽 footer 없음: ' + rel);
+    text = text.replace('</footer>', link + '</footer>');
+  }
   const abs = path.join(ROOT, rel);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   let 옛 = null;
