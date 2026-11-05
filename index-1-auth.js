@@ -1278,8 +1278,32 @@ async function deleteMyAccount() {
    *   전에는 학습 기록을 먼저 지우고, 계정 삭제가 「최근 로그인 필요」로 막히면 구글로만 재인증했다.
    *   카카오(커스텀 토큰)·이메일 회원은 구글 재인증이 안 맞아 실패 → 기록만 지워지고 계정은 남았다.
    *   이제: 로그인한 지 5분이 넘었으면 구글 회원은 재인증, 그 밖은 다시 로그인하게 하고 멈춘다. */
+  /* [2026-11-06] 아이폰 앱의 Apple 회원: 앱에 Apple 재인증(Face ID)을 부탁해 새 인가코드를 받는다 —
+   *   그 자격으로 최근 로그인 조건을 채우고, 그 코드로 아래에서 애플 연결을 끊는다(코드는 5분 만료). 취소하면 탈퇴를 멈춘다. */
+  var _appleFresh = false;
+  if (typeof CL_IOS_APP !== 'undefined' && CL_IOS_APP && (currentUser.providerData || []).some(function(p){ return p && p.providerId === 'apple.com'; })) {
+    var _a = await new Promise(function(res){
+      window.certlabAppAppleCode = function(x){ res(x || null); };
+      if (!clAppCall({ 할일:'애플재인증' })) res(null);
+      setTimeout(function(){ res(null); }, 120000);
+    });
+    if (!_a || !(_a['토큰'] || _a.token)) {
+      alert('Apple 확인을 마치지 못해 탈퇴를 멈췄어요. 다시 시도해 주세요.');
+      if (btn) { btn.disabled = false; btn.textContent = '영구 삭제하기'; }
+      return;
+    }
+    try {
+      await currentUser.reauthenticateWithCredential(new firebase.auth.OAuthProvider('apple.com').credential({ idToken: _a['토큰'] || _a.token, rawNonce: _a.nonce }));
+      var _c = _a['인가코드'] || _a.authorizationCode; if (_c) localStorage.setItem('clAppleAuthCode', _c);
+      _appleFresh = true;
+    } catch (eR) {
+      alert('Apple 본인 확인을 마치지 못했어요. 다시 시도해 주세요.');
+      if (btn) { btn.disabled = false; btn.textContent = '영구 삭제하기'; }
+      return;
+    }
+  }
   var lastMs = Date.parse((currentUser.metadata && currentUser.metadata.lastSignInTime) || '') || 0;
-  if (Date.now() - lastMs > 5 * 60 * 1000) {
+  if (!_appleFresh && Date.now() - lastMs > 5 * 60 * 1000) {
     var isGoogle = (currentUser.providerData || []).some(function(p){ return p && p.providerId === 'google.com'; });
     if (!isGoogle) {
       alert('안전을 위해 한 번 더 로그인해 주세요.\n로그인한 뒤 바로 마이페이지 → 회원 탈퇴를 누르면 삭제됩니다.');
