@@ -1300,6 +1300,14 @@ async function deleteMyAccount() {
     }
   }
   try {
+    // 0) [2026-11-06] Apple 로그인 사용자면 애플 쪽 연결부터 끊는다(App Store 심사 규칙) — 아이폰 앱이 로그인 때 준 authorizationCode 로.
+    //    코드는 5분이면 만료라 실패할 수 있다 — 실패해도 탈퇴는 계속한다(기록만).
+    try {
+      var _apple = (currentUser.providerData || []).some(function(p){ return p && p.providerId === 'apple.com'; });
+      var _code = _apple ? localStorage.getItem('clAppleAuthCode') : null;
+      if (_code && auth && typeof auth.revokeAccessToken === 'function') { await auth.revokeAccessToken(_code); }
+      localStorage.removeItem('clAppleAuthCode');
+    } catch (eA) { console.warn('Apple 연결 끊기 실패(탈퇴는 계속)', eA && (eA.code || eA.message)); }
     // 1) Firestore 사용자 데이터 삭제 (없는 문서는 무시)
     await Promise.allSettled([
       db.collection('users').doc(uid).delete(),
