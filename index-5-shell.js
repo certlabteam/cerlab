@@ -1769,7 +1769,7 @@ function mpRenderHome(){
     /* [2026-10-13 크리스] 복습 알림 — 끄면 userData.pushOff=true(서버 runReviewPush 가 건너뜀) · 브라우저 권한은 안 건드린다 */
     + '<div class="my-row-static my-push"><span>복습 알림<small>복습할 때가 된 문제를 알려 드려요</small></span>'
     +   '<button type="button" class="dg-switch" id="mpPushSw" onclick="mpTogglePush()"><i class="dg-switch-knob"></i><span id="mpPushState">확인 중…</span></button></div>'
-    + (_isApp ? _mpRow('앱', '앱으로 쓰는 중 ✓', '', 'still')
+    + ((_isApp || (typeof CL_IOS_APP!=='undefined' && CL_IOS_APP)) ? _mpRow('앱', '앱으로 쓰는 중 ✓', '', 'still')
               : _mpRow(_isAnd ? '앱 설치하기' : '홈 화면에 추가', _isAnd ? '앱 첫 로그인 혜택 9,900P' : '', 'addToHome(event)', 'go'))
     + _mpRow('로그아웃', '', 'signOut()', '')
     +'</nav>'
