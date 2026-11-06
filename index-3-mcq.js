@@ -400,6 +400,8 @@ function renderMcqHome(root){
           ? '<button class="b-go" onclick="resumeMcqExam(\''+id+'\','+si+')">이어풀기</button><button class="b-fresh" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">처음부터</button>'
           : '<button class="b-go" onclick="startMcqExam(\''+id+'\','+si+',\'all\')">풀기</button>';
         var _np=st._noexp?' srow-noexp':'';
+        var _nBtn=(hasSave?2:1)+(setWrong>0?1:0)+(showUnans?1:0)+(setConceptReady(mqCert,id,si)?1:0);
+        if(_nBtn>2) _np+=' srow-many';   // 단추 3개 이상이면 제목 아래 한 줄로 (좁은 폰)
         var _npBadge=st._noexp?'<span class="s-noexp">해설 준비 중</span>':'';
         html+='<div class="srow'+_np+'"><div class="srow-left"><span class="syr">'+st.label+_npBadge+'</span>'+
           '<span class="swc">'+st.questions.length+'문항'+(setWrong>0?' · 오답 '+setWrong:'')+(showUnans?' · 미응답 '+setUnans:'')+'</span></div>'+
