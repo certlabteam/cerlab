@@ -86,6 +86,8 @@
   }
   function 시작(k, 남은번){
     if(봤나(k) || 판) return;
+    // 2026-11-07 크리스 승인 — 광고 주소(?src=)로 온 사람은 화면이 어둡게 덮이면 바로 나간다(도착 583 → 시작 50). 띄우지 않는다
+    if(/[?&]src=/.test(location.search)) return;
     if(팝업떠있나()){ if(남은번 > 0) setTimeout(function(){ 시작(k, 남은번 - 1); }, 3000); return; }
     var 줄 = [];
     (단계들[k] || []).forEach(function(s){ var el = document.querySelector(s.sel); if(보이나(el)) 줄.push({ el:el, t:s.t }); });

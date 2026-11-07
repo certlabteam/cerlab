@@ -186,7 +186,6 @@ function mqRunTimer(){
   },1000);
 }
 function mqStartTimer(){
-  try{ clLeadOnce(typeof mqCert!=='undefined'?mqCert:''); }catch(_){}
   mqStopTimer(); mqStopOverTimer(); mqTimeUp=false; mqTimeUpIdx=-1; mqOvertimeSec=0; mqOvertimeCount=0; mqOverStart=0; mqPaused=false;
   mqRunTimer();
 }
@@ -955,6 +954,7 @@ async function startDiagnostic(){
   if(picked.length<1){ _luToast('레벨 테스트에 사용할 문제가 아직 없어요. (정답이 입력된 문제가 필요해요)'); return; }
   clearDiagProgress(cert);
   try{ if(typeof lpTrack==='function') lpTrack('LevelTestStart', { cert:cert, guest:!currentUser }); }catch(_){}
+  try{ clLeadOnce(cert); }catch(_){}   // 2026-11-07 Lead 는 레벨테스트 시작에서만(기출 풀기에서도 쏴서 348로 부풀었다)
   mqStopTimer();
   mqDiag=true; mqLevelTest=true; mqReview=false; mqInReview=false; mqConcept=false; mqMode='diag'; mqSub=''; mqSet=0; mqShow={}; mqGuess={}; mqAns={}; mqIdx=0;
   mqList=picked; mqOXClearList(picked);   // 레벨 테스트 출제 문항의 이전 O/X 해제
@@ -994,12 +994,21 @@ function _ltRenderResultGate(M){
     var w=[62,48,55,70][i%4];
     return '<div class="ltg-card"><div class="ltg-nm">'+mqEsc(nm)+'</div><div class="ltg-bar"><div style="width:'+w+'%"></div></div></div>';
   }).join('')+'<div class="ltg-card"><div class="ltg-nm">'+metric+' · 약점 토픽</div><div class="ltg-bar"><div style="width:58%"></div></div></div>';
+  /* 2026-11-07 크리스 승인 「점수는 먼저 보여 주기」 — 채점 때 ltFinalize 가 손님도 eloState 에 남기므로 예상 점수를 바로 낼 수 있다.
+   * 못 내면(다른 기기 재방문 등) 예전처럼 다 가린다. */
+  var _ap=null, _v=null, _cc=0, _cn=0;
+  try{ var _rec=eloState._levelTest[cert]; if(_rec&&_rec.summary){ Object.keys(_rec.summary).forEach(function(s){ _cc+=_rec.summary[s].correct||0; _cn+=_rec.summary[s].n||0; }); _ap=(typeof adPredicted==='function')?adPredicted(cert):null; if(_ap&&_ap.predicted!=null&&typeof adVerdict==='function') _v=adVerdict(cert,_ap); } }catch(_){}
+  var _show=!!(_ap&&_ap.predicted!=null);
   var host=document.getElementById('mcqView')||document.body;
   var box=document.getElementById('mcqRoot');
   var html='<div class="lt-nav"><button class="lt-nav-back" onclick="goHome()" aria-label="홈">'+BACK_ARROW+'</button><span>레벨테스트</span></div>'
     +'<div class="ltg-wrap">'
-    +'<div class="ltg-top"><div class="ltg-done">레벨테스트 완료 🎉</div><div class="ltg-h">결과가 준비됐어요</div>'
-      +'<div class="ltg-sc">'+_totN+'문제 · '+subs.length+'과목 채점 완료</div></div>'
+    +(_show
+      ? '<div class="ltg-top"><div class="ltg-done">레벨테스트 완료 🎉</div><div class="ltg-h">내 '+metric+'</div>'
+        +'<div class="ltg-big">'+mqEsc(String(_ap.predicted))+(isGrade?'':'<span>점</span>')+'</div>'
+        +'<div class="ltg-sc">'+((_v&&_v.label)?mqEsc(_v.label)+' · ':'')+_totN+'문제 중 '+_cc+'개 맞음</div></div>'
+      : '<div class="ltg-top"><div class="ltg-done">레벨테스트 완료 🎉</div><div class="ltg-h">결과가 준비됐어요</div>'
+        +'<div class="ltg-sc">'+_totN+'문제 · '+subs.length+'과목 채점 완료</div></div>')
     +'<div class="ltg-blurwrap"><div class="ltg-blur">'+blurCards+'</div>'
       +'<div class="ltg-gate"><div class="ltg-lock">🔒</div>'
         /*
@@ -1007,12 +1016,15 @@ function _ltRenderResultGate(M){
          * 나온다. 이미 채점이 끝났다는 것과, 지금 바로 볼 수 있다는 것을 앞에
          * 둔다 - 기다리라는 말이 아니라 한 번만 누르면 된다는 말이어야 한다.
          */
-        +'<div class="ltg-gt">채점 끝났어요. 지금 바로 확인</div>'
-        +'<div class="ltg-gs">내 '+metric+'와 약한 과목이 나왔어요.<br>로그인 한 번이면 바로 열립니다.</div>'
+        +(_show
+          ? '<div class="ltg-gt">어느 과목에서 점수를 잃었는지 볼까요?</div>'
+            +'<div class="ltg-gs">과목별 레벨·약점 토픽·틀린 '+Math.max(0,_totN-_cc)+'문제 해설은<br>로그인하면 바로 열려요.</div>'
+          : '<div class="ltg-gt">채점 끝났어요. 지금 바로 확인</div>'
+            +'<div class="ltg-gs">내 '+metric+'와 약한 과목이 나왔어요.<br>로그인 한 번이면 바로 열립니다.</div>')
         /* [2026-10-14 크리스] 「레벨테스트후 카톡 로그인이 없다」 — 구글만 있으면 카카오톡·네이버 앱 안(구글 막힘)에서 결과를 못 본다.
          *   카카오를 더하고, 앱 안 브라우저에서는 카카오를 앞에 둔다. */
         /* [2026-10-15 크리스] 로그인 단추는 어디서나 한 줄 반반 — 왼쪽 카카오 · 오른쪽 구글 */
-        +'<div class="ltg-row"><button class="ltg-btn ltg-kakao" onclick="_ltGateLogin(\'kakao\')"><span class="ltg-k">💬</span> 카카오로 시작</button>'
+        +'<div class="ltg-row"><button class="ltg-btn ltg-kakao" onclick="_ltGateLogin(\'kakao\')"><svg class="ltg-k" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#191600" d="M12 3C6.9 3 2.8 6.3 2.8 10.3c0 2.6 1.7 4.8 4.3 6.1-.2.7-.7 2.5-.8 2.9 0 .2.1.4.3.4h.2c.4-.1 3-2 3.6-2.4.5.1 1 .1 1.6.1 5.1 0 9.2-3.3 9.2-7.3S17.1 3 12 3z"/></svg> 카카오로 시작</button>'
         +'<button class="ltg-btn" onclick="_ltGateLogin(\'google\')"><span class="ltg-g">G</span> 구글로 시작</button></div>'
         +'<div class="ltg-note">가입하면 오늘 하루는 문제 수 제한 없이 풀 수 있어요</div>'
       +'</div></div>'
@@ -1021,7 +1033,8 @@ function _ltRenderResultGate(M){
   else { var d=document.getElementById('mqResultMount'); if(!d){ d=document.createElement('div'); d.id='mqResultMount'; host.appendChild(d); } d.innerHTML=html; }
   if(!document.getElementById('ltgCss')){
     var st=document.createElement('style'); st.id='ltgCss';
-    st.textContent='.ltg-wrap{max-width:440px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 22px rgba(31,41,55,.1)}'
+    st.textContent='.ltg-big{font-size:48px;font-weight:900;line-height:1.1;margin:6px 0 2px}.ltg-big span{font-size:20px;font-weight:700}'
+      +'.ltg-wrap{max-width:440px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 22px rgba(31,41,55,.1)}'
       +'.ltg-top{background:#185FA5;color:#fff;padding:24px 20px 28px;text-align:center}'
       +'.ltg-done{font-size:12px;opacity:.85;margin-bottom:6px}.ltg-h{font-size:20px;font-weight:900;margin:2px 0 4px}.ltg-sc{font-size:14px;opacity:.9}'
       +'.ltg-blurwrap{position:relative;padding:16px 20px;min-height:230px}'

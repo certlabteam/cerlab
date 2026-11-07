@@ -468,6 +468,7 @@ async function loadUserPlan(user) {
       }
       try { localStorage.removeItem('pendingRef'); } catch(_){}
       // 신규 가입 확정 시점(로그인 경로 무관) → Meta CompleteRegistration
+      try { if (localStorage.getItem('certlab_lt_pending') && window.clTrackCustom) clTrackCustom('LevelTestSignup', { cert:(typeof activeCert!=='undefined'?(activeCert||''):'') }); } catch(_){}   // 2026-11-07 레벨테스트 결과 벽에서 가입
       try { clTrack('CompleteRegistration', { content_name:'signup', content_category:(typeof activeCert!=='undefined'?(activeCert||''):''), status:true }); } catch(_){}
       // 같은 지점 → Google Ads 전환(회원가입). 신규 가입에만 1회 발화
       try { if (typeof gtag === 'function') gtag('event','conversion',{ 'send_to':'AW-18199166773/5qIECPuRk9scELX-hOZD', 'value':1.0, 'currency':'KRW' }); } catch(_){}
