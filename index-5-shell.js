@@ -1771,9 +1771,9 @@ function mpRenderHome(){
     +   '<button type="button" class="dg-switch" id="mpPushSw" onclick="mpTogglePush()"><i class="dg-switch-knob"></i><span id="mpPushState">확인 중…</span></button></div>'
     + ((_isApp || (typeof CL_IOS_APP!=='undefined' && CL_IOS_APP)) ? _mpRow('앱', '앱으로 쓰는 중 ✓', '', 'still')
               : _mpRow(_isAnd ? '앱 설치하기' : '홈 화면에 추가', _isAnd ? '앱 첫 로그인 혜택 9,900P' : '', 'addToHome(event)', 'go'))
+    + _mpRow('개인/보안', '', 'mpShowSecurity()', 'go')   // 2026-11-07 크리스 — 회원 탈퇴는 개인/보안 안으로
     + _mpRow('로그아웃', '', 'signOut()', '')
-    +'</nav>'
-    +'<button type="button" class="my-delete-link" onclick="showDeletePopup()">회원 탈퇴</button>';
+    +'</nav>';
   mpPushStateLoad();
 }
 function mpShowInvite(){
@@ -1887,6 +1887,27 @@ function mpShowEnts(){
     +  '<div style="margin-top:6px;font-size:12px;color:#8A7D6E;text-align:center">'
     +  '지금 보고 있는 시험의 이용권을 삽니다. 다른 시험은 그 시험으로 옮긴 뒤 눌러 주세요.</div></div>';
   box.innerHTML = h;
+}
+/* 2026-11-07 크리스 「마이페이지에 개인/보안 메뉴 만들고 이안에 탈퇴 만들고 이 안에 탈퇴 버튼 넣자」
+ *   로그인 계정(무엇으로 들어왔는지) · 개인정보 처리방침 · 이용약관 · 회원 탈퇴(빨강 → 지금 쓰는 탈퇴 화면) */
+function _mpLoginKind(){
+  try{ if(!currentUser) return ''; if(String(currentUser.uid||'').indexOf('kakao:')===0) return '카카오';
+    var p=(currentUser.providerData||[]).map(function(x){ return x&&x.providerId; });
+    if(p.indexOf('google.com')>=0) return '구글'; if(p.indexOf('apple.com')>=0) return '애플'; if(p.indexOf('password')>=0) return '이메일';
+  }catch(_){}
+  return '';
+}
+function mpShowSecurity(){
+  var box=document.getElementById('mpBody'); if(!box) return;
+  var kind=_mpLoginKind(), email=(currentUser&&currentUser.email)||'';
+  box.innerHTML='<div class="mp-sub-top"><button class="cm-back" onclick="mpRenderHome()">\u2190</button><span>개인/보안</span></div>'
+    +'<nav class="my-list">'
+    + _mpRow('로그인 계정', cmEsc([kind, email].filter(Boolean).join(' · ')), '', 'still')
+    + _mpRow('개인정보 처리방침', '', "location.href='privacy.html'", 'go')
+    + _mpRow('이용약관', '', "location.href='terms.html'", 'go')
+    + _mpRow('회원 탈퇴', '', 'showDeletePopup()', 'go danger-text')
+    +'</nav>';
+  window.scrollTo(0,0);
 }
 async function mpShowPayments(){
   var box=document.getElementById('mpBody'); if(!box) return;
