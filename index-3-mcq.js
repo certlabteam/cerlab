@@ -54,7 +54,7 @@ function _sp2OpenPicker(cb){
   function cnt(){ return Object.keys(sel).filter(function(k){return sel[k];}).length; }
   function render(){
     var n=cnt();
-    ov.innerHTML='<div class="auth-sheet" style="max-width:360px;text-align:left">'
+    ov.innerHTML='<div class="auth-sheet" style="max-width:360px;text-align:left">'+'<button class="popup-x" id="sp2X" aria-label="닫기">✕</button>'
       +'<div style="font-size:18px;font-weight:900;color:#0C447C;margin-bottom:2px">\uC2DC\uD5D8 \uBCFC 5\uACFC\uBAA9 \uC120\uD0DD</div>'
       +'<div style="font-size:14px;color:#8A7D6E;margin-bottom:14px">7\uACFC\uBAA9 \uC911 <b>5\uACFC\uBAA9</b>\uC744 \uACE8\uB77C \uC751\uC2DC\uD574\uC694. \uB808\uBCA8\uD14C\uC2A4\uD2B8\u00B7\uB808\uBCA8\uC5C5\uC774 \uC120\uD0DD\uD55C 5\uACFC\uBAA9\uC73C\uB85C \uC9C4\uD589\uB3FC\uC694.</div>'
       +'<div>'+codes.map(function(c){ var nm=(qb[c]&&qb[c].name)||c; var on=!!sel[c];
@@ -63,6 +63,7 @@ function _sp2OpenPicker(cb){
       +'<div style="text-align:center;font-size:14px;font-weight:800;color:'+(n===5?'#15793F':'#A32D2D')+';margin:4px 0 12px">'+n+' / 5 \uC120\uD0DD\uB428</div>'
       +'<button id="sp2Go" '+(n===5?'':'disabled')+' style="width:100%;background:'+(n===5?'#185FA5':'#94A3B8')+';color:#fff;border:none;border-radius:12px;padding:12px;font-size:16px;font-weight:800;cursor:'+(n===5?'pointer':'not-allowed')+'">'+(n===5?'\uC120\uD0DD \uC644\uB8CC':'5\uACFC\uBAA9\uC744 \uC120\uD0DD\uD558\uC138\uC694')+'</button>';
     ov.querySelectorAll('input[type=checkbox]').forEach(function(chk){ chk.onchange=function(){ var c=chk.getAttribute('data-c'); if(chk.checked){ if(cnt()>=5){ chk.checked=false; return; } sel[c]=true; } else { delete sel[c]; } render(); }; });
+    var sx=document.getElementById('sp2X'); if(sx) sx.onclick=function(){ ov.remove(); };
     var go=document.getElementById('sp2Go'); if(go) go.onclick=function(){ var arr=Object.keys(sel).filter(function(k){return sel[k];}); if(arr.length!==5) return; _sp2Set(arr); ov.remove(); if(typeof cb==='function') cb(); };
   }
   document.body.appendChild(ov); render();
@@ -902,10 +903,9 @@ function _planUpsell(){
     +'<div style="font-size:16px;font-weight:800;color:#0C447C;margin-bottom:6px">맞춤 합격 플랜은 멤버십</div>'
     +'<div style="font-size:14px;color:#5F5A52;line-height:1.6;margin-bottom:14px">오늘의 1순위 학습, 과목별 약점 전체,<br>무제한 문제풀이까지 — 멤버십으로 합격까지 한 번에.</div>'
     +'<button id="_pupBuy" style="border:none;background:#0C447C;color:#fff;font-size:14px;font-weight:800;padding:12px 0;border-radius:12px;width:100%;cursor:pointer">멤버십 구매하기</button>'
-    +'<div id="_pupLater" style="font-size:12px;color:#A79C8C;margin-top:10px;cursor:pointer">나중에</div></div>';
+    +'</div>';
   document.body.appendChild(w);
   w.querySelector('#_pupBuy').onclick=function(){ document.body.removeChild(w); if(typeof showPlanPopup==='function') showPlanPopup(true); };
-  w.querySelector('#_pupLater').onclick=function(){ document.body.removeChild(w); };
   w.querySelector('#_pupX').onclick=function(){ document.body.removeChild(w); };
   w.onclick=function(e){ if(e.target===w) document.body.removeChild(w); };
 }

@@ -11,8 +11,8 @@ function _oxWarnShow(){
       +'<div class="oxw-t">\uC815\uB2F5\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694</div>'
       +'<div class="oxw-s">\uBCF4\uAE30 \uC911 \uC815\uB2F5\uC744 \uACE8\uB77C\uC57C \uCC44\uC810\u00B7\uCE21\uC815\uB3FC\uC694.</div>'
       +'<div class="oxw-note"><b>OX \uCCB4\uD06C</b>\uB294 \uBCF4\uAE30 \uBB38\uC7A5\uC774 \uB9DE\uB294\uC9C0(O)\u00B7\uD2C0\uB9B0\uC9C0(X)\uB97C \uC9C1\uC811 \uD310\uB2E8\uD574, \uD2C0\uB9B0 \uC9C4\uC220\uC758 \uAC1C\uB150\uB9CC \uB530\uB85C \uBCF5\uC2B5\uD558\uB294 \uAE30\uB2A5\uC774\uC5D0\uC694. \uC815\uB2F5 \uC120\uD0DD\uACFC\uB294 \uBCC4\uAC1C\uC608\uC694.</div>'
-      +'<button class="oxw-b1" onclick="_oxWarnPick()">\uC815\uB2F5 \uC120\uD0DD\uD558\uAE30</button>'
       +'<button class="oxw-b2" onclick="_oxWarnSkip()">\uBAA8\uB974\uACA0\uC5B4\uC694 \u00B7 \uADF8\uB0E5 \uB118\uAE30\uAE30</button>'
+      +'<button class="oxw-b1" onclick="_oxWarnPick()">\uC815\uB2F5 \uC120\uD0DD\uD558\uAE30</button>'
       +'<button class="oxw-b3" onclick="_oxWarnSnooze()">7\uC77C\uAC04 \uBCF4\uC9C0 \uC54A\uAE30</button></div>';
     document.body.appendChild(el);
     if(!document.getElementById('oxWarnCss')){

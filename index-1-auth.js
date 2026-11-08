@@ -136,7 +136,7 @@ function _clDlg(msg, okTxt, noTxt){
   });
 }
 function clNotice(msg){ return _clDlg(msg, '확인'); }
-function clConfirm(msg, okTxt){ return _clDlg(msg, okTxt||'확인', '취소'); }
+function clConfirm(msg){ return _clDlg(msg, '확인', '취소'); }   // 2026-11-07 크리스 「좌측 취소 우측 확인」 — 단추 글자는 늘 취소·확인
 window.alert=function(m){ clNotice(m); };
 /* ★★ [2026-10-15] 저절로 뜨는 팝업은 한 번에 하나만 — 크리스 「동시에 뜰때는 우선순위 정해서 하나만 뜨게하고
  *   그거 뜨고 문제를 몇문제 더 풀면 팝업 뜨도록 시간텀을 둬」(로그인 뒤 환급 안내와 다른 안내가 위아래로 같이 떴다).
