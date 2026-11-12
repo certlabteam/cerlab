@@ -1235,6 +1235,9 @@ function clHandleBack(){
   history.replaceState({cl:'root'},'');
   history.pushState({cl:'app'},'');
   window.addEventListener('popstate', function(){
+    /* [2026-11-13 크리스 「밑에 링크 안열려」] 문제가 열린 채로 다른 문항 링크(#q/…)를 누르면 해시만 바뀌는데
+       popstate 가 같이 와서 뒤로가기로 처리돼 시험 홈으로 나갔다 — 문항 링크면 뒤로가기로 보지 않고 hashchange(tryQ)에 맡긴다. */
+    if((location.hash||'').indexOf('#q/')===0) return;
     if(clHandleBack()){
       history.pushState({cl:'app'},'');                 // 재무장: 앱 안에 머무름
     } else {
