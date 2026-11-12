@@ -1215,6 +1215,11 @@ function countStemHTML(rawStem, q, withOX){
   }).join('');
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
+/* [2026-11-13 크리스 「선지 개행해야지 이런경우」] 자료가 (가)로 시작하고 (나)·(다)… 가 한 문단에 이어 붙어 있으면 각자 줄로 */
+function _jrGaNaBreak(h){
+  var t=String(h||''); if(!/^\s*(?:<[^>]+>\s*)*\(가\)/.test(t) || !/\(나\)/.test(t)) return t;
+  return t.replace(/([^\n>])[ \t]+\((나|다|라|마|바)\)(?=\s)/g, '$1<br>($2)');
+}
 function markComboStmts(scope, addOX){
   (scope||document).querySelectorAll('#mcqView .jaryo').forEach(function(el){
     if(el.dataset.oxed) return;
@@ -1234,6 +1239,19 @@ function markComboStmts(scope, addOX){
       /* [2026-10-18] 한 줄에 「ㄱ. … ㄴ. … ㄷ. …」 가 이어 붙은 자료는 줄이 하나라 통째로 한 진술이 됐다 — 마커 앞에서 줄을 나눈다(크리스 「문제보기 ㄱㄴㄷ각 개행」 re2 publiclaw23_10). */
       html=html.replace(/([^\n])\s+([\u3131-\u3141])\.(?=\s)/g, '$1\n$2.');
       var lines=html.split(/\r?\n/);
+      /* [2026-11-13 크리스 「Ox체크가 그 선지 우측에 있어야지」] 「• 혜인 씨에게 ㉠ 무정타 …」처럼 원문자 마커가 줄 가운데 하나씩 든 자료 —
+         줄마다 그 마커로 O/X 를 붙이고, 아래 따로 그리던 「내 O/X 체크」(.oximg) 칸은 뺀다. 채점 키(s㉠)는 그 칸과 같다. */
+      var _cl=lines.filter(function(l){ return l.replace(/<[^>]+>/g,'').trim(); });
+      if(!lines.some(function(l){ return mk.test(l); }) && _cl.length>=2 &&
+         _cl.every(function(l){ return (l.match(/data-mk="[\u3260-\u3269]"/g)||[]).length===1; })){
+        el.innerHTML=_cl.map(function(l){
+          var h=stmtHTML(l, (l.match(/data-mk="([\u3260-\u3269])"/)||[])[1]||''), i=h.indexOf('<span class="jr-ox"'), t=h.indexOf('<span class="jr-stmt-t">');
+          return (i>t && t>=0) ? h.slice(0,t)+h.slice(i,h.length-6)+h.slice(t,i)+'</div>' : h;   // O/X 를 글 앞에 둬야 긴 줄도 같은 줄 오른쪽에 붙는다(float)
+        }).join('');
+        el.dataset.oxed=1;
+        if(addOX){ try{ var _ob=(scope||document).querySelector('#mcqView .oximg'); if(_ob) _ob.remove(); }catch(_){} }
+        return;
+      }
       if(!lines.some(function(l){ return mk.test(l); })){ el.dataset.oxed=1; return; }
       var groups=[], cur=null;
       lines.forEach(function(ln){
@@ -1451,7 +1469,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(_jrHdr(jaryo),q).replace(/ \/ /g,'<br>')))/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 intro25_7) */+'</div>':'')+imgBlock(q)+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(jaryo),q)).replace(/ \/ /g,'<br>')))/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 intro25_7) */+'</div>':'')+imgBlock(q)+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
@@ -1815,7 +1833,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview&&mqAns[q.id]===undefined):tpSwap(_jaryoDots(stemHTML(rm(_stemQ,q))),q.id))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(rm(_jrHdr(jr.jaryo),q).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(jr.jaryo),q)).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
