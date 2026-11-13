@@ -1118,7 +1118,11 @@ function _comboHdr3(q){ try{
 }catch(e){ return null; } }
 /* [2026-11-13 크리스 「빼」] 묶음으로 나누는 문제(분류형)는 진술마다 O/X 가 맞지 않는다 — 문제 화면 진술 O/X 단추를 안 단다 */
 function _isCatCombo(q){ try{ if(_comboHdr3(q)) return true; var a=ansArr(q.ans); return ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ'].some(function(k){ return !!_comboCatOf(q, a, k); }); }catch(e){ return false; } }
-function _jr3Strip(t, q){ var h=_comboHdr3(q); return h ? String(t==null?'':t).replace(new RegExp('\\s+'+h[0]+'\\s+'+h[1]+'\\s*$'),'') : t; }   // ③ 자료 끝 표 머리 「스키마 인스턴스」를 문제 화면에서 뗀다
+/* [2026-11-13 크리스 「문제 보기가 이상한데?」] 자료 글 끝에 보기 표의 칸 머리 「(가) (나)」가 붙어 「…판단하는 것 (가)」 「(나)」로 보였다(saf22_s5_1).
+   앞 글에 같은 칸 이름이 이미 나오면 끝의 칸 머리 줄은 뗀다. 자료가 칸 이름뿐이면 그대로 둔다(ifs24_s5_5). */
+function _jrTailHdr(t){ var s=String(t==null?'':t), m=s.match(/\s+((?:\([가-하]\)\s*){2,})$/); if(!m) return s; var body=s.slice(0, s.length-m[0].length);
+  return (m[1].match(/\([가-하]\)/g)||[]).every(function(l){ return body.indexOf(l)>=0; }) ? body : s; }
+function _jr3Strip(t, q){ t=_jrTailHdr(t); var h=_comboHdr3(q); return h ? String(t==null?'':t).replace(new RegExp('\\s+'+h[0]+'\\s+'+h[1]+'\\s*$'),'') : t; }   // ③ 자료 끝 표 머리 「스키마 인스턴스」를 문제 화면에서 뗀다
 function _opt3(o, q){ var h=_comboHdr3(q); if(!h) return o; var g=String(o||'').replace(/[,，]\s+/g,',').trim().split(/\s+/); return g.length===2 ? '<b>'+h[0]+'</b> '+g[0].replace(/,/g,', ')+'  /  <b>'+h[1]+'</b> '+g[1].replace(/,/g,', ') : o; }   // ③ 보기 「ㄱ, ㄹ ㄴ, ㄷ」 → 「스키마 ㄱ, ㄹ / 인스턴스 ㄴ, ㄷ」
 function _comboCatOf(q, ansN, k){ try{
   var a=String(((q&&q.opts)||[])[((ansN&&ansN[0])||0)-1]||''); if(!a||!k) return '';
