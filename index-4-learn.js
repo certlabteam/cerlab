@@ -1116,6 +1116,8 @@ function _comboHdr3(q){ try{
   var ok=((q.opts||[]).length>0) && (q.opts||[]).every(function(o){ var g=String(o||'').replace(/[,，]\s+/g,',').trim().split(/\s+/); return g.length===2 && g.every(function(x){ return /^[ㄱ-ㅎ](,[ㄱ-ㅎ])*$/.test(x); }); });   // 묶음 둘 다 자모(ㄱ,ㄹ)일 때만 — 「감소 상승」 같은 보기(sta26_s5_4)는 아니다
   return ok ? [qm[1], qm[2]] : null;
 }catch(e){ return null; } }
+/* [2026-11-13 크리스 「빼」] 묶음으로 나누는 문제(분류형)는 진술마다 O/X 가 맞지 않는다 — 문제 화면 진술 O/X 단추를 안 단다 */
+function _isCatCombo(q){ try{ if(_comboHdr3(q)) return true; var a=ansArr(q.ans); return ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ'].some(function(k){ return !!_comboCatOf(q, a, k); }); }catch(e){ return false; } }
 function _jr3Strip(t, q){ var h=_comboHdr3(q); return h ? String(t==null?'':t).replace(new RegExp('\\s+'+h[0]+'\\s+'+h[1]+'\\s*$'),'') : t; }   // ③ 자료 끝 표 머리 「스키마 인스턴스」를 문제 화면에서 뗀다
 function _opt3(o, q){ var h=_comboHdr3(q); if(!h) return o; var g=String(o||'').replace(/[,，]\s+/g,',').trim().split(/\s+/); return g.length===2 ? '<b>'+h[0]+'</b> '+g[0].replace(/,/g,', ')+'  /  <b>'+h[1]+'</b> '+g[1].replace(/,/g,', ') : o; }   // ③ 보기 「ㄱ, ㄹ ㄴ, ㄷ」 → 「스키마 ㄱ, ㄹ / 인스턴스 ㄴ, ㄷ」
 function _comboCatOf(q, ansN, k){ try{
@@ -1858,7 +1860,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   expFold(root, q);   // 해설 접기(위 함수 머리글)
-  resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); markComboStmts(root, !mqInReview && !_isPairOpts(q) && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
+  resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); markComboStmts(root, !mqInReview && !_isPairOpts(q) && !_isCatCombo(q) && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
   /* [2026-09-26] 시험이 바뀔 때 GA4 에 page_view 를 한 번 보낸다.
