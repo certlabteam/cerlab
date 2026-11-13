@@ -1107,8 +1107,20 @@ function _hasConcept(e){ return !!(e && ((Array.isArray(e.cpt)&&e.cpt.length) ||
 // 개념(exp.cpt)이 묶은 하위 마스터 참조(mn/tbl/grp) 수집 — "개념=마스터의 마스터" 체인
 /* [2026-10-19] 분류형 조합(진술을 두 갈래로 나눠 묶는 문항)은 진술마다 「옳음/옳지 않음」이 아니라 갈래 이름을 단다 — ㄱ 통화량이 저량인데 「옳음」으로 떠 헷갈렸다(크리스 「새로운유형이다 이건 해설을 유량이다 저량이다 라고 표현되어야해 옳다 옳지 않다가 아니라」 intro25_7).
    두 꼴을 본다. ① 정답 보기가 「[ㄴ, ㄹ, ㅁ] / [ㄱ, ㄷ, ㅂ]」이고 발문 끝에 「[유량변수 / 저량변수]」 머리표 ② 정답 보기가 「위탁관리방식 - ㄴ, ㄹ, ㅁ, ㅂ」이고 다른 보기에 다른 이름(자기관리방식)이 있을 때. 둘 다 아니면 '' — 종전대로 옳음/옳지 않음. */
+/* [2026-11-13] ③ 표 머리가 자료 끝에 붙은 분류형 — 발문 「스키마와 인스턴스에 관한 …」, 자료 끝 줄 「… 스키마 인스턴스」, 보기 「ㄱ, ㄹ ㄴ, ㄷ」(앞 묶음·뒤 묶음).
+   진술마다 「옳음」이 떠 왜 ㄱ·ㄹ, ㄴ·ㄷ로 묶이는지 안 보였다(크리스 「이런건 2개씩 묶는거니까 해설이 좀 달라야지」 「처음나온형태네」 gov9data dat23_s4_6). 머리 두 말을 돌려준다. */
+function _comboHdr3(q){ try{
+  var jl=String((q&&q.jaryo)||'').replace(/\s+$/,'').split('\n').pop()||'';
+  var qm=jl.match(/\s([가-힣A-Za-z]{2,})\s+([가-힣A-Za-z]{2,})$/); if(!qm) return null;
+  if(String((q&&q.q)||'').indexOf(qm[1]+(/[가-힣]/.test(qm[1].slice(-1)) && (qm[1].charCodeAt(qm[1].length-1)-0xAC00)%28 ? '과 ' : '와 ')+qm[2])<0) return null;
+  var ok=((q.opts||[]).length>0) && (q.opts||[]).every(function(o){ var g=String(o||'').replace(/[,，]\s+/g,',').trim().split(/\s+/); return g.length===2 && g.every(function(x){ return /^[ㄱ-ㅎ](,[ㄱ-ㅎ])*$/.test(x); }); });   // 묶음 둘 다 자모(ㄱ,ㄹ)일 때만 — 「감소 상승」 같은 보기(sta26_s5_4)는 아니다
+  return ok ? [qm[1], qm[2]] : null;
+}catch(e){ return null; } }
+function _jr3Strip(t, q){ var h=_comboHdr3(q); return h ? String(t==null?'':t).replace(new RegExp('\\s+'+h[0]+'\\s+'+h[1]+'\\s*$'),'') : t; }   // ③ 자료 끝 표 머리 「스키마 인스턴스」를 문제 화면에서 뗀다
+function _opt3(o, q){ var h=_comboHdr3(q); if(!h) return o; var g=String(o||'').replace(/[,，]\s+/g,',').trim().split(/\s+/); return g.length===2 ? '<b>'+h[0]+'</b> '+g[0].replace(/,/g,', ')+'  /  <b>'+h[1]+'</b> '+g[1].replace(/,/g,', ') : o; }   // ③ 보기 「ㄱ, ㄹ ㄴ, ㄷ」 → 「스키마 ㄱ, ㄹ / 인스턴스 ㄴ, ㄷ」
 function _comboCatOf(q, ansN, k){ try{
   var a=String(((q&&q.opts)||[])[((ansN&&ansN[0])||0)-1]||''); if(!a||!k) return '';
+  var h3=_comboHdr3(q); if(h3){ var g3=a.replace(/[,，]\s+/g,',').trim().split(/\s+/); if((g3[0].match(/[ㄱ-ㅎ]/g)||[]).indexOf(k)>=0) return {n:h3[0], i:0}; if((g3[1].match(/[ㄱ-ㅎ]/g)||[]).indexOf(k)>=0) return {n:h3[1], i:1}; return ''; }
   var hm=String(q.q||'').match(/\[\s*([^\[\]\/\n]+?)\s*\/\s*([^\[\]\/\n]+?)\s*\]\s*$/);
   var gs=a.split('/');
   if(hm && gs.length===2){ var g0=gs[0].match(/[\u3131-\u314E]/g)||[], g1=gs[1].match(/[\u3131-\u314E]/g)||[];
@@ -1469,7 +1481,7 @@ function renderSaExam(root, q, qs, pct, examName, examSet){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' \uBB38\uD56D</span><span></span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+stemHTML(rm(stem,q))+'</div></div>'+
     '</div>'+
-    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(jaryo),q)).replace(/ \/ /g,'<br>')))/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 intro25_7) */+'</div>':'')+imgBlock(q)+
+    '<div class="qcard">'+(jaryo?'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(_jr3Strip(jaryo,q)),q)).replace(/ \/ /g,'<br>')))/* [2026-10-19] 분류형 머리표 「[유량변수 / 저량변수]」는 「 / 」 줄바꿈에 갈려 두 줄로 보였다 — 「[유량변수] / [저량변수]」 한 줄로(크리스 「[유량변수]/[저량변수] 이렇게 표시되어야지 문제보기에」 intro25_7) */+'</div>':'')+imgBlock(q)+
     '<div class="sa-list">'+inputs+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">\u25C0 \uC774\uC804</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+qid+'\')">'+(showExp?'\uC815\uB2F5 \uC228\uAE30\uAE30':'\uC815\uB2F5\u00B7\uD574\uC124')+'</button>'+
@@ -1576,7 +1588,7 @@ function renderMcqExam(root){
     else if(sel===n)cls+=' sel';
     const oimg=(q.optImg && q.optImg[i])?'<div class="oimg">'+imgInner(q.optImg[i])+'</div>':'';
     const oxBtns=(optOX && o && !showExp)?'<span class="opt-ox" data-oxk="o'+i+'" onclick="event.stopPropagation()"><button type="button" class="jox jox-o" onclick="event.stopPropagation();joxToggle(this)">O</button><button type="button" class="jox jox-x" onclick="event.stopPropagation();joxToggle(this)">X</button></span>':'';
-    const otxt=o?('<div class="otxt">'+_optTbl(_jaryoDots(rm(o,q)))+oxBtns+'</div>'):'';   // [2026-07-20] 보기 ○→· 일관 적용
+    const otxt=o?('<div class="otxt">'+_opt3(_optTbl(_jaryoDots(rm(o,q))),q)+oxBtns+'</div>'):'';   // [2026-07-20] 보기 ○→· 일관 적용
     return '<div class="'+cls+(oimg?' opt-img':'')+'" onclick="mqPick(\''+q.id+'\','+n+')"><div class="onum">'+n+'</div>'+otxt+oimg+'</div>';
   }).join('');
   let expHTML='';
@@ -1610,6 +1622,8 @@ function renderMcqExam(root){
     if(isCombo && !stmts.length && q.exp && q.exp.comboByStmt===true){ var _jm={}; (q.opts||[]).forEach(function(o){ (_isPairOpts(q) ? (String(o).match(/(?:^|[,\s])([ㄱ-ㅎ㉠-㉭A-E])(?=\s*[:：])/g)||[]).map(function(x){ return x.replace(/[,\s]/g,''); }) : (String(o).match(/[ㄱ-ㅎ㉠-㉭]/g)||[])).forEach(function(c){ _jm[c]=1; }); }); stmts=Object.keys(_jm).sort().map(function(c){ return {k:c, t:''}; }); }   // [2026-08-11] jaryo 인자 누락 수정 — 지문이 jaryo에만 있으면 comboOK가 안 서서 해설이 지문 아닌 보기에 붙었다
     var comboOK = isCombo && stmts.length>0 && stmts.length===oFilled;  // 파싱수=교정문수 일치할 때만
     if(comboOK){ var _ansTxt=ansN.map(function(n){ return n+'번'+((q.opts&&q.opts[n-1])?'('+q.opts[n-1]+')':''); }).join(' · ');
+      /* [2026-11-13] 분류형은 「정답 2번(스키마 ㄱ·ㄹ / 인스턴스 ㄴ·ㄷ)」처럼 묶음 이름을 붙인다 — 「ㄱ, ㄹ ㄴ, ㄷ」만으론 어느 쪽이 무엇인지 안 보였다 */
+      try{ var _cg=[[],[]], _cn=['','']; stmts.forEach(function(s){ var c=_comboCatOf(q, ansN, s.k); if(c){ _cg[c.i].push(s.k); _cn[c.i]=c.n; } }); if(_cg[0].length && _cg[1].length) _ansTxt=ansN[0]+'번('+_cn[0]+' '+_cg[0].join('·')+' / '+_cn[1]+' '+_cg[1].join('·')+')'; }catch(_){}
       var _bd=' <span class="eo-badge">✅ 정답 '+_ansTxt+'</span>';
       var _ni=body.lastIndexOf('<div class="note">'); if(_ni>=0){ var _ne=body.indexOf('</div>',_ni); if(_ne>0) body=body.slice(0,_ne)+_bd+body.slice(_ne); } }
     var exArr=(q.exp && Array.isArray(q.exp.ex))?q.exp.ex:[];
@@ -1648,11 +1662,16 @@ function renderMcqExam(root){
         var _isO = inAns!==_stN;
         var verdictTag = ' <span class="eo-verdict '+(_isO?'eo-grn':'eo-red')+'">'+(_isO?'옳음':'옳지 않음')+'</span>';
         var _qh=String(q.q||'').split(/ㄱ\s*[.．]/)[0]; if(!/옳|틀|적절/.test(_qh)){ if(/관련\s*(있|이\s*있)/.test(_qh)) verdictTag=' <span class="eo-verdict '+(_isO?'eo-grn':'eo-red')+'">'+(_isO?'관련 있음':'관련 없음')+'</span>'; else if(/해당하는|해당되는/.test(_qh)) verdictTag=' <span class="eo-verdict '+(_isO?'eo-grn':'eo-red')+'">'+(_isO?'해당':'해당하지 않음')+'</span>'; }   // [2026-10-20] 「관련 있는 것/해당하는 것을 고른」 조합형은 옳음 대신 관련 있음·해당(호텔관리사 h21_26 푸드 마일리지)
+        /* [2026-11-13] 「허용되지 않는 행위만을 고른」처럼 옳음 대신 발문의 말로 단다 — 정답에 든 진술이 「옳음」으로 떠 헷갈렸다(크리스 「이런건 옳음 옳지 않음이 아니라 허용 허용되지 않음 이렇게 표시가 되어야할듯」 gov9elect ele22_s4_3) */
+        if(!/옳|틀|적절|해당|관련/.test(_qh)){ var _ng=_qh.match(/([가-힣]{1,6}?)(되|하)지\s*않는/), _ps=!_ng && _qh.match(/([가-힣]{1,6}?)(되|하)는\s*(?:것|행위|사항|경우|내용)/);
+          if(_ng && _ng[1].length>2 && _ng[1][0]==='에') _ng[1]=_ng[1].slice(1); if(_ps && _ps[1].length>2 && _ps[1][0]==='에') _ps[1]=_ps[1].slice(1);   // 「leadership)에포함되는」 띄어쓰기 없는 원문(c20_106)
+          if(_ng) verdictTag=' <span class="eo-verdict '+(inAns?'eo-red':'eo-grn')+'">'+_ng[1]+(inAns?_ng[2]+'지 않음':(_ng[2]==='되'?'됨':'함'))+'</span>';
+          else if(_ps && /허용|인정|포함|면제|가능/.test(_ps[1])) verdictTag=' <span class="eo-verdict '+(inAns?'eo-grn':'eo-red')+'">'+_ps[1]+(inAns?(_ps[2]==='되'?'됨':'함'):_ps[2]+'지 않음')+'</span>'; }
         if(/순서|차례|순으로|나열/.test(_qh)){ var _yr=String(raw).match(/\d{3,4}\s*년/); verdictTag=_yr?' <span class="eo-verdict eo-grn">'+_yr[0]+'</span>':''; }   // [2026-10-20] 순서 맞추기형은 옳음 대신 그 진술의 연도(관광 법규 제정 순서 h22_29 · 크리스 「조합형으로 한번만 설명하면 되지」)
         if(_isPairOpts(q)){ var _pm={}; ansN.forEach(function(n){ String((q.opts||[])[n-1]||'').split(/[,，]\s*(?=[ㄱ-ㅎA-E]\s*[:：])/).forEach(function(p){ var m=p.match(/^\s*([ㄱ-ㅎA-E])\s*[:：]\s*(.+?)\s*$/); if(m) _pm[m[1]]=m[2]; }); }); verdictTag=_pm[s.k]?' <span class="eo-verdict eo-grn">'+_pm[s.k]+'</span>':''; }   // [2026-10-27] 짝짓기형(「ㄴ: 절차기억, ㄷ: 일화기억」)은 정답 조합에 안 쓰인 진술도 참일 수 있다 — 옳음/옳지 않음 대신 정답 선지의 짝 이름만(ycounselor3 yc325_2_14)
         var _cat=_comboCatOf(q, ansN, s.k); if(_cat) verdictTag=' <span class="eo-verdict '+(_cat.i?'eo-red':'eo-grn')+'">'+_cat.n+'</span>';   // [2026-10-19] 분류형은 옳음/옳지 않음 대신 갈래 이름 — 앞 갈래 녹색·뒤 갈래 빨강(크리스 「저량 유량 색상 다르게 써야지 녹색 빨간색 쓰던거 써」)
         var ansTag = '';   // [2026-10-17] 진술 옆엔 옳음/옳지 않음만 — 정답은 선지에 붙는 말(크리스 「진술 ㄱ ㄴ ㄷ 하나씩 우측에 정답은 안맞아」)
-        var _stT=String(s.t||'').replace(/\s*\[[^\[\]\n]+\/[^\[\]\n]+\]\s*$/,'').replace(/\s*\/\s*$/,'');   /* [2026-10-19] 원문 진술 구분자 「/」가 진술 끝에 붙어 「… / 옳음」으로 보였다(호텔관리사 h21_12) */   // [2026-10-19] 마지막 진술(ㅂ)에 발문 끝 머리표 「[유량변수 / 저량변수]」가 붙어 나왔다
+        var _stT=String(s.t||'').replace(/\s*\[[^\[\]\n]+\/[^\[\]\n]+\]\s*$/,'').replace(/\s*\/\s*$/,''); var _h3=_comboHdr3(q); if(_h3) _stT=_stT.replace(new RegExp('\\s+'+_h3[0]+'\\s+'+_h3[1]+'\\s*$'),'');   /* [2026-11-13] ③ 마지막 진술에 붙은 표 머리 「스키마 인스턴스」를 뗀다 */   /* [2026-10-19] 원문 진술 구분자 「/」가 진술 끝에 붙어 「… / 옳음」으로 보였다(호텔관리사 h21_12) */   // [2026-10-19] 마지막 진술(ㅂ)에 발문 끝 머리표 「[유량변수 / 저량변수]」가 붙어 나왔다
         var q1='<div class="eo-q">'+s.k+'. '+rm(_stT,q)+verdictTag+ansTag+'</div>';
         var a1= sv.rest ? ('<div class="eo-a">'+rm(sv.rest,q)+'</div>') : '';
         var exTxt = (exArr[i]&&String(exArr[i]).trim()) ? '<div class="eo-ex"><span class="eo-ex-ti">예)</span>'+rm(_exTrim(exArr[i]),q)+'</div>' : '';
@@ -1833,7 +1852,7 @@ function renderMcqExam(root){
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview&&mqAns[q.id]===undefined):tpSwap(_jaryoDots(stemHTML(rm(_stemQ,q))),q.id))+'</div>'+guessHint+'</div>'+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(jr.jaryo),q)).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(_jr3Strip(jr.jaryo,q)),q)).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
