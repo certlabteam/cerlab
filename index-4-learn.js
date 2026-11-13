@@ -1232,7 +1232,8 @@ function countStemHTML(rawStem, q, withOX){
 /* [2026-11-13 크리스 「선지 개행해야지 이런경우」] 자료가 (가)로 시작하고 (나)·(다)… 가 한 문단에 이어 붙어 있으면 각자 줄로 */
 function _jrGaNaBreak(h){
   var t=String(h||''); if(!/^\s*(?:<[^>]+>\s*)*\(가\)/.test(t) || !/\(나\)/.test(t)) return t;
-  return t.replace(/([^\n>])[ \t]+\((나|다|라|마|바)\)(?=\s)/g, '$1<br>($2)');
+  /* [2026-11-13 크리스 「문제보기 나 다 가 붙어있다고」] 「(가) (나) (다)」 처럼 칸 이름이 이어지면 (다)가 (나) 옆에 붙어 남았다 — 앞 글자를 소비하지 않게 하고 글 끝의 칸 이름도 나눈다(ifs24_s5_5) */
+  return t.replace(/[ \t]+\((나|다|라|마|바)\)(?=\s|$)/g, function(m, k, i){ var p=t.charAt(i-1); return (p==='>'||p==='\n') ? m : '<br>('+k+')'; });
 }
 function markComboStmts(scope, addOX){
   (scope||document).querySelectorAll('#mcqView .jaryo').forEach(function(el){
