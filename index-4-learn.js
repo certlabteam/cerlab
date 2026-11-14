@@ -1234,7 +1234,16 @@ function countStemHTML(rawStem, q, withOX){
   return head+'<div class="qbul-wrap">'+rows+'</div>';
 }
 /* [2026-11-13 크리스 「선지 개행해야지 이런경우」] 자료가 (가)로 시작하고 (나)·(다)… 가 한 문단에 이어 붙어 있으면 각자 줄로 */
-function _jrGaNaBreak(h){
+/* [2026-11-14 크리스 「클라이언트 복지사 문단 개행 구분」] 대화 자료(「클라이언트: … 사회복지사: …」)는 말하는 사람마다 줄을 나누고 이름을 굵게(prb26_s5_6).
+   자료가 「이름:」으로 시작하고 서로 다른 이름이 둘 이상 「이름:」 꼴로 나올 때만. */
+function _jrDialog(h){
+  var t=String(h||''), m=t.match(/^\s*([가-힣A-Za-z]{2,8})\s*[:：]/); if(!m) return t;
+  var names={}; (t.match(/(?:^|[\s.?!…])([가-힣A-Za-z]{2,8})\s*[:：]\s/g)||[]).forEach(function(x){ names[x.replace(/^[\s.?!…]+/,'').replace(/\s*[:：]\s*$/,'')]=1; });
+  var L=Object.keys(names).filter(function(n){ return n!=='예' && n!=='단'; }); if(L.length<2 || !names[m[1]]) return t;
+  var re=new RegExp('(^|[\\s.?!…])('+L.join('|')+')\\s*[:：]\\s','g');
+  return t.replace(re, function(all, pre, n, i){ return (i===0&&!pre?'':pre.replace(/\s+$/,'')+'<br>')+'<b>'+n+':</b> '; }).replace(/^<br>/,'');
+}
+function _jrGaNaBreak(h){ h=_jrDialog(h);
   var t=String(h||''); if(!/^\s*(?:<[^>]+>\s*)*\(가\)/.test(t) || !/\(나\)/.test(t)) return t;
   /* [2026-11-13 크리스 「문제보기 나 다 가 붙어있다고」] 「(가) (나) (다)」 처럼 칸 이름이 이어지면 (다)가 (나) 옆에 붙어 남았다 — 앞 글자를 소비하지 않게 하고 글 끝의 칸 이름도 나눈다(ifs24_s5_5) */
   return t.replace(/[ \t]+\((나|다|라|마|바)\)(?=\s|$)/g, function(m, k, i){ var p=t.charAt(i-1); return (p==='>'||p==='\n') ? m : '<br>('+k+')'; });
