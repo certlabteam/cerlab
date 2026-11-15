@@ -1236,6 +1236,8 @@ function countStemHTML(rawStem, q, withOX){
 /* [2026-11-13 크리스 「선지 개행해야지 이런경우」] 자료가 (가)로 시작하고 (나)·(다)… 가 한 문단에 이어 붙어 있으면 각자 줄로 */
 /* [2026-11-14 크리스 「클라이언트 복지사 문단 개행 구분」] 대화 자료(「클라이언트: … 사회복지사: …」)는 말하는 사람마다 줄을 나누고 이름을 굵게(prb26_s5_6).
    자료가 「이름:」으로 시작하고 서로 다른 이름이 둘 이상 「이름:」 꼴로 나올 때만. */
+/* [2026-11-15 크리스 「한줄로」] 수식 칸(.cc-eq)이 칸보다 넓으면 글자를 1px씩 줄여 한 줄에 맞춘다(11px 아래로는 안 줄임 — 그래도 넘치면 가로 스크롤) */
+function _eqFit(root){ try{ (root||document).querySelectorAll('.cc-eq').forEach(function(e){ e.style.fontSize=''; var px=parseFloat(getComputedStyle(e).fontSize)||14; var n=0; while(e.scrollWidth>e.clientWidth+1 && px>11 && n++<10){ px-=1; e.style.fontSize=px+'px'; } }); }catch(_){} }
 function _jrDialog(h){
   var t=String(h||''), m=t.match(/^\s*([가-힣A-Za-z]{2,8})\s*[:：]/); if(!m) return t;
   var names={}; (t.match(/(?:^|[\s.?!…])([가-힣A-Za-z]{2,8})\s*[:：]\s/g)||[]).forEach(function(x){ names[x.replace(/^[\s.?!…]+/,'').replace(/\s*[:：]\s*$/,'')]=1; });
@@ -1874,7 +1876,7 @@ function renderMcqExam(root){
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
     expHTML+'</div>';
   expFold(root, q);   // 해설 접기(위 함수 머리글)
-  resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); markComboStmts(root, !mqInReview && !_isPairOpts(q) && !_isCatCombo(q) && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
+  resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); _eqFit(root); markComboStmts(root, !mqInReview && !_isPairOpts(q) && !_isCatCombo(q) && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.
   try{ if(mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag && !mqGather && q && q.id && typeof mqCert!=='undefined') history.replaceState(null,'',location.pathname+location.search+'#q/'+mqCert+'/'+q.id); }catch(_){}
   /* [2026-09-26] 시험이 바뀔 때 GA4 에 page_view 를 한 번 보낸다.

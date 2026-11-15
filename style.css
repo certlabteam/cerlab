@@ -645,6 +645,11 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 #mcqView .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;margin:0 2px;line-height:1.05;text-indent:0;white-space:normal}
 #mcqView .frac .fn{border-bottom:1.4px solid currentColor;padding:0 2px;font-size:0.8em}
 #mcqView .frac .fd{padding:0 2px;font-size:0.8em}
+/* [2026-11-15 크리스 「분자분모 표시는 좋은데 글씨크기 = 기호 좌측과 크기같아야지」] 수식 블록 안 분수는 = 왼쪽 글자와 같은 크기로(saf26_s4_7) */
+#mcqView .cc-eq .frac .fn,#mcqView .cc-eq .frac .fd,.subj-view .cc-eq .frac .fn,.subj-view .cc-eq .frac .fd{font-size:1em}
+/* 한 줄로(크리스 「한줄로」) — 줄바꿈 없이 두고, 칸보다 길면 _eqFit 이 글자를 조금씩 줄여 맞춘다 */
+#mcqView .cc-eq,.subj-view .cc-eq{white-space:nowrap}
+#mcqView .cc-eq .frac,.subj-view .cc-eq .frac{white-space:nowrap}
 #mcqView sub{font-size:0.7em;vertical-align:sub;line-height:0}
 #mcqView sup{font-size:0.7em;vertical-align:super;line-height:0}
 #mcqView .b-learn{background:#EAF0F9;color:#0C447C;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800;cursor:pointer}
