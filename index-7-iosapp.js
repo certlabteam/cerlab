@@ -14,10 +14,25 @@ function clAppCall(o){
   if(!CL_IOS_APP) return;
   try{ document.documentElement.classList.add('ios-app'); }catch(_){}
 
-  /* 로그인 창: 웹 창은 그대로 열어 두고(「다른 방법으로 로그인」이면 앱이 제 창만 닫는다) 앱 로그인 화면도 띄운다 */
+  /* 로그인 창: [11-15 크리스 「그냥 로그인 방법 다 보여주면 되잖아」] 앱 로그인 화면 하나에 카카오·Apple·구글·이메일을 다 보인다.
+   * 웹 창은 열지 않는다. 앱에서 「이메일로 로그인」을 누르면 certlabAppEmailLogin 이 이메일 칸만 있는 웹 창을 연다.
+   * 옛 앱(이 연결이 없는 판)이면 clAppCall 이 false 라 웹 창을 그대로 연다. */
   var _login = window.showLoginPopup;
   if(typeof _login === 'function'){
-    window.showLoginPopup = function(){ var r = _login.apply(this, arguments); clAppCall({ 할일:'로그인필요' }); return r; };
+    window.showLoginPopup = function(){ if(clAppCall({ 할일:'로그인필요' })) return; return _login.apply(this, arguments); };
+    window.certlabAppEmailLogin = function(){
+      _login.call(window);
+      try{
+        var p = document.getElementById('loginPopup'); if(p) p.classList.add('email-only');
+        var box = document.getElementById('emailAuthBox'); if(box) box.classList.remove('hidden');
+        var id = document.getElementById('emailAuthId'); if(id) id.focus();
+      }catch(_){}
+    };
+    try{
+      var st = document.createElement('style');
+      st.textContent = '#loginPopup.email-only .login-row,#loginPopup.email-only #emailAuthToggle{display:none}';
+      document.head.appendChild(st);
+    }catch(_){}
   }
 
   /* 이용권: 앱 안에서는 웹 결제(토스·포인트)를 보이지 않고 앱의 App Store 이용권 화면을 연다(애플 규칙) */
