@@ -427,6 +427,8 @@ if (firebaseReady) {
       guestCounts = blankGuest();
       appWrong={};
       updateAuthBar();
+      /* [2026-11-15 크리스] 「로그아웃 했으면 랜딩이 떠야지」 — 마이페이지에서 로그아웃하면 그 화면이 남아 있었다 → 홈(손님은 랜딩)으로 */
+      try{ var _mp=document.getElementById('myPageView'); if(_mp && !_mp.classList.contains('hidden') && typeof goHome==='function') goHome(); }catch(_){}
     }
     refresh();
     routeAfterAuth();
