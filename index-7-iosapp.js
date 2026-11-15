@@ -44,6 +44,7 @@ function clAppCall(o){
         var cert = (typeof activeCertId === 'function') ? activeCertId() : '';
         var 등급 = (typeof _certTier === 'function') ? _certTier(cert) : 'standard';
         var 이름 = (typeof certFull === 'function') ? certFull(cert) : cert;
+        try{ localStorage.setItem('cl_ios_pay_exam', cert); }catch(_){}   // 앱을 다시 열어 이어 켤 때 어느 시험인지(R5)
         if(clAppCall({ 할일:'결제열기', 시험:cert, 등급:등급, 시험이름:이름 })) return;
       }catch(e){ console.warn('앱 결제 열기 실패', e); }
       return _plan.apply(this, arguments);
@@ -77,6 +78,26 @@ function clAppCall(o){
     window.renderMCQ = function(){ var r = _render.apply(this, arguments); 광고알리기(); return r; };
   }
   window.clAppAdSync = 광고알리기;
+
+  /* [11-15 크리스 「다매루틴도 수업 끝나면 큰 광고 하나 띄우잖아 · 한 회차 다 풀거나 테스트 끝나거나」]
+   * 무료 이용자가 기출 한 회차를 끝까지 풀었을 때 · 레벨테스트를 끝냈을 때만 앱에 전면 광고를 부탁한다.
+   * 레벨업(5문제)·복습·OX·푸는 도중엔 안 부른다. 3분에 한 번 제한은 앱이 한다. 광고는 결과 화면 위에 떴다가 닫히면 결과가 그대로 보인다. */
+  var _결과 = window.mqResult;
+  if(typeof _결과 === 'function'){
+    window.mqResult = function(){
+      var r = _결과.apply(this, arguments);
+      try{
+        var M = (typeof mqResultMeta !== 'undefined') ? mqResultMeta : null;
+        if(M){
+          var 회차끝 = !M.lu && !M.review && !M.diag && M.mode === 'all';
+          var e = (typeof userEnt !== 'undefined' && userEnt && userEnt[M.cert]) || {};
+          if((M.levelTest || 회차끝) && e.plan !== 'ACTIVE') clAppCall({ 할일:'전면광고' });
+        }
+      }catch(_){}
+      return r;
+    };
+  }
+  window.certlabAppAdDone = function(){};   // 앱이 광고를 닫으면 부른다 — 지금은 할 일 없음(결과는 이미 그려져 있다)
 })();
 
 /* 앱 → 웹: 앱 로그인 결과로 Firebase 로그인. {공급자:'google'|'apple'|'kakao', 토큰, nonce?, 인가코드?} */
@@ -146,10 +167,12 @@ window.certlabAppPurchased = async function(a){
   try{
     if(typeof currentUser === 'undefined' || !currentUser){ window.showLoginPopup(); return { ok:false, error:'로그인 필요' }; }
     if(!fbFunctions) throw new Error('결제 확인 준비가 아직 안 됐어요.');
-    var r = await fbFunctions.httpsCallable('confirmApplePurchase')({ jws:a.jws, productId:a['상품'] || a.productId, examId:a['시험'] || a.examId });
+    var 시험 = a['시험'] || a.examId; if(!시험){ try{ 시험 = localStorage.getItem('cl_ios_pay_exam') || ''; }catch(_){} }
+    var r = await fbFunctions.httpsCallable('confirmApplePurchase')({ jws:a.jws, productId:a['상품'] || a.productId, examId:시험 });
     var d = (r && r.data) || {};
     if(d.status === 'PAID' || d.status === 'ALREADY'){
-      var 이름 = (typeof certFull === 'function') ? certFull(a['시험'] || a.examId) : '';
+      clAppCall({ 할일:'결제끝', 상품:a['상품'] || a.productId });   // 서버가 켠 뒤에만 앱이 애플 거래를 끝낸다(R5 — 실패하면 다음에 앱을 열 때 애플이 다시 넘겨줘 이어 켬)
+      var 이름 = (typeof certFull === 'function') ? certFull(시험) : '';
       try{ if(typeof clNotice === 'function') await clNotice((이름 ? 이름 + ' ' : '') + '이용권을 켰어요.'); }catch(_){}
       location.reload();
     }
