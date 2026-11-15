@@ -1035,7 +1035,7 @@ function updateAuthBar() {
     bar.innerHTML = '<button class="btn-login" onclick="showLoginPopup()">로그인</button>';
     return;
   }
-  const _fb = `<div style="width:28px;height:28px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
+  const _fb = `<div style="width:34px;height:34px;border-radius:50%;background:#B5D4F4;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#185FA5">${(currentUser.displayName||'U')[0]}</div>`;
   /* [2026-10-13] 옛 카카오 계정은 http 사진 주소를 줘서 https 화면에서 막힌다 → https 로 바꾼다.
    *   주소가 죽어 깨지면 머리글자 원으로 돌린다(일구미와 함께 UIUX_모바일 「프로필 사진」에 맞춤). */
   const img = currentUser.photoURL
