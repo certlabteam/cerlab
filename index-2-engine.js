@@ -1110,14 +1110,38 @@ function flipCard(){
   renderCard();
 }
 
-function countUp(cert){
+function countUp(cert, qid){
   cert = cert || activeCertId();
   solveCountByCert[cert]=(solveCountByCert[cert]||0)+1;
   solveCount=totalSolve();
   setStatCountUI();
   checkMilestone(totalSolve());
   if(typeof _pushTick==='function') _pushTick();
+  clSolveTick(cert, qid);
   srSaveDebounced();
+}
+/* [2026-11-16 점검] 추천 보상·앱 혜택 조건의 푼 수는 서버가 센다(countSolve) — 회원이 userData.solveCount 를 고쳐 받던 구멍.
+ *   받을 게 남은 회원만 부른다: 추천 연결됨+아직 안 받음 / 앱에서 풀고+앱 혜택 아직 안 받음. 서버가 「더 안 세도 됨」이라 하면
+ *   그 기기에선 다시 안 부른다(srvRefDone_·srvAppDone_). 같은 문항은 한 화면에서 한 번만. 실패해도 풀이는 그대로 간다. */
+var _srvSolveSent = {};
+function clSolveTick(cert, qid){
+  try{
+    if(!qid || typeof currentUser==='undefined' || !currentUser || typeof fbFunctions==='undefined' || !fbFunctions) return;
+    var uid=currentUser.uid, ls=localStorage;
+    var ref=(typeof myReferredBy!=='undefined') && !!myReferredBy && !ls.getItem('refClaimed_'+uid) && !ls.getItem('srvRefDone_'+uid);
+    var app=(typeof clInApp==='function') && clInApp() && !ls.getItem('appBonusDone_'+uid) && !ls.getItem('srvAppDone_'+uid);
+    if(!ref && !app) return;
+    var k=cert+'|'+qid+'|'+(app?1:0);
+    if(_srvSolveSent[k]) return;
+    _srvSolveSent[k]=1;
+    fbFunctions.httpsCallable('countSolve')({ cert:cert, qid:String(qid), app:app }).then(function(r){
+      var d=(r&&r.data)||{};
+      try{
+        if(d.refMore===false) ls.setItem('srvRefDone_'+uid,'1');
+        if(app && d.appMore===false) ls.setItem('srvAppDone_'+uid,'1');
+      }catch(_){}
+    }).catch(function(e){ delete _srvSolveSent[k]; console.warn('푼 수 서버 기록 안 됨:', e && e.message); });
+  }catch(_){}
 }
 
 /* ===== SR 저장(디바운스) ===== */
@@ -1141,7 +1165,7 @@ function rate(result){
   if(!canAccess('bodybuilding')) return;
   const card=filtered[current];
   srRate(card,result);
-  countUp('bodybuilding');
+  countUp('bodybuilding', card&&card.id);
   { const e=userEnt.bodybuilding;
     if(e.plan==='GUEST') _guestDayBump('bodybuilding'); if(typeof bumpGuestSolved==='function') bumpGuestSolved();
     if(e.plan==='FREE_TRIAL'){ _userDayBump('bodybuilding'); } }
@@ -1277,7 +1301,7 @@ function toggleWrong(){
   // 오답 표시 후 다음 문제로 이동
   if(current<filtered.length-1){
     if(!canAccess('bodybuilding'))return;
-    countUp('bodybuilding');
+    countUp('bodybuilding', card&&card.id);
     { const e=userEnt.bodybuilding;
       if(e.plan==='GUEST') _guestDayBump('bodybuilding'); if(typeof bumpGuestSolved==='function') bumpGuestSolved();
       if(e.plan==='FREE_TRIAL'){ _userDayBump('bodybuilding'); } }

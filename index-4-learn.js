@@ -1938,7 +1938,7 @@ function mqPick(qid,n){
   }
   if(firstTime){
     if(mqTimeUp) mqOvertimeCount++;
-    countUp(mqCert);
+    countUp(mqCert, qid);
     const e=userEnt[mqCert];
     if(e.plan==='GUEST'){ _guestDayBump(mqCert); } if(typeof bumpGuestSolved==='function') bumpGuestSolved();
     if(e.plan==='FREE_TRIAL'){ _userDayBump(mqCert); } }
