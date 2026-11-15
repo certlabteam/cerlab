@@ -1054,7 +1054,7 @@ function _ltRenderResultGate(M){
   }
   window.scrollTo(0,0);
 }
-function _ltGateLogin(kind){ if(kind==='kakao'){ if(typeof signInWithKakao==='function') signInWithKakao(); return; } if(typeof signInWithGoogle==='function') signInWithGoogle(); }
+function _ltGateLogin(kind){ if(typeof CL_IOS_APP!=='undefined' && CL_IOS_APP && typeof showLoginPopup==='function'){ showLoginPopup(); return; }   /* 2026-11-15 아이폰 앱은 앱 로그인 화면(카카오·Apple·구글)으로 */ if(kind==='kakao'){ if(typeof signInWithKakao==='function') signInWithKakao(); return; } if(typeof signInWithGoogle==='function') signInWithGoogle(); }
 // 비로그인 시험 진입: 레벨테스트 안 했으면 후킹, 했으면(같은 브라우저) 결과 게이트
 function _ltGuestHasDone(cert){ try{ var raw=localStorage.getItem('certlab_lt_pending'); if(!raw) return false; var j=JSON.parse(raw); return !!(j && j.cert===cert && j.ids && j.ids.length); }catch(_){ return false; } }
 function _ltGuestGate(cert){

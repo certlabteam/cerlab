@@ -878,6 +878,7 @@ function checkInAppBrowser() {
 
 function isInAppBrowser() {
   const ua = navigator.userAgent.toLowerCase();
+  if (/certlabios\//.test(ua)) return false;   /* 2026-11-15 우리 아이폰 앱(WKWebView·Safari 없음)은 남의 앱 브라우저가 아니다 — 앱 켜자마자 「구글 로그인이 막혀 있습니다」 창이 떴다 */
   return /kakaotalk|naver|instagram|fban|fbav|line|wechat|micromessenger/.test(ua)
     || (ua.includes('android') && ua.includes('wv'))
     || (ua.includes('iphone') && !ua.includes('safari'));
@@ -1099,7 +1100,7 @@ function _refShareBlockHTML(source){
   return '<div style="margin:10px 0;padding:12px;background:#fff;border:1px solid #E6EEF8;border-radius:12px;text-align:center">'
     + '<div style="font-size:14px;font-weight:700;color:#0C447C;margin-bottom:2px"><img src="icons/gift.png" alt="" class="ic-img ic-in"> 친구 초대하면 한 달 무료</div>'
     + '<div style="font-size:14px;color:#8A7E70;line-height:1.7;margin-bottom:10px">'
-      + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값'+((typeof pwaStandalone==='function'&&pwaStandalone())?'':' · 포인트로 전액 결제')+')<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
+      + '친구가 가입해 문제 30개를 풀면 <b>친구도 나도 9,900P</b><br>(한 달 이용권 값'+((typeof pwaStandalone==='function'&&pwaStandalone())||(typeof CL_IOS_APP!=='undefined'&&CL_IOS_APP)?'':' · 포인트로 전액 결제')+')<br>친구가 결제하면 <b>그 값의 절반</b>도 나에게</div>'
     + '<button onclick="shareReferral(\''+(source||'limit')+'\')" style="width:100%;padding:12px;background:#1D9E75;color:#fff;'
       + 'border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">'
       + '친구에게 보내기</button></div>';
@@ -2217,7 +2218,7 @@ function showPtModal(kind, points, certLabel){
   ic.innerHTML='<img src="icons/'+icName+'.png" alt="" class="popup-hero-ico">';
   /* [2026-10-15] 앱(TWA)에선 「포인트로 결제」를 말하지 않고 안내글 링크도 숨긴다 — 앱 결제는 구글 플레이라 포인트가 안 들고(플레이 정책),
    *   링크는 새 창 대신 앱 안에서 열려 게시글이 문제 화면 밑에 붙었다(크리스 폰 2026-10-15). */
-  var _app=(typeof pwaStandalone==='function' && pwaStandalone());
+  var _app=(typeof pwaStandalone==='function' && pwaStandalone()) || (typeof CL_IOS_APP!=='undefined' && CL_IOS_APP);   /* 2026-11-15 아이폰 앱도 「포인트로 전액 결제」 안내를 뺀다(애플 3.1.1) */
   var _use=_app ? '' : ' 이용권 결제에 전액 쓸 수 있어요.';
   var _gl=ov.querySelector('a[onclick="ptGoGuide()"]'); if(_gl && _gl.parentNode) _gl.parentNode.style.display=_app?'none':'';
   if(kind==='referral'){
