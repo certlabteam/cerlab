@@ -108,7 +108,12 @@ window.certlabAppLogin = async function(a){
     if(typeof auth === 'undefined' || !auth) throw new Error('로그인 준비가 아직 안 됐어요. 잠시 뒤 다시 해 주세요.');
     if(!토큰) throw new Error('로그인 정보가 비어 있어요.');
     if(공급자 === 'google'){
-      await auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(토큰));
+      // 아이폰 앱 구글 토큰엔 nonce 가 들어 있다 — Firebase 가 원문을 요구하면 원문 nonce 를 붙여 다시(전수조사 기기 확인 11-15)
+      try{ await auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(토큰)); }
+      catch(eG){
+        if(!(a.nonce && eG && /nonce/i.test((eG.code || '') + (eG.message || '')))) throw eG;
+        await auth.signInWithCredential(new firebase.auth.OAuthProvider('google.com').credential({ idToken:토큰, rawNonce:a.nonce }));
+      }
     }else if(공급자 === 'apple'){
       var p = new firebase.auth.OAuthProvider('apple.com');
       await auth.signInWithCredential(p.credential({ idToken:토큰, rawNonce:a.nonce }));

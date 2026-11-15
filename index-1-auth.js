@@ -1309,7 +1309,9 @@ async function deleteMyAccount() {
   var lastMs = Date.parse((currentUser.metadata && currentUser.metadata.lastSignInTime) || '') || 0;
   if (!_appleFresh && Date.now() - lastMs > 5 * 60 * 1000) {
     var isGoogle = (currentUser.providerData || []).some(function(p){ return p && p.providerId === 'google.com'; });
-    if (!isGoogle) {
+    // [11-15 아이폰 앱 R4] 앱 웹뷰에선 구글 팝업·리다이렉트가 사파리로 튕긴다 → 카카오·이메일처럼 앱 로그인으로 다시 로그인한 뒤 지우게 한다
+    var _iosApp = (typeof CL_IOS_APP !== 'undefined' && CL_IOS_APP);
+    if (!isGoogle || _iosApp) {
       alert('안전을 위해 한 번 더 로그인해 주세요.\n로그인한 뒤 바로 마이페이지 → 회원 탈퇴를 누르면 삭제됩니다.');
       if (btn) { btn.disabled = false; btn.textContent = '영구 삭제하기'; }
       try { await auth.signOut(); } catch(_){}
@@ -1347,6 +1349,13 @@ async function deleteMyAccount() {
       await currentUser.delete();
     } catch (e) {
       if (e && e.code === 'auth/requires-recent-login') {
+        if (typeof CL_IOS_APP !== 'undefined' && CL_IOS_APP) {   // 아이폰 앱(R4) — 다시 로그인한 뒤 탈퇴
+          alert('안전을 위해 한 번 더 로그인해 주세요.\n로그인한 뒤 바로 마이페이지 → 회원 탈퇴를 누르면 삭제됩니다.');
+          try { await auth.signOut(); } catch(_){}
+          if (typeof hideDeletePopup === 'function') hideDeletePopup();
+          if (typeof showLoginPopup === 'function') showLoginPopup();
+          return;
+        }
         try { await currentUser.reauthenticateWithPopup(googleProvider); }
         catch (e2) {
           if (e2 && (e2.code === 'auth/operation-not-supported-in-this-environment' || e2.code === 'auth/popup-blocked')) {
