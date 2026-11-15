@@ -1741,3 +1741,17 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
  *   작은 단추 공통 규칙(회색 바탕·테두리·28px)에서 빼고 일구미 머리글 프로필처럼 34px 원만 보인다. */
 #authBar .avatar-btn{width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;background:none!important;border:0!important;border-radius:50%!important;box-shadow:none!important}
 #authBar .user-avatar{width:34px;height:34px;border:0}
+/* [2026-11-15 크리스 아이폰 TestFlight 확인 — 모아서 한 번에]
+ * ① 헤더 「헤더가 남아있어야하지 않을까? 밑에 다 내려가서 로그인하려면 다시 위로 올라가야 해」 → 맨 위에 붙어 있게 */
+.header{position:sticky;top:0;z-index:40}
+/* ② 랜딩 시험 단추 「D-1 글씨가 시험 글씨에 따라 잘리네」 — 작은 단추 공통 규칙(28px·한 줄)이 걸려 잘렸다 → 이름은 두 줄까지, D-n 은 늘 다 보이게 */
+#lpWrap .lp-chips button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;height:auto!important;min-height:56px!important;padding:6px 4px!important;font-size:14px!important;white-space:normal!important;word-break:keep-all;overflow:visible!important;text-overflow:clip!important;line-height:18px!important;text-align:center}
+#lpWrap .lp-chips button small{display:block;white-space:nowrap;font-size:12px;line-height:16px}
+/* ③ 푸터 — 줄이 바뀌는 자리에 점만 남지 않게 점을 빼고 간격으로 나눈다 · 아이폰 앱 안에서는 웹 결제 안내(이용권 상품·가격)를 숨긴다(애플 외부 결제 유도 반려) */
+.footer-links .sep{display:none}
+.footer-links{column-gap:14px;row-gap:0}   /* 링크마다 누름 높이 44px(UIUX) — 줄 사이를 더 띄우지 않는다 */
+.ios-app .web-pay-only{display:none!important}
+/* ④ 커뮤니티 카드 아이콘 — 시험 카드 아이콘 칸(.cert-ic)과 같은 크기 */
+.cm-enter .ico{width:52px;height:52px;border-radius:12px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.cm-enter .ico img{width:28px!important;height:28px!important}
+
