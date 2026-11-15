@@ -400,7 +400,7 @@ const REFUND = {
   popSteps:'① 큐넷·한능검 등에서 합격·점수(급수) 화면 캡처<br>② 커뮤니티 「합격후기」에 CertLab 활용 후기를 쓰고 캡처 사진을 붙여 올리기<br>→ 올리는 즉시 포인트 자동 적립! (1P=1원 · 자격증마다 한 번 · 다음 이용권 결제에 사용)'
 };
 function certLabel(c){ return CERT_LABELS[c]||c; }
-function certFull(c){ return CERT_FULLNAMES[c]||c; }
+function certFull(c){ return CERT_FULLNAMES[c]||(typeof LT_CERT_NAMES!=='undefined'&&LT_CERT_NAMES[c])||CERT_LABELS[c]||c; }   // 2026-11-15 표에 없는 시험(9급 건축 gov9arch 등)은 이용권 창에 「gov9arch 이용권」으로 코드가 나왔다 — 매니페스트가 채우는 이름표로 넘겨 받는다(아이폰 앱 이용권 이름도 이 값)
 function blankEnt(){ const o={}; ALL_CERTS.forEach(c=>o[c]={plan:'GUEST',trialCount:0,expireAt:null,planDays:null}); return o; }
 function blankGuest(){ const o={}; ALL_CERTS.forEach(c=>o[c]=0); return o; }
 let userEnt = blankEnt();
