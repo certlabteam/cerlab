@@ -1098,7 +1098,7 @@ function renderRecentPayments() {
       <thead><tr><th>이메일</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th></tr></thead>
       <tbody>${recent.map(p => `
         <tr>
-          <td>${p.email||'-'}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
+          <td>${cmaEsc(p.email||'-')}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
           <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${p.kind==='aigrade'?'<span style="color:#7F4FD8;font-weight:700">🤖 '+(p.wallet==='explain'?'해설':'첨삭')+' '+(p.packSize||0)+'회</span>':(planNames[p.planDays]||p.planDays+'일')}</td>
           <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>
@@ -1116,8 +1116,8 @@ function renderPayments(list) {
       <thead><tr><th>이메일</th><th>입금자</th><th>자격증</th><th>플랜</th><th>금액</th><th>상태</th><th>신청일</th><th>처리</th></tr></thead>
       <tbody>${list.map(p => `
         <tr>
-          <td>${p.email||'-'}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
-          <td><strong>${p.depositorName||'-'}</strong></td>
+          <td>${cmaEsc(p.email||'-')}${isExcludedPay(p)?' <span class="badge" style="background:#EEE;color:#888;font-size:10px">TEST</span>':''}</td>
+          <td><strong>${cmaEsc(p.depositorName||'-')}</strong></td>
           <td style="font-size:11px">${certNameOf(p)}</td>
           <td>${p.kind==='aigrade'?'<span style="color:#7F4FD8;font-weight:700">🤖 '+(p.wallet==='explain'?'해설':'첨삭')+' '+(p.packSize||0)+'회</span>':(planNames[p.planDays]||p.planDays+'일')}</td>
           <td>${p.mileageUsed>0 ? (p.depositAmount||0).toLocaleString()+'원<div style="font-size:11px;color:#C2611B">+마일리지 '+(p.mileageUsed||0).toLocaleString()+'</div>' : (p.price||0).toLocaleString()+'원'}</td>

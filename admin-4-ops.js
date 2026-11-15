@@ -1279,8 +1279,8 @@ function cmaRenderPosts(){
         <td style="font-size:11px"><span class="badge">${CMA_BOARD[p.board]||p.board}</span></td>
         <td style="max-width:220px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${cmaEsc(p.title)}">${p.pinned?'📌 ':''}${cmaEsc(p.title)}</div></td>
         <td style="font-size:11px">${cmaEsc(p.authorNick||'-')}</td>
-        <td style="font-size:11px">▲${p.upCount||0} ▼${p.downCount||0}</td>
-        <td><button class="btn-sm" onclick="cmaToggleComments('${p.id}')" style="background:#F1EFFB;color:#5B50C0;border:none;cursor:pointer">💬 ${p.commentCount||0}</button></td>
+        <td style="font-size:11px">▲${Number(p.upCount)||0} ▼${Number(p.downCount)||0}</td>
+        <td><button class="btn-sm" onclick="cmaToggleComments('${p.id}')" style="background:#F1EFFB;color:#5B50C0;border:none;cursor:pointer">💬 ${Number(p.commentCount)||0}</button></td>
         <td style="white-space:nowrap">${p.board==='notice'?`<button class="btn-sm" onclick="cmaTogglePin('${p.id}')" style="background:${p.pinned?'#FDECEC':'#E6F1FB'};color:${p.pinned?'#A32D2D':'#185FA5'};border:1px solid ${p.pinned?'#F0C9C9':'#B5D4F4'};cursor:pointer;margin-right:3px">${p.pinned?'고정 해제':'📌 고정'}</button>`:''}<button class="btn-sm" onclick="cmaGrantPost('${p.id}')" style="background:#EAF5EE;color:#15793F;border:1px solid #B7E0C5;cursor:pointer">💰 지급</button>${p.board==='review'?`<button class="btn-sm" onclick="cmaRevokeEvent('${p.id}')" style="background:#FFF3E0;color:#C2611B;border:1px solid #F0D3A8;cursor:pointer;margin-left:3px">철회</button>`:''}<button class="btn-sm" onclick="cmaDeletePost('${p.id}')" style="background:#FDECEC;color:#A32D2D;border:1px solid #F0C9C9;cursor:pointer;margin-left:3px">삭제</button></td>
       </tr>
       <tr id="cmaCmRow-${p.id}" style="display:none"><td colspan="7" style="background:#FAFAF8;padding:0"><div id="cmaCmBox-${p.id}" style="padding:10px 16px"></div></td></tr>`).join('')

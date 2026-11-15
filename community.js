@@ -48,10 +48,10 @@ function cmCardHTML(p){
   if(p.board==='review' && p.cert) badge='<span class="cm-cert">'+cmEsc(CM_CERT_LABEL[p.cert]||p.cert)+'</span>';
   if(p.board==='notice' && p.pinned) badge='<span class="cm-pin">📌 고정</span>';
   var meta='<span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span>';
-  var views='<span>👁️ '+(p.viewCount||0)+'</span>';
+  var views='<span>👁️ '+cmN(p.viewCount)+'</span>';
   var stat = (p.board==='notice')
     ? '<span class="sp">'+views+'</span>'
-    : '<span class="sp"><span>\u2764\ufe0f '+(p.likeCount||0)+'</span><span>💬 '+(p.commentCount||0)+'</span>'+views+'</span>';
+    : '<span class="sp"><span>\u2764\ufe0f '+cmN(p.likeCount)+'</span><span>💬 '+cmN(p.commentCount)+'</span>'+views+'</span>';
   var body = p.body ? '<div class="cm-pe">'+cmEsc(p.body)+'</div>' : '';
   return '<div class="cm-post" onclick="cmOpenDetail(\''+p._id+'\')">'
     +'<div class="cm-pt">'+badge+cmEsc(p.title||'')+'</div>'+body
@@ -73,7 +73,7 @@ function cmListHTML(board, head, posts){
   var todayHtml='';
   if(board==='review'){
     var now=Date.now();
-    var cand=posts.filter(function(p){ var t=(p.createdAt&&p.createdAt.toDate)?p.createdAt.toDate().getTime():0; return (p.upCount||0)>0 && (now-t)<172800000; });
+    var cand=posts.filter(function(p){ var t=(p.createdAt&&p.createdAt.toDate)?p.createdAt.toDate().getTime():0; return cmN(p.upCount)>0 && (now-t)<172800000; });
     cand.sort(function(a,b){ return (b.upCount||0)-(a.upCount||0); });
     if(cand.length) todayHtml=cmTodayHTML(cand[0]);
   }
@@ -228,7 +228,7 @@ async function cmOpenDetail(id){
     var doc=await db.collection('posts').doc(id).get();
     if(!doc.exists){ box.innerHTML='<div class="cm-empty">삭제되었거나 없는 글이에요.</div>'; return; }
     var p=doc.data(); p._id=id; cmCurPost=p; cmMyVote=0;
-    p.viewCount=(p.viewCount||0)+1;
+    p.viewCount=cmN(p.viewCount)+1;
     try{ db.collection('posts').doc(id).update({viewCount:firebase.firestore.FieldValue.increment(1)}).catch(function(){}); }catch(_){}
     if(currentUser){
       try{ var vd=await db.collection('posts').doc(id).collection('votes').doc(currentUser.uid).get(); if(vd.exists) cmMyVote=vd.data().v||0; }catch(_){}
@@ -282,14 +282,14 @@ function cmRenderDetail(p){
   if(Array.isArray(p.images)) p.images.forEach(function(u){ imgs+='<img class="cm-dimg" src="'+cmEsc(u)+'" alt="">'; });
   var votes=(p.board==='notice')?'':
     '<div class="cm-vote-row">'
-    +'<button class="cm-vote up" id="cmUpBtn" onclick="cmVote(1)">👍 추천 <b id="cmUpN">'+(p.upCount||0)+'</b></button>'
-    +'<button class="cm-vote down" id="cmDownBtn" onclick="cmVote(-1)">👎 비공감 <b id="cmDownN">'+(p.downCount||0)+'</b></button>'
+    +'<button class="cm-vote up" id="cmUpBtn" onclick="cmVote(1)">👍 추천 <b id="cmUpN">'+cmN(p.upCount)+'</b></button>'
+    +'<button class="cm-vote down" id="cmDownBtn" onclick="cmVote(-1)">👎 비공감 <b id="cmDownN">'+cmN(p.downCount)+'</b></button>'
     +'</div>';
   var cmt=(p.board==='notice')?'':
     '<div id="cmComments"></div>'
     +'<div class="cm-cmt-input"><input id="cmCmtInput" maxlength="1000" placeholder="댓글을 입력하세요"><button onclick="cmAddComment()">등록</button></div>';
   return '<div class="cm-dtitle">'+badge+cmEsc(p.title||'')+'</div>'
-    +'<div class="cm-dmeta"><span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span><span>\u00b7</span><span>👁️ '+(p.viewCount||0)+'</span></div>'
+    +'<div class="cm-dmeta"><span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span><span>\u00b7</span><span>👁️ '+cmN(p.viewCount)+'</span></div>'
     +'<div class="cm-dtext">'+cmEsc(p.body||'').replace(/\n/g,'<br>')+'</div>'+imgs+votes+cmt;
 }
 function cmRefreshVoteUI(){
@@ -492,12 +492,14 @@ function cmNbClick(){
   cmBoard=it.board||'notice'; openCommunity();
   setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(it.id); },60);
 }
+/* 2026-11-15 보안 점검 1번 — 숫자 칸은 숫자로만 찍는다(글자가 들어 있어도 HTML 로 안 나가게) */
+function cmN(x){ var n=Number(x); return isFinite(n)?Math.floor(n):0; }
 function cmTodayHTML(p){
   var badge=(p.cert)?'<span class="cm-cert">'+cmEsc(CM_CERT_LABEL[p.cert]||p.cert)+'</span>':'';
   return '<div class="cm-today" onclick="cmOpenDetail(\''+p._id+'\')">'
     +'<div class="cm-today-l">🏆 오늘의 글</div>'
     +'<div class="cm-today-t">'+badge+cmEsc(p.title||'')+'</div>'
-    +'<div class="cm-today-m">'+cmEsc(p.authorNick||'익명')+' · 👍 '+(p.upCount||0)+' · 💬 '+(p.commentCount||0)+' · 👁️ '+(p.viewCount||0)+'</div></div>';
+    +'<div class="cm-today-m">'+cmEsc(p.authorNick||'익명')+' · 👍 '+cmN(p.upCount)+' · 💬 '+cmN(p.commentCount)+' · 👁️ '+cmN(p.viewCount)+'</div></div>';
 }
 async function cmReport(){
   if(!currentUser){ alert('신고하려면 로그인이 필요해요.'); return; }
