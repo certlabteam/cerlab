@@ -290,7 +290,24 @@ function cmRenderDetail(p){
     +'<div class="cm-cmt-input"><input id="cmCmtInput" maxlength="1000" placeholder="댓글을 입력하세요"><button onclick="cmAddComment()">등록</button></div>';
   return '<div class="cm-dtitle">'+badge+cmEsc(p.title||'')+'</div>'
     +'<div class="cm-dmeta"><span class="nick">'+cmEsc(p.authorNick||'익명')+'</span><span>\u00b7</span><span>'+cmTimeAgo(p.createdAt)+'</span><span>\u00b7</span><span>👁️ '+cmN(p.viewCount)+'</span></div>'
-    +'<div class="cm-dtext">'+cmEsc(p.body||'').replace(/\n/g,'<br>')+'</div>'+imgs+votes+cmt;
+    +'<div class="cm-dtext">'+cmEsc(p.body||'').replace(/\n/g,'<br>')+'</div>'+imgs+votes+cmRefundBtn(p)+cmt;
+}
+// 합격후기 환급 지급 — 운영 관리자 계정에만 보이는 버튼(게시판 관리자 isAdmin 회원에게도 안 보임, 서버 approveEventRefund 도 같은 계정만 허용).
+// 2026-11-15부터 글을 올려도 자동으로 안 나가고, 관리자가 인증 사진을 보고 누른다(크리스 결정)
+function cmRefundBtn(p){
+  if(!(p.board==='review'&&p.cert&&Array.isArray(p.images)&&p.images.length)) return '';
+  if(!(currentUser&&String(currentUser.email||'').toLowerCase()==='certlab.team@gmail.com')) return '';
+  return '<div style="text-align:center;margin:0 0 20px"><button id="cmRefundBtn" onclick="cmPayRefund()" style="padding:10px 20px;border-radius:12px;border:1px solid #B7E0C5;background:#EAF5EE;color:#15793F;font-size:14px;font-weight:700;cursor:pointer">💰 환급 지급 (관리자)</button></div>';
+}
+async function cmPayRefund(){
+  var p=cmCurPost, b=document.getElementById('cmRefundBtn'); if(!p||!b) return;
+  if(!confirm('합격 인증 사진을 확인했나요?\n'+(CM_CERT_LABEL[p.cert]||p.cert)+' 결제금액만큼 포인트를 지급합니다.')) return;
+  b.disabled=true; b.textContent='지급 중…';
+  try{
+    var r=await firebase.app().functions('asia-northeast3').httpsCallable('approveEventRefund')({postId:p._id});
+    var a=(r.data&&r.data.amount)||0;
+    b.textContent=a>0?('✓ '+a.toLocaleString()+'P 지급됨'):'지급할 금액 없음(이미 지급·철회·결제 없음)';
+  }catch(e){ b.disabled=false; b.textContent='💰 환급 지급 (관리자)'; alert('지급 실패: '+(e&&e.message?e.message:e)); }
 }
 function cmRefreshVoteUI(){
   var un=document.getElementById('cmUpN'), dn=document.getElementById('cmDownN');
