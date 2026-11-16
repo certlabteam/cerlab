@@ -283,6 +283,13 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .plan-card-name{font-size:14px;font-weight:700;color:#2C2C2A}
 .plan-card-price{font-size:16px;font-weight:800;color:#185FA5}
 .plan-card-desc{font-size:12px;color:#888780;margin-top:4px}
+/* 2026-11-15 크리스 「이용권 구매 이렇게 한 줄로」 — 아이폰 앱 이용권 화면처럼 한 줄씩 세로 목록 */
+.plan-cards{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.plan-card{display:flex;align-items:center;padding:16px;border-radius:12px}
+.plan-card.selected{border-color:#185FA5;background:#EEF4FB}
+.plan-card-top{flex-direction:row;align-items:center;justify-content:space-between;width:100%;gap:8px}
+.plan-card-name{font-size:16px}
+.plan-card-off{font-size:12px;font-weight:700;color:#1D9E75;margin-left:4px}
 .plan-badge-pop{position:absolute;top:-8px;right:12px;background:#185FA5;color:#fff;font-size:12px;font-weight:700;padding:2px 10px;border-radius:12px}
 .bank-info{background:#fff;border:1.5px solid #B9D2EF;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:14px;color:#0C447C;line-height:1.8}
 .bank-info strong{font-weight:700}

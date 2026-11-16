@@ -899,7 +899,6 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
     <!-- [2026-10-14] 앱(TWA) 안 구글 플레이 결제 — 앱이고 Play 결제가 붙은 판일 때만 보인다(_playMode) -->
     <button class="btn-payment" id="btnPlayPay" onclick="startPlayPayment()" style="display:none;background:#1D9E75">Google Play로 결제</button>
     <!-- ★ 계좌이체 단추는 숨겨 둔다(지우지 않음). 카드가 막히는 날 hidden 만 떼면 된다. -->
-    <button class="btn-payment" id="btnPayment" hidden onclick="submitPayment()">입금하고 시작하기</button>
     <div class="payment-note">결제가 끝나면 이용권이 <strong>바로 켜집니다</strong>.<br>국민·신한·삼성·하나·BC·롯데·농협·우리카드로 결제할 수 있어요.</div>
     <div class="plan-stats" id="planStats"></div>
   </div>
@@ -914,7 +913,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-storage-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
-<script defer src="index-1-auth.js?v=05c6e023"></script>
+<script defer src="index-1-auth.js?v=f2f952a7"></script>
 <script defer src="index-2-engine.js?v=471b7879"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->

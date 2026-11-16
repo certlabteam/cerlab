@@ -1545,7 +1545,7 @@ function featureCompareHTML(totalTxt){
 }
 function _togglePayUI(show){
   /* ★ [2026-10-14] #btnCardPay(토스 카드 결제)가 빠져 있어 앱(TWA)에서도 카드 결제 단추가 보였다 — 플레이 정책 위반 자리. 더한다. */
-  var els=['.plan-cards','.plan-more','.discount-row','.bank-info','.pay-ref-line','#mileUseBox','#depositorName','#btnPayment','#btnCardPay','.payment-note'];
+  var els=['.plan-cards','.plan-more','.discount-row','.bank-info','.pay-ref-line','#mileUseBox','#depositorName','#btnCardPay','.payment-note'];
   els.forEach(function(sel){ document.querySelectorAll(sel).forEach(function(el){ el.style.display=show?'':'none'; }); });
   if(!show){ var m=document.querySelector('.discount-msg'); if(m) m.style.display='none'; }
 }
@@ -1694,14 +1694,17 @@ function plansFor(cert){ if(_pricingCfg){ var tp=_tierPlans(_certTier(cert)); if
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
 function renderPlanCards(cert){
   const set=plansFor(cert), box=document.querySelector('.plan-cards'); if(!box) return;
+  /* [2026-11-15 크리스 「이용권 구매 이렇게 한 줄로 지금처럼 가는 게 좋다 · 웹을 이렇게 바꾸라고 해」] 아이폰 앱 이용권 화면처럼 한 줄 목록 —
+     왼쪽 「3개월」+초록 「16% 할인」(가장 짧은 상품의 하루값 대비), 오른쪽 가격. 칸 모양은 style.css .plan-cards */
+  const base=set[0], perMon=base?base.p/Math.max(1,Math.round(base.d/30)):0;
   box.innerHTML=set.map((pl,i)=>{
-    const badge=pl.pop?('<div class="plan-badge-pop"'+(pl.green?' style="background:#1D9E75"':'')+'>'+pl.pop+'</div>'):'';
-    return '<div class="plan-card" id="plan'+pl.d+'" onclick="selectPlan('+pl.d+','+pl.p+')">'+badge
-      +'<div class="plan-card-top"><span class="plan-card-name">'+pl.name+'</span>'
-      +'<span class="plan-card-price">'+pl.p.toLocaleString()+'원</span></div>'
-      +'<div class="plan-card-desc">'+pl.desc+'</div></div>';
+    const mon=Math.max(1,Math.round(pl.d/30)), nm=(pl.d>=28?(mon+'개월'):(pl.d+'일'));
+    const off=(i>0&&perMon)?Math.round((1-pl.p/(perMon*mon))*100):0;
+    return '<div class="plan-card" id="plan'+pl.d+'" onclick="selectPlan('+pl.d+','+pl.p+')">'
+      +'<div class="plan-card-top"><span class="plan-card-name">'+nm+(off>0?' <span class="plan-card-off">'+off+'% 할인</span>':'')+'</span>'
+      +'<span class="plan-card-price">'+pl.p.toLocaleString()+'원</span></div></div>';
   }).join('');
-  const mid=set.find(x=>x.sel)||set[1]||set[0]; selectPlan(mid.d, mid.p);   // 기본 선택 = sel 지정 또는 가운데
+  const mid=set.find(x=>Math.round(x.d/30)===3)||set.find(x=>x.sel)||set[1]||set[0]; selectPlan(mid.d, mid.p);   // 기본 선택 = 3개월(크리스 11-16), 없으면 sel 지정 또는 가운데
 }
 function selectPlan(days, price) {
   selectedPlanDays = days;
@@ -1734,15 +1737,6 @@ function recalcPay(){
       : applied0>0 ? payable0.toLocaleString()+'원 카드 결제 (포인트 '+applied0.toLocaleString()+'P 사용)'
       : '카드로 결제');
   }
-  const btn=document.getElementById('btnPayment'); if(!btn) return;
-  const price=selectedPlanPrice||0;
-  const bal=mileageBalance(myMileageLots);
-  const applied=mileApplyOn?Math.min(bal,price):0;
-  const payable=price-applied;
-  if(price<=0){ btn.textContent='이용권을 선택하세요'; return; }
-  if(payable<=0) btn.textContent='포인트 '+applied.toLocaleString()+'P로 결제 (즉시 활성화)';
-  else if(applied>0) btn.textContent=payable.toLocaleString()+'원 입금 신청 (포인트 '+applied.toLocaleString()+'P 사용)';
-  else btn.textContent=price.toLocaleString()+'원 입금하고 시작하기';
 }
 
 function consumeMileage(lots, amount){
@@ -1852,7 +1846,7 @@ async function startCardPayment(){
    *   ⚠ selectPlan() 은 쓰지 않는다 — 팝업이 닫혀 있으면 `#plan<일수>` 가 없어 터진다. */
   var _ps = (typeof plansFor === 'function') ? (plansFor(activeCertId()) || []) : [];
   if(_ps.length && !_ps.some(function(p){ return p.d === selectedPlanDays; })){
-    var _m = _ps.filter(function(x){ return x.sel; })[0] || _ps[1] || _ps[0];
+    var _m = _ps.filter(function(x){ return Math.round(x.d/30)===3; })[0] || _ps.filter(function(x){ return x.sel; })[0] || _ps[1] || _ps[0];   // 3개월 먼저(크리스 11-16)
     selectedPlanDays = _m.d; selectedPlanPrice = _m.p;
   }
   if(!selectedPlanDays){ alert('이용권을 먼저 선택해주세요.'); return; }
@@ -1895,89 +1889,6 @@ async function startCardPayment(){
     else alert('결제를 시작하지 못했어요.\n' + m);
   }finally{
     if(btn){ btn.disabled=false; btn.innerHTML='<img src="icons/card.png" alt="" class="ic-img ic-in"> 카드로 결제'; recalcPay(); }
-  }
-}
-
-async function submitPayment() {
-  if (!currentUser) { showLoginPopup(); return; }
-  if (!selectedPlanDays || !selectedPlanPrice) { alert('이용권을 먼저 선택해주세요.'); return; }
-  const cert = activeCertId();
-  const certName = certFull(cert);
-  const price = selectedPlanPrice;
-  const bal = mileageBalance(myMileageLots);
-  const applied = mileApplyOn ? Math.min(bal, price) : 0;
-  const payable = price - applied;
-  const depositorName = (document.getElementById('depositorName').value||'').trim();
-  if (payable > 0 && !depositorName) { alert('입금자 이름을 입력해주세요.'); return; }
-
-  const confMsg = payable<=0
-    ? '['+certName+'] '+planLabelOf(selectedPlanDays)+'\n포인트 '+applied.toLocaleString()+'P로 결제 (입금 없이 즉시 활성화)\n진행할까요?'
-    : '['+certName+'] '+planLabelOf(selectedPlanDays)+' - '+price.toLocaleString()+'원\n'+(applied>0?'포인트 '+applied.toLocaleString()+'P 사용 + 입금 '+payable.toLocaleString()+'원\n':'')+'입금자: '+depositorName+'\n신청하시겠어요?';
-  if (!(await clConfirm(confMsg))) return;
-
-  try {
-    const expireAt = new Date();
-    expireAt.setDate(expireAt.getDate() + selectedPlanDays);
-
-    if (applied > 0) {
-      myMileageLots = consumeMileage(myMileageLots, applied);
-      let hist = [];
-      try { const ud=await db.collection('users').doc(currentUser.uid).get(); hist=(ud.data()&&Array.isArray(ud.data().mileageHistory))?ud.data().mileageHistory.slice():[]; } catch(_){}
-      hist.push({t:'use', a:-applied, at:Date.now(), memo:certName});
-      try { await db.collection('users').doc(currentUser.uid).update({ mileageLots: myMileageLots, mileageHistory: hist }); } catch(_){}
-    }
-
-    await db.collection('payments').add({
-      uid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName,
-      depositorName: depositorName || (applied>0?'(포인트 결제)':''),
-      certType: cert, certName,
-      planDays: selectedPlanDays,
-      price: price,
-      mileageUsed: applied,
-      depositAmount: payable,
-      status: 'auto_approved', autoApproved: true,
-      paidByMileageOnly: payable<=0,
-      approvedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    const upd = {
-      ['entitlements.'+cert+'.plan']: 'ACTIVE',
-      ['entitlements.'+cert+'.expireAt']: firebase.firestore.Timestamp.fromDate(expireAt),
-      ['entitlements.'+cert+'.planDays']: selectedPlanDays
-    };
-    if (cert === 'bodybuilding') { upd.plan = 'ACTIVE'; upd.expireAt = firebase.firestore.Timestamp.fromDate(expireAt); upd.planDays = selectedPlanDays; }
-    await db.collection('users').doc(currentUser.uid).update(upd);
-    userEnt[cert].plan = 'ACTIVE'; userEnt[cert].expireAt = expireAt; userEnt[cert].planDays = selectedPlanDays;
-    try { clTrack('Purchase', { value: price, currency:'KRW', content_name: certName, content_category: cert, content_type:'product', contents:[{id:cert, quantity:1}], num_items:1 }); } catch(_){}
-
-    // 추천 결제 보너스: 추천받아 가입했다면, 이번 실입금액의 50%를 추천인에게 적립(결제할 때마다)
-    try {
-      var _refReward = Math.floor((payable||0) * 0.5);
-      await db.collection('referrals').doc(currentUser.uid).update({ paid:true });
-      if (_refReward > 0) {
-        var _myRefDoc = await db.collection('referrals').doc(currentUser.uid).get();
-        var _refrCode = _myRefDoc.exists ? (_myRefDoc.data().referrerCode||null) : null;
-        if (_refrCode) {
-          var _refrSnap = await db.collection('users').where('referralCode','==',_refrCode).limit(1).get();
-          if (!_refrSnap.empty) {
-            var _refrRef = _refrSnap.docs[0].ref, _refrData = _refrSnap.docs[0].data();
-            var _rlots = Array.isArray(_refrData.mileageLots) ? _refrData.mileageLots.slice() : [];
-            var _rhist = Array.isArray(_refrData.mileageHistory) ? _refrData.mileageHistory.slice() : [];
-            var _rnow = Date.now();
-            _rlots.push({a:_refReward, t:'ref_paid', at:_rnow, exp:_rnow+365*MILE_DAY});
-            _rhist.push({t:'ref_paid', a:_refReward, at:_rnow, who:(currentUser.email||null)});
-            await _refrRef.update({ mileageLots:_rlots, mileageHistory:_rhist.slice(-300) });
-          }
-        }
-      }
-    } catch(_){}
-
-    syncPlanMirror(); updateAuthBar(); hidePlanPopup();
-    showPaySuccess({ certName: certName, planLabel: planLabelOf(selectedPlanDays), expireAt: expireAt, payable: payable, depositorName: depositorName });
-    refresh();
-  } catch(e) {
-    alert('오류가 발생했습니다: ' + e.message);
   }
 }
 
