@@ -11,6 +11,7 @@
    =========================================================================== */
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
@@ -23,7 +24,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /* seo-core.js — admin.html과 공유하는 생성 로직 단일 출처 */
 const {
-  SEO_SUBJ_OVERRIDE, seoRound, seoPage, seoHub, seoSitemap, seoRobots, seoLlms, seoReadAllBanks,
+  SEO_SUBJ_OVERRIDE, SEO_BASE_URLS, seoRound, seoPage, seoHub, seoUrlset, seoSitemapIndex, seoRobots, seoLlms, seoReadAllBanks,
   seoCertOfFname, seoAddNav, seoCertHub, seoCertName, seoEsc
 } = require(path.join(ROOT, 'seo-core.js'));
 
@@ -37,13 +38,8 @@ const firebaseConfig = {
   appId: "1:698827699707:web:b08d492f408ac444fa875e"
 };
 
-/* ★ [2026-09-29] **안 바뀜 파일은 안 쓴다.**
- * 앞서는 날마다 772쪽을 다 덮어써
- * git 이 전부 바뀐 것으로 보았고,
- * sitemap 의 lastmod 도 전부 그날로 바뀌었다.
- * 바뀐 쪽을 여기서 모아 sitemap 에 넘긴다. */
-const 바뀐것 = new Set();
-
+/* ★ [2026-09-29] **안 바뀐 파일은 안 쓴다.** 앞서는 날마다 772쪽을 다 덮어써
+ * git 이 전부 바뀐 것으로 보았다. */
 function write(rel, text) {
   if (rel.startsWith('seo/') && rel.endsWith('.html')) {
     const link = '<p style="white-space:nowrap"><a href="https://ilgumi.com/" style="color:inherit;font-size:inherit">일구미 · 사장님 리뷰 답글</a></p>';
@@ -59,24 +55,73 @@ function write(rel, text) {
   catch (e) { if (e.code !== 'ENOENT') throw e; }
   if (옛 === text) return false;          // 그대로면 손대지 않는다
   fs.writeFileSync(abs, text, 'utf8');   // LF 그대로 (저장소의 기존 seo/ 파일과 동일)
-  바뀐것.add(rel);
   return true;
 }
 
-/* 지금 저장소에 있는 sitemap.xml 에서 주소별 lastmod 를 읽어 둔다.
- * 내용이 안 바뀐 쪽은 이 날짜를 그대로 쓴다. */
+/* 지금 저장소에 있는 사이트맵(옛 sitemap.xml 또는 나눈 sitemap-*.xml)에서 주소별 lastmod 를 읽는다.
+ * 기록 파일(seo-src/lastmod.json)에 없는 주소의 첫 날짜로만 쓴다. */
 function 옛사이트맵날짜() {
-  try {
-    const x = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
-    const 맵 = {};
+  const 맵 = {};
+  for (const name of ['sitemap.xml', 'sitemap-hubs.xml', 'sitemap-pages.xml']) {
+    let x;
+    try { x = fs.readFileSync(path.join(ROOT, name), 'utf8'); }
+    catch (e) { if (e.code === 'ENOENT') continue; throw e; }   // 없는 파일만 넘긴다
     const re = /<url>\s*<loc>([^<]+)<\/loc>\s*<lastmod>([^<]+)<\/lastmod>/g;
     let m;
     while ((m = re.exec(x))) 맵[m[1]] = m[2];
-    return 맵;
-  } catch (e) {
-    if (e.code === 'ENOENT') return {};   // 첫 실행 — 사이트맵이 아직 없다
-    throw e;                              // 그 밖의 읽기 오류는 숨기지 않는다
   }
+  return 맵;
+}
+
+/* ★ [2026-11-17] **lastmod 는 그 쪽의 문항 내용이 바뀐 날.**
+ * 앞서는 「파일이 바뀐 날」이었다. 그러자 틀(꼬리말 링크·요약 칸)만 고쳐도 1,080쪽이
+ * 한날(11-05)로 같이 올라갔다. 이제 쪽마다 문항 자료의 지문(hash)을 seo-src/lastmod.json 에
+ * 적어 두고, 지문이 바뀐 쪽만 날짜를 새로 준다. 새 날짜는 그 과목 은행의 updatedAt(문항을
+ * 올린 날)을 먼저 쓰고, 그것이 옛 날짜보다 앞서면(올린 날 기록이 안 바뀜) 오늘로 둔다.
+ * 정답률처럼 날마다 움직이는 숫자는 지문에서 뺀다. */
+const LASTMOD_FILE = path.join(ROOT, 'seo-src', 'lastmod.json');
+const 변동키 = new Set(['correctRate', 'accuracy', 'correct_rate']);
+function 지문(value) {
+  const stable = v => Array.isArray(v) ? v.map(stable)
+    : v && typeof v === 'object' ? Object.keys(v).filter(k => !변동키.has(k)).sort().reduce((o, k) => (o[k] = stable(v[k]), o), {})
+    : v;
+  return crypto.createHash('sha1').update(JSON.stringify(stable(value))).digest('hex').slice(0, 16);
+}
+function 한국날짜(ts) {
+  const sec = ts && (typeof ts.seconds === 'number' ? ts.seconds : null);
+  return sec == null ? '' : new Date(sec * 1000 + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/* ★ [2026-11-17] **얇은 쪽·겹치는 쪽은 noindex.** (SEO방 진단: 색인 151 · 크롤링됨-색인 안 됨 598)
+ * - 문항 5개 이하인 쪽
+ * - 문항(발문+보기)의 80% 이상이 앞서 나온 다른 한 쪽에 그대로 있는 쪽
+ *   (9급 공무원 공통과목 국어·영어·한국사가 직렬마다 똑같이 실린다 · 경영/기술지도사 1차 공통과목 등)
+ *   먼저 나온 쪽(manifest 순서)을 남기고 뒤 쪽을 뺀다.
+ * 사람이 보는 화면은 그대로 — <meta name="robots" content="noindex,follow"> 만 넣고 사이트맵에서 뺀다.
+ * 빼는 쪽이 전체의 30% 를 넘으면 기준이 잘못된 것으로 보고 아무것도 안 뺀다(목록만 찍는다). */
+const THIN_MAX = 5, DUP_RATIO = 0.8, NOINDEX_CAP = 0.3;
+const 문항키 = q => [q.q, (q.opts || []).join('|')].map(s => String(s || '').replace(/<[^>]*>/g, '').replace(/[\s\p{P}\p{S}]/gu, '')).join('|');
+function 얇은쪽고르기(metas) {
+  const out = new Map();                  // fname → 이유
+  const owner = new Map();                // 문항키 → 처음 실린 남긴 쪽
+  for (const m of metas) {
+    if (m.n <= THIN_MAX) { out.set(m.fname, '문항 ' + m.n + '개'); continue; }
+    const cnt = {};
+    for (const k of new Set(m.keys)) { const o = owner.get(k); if (o) cnt[o] = (cnt[o] || 0) + 1; }
+    let best = '', bn = 0;
+    for (const o in cnt) if (cnt[o] > bn) { bn = cnt[o]; best = o; }
+    if (m.keys.length && bn / m.keys.length >= DUP_RATIO) { out.set(m.fname, '겹침 ' + Math.round(bn / m.keys.length * 100) + '% ← ' + best); continue; }
+    for (const k of m.keys) if (!owner.has(k)) owner.set(k, m.fname);
+  }
+  return out;
+}
+const NOINDEX_TAG = '<meta name="robots" content="noindex,follow">';
+function noindex붙이기(html) {
+  if (html.includes(NOINDEX_TAG)) return html;
+  const at = html.indexOf('<meta name="viewport"');
+  if (at < 0) throw new Error('viewport 메타가 없어 noindex 를 못 넣습니다');
+  const end = html.indexOf('>', at) + 1;
+  return html.slice(0, end) + '\n' + NOINDEX_TAG + html.slice(end);
 }
 
 const MAX_PAGE_SIZE = 40;
@@ -284,9 +329,11 @@ async function main() {
    * 그 자격증에 어떤 쪽들이 있는지 다 알아야 만들 수 있어서다.
    */
   const pages = new Map();   // fname → html
+  const metas = [];          // 쪽마다 문항 수·문항키·내용 지문·은행 날짜 (lastmod·noindex 용)
   for (const b of banks) {
     const data = b.data;
     const cert = data.cert, sid = data.subject;
+    const bankDate = 한국날짜(data.updatedAt);
     const subjName = b.subjName || SEO_SUBJ_OVERRIDE[sid] || data.name || sid;
     const qs = data.questions || [];
     const groups = {};
@@ -302,6 +349,8 @@ async function main() {
         const pg = splitPage(cert, subjName, rr, sid, chunk, all, start, part, total);
         pages.set(pg.fname, pg.html);
         files.push(pg.fname);
+        metas.push({ fname: pg.fname, n: chunk.length, keys: chunk.map(문항키), bankDate,
+          hash: 지문({ subjName, rr, start, total, chunk }) });
         SEO_LABELS[pg.fname] = subjName + (total > 1 ? ' ' + (start + 1) + '~' + (start + chunk.length) + '번' : '');
       }
     }
@@ -310,6 +359,13 @@ async function main() {
   /* 자격증별로 묶어 이웃 링크를 끼우고, 자격증 허브를 만든다. */
   const byCert = {};
   for (const f of files) (byCert[seoCertOfFname(f)] = byCert[seoCertOfFname(f)] || []).push(f);
+  let 뺄쪽 = 얇은쪽고르기(metas);
+  console.log('  noindex 후보: ' + 뺄쪽.size + '쪽 / ' + files.length + '쪽 (' + (뺄쪽.size / files.length * 100).toFixed(1) + '%)');
+  for (const [f, why] of 뺄쪽) console.log('    - ' + f + ' · ' + why);
+  if (뺄쪽.size > files.length * NOINDEX_CAP) {
+    console.log('  ⚠ ' + Math.round(NOINDEX_CAP * 100) + '% 를 넘어 noindex 를 넣지 않습니다(목록만).');
+    뺄쪽 = new Map();
+  }
   const hubFiles = [];
   for (const cert of Object.keys(byCert)) {
     const list = byCert[cert];
@@ -317,7 +373,8 @@ async function main() {
       const f = list[i];
       // 전체 목록은 index-시험.html에 두고 문항 쪽에는 가까운 이웃만 둔다.
       const near = list.slice(Math.max(0, i - 3), i + 4);
-      write('seo/' + f, seoAddNav(pages.get(f), cert, f, near, SEO_LABELS));
+      const html = seoAddNav(pages.get(f), cert, f, near, SEO_LABELS);
+      write('seo/' + f, 뺄쪽.has(f) ? noindex붙이기(html) : html);
     }
     const ch = cert === 'realestate1' || cert === 'realestate2'
       ? realestateHub(cert, list, SEO_LABELS, banks, variantCounts, conceptCounts, guideByCert[cert] || [])
@@ -343,31 +400,59 @@ async function main() {
     }
   }
 
-  const urls = ['https://certlab.ai.kr/seo/index.html']
-    .concat(hubFiles.map(f => 'https://certlab.ai.kr/seo/' + f))
-    .concat(files.map(f => 'https://certlab.ai.kr/seo/' + f))
-    .concat(guides.map(g => 'https://certlab.ai.kr/seo/' + g.fname));
+  const U = f => 'https://certlab.ai.kr/seo/' + f;
+  const indexable = files.filter(f => !뺄쪽.has(f));
   /* 허브는 쪽 목록만 보고 자격증을 센다. 자격증 허브 주소는 빼고 넘긴다. */
-  write('seo/index.html', seoHub(['https://certlab.ai.kr/seo/index.html'].concat(files.map(f => 'https://certlab.ai.kr/seo/' + f)), SEO_LABELS));
-  /* ★ 바뀐 쪽만 오늘 날짜를 준다.
-   * 이 줄이 도는 시점에는 seo/*.html 이 다
-   * 쓰였으므로 바뀐것 이 채워져 있다. */
+  write('seo/index.html', seoHub([U('index.html')].concat(files.map(U)), SEO_LABELS));
+
+  /* --- lastmod: 내용 지문이 바뀐 쪽만 새 날짜 (위 LASTMOD_FILE 설명) --- */
   const 옛날짜 = 옛사이트맵날짜();
-  for (const rel of 바뀐것) {
-    if (rel.startsWith('seo/')) delete 옛날짜['https://certlab.ai.kr/' + rel];
+  let 옛기록 = {};
+  try { 옛기록 = JSON.parse(fs.readFileSync(LASTMOD_FILE, 'utf8')); }
+  catch (e) { if (e.code !== 'ENOENT') throw e; }
+  const 기록 = {};
+  const 날짜정하기 = (key, hash, bankDate) => {
+    const old = 옛기록[key];
+    let d;
+    if (old && old.h === hash) d = old.d;                                   // 내용 그대로 → 날짜 그대로
+    else if (!old) d = bankDate || 옛날짜[U(key)] || today;                  // 처음 적을 때 → 은행 올린 날
+    else d = bankDate && bankDate > old.d ? bankDate : today;              // 내용 바뀜 → 올린 날, 없으면 오늘
+    기록[key] = { h: hash, d };
+    return d;
+  };
+  const lastmod = {};
+  for (const m of metas) lastmod[m.fname] = 날짜정하기(m.fname, m.hash, m.bankDate);
+  for (const g of guides) lastmod[g.fname] = 날짜정하기(g.fname, 지문(g.html), '');
+  /* 허브는 목록에 실린 쪽(문항 쪽·학습 글) 가운데 가장 늦게 바뀐 날 — 허브 내용이 거기서 나온다. */
+  const maxDate = ds => ds.filter(Boolean).sort().at(-1) || today;
+  for (const cert of Object.keys(byCert)) {
+    lastmod[seoCertHub(cert, [], {}).fname] = maxDate(byCert[cert].map(f => lastmod[f]).concat((guideByCert[cert] || []).map(g => lastmod[g.fname])));
   }
-  const 사이트맵 = seoSitemap(urls, today, 옛날짜);
-  write('sitemap.xml', 사이트맵);
-  const 오늘수 = (사이트맵.match(new RegExp('<lastmod>' + today + '</lastmod>', 'g')) || []).length;
-  console.log('  sitemap     : ' + urls.length + '쪽 중 ' + 오늘수 + '쪽만 오늘 날짜 (나머지는 그대로)');
+  lastmod['index.html'] = maxDate(Object.values(lastmod));
+  for (const n of [...뺄쪽.keys()]) if (기록[n]) 기록[n].noindex = 뺄쪽.get(n);
+  write('seo-src/lastmod.json', JSON.stringify(기록, null, 1) + '\n');
+
+  /* --- 사이트맵: 허브(sitemap-hubs.xml) · 그 밖(sitemap-pages.xml) · sitemap.xml 은 인덱스 --- */
+  const hubEntries = ['index.html'].concat(hubFiles).map(f => ({ loc: U(f), lastmod: lastmod[f] }));
+  const pageEntries = SEO_BASE_URLS.map(loc => ({ loc, lastmod: 옛날짜[loc] || today }))
+    .concat(indexable.map(f => ({ loc: U(f), lastmod: lastmod[f] })))
+    .concat(guides.map(g => ({ loc: U(g.fname), lastmod: lastmod[g.fname] })));
+  write('sitemap-hubs.xml', seoUrlset(hubEntries));
+  write('sitemap-pages.xml', seoUrlset(pageEntries));
+  write('sitemap.xml', seoSitemapIndex([
+    { loc: 'https://certlab.ai.kr/sitemap-hubs.xml', lastmod: maxDate(hubEntries.map(e => e.lastmod)) },
+    { loc: 'https://certlab.ai.kr/sitemap-pages.xml', lastmod: maxDate(pageEntries.map(e => e.lastmod)) }
+  ]));
+  const urls = hubEntries.concat(pageEntries).map(e => e.loc);
+  const 오늘수 = hubEntries.concat(pageEntries).filter(e => e.lastmod === today).length;
+  console.log('  sitemap     : 허브 ' + hubEntries.length + ' + 쪽 ' + pageEntries.length + ' = ' + urls.length + '개 · noindex 로 뺀 쪽 ' + 뺄쪽.size + ' · 오늘 날짜 ' + 오늘수 + '개');
   write('robots.txt', seoRobots());
-  write('llms.txt', seoLlms(urls));
+  write('llms.txt', seoLlms([U('index.html')].concat(hubFiles.map(U), indexable.map(U), guides.map(g => U(g.fname)))));
 
   console.log('');
   console.log('✅ 완료');
   console.log('  seo/*.html  : ' + files.length + '장 (+ 자격증 허브 ' + hubFiles.length + ' + 메인 허브 1 + 글 ' + guides.length + ')');
   console.log('  문항        : ' + qtot.toLocaleString() + '개');
-  console.log('  sitemap URL : ' + urls.length + '개 (lastmod ' + today + ')');
   console.log('  robots.txt · llms.txt 갱신');
   console.log('');
   console.log('git status / git diff 로 변경분을 확인한 뒤 커밋하세요.');

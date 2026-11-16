@@ -55,7 +55,7 @@ jobs:
 
       - name: 바뀐 것이 있으면 커밋
         run: |
-          git add -A seo sitemap.xml robots.txt llms.txt lp-sample.json
+          git add -A seo sitemap.xml sitemap-hubs.xml sitemap-pages.xml seo-src/lastmod.json robots.txt llms.txt lp-sample.json
           if git diff --cached --quiet; then
             echo "바뀐 것이 없습니다. 넘어갑니다."
             exit 0
