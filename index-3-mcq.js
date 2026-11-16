@@ -699,24 +699,28 @@ async function loadCrowdExamVotes(cert){
 }
 function _crowdExamMs(cert){
   var votes=_crowdVotes[cert]; if(!votes) return null;
-  var cands=Object.keys(votes).filter(function(d){ return (votes[d]||0)>=3 && /^\d{4}-\d{2}-\d{2}$/.test(d); }).sort();
+  var cands=Object.keys(votes).filter(function(d){ return (Number(votes[d])||0)>=3 && /^\d{4}-\d{2}-\d{2}$/.test(d); }).sort();
   if(!cands.length) return null;
   var clusters=[], cur=null, anchorMs=null;   // ±1개월 회차 그룹(최초=가장 이른 날짜 기준)
   cands.forEach(function(d){ var ms=new Date(d+'T23:59:59').getTime();
     if(cur && (ms-anchorMs)<=31*86400000){ cur.push(d); } else { cur=[d]; clusters.push(cur); anchorMs=ms; } });
   var now=Date.now(), best=null;   // 회차마다 최다표 날짜, 그 중 가장 가까운 미래
-  clusters.forEach(function(cl){ var top=cl[0], tc=votes[cl[0]]||0;
-    cl.forEach(function(d){ if((votes[d]||0)>tc){ tc=votes[d]||0; top=d; } });
+  clusters.forEach(function(cl){ var top=cl[0], tc=Number(votes[cl[0]])||0;
+    cl.forEach(function(d){ var n=Number(votes[d])||0; if(n>tc){ tc=n; top=d; } });
     var ms=new Date(top+'T23:59:59').getTime(); if(ms>=now && (best==null||ms<best)) best=ms; });
   return best;
 }
 async function _crowdVote(cert, oldDate, newDate){
   if(typeof firebaseReady==='undefined' || !firebaseReady || typeof db==='undefined' || !db || typeof currentUser==='undefined' || !currentUser || !cert) return;
   if(oldDate===newDate) return;
-  try{ var upd={};
-    if(newDate && /^\d{4}-\d{2}-\d{2}$/.test(newDate)) upd[newDate]=firebase.firestore.FieldValue.increment(1);
-    if(oldDate && /^\d{4}-\d{2}-\d{2}$/.test(oldDate)) upd[oldDate]=firebase.firestore.FieldValue.increment(-1);
-    if(Object.keys(upd).length){ await db.collection('examDateVotes').doc(cert).set(upd,{merge:true}); _crowdVotes[cert]=null; loadCrowdExamVotes(cert); }
+  /* 2026-11-17 한 사람 한 표 — 내 표(voters/{uid}.d)를 서버에서 읽어 옛 날짜로 쓰고, 표와 집계를 한 batch 로(규칙이 ±1 만 받는다) */
+  try{ var upd={}, cRef=db.collection('examDateVotes').doc(cert), vRef=cRef.collection('voters').doc(currentUser.uid);
+    var vs=await vRef.get(); var od=(vs.exists && vs.data() && vs.data().d) || '';
+    var nd=(newDate && /^\d{4}-\d{2}-\d{2}$/.test(newDate)) ? newDate : '';
+    if(nd===od) return;
+    if(nd) upd[nd]=firebase.firestore.FieldValue.increment(1);
+    if(od) upd[od]=firebase.firestore.FieldValue.increment(-1);
+    if(Object.keys(upd).length){ var b=db.batch(); b.set(vRef,{d:nd}); b.set(cRef,upd,{merge:true}); await b.commit(); _crowdVotes[cert]=null; loadCrowdExamVotes(cert); }
   }catch(e){ try{ console.error('시험일 집계 오류', e); }catch(_){} }
 }
 async function editExamDate(cert){
