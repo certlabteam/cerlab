@@ -1643,40 +1643,6 @@ function showWelcomePopup() {
 }
 
 // ===== 이용권 선택 & 신청 =====
-const PLAN_SETS={
-  _default:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
-            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
-            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
-  bodybuilding:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
-            {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
-            {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-            {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
-  appraiser:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
-             {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
-             {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
-             {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
-  koreanhistory:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
-                 {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
-                 {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-                 {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
-  realestate1:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
-               {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
-               {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-               {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
-  realestate2:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
-               {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
-               {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
-               {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
-  housing:[{d:7,p:3900,name:'1주 이용권',desc:'7일 전체 이용'},
-           {d:14,p:5900,name:'2주 이용권',desc:'14일 전체 이용'},
-           {d:28,p:8900,name:'4주 이용권',desc:'28일 전체 이용'},
-           {d:56,p:13900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}],
-  housing2:[{d:7,p:4900,name:'1주 이용권',desc:'7일 전체 이용'},
-            {d:14,p:7900,name:'2주 이용권',desc:'14일 전체 이용'},
-            {d:28,p:11900,name:'4주 이용권',desc:'28일 전체 이용'},
-            {d:56,p:17900,name:'8주 이용권',desc:'56일 전체 이용',pop:'⭐ 가장 경제적',green:1,sel:1}]
-};
 let _pricingCfg=null;   // config/pricing: {tiers:{premium/standard/light:{m1,m3,m6,m12}}, certTier:{cert:tier}, freeDays}
 const _LEGACY_PLAN_NAMES={7:'1주 이용권',14:'2주 이용권',28:'4주 이용권',56:'8주 이용권',30:'1개월 이용권',90:'3개월 이용권',180:'6개월 이용권',365:'1년 이용권'};
 function _certTier(cert){ return (_pricingCfg&&_pricingCfg.certTier&&_pricingCfg.certTier[cert]) || 'standard'; }
@@ -1690,10 +1656,21 @@ function _tierPlans(tier){
            {d:180,p:+t.m6||0,name:'6개월 이용권',desc:'180일 전체 이용'},
            {d:365,p:+t.m12||0,name:'1년 이용권',desc:'365일 전체 이용',pop:'⭐ 가장 경제적',green:1} ];
 }
-function plansFor(cert){ if(_pricingCfg){ var tp=_tierPlans(_certTier(cert)); if(tp) return tp; } return PLAN_SETS[cert]||PLAN_SETS._default; }
+/* [2026-11-17 크리스 승인] 옛 주 단위 상품표(1·2·4·8주)를 지웠다 — 설정(config/pricing)을 못 읽으면 그 표로 엉뚱한 값을 팔 수 있었다.
+ *   설정이 없으면 빈 목록 → renderPlanCards 가 「이용권을 불러오지 못했어요」+다시 시도를 보이고 결제 단추는 숨긴다. */
+function plansFor(cert){ if(_pricingCfg){ var tp=_tierPlans(_certTier(cert)); if(tp) return tp; } return []; }
 function planLabelOf(days){ const s=plansFor(activeCertId()).find(x=>x.d===days); return s?s.name:(days+'일 이용권'); }
 function renderPlanCards(cert){
   const set=plansFor(cert), box=document.querySelector('.plan-cards'); if(!box) return;
+  const pp=document.getElementById('planPopup');
+  if(!set.length){   // 설정을 못 읽음 — 결제 단추·할인코드는 숨긴다(style.css #planPopup.load-err)
+    if(pp) pp.classList.add('load-err');
+    box.classList.add('plan-cards-err');
+    box.innerHTML='<div class="plan-load-err" role="alert"><div class="plan-load-err-t">이용권을 불러오지 못했어요.</div><div class="plan-load-err-s">다시 열어 주세요.</div><button type="button" class="btn-payment plan-load-retry" onclick="_planRetry(this)">다시 시도</button></div>';
+    return;
+  }
+  if(pp) pp.classList.remove('load-err');
+  box.classList.remove('plan-cards-err');
   /* [2026-11-15 크리스 「이용권 구매 이렇게 한 줄로 지금처럼 가는 게 좋다 · 웹을 이렇게 바꾸라고 해」] 아이폰 앱 이용권 화면처럼 한 줄 목록 —
      왼쪽 「3개월」+초록 「16% 할인」(가장 짧은 상품의 하루값 대비), 오른쪽 가격. 칸 모양은 style.css .plan-cards */
   const base=set[0], perMon=base?base.p/Math.max(1,Math.round(base.d/30)):0;
@@ -1705,6 +1682,15 @@ function renderPlanCards(cert){
       +'<span class="plan-card-price">'+pl.p.toLocaleString()+'원</span></div></div>';
   }).join('');
   const mid=set.find(x=>Math.round(x.d/30)===3)||set.find(x=>x.sel)||set[1]||set[0]; selectPlan(mid.d, mid.p);   // 기본 선택 = 3개월(크리스 11-16), 없으면 sel 지정 또는 가운데
+}
+async function _planRetry(btn){   // 다시 시도 — 설정을 다시 읽고 다시 그린다
+  if(btn){ btn.disabled=true; btn.textContent='불러오는 중…'; }
+  try{
+    var c=(typeof _fsRestDoc==='function') ? await _fsRestDoc('config/pricing') : null;
+    if(!(c && c.tiers) && typeof db!=='undefined' && db){ var s=await db.collection('config').doc('pricing').get(); if(s.exists) c=s.data(); }
+    if(c && c.tiers) _pricingCfg=c;
+  }catch(e){ console.warn('가격 설정 다시 읽기 실패', e); }
+  renderPlanCards(activeCertId()); recalcPay();
 }
 function selectPlan(days, price) {
   selectedPlanDays = days;
@@ -1845,7 +1831,8 @@ async function startCardPayment(){
    *   거절되고 결제창까지 못 간다. 2026-10-11 밤에 이것으로 여러 번 헛돌았다.
    *   ⚠ selectPlan() 은 쓰지 않는다 — 팝업이 닫혀 있으면 `#plan<일수>` 가 없어 터진다. */
   var _ps = (typeof plansFor === 'function') ? (plansFor(activeCertId()) || []) : [];
-  if(_ps.length && !_ps.some(function(p){ return p.d === selectedPlanDays; })){
+  if(!_ps.length){ alert('이용권을 불러오지 못했어요. 이용권 창을 다시 열어 주세요.'); return; }   // 설정 없음(2026-11-17) — 옛 값 56 이 서버로 가지 않게
+  if(!_ps.some(function(p){ return p.d === selectedPlanDays; })){
     var _m = _ps.filter(function(x){ return Math.round(x.d/30)===3; })[0] || _ps.filter(function(x){ return x.sel; })[0] || _ps[1] || _ps[0];   // 3개월 먼저(크리스 11-16)
     selectedPlanDays = _m.d; selectedPlanPrice = _m.p;
   }

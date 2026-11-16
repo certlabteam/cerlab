@@ -290,6 +290,13 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .plan-card-top{flex-direction:row;align-items:center;justify-content:space-between;width:100%;gap:8px}
 .plan-card-name{font-size:16px}
 .plan-card-off{font-size:12px;font-weight:700;color:#1D9E75;margin-left:4px}
+/* 2026-11-17 가격 설정을 못 읽었을 때 — 이용권 칸 대신 안내+다시 시도, 결제 단추·할인코드는 숨김(시안 승인) */
+.plan-cards.plan-cards-err{display:block}
+.plan-load-err{padding:24px 16px 16px;border:1.5px solid #E8E8E8;border-radius:12px;background:#fff;text-align:center}
+.plan-load-err-t{font-size:16px;font-weight:700;color:#2C2C2A}
+.plan-load-err-s{margin-top:4px;font-size:14px;color:#888780}
+.plan-load-retry{margin:16px 0 0}
+#planPopup.load-err .plan-more,#planPopup.load-err #mileUseBox,#planPopup.load-err #btnCardPay,#planPopup.load-err #btnPlayPay,#planPopup.load-err .payment-note{display:none}
 .plan-badge-pop{position:absolute;top:-8px;right:12px;background:#185FA5;color:#fff;font-size:12px;font-weight:700;padding:2px 10px;border-radius:12px}
 .bank-info{background:#fff;border:1.5px solid #B9D2EF;border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:14px;color:#0C447C;line-height:1.8}
 .bank-info strong{font-weight:700}

@@ -863,7 +863,6 @@ function buildCertRegistry(man){
     var type=ex.type||'mcq';
     if(typeof CERT_LABELS!=='undefined' && !CERT_LABELS[id]) CERT_LABELS[id]=ex.label||ex.name||id;
     if(typeof PASS_RULE!=='undefined' && ex.pass && !PASS_RULE[id]) PASS_RULE[id]=ex.pass;       // 없으면 _default
-    if(typeof PLAN_SETS!=='undefined' && ex.plan && !PLAN_SETS[id]) PLAN_SETS[id]=ex.plan;        // 없으면 _default
     if(type==='subjective'){
       if(!SUBJ_EXAMS[id]) SUBJ_EXAMS[id]={name:ex.name||id, subjects:(ex.subjects||[]).slice(), questions:[]};   // 주관식 컨테이너(applyBank가 채움) + 과목 골격(빈 과목도 '준비 중' 노출)
       else if(!SUBJ_EXAMS[id].subjects) SUBJ_EXAMS[id].subjects=(ex.subjects||[]).slice();
@@ -1974,7 +1973,7 @@ async function mpShowPayments(){
   }catch(e){ console.warn('mpShowPayments',e); box.innerHTML=top+accBox+'<div class="cm-empty">불러오지 못했어요.</div>'; }
 }
 function mpPlanName(p){
-  // PLAN_SETS에서 일수→이름(8주 이용권 등), 없으면 N일
+  // 지금 상품표에서 일수→이름, 없으면 옛 이름표(_LEGACY_PLAN_NAMES), 그래도 없으면 N일
   try{ var set=plansFor(p.certType); if(set){ var f=set.find(function(x){return x.d===p.planDays;}); if(f) return f.name; } }catch(_){}
   if(_LEGACY_PLAN_NAMES[p.planDays]) return _LEGACY_PLAN_NAMES[p.planDays];
   return (p.planDays!=null)?(p.planDays+'일'):'-';
