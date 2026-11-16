@@ -799,15 +799,15 @@ function renderReports(list) {
       <tbody>${list.map((r,i) => `
         <tr>
           <td>${fmtDate(r.createdAt)}</td>
-          <td style="font-size:11px">${CERT_NAMES[r.certType]||r.certType||'-'}</td>
-          <td style="font-size:11px">${r.subject||'-'}</td>
-          <td style="font-size:11px;color:#888780">${r.questionId||'-'}</td>
-          <td><span class="badge badge-pending">${r.errorType||'-'}</span></td>
+          <td style="font-size:11px">${cmaEsc(CERT_NAMES[r.certType]||r.certType||'-')}</td>
+          <td style="font-size:11px">${cmaEsc(r.subject||'-')}</td>
+          <td style="font-size:11px;color:#888780">${cmaEsc(r.questionId||'-')}</td>
+          <td><span class="badge badge-pending">${cmaEsc(r.errorType||'-')}</span></td>
           <td style="max-width:160px">
-            <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${r.question||''}">${(r.question||'').slice(0,20)}${(r.question||'').length>20?'...':''}</div>
-            <div style="font-size:11px;color:#888780">${r.detail||'-'}</div>
+            <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${cmaEsc(r.question||'')}">${cmaEsc(String(r.question||'').slice(0,20))}${String(r.question||'').length>20?'...':''}</div>
+            <div style="font-size:11px;color:#888780">${cmaEsc(r.detail||'-')}</div>
           </td>
-          <td style="font-size:11px">${r.reporterEmail||'-'}</td>
+          <td style="font-size:11px">${cmaEsc(r.reporterEmail||'-')}</td>
           <td><span class="badge ${r.status==='done'?'badge-approved':'badge-pending'}">${r.status==='done'?'처리완료':'대기'}</span></td>
           <td>${r.status==='pending'
             ? `<button class="btn-sm btn-approve" onclick="markReportDone('${r.id}')">완료</button>`
@@ -1241,7 +1241,7 @@ function cmaRenderReports(){
   box.innerHTML='<table><thead><tr><th>신고일</th><th>게시판</th><th>글 제목</th><th>사유</th><th>신고자</th><th>상태</th><th>처리</th></tr></thead><tbody>'
     + cmaReports.map(r=>`<tr>
         <td style="font-size:11px">${fmtDateShort(r.createdAt)}</td>
-        <td style="font-size:11px"><span class="badge">${CMA_BOARD[r.board]||r.board||'-'}</span></td>
+        <td style="font-size:11px"><span class="badge">${cmaEsc(CMA_BOARD[r.board]||r.board||'-')}</span></td>
         <td style="max-width:200px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${cmaEsc(r.postTitle||'')}">${cmaEsc(r.postTitle||'(제목없음)')}</div></td>
         <td style="font-size:12px;max-width:160px">${cmaEsc(r.reason||'-')}</td>
         <td style="font-size:11px">${cmaEsc(r.reporterNick||'-')}</td>
@@ -1276,7 +1276,7 @@ function cmaRenderPosts(){
   box.innerHTML='<table><thead><tr><th>작성일</th><th>게시판</th><th>제목</th><th>작성자</th><th>추천</th><th>댓글</th><th>관리</th></tr></thead><tbody>'
     + cmaPosts.map(p=>`<tr>
         <td style="font-size:11px">${fmtDateShort(p.createdAt)}</td>
-        <td style="font-size:11px"><span class="badge">${CMA_BOARD[p.board]||p.board}</span></td>
+        <td style="font-size:11px"><span class="badge">${cmaEsc(CMA_BOARD[p.board]||p.board)}</span></td>
         <td style="max-width:220px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${cmaEsc(p.title)}">${p.pinned?'📌 ':''}${cmaEsc(p.title)}</div></td>
         <td style="font-size:11px">${cmaEsc(p.authorNick||'-')}</td>
         <td style="font-size:11px">▲${Number(p.upCount)||0} ▼${Number(p.downCount)||0}</td>

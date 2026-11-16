@@ -283,7 +283,25 @@ function showHome(){ if(typeof ttsStop==='function')ttsStop();
   setTimeout(function(){ if(typeof reorderCertCards==='function') reorderCertCards(); }, 2500);   // 모바일 느린 렌더 대비 늦은 재정렬
   syncPlanMirror(); updateAuthBar();
 }
+/* [2026-11-16] 주소(?cert= ?lt= ?card=&cert= ?q=)로 온 시험 id 는 실제 시험 목록에 있을 때만 받는다.
+ * 모르는 글자가 시험 이름 자리 HTML 에 그대로 들어가 링크 하나로 남의 스크립트가 돌 수 있었다(보안 점검 2차 1번).
+ * 아는 id 는 기다리지 않고 바로 통과한다(동기로 부르는 곳의 흐름 그대로). 모르면 시험 목록을 한 번 받아 다시 보고, 그래도 없으면 홈으로. */
+function _isKnownCert(id){
+  if(typeof id!=='string' || !id) return false;
+  if(typeof ALL_CERTS!=='undefined' && ALL_CERTS.indexOf(id)!==-1) return true;
+  try{ return !!(MANIFEST && (MANIFEST.exams||[]).some(function(e){ return e && e.id===id; })); }catch(_){ return false; }
+}
+async function _certOk(id){
+  if(_isKnownCert(id)) return true;
+  try{ if(typeof loadManifest==='function') await loadManifest(); }catch(_){}
+  return _isKnownCert(id);
+}
+function _badCertHome(){
+  try{ history.replaceState(null, '', location.pathname); }catch(_){}
+  try{ if(typeof showHome==='function') showHome(); }catch(_){}
+}
 async function enterCert(id, noGate, noWait){
+  if(!_isKnownCert(id) && !(await _certOk(id))){ _badCertHome(); return; }
   // 객관식 시험 풀던 중 다른 시험으로 전환 시에도 오답노트·진행상황 반영
   if(typeof mqScreen!=='undefined' && mqScreen==='exam' && !mqInReview && !mqReview && !mqDiag){
     if(typeof mqFlushAnsweredToWrong==='function') mqFlushAnsweredToWrong();
@@ -346,7 +364,7 @@ async function enterCert(id, noGate, noWait){
   if(!loadedExams[id] && noWait && id!=='bodybuilding'){ try{ await loadManifest(); }catch(_){} }   // 시험 목록(과목 코드)만 받고 간다 — 회차는 홈으로 갈 때 받는다(같이 받으면 느린 망을 나눠 써 더 늦었다)
   else if(!loadedExams[id]){
     var _tgt = (id==='bodybuilding') ? document.getElementById('cardArea') : document.getElementById('mcqRoot');
-    if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:10px;max-width:440px;margin:0 auto 10px;padding:2px"><button class="ui-back" onclick="goHome()" aria-label="홈">'+BACK_ARROW+'</button><span style="font-size:16px;font-weight:800;color:#1F2937">'+certLabel(id)+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
+    if(_tgt) _tgt.innerHTML=(id==='bodybuilding'?'':'<div style="display:flex;align-items:center;gap:10px;max-width:440px;margin:0 auto 10px;padding:2px"><button class="ui-back" onclick="goHome()" aria-label="홈">'+BACK_ARROW+'</button><span style="font-size:16px;font-weight:800;color:#1F2937">'+cmEsc(certLabel(id))+'</span></div>')+'<div class="loading" style="padding:48px 16px;text-align:center;color:#0C447C;font-weight:600">문제 불러오는 중…</div>';
     try{ await loadExam(id); }
     catch(e){ if(_tgt) _tgt.innerHTML='<div style="padding:48px 16px;text-align:center;color:#E24B4A">불러오기 실패. 새로고침해 주세요.</div>'; console.error('loadExam 실패',e); return; }
     if(id==='bodybuilding'){ cards=[...D]; filtered=[...cards]; current=0; }
@@ -369,6 +387,7 @@ function goHome(){ if(typeof _cmReturn!=='undefined') _cmReturn=null; showHome()
 // 딥링크: 특정 생체 카드로 바로 이동 (?card=EP_72)
 async function goToCard(qid, certHint){
   if(!qid) return;
+  if(certHint && !_isKnownCert(certHint) && !(await _certOk(certHint))){ _badCertHome(); return; }   // [2026-11-16] 모르는 시험 id 는 홈으로(위 _isKnownCert)
   // 객관식 문항이면 해당 시험·과목·세트·문항으로 이동(진행상황 보존)
   var cs=(typeof MCQ_QID2CS!=='undefined')?MCQ_QID2CS[qid]:null;
   // 맵에 없고 cert 힌트가 MCQ 시험이면, 그 시험을 로드(lazy)한 뒤 다시 찾기
@@ -1533,9 +1552,15 @@ async function cmLoadUserDoc(){
   if(!currentUser||!firebaseReady||!db){ window._cmUserDoc=null; return; }
   try{ var d=await db.collection('users').doc(currentUser.uid).get(); window._cmUserDoc=d.exists?d.data():{}; }catch(_){ window._cmUserDoc={}; }
 }
+/* [2026-11-16] 운영자 사칭 막기 — 새로 정하는 닉네임에 운영자·관리자·서트랩·CertLab·admin 같은 말을 못 넣는다.
+ * 띄어쓰기·점·밑줄·하이픈을 빼고 소문자로 본다. 규칙(certlab-pay/firestore.rules nickOk)도 같은 검사. 이미 정한 닉네임은 그대로 둔다. */
+function cmNickBanned(n){
+  var s=String(n==null?'':n).toLowerCase().replace(/[\s._\-·]/g,'');
+  return /(운영자|운영진|관리자|서트랩|certlab|admin|어드민)/.test(s);
+}
 function cmGetNick(){
   if(window._cmUserDoc && window._cmUserDoc.boardNick) return window._cmUserDoc.boardNick;
-  if(currentUser && currentUser.displayName) return currentUser.displayName;
+  if(currentUser && currentUser.displayName && !cmNickBanned(currentUser.displayName)) return currentUser.displayName;
   return '익명';
 }
 /* [2026-10-12] 게시판 주소 — 지인에게 후기를 부탁할 때 보낼 주소(크리스).
@@ -1614,6 +1639,7 @@ function clRouteFromHash(){
     return null;
   }
   async function openQ(cert, qid){
+    if(!_isKnownCert(cert) && !(await _certOk(cert))){ _badCertHome(); return 'bad'; }   // [2026-11-16] 모르는 시험 id 는 홈으로 — 다시 열기(_retry)도 안 한다
     /* [2026-10-17] 링크가 7~9초 걸렸다 — 시험 다섯 과목을 다 받은 뒤에 문제로 갔다(크리스 「링크 누르면 넘어가는데 왜 이리 오래걸리냐」 → 「고친다 — 그 회차만 먼저」).
        문항 id 에 과목 코드가 있으면(adm26_s1_1 → s1) 그 과목만 먼저 받아 띄우고, 나머지는 뒤에서 받는다. 과목을 모르면 종전대로 다 받는다. */
     var _fast=false;
@@ -1692,6 +1718,7 @@ function clRouteFromHash(){
       function _gone(){ var c=qWanted(); return !_touched && c && c.cert===w.cert && c.qid===w.qid && typeof mqScreen!=='undefined' && (typeof activeCert==='undefined' || activeCert!==w.cert || (mqScreen!=='exam' && mqScreen!=='subjexam')); }
       function _go(){
         Promise.resolve(openQ(w.cert, w.qid)).catch(function(){ return false; }).then(function(ok){
+          if(ok==='bad') return;
           /* 쿼리로 들어왔으면 열린 뒤 주소를 해시 형태로 정리한다 —
              ?q= 가 남아 있으면 앱이 앞으로 나올 때마다 이 문항으로 되돌아간다. */
           if(ok && _viaQuery){ try{ history.replaceState(null,'',location.pathname+'#q/'+encodeURIComponent(w.cert)+'/'+encodeURIComponent(w.qid)); }catch(_){} }
@@ -2007,6 +2034,7 @@ async function mpChangeNick(){
   if(nv==null) return; nv=nv.trim();
   if(!nv){ alert('닉네임을 입력해 주세요.'); return; }
   if(nv.length>20){ alert('닉네임은 20자 이내로 해주세요.'); return; }
+  if(cmNickBanned(nv)){ alert('운영자·관리자·서트랩 같은 말은 닉네임에 쓸 수 없어요.'); return; }
   try{
     await db.collection('users').doc(currentUser.uid).set({boardNick:nv},{merge:true});
     window._cmUserDoc=window._cmUserDoc||{}; window._cmUserDoc.boardNick=nv;

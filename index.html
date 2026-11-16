@@ -596,7 +596,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       <div class="report-type" onclick="selectReportType(this,'오타')">오타</div>
       <div class="report-type" onclick="selectReportType(this,'기타')">기타</div>
     </div>
-    <textarea class="report-textarea" id="reportDetail" rows="3" placeholder="오류 내용을 자세히 적어주세요."></textarea>
+    <textarea class="report-textarea" id="reportDetail" rows="3" maxlength="2000" placeholder="오류 내용을 자세히 적어주세요."></textarea>
     <div class="report-btns">
       <button class="btn-report-cancel" onclick="closeReport()">취소</button>
       <button class="btn-report-submit" onclick="submitReport()">신고하기</button>
@@ -614,7 +614,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
       <div class="report-type" onclick="selectCSType(this,'오류')">오류</div>
       <div class="report-type" onclick="selectCSType(this,'개선사항')">개선사항</div>
     </div>
-    <textarea class="report-textarea" id="csDetail" rows="4" placeholder="내용을 자세히 적어주세요."></textarea>
+    <textarea class="report-textarea" id="csDetail" rows="4" maxlength="2000" placeholder="내용을 자세히 적어주세요."></textarea>
     <div class="report-btns">
       <button class="btn-report-cancel" onclick="closeCS()">취소</button>
       <button class="btn-report-submit" onclick="submitCS()">보내기</button>
@@ -914,13 +914,13 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-app-check-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/12.15.0/firebase-messaging-compat.js"></script>
 <script defer src="index-1-auth.js?v=f2f952a7"></script>
-<script defer src="index-2-engine.js?v=471b7879"></script>
+<script defer src="index-2-engine.js?v=a83741be"></script>
 <!-- [2026-08-05] 인터랙티브 전체 템플릿(T_cvp·T_eps·T_risk_return 등 16종).
      엔진의 itv 구역을 통째로 덮어쓰는 상위호환 모듈이라 반드시 index-2-engine.js 뒤에 온다. -->
 <script defer src="itv-render.js?v=a0b7f8f5"></script>
 <script defer src="index-3-mcq.js?v=986b2df6"></script>
 <script defer src="index-4-learn.js?v=65a82cb0"></script>
-<script defer src="index-5-shell.js?v=c889fe4c"></script>
+<script defer src="index-5-shell.js?v=262a93a7"></script>
 <script defer src="tour.js?v=65c818bb"></script>
 
 <div class="pr-ov as-page hidden" id="printSheet" onclick="if(event.target===this)closePrintSheet()">
@@ -928,7 +928,7 @@ window.clLeadOnce = function(cert){ if(window._clLeadFired) return; window._clLe
 </div>
 <div id="printArea"></div>
 <script defer src="index-6-adaptive.js?v=5a714ecb"></script>
-<script defer src="community.js?v=84b17ff6"></script>
+<script defer src="community.js?v=8c7c4c9f"></script>
 <script defer src="emoji-ui.js?v=b0f5a73b"></script>
 <script defer src="calc-render.js?v=a7d9019a"></script>
 <script defer src="index-7-iosapp.js?v=ca03728e"></script>

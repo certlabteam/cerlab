@@ -1178,6 +1178,8 @@ function updateReportBadge() {
   else { badge.style.display = 'none'; }
 }
 
+// [2026-11-16] 회원이 쓴 신고 글은 HTML 로 넣지 않는다(보안 점검 2차 2번) — admin-4-ops.js cmaEsc 와 같은 함수
+function repEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function renderReports(list) {
   if (!list.length) { document.getElementById('reportList').innerHTML = '<div class="empty">신고 내역이 없습니다.</div>'; return; }
   document.getElementById('reportList').innerHTML = `
@@ -1186,13 +1188,13 @@ function renderReports(list) {
       <tbody>${list.map((r,i) => `
         <tr>
           <td>${fmtDate(r.createdAt)}</td>
-          <td style="font-size:11px">${r.subject||'-'}</td>
-          <td><span class="badge badge-pending">${r.errorType||'-'}</span></td>
+          <td style="font-size:11px">${repEsc(r.subject||'-')}</td>
+          <td><span class="badge badge-pending">${repEsc(r.errorType||'-')}</span></td>
           <td style="max-width:160px">
-            <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${r.question||''}">${(r.question||'').slice(0,20)}${(r.question||'').length>20?'...':''}</div>
-            <div style="font-size:11px;color:#888780">${r.detail||'-'}</div>
+            <div style="font-size:12px;color:#555;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${repEsc(r.question||'')}">${repEsc(String(r.question||'').slice(0,20))}${String(r.question||'').length>20?'...':''}</div>
+            <div style="font-size:11px;color:#888780">${repEsc(r.detail||'-')}</div>
           </td>
-          <td style="font-size:11px">${r.reporterEmail||'-'}</td>
+          <td style="font-size:11px">${repEsc(r.reporterEmail||'-')}</td>
           <td><span class="badge ${r.status==='done'?'badge-approved':'badge-pending'}">${r.status==='done'?'처리완료':'대기'}</span></td>
           <td>${r.status==='pending'
             ? `<button class="btn-sm btn-approve" onclick="markReportDone('${r.id}')">완료</button>`

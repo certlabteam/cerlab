@@ -169,6 +169,7 @@ async function cmSubmitPost(){
   if(!nick){ alert('닉네임을 입력해 주세요.'); return; }
   if(nick.length>20){ alert('닉네임은 20자 이내로 해주세요.'); return; }
   if(window._cmUserDoc && window._cmUserDoc.boardNick){ nick=window._cmUserDoc.boardNick; }  // 닉 잠금: 기존 닉 강제
+  else if(typeof cmNickBanned==='function' && cmNickBanned(nick) && !cmIsAdmin()){ alert('운영자·관리자·서트랩 같은 말은 닉네임에 쓸 수 없어요.'); return; }   // [2026-11-16] 새 닉네임만 검사(사칭 막기)
   if(!title){ alert('제목을 입력해 주세요.'); return; }
   if(!body){ alert('내용을 입력해 주세요.'); return; }
   var btn=document.getElementById('cmwSubmit'); btn.disabled=true; btn.textContent='등록 중\u2026';
@@ -522,7 +523,7 @@ async function cmReport(){
   if(!currentUser){ alert('신고하려면 로그인이 필요해요.'); return; }
   if(!cmCurPost) return;
   var reason=prompt('신고 사유를 적어주세요 (욕설 · 광고 · 도배 등)');
-  if(reason==null) return; reason=(reason||'').trim();
+  if(reason==null) return; reason=(reason||'').trim().slice(0,1000);   // [2026-11-16] 규칙이 1000자까지만 받는다
   try{
     await db.collection('reports').add({
       postId:cmCurPost._id, postTitle:(cmCurPost.title||''), board:(cmCurPost.board||''),

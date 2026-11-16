@@ -44,13 +44,13 @@ async function submitReport() {
   const t = reportTarget || {};
   try {
     await db.collection('reports').add({
-      question: t.q || '',
+      question: String(t.q || '').slice(0, 20000),   // [2026-11-16] 규칙이 칸·길이를 본다(question 20000 · detail 2000)
       subject: t.subject || '',
       cardIndex: (t._card ? D.findIndex(c => c.q === t._card.q && c.s === t._card.s) : -1),
       questionId: t.qid || '',
       certType: t.cert || activeCertId(),
       errorType: selectedReportType,
-      detail: detail || '',
+      detail: (detail || '').slice(0, 2000),
       reporterUid: currentUser ? currentUser.uid : 'guest',
       reporterEmail: currentUser ? currentUser.email : '비회원',
       status: 'pending',
@@ -88,7 +88,7 @@ async function submitCS() {
       cardIndex: -1,
       certType: (typeof activeCert!=='undefined' && activeCert) ? activeCert : 'general',
       errorType: selectedCSType,
-      detail: detail,
+      detail: detail.slice(0, 2000),
       reporterUid: currentUser ? currentUser.uid : 'guest',
       reporterEmail: currentUser ? currentUser.email : '비회원',
       status: 'pending',
