@@ -38,16 +38,39 @@ function clAppCall(o){
   /* 이용권: 앱 안에서는 웹 결제(토스·포인트)를 보이지 않고 앱의 App Store 이용권 화면을 연다(애플 규칙) */
   var _plan = window.showPlanPopup;
   if(typeof _plan === 'function'){
+    /* [2026-11-17] 가격 설정(config/pricing)을 못 읽은 채로 열면 _certTier 가 'standard' 로 떨어져
+     * 프리미엄 시험을 스탠다드 상품으로 사게 됐다(서버는 등급이 달라 거절 · 돈은 나감).
+     * → 설정이 없으면 한 번 다시 읽고 열고, 그래도 없으면 안내만 한다. */
+    function 설정있음(){ return typeof _pricingCfg !== 'undefined' && !!(_pricingCfg && _pricingCfg.tiers); }
+    async function 설정다시읽기(){
+      try{
+        var c = (typeof _fsRestDoc === 'function') ? await _fsRestDoc('config/pricing') : null;
+        if(!(c && c.tiers) && typeof db !== 'undefined' && db){ var s = await db.collection('config').doc('pricing').get(); if(s.exists) c = s.data(); }
+        if(c && c.tiers){ _pricingCfg = c; return true; }
+      }catch(e){ console.warn('가격 설정 다시 읽기 실패', e); }
+      return false;
+    }
+    function 앱결제열기(){
+      var cert = (typeof activeCertId === 'function') ? activeCertId() : '';
+      var 등급 = _certTier(cert);
+      var 이름 = (typeof certFull === 'function') ? certFull(cert) : cert;
+      try{ localStorage.setItem('cl_ios_pay_exam', cert); }catch(_){}   // 앱을 다시 열어 이어 켤 때 어느 시험인지(R5)
+      return clAppCall({ 할일:'결제열기', 시험:cert, 등급:등급, 시험이름:이름 });
+    }
     window.showPlanPopup = function(){
+      var self = this, args = arguments;
       try{
         if(typeof currentUser !== 'undefined' && !currentUser){ window.showLoginPopup(); return; }
-        var cert = (typeof activeCertId === 'function') ? activeCertId() : '';
-        var 등급 = (typeof _certTier === 'function') ? _certTier(cert) : 'standard';
-        var 이름 = (typeof certFull === 'function') ? certFull(cert) : cert;
-        try{ localStorage.setItem('cl_ios_pay_exam', cert); }catch(_){}   // 앱을 다시 열어 이어 켤 때 어느 시험인지(R5)
-        if(clAppCall({ 할일:'결제열기', 시험:cert, 등급:등급, 시험이름:이름 })) return;
+        if(!(window.CertlabApp && window.CertlabApp.postMessage)) return _plan.apply(self, args);   // 옛 앱(연결 없음)은 그대로
+        if(설정있음()){ if(앱결제열기()) return; return _plan.apply(self, args); }
+        설정다시읽기().then(function(ok){
+          if(ok){ if(!앱결제열기()) _plan.apply(self, args); return; }
+          var 글 = '이용권을 불러오지 못했어요. 인터넷 연결을 확인하고 다시 열어 주세요.';
+          try{ if(typeof clNotice === 'function') clNotice(글); else alert(글); }catch(_){}
+        });
+        return;
       }catch(e){ console.warn('앱 결제 열기 실패', e); }
-      return _plan.apply(this, arguments);
+      return _plan.apply(self, args);
     };
   }
 
