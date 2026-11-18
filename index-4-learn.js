@@ -586,7 +586,7 @@ function _dropNonFinalDot(h){ try{ h=String(h==null?'':h);
     if(c==='다'||c==='요') return m;
     // [2026-11-17] 날짜 「2024. 2. 1」의 연·월 점은 지우지 않는다 — 「2024 2 1」로 나왔다(크리스 변리사 patent2026_ip_003)
     if(/[0-9]/.test(c)){ var _bf=h.slice(0, off+1).replace(/<[^>]*>/g,''), _af=h.slice(off+m.length).replace(/<[^>]*>/g,'');
-      if((/(^|[^\d])\d{4}$/.test(_bf) || /\d{4}\.\s?\d{1,2}$/.test(_bf)) && /^\s?\d{1,2}\./.test(_af)) return m; }   // 연·월 뒤 점만 남기고 일 뒤 끝 점은 뺀다(크리스 「끝 점은 빼고」)
+      if((/(^|[^\d])\d{4}$/.test(_bf) || /\d{4}\.\s?\d{1,2}$/.test(_bf)) && /^\s?\d{1,2}(?!\d)/.test(_af)) return m; }   // 연·월 뒤 점만 남기고 일 뒤 끝 점은 뺀다(크리스 「끝 점은 빼고」) · [2026-11-18] 일 뒤 끝 점이 없어도 연·월 점은 남긴다(ip2026_005 그래프)
     var before=h.slice(0, off+1).replace(/<[^>]*>/g,'');
     // [2026-10-22] 영문 이름 머리글자 「N. Gilbert」「A. Bandura」의 점은 지우지 않는다 — 「(N Gilbert & H Specht)」로 나왔다(기출1번방 sw20_2_52)
     if(/[A-Z]/.test(c) && !tags && /(^|[^A-Za-z])[A-Z]$/.test(before)) return m;
