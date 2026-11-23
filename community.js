@@ -222,6 +222,7 @@ async function cmOpenDetail(id){
   if(_cv && _cv.classList.contains('hidden')){ ['homeView','bodybuildingView','mcqView','myPageView'].forEach(function(x){var el=document.getElementById(x); if(el) el.classList.add('hidden');}); _cv.classList.remove('hidden'); var _cs=document.getElementById('certSwitch'); if(_cs) _cs.classList.remove('hidden'); }
   document.getElementById('cmListWrap').classList.add('hidden');
   var d=document.getElementById('cmDetail'); d.classList.remove('hidden');
+  try{ document.querySelectorAll('#cmBody .cm-post').forEach(function(el){ el.classList.toggle('cm-post-cur', (el.getAttribute('onclick')||'').indexOf("'"+id+"'")>=0); }); }catch(_){}   // [2026-11-23] 넓은 화면은 목록이 옆에 남아 있어 지금 글을 표시한다
   try{ history.replaceState(history.state, '', '#post/'+id); }catch(_){}
   var box=document.getElementById('cmDetailBody'); box.innerHTML='<div class="cm-loading">불러오는 중\u2026</div>';
   if(!firebaseReady||!db){ box.innerHTML='<div class="cm-empty">서버에 연결할 수 없어요.</div>'; return; }

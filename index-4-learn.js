@@ -1590,6 +1590,74 @@ function _mqRailHTML(qs){
     '<div class="mq-rail-grid">'+btns+'</div><div class="gx-leg">'+leg+'</div></nav>';
 }
 function mqRailGo(i){ if(i!==mqIdx) mqNav(i-mqIdx); }   // 번호판 — 이전·다음 단추와 같은 길(mqNav)로 옮긴다
+/* 다시 그려도 왼쪽 목록(번호판·개념·복습)의 스크롤 자리를 그대로 둔다. 지금 항목이 목록 밖이면 목록 안에서만 당겨 보인다 */
+function _mqKeepScroll(root, fn){
+  var S=['.mq-rail','.mq-clist','.mq-rvlist'], keep={};
+  S.forEach(function(s){ var e=root.querySelector(s); if(e) keep[s]=e.scrollTop; });
+  fn();
+  S.forEach(function(s){ var e=root.querySelector(s); if(!e) return; if(keep[s]!=null) e.scrollTop=keep[s];
+    var c=e.querySelector('[aria-current]'); if(c && (c.offsetTop<e.scrollTop || c.offsetTop+c.offsetHeight>e.scrollTop+e.clientHeight)) e.scrollTop=Math.max(0, c.offsetTop-e.clientHeight/3); });
+}
+/* 선행학습 넓은 화면 — 그 문항에 걸린 암기코드 · 그래프 · 표(해설과 같은 그리기 함수) */
+function _mqMastersHTML(q){
+  var mn=q.mn||(q.exp&&q.exp.mn), L=Array.isArray(mn)?mn.slice():(mn?[mn]:[]);
+  _conceptChain(q,'mn').forEach(function(r){ if(L.indexOf(r)<0) L.push(r); });
+  var h=(L.length?_mnBoxesHTML(L):'')+grpBlockHTML(q)+tblBlockHTML(q);
+  return h?'<div class="mq-lmasters">'+h+'</div>':'';
+}
+function _mqConceptListHTML(qs){
+  return '<nav class="mq-clist" aria-label="개념 목록"><div class="gx-ti">개념 <span>'+qs.length+'개 · 누르면 그 개념으로</span></div>'+qs.map(function(x,i){
+    var t=(x.exp&&x.exp.learn&&x.exp.learn.title)||((_conceptCards(x)[0]||{}).t)||String(x.q||'');
+    t=String(t).replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); if(t.length>40) t=t.slice(0,40)+'…';
+    return '<button type="button" class="mq-cl-it'+(i===mqIdx?' on':'')+'" onclick="mqRailGo('+i+')"'+(i===mqIdx?' aria-current="true"':'')+'><span class="mq-cl-n">'+(i+1)+'</span><span class="mq-cl-t">'+mqEsc(t)+'</span></button>';
+  }).join('')+'</nav>';
+}
+/* 오늘의 복습 넓은 화면 — 왼쪽 목록(맞힘·또 틀림) + 문항마다 다시 나온 이유 한 줄.
+   이유는 복습 기록(srProgress)의 지난 결과로만 쓴다. 이번에 풀면 기록이 덮이므로 처음 그릴 때 적어 둔다 */
+var _mqRvWhy={};
+function _mqRvReason(q){
+  if(_mqRvWhy[q.id]!==undefined) return _mqRvWhy[q.id];
+  if(mqAns[q.id]!==undefined) return '';
+  var p=(typeof srGetK==='function')&&srGetK(mqCert,q.id), s='';
+  if(p && p.rc){
+    var d=p.lr?Math.max(0,Math.floor((Date.now()-p.lr)/86400000)):null, ago=(d===null)?'':(d===0?' · 오늘':' · '+d+'일 전');
+    s=p.res===0?'지난번에 틀렸어요'+ago : p.res===1?'지난번에 확실하지 않았어요(찍음 등)'+ago : '맞혔지만 잊기 전에 다시 봐요'+ago;
+  }
+  return (_mqRvWhy[q.id]=s);
+}
+function _mqReviewListHTML(qs){
+  if(!Object.keys(mqAns).length) _mqRvWhy={};
+  var ok=0, bad=0;
+  var items=qs.map(function(x,i){
+    var a=mqAns[x.id], why=_mqRvReason(x), st, cls;
+    if(a===undefined){ st='아직'; cls='none'; } else if(isCorr(x.ans,a)){ st='맞힘'; cls='ok'; ok++; } else { st='또 틀림'; cls='bad'; bad++; }
+    if(a!==undefined && mqGuess[x.id]) st+=' · 찍음';
+    var t=String(x.q||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); if(t.length>44) t=t.slice(0,44)+'…';
+    return '<button type="button" class="mq-rv-it'+(i===mqIdx?' on':'')+'" onclick="mqRailGo('+i+')"'+(i===mqIdx?' aria-current="true"':'')+'>'+
+      '<span class="mq-rv-n '+cls+'">'+(i+1)+'</span><span class="mq-rv-b"><span class="mq-rv-q">'+mqEsc(t)+'</span>'+
+      '<span class="mq-rv-s"><b class="'+cls+'">'+st+'</b>'+(why?' · '+why:'')+'</span></span></button>';
+  }).join('');
+  return '<nav class="mq-rvlist" aria-label="오늘 복습 목록"><div class="gx-ti">오늘 복습 <span>'+qs.length+'문항 · 맞힘 '+ok+' · 또 틀림 '+bad+'</span></div>'+items+'</nav>';
+}
+/* PC 키보드 — 문제 화면에서 1~5 보기 고르기 · ←/→ 이전·다음 · 스페이스 정답 보기.
+   마우스·트랙패드가 있는 기기(hover · fine pointer)에서만, 글을 쓰는 중이거나 창이 떠 있으면 안 듣는다. 터치 기기는 그대로 */
+document.addEventListener('keydown', function(e){
+  try{
+    if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+    if(!(window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches)) return;
+    if(typeof mqScreen==='undefined' || mqScreen!=='exam') return;
+    var v=document.getElementById('mcqView'); if(!v || v.classList.contains('hidden')) return;
+    var t=e.target; if(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    if(document.querySelector('.inapp-popup:not(.hidden), .as-page:not(.hidden), .jr-sheet.on, #oxWarnPop[style*="flex"], #oxWarnPop[style*="block"]')) return;
+    var qs=mqQuestions(), q=qs[mqIdx]; if(!q) return;
+    var k=e.key;
+    if(k==='ArrowLeft'){ if(mqIdx>0){ e.preventDefault(); mqNav(-1); } return; }
+    if(k==='ArrowRight'){ if(mqIdx<qs.length-1){ e.preventDefault(); mqNav(1); } return; }   // 마지막 문항에서는 채점으로 넘기지 않는다(실수 막기)
+    if(mqConcept && mqConceptPhase==='learn') return;
+    if(k===' ' || k==='Spacebar'){ if(t && t.tagName==='BUTTON') return; e.preventDefault(); mqToggleExp(q.id); return; }
+    if(/^[1-9]$/.test(k) && !mqInReview && !isSA(q) && Array.isArray(q.opts) && +k<=q.opts.length){ e.preventDefault(); mqPick(q.id, +k); }
+  }catch(_){}
+});
 /* 정답을 숨긴 동안 오른쪽 해설 칸 — 자리는 두고 흐리게 가린 뒤 가운데 「정답 보기」(누르면 「정답·해설」 단추와 같다).
    가린 칸에는 진짜 해설 대신 빈 줄만 그린다 — 정답이 비쳐 보이지 않게. */
 function _mqHoldHTML(q, sel){
@@ -1680,15 +1748,19 @@ function renderMcqExam(root){
     return parts.length?(' · '+parts.join(' · ')):''; })();
   // 개념학습 모드 - 개념 카드 단계
   if(mqConcept && mqConceptPhase==='learn'){
-    root.innerHTML=
+    const _lw=_mqWide();   // [2026-11-23] 넓은 화면: 왼쪽 개념 목록 · 오른쪽 고른 개념 카드(표·암기코드 같이)
+    const _learnHTML=
       '<div class="exam-sticky">'+
       '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="뒤로">'+BACK_ARROW+'</button>'+
         '<div class="exam-ti"><div class="nm">선행학습</div><div class="st">'+(sets[mqSet]?sets[mqSet].label:'')+'</div></div></div>'+
       '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
       '</div>'+
       '<div class="learn-hd"><span class="learn-step"><img class="mq-ico" src="icons/book.png" alt=""> 선행학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
-      '<div class="lcard">'+conceptCardHTML(q)+
+      '<div class="lcard">'+conceptCardHTML(q)+(_lw?_mqMastersHTML(q):'')+
         '<button class="solve-btn" onclick="mqConceptSolve()">이 개념으로 문제 풀기 →</button></div>';
+    _mqKeepScroll(root, function(){
+      root.innerHTML=(_lw && qs.length>1) ? '<div class="mq-split">'+_mqConceptListHTML(qs)+'<div class="mq-main">'+_learnHTML+'</div></div>' : _learnHTML;
+    });
     resolveImages(root);
     return;
   }
@@ -1971,10 +2043,10 @@ function renderMcqExam(root){
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>';
-  root.innerHTML=_mqWideNow
-    ? '<div class="mq-split">'+_mqRailHTML(qs)+'<div class="mq-main">'+_mqMainHTML+'</div></div>'+
+  _mqKeepScroll(root, function(){ root.innerHTML=_mqWideNow
+    ? '<div class="mq-split">'+((mqReview&&!mqInReview)?_mqReviewListHTML(qs):_mqRailHTML(qs))+'<div class="mq-main">'+_mqMainHTML+'</div></div>'+
       '<aside class="mq-side" aria-label="해설">'+(showExp?expHTML:_mqHoldHTML(q,sel))+'</aside></div>'
-    : _mqMainHTML+expHTML+'</div>';
+    : _mqMainHTML+expHTML+'</div>'; });
   if(_mqCpt && (!_mqWideNow || _mqCpt.qid!==q.id)) mqCptClose();   // 다른 문항으로 가면 개념 옆 칸을 닫는다
   expFold(root, q);   // 해설 접기(위 함수 머리글)
   resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); _eqFit(root); markComboStmts(root, !mqInReview && !_isPairOpts(q) && !_isCatCombo(q) && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);

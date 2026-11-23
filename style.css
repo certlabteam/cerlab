@@ -1842,5 +1842,35 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
   #mcqView .mq-rx-bd>.exp{margin-top:0}
   #mcqView .mq-rx-go{margin-top:12px;background:#fff;border:1px solid #B5D4F4;color:#185FA5;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer}
   #mcqView .mq-rx-empty{font-size:14px;color:#64748B;padding:12px 0}
+  /* 선행학습 — 왼쪽 개념 목록 · 오른쪽 개념 카드 / 오늘의 복습 — 왼쪽 복습 목록 · 가운데 문제 · 오른쪽 해설 */
+  #mcqView .mq-split:has(>.mq-clist){grid-template-columns:256px minmax(0,1fr)}
+  #mcqView .mq-split:has(>.mq-clist) .mq-main{max-width:760px}
+  #mcqView .mq-split:has(>.mq-rvlist){grid-template-columns:256px minmax(0,1fr) minmax(0,1fr)}
+  #mcqView .mq-clist,#mcqView .mq-rvlist{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px 8px}
+  #mcqView .mq-clist .gx-ti,#mcqView .mq-rvlist .gx-ti{padding:0 4px}
+  #mcqView .mq-clist .gx-ti span,#mcqView .mq-rvlist .gx-ti span{display:block;margin:2px 0 0}
+  #mcqView .mq-cl-it,#mcqView .mq-rv-it{display:flex;align-items:flex-start;gap:8px;width:100%;min-height:44px;text-align:left;background:none;border:1px solid transparent;border-radius:8px;padding:8px;margin-top:4px;cursor:pointer;font:inherit;color:#334155}
+  #mcqView .mq-cl-it:hover,#mcqView .mq-rv-it:hover{background:#fff;border-color:#E2E8F0}
+  #mcqView .mq-cl-it.on,#mcqView .mq-rv-it.on{background:#fff;border-color:#0F172A}
+  #mcqView .mq-cl-n,#mcqView .mq-rv-n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:#E6F1FB;color:#185FA5;font-size:12px;font-weight:800}
+  #mcqView .mq-cl-it.on .mq-cl-n{background:#0F172A;color:#fff}
+  #mcqView .mq-cl-t{font-size:14px;line-height:1.5;padding-top:4px}
+  #mcqView .mq-rv-n.ok{background:#DCFCE7;color:#15803D}
+  #mcqView .mq-rv-n.bad{background:#FEE2E2;color:#B91C1C}
+  #mcqView .mq-rv-n.none{background:#F1F5F9;color:#64748B}
+  #mcqView .mq-rv-b{display:flex;flex-direction:column;gap:2px;min-width:0}
+  #mcqView .mq-rv-q{font-size:14px;line-height:1.5;color:#0F172A;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  #mcqView .mq-rv-s{font-size:12px;color:#64748B}
+  #mcqView .mq-rv-s b.ok{color:#15803D}
+  #mcqView .mq-rv-s b.bad{color:#B91C1C}
+  #mcqView .mq-rv-s b.none{color:#64748B;font-weight:700}
+  #mcqView .mq-lmasters{max-width:560px;margin:16px auto}
+  /* 커뮤니티 — 왼쪽 글 목록 · 오른쪽 본문·댓글. 글을 열어도 목록이 남는다 */
+  body:has(#communityView:not(.hidden)){max-width:1200px}
+  #communityView:not(.hidden){display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:0 24px;align-items:start;padding:0 24px 24px}
+  #communityView #cmListWrap,#communityView #cmListWrap.hidden{display:block;grid-column:1;grid-row:1;position:sticky;top:80px;max-height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain;background:#fff;border:1px solid #E6EEF8;border-radius:12px;margin-top:16px}
+  #communityView #cmDetail,#communityView #cmWrite{grid-column:2;grid-row:1;background:#fff;border:1px solid #E6EEF8;border-radius:12px;margin-top:16px;overflow:hidden}
+  #communityView:has(#cmDetail.hidden):has(#cmWrite.hidden)::after{content:'글을 누르면 여기에 본문과 댓글이 나와요';grid-column:2;grid-row:1;margin-top:16px;padding:48px 16px;text-align:center;font-size:14px;color:#64748B;background:#fff;border:1px dashed #D6E2F5;border-radius:12px}
+  #communityView .cm-post.cm-post-cur{border-color:#0F172A;box-shadow:0 0 0 1px #0F172A}
 }
 
