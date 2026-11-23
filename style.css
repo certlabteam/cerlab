@@ -1993,3 +1993,20 @@ html.bs-preview .header,html.bs-preview #mcqView .exam-sticky{top:28px}
 #mcqView .bs-bx-u{background:#FFF3D6;border-color:#E0A52E}
 #mcqView .bs-r>b.bs-num{flex:none;min-width:24px;font-size:16px;font-weight:800;color:#0C447C;line-height:1.2}   /* [spike-basics] 관계도 번호 — 원 없이 「1.」 큰 숫자 */
 #mcqView .bs-r .bs-l{padding-left:30px}
+/* [spike-basics] 번호는 원·네모 바탕 없이 「1.」 큰 숫자로(크리스 「숫자 여전히 원안에 들어가있네」) — 문항 번호 · 보기 번호 · 선행학습 개념 번호 · 넓은 화면 목록 번호 · 첫 화면 예시 */
+#mcqView .qnum,#lpWrap #sample .qnum{background:none!important;border:0!important;color:#0C447C;width:auto;height:auto;min-width:0;font-size:18px;border-radius:0}
+#mcqView .qnum::after,#lpWrap #sample .qnum::after{content:'.'}
+#mcqView .opt .onum,#lpWrap #sample .opt .onum{background:none!important;border:0!important;width:auto;min-width:22px;height:auto;border-radius:0;font-size:16px;color:#334155;justify-content:flex-start}
+#mcqView .opt .onum::after,#lpWrap #sample .opt .onum::after{content:'.'}
+#mcqView .lsec-t .lico{background:none!important;border:0!important;width:auto;height:auto;min-width:22px;font-size:16px;border-radius:0;justify-content:flex-start}
+#mcqView .lsec-t .lico::after{content:'.'}
+#mcqView .ltrap .lsec-t .lico::after{content:''}
+#mcqView .mq-cl-n,#mcqView .mq-rv-n,#mcqView .mq-rx-n{background:none!important;border:0!important;width:auto;min-width:28px;height:auto;border-radius:0;font-size:16px;justify-content:flex-start}
+#mcqView .mq-cl-n::after,#mcqView .mq-rv-n::after,#mcqView .mq-rx-n::after{content:'.'}
+#mcqView .mq-cl-it.on .mq-cl-n{color:#0C447C}
+/* 결과 번호판·넓은 화면 번호판(.gx)도 바탕 없이 「1.」 — 상태는 숫자 색(정답 초록·오답 빨강·미응답 회색 / 푼 파랑·찍음 주황·안 푼 회색), 지금 문항은 밑줄 */
+#mcqView .gx,#mcqView .mq-rail .gx,#mcqView .mq-rail .gx.mq-r-done,#mcqView .mq-rail .gx.mq-r-guess,#mcqView .mq-rail .gx.mq-r-none,#mcqView .mq-rail .gx.gx-ok,#mcqView .mq-rail .gx.gx-bad,#mcqView .mq-rail .gx.gx-none,#mcqView .mq-rail .gx.mq-r-cur.mq-r-done,#mcqView .mq-rail .gx.mq-r-cur.mq-r-guess,#mcqView .mq-rail .gx.mq-r-cur.mq-r-none{background:transparent!important;border:0!important;box-shadow:none!important;outline:0;font-size:16px!important;font-weight:800!important}
+#mcqView .gx::after{content:'.'}
+#mcqView .gx.gx-ok{color:#15803D}#mcqView .gx.gx-bad{color:#B91C1C}#mcqView .gx.gx-none{color:#94A3B8}
+#mcqView .mq-rail .gx.mq-r-done{color:#185FA5}#mcqView .mq-rail .gx.mq-r-guess{color:#B45309}#mcqView .mq-rail .gx.mq-r-none{color:#64748B}
+#mcqView .mq-rail .gx.mq-r-cur,#mcqView .mq-rail .gx.mq-r-cur.mq-r-done,#mcqView .mq-rail .gx.mq-r-cur.mq-r-guess,#mcqView .mq-rail .gx.mq-r-cur.mq-r-none{color:#0C447C;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
