@@ -445,7 +445,7 @@ async function cmUploadImages(pid, files){
 }
 async function cmLoadNoticeBar(){
   var bar=document.getElementById('cmNoticeBar'); if(!bar) return;
-  if(!firebaseReady||!db){ bar.classList.add('hidden'); return; }
+  if(!firebaseReady||!db){ bar.classList.add('hidden'); var _rb=document.getElementById('cmReviewBar'); if(_rb) _rb.classList.add('hidden'); return; }
   try{
     // 공지글 최신 5개를 3초마다 회전(공지 외 글 없음)
     _cmNbItems=[];
@@ -458,46 +458,53 @@ async function cmLoadNoticeBar(){
       if(typeof pwaStandalone==='function' && pwaStandalone() && typeof POINT_GUIDE_POST!=='undefined') arr=arr.filter(function(p){ return p.id!==POINT_GUIDE_POST; });
       arr.slice(0,5).forEach(function(p){ _cmNbItems.push({id:p.id, board:'notice', title:('\uD83D\uDCE2 '+p.t)}); });
     }catch(_){}
-    /* [2026-10-12] \uD569\uACA9\uD6C4\uAE30\uB3C4 \uC11E\uC5B4 \uB3CC\uB9B0\uB2E4 \u2014 \uD06C\uB9AC\uC2A4 \u300E\uC5EC\uAE30\uC5D0 \uD6C4\uAE30 \uB9AC\uBDF0 \uC62C\uB77C\uC628\uAC83\uB3C4 \uB864\uB9C1\uB418\uAC8C \uD574\uC918\u300F.
-       \uCD5C\uC2E0 5\uAC1C\uB97C \uACF5\uC9C0\uC640 \uBC88\uAC08\uC544 \uB123\uB294\uB2E4(\uACF5\uC9C01\u00B7\uD6C4\uAE301\u00B7\uACF5\uC9C02\u00B7\uD6C4\uAE302\u2026). \uB204\uB974\uBA74 \uADF8 \uD6C4\uAE30\uAC00 \uC5F4\uB9B0\uB2E4(cmNbClick \uC774 board \uB97C \uBCF8\uB2E4). */
+    /* [2026-11-23 크리스] 합격후기는 공지 띠에 섞지 않고 공지 띠 아래 따로 한 줄(#cmReviewBar)로 돌린다 — 띠 순서: 공지 → 합격후기 (예전: 공지와 번갈아 섞음 · 10-12) */
+    var ri=[];
     try{
       var rq=await db.collection('posts').where('board','==','review').limit(20).get();
       var rv=[]; rq.forEach(function(d){ var p=d.data(); rv.push({id:d.id, t:(p.title||''), c:p.cert, at:(p.createdAt&&p.createdAt.seconds)||0}); });
       rv.sort(function(a,b){ return b.at-a.at; });
-      var ri=rv.slice(0,5).map(function(p){
+      ri=rv.slice(0,5).map(function(p){
         var lb=(p.c && typeof CM_CERT_LABEL!=='undefined' && CM_CERT_LABEL[p.c]) ? (CM_CERT_LABEL[p.c]+' \u2014 ') : '';
         return {id:p.id, board:'review', title:('\u2B50 \uD569\uACA9\uD6C4\uAE30 \u00B7 '+lb+p.t)};
       });
-      if(ri.length){
-        var mix=[], ni=_cmNbItems;
-        for(var k=0;k<Math.max(ni.length,ri.length);k++){ if(ni[k]) mix.push(ni[k]); if(ri[k]) mix.push(ri[k]); }
-        _cmNbItems=mix;
-      }
     }catch(_){}
+    _cmRvItems=ri; _cmRvRun(document.getElementById('cmReviewBar'), ri, 'rv');
     /* [2026-10-12 크리스] 친구 초대(9,900P)도 두 번째 줄로 섞는다 */
     _cmNbItems.splice(Math.min(1,_cmNbItems.length),0,{board:'invite', title:'🎁 친구 초대하면 친구도 나도 9,900P — 한 달 이용권 값'});
     /* [2026-10-13] 안드로이드 웹에서만 — 앱 첫 로그인 혜택(앱 안이면 안 띄운다) */
     if(/android/i.test(navigator.userAgent) && !(typeof clInApp==='function' && clInApp()) && !(typeof pwaStandalone==='function' && pwaStandalone()))
       _cmNbItems.splice(Math.min(3,_cmNbItems.length),0,{board:'app', title:'📲 앱에서 첫 로그인하고 문제 10개 풀면 9,900P'});
-    if(!_cmNbItems.length){ bar.classList.add('hidden'); if(_cmNbTimer){clearInterval(_cmNbTimer);_cmNbTimer=null;} return; }
-    bar.classList.remove('hidden');
-    var roll=document.getElementById('cmNbRoll');
-    /* [2026-10-29] 크리스 「롤린배너쪽도 다시 디자인」 — 줄 앞 이모지 대신 그록 아이콘 + 종류 이름표(공지·합격후기·혜택) */
-    var NB_KIND={notice:['speaker','공지'], review:['trophy','합격후기'], invite:['gift','혜택'], app:['gift','앱 혜택']};
-    roll.innerHTML=_cmNbItems.map(function(it,i){
-      var k=NB_KIND[it.board]||['speaker','공지'], t=String(it.title||'').replace(/^(?:[\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D\s]|[\uD83C-\uDBFF][\uDC00-\uDFFF])+/,'').replace(/^합격후기 · /,'');
-      return '<div class="cm-nb-line'+(i===0?' on':'')+'"><img src="icons/'+k[0]+'.png" alt="" class="cm-nb-ic"><span class="cm-nb-tag cm-nb-'+it.board+'">'+k[1]+'</span><span class="cm-nb-t">'+cmEsc(t)+'</span></div>'; }).join('');
-    _cmNbIdx=0;
-    if(_cmNbTimer){ clearInterval(_cmNbTimer); _cmNbTimer=null; }
-    if(_cmNbItems.length>1){
-      _cmNbTimer=setInterval(function(){
-        var lines=roll.querySelectorAll('.cm-nb-line'); if(lines.length<2) return;
-        var cur=lines[_cmNbIdx]; _cmNbIdx=(_cmNbIdx+1)%lines.length; var nx=lines[_cmNbIdx];
-        cur.classList.remove('on');
-        nx.classList.add('on');
-      },3000);
-    }
+    _cmRvRun(bar, _cmNbItems, 'nb');
   }catch(e){ console.warn('cmLoadNoticeBar',e); bar.classList.add('hidden'); }
+}
+/* 띠 하나를 그리고 3초마다 돌린다 — 공지 띠(nb)와 합격후기 띠(rv)가 같이 쓴다. 항목이 없으면 그 띠만 숨긴다 */
+var _cmRvItems=[], _cmRvIdx=0, _cmRvTimer=null;
+function _cmRvRun(bar, items, which){
+  if(!bar) return;
+  var nb=(which==='nb');
+  if(nb){ if(_cmNbTimer){ clearInterval(_cmNbTimer); _cmNbTimer=null; } _cmNbIdx=0; } else { if(_cmRvTimer){ clearInterval(_cmRvTimer); _cmRvTimer=null; } _cmRvIdx=0; }
+  if(!items.length){ bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  var roll=bar.querySelector('.cm-nb-roll');
+  /* [2026-10-29] 크리스 「롤린배너쪽도 다시 디자인」 — 줄 앞 이모지 대신 그록 아이콘 + 종류 이름표(공지·합격후기·혜택) */
+  var NB_KIND={notice:['speaker','공지'], review:['trophy','합격후기'], invite:['gift','혜택'], app:['gift','앱 혜택']};
+  roll.innerHTML=items.map(function(it,i){
+    var k=NB_KIND[it.board]||['speaker','공지'], t=String(it.title||'').replace(/^(?:[☀-➿⬀-⯿️‍\s]|[\uD83C-\uDBFF][\uDC00-\uDFFF])+/,'').replace(/^합격후기 · /,'');
+    return '<div class="cm-nb-line'+(i===0?' on':'')+'"><img src="icons/'+k[0]+'.png" alt="" class="cm-nb-ic"><span class="cm-nb-tag cm-nb-'+it.board+'">'+k[1]+'</span><span class="cm-nb-t">'+cmEsc(t)+'</span></div>'; }).join('');
+  if(items.length>1){
+    var tm=setInterval(function(){
+      var lines=roll.querySelectorAll('.cm-nb-line'); if(lines.length<2) return;
+      var i0=nb?_cmNbIdx:_cmRvIdx, i1=(i0+1)%lines.length;
+      lines[i0].classList.remove('on'); lines[i1].classList.add('on');
+      if(nb) _cmNbIdx=i1; else _cmRvIdx=i1;
+    },3000);
+    if(nb) _cmNbTimer=tm; else _cmRvTimer=tm;
+  }
+}
+function cmRvClick(){
+  var it=_cmRvItems&&_cmRvItems[_cmRvIdx]; cmBoard='review'; openCommunity();
+  if(it) setTimeout(function(){ if(typeof cmOpenDetail==='function') cmOpenDetail(it.id); },60);
 }
 function cmGotoNotice(){ cmBoard='notice'; openCommunity(); }
 function cmNbClick(){
