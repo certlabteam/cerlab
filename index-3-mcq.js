@@ -211,6 +211,7 @@ function renderMCQ(){
   if(mqScreen==='lt2') return renderLt2(root);
   if(mqScreen==='lu2') return renderLu2(root);
   if(mqScreen==='exam') return renderMcqExam(root);
+  if(mqScreen==='basics' && typeof renderBasics==='function') return renderBasics(root);   // [spike-basics] 과목 기초학습(선행학습과 따로)
   if(mqScreen==='mnlist') return renderMnList(root);
   if(mqScreen==='oxlearn') return renderOxLearn(root);
   if(mqScreen==='luhist') return renderLuHist(root);
@@ -373,6 +374,7 @@ function renderMcqHome(root){
     html+='<div class="oxl-banner oxl-banner-promo" onclick="oxGuideOpen()"><div class="oxl-banner-l"><span class="oxl-banner-ico"><img src="icons/check.png" alt="" class="ic-img"></span><div><b>OX진술을 체크해보세요</b><span class="oxl-banner-sub">보기 옆 O/X로 진술을 직접 판단하면, 틀린 진술의 개념을 잡아드려요</span></div></div><div class="oxl-banner-go">알아보기 →</div></div>';
   }
   }
+  if(typeof bsBannerHTML==='function') html+=bsBannerHTML(mqCert);   // [spike-basics] 암기코드 듣기 바로 위 「🧱 기초학습」 띠(크리스)
   html+=auMnBanner(mqCert);
   html+='<div class="sec-lbl">기출 문제</div><div class="sec-desc">회차별로 실제 시험에 나온 문제입니다.</div>';   // [2026-10-19] 크리스 「관광법규 위에 기출 문제 라고 타이틀 넣고」 — 아래 「레벨업 문제」와 짝
   curOrder().forEach(id=>{
