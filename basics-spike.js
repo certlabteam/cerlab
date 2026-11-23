@@ -158,15 +158,15 @@
   } };
 
   /* 원고(basics-story-data.js · BS_STORY)를 한 장씩 카드로 — 글은 원고 그대로.
-     말풍선: 빵집 甲(경제)만 그림, 그 밖은 동그라미 안 첫 글자 · 밑에 이름. 한 화에서 처음 말한 사람은 왼쪽, 다른 사람은 오른쪽 */
+     말풍선: 그림 있는 인물은 그림, 그 밖은 동그라미 안 첫 글자 · 밑에 이름. 주인공 甲은 늘 왼쪽, 다른 사람은 오른쪽 */
   /* 과목마다 그림이 있는 인물 — 그 밖의 사람(동생·은행원·변호사·중개사 등)은 동그라미 안 글자 */
   var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_jeong','戊':'civ_mu'} };
   function cardsOf(key){ var S=(window.BS_STORY||{})[key]; if(!S) return [];
     return S['화'].map(function(e, i, all){
-      var first=null, sc=e['장면'].map(function(x){ if(!x['말']) return x['글'];
-        var who=x['말']; if(!first) first=who;
+      var sc=e['장면'].map(function(x){ if(!x['말']) return x['글'];
+        var who=x['말'];
         var face=(PIC[key]&&PIC[key][who]) ? '@'+PIC[key][who] : who.charAt(0);
-        return [who, x['글'], face, who===first?0:1]; });
+        return [who, x['글'], face, who==='甲'?0:1]; });   // 주인공 甲은 늘 왼쪽, 다른 사람은 오른쪽(크리스)
       var last=(i===all.length-1);
       return { tag:e['화']+'화 · '+e['개념'], t:e['제목'], prev:e['지난이야기']||'', scene:sc,
         learn:[e['개념'], e['개념상자']], next:last?e['다음화']:('다음 화 — '+e['다음화']), quiz:e['문제']||[], fig:(FIG[key]&&FIG[key][e['화']])||'' };
@@ -246,7 +246,7 @@
     root.innerHTML='<div class="exam-sticky"><div class="exam-hd">'
       +'<div class="exam-ti"><div class="nm">기초학습</div><div class="st">'+esc(deck.name)+' · '+esc(deck.kind)+'</div></div><button type="button" class="bs-x" onclick="bsClose()" aria-label="닫기">✕</button></div>'
       +'<div class="mq-prog"><div class="row"><span>'+done+' / '+n+' 봤어요</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div></div>'
-      +'<div class="learn-hd"><span class="learn-step">🧱 기초학습 · '+esc(deck.kind)+'</span><span class="learn-num">'+(BS.idx+1)+' / '+n+'</span></div>'
+      /* 「🧱 기초학습 · 연재 이름」 칩 줄은 뺐다 — 위 고정 머리줄과 같은 말이고 폰에서 그 밑에 깔려 반쯤 잘렸다(크리스) */
       +'<div class="lcard'+(c.soon?' bs-soon-card':'')+'">'+storyHTML(c)
       /* 이전·다음은 문제 풀이 아래 단추(mbtn-prev · mbtn-next) 꼴 그대로 한 줄에 같은 크기 — 첫 장의 이전은 흐리게 두어 자리를 지킨다(크리스) */
       +'<div class="bs-pn"><button type="button" class="mbtn mbtn-prev" onclick="bsGo(-1)"'+(BS.idx>0?'':' disabled')+'>← 이전</button>'
