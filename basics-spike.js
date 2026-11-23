@@ -70,9 +70,16 @@
   }
   /* 관계도 — ① ② … 차례로 「누가 → 누구 : 무엇」, 마지막 「→ 결과」 줄 */
   var CIRC={'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6,'⑦':7,'⑧':8,'⑨':9,'⑩':10};   // 번호는 원 안에 넣지 않는다 — 「1.」 큰 숫자(크리스)
-  var ARW={'→':'──▶','↔':'◀──▶','⇢':'┄┄▶'};   // 글자 화살표(크리스 「단순하게」)
-  function rel(rows, result){ return '<div class="bs-rel2">'+rows.map(function(r){ return '<div class="bs-r"><b class="bs-num">'+(CIRC[r[0]]||r[0])+'.</b><span class="bs-p">'+esc(r[1])+'</span><span class="bs-a">'+esc(ARW[r[2]]!=null?ARW[r[2]]:r[2])+'</span><span class="bs-p">'+esc(r[3])+'</span><span class="bs-l">'+esc(r[4])+'</span></div>'; }).join('')
-    +(result?[].concat(result).map(function(x){ return '<div class="bs-res">→ 결과: '+esc(x)+'</div>'; }).join(''):'')+'</div>'; }
+  /* 관계도 — 앱 개념 카드가 쓰는 [dia] 관계도(renderMath → <pre class="cc-dia">, 「甲 ─(무엇)→ 乙」) 그대로(크리스 「개념에서 쓰는 관계도 화살표 형태도 갖다써」).
+     번호는 원 없이 「1.」 큰 숫자, 마지막 「→ 결과」 줄 */
+  var ARW={'→':['─(',')→'],'↔':['←(',')→'],'⇢':['┄(',')┄→']};
+  function rel(rows, result){
+    var lines=rows.map(function(r){ var n=(CIRC[r[0]]||r[0])+'.'; var a=ARW[r[2]];
+      return a ? n+' '+r[1]+' '+a[0]+r[4]+a[1]+' '+r[3] : n+' '+r[1]+(r[3]?' '+r[3]:'')+' — '+r[4]; });
+    [].concat(result||[]).forEach(function(x){ lines.push('→ 결과: '+x); });
+    var h=(typeof renderMath==='function') ? renderMath('[dia]\n'+lines.join('\n')+'\n[/dia]') : '<pre class="cc-dia">'+esc(lines.join('\n'))+'</pre>';
+    return h.replace(/(<pre class="cc-dia">|<br>)(\d+)\./g, '$1<b class="bs-dnum">$2.</b>').replace(/(<br>)(→ 결과:[^<]*)/g, '$1<b class="bs-dres">$2</b>');
+  }
   function tbl(head, rows, note){ return '<table class="bs-tbl"><thead><tr>'+head.map(function(x){ return '<th>'+esc(x)+'</th>'; }).join('')+'</tr></thead><tbody>'
     +rows.map(function(r){ return '<tr>'+r.map(function(x,i){ var hl=(typeof x==='object'&&x); return '<td'+(hl?' class="hl"':'')+'>'+esc(hl?x.v:x)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>'
     +(note?'<div class="bs-legend">'+esc(note)+'</div>':''); }
@@ -313,6 +320,13 @@
   };
   /* 레벨테스트 관문 — 기초학습에서 들어온 그 한 번만 건너뛴다(다른 길은 원래대로) */
   if(typeof ltGate==='function'){ var _bsLtGate=ltGate; window.ltGate=function(c){ if(window._bsLuOnce && window._bsLuOnce===c){ window._bsLuOnce=null; return false; } return _bsLtGate.apply(this, arguments); }; }
+  function hjWrap(el){ if(!el) return; var re=/[\u3400-\u9FFF\uF900-\uFAFF]+/g, w=document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), list=[], t;
+    while((t=w.nextNode())){ var pe=t.parentNode; if(!pe || pe.closest('svg,script,style,.hj')) continue; re.lastIndex=0; if(re.test(t.nodeValue)) list.push(t); }
+    list.forEach(function(tn){ var f=document.createDocumentFragment(), v=tn.nodeValue, last=0; v.replace(re, function(m, i){ if(i>last) f.appendChild(document.createTextNode(v.slice(last,i))); var sp=document.createElement('span'); sp.className='hj'; sp.textContent=m; f.appendChild(sp); last=i+m.length; return m; });
+      if(last<v.length) f.appendChild(document.createTextNode(v.slice(last))); tn.parentNode.replaceChild(f, tn); }); }
+  (function(){ var root=document.getElementById('mcqRoot'); if(!root||typeof MutationObserver==='undefined') return; var busy=false;
+    new MutationObserver(function(){ if(busy) return; busy=true; requestAnimationFrame(function(){
+      try{ if(typeof mqScreen!=='undefined' && (mqScreen==='basics' || mqScreen==='bsquiz')) hjWrap(root); else root.querySelectorAll('.bs-story').forEach(hjWrap); }catch(_){} busy=false; }); }).observe(root,{childList:true,subtree:true}); })();
   window.bsQPreHTML=function(q){ var b=q&&Q[q.id]; return (b&&b.story)?'<div class="lcard bs-story">'+storyHTML(b.story,'이 문제 개념')+'</div>':''; };
   window.bsCardFilter=function(q, html){ var b=q&&Q[q.id]; if(!b||!b.hideEx) return html;   // 이야기와 같은 말을 하는 개념 카드 예시는 뺀다
     var t=document.createElement('div'); t.innerHTML=html; var ex=t.querySelectorAll('.cc-ex'); b.hideEx.forEach(function(i){ if(ex[i]) ex[i].remove(); }); return t.innerHTML; };
