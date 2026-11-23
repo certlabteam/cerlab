@@ -16,24 +16,10 @@
      글은 스토리시안 그대로. 그래프가 있던 화는 장면 아래에 그래프를 둔다 */
   /* 이야기 그래프(스토리시안) — 선 1.5 · 축 1 · 점 3.5. 점과 점선은 선의 식으로 계산한 자리에만 찍는다(눈대중 좌표 금지) */
   function fig(vb, label, inner){ return '<svg class="bs-fig bs-fig2" viewBox="'+vb+'" role="img" aria-label="'+label+'">'+inner+'</svg>'; }
-  // 1화 수요선 y=40+0.5(x−60): (120,70) · (168,94)
-  var S_DEMAND=fig('0 0 320 190','수요곡선: 1,000원에 10개, 900원에 12개','<path class="ax" d="M40 15 V160 H305"/><text x="16" y="24">값</text><text x="292" y="180">양</text>'
-    +'<path class="dl" d="M60 40 L280 150"/><circle cx="120" cy="70" r="3.5" fill="#185FA5"/><circle cx="168" cy="94" r="3.5" fill="#185FA5"/>'
-    +'<text x="128" y="56">1,000원 · 10개</text><text x="70" y="118">900원 · 12개</text><text x="285" y="154">수요</text>');
   var S_MR=fig('0 0 320 170','매출 10,000원에서 10,800원, 한 개 더 팔 때 400원','<path class="ax" d="M30 140 H305"/>'
     +'<rect x="50" y="40" width="60" height="100" rx="4" fill="#B5D4F4"/><rect x="140" y="32" width="60" height="108" rx="4" fill="#185FA5"/>'
     +'<text x="50" y="30">10,000원</text><text x="140" y="22">10,800원</text><text x="56" y="158" class="muted">1,000원×10</text><text x="148" y="158" class="muted">900원×12</text>'
     +'<text x="222" y="70">+800원</text><text x="222" y="92">÷ 2개</text><text x="222" y="114" style="font-weight:700">= MR 400원</text>');
-  // 3화 매출 산: 2차 곡선 (45,148)~(170,−40)~(295,148), 꼭대기 (170,54). 글씨는 곡선 안쪽 빈 자리
-  var S_HILL=fig('0 0 320 180','매출 산: MR이 0인 곳에서 매출이 가장 크다','<path class="ax" d="M40 15 V150 H305"/><text x="10" y="24">매출</text><text x="292" y="170">양</text>'
-    +'<path class="gl" d="M45 148 Q170 -40 295 148"/><circle cx="170" cy="54" r="3.5" fill="#15803D"/><path class="dash" d="M170 58 V150"/>'
-    +'<text x="180" y="40">꼭대기 · MR=0 · 탄력성 1</text><text x="92" y="118" class="muted">MR&gt;0</text><text x="92" y="134" class="muted">내리면 늘어남</text>'
-    +'<text x="258" y="118" class="muted" text-anchor="end">MR&lt;0</text><text x="258" y="134" class="muted" text-anchor="end">내리면 줄어듦</text>');
-  var C_TWICE=fig('0 0 320 170','乙이 甲과 丙에게 두 번 팔고 丙이 먼저 등기','<defs><marker id="bsAh" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="#185FA5"/></marker><marker id="bsAh2" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8z" fill="#15803D"/></marker></defs>'
-    +'<text x="160" y="30" style="font-weight:700" text-anchor="middle">乙 (집주인)</text><text x="20" y="150" style="font-weight:700">甲</text><text x="268" y="150" style="font-weight:700">丙</text>'
-    +'<path d="M140 40 L45 128" stroke="#185FA5" stroke-width="1.5" fill="none" marker-end="url(#bsAh)"/><path d="M180 40 L270 128" stroke="#15803D" stroke-width="1.5" fill="none" marker-end="url(#bsAh2)"/>'
-    +'<text x="4" y="80">① 먼저 계약</text><text x="4" y="96" class="muted">채권만 생김</text><text x="262" y="80">② 또 팔고</text><text x="262" y="96">丙이 등기</text><text x="262" y="112" class="muted">→ 물권</text>'
-    +'<text x="160" y="166" class="muted" text-anchor="middle">결과: 집은 丙, 甲은 乙에게 손해배상</text>');
   /* e26_2 주유소 — 문제의 식 그대로 그린다. x=50+0.6Q, y=175−(P−800)×0.1333
      수요 P=2000−2Q · 공급 P=3Q+500 · 세금 붙은 공급 P=3Q+1000
      교점: 처음 (Q300,P1400)=(230,95) · 세금 뒤 (Q200,P1600)=(170,68.3) · 공급자가 받는 값 (Q200,P1100)=(170,135) */
@@ -44,29 +30,147 @@
     +'<text x="46" y="72" text-anchor="end">1,600</text><text x="46" y="99" text-anchor="end">1,400</text><text x="46" y="139" text-anchor="end" class="muted">1,100</text>'
     +'<text x="170" y="192" text-anchor="middle">200</text><text x="230" y="192" text-anchor="middle">300</text>'
     +'<text x="294" y="126">수요</text><text x="294" y="59">공급</text><text x="254" y="19">공급+세금 500</text>');
-  function soon(n){ return {tag:n+'화', t:'다음 화 준비 중', scene:['다음 이야기를 쓰고 있어요.'], soon:1}; }
+  /* ── 기초학습 그림(원고의 「그래프」 설명대로) ──
+     좌표 그림은 plot() 하나로 — 선은 식으로 그리고 점·점선은 그 식의 값으로만 찍는다(눈대중 좌표 금지).
+     선 1.5 · 축 1 · 점 3.5. 글씨는 선에서 떼고, 자리가 없으면 그림 밑 설명 줄(legend)로 뺀다. */
+  function plot(o){
+    var W=o.w||320, H=o.h||200, L=o.L||52, R=W-(o.R||52), T=14, B=H-28;
+    var X=function(v){ return +(L+(v-o.x[0])/(o.x[1]-o.x[0])*(R-L)).toFixed(1); };
+    var Y=function(v){ return +(B-(v-o.y[0])/(o.y[1]-o.y[0])*(B-T)).toFixed(1); };
+    var t=function(x,y,s,anc,cls){ return '<text x="'+x+'" y="'+y+'"'+(anc?' text-anchor="'+anc+'"':'')+(cls?' class="'+cls+'"':'')+'>'+esc(s)+'</text>'; };
+    var h=o.noAxis?'':'<path class="ax" d="M'+L+' '+(T-4)+' V'+B+' H'+(R+8)+'"/>'+t(4,10,o.yl||'')+t(W-4,H-4,o.xl||'','end');
+    (o.items||[]).forEach(function(it){
+      if(it.area) h+='<path d="M'+it.area.map(function(p){ return X(p[0])+' '+Y(p[1]); }).join(' L')+' Z" fill="'+it.fill+'" stroke="none"/>';
+      else if(it.f){ var n=it.n||48, d=''; for(var i=0;i<=n;i++){ var q=it.a+(it.b-it.a)*i/n; d+=(i?' L':'M')+X(q)+' '+Y(it.f(q)); }
+        h+='<path class="'+(it.cls||'dl')+'" d="'+d+'"'+(it.dashed?' stroke-dasharray="6 4"':'')+'/>';
+        if(it.name) h+=t(X(it.b)+5, Y(it.f(it.b))+4+(it.ndy||0), it.name); }
+      else if(it.line) h+='<path class="'+(it.cls||'dl')+'" d="M'+it.line.map(function(p){ return X(p[0])+' '+Y(p[1]); }).join(' L')+'"/>';
+      else if(it.dash){ var p=it.dash; h+='<path class="dash" d="M'+L+' '+Y(p[1])+' H'+X(p[0])+(it.toX===false?'':' V'+B)+'"/>'; }
+      else if(it.vdash){ var v=it.vdash; h+='<path class="dash" d="M'+X(v[0])+' '+Y(v[1])+' V'+B+'"/>'; }
+      else if(it.hseg){ var s=it.hseg; h+='<path class="dash" d="M'+X(s[0])+' '+Y(s[2])+' H'+X(s[1])+'"/>'; }
+      else if(it.pt){ var c=it.pt; h+='<circle cx="'+X(c[0])+'" cy="'+Y(c[1])+'" r="3.5"'+(it.hollow?' fill="none" stroke="'+(it.color||'#185FA5')+'" stroke-width="1.5"':' fill="'+(it.color||'#185FA5')+'"')+'/>';
+        if(it.lab) h+=t(X(c[0])+(it.dx||8), Y(c[1])+(it.dy==null?-8:it.dy), it.lab, it.anc, it.lcls); }
+      else if(it.ty) h+=t(L-5, Y(it.ty)+4, it.s, 'end', it.cls);
+      else if(it.tx!=null) h+=t(X(it.tx), B+15, it.s, 'middle', it.cls);
+      else if(it.txt) h+=t(X(it.txt[0])+(it.dx||0), Y(it.txt[1])+(it.dy||0), it.s, it.anc, it.cls);
+    });
+    return fig('0 0 '+W+' '+H, o.label||'', h)+(o.legend?'<div class="bs-legend">'+esc(o.legend)+'</div>':'');
+  }
+  /* 막대 — 값 비율대로 높이, 위에 값, 밑에 이름. gap:true 는 「…」 칸 */
+  function bars(o){
+    var W=320, H=o.h||190, L=24, B=H-28, T=26, n=o.vals.length, cw=(W-L-12)/n, mx=o.max;
+    var h='<path class="ax" d="M'+L+' '+B+' H'+(W-8)+'"/>';
+    o.vals.forEach(function(v,i){ var cx=L+cw*i+cw/2;
+      if(v.gap){ h+='<text x="'+cx+'" y="'+(B-6)+'" text-anchor="middle" class="muted">…</text>'; return; }
+      var bh=Math.max(2,(B-T)*v.v/mx), bw=Math.min(34,cw*0.62);
+      h+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(B-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="3" fill="'+(v.total?'#185FA5':'#B5D4F4')+'"/>'
+        +'<text x="'+cx.toFixed(1)+'" y="'+(B-bh-6).toFixed(1)+'" text-anchor="middle"'+(v.total?' style="font-weight:700"':'')+'>'+esc(v.top)+'</text>'
+        +'<text x="'+cx.toFixed(1)+'" y="'+(B+15)+'" text-anchor="middle" class="muted">'+esc(v.lab)+'</text>'; });
+    return fig('0 0 '+W+' '+H, o.label||'', h)+(o.legend?'<div class="bs-legend">'+esc(o.legend)+'</div>':'');
+  }
+  /* 관계도 — ① ② … 차례로 「누가 → 누구 : 무엇」, 마지막 「→ 결과」 줄 */
+  function rel(rows, result){ return '<div class="bs-rel2">'+rows.map(function(r){ return '<div class="bs-r"><b>'+esc(r[0])+'</b><span class="bs-p">'+esc(r[1])+'</span><span class="bs-a">'+esc(r[2])+'</span><span class="bs-p">'+esc(r[3])+'</span><span class="bs-l">'+esc(r[4])+'</span></div>'; }).join('')
+    +(result?[].concat(result).map(function(x){ return '<div class="bs-res">→ 결과: '+esc(x)+'</div>'; }).join(''):'')+'</div>'; }
+  function tbl(head, rows, note){ return '<table class="bs-tbl"><thead><tr>'+head.map(function(x){ return '<th>'+esc(x)+'</th>'; }).join('')+'</tr></thead><tbody>'
+    +rows.map(function(r){ return '<tr>'+r.map(function(x,i){ var hl=(typeof x==='object'&&x); return '<td'+(hl?' class="hl"':'')+'>'+esc(hl?x.v:x)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>'
+    +(note?'<div class="bs-legend">'+esc(note)+'</div>':''); }
+  function flow(boxes, note){ return '<div class="bs-flow">'+boxes.map(function(b,i){ return (i?'<span class="bs-fa">→</span>':'')+'<div class="bs-fb"><b>'+esc(b[0])+'</b><span>'+esc(b[1])+'</span></div>'; }).join('')+'</div>'+(note?'<div class="bs-legend">'+esc(note)+'</div>':''); }
+
+  var De=function(q){ return 1500-50*q; }, MRe=function(q){ return 1500-100*q; }, TRe=function(q){ return 1500*q-50*q*q; };
+  var D9=function(q){ return 1200-q; }, S9=function(q){ return 150+q/2; };
+  var FIG={ econ:{
+    1: plot({label:'수요곡선 P=1,500−50Q', yl:'값(원)', xl:'양(개)', x:[0,30], y:[0,1600], items:[
+      {f:De, a:0, b:28, name:'수요'},
+      {pt:[10,De(10)], lab:'1,000원 · 10개'}, {pt:[12,De(12)], lab:'900원 · 12개', dx:-8, dy:18, anc:'end'}]}),
+    2: S_MR,
+    3: plot({label:'매출 TR=1,500Q−50Q²', yl:'매출(원)', xl:'양(개)', x:[0,30], y:[0,12000], items:[
+      {f:TRe, a:0, b:30, cls:'gl'}, {vdash:[15,TRe(15)]},
+      {pt:[10,TRe(10)], color:'#15803D'}, {pt:[12,TRe(12)], color:'#15803D'}, {pt:[20,TRe(20)], color:'#15803D'},
+      {pt:[15,TRe(15)], color:'#15803D', lab:'꼭대기 · MR=0 · 탄력성 1', dx:6, dy:-6},
+      {ty:10000, s:'10,000'}, {tx:10, s:'10'}, {tx:15, s:'15'}, {tx:20, s:'20'},
+      {txt:[9,4480], s:'MR>0', anc:'middle', cls:'muted'}, {txt:[9,4480], dy:16, s:'내리면 늘어남', anc:'middle', cls:'muted'},
+      {txt:[21,4480], s:'MR<0', anc:'middle', cls:'muted'}, {txt:[21,4480], dy:16, s:'내리면 줄어듦', anc:'middle', cls:'muted'}]}),
+    4: plot({label:'독점: MR=MC에서 양, 수요곡선에서 값', yl:'값(원)', xl:'양(개)', x:[0,16], y:[0,1600], items:[
+      {f:De, a:0, b:16, name:'수요'}, {f:MRe, a:0, b:14, cls:'rl', name:'MR'}, {f:function(){ return 500; }, a:0, b:16, cls:'gl', name:'MC'},
+      {dash:[10,De(10)]}, {pt:[10,De(10)], lab:'독점가격'}, {pt:[10,MRe(10)], color:'#C2410C', lab:'MR=MC', dx:-8, dy:18, anc:'end'},
+      {ty:1000, s:'1,000'}, {ty:500, s:'500'}, {tx:10, s:'10'}]}),
+    5: plot({label:'평균비용 AC=2,000/Q+500, 한계비용 MC=500', yl:'비용(원)', xl:'양(개)', x:[0,40], y:[0,1200], items:[
+      {f:function(q){ return 2000/q+500; }, a:3, b:40, cls:'rl'}, {f:function(){ return 500; }, a:0, b:40, cls:'gl', name:'MC'},
+      {txt:[4,1100], dx:6, s:'AC(평균비용)'},
+      {pt:[10,2000/10+500], color:'#C2410C', lab:'10개 · 700원'}, {pt:[20,2000/20+500], color:'#C2410C', lab:'20개 · 600원'},
+      {ty:500, s:'500'}]}),
+    6: plot({label:'수요가 오른쪽으로 이동', yl:'값(원)', xl:'양(개)', x:[0,32], y:[0,1800], legend:'파랑: 원래 수요 P=1,500−50Q · 주황: 새 수요 P=1,700−50Q (같은 1,000원에 10개 → 14개)', items:[
+      {f:De, a:0, b:28}, {f:function(q){ return 1700-50*q; }, a:0, b:32, cls:'rl'}, {hseg:[0,32,1000]},
+      {pt:[10,1000], lab:'10개', dx:-6, dy:16, anc:'end'}, {pt:[14,1000], color:'#C2410C', lab:'14개', dx:6, dy:-6},
+      {ty:1000, s:'1,000'}]}),
+    8: plot({label:'꾸르노 반응곡선', yl:'q乙(개)', xl:'q甲(개)', x:[0,26], y:[0,26], legend:'파랑: 甲의 반응곡선 q甲=12−q乙/2 · 주황: 乙의 반응곡선 q乙=12−q甲/2 · 만나는 (8, 8)이 꾸르노 균형', items:[
+      {f:function(x){ return 24-2*x; }, a:0, b:12}, {f:function(x){ return 12-x/2; }, a:0, b:24, cls:'rl'},
+      {dash:[8,8]}, {pt:[8,8], color:'#15803D', lab:'(8, 8) 꾸르노 균형'},
+      {ty:8, s:'8'}, {ty:12, s:'12'}, {ty:24, s:'24'}, {tx:8, s:'8'}, {tx:12, s:'12'}, {tx:24, s:'24'}]}),
+    9: plot({label:'시장균형', yl:'값(원)', xl:'양(개)', x:[0,1000], y:[0,1300], h:240, legend:'균형 700개 · 500원 — 600원이면 수요 600·공급 900(초과공급 300), 400원이면 수요 800·공급 500(초과수요 300)', items:[
+      {f:D9, a:0, b:1000, name:'수요'}, {f:S9, a:0, b:1000, cls:'rl', name:'공급'},
+      {hseg:[0,900,600]}, {hseg:[0,800,400]}, {dash:[700,500]},
+      {pt:[600,D9(600)]}, {pt:[900,S9(900)], color:'#C2410C'}, {pt:[800,D9(800)]}, {pt:[500,S9(500)], color:'#C2410C'}, {pt:[700,D9(700)], color:'#15803D'},
+      {ty:600, s:'600'}, {ty:500, s:'500'}, {ty:400, s:'400'}, {tx:700, s:'700'}]}),
+    10: plot({label:'완전경쟁: P=MC', yl:'값(원)', xl:'양(개)', x:[0,46], y:[0,700], items:[
+      {f:function(){ return 500; }, a:0, b:46, name:'P=500'}, {f:function(q){ return 200+10*q; }, a:0, b:46, cls:'rl', name:'MC'},
+      {dash:[30,500]}, {pt:[30,500], color:'#15803D', lab:'30개 · 500원', dx:8, dy:18},
+      {ty:500, s:'500'}, {ty:200, s:'200'}, {tx:30, s:'30'}]}),
+    11: plot({label:'소비자잉여와 생산자잉여', yl:'값(원)', xl:'양(개)', x:[0,1000], y:[0,1300], h:240, legend:'소비자잉여 245,000원(파란 삼각형) · 생산자잉여 122,500원(노란 삼각형) · 균형 700개 · 500원', items:[
+      {area:[[0,1200],[0,500],[700,500]], fill:'#E6F1FB'}, {area:[[0,500],[0,150],[700,500]], fill:'#FFF3D6'},
+      {f:D9, a:0, b:1000, name:'수요'}, {f:S9, a:0, b:1000, cls:'rl', name:'공급'},
+      {dash:[700,500]}, {pt:[700,500], color:'#15803D'},
+      {txt:[200,716], s:'소비자잉여', anc:'middle'}, {txt:[150,380], s:'생산자잉여', anc:'middle'},
+      {ty:1200, s:'1,200'}, {ty:500, s:'500'}, {ty:150, s:'150'}, {tx:700, s:'700'}]}),
+    12: tbl(['','1개','2개','3개','4개','5개','6개','7개'], [
+        ['빵 한계효용','10','8','6',{v:'4'},'2','0','−2'], ['빵 100원당','2','1.6','1.2',{v:'0.8'},'0.4','0','−0.4'],
+        ['우유 한계효용','20','16','12',{v:'8'},'4','',''], ['우유 100원당','2','1.6','1.2',{v:'0.8'},'0.4','','']],
+        '빵 500원·우유 1,000원 — 둘 다 넷째 칸(100원당 0.8)에서 멈춤: 빵 4개 + 우유 4개 = 6,000원')
+      +plot({label:'빵 총효용', yl:'총효용', xl:'빵(개)', x:[0,8], y:[0,34], h:170, items:[
+        {line:[[1,10],[2,18],[3,24],[4,28],[5,30],[6,30],[7,28]], cls:'gl'},
+        {pt:[1,10], color:'#15803D'}, {pt:[2,18], color:'#15803D'}, {pt:[3,24], color:'#15803D'}, {pt:[4,28], color:'#15803D'}, {pt:[5,30], color:'#15803D'}, {pt:[6,30], color:'#15803D', lab:'꼭대기 30 · 한계효용 0', dx:0, dy:-10, anc:'middle'}, {pt:[7,28], color:'#15803D'},
+        {ty:30, s:'30'}, {tx:1, s:'1'}, {tx:4, s:'4'}, {tx:6, s:'6'}, {tx:7, s:'7'}]}),
+    13: flow([['농부 · 밀','100원'],['제분소 · 밀가루','300원 (부가가치 200)'],['甲 · 빵','500원 (부가가치 200)']], '부가가치 100 + 200 + 200 = 500 = 최종 재화 빵 500원'),
+    14: bars({label:'신용창조: 1,000만 원 → 1억 원', max:10000, legend:'매번 0.9배로 다시 맡겨진다 · 합계 = 1,000만 ÷ 0.1 = 1억 원', vals:[
+      {v:1000, top:'1,000만', lab:'1차'}, {v:900, top:'900만', lab:'2차'}, {v:810, top:'810만', lab:'3차'}, {v:729, top:'729만', lab:'4차'}, {gap:1}, {v:10000, top:'1억', lab:'합계', total:1}]}),
+    16: '<div class="bs-boxes"><div class="bs-bx-all">15세 이상 인구 100명<div class="bs-bx-row"><div class="bs-bx bs-bx-a">경제활동인구 60<div class="bs-bx-row"><div class="bs-bx">취업자 57</div><div class="bs-bx bs-bx-u">실업자 3</div></div></div><div class="bs-bx bs-bx-n">비경제활동인구 40</div></div></div></div><div class="bs-legend">실업률 = 3 ÷ 60 = 5%</div>',
+    17: bars({label:'정부지출 승수: 10억 → 20억', max:20, legend:'매번 0.5배로 다시 쓰인다 · 합계 = 10억 × 2 = 20억 원', vals:[
+      {v:10, top:'10억', lab:'1차'}, {v:5, top:'5억', lab:'2차'}, {v:2.5, top:'2.5억', lab:'3차'}, {v:1.25, top:'1.25억', lab:'4차'}, {gap:1}, {v:20, top:'20억', lab:'합계', total:1}]})
+  }, civil:{
+    2: rel([['①','乙(집주인)','→','甲','먼저 계약 — 채권만 생김'],['②','乙(집주인)','→','丙','또 팔고 丙이 등기 → 물권']], '집은 丙, 甲은 乙에게 손해배상'),
+    3: rel([['①','법률','','(성문법)','가장 먼저'],['②','관습법','','(불문법)','법률에 없으면'],['③','조리','','(불문법)','관습법도 없으면']], '②·③은 불문법'),
+    4: rel([['①','乙','→','戊','짜고 한 가짜 매매 — 무효'],['②','戊','→','이웃','진짜 매매 — 이웃은 몰랐음(선의)'],['③','甲','⇢','이웃','무효 주장 못 함']], '甲은 선의의 이웃에게 무효를 주장 못 함'),
+    7: rel([['①','중개사','→','甲','속임(제3자의 사기)'],['②','甲','↔','집주인','매매계약']], ['집주인이 알았거나 알 수 있었음 → 甲은 취소 가능','몰랐고 알 수도 없었음 → 취소 불가']),
+    8: tbl(['무효','취소'], [['비진의표시(상대방 악의·과실)','착오(중요부분)'],['통정허위표시','사기'],['','강박']], '취소 → 처음부터 무효(소급) · 추인 → 더는 취소 못 함'),
+    10: rel([['①','甲(본인)','→','동생(대리인)','대리권 줌'],['②','동생','→','장학회','甲의 대리인으로 계약']], '효과는 甲에게 직접(장학회 → 甲)'),
+    13: tbl(['할 일','예','누가 정하나'], [['보존행위','지붕 수리·무단 사용자 내보내기','각자 혼자'],['관리행위','주차장 임대','지분 과반수'],['처분·변경','매각·건축','전원 동의']])
+      +fig('0 0 320 120','지분: 甲 1/2, 아내 1/4, 동생 1/4','<path d="M60 60 L60 18 A42 42 0 0 1 60 102 Z" fill="#185FA5"/><path d="M60 60 L60 102 A42 42 0 0 1 18 60 Z" fill="#B5D4F4"/><path d="M60 60 L18 60 A42 42 0 0 1 60 18 Z" fill="#FAC775"/>'
+        +'<rect x="130" y="30" width="12" height="12" fill="#185FA5"/><text x="148" y="41">甲 1/2</text><rect x="130" y="54" width="12" height="12" fill="#B5D4F4"/><text x="148" y="65">아내 1/4</text><rect x="130" y="78" width="12" height="12" fill="#FAC775"/><text x="148" y="89">동생 1/4</text>'),
+    14: tbl(['권리','무엇','특징'], [['지상권','남의 땅에 건물·수목 소유','최단 30/15/5년'],['지역권','내 땅 편익을 위해 남의 땅 이용','통행'],['전세권','전세금 내고 남의 부동산 사용·수익','우선변제']]),
+    15: tbl(['권리','어떻게','예'], [['유치권','물건 붙잡아 둠','창고 열쇠'],['질권','동산을 넘겨받아 점유','맡긴 시계'],['저당권','점유는 그대로, 등기로','집']]),
+    16: plot({label:'소멸시효 시간선', noAxis:1, L:16, R:16, x:[0,22], y:[0,10], h:150, legend:'소유권 — 시효 없음', items:[
+      {line:[[0,5],[21,5]], cls:'dl'}, {pt:[0,5]}, {pt:[9,5], color:'#C2410C'}, {pt:[10,5], color:'#15803D'}, {pt:[20,5], color:'#15803D'},
+      {txt:[0,5], dx:2, dy:-24, s:'권리 행사할 수 있는 때'}, {txt:[0,5], dx:2, dy:-10, s:'시효 시작', cls:'muted'},
+      {txt:[9,5], dy:20, s:'지금(9년)', anc:'end'}, {txt:[9,5], dy:34, s:'소송으로 중단', anc:'end', cls:'muted'},
+      {txt:[10,5], dx:4, dy:20, s:'10년'}, {txt:[10,5], dx:4, dy:34, s:'채권 시효 완성', cls:'muted'},
+      {txt:[20,5], dy:-24, s:'20년', anc:'end'}, {txt:[20,5], dy:-10, s:'지상권 등 기타 재산권 완성', anc:'end', cls:'muted'}]})
+  } };
+
+  /* 원고(basics-story-data.js · BS_STORY)를 한 장씩 카드로 — 글은 원고 그대로.
+     말풍선: 빵집 甲(경제)만 그림, 그 밖은 동그라미 안 첫 글자 · 밑에 이름. 한 화에서 처음 말한 사람은 왼쪽, 다른 사람은 오른쪽 */
+  function cardsOf(key){ var S=(window.BS_STORY||{})[key]; if(!S) return [];
+    return S['화'].map(function(e, i, all){
+      var first=null, sc=e['장면'].map(function(x){ if(!x['말']) return x['글'];
+        var who=x['말']; if(!first) first=who;
+        var face=(key==='econ' && who==='甲') ? '@baker' : who.charAt(0);
+        return [who, x['글'], face, who===first?0:1]; });
+      var last=(i===all.length-1);
+      return { tag:e['화']+'화 · '+e['개념'], t:e['제목'], prev:e['지난이야기']||'', scene:sc,
+        learn:[e['개념'], e['개념상자']], next:last?e['다음화']:('다음 화 — '+e['다음화']), quiz:e['문제']||[], fig:(FIG[key]&&FIG[key][e['화']])||'' };
+    }); }
   var D={
-    econ:{ name:'경제학원론', kind:'빵집 甲 이야기', cards:[
-      {tag:'1화 · 수요곡선', t:'값을 내렸더니 손님이 늘었다', fig:S_DEMAND, quiz:['econ_v_supply_demand_301','econ_v_calc_mi_demand_supply_L1'],
-       scene:['甲이 동네에 빵집을 열었다. 첫날 빵 하나 1,000원에 10개가 팔렸다.',['甲','100원만 내려 볼까?','@baker'],'900원으로 내리자 12개가 팔렸다. 값이 내려가니 사는 사람이 늘었다.'],
-       learn:['수요곡선','값과 사는 양을 이은 선. 값이 내리면 더 사서 오른쪽 아래로 내려간다.'], next:'다음 화 — 그럼 값을 계속 내리면 甲은 돈을 더 벌까?'},
-      {tag:'2화 · 한계수입', t:'한 개 더 팔면 얼마가 더 남나', fig:S_MR, quiz:['econ_v_calc_mi_monopoly_L1'], prev:'1,000원에 10개, 900원에 12개가 팔렸다.',
-       scene:['甲이 계산기를 두드렸다. 10,000원이던 매출이 10,800원이 됐다.',['甲','2개 더 팔아서 800원 늘었네. 한 개에 400원꼴이구나.','@baker'],'빵값은 900원인데, 한 개 더 팔 때 늘어난 돈은 400원뿐이다. 더 팔려면 앞 손님 값까지 같이 내려야 해서다.'],
-       learn:['한계수입(MR)','한 개 더 팔 때 늘어나는 수입. 값을 내려야 더 팔리니 MR은 값보다 작다.'], next:'다음 화 — 계속 내리다 보니 매출이 오히려 줄기 시작했다!'},
-      {tag:'3화 · 탄력성', t:'매출이 가장 큰 값은 어디일까', fig:S_HILL, quiz:['econ_v_calc_mi_elasticity_L1','econ_v_elasticity_basic_302'], prev:'한 개 더 팔 때 늘어나는 돈(MR)은 값보다 작았다.',
-       scene:['甲이 500원까지 내려 보니 손님은 늘었는데 매출은 줄었다.',['甲','어디까지 내려야 제일 많이 벌지?','@baker'],'MR이 0이 되는 값에서 매출이 꼭대기다. 거기서 더 내리면 MR이 마이너스가 돼 판 만큼 손해다. 이 꼭대기가 손님이 값에 반응하는 정도(탄력성)가 딱 1인 곳이다.'],
-       learn:['가격탄력성','값이 1% 바뀔 때 사는 양이 몇 % 바뀌나. 1보다 크면 값 내리기가 매출을 늘리고, 1보다 작으면 줄인다.'], next:'다음 화 — 옆 동네 빵집이 문을 닫아 甲 혼자 남았다(독점).'},
-      soon(4), soon(5), soon(6)
-    ]},
-    civil:{ name:'민법', kind:'甲의 첫 집 사기', cards:[
-      {tag:'1화 · 권리와 의무', t:'계약서에 도장을 찍었다', quiz:['civ_v_person_lv1_001'],
-       scene:['甲이 乙의 아파트를 3억 원에 사기로 하고 계약서에 도장을 찍었다.',['乙','잔금 주시면 집 넘겨 드릴게요.','乙',1],'이 순간 甲은 「집 넘겨 달라」고 할 수 있고, 乙은 「돈 달라」고 할 수 있다. 서로 받을 것과 줄 것이 동시에 생겼다.'],
-       learn:['권리와 의무','권리 = 남에게 요구할 수 있는 힘. 의무 = 남에게 해 줘야 할 것. 계약 하나에 둘이 같이 생긴다.'], next:'다음 화 — 잔금을 다 줬는데 乙이 집을 다른 사람에게 또 팔았다?'},
-      {tag:'2화 · 물권과 채권', t:'집이 두 번 팔렸다', fig:C_TWICE, quiz:['civ_v_ownership_lv1_001'], prev:'甲은 乙에게 「집 넘겨 달라」고 할 권리가 생겼다.',
-       scene:['乙이 몰래 丙에게도 집을 팔고, 丙이 먼저 등기를 했다.',['甲','내가 먼저 샀는데 왜 丙 집이에요?','甲'],'甲이 가진 건 乙에게만 요구할 수 있는 권리라 丙에게는 못 내민다. 丙은 등기로 집 자체에 대한 권리를 가져서 누구에게나 「내 집」이라고 할 수 있다.'],
-       learn:['물권과 채권','채권 = 특정한 사람에게만 요구하는 권리. 물권 = 물건 자체에 대한 권리라 모두에게 주장한다.'], next:'다음 화 — 甲은 乙에게 무엇을 받아 낼 수 있을까(손해배상).'},
-      soon(3)
-    ]}
+    econ:{ name:'경제학원론', kind:'빵집 甲 이야기', cards:cardsOf('econ') },
+    civil:{ name:'민법', kind:'甲의 첫 집 사기', cards:cardsOf('civil') }
   };
   /* 한 화(또는 문제 이야기) 한 장 — 선행학습 lcard 안에 그린다 */
   /* 말하는 사람 얼굴 — 빵집 사장 甲만 그림(어른 웹툰체), 역할 없는 사람은 동그라미 안에 글자만. 이모지·마스코트 안 씀 */
@@ -168,11 +272,11 @@
     var lastQ=BQ.idx>=n-1;
     var foot=root.querySelector('.mcq-foot');
     if(foot) foot.innerHTML='<button class="mbtn mbtn-prev" onclick="bsQuizGo(-1)">← '+(BQ.idx>0?'이전 문제':'이야기')+'</button>'
-      +'<button class="mbtn mbtn-next" onclick="bsQuizGo(1)"'+(ans?'':' disabled')+'>'+(lastQ?'다음 화 →':'다음 문제 →')+'</button>';
+      +'<button class="mbtn mbtn-next" onclick="bsQuizGo(1)"'+(ans?'':' disabled')+'>'+(lastQ?(BQ.ep>=deck.cards.length-1?'레벨업 1단계 풀기 →':'다음 화 →'):'다음 문제 →')+'</button>';
   };
   window.bsQuizGo=function(d){ if(!BQ) return; var i=BQ.idx+d;
     if(i<0){ bsQuizBack(); return; }
-    if(i>=BQ.list.length){ var ep=BQ.ep; BQ=null; mqList=null; BS.idx=Math.min(ep+1, D[BS.key].cards.length-1); mqScreen='basics'; renderMCQ(); window.scrollTo(0,0); return; }
+    if(i>=BQ.list.length){ var ep=BQ.ep; BQ=null; mqList=null; if(ep>=D[BS.key].cards.length-1){ bsLevelUp(); return; } BS.idx=ep+1; mqScreen='basics'; renderMCQ(); window.scrollTo(0,0); return; }   // 마지막 화 문제 뒤에는 그 과목 레벨업 1단계로
     BQ.idx=i; renderMCQ(); window.scrollTo(0,0); };
   window.bsQuizBack=function(){ BQ=null; mqList=null; mqScreen='basics'; renderMCQ(); window.scrollTo(0,0); };
   /* 견본 문제 화면에서는 고르기·해설·찍음이 화면만 바꾼다(복습 기록·레벨·푼 수 저장 없음) */
