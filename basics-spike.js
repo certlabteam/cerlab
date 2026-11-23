@@ -70,7 +70,8 @@
   }
   /* 관계도 — ① ② … 차례로 「누가 → 누구 : 무엇」, 마지막 「→ 결과」 줄 */
   var CIRC={'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6,'⑦':7,'⑧':8,'⑨':9,'⑩':10};   // 번호는 원 안에 넣지 않는다 — 「1.」 큰 숫자(크리스)
-  function rel(rows, result){ return '<div class="bs-rel2">'+rows.map(function(r){ return '<div class="bs-r"><b class="bs-num">'+(CIRC[r[0]]||r[0])+'.</b><span class="bs-p">'+esc(r[1])+'</span><span class="bs-a">'+esc(r[2])+'</span><span class="bs-p">'+esc(r[3])+'</span><span class="bs-l">'+esc(r[4])+'</span></div>'; }).join('')
+  var ARW={'→':'──▶','↔':'◀──▶','⇢':'┄┄▶'};   // 글자 화살표(크리스 「단순하게」)
+  function rel(rows, result){ return '<div class="bs-rel2">'+rows.map(function(r){ return '<div class="bs-r"><b class="bs-num">'+(CIRC[r[0]]||r[0])+'.</b><span class="bs-p">'+esc(r[1])+'</span><span class="bs-a">'+esc(ARW[r[2]]!=null?ARW[r[2]]:r[2])+'</span><span class="bs-p">'+esc(r[3])+'</span><span class="bs-l">'+esc(r[4])+'</span></div>'; }).join('')
     +(result?[].concat(result).map(function(x){ return '<div class="bs-res">→ 결과: '+esc(x)+'</div>'; }).join(''):'')+'</div>'; }
   function tbl(head, rows, note){ return '<table class="bs-tbl"><thead><tr>'+head.map(function(x){ return '<th>'+esc(x)+'</th>'; }).join('')+'</tr></thead><tbody>'
     +rows.map(function(r){ return '<tr>'+r.map(function(x,i){ var hl=(typeof x==='object'&&x); return '<td'+(hl?' class="hl"':'')+'>'+esc(hl?x.v:x)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>'

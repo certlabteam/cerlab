@@ -2010,3 +2010,9 @@ html.bs-preview .header,html.bs-preview #mcqView .exam-sticky{top:28px}
 #mcqView .gx.gx-ok{color:#15803D}#mcqView .gx.gx-bad{color:#B91C1C}#mcqView .gx.gx-none{color:#94A3B8}
 #mcqView .mq-rail .gx.mq-r-done{color:#185FA5}#mcqView .mq-rail .gx.mq-r-guess{color:#B45309}#mcqView .mq-rail .gx.mq-r-none{color:#64748B}
 #mcqView .mq-rail .gx.mq-r-cur,#mcqView .mq-rail .gx.mq-r-cur.mq-r-done,#mcqView .mq-rail .gx.mq-r-cur.mq-r-guess,#mcqView .mq-rail .gx.mq-r-cur.mq-r-none{color:#0C447C;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
+/* [기초학습] 관계도 단순하게(크리스 「상자·음영이 더 어수선」) — 이름 상자 없이 굵은 글, 글자 화살표, 바깥 상자 하나만 */
+#mcqView .bs-figwrap .bs-rel2{background:none;border:0;padding:4px 4px 0;margin:0}
+#mcqView .bs-r .bs-p{padding:0;border-radius:0;background:none;color:#1B2430;font-weight:800}
+#mcqView .bs-r .bs-a{color:#475569;font-weight:700;letter-spacing:-1px}
+#mcqView .bs-r .bs-l{font-size:14px;color:#64748B}
+#mcqView .bs-r .bs-p{display:inline;min-height:0;border:0;text-align:left}   /* 옛 .bs-p 상자(테두리·높이 44)도 끈다 */
