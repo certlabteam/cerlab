@@ -69,7 +69,8 @@
     return fig('0 0 '+W+' '+H, o.label||'', h)+(o.legend?'<div class="bs-legend">'+esc(o.legend)+'</div>':'');
   }
   /* 관계도 — ① ② … 차례로 「누가 → 누구 : 무엇」, 마지막 「→ 결과」 줄 */
-  function rel(rows, result){ return '<div class="bs-rel2">'+rows.map(function(r){ return '<div class="bs-r"><b>'+esc(r[0])+'</b><span class="bs-p">'+esc(r[1])+'</span><span class="bs-a">'+esc(r[2])+'</span><span class="bs-p">'+esc(r[3])+'</span><span class="bs-l">'+esc(r[4])+'</span></div>'; }).join('')
+  var CIRC={'①':1,'②':2,'③':3,'④':4,'⑤':5,'⑥':6,'⑦':7,'⑧':8,'⑨':9,'⑩':10};   // 번호는 원 안에 넣지 않는다 — 「1.」 큰 숫자(크리스)
+  function rel(rows, result){ return '<div class="bs-rel2">'+rows.map(function(r){ return '<div class="bs-r"><b class="bs-num">'+(CIRC[r[0]]||r[0])+'.</b><span class="bs-p">'+esc(r[1])+'</span><span class="bs-a">'+esc(r[2])+'</span><span class="bs-p">'+esc(r[3])+'</span><span class="bs-l">'+esc(r[4])+'</span></div>'; }).join('')
     +(result?[].concat(result).map(function(x){ return '<div class="bs-res">→ 결과: '+esc(x)+'</div>'; }).join(''):'')+'</div>'; }
   function tbl(head, rows, note){ return '<table class="bs-tbl"><thead><tr>'+head.map(function(x){ return '<th>'+esc(x)+'</th>'; }).join('')+'</tr></thead><tbody>'
     +rows.map(function(r){ return '<tr>'+r.map(function(x,i){ var hl=(typeof x==='object'&&x); return '<td'+(hl?' class="hl"':'')+'>'+esc(hl?x.v:x)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>'
@@ -138,7 +139,7 @@
       {v:10, top:'10억', lab:'1차'}, {v:5, top:'5억', lab:'2차'}, {v:2.5, top:'2.5억', lab:'3차'}, {v:1.25, top:'1.25억', lab:'4차'}, {gap:1}, {v:20, top:'20억', lab:'합계', total:1}]})
   }, civil:{
     2: rel([['①','乙(집주인)','→','甲','먼저 계약 — 채권만 생김'],['②','乙(집주인)','→','丙','또 팔고 丙이 등기 → 물권']], '집은 丙, 甲은 乙에게 손해배상'),
-    3: rel([['①','법률','','(성문법)','가장 먼저'],['②','관습법','','(불문법)','법률에 없으면'],['③','조리','','(불문법)','관습법도 없으면']], '②·③은 불문법'),
+    3: rel([['①','법률','','(성문법)','가장 먼저'],['②','관습법','','(불문법)','법률에 없으면'],['③','조리','','(불문법)','관습법도 없으면']], '관습법과 조리는 불문법'),
     4: rel([['①','乙','→','戊','짜고 한 가짜 매매 — 무효'],['②','戊','→','이웃','진짜 매매 — 이웃은 몰랐음(선의)'],['③','甲','⇢','이웃','무효 주장 못 함']], '甲은 선의의 이웃에게 무효를 주장 못 함'),
     7: rel([['①','중개사','→','甲','속임(제3자의 사기)'],['②','甲','↔','집주인','매매계약']], ['집주인이 알았거나 알 수 있었음 → 甲은 취소 가능','몰랐고 알 수도 없었음 → 취소 불가']),
     8: tbl(['무효','취소'], [['비진의표시(상대방 악의·과실)','착오(중요부분)'],['통정허위표시','사기'],['','강박']], '취소 → 처음부터 무효(소급) · 추인 → 더는 취소 못 함'),
@@ -162,7 +163,7 @@
     return S['화'].map(function(e, i, all){
       var first=null, sc=e['장면'].map(function(x){ if(!x['말']) return x['글'];
         var who=x['말']; if(!first) first=who;
-        var face=(key==='econ' && who==='甲') ? '@baker' : who.charAt(0);
+        var face=(key==='econ' && who==='甲') ? '@baker' : (key==='econ' && who==='乙') ? '@baker_eul' : who.charAt(0);
         return [who, x['글'], face, who===first?0:1]; });
       var last=(i===all.length-1);
       return { tag:e['화']+'화 · '+e['개념'], t:e['제목'], prev:e['지난이야기']||'', scene:sc,
@@ -174,12 +175,12 @@
   };
   /* 한 화(또는 문제 이야기) 한 장 — 선행학습 lcard 안에 그린다 */
   /* 말하는 사람 얼굴 — 빵집 사장 甲만 그림(어른 웹툰체), 역할 없는 사람은 동그라미 안에 글자만. 이모지·마스코트 안 씀 */
-  var FACE={ baker:'icons/story/baker_gap.png' };
-  function faceHTML(f){ return (f && f.charAt(0)==='@' && FACE[f.slice(1)]) ? '<b class="pic" aria-hidden="true"><img src="'+FACE[f.slice(1)]+'" alt=""></b>' : '<b aria-hidden="true">'+esc(f||'')+'</b>'; }
+  var FACE={ baker:'icons/story/baker_gap.png', baker_eul:'icons/story/baker_eul.png' };   // baker_eul(옆 빵집 乙)은 그림이 오면 넣는다 — 파일이 없으면 글자로
+  function faceHTML(f, alt){ return (f && f.charAt(0)==='@' && FACE[f.slice(1)]) ? '<b class="pic" aria-hidden="true" data-alt="'+esc(alt||'')+'"><img src="'+FACE[f.slice(1)]+'" alt="" onerror="var b=this.parentNode;b.classList.remove(\'pic\');b.textContent=b.getAttribute(\'data-alt\')"></b>' : '<b aria-hidden="true">'+esc(f||'')+'</b>'; }
   function storyHTML(c, learnLbl){
     return '<span class="bs-tag">'+esc(c.tag)+'</span><div class="ltitle bs-st">'+esc(c.t)+'</div>'
       +(c.prev?'<p class="bs-prev">지난 이야기: '+esc(c.prev)+'</p>':'')
-      +'<div class="bs-scene">'+c.scene.map(function(x){ return Array.isArray(x)?'<div class="bs-say'+(x[3]?' r':'')+'"><span class="bs-face">'+faceHTML(x[2])+'<i>'+esc(x[0])+'</i></span><div><span class="bs-bub">'+esc(x[1])+'</span></div></div>':'<p>'+esc(x)+'</p>'; }).join('')+'</div>'
+      +'<div class="bs-scene">'+c.scene.map(function(x){ return Array.isArray(x)?'<div class="bs-say'+(x[3]?' r':'')+'"><span class="bs-face">'+faceHTML(x[2], x[0].charAt(0))+'<i>'+esc(x[0])+'</i></span><div><span class="bs-bub">'+esc(x[1])+'</span></div></div>':'<p>'+esc(x)+'</p>'; }).join('')+'</div>'
       +(c.fig?'<div class="bs-figwrap">'+c.fig+'</div>':'')
       +(c.learn?'<div class="bs-learn"><strong>'+esc(learnLbl||'이번 화 개념')+' · '+esc(c.learn[0])+'</strong><br>'+esc(c.learn[1])+'</div>':'')
       +(c.next?'<div class="bs-next">'+esc(c.next)+'</div>':'');
@@ -212,7 +213,7 @@
   /* 본 카드 표시 — 이 브라우저에만(견본) */
   function seenGet(k){ try{ return JSON.parse(localStorage.getItem('certlab_bs_seen_'+k)||'[]'); }catch(_){ return []; } }
   function seenAdd(k,i){ try{ var a=seenGet(k); if(a.indexOf(i)<0){ a.push(i); localStorage.setItem('certlab_bs_seen_'+k, JSON.stringify(a)); } }catch(_){} }
-  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/[\u2460-\u2469]/g, function(c){ return (c.charCodeAt(0)-0x245F)+'.'; }); }   // 원 문자 ①② 는 「1.」「2.」로
   var BS={sub:'', key:'', idx:0};
   /* 시험 홈 「암기코드 듣기」 바로 위 띠 — oxl-banner 꼴 그대로. 연결된 과목이 있는 시험에만 */
   window.bsBannerHTML=function(cert){ var m=MAP[cert]; if(!m) return ''; var keys={}; Object.keys(m).forEach(function(s){ if(D[m[s]]) keys[m[s]]=1; });

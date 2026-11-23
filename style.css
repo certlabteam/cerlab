@@ -1991,3 +1991,5 @@ html.bs-preview .header,html.bs-preview #mcqView .exam-sticky{top:28px}
 #mcqView .bs-bx-a{flex:3;background:#E6F1FB;border-color:#B5D4F4}
 #mcqView .bs-bx-n{flex:2;background:#F8FAFC}
 #mcqView .bs-bx-u{background:#FFF3D6;border-color:#E0A52E}
+#mcqView .bs-r>b.bs-num{flex:none;min-width:24px;font-size:16px;font-weight:800;color:#0C447C;line-height:1.2}   /* [spike-basics] 관계도 번호 — 원 없이 「1.」 큰 숫자 */
+#mcqView .bs-r .bs-l{padding-left:30px}
