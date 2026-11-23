@@ -1,7 +1,7 @@
 /* [2026-11-24 spike-basics · 견본] 크리스 「기초학습과 선행학습은 달라야 한다」 「선행학습은 문제에 대한 선행학습」
    ① 기초학습 = 과목 바탕. 선행학습과 따로 — 시험 홈 「암기코드 듣기」 위 띠 → 과목 고르기 → 기초 카드(경제학원론=그래프 · 민법=관계도 견본)
      자료는 과목 기초 묶음(D.civil · D.econ) 단위, 시험마다 MAP 연결표(감평·공인중개사 1차·주택관리사 1차 민법 → civil)
-   ② 선행학습 = 그 문제를 풀기 위한 학습 — 선행학습의 그 문제 카드 위에 문제별 기초 칸(e26_9 기초 3가지 · e26_2 계산 6단계). 회차 흐름에서도 그 문제 차례에 나온다
+   ② 선행학습 = 그 문제를 풀기 위한 학습 — 「기초」 이름 없이 원래 개념 카드 뒤에 이 문제만의 것만(e26_9 숫자 예시 · e26_2 풀이 순서). 회차 흐름에서도 그 문제 차례에 나온다
    자료는 이 파일에 박은 견본뿐 — Firestore·서버에 아무것도 쓰지 않는다(본 카드 표시만 이 브라우저에 적어 둔다). 생김새는 선행학습 카드(learn-hd · lcard · lsec · lcue) 그대로.
    견본 바로가기: ?basics=econ · ?basics=civil(기초학습 화면) · ?basics=q(e26_9) · ?basics=q2(e26_2)(선행학습 그 문제) — 로그인 없이 */
 (function(){
@@ -59,16 +59,16 @@
     +'<text x="134" y="164" font-size="10" fill="#5F6B7A" text-anchor="middle">200</text><text x="184" y="164" font-size="10" fill="#5F6B7A" text-anchor="middle">300</text>'
     +'<text x="220" y="124" font-size="12" fill="#185FA5" font-weight="700">수요</text><text x="222" y="44" font-size="12" fill="#1D9E75" font-weight="700">공급</text>'
     +'<text x="196" y="12" font-size="12" fill="#A32D2D" font-weight="700" text-anchor="end">세금 뒤 공급(+500)</text></svg>';
-  var Q={ e26_2:{ head:'계산 기초 · 이 문제를 푸는 6단계', fig:TAX,
+  /* 선행학습 = 그 문제를 풀기 위한 학습 — 「기초」라는 이름 없이, 원래 개념 카드 뒤에 이 문제에만 쓰는 것만 붙인다(개념 카드와 같은 말은 빼고) */
+  var Q={ e26_2:{ title:'풀이 순서', fig:TAX,
       legend:'● 파랑 처음 균형 1,400원·300개 · ● 빨강 세금 뒤 소비자가 내는 값 1,600원·200개 · ● 초록 공급자가 받는 값 1,100원',
       steps:[['균형 찾기','수요량=공급량으로 놓는다. 1000−P/2 = P/3−500/3 → 양쪽에 6을 곱하면 6000−3P = 2P−1000 → P=1,400, Q=300.'],
-        ['종량세 500원을 공급자에게 매기면','공급자가 실제로 받는 값은 P−500이라, 공급곡선이 위로 500 올라간다. Qs=(P−500)/3−500/3.'],
+        ['공급자에게 500원','공급식의 P 자리에 공급자가 받는 값 P−500을 넣는다. Qs=(P−500)/3−500/3.'],
         ['새 균형','1000−P/2 = (P−500)/3−500/3 → 6000−3P = 2P−2000 → 소비자가 내는 값 P=1,600, 공급자가 받는 값 1,100, Q=200.'],
-        ['누가 얼마 무나','소비자 1,600−1,400=200원, 공급자 1,400−1,100=300원 → 공급자만 다 무는 게 아니다(ㄱ ×). 공급이 덜 민감해서(기울기) 공급자가 더 문다.'],
-        ['거래량과 소비자잉여','거래량은 300→200으로 준다(ㄴ ○). 값이 오르고 덜 사니 소비자잉여는 준다(ㄷ ×).'],
-        ['수요자에게 매기면','같은 세금을 수요자에게 매겨도 수요곡선이 아래로 500 내려갈 뿐, 새 거래량은 똑같이 200이다(ㄹ ○).']] },
-    e26_9:{ steps:['수요곡선: 값을 내리면 더 팔린다.','한계수입(MR): 한 개 더 팔 때 늘어나는 수입. 값을 내려야 더 팔리니 MR은 값보다 작다.','탄력성: 1인 곳에서 MR=0이 된다. 독점기업은 MR>0인 곳(탄력성이 1보다 큰 곳)에서만 판다.'],
-    ex:'빵을 1,000원에 10개 팔다가 900원으로 내리니 12개가 팔렸다. 수입은 10,000원 → 10,800원으로 800원 늘었다. 이 800원을 2개로 나눈 400원이 한 개 더 팔 때 늘어난 수입(MR)이다.' } };
+        ['누가 얼마 무나','소비자 1,600−1,400=200원, 공급자 1,400−1,100=300원 → 공급자만 다 무는 게 아니다(ㄱ ×).'],
+        ['거래량과 소비자잉여','거래량 300 → 200(ㄴ ○). 내는 값이 1,400 → 1,600으로 오르고 덜 사니 소비자잉여는 준다(ㄷ ×).'],
+        ['수요자에게 500원','수요식이 1000−(P+500)/2가 된다. P/3−500/3과 같게 놓으면 6000−3P−1500 = 2P−1000 → 공급자가 받는 값 1,100, 거래량 200으로 같다(ㄹ ○).']] },
+    e26_9:{ ex:'숫자로 보면 — 빵을 1,000원에 10개 팔다가 900원으로 내리니 12개가 팔렸다. 매출은 10,000원 → 10,800원으로 800원 늘었고, 2개 더 팔았으니 한 개 더 팔 때 늘어난 돈(한계수입)은 400원이다. 값(900원)보다 작다.' } };
 
   /* 기초는 시험이 아니라 과목 기초 묶음(D.civil · D.econ …) 단위 — 시험마다 「과목 → 묶음」 연결표만 둔다(크리스 「시험별로 공통적인 게 많다」) */
   var MAP={ appraiser:{civil:'civil', econ:'econ'}, realestate1:{re1_civil:'civil'}, housing:{hm_civil:'civil'} };
@@ -117,12 +117,14 @@
   window.bsClose=function(){ BS={sub:'', key:'', idx:0}; mqScreen='home'; renderMCQ(); window.scrollTo(0,0); };   // 오른쪽 위 X — 기초학습을 닫고 시험 홈으로
   window.bsDone=function(){ var sub=BS.sub; BS={sub:'', key:'', idx:0}; if(sub) mqOpen[sub]=true; mqScreen='home'; renderMCQ(); window.scrollTo(0,0); };   // 끝 → 그 과목 기출 목록을 펼친 시험 홈
   window.bsQHTML=function(q){ var b=q&&Q[q.id]; if(!b) return '';
-    return '<div class="bs-qbox"><div class="learn-hd"><span class="learn-step">🧱 '+esc(b.head||'기초 · 이 문제에 필요한 3가지')+'</span></div>'
+    var h='';
+    if(b.steps) h+='<div class="bs-solve"><div class="ltitle">'+esc(b.title||'풀이 순서')+'</div>'
       +(b.fig?'<div class="bs-figwrap">'+b.fig+(b.legend?'<div class="bs-legend">'+esc(b.legend)+'</div>':'')+'</div>':'')
-      +b.steps.map(function(s,i){ var t=Array.isArray(s)?s[0]:s.split(':')[0], d=Array.isArray(s)?s[1]:(s.indexOf(':')>0?s.slice(s.indexOf(':')+1).trim():s);
-        return '<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+esc(t)+'</div><div class="lsec-d">'+esc(d)+'</div></div>'; }).join('')
-      +(b.ex?'<div class="lcue"><span class="lcue-tag">예시</span>'+esc(b.ex)+'</div>':'')+'</div>';
+      +b.steps.map(function(s,i){ return '<div class="lsec"><div class="lsec-t"><span class="lico">'+(i+1)+'</span>'+esc(s[0])+'</div><div class="lsec-d">'+esc(s[1])+'</div></div>'; }).join('')+'</div>';
+    if(b.ex) h+='<div class="lcue"><span class="lcue-tag">예시</span>'+esc(b.ex)+'</div>';
+    return h;
   };
+
 
   // 견본 바로가기 주소 — ?basics=econ | civil | q (로그인 없이)
   var m=/[?&]basics=(econ|civil|q2|q)\b/.exec(location.search); if(!m) return;

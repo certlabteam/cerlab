@@ -1760,8 +1760,7 @@ function renderMcqExam(root){
       '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
       '</div>'+
       '<div class="learn-hd"><span class="learn-step"><img class="mq-ico" src="icons/book.png" alt=""> 선행학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
-      (typeof bsQHTML==='function'?bsQHTML(q):'')+   // [spike-basics] 그 문제를 풀기 위한 기초 칸(있는 문제만) — 회차 흐름에서도 그 문제 차례에 보인다
-      '<div class="lcard">'+conceptCardHTML(q)+(_lw?_mqMastersHTML(q):'')+
+      '<div class="lcard">'+conceptCardHTML(q)+(typeof bsQHTML==='function'?bsQHTML(q):'')+(_lw?_mqMastersHTML(q):'')+   // [spike-basics] 개념 → (이 문제만의 예시·풀이 순서) → 문제 풀기
         '<button class="solve-btn" onclick="mqConceptSolve()">문제 풀기 →</button></div>';
     _mqKeepScroll(root, function(){
       root.innerHTML=(_lw && qs.length>1) ? '<div class="mq-split">'+_mqConceptListHTML(qs)+'<div class="mq-main">'+_learnHTML+'</div></div>' : _learnHTML;

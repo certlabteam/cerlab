@@ -1921,3 +1921,4 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
 #mcqView .exam-hd .bs-x{grid-column:5;grid-row:1;justify-self:end;margin:-6px -8px -6px 0}   /* [spike-basics] 머리줄 오른쪽 위 X */
 #mcqView .exam-hd:has(.bs-x) .exam-ti .nm{grid-column:1/5}
 #mcqView .exam-hd:has(.bs-x) .exam-ti .st{grid-column:1/4}
+#mcqView .bs-solve{margin-top:20px;padding-top:16px;border-top:1px solid #E2E8F0}   /* [spike-basics] 선행학습 개념 뒤 「풀이 순서」 — 같은 카드 안 */
