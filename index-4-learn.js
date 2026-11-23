@@ -303,7 +303,7 @@ function _mastersFor(q, rerender){
     cptIds.forEach(function(id){ if(typeof _cptCache!=='undefined' && !_cptCache[id]) jobs.push(_mRest('concepts',id).then(function(c){ return putC(c,id); })); });
     itvIds.forEach(function(id){ if(typeof _itvCache!=='undefined' && !_itvCache[id]) jobs.push(_mRest('interactives',id).then(function(d){ if(d){ _itvCache[id]=d; return 1; } })); });
     if(!jobs.length) return;
-    Promise.all(jobs).then(function(r){ if(!rerender || !r.some(Boolean)) return; if(typeof mqCurId!=='undefined' && mqCurId===q.id && typeof renderMCQ==='function' && ((typeof mqShow!=='undefined' && mqShow[q.id]) || (typeof mqInReview!=='undefined' && mqInReview))) renderMCQ(); }).catch(function(){});
+    Promise.all(jobs).then(function(r){ if(!rerender || !r.some(Boolean) || _mqRxBusy || (typeof mqScreen!=='undefined' && mqScreen!=='exam')) return; if(typeof mqCurId!=='undefined' && mqCurId===q.id && typeof renderMCQ==='function' && ((typeof mqShow!=='undefined' && mqShow[q.id]) || (typeof mqInReview!=='undefined' && mqInReview))) renderMCQ(); }).catch(function(){});
   }catch(_){}
 }
 function _imgPrefetch(qs, idx){ try{ for(var i=idx+1;i<=idx+3&&i<(qs||[]).length;i++) _imgKeysOf(qs[i]).forEach(function(k){ if(!imgCache[k]) _imgFetch(k); });
@@ -1556,6 +1556,102 @@ function expFold(root, q){
     if(first) first.parentNode.insertBefore(bar, first); else exp.appendChild(bar);
   }catch(e){ console.warn('expFold', e); }
 }
+/* 암기코드 상자 — 해설과 개념 옆 칸이 같이 쓴다(그리는 모양은 예전 그대로) */
+function _mnBoxesHTML(mnList){
+  var out='', _cards=[];
+  mnList.forEach(function(mn){ _cards=_cards.concat(mnBoxCards(mnResolve(mn))); });
+  _cards.forEach(function(cd,i){
+    var extra=i>0?' mn-box-extra':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':'';
+    if(cd.broken){ out+='<div class="mn-box'+extra+'">'+ti+'<div class="mn-code" style="color:#A32D2D;font-size:14px"><img class="mq-ico" src="icons/warning.png" loading="lazy" alt=""> 참조 오류: mn://'+cd.ref+' (마스터에 없음)</div></div>'; return; }
+    var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
+    out+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
+  });
+  return out;
+}
+/* [2026-11-23] 넓은 화면(가로 900px 이상 · 태블릿 가로 · PC) — 크리스 태블릿 시안 승인(A안).
+   왼쪽 끝 문항 번호판 · 가운데 문제 · 오른쪽 해설(따로 스크롤), 해설 속 개념 이름을 누르면 오른쪽 끝에 개념 옆 칸.
+   폰·세로 태블릿은 _mqWide() 가 거짓이라 예전 줄을 한 글자도 안 바꾸고 그린다. 꼴은 style.css 맨 끝 @media(min-width:900px). */
+var _mqRxBusy=false;   // 결과 화면이 해설만 뽑아 갈 때는 한 칸으로 그린다
+function _mqWide(){ try{ return !_mqRxBusy && !!(window.matchMedia && window.matchMedia('(min-width:900px)').matches); }catch(_){ return false; } }
+function _mqRailHTML(qs){
+  if(!qs || qs.length<2) return '';
+  var done=0;
+  var btns=qs.map(function(x,i){
+    var a=mqAns[x.id], cls, st;
+    if(mqInReview){ cls=(a===undefined)?'gx-none':(isCorr(x.ans,a)?'gx-ok':'gx-bad'); st=(a===undefined)?'미응답':(cls==='gx-ok'?'정답':'오답'); }
+    else { if(a!==undefined) done++; cls=(a===undefined)?'mq-r-none':(mqGuess[x.id]?'mq-r-guess':'mq-r-done'); st=(a===undefined)?'안 푼 문항':(mqGuess[x.id]?'찍은 문항':'푼 문항'); }
+    if(i===mqIdx){ cls+=' mq-r-cur'; st+=' · 지금 문항'; }
+    return '<button type="button" class="gx '+cls+'" onclick="mqRailGo('+i+')" aria-label="'+(i+1)+'번 · '+st+'"'+(i===mqIdx?' aria-current="true"':'')+'>'+(i+1)+'</button>';
+  }).join('');
+  var leg=mqInReview
+    ? '<span><i class="gx-d gx-ok"></i>정답</span><span><i class="gx-d gx-bad"></i>오답</span><span><i class="gx-d gx-none"></i>미응답</span>'
+    : '<span><i class="gx-d mq-r-done"></i>푼 문항</span><span><i class="gx-d mq-r-guess"></i>찍은 문항</span><span><i class="gx-d mq-r-none"></i>안 푼 문항</span>';
+  return '<nav class="mq-rail" aria-label="문항 번호판"><div class="gx-ti">문항 <span>'+(mqInReview?qs.length+'문항':done+' / '+qs.length+' 풀었어요')+'</span></div>'+
+    '<div class="mq-rail-grid">'+btns+'</div><div class="gx-leg">'+leg+'</div></nav>';
+}
+function mqRailGo(i){ if(i!==mqIdx) mqNav(i-mqIdx); }   // 번호판 — 이전·다음 단추와 같은 길(mqNav)로 옮긴다
+/* 정답을 숨긴 동안 오른쪽 해설 칸 — 자리는 두고 흐리게 가린 뒤 가운데 「정답 보기」(누르면 「정답·해설」 단추와 같다).
+   가린 칸에는 진짜 해설 대신 빈 줄만 그린다 — 정답이 비쳐 보이지 않게. */
+function _mqHoldHTML(q, sel){
+  var picked=(sel!==undefined && sel!==null && sel!=='');
+  var sk='<div class="mq-skel"></div>';
+  return '<div class="mq-hold"><div class="mq-hold-blur" aria-hidden="true"><div class="exp"><div class="exp-note-hd">학습 노트</div>'+sk+sk+sk+'<div class="mq-skel mq-skel-s"></div>'+sk+sk+sk+'<div class="mq-skel mq-skel-s"></div></div></div>'+
+    '<div class="mq-hold-cta"><button type="button" class="mbtn mbtn-next mq-hold-btn" onclick="mqToggleExp(\''+q.id+'\')">정답 보기</button>'+
+    '<small>'+(picked?('고른 답 '+(Array.isArray(sel)?sel.join(', '):sel)+'번 · 눌러서 해설을 봐요'):'보기를 고르면 해설이 여기 나와요')+'</small></div></div>';
+}
+/* 결과 화면 — 문항 하나의 해설(.exp)만 뽑는다. 문제 화면 그리기(renderMcqExam)를 「결과 검토」 상태로 화면 밖에서 한 번 돌려
+   그 해설 덩이를 그대로 옮긴다(그림이 늦게 붙어도 같은 덩이라 제자리에 들어간다). 상태는 돌려놓는다. */
+function _mqExpNode(q){
+  var host=document.getElementById('mcqView')||document.body, box=document.createElement('div'), node=null;
+  box.style.cssText='position:absolute;left:-10000px;top:0;width:480px;visibility:hidden';
+  host.appendChild(box);
+  var S=[mqInReview,mqReviewList,mqReviewMode,mqIdx,mqAns,mqShow,mqCurId];
+  try{ _mqRxBusy=true; mqInReview=true; mqReviewList=[q]; mqReviewMode='wrong'; mqIdx=0; mqAns=Object.assign({},mqResultAns); mqShow={}; mqShow[q.id]=true;
+    renderMcqExam(box); node=box.querySelector('.exp'); }
+  catch(err){ console.warn('mqExpNode', err); }
+  finally{ _mqRxBusy=false; mqInReview=S[0]; mqReviewList=S[1]; mqReviewMode=S[2]; mqIdx=S[3]; mqAns=S[4]; mqShow=S[5]; mqCurId=S[6]; if(node) node.remove(); box.remove(); }
+  return node;
+}
+/* 개념 옆 칸 — 해설 「개념」 상자의 이름을 누르면 그 개념의 카드 · 암기코드 · 그래프 · 표를 오른쪽 끝에 띄운다. 해설 칸은 그대로라 읽던 자리가 남는다. */
+var _mqCpt=null;   // {qid, ci}
+function _mqCptHit(q, ci){
+  var e=q&&q.exp; if(!e) return null;
+  if(Array.isArray(e.cpt) && e.cpt.length){ var n=0;
+    for(var k=0;k<e.cpt.length;k++){ var c=cptResolve(e.cpt[k]), cs=(c&&Array.isArray(c.cards))?c.cards:[];
+      if(ci<n+cs.length) return {cards:cs, at:ci-n, ref:e.cpt[k]}; n+=cs.length; } }
+  var cc=_conceptCards(q); return cc[ci]?{cards:[cc[ci]], at:0, ref:null}:null;
+}
+function mqCptOpen(q, ci){
+  var hit=_mqCptHit(q, ci); if(!hit) return;
+  var fq={id:q.id, exp:{cpt:hit.ref?[hit.ref]:[]}};
+  var rows=hit.cards.map(function(it,i){ if(!it||!it.t) return '';
+    var r='<div class="concept-row'+(i===hit.at?' mq-cpt-hit':'')+'"><div class="mq-cpt-name">'+rm(it.t,q)+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
+    if(it.cx && String(it.cx).trim()) r+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
+    if(it.ex && String(it.ex).trim()) r+='<div class="cc-ex">'+rm(String(it.ex).trim(),q)+'</div>';
+    return r; }).join('');
+  var body='<div class="concept-box"><div class="concept-ti">개념</div>'+rows+'</div>';
+  if(hit.ref){ var mnL=_conceptChain(fq,'mn'); if(mnL.length) body+=_mnBoxesHTML(mnL); body+=grpBlockHTML(fq)+tblBlockHTML(fq); }
+  var p=document.getElementById('mqCptSide');
+  if(!p){ p=document.createElement('aside'); p.id='mqCptSide'; p.className='mq-cpt-side'; p.setAttribute('aria-label','개념 카드'); (document.getElementById('mcqView')||document.body).appendChild(p); }
+  p.innerHTML='<div class="mq-cpt-hd"><span>개념 카드</span><button type="button" class="mq-cpt-x" onclick="mqCptClose()" aria-label="개념 카드 닫기">✕</button></div><div class="mq-cpt-bd">'+body+'</div>';
+  p.hidden=false; _mqCpt={qid:q.id, ci:ci};
+  var v=document.getElementById('mcqView'); if(v) v.classList.add('mq-cpt-on');
+  try{ resolveImages(p); }catch(_){}
+}
+function mqCptClose(){ _mqCpt=null; var p=document.getElementById('mqCptSide'); if(p) p.hidden=true; var v=document.getElementById('mcqView'); if(v) v.classList.remove('mq-cpt-on'); }
+document.addEventListener('click', function(e){
+  var t=e.target && e.target.closest && e.target.closest('.mq-cpt-t'); if(!t || !_mqWide()) return;
+  var rx=t.closest('.mq-rx'), q=null;
+  if(rx) q=mqResultQs[+rx.getAttribute('data-i')];
+  else if(t.closest('.mq-split')) q=mqQuestions()[mqIdx];
+  if(!q) return;
+  e.preventDefault(); mqCptOpen(q, +t.getAttribute('data-ci'));
+});
+/* 폭이 900px 을 넘나들면(태블릿을 돌리면) 지금 화면을 다시 그린다 */
+(function(){ try{ var mm=window.matchMedia && window.matchMedia('(min-width:900px)'); if(!mm) return;
+  var f=function(){ var v=document.getElementById('mcqView'); if(!mm.matches) mqCptClose(); if(!v || v.classList.contains('hidden')) return;
+    if(mqScreen==='exam') renderMCQ(); else if(mqScreen==='result' && typeof renderMqResultScreen==='function') renderMqResultScreen(); };
+  if(mm.addEventListener) mm.addEventListener('change', f); else if(mm.addListener) mm.addListener(f); }catch(_){} })();
 function renderMcqExam(root){
   const subObj=(mqReview||mqDiag)?null:curQB()[mqSub];
   const sets=subObj?subObj.sets:[];
@@ -1811,21 +1907,14 @@ function renderMcqExam(root){
           if(typeof m==='string'){ if(seen[m]) return; seen[m]=1; }
           out.push(m); });
         mnList=out; })();
-      var _cards=[];
-      mnList.forEach(function(mn){ _cards=_cards.concat(mnBoxCards(mnResolve(mn))); });
-      _cards.forEach(function(cd,i){
-        var extra=i>0?' mn-box-extra':''; var ti=i===0?'<div class="mn-ti">암기코드</div>':'';
-        if(cd.broken){ body+='<div class="mn-box'+extra+'">'+ti+'<div class="mn-code" style="color:#A32D2D;font-size:14px"><img class="mq-ico" src="icons/warning.png" loading="lazy" alt=""> 참조 오류: mn://'+cd.ref+' (마스터에 없음)</div></div>'; return; }
-        var num=cd.num?'<span class="mn-num">'+cd.num+'</span> ':'';
-        body+='<div class="mn-box'+extra+'">'+ti+num+mnChantHTML(cd.code,null,cd.kind)+'<div class="mn-code">'+cd.code+'</div>'+(cd.desc?'<div class="mn-desc'+((cd.desc&&(cd.desc.match(/↓/g)||[]).length>=2&&cd.desc.indexOf('↑')<0)?' mn-flow':'')+'">'+cd.desc+'</div>':'')+'</div>';
-      });
+      body+=_mnBoxesHTML(mnList);
     }
     var _cc=_conceptCards(q); if(_cc.length){
       var _aiCards=[];
       body+='<div class="concept-box"><div class="concept-ti">개념</div>'+_cc.map(function(it,ci){
         if(!it||!it.t) return '';
         var _aiOff=(typeof AI_OFF!=='undefined' && AI_OFF);
-        var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span>'+(_aiOff?'':'<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:12px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button>')+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
+        var row='<div class="concept-row"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px"><span class="mq-cpt-t" data-ci="'+ci+'" style="font-weight:500;color:#0C447C">'+rm(it.t,q)+'</span>'+(_aiOff?'':'<button class="ai-copy" onclick="aiAskInsert(\''+q.id+'\','+ci+')" style="flex:none;margin:0;font-size:12px;padding:2px 8px;border:1px solid #C7DBF2;background:#EAF2FB;color:#0C447C;border-radius:6px;cursor:pointer;white-space:nowrap">📋 복사</button>')+'</div>'+(it.d?'<div>'+rm(it.d,q)+'</div>':'')+'</div>';
         // cx 있으면 파란 예시박스. 💡(exd)는 생체(보디빌딩)에서만 표시, 나머지 과목 폐지
         if(it.cx && String(it.cx).trim()) row+='<div class="cc-ex">'+rm(String(it.cx).trim(),q)+'</div>';
         else if(mqCert==='bodybuilding' && it.exd && String(it.exd).trim()) row+='<div class="cc-exd"><img class="mq-ico" src="icons/bulb.png" loading="lazy" alt=""> '+rm(String(it.exd).trim(),q)+'</div>';
@@ -1868,7 +1957,8 @@ function renderMcqExam(root){
   const _jrHTML=(!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(_jr3Strip(jr.jaryo,q)),q)).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'';
   /* [2026-11-23] 짧은 자료(조건·수치 몇 줄)는 문제와 같이 위에 붙여 둔다 — 보기·해설을 내려 봐도 조건이 보이게(크리스 「생산소요시간까지 고정값으로 해야겠다 문제와 같이」 감평 경제 2026_20). 길거나 표·그림·빈칸이 있으면 화면을 덮으니 지금처럼 아래에 둔다. */
   const _jrPin=!!_jrHTML && String(jr.jaryo).length<=160 && String(jr.jaryo).split(/\n/).length<=5 && !/<table|\[tbl\]|<img|_{2,}|\(\s*\)/.test(String(jr.jaryo)) && !jaryoBlanksHTML(jr.jaryo,q);
-  root.innerHTML=
+  const _mqWideNow=_mqWide();   // [2026-11-23] 넓은 화면이면 번호판 · 문제 · 해설 세 칸(폰은 아래 줄 그대로)
+  const _mqMainHTML=
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="뒤로">'+BACK_ARROW+'</button>'+
       '<div class="exam-ti"><div class="nm">'+(mqInReview?(mqReviewMode==='wrong'?'오답 보기':mqReviewMode==='unans'?'미응답 보기':'결과 검토'):((!mqGather&&!mqDiag&&!mqReview&&typeof certLabel==='function')?'<a class="exam-home-link" style="color:inherit;text-decoration:underline;cursor:pointer" data-c="'+mqCert+'" onclick="if(window.enterCert)enterCert(this.dataset.c)">'+certLabel(mqCert)+'</a> &gt; '+examName:examName))+'</div><div class="st">'+(mqInReview?(mqReviewMode==='wrong'?'틀린 문항만':mqReviewMode==='unans'?'안 푼 문항만':'')+(function(){ /* 2026-10-21 결과 검토 머리에 「시험 > 과목」 — 공유 링크로 열면 무슨 시험인지 안 보였다(크리스 「무슨 시험인지 표시좀」 「시험 이랑 과목 둘다」 「시험 누르면 그시험 홈으로」 「감평사 > 회계학 이런식」) */ try{ var _cn=(typeof certLabel==='function')?certLabel(mqCert):''; var _sc=(q&&(q._subj||q.sub))||''; var _sn=curSubj||''; if(!_sn&&_sc){ try{ var _qb=qbOf(mqCert)[_sc]; _sn=(_qb&&_qb.name)||''; }catch(_){} } if(!_sn&&examName&&examName!=='오늘의 복습') _sn=examName; return _cn?((mqReviewMode==='wrong'||mqReviewMode==='unans')?' · ':'')+'<a class="exam-home-link" style="color:inherit;text-decoration:underline;cursor:pointer" data-c="'+mqCert+'" onclick="if(window.enterCert)enterCert(this.dataset.c)">'+_cn+'</a>'+(_sn?' &gt; '+_sn:''):''; }catch(_){ return ''; } })():examSet+(curSubj?' · '+curSubj:''))+qCtx+'</div></div>'+
@@ -1880,8 +1970,12 @@ function renderMcqExam(root){
     '<div class="qcard">'+(_jrPin?'':_jrHTML)+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
-    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
-    expHTML+'</div>';
+    '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>';
+  root.innerHTML=_mqWideNow
+    ? '<div class="mq-split">'+_mqRailHTML(qs)+'<div class="mq-main">'+_mqMainHTML+'</div></div>'+
+      '<aside class="mq-side" aria-label="해설">'+(showExp?expHTML:_mqHoldHTML(q,sel))+'</aside></div>'
+    : _mqMainHTML+expHTML+'</div>';
+  if(_mqCpt && (!_mqWideNow || _mqCpt.qid!==q.id)) mqCptClose();   // 다른 문항으로 가면 개념 옆 칸을 닫는다
   expFold(root, q);   // 해설 접기(위 함수 머리글)
   resolveImages(root); _imgPrefetch(qs, mqIdx); _mastersFor(q, true); _mastersFor(qs[mqIdx+1], false); fmtJaryo(root); _eqFit(root); markComboStmts(root, !mqInReview && !_isPairOpts(q) && !_isCatCombo(q) && (isComboQuestion(q.opts, q) || _tfAssign(q))); injectTableOX(root, q); restoreOX(root);
   // [2026-07-20] 문제별 단독 URL: 일반 기출 풀이 화면일 때 주소창을 #q/{시험}/{문항id}로 유지(공유·광고용). 복습·모아풀기·진단·검토는 제외.

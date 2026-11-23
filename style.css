@@ -1768,4 +1768,79 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
 /* ④ 커뮤니티 카드 아이콘 — 시험 카드 아이콘 칸(.cert-ic)과 같은 크기 */
 .cm-enter .ico{width:52px;height:52px;border-radius:12px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
 .cm-enter .ico img{width:28px!important;height:28px!important}
+/* ── [2026-11-23] 넓은 화면(가로 900px 이상 · 태블릿 가로 · PC) — 크리스 태블릿 시안 승인(A안)
+   폰·세로 태블릿은 아래 @media 가 안 걸려 지금 그대로다. 색은 앱에 있던 값만, 크기는 피그마 계단 안에서만. */
+.mq-cpt-side{display:none}
+@media (min-width:900px){
+  /* 홈 — 본문을 넓히고 시험 카드를 세 줄로 */
+  body:has(#homeView:not(.hidden)){max-width:1200px}
+  #homeView .cert-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  /* 문제 풀이 — 왼쪽 번호판 · 가운데 문제 · 오른쪽 해설. 해설 칸은 따로 스크롤 */
+  body:has(#mcqRoot .mq-split),body:has(#mcqRoot .mq-rsplit){max-width:1440px}
+  #mcqView .mcq-wrap:has(.mq-split),#mcqView .mcq-wrap:has(.mq-rsplit){padding:12px 24px 24px}
+  #mcqView .mq-split{display:grid;grid-template-columns:176px minmax(0,1fr) minmax(0,1fr);gap:0 24px;align-items:start}
+  #mcqView .mq-split:not(:has(>.mq-rail)){grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  #mcqView .mq-main{min-width:0}
+  #mcqView .mq-split .qcard{margin-bottom:0}
+  #mcqView .mq-split .mcq-foot{position:sticky;left:auto;transform:none;bottom:0;width:auto;max-width:none;margin:16px 0 0;padding:12px 0;background:#FDF8F5;border-top:0;box-shadow:0 -6px 8px -6px rgba(15,23,42,.12)}
+  #mcqView .mq-side{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;border-radius:12px}
+  #mcqView .mq-side>.exp,#mcqView .mq-hold-blur>.exp{margin-top:0}
+  /* 문항 번호판 */
+  #mcqView .mq-rail{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
+  #mcqView .mq-rail .gx-ti span{display:block;margin:2px 0 0}
+  #mcqView .mq-rail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  /* 앱 전체 버튼 통일 규칙(.gx 회색 · !important)을 번호판 안에서만 되돌린다 — 색이 곧 상태라서 */
+  #mcqView .mq-rail .gx{width:100%;height:36px!important;min-height:36px!important;padding:0!important;font-size:14px!important;font-weight:800!important;border-radius:8px!important}
+  #mcqView .mq-rail .gx-leg{flex-direction:column;align-items:flex-start;gap:4px;margin-top:12px}
+  #mcqView .mq-rail .gx.mq-r-done{background:#E6F1FB!important;color:#185FA5;border-color:#B5D4F4!important}
+  #mcqView .mq-rail .gx.mq-r-guess{background:#FFF3D6!important;color:#4B2000;border-color:#E0A52E!important}
+  #mcqView .mq-rail .gx.mq-r-none{background:#fff!important;color:#64748B;border-color:#E2E8F0!important}
+  #mcqView .mq-rail .gx.gx-ok{background:#DCFCE7!important;border-color:#BBF7D0!important}
+  #mcqView .mq-rail .gx.gx-bad{background:#FEE2E2!important;border-color:#FECACA!important}
+  #mcqView .mq-rail .gx.gx-none{background:#F1F5F9!important;border-color:#E2E8F0!important}
+  #mcqView .mq-rail .gx.mq-r-cur{outline:2px solid #0F172A;outline-offset:1px}
+  #mcqView .mq-rail .gx.mq-r-cur.mq-r-done,#mcqView .mq-rail .gx.mq-r-cur.mq-r-guess,#mcqView .mq-rail .gx.mq-r-cur.mq-r-none{background:#0F172A!important;color:#fff;border-color:#0F172A!important}
+  #mcqView .gx-d.mq-r-done{background:#B5D4F4}
+  #mcqView .gx-d.mq-r-guess{background:#FAC775}
+  #mcqView .gx-d.mq-r-none{background:#fff;border:1px solid #CBD5E1}
+  /* 정답을 숨긴 동안(A안) — 해설 칸은 그 자리에 두고 흐리게 가린 뒤 가운데 「정답 보기」 */
+  #mcqView .mq-hold{position:relative;min-height:320px}
+  #mcqView .mq-hold-blur{filter:blur(4px);opacity:.55;pointer-events:none;user-select:none}
+  #mcqView .mq-skel{height:12px;border-radius:999px;background:#E2E8F0;margin:12px 0}
+  #mcqView .mq-skel-s{width:60%}
+  #mcqView .mq-hold-cta{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;text-align:center}
+  #mcqView .mq-hold-btn{flex:none;padding:12px 24px;font-size:16px}
+  #mcqView .mq-hold-cta small{font-size:14px;color:#475569}
+  /* 해설 속 개념 이름 — 누르면 오른쪽 끝 옆 칸 */
+  #mcqView .mq-split .mq-cpt-t,#mcqView .mq-rsplit .mq-cpt-t{cursor:pointer;text-decoration:underline;text-decoration-color:#B5D4F4;text-underline-offset:4px}
+  #mcqView .mq-split .mq-cpt-t::after,#mcqView .mq-rsplit .mq-cpt-t::after{content:'옆에 보기 ›';display:inline-block;margin-left:8px;font-size:12px;font-weight:700;color:#185FA5;text-decoration:none}
+  #mcqView.mq-cpt-on .mq-split,#mcqView.mq-cpt-on .mq-rsplit{margin-right:384px}
+  #mcqView:has(.mq-split,.mq-rsplit) .mq-cpt-side:not([hidden]){display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;width:384px;background:#fff;border-left:1px solid #E2E8F0;box-shadow:-8px 0 24px -12px rgba(15,23,42,.25);z-index:50}
+  #mcqView .mq-cpt-hd{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 4px 16px;border-bottom:1px solid #E2E8F0;font-size:16px;font-weight:800;color:#0C447C}
+  #mcqView .mq-cpt-x{width:44px;height:44px;border:0;background:none;font-size:18px;color:#475569;cursor:pointer;border-radius:8px}
+  #mcqView .mq-cpt-bd{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 24px;font-size:14px;line-height:1.7}
+  #mcqView .mq-cpt-name{font-weight:700;color:#0C447C;margin-bottom:6px}
+  #mcqView .concept-row.mq-cpt-hit .mq-cpt-name{background:#FFF3D6;border-radius:4px;padding:0 4px;display:inline-block}
+  /* 시험 끝 결과 — 왼쪽 점수·막대 · 오른쪽 틀린 문항 */
+  #mcqView .mq-rsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:0 24px;align-items:start}
+  #mcqView .mq-rmain{min-width:0}
+  #mcqView .mq-rbars{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px 12px;margin-top:16px}
+  #mcqView .mq-rb{display:grid;grid-template-columns:144px minmax(0,1fr) 48px;align-items:center;gap:8px;margin-top:8px;font-size:14px}
+  #mcqView .mq-rb-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155}
+  #mcqView .mq-rb-t{height:9px;border-radius:999px;background:#F0E7DE;overflow:hidden}
+  #mcqView .mq-rb-t i{display:block;height:100%;border-radius:999px;transition:width .3s}
+  #mcqView .mq-rb-v{text-align:right;color:#475569;font-weight:700;font-variant-numeric:tabular-nums}
+  #mcqView .mq-rb-tip{margin-top:12px;font-size:14px;font-weight:700;color:#A32D2D}
+  #mcqView .mq-rside{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;background:#fff;border:1px solid #E2E8F0;border-radius:16px;padding:16px}
+  #mcqView .mq-rx+.mq-rx{border-top:1px solid #E2E8F0}
+  #mcqView .mq-rx-hd{display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px 12px;align-items:center;width:100%;min-height:48px;text-align:left;background:none;border:0;padding:12px 0;cursor:pointer;font:inherit}
+  #mcqView .mq-rx-n{grid-row:1 / 3;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:#FEE2E2;color:#B91C1C;font-size:14px;font-weight:800}
+  #mcqView .mq-rx-q{font-size:14px;font-weight:600;color:#0F172A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #mcqView .mq-rx-hd[aria-expanded="true"] .mq-rx-q{white-space:normal}
+  #mcqView .mq-rx-a{font-size:12px;color:#64748B}
+  #mcqView .mq-rx-bd{padding:0 0 16px}
+  #mcqView .mq-rx-bd>.exp{margin-top:0}
+  #mcqView .mq-rx-go{margin-top:12px;background:#fff;border:1px solid #B5D4F4;color:#185FA5;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer}
+  #mcqView .mq-rx-empty{font-size:14px;color:#64748B;padding:12px 0}
+}
 

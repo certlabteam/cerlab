@@ -164,8 +164,9 @@ function renderMqResultScreen(){
        '<button onclick="mqRetry()">🔄 다시풀기</button><button class="ghost" onclick="mqBackHome()">과목 선택</button>');
   var _navLbl=M.lu?'레벨업 결과':diag?'레벨 테스트 결과':M.review?'복습 결과':((curQB()&&curQB()[M.sub]&&curQB()[M.sub].name)?(curQB()[M.sub].name+' 결과'):'결과');
   var _navHead='<div class="mcq-exam-title"><button class="exam-home-back" onclick="clHandleBack()" aria-label="뒤로">'+BACK_ARROW+'</button>'+mqEsc(_navLbl)+'</div>';
-  document.getElementById('mcqRoot').innerHTML=
-    _navHead+
+  if(typeof mqCptClose==='function') mqCptClose();
+  var _wideR=(typeof _mqWide==='function') && _mqWide();   // [2026-11-23] 넓은 화면: 왼쪽 점수·막대 · 오른쪽 틀린 문항(폰은 아래 그대로)
+  var _resHTML=
     '<div class="mcq-result"><div class="em">'+em+'</div>'+
     luHead+
     '<div class="rt">'+titleTxt+modeLbl+'</div>'+
@@ -178,8 +179,62 @@ function renderMqResultScreen(){
     gridHTML+
     (M.levelTest?_ltResultHTML(M):'')+
     '<div class="rbtns">'+btns+'</div></div>';
+  document.getElementById('mcqRoot').innerHTML=_navHead+(_wideR
+    ? '<div class="mq-rsplit"><div class="mq-rmain">'+_resHTML+_mqResultBarsHTML(M)+'</div>'+_mqWrongListHTML()+'</div>'
+    : _resHTML);
   if(M.lu && !M.luFromHist){ _luResultFx(M); }
   window.scrollTo(0,0);
+}
+/* [2026-11-23] 넓은 화면 결과 — 왼쪽 과목(한 과목이면 단원)별 정답률 막대, 오른쪽 틀린 문항 목록(누르면 그 자리에서 해설). 폰은 안 그린다. */
+function _mqResultBarsHTML(M){
+  try{
+    var cert=M.cert||mqCert, subs={}, by={}, order=[], tnm={};
+    mqResultQs.forEach(function(q){ subs[q._subj||M.sub||'']=1; });
+    var multi=Object.keys(subs).length>1;
+    mqResultQs.forEach(function(q){
+      var sc=q._subj||M.sub, key, nm;
+      if(multi){ key=sc; try{ nm=(qbOf(cert)[sc]||{}).name||sc; }catch(_){ nm=sc; } }
+      else {
+        var info=(typeof adLookup==='function') && adLookup(cert, sc, q.id); if(!info || !info.topic) return;
+        if(!tnm[sc]) tnm[sc]=(typeof topicNameMap==='function' && topicNameMap(cert, sc)) || {};
+        key=info.topic; nm=(tnm[sc][key]||{}).name||key;
+      }
+      if(!by[key]){ by[key]={nm:nm, n:0, ok:0}; order.push(key); }
+      by[key].n++; var a=mqResultAns[q.id]; if(a!==undefined && isCorr(q.ans,a)) by[key].ok++;
+    });
+    if(order.length<2) return '';
+    var low=null;
+    var rows=order.map(function(k){ var g=by[k], p=Math.round(g.ok/g.n*100), col=p>=80?'#2E9B5E':p>=70?'#E0A52E':'#E24B4A';
+      if(!low || p<low.p) low={nm:g.nm, p:p};
+      return '<div class="mq-rb"><span class="mq-rb-n" title="'+mqEsc(g.nm)+'">'+mqEsc(g.nm)+'</span><span class="mq-rb-t"><i style="width:'+Math.max(p,2)+'%;background:'+col+'"></i></span><span class="mq-rb-v">'+g.ok+'/'+g.n+'</span></div>';
+    }).join('');
+    return '<div class="mq-rbars"><div class="gx-ti">'+(multi?'과목별':'단원별')+' 정답률 <span>이번 '+mqResultQs.length+'문항 기준</span></div>'+rows+
+      (low && low.p<80 ? '<div class="mq-rb-tip">⚠️ '+mqEsc(low.nm)+' 집중 학습이 필요해요('+low.p+'%)</div>' : '')+'</div>';
+  }catch(e){ return ''; }
+}
+function _mqWrongListHTML(){
+  var items=[]; mqResultQs.forEach(function(q,i){ var a=mqResultAns[q.id]; if(a!==undefined && !isCorr(q.ans,a)) items.push(i); });
+  var head='<div class="gx-ti">틀린 문항 <span>'+(items.length?items.length+'개 · 누르면 해설이 펼쳐져요':'')+'</span></div>';
+  if(!items.length) return '<section class="mq-rside" aria-label="틀린 문항">'+head+'<div class="mq-rx-empty">틀린 문항이 없어요. 안 푼 문항은 왼쪽 번호를 눌러 볼 수 있어요.</div></section>';
+  return '<section class="mq-rside" aria-label="틀린 문항">'+head+items.map(function(i){
+    var q=mqResultQs[i], a=mqResultAns[q.id];
+    var t=String(q.q||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); if(t.length>80) t=t.slice(0,80)+'…';
+    return '<div class="mq-rx" data-i="'+i+'"><button type="button" class="mq-rx-hd" aria-expanded="false" onclick="mqRxToggle('+i+')">'+
+      '<span class="mq-rx-n">'+(i+1)+'</span><span class="mq-rx-q">'+mqEsc(t)+'</span>'+
+      '<span class="mq-rx-a">내 답 '+(Array.isArray(a)?a.join(', '):a)+'번 · 정답 '+ansLabel(q.ans)+'번</span></button><div class="mq-rx-bd" hidden></div></div>';
+  }).join('')+'</section>';
+}
+function mqRxToggle(i){
+  var box=document.querySelector('.mq-rx[data-i="'+i+'"]'); if(!box) return;
+  var hd=box.querySelector('.mq-rx-hd'), bd=box.querySelector('.mq-rx-bd'), q=mqResultQs[i];
+  if(!bd.hidden){ bd.hidden=true; hd.setAttribute('aria-expanded','false'); return; }
+  if(!bd.firstChild && q){
+    var ex=_mqExpNode(q); if(ex) bd.appendChild(ex); else bd.innerHTML='<div class="mq-rx-empty">해설을 불러오지 못했어요. 아래 단추로 문제와 같이 봐 주세요.</div>';
+    var go=document.createElement('button'); go.type='button'; go.className='mq-rx-go'; go.textContent='문제와 같이 보기 ›';
+    go.onclick=function(){ mqOpenReview('all', i); }; bd.appendChild(go);
+    setTimeout(function(){ if(bd.hidden || !bd.isConnected) return; var old=bd.querySelector('.exp'), n=_mqExpNode(q); if(old && n && n.innerHTML.length!==old.innerHTML.length) old.replaceWith(n); }, 1500);   // 개념·표가 늦게 받아지면 한 번 다시
+  }
+  bd.hidden=false; hd.setAttribute('aria-expanded','true');
 }
 // 게이미피케이션: 결과화면 레벨업 연출(XP 바 채움 → Lv 배지 팝 → 컨페티). Safari/저사양 배려: reduced-motion 즉시표시
 function _luReduceMotion(){ try{ return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
