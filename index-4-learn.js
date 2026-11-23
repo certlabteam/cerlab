@@ -1573,8 +1573,12 @@ function _mnBoxesHTML(mnList){
    폰·세로 태블릿은 _mqWide() 가 거짓이라 예전 줄을 한 글자도 안 바꾸고 그린다. 꼴은 style.css 맨 끝 @media(min-width:900px). */
 var _mqRxBusy=false;   // 결과 화면이 해설만 뽑아 갈 때는 한 칸으로 그린다
 function _mqWide(){ try{ return !_mqRxBusy && !!(window.matchMedia && window.matchMedia('(min-width:900px)').matches); }catch(_){ return false; } }
+/* [2026-11-23] 번호판은 접고 펼 수 있다 — 처음엔 접힘, 왼쪽에 좁은 손잡이만(크리스 「접을 수도 있게, 기본값은 접혀 있게」). 펼친 상태는 이 브라우저에 기억한다 */
+function _mqRailOpen(){ try{ return localStorage.getItem('certlab_rail_open')==='1'; }catch(_){ return false; } }
+function mqRailToggle(){ try{ localStorage.setItem('certlab_rail_open', _mqRailOpen()?'0':'1'); }catch(_){} renderMCQ(); }
 function _mqRailHTML(qs){
   if(!qs || qs.length<2) return '';
+  if(!_mqRailOpen()) return '<nav class="mq-rail mq-rail-off" aria-label="문항 번호판"><button type="button" class="mq-rail-tog" onclick="mqRailToggle()" aria-expanded="false" aria-label="문항 번호판 펴기">▶ 문항 '+(mqIdx+1)+'/'+qs.length+'</button></nav>';
   var done=0;
   var btns=qs.map(function(x,i){
     var a=mqAns[x.id], cls, st;
@@ -1586,7 +1590,7 @@ function _mqRailHTML(qs){
   var leg=mqInReview
     ? '<span><i class="gx-d gx-ok"></i>정답</span><span><i class="gx-d gx-bad"></i>오답</span><span><i class="gx-d gx-none"></i>미응답</span>'
     : '<span><i class="gx-d mq-r-done"></i>푼 문항</span><span><i class="gx-d mq-r-guess"></i>찍은 문항</span><span><i class="gx-d mq-r-none"></i>안 푼 문항</span>';
-  return '<nav class="mq-rail" aria-label="문항 번호판"><div class="gx-ti">문항 <span>'+(mqInReview?qs.length+'문항':done+' / '+qs.length+' 풀었어요')+'</span></div>'+
+  return '<nav class="mq-rail" aria-label="문항 번호판"><button type="button" class="mq-rail-fold" onclick="mqRailToggle()" aria-expanded="true" aria-label="문항 번호판 접기">◀ 접기</button><div class="gx-ti">문항 <span>'+(mqInReview?qs.length+'문항':done+' / '+qs.length+' 풀었어요')+'</span></div>'+
     '<div class="mq-rail-grid">'+btns+'</div><div class="gx-leg">'+leg+'</div></nav>';
 }
 function mqRailGo(i){ if(i!==mqIdx) mqNav(i-mqIdx); }   // 번호판 — 이전·다음 단추와 같은 길(mqNav)로 옮긴다

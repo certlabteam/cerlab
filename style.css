@@ -1788,6 +1788,12 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
   /* 문항 번호판 */
   #mcqView .mq-rail{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
   #mcqView .mq-rail .gx-ti span{display:block;margin:2px 0 0}
+  /* 번호판 접힘(기본) — 왼쪽에 세로 손잡이만, 문제·해설 칸이 그만큼 넓어진다 */
+  #mcqView .mq-split:has(>.mq-rail-off){grid-template-columns:44px minmax(0,1fr) minmax(0,1fr)}
+  #mcqView .mq-rail.mq-rail-off{padding:0;background:none;border:0;overflow:visible}
+  #mcqView .mq-rail-tog{display:flex;align-items:center;justify-content:center;width:44px;min-height:160px;padding:12px 0;writing-mode:vertical-rl;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;font:inherit;font-size:14px;font-weight:800;color:#185FA5;cursor:pointer;white-space:nowrap}
+  #mcqView .mq-rail-tog:hover,#mcqView .mq-rail-fold:hover{background:#E6F1FB}
+  #mcqView .mq-rail-fold{display:block;width:100%;min-height:36px;margin:0 0 8px;background:#fff;border:1px solid #E2E8F0;border-radius:8px;font:inherit;font-size:12px;font-weight:700;color:#185FA5;cursor:pointer}
   #mcqView .mq-rail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
   /* 앱 전체 버튼 통일 규칙(.gx 회색 · !important)을 번호판 안에서만 되돌린다 — 색이 곧 상태라서 */
   #mcqView .mq-rail .gx{width:100%;height:36px!important;min-height:36px!important;padding:0!important;font-size:14px!important;font-weight:800!important;border-radius:8px!important}
