@@ -1908,3 +1908,4 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
 #mcqView .bs-p.bs-thing{background:#E7F6EE;border-color:#BBF7D0;color:#15803D}
 #mcqView .bs-arrow{position:relative;text-align:center;border-bottom:2px solid #94A3B8;padding-bottom:4px}
 #mcqView .bs-arrow small{font-size:12px;color:#334155;font-weight:600;line-height:1.4}
+#mcqView .bs-fig text{paint-order:stroke;stroke:#F8FAFC;stroke-width:3px;stroke-linejoin:round}   /* [spike-basics] 그래프 글씨 뒤에 카드 바탕색 테두리 — 선 가까이 있어도 읽히게 */

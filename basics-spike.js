@@ -8,24 +8,24 @@
     +'<text x="10" y="20" font-size="12" fill="#5F6B7A">값</text><text x="232" y="168" font-size="12" fill="#5F6B7A">양</text>';
   function svg(inner, label){ return '<svg class="bs-fig" viewBox="0 0 260 176" role="img" aria-label="'+label+'">'+AX+inner+'</svg>'; }
   var F={
-    demand: svg('<line x1="50" y1="30" x2="230" y2="140" stroke="#185FA5" stroke-width="3"/><text x="214" y="128" font-size="13" fill="#185FA5" font-weight="700">수요</text>'
-      +'<circle cx="80" cy="48" r="5" fill="#185FA5"/><text x="88" y="44" font-size="12" fill="#334155">1,000원 · 10개</text>'
-      +'<circle cx="170" cy="103" r="5" fill="#185FA5"/><text x="120" y="96" font-size="12" fill="#334155">900원 · 12개</text>', '수요곡선'),
-    supply: svg('<line x1="50" y1="140" x2="230" y2="30" stroke="#1D9E75" stroke-width="3"/><text x="206" y="28" font-size="13" fill="#1D9E75" font-weight="700">공급</text>'
+    demand: svg('<line x1="50" y1="30" x2="230" y2="140" stroke="#185FA5" stroke-width="3"/><text x="218" y="114" font-size="13" fill="#185FA5" font-weight="700">수요</text>'
+      +'<circle cx="80" cy="48" r="5" fill="#185FA5"/><text x="90" y="40" font-size="12" fill="#334155">1,000원 · 10개</text>'
+      +'<circle cx="170" cy="103" r="5" fill="#185FA5"/><text x="162" y="128" font-size="12" fill="#334155" text-anchor="end">900원 · 12개</text>', '수요곡선'),
+    supply: svg('<line x1="50" y1="140" x2="230" y2="30" stroke="#1D9E75" stroke-width="3"/><text x="196" y="22" font-size="13" fill="#1D9E75" font-weight="700">공급</text>'
       +'<circle cx="90" cy="116" r="5" fill="#1D9E75"/><text x="98" y="130" font-size="12" fill="#334155">싸면 조금 판다</text>'
-      +'<circle cx="190" cy="55" r="5" fill="#1D9E75"/><text x="100" y="52" font-size="12" fill="#334155">비싸면 많이 판다</text>', '공급곡선'),
+      +'<circle cx="190" cy="55" r="5" fill="#1D9E75"/><text x="182" y="44" font-size="12" fill="#334155" text-anchor="end">비싸면 많이 판다</text>', '공급곡선'),
     equil: svg('<line x1="50" y1="30" x2="230" y2="140" stroke="#185FA5" stroke-width="3"/><line x1="50" y1="140" x2="230" y2="30" stroke="#1D9E75" stroke-width="3"/>'
-      +'<circle cx="140" cy="85" r="6" fill="#A32D2D"/><text x="150" y="90" font-size="13" fill="#A32D2D" font-weight="700">균형</text>'
+      +'<circle cx="140" cy="85" r="6" fill="#A32D2D"/><text x="140" y="62" font-size="13" fill="#A32D2D" font-weight="700" text-anchor="middle">균형</text>'
       +'<line x1="34" y1="85" x2="140" y2="85" stroke="#A32D2D" stroke-dasharray="4 4"/><line x1="140" y1="85" x2="140" y2="150" stroke="#A32D2D" stroke-dasharray="4 4"/>'
-      +'<text x="214" y="132" font-size="12" fill="#185FA5">수요</text><text x="206" y="28" font-size="12" fill="#1D9E75">공급</text>', '균형'),
+      +'<text x="232" y="128" font-size="12" fill="#185FA5">수요</text><text x="234" y="46" font-size="12" fill="#1D9E75">공급</text>', '균형'),
     marginal: svg('<rect x="56" y="60" width="34" height="90" fill="#B5D4F4"/><rect x="110" y="96" width="34" height="54" fill="#B5D4F4"/><rect x="164" y="126" width="34" height="24" fill="#B5D4F4"/>'
       +'<text x="62" y="54" font-size="12" fill="#185FA5" font-weight="700">+5</text><text x="116" y="90" font-size="12" fill="#185FA5" font-weight="700">+3</text><text x="170" y="120" font-size="12" fill="#185FA5" font-weight="700">+1</text>'
       +'<text x="50" y="166" font-size="11" fill="#5F6B7A">1개째</text><text x="104" y="166" font-size="11" fill="#5F6B7A">2개째</text><text x="158" y="166" font-size="11" fill="#5F6B7A">3개째</text>', '한계 — 하나 더 먹을 때 느는 만족'),
-    elastic: svg('<line x1="90" y1="20" x2="130" y2="146" stroke="#A32D2D" stroke-width="3"/><text x="44" y="40" font-size="12" fill="#A32D2D" font-weight="700">덜 민감</text>'
-      +'<line x1="50" y1="70" x2="236" y2="112" stroke="#185FA5" stroke-width="3"/><text x="170" y="90" font-size="12" fill="#185FA5" font-weight="700">민감</text>', '탄력성 — 가파르면 덜 민감'),
-    revenue: svg('<line x1="40" y1="24" x2="236" y2="146" stroke="#185FA5" stroke-width="3"/><text x="200" y="134" font-size="12" fill="#185FA5" font-weight="700">수요</text>'
-      +'<line x1="40" y1="24" x2="138" y2="146" stroke="#A32D2D" stroke-width="3"/><text x="104" y="118" font-size="12" fill="#A32D2D" font-weight="700">MR</text>'
-      +'<line x1="138" y1="85" x2="138" y2="150" stroke="#94A3B8" stroke-dasharray="4 4"/><text x="142" y="80" font-size="11" fill="#334155">MR=0 · 탄력성 1</text>', '총수입과 한계수입')
+    elastic: svg('<line x1="90" y1="20" x2="130" y2="146" stroke="#A32D2D" stroke-width="3"/><text x="40" y="64" font-size="12" fill="#A32D2D" font-weight="700">덜 민감</text>'
+      +'<line x1="50" y1="70" x2="236" y2="112" stroke="#185FA5" stroke-width="3"/><text x="176" y="82" font-size="12" fill="#185FA5" font-weight="700">민감</text>', '탄력성 — 가파르면 덜 민감'),
+    revenue: svg('<line x1="40" y1="24" x2="236" y2="146" stroke="#185FA5" stroke-width="3"/><text x="206" y="110" font-size="12" fill="#185FA5" font-weight="700">수요</text>'
+      +'<line x1="40" y1="24" x2="138" y2="146" stroke="#A32D2D" stroke-width="3"/><text x="64" y="112" font-size="12" fill="#A32D2D" font-weight="700">MR</text>'
+      +'<line x1="138" y1="85" x2="138" y2="150" stroke="#94A3B8" stroke-dasharray="4 4"/><circle cx="138" cy="85" r="4" fill="#185FA5"/><text x="146" y="72" font-size="11" fill="#334155">MR=0 · 탄력성 1</text>', '총수입과 한계수입')
   };
   function rel(rows){ return '<div class="bs-rel">'+rows.map(function(r){ return '<div class="bs-rel-row"><span class="bs-p">'+r[0]+'</span><span class="bs-arrow"><small>'+r[1]+'</small></span><span class="bs-p'+(r[3]?' bs-thing':'')+'">'+r[2]+'</span></div>'; }).join('')+'</div>'; }
   var D={
