@@ -1,9 +1,9 @@
-/* [2026-11-24 spike-basics · 견본] 크리스 「기초학습과 선행학습은 달라야 한다」 「선행학습은 문제에 대한 선행학습」
-   ① 기초학습 = 과목 바탕. 선행학습과 따로 — 시험 홈 「암기코드 듣기」 위 띠 → 과목 고르기 → 기초 카드(경제학원론=그래프 · 민법=관계도 견본)
+/* [2026-11-24 기초학습 · 라이브] 크리스 「기초학습과 선행학습은 달라야 한다」 「선행학습은 문제에 대한 선행학습」
+   ① 기초학습 = 과목 바탕. 선행학습과 따로 — 시험 홈 「암기코드 듣기」 위 띠 → 과목 고르기 → 기초 카드(경제학원론=그래프 · 민법=관계도)
      자료는 과목 기초 묶음(D.civil · D.econ) 단위, 시험마다 MAP 연결표(감평·공인중개사 1차·주택관리사 1차 민법 → civil)
    ② 선행학습 = 그 문제를 풀기 위한 학습 — 「기초」 이름 없이 원래 개념 카드 뒤에 이 문제만의 것만(e26_9 숫자 예시 · e26_2 풀이 순서). 회차 흐름에서도 그 문제 차례에 나온다
-   자료는 이 파일에 박은 견본뿐 — Firestore·서버에 아무것도 쓰지 않는다(본 카드 표시만 이 브라우저에 적어 둔다). 생김새는 선행학습 카드(learn-hd · lcard · lsec · lcue) 그대로.
-   견본 바로가기: ?basics=econ · ?basics=civil(기초학습 화면) · ?basics=q(e26_9) · ?basics=q2(e26_2)(선행학습 그 문제) — 로그인 없이 */
+   원고는 basics-story-data.js — Firestore 에 쓰지 않는다(본 화 표시는 이 브라우저 localStorage, 레벨은 원래 레벨 저장 흐름). 생김새는 선행학습 카드(learn-hd · lcard · lsec · lcue) 그대로.
+   바로가기: ?basics=econ · ?basics=civil(기초학습 화면) · ?basics=q(e26_9) · ?basics=q2(e26_2)(선행학습 그 문제) — 로그인 없이 */
 /* 미리보기 주소(/preview-basics/…)에서만 맨 위에 「미리보기 — 라이브와 다른 시안」 띠 — 라이브 주소에서는 절대 안 보인다 */
 (function(){
   if(location.pathname.indexOf('/preview-basics/')!==0) return;
@@ -159,11 +159,13 @@
 
   /* 원고(basics-story-data.js · BS_STORY)를 한 장씩 카드로 — 글은 원고 그대로.
      말풍선: 빵집 甲(경제)만 그림, 그 밖은 동그라미 안 첫 글자 · 밑에 이름. 한 화에서 처음 말한 사람은 왼쪽, 다른 사람은 오른쪽 */
+  /* 과목마다 그림이 있는 인물 — 그 밖의 사람(동생·은행원·변호사·중개사 등)은 동그라미 안 글자 */
+  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_jeong','戊':'civ_mu'} };
   function cardsOf(key){ var S=(window.BS_STORY||{})[key]; if(!S) return [];
     return S['화'].map(function(e, i, all){
       var first=null, sc=e['장면'].map(function(x){ if(!x['말']) return x['글'];
         var who=x['말']; if(!first) first=who;
-        var face=(key==='econ' && who==='甲') ? '@baker' : (key==='econ' && who==='乙') ? '@baker_eul' : who.charAt(0);
+        var face=(PIC[key]&&PIC[key][who]) ? '@'+PIC[key][who] : who.charAt(0);
         return [who, x['글'], face, who===first?0:1]; });
       var last=(i===all.length-1);
       return { tag:e['화']+'화 · '+e['개념'], t:e['제목'], prev:e['지난이야기']||'', scene:sc,
@@ -175,7 +177,10 @@
   };
   /* 한 화(또는 문제 이야기) 한 장 — 선행학습 lcard 안에 그린다 */
   /* 말하는 사람 얼굴 — 빵집 사장 甲만 그림(어른 웹툰체), 역할 없는 사람은 동그라미 안에 글자만. 이모지·마스코트 안 씀 */
-  var FACE={ baker:'icons/story/baker_gap.png', baker_eul:'icons/story/baker_eul.png' };   // baker_eul(옆 빵집 乙)은 그림이 오면 넣는다 — 파일이 없으면 글자로
+  var FACE={ baker:'icons/story/baker_gap.png', baker_eul:'icons/story/baker_eul.png',
+    civ_gap:'icons/story/civ_gap.png', civ_eul:'icons/story/civ_eul.png', civ_byeong:'icons/story/civ_byeong.png', civ_jeong:'icons/story/civ_jeong.png', civ_mu:'icons/story/civ_mu.png' };
+  /* 과목마다 그림이 있는 인물 — 그 밖의 사람(동생·은행원·변호사·중개사 등)은 동그라미 안 글자 */
+  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_jeong','戊':'civ_mu'} };   // baker_eul(옆 빵집 乙)은 그림이 오면 넣는다 — 파일이 없으면 글자로
   function faceHTML(f, alt){ return (f && f.charAt(0)==='@' && FACE[f.slice(1)]) ? '<b class="pic" aria-hidden="true" data-alt="'+esc(alt||'')+'"><img src="'+FACE[f.slice(1)]+'" alt="" onerror="var b=this.parentNode;b.classList.remove(\'pic\');b.textContent=b.getAttribute(\'data-alt\')"></b>' : '<b aria-hidden="true">'+esc(f||'')+'</b>'; }
   function storyHTML(c, learnLbl){
     return '<span class="bs-tag">'+esc(c.tag)+'</span><div class="ltitle bs-st">'+esc(c.t)+'</div>'
@@ -210,7 +215,7 @@
   /* 기초는 시험이 아니라 과목 기초 묶음(D.civil · D.econ …) 단위 — 시험마다 「과목 → 묶음」 연결표만 둔다(크리스 「시험별로 공통적인 게 많다」) */
   var MAP={ appraiser:{civil:'civil', econ:'econ'}, realestate1:{re1_civil:'civil'}, housing:{hm_civil:'civil'} };
   function keyOf(cert, sub){ var m=MAP[cert]; return (m&&m[sub]&&D[m[sub]])?m[sub]:''; }
-  /* 본 카드 표시 — 이 브라우저에만(견본) */
+  /* 본 화 표시 — 이 브라우저(localStorage)에만 */
   function seenGet(k){ try{ return JSON.parse(localStorage.getItem('certlab_bs_seen_'+k)||'[]'); }catch(_){ return []; } }
   function seenAdd(k,i){ try{ var a=seenGet(k); if(a.indexOf(i)<0){ a.push(i); localStorage.setItem('certlab_bs_seen_'+k, JSON.stringify(a)); } }catch(_){} }
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/[\u2460-\u2469]/g, function(c){ return (c.charCodeAt(0)-0x245F)+'.'; }); }   // 원 문자 ①② 는 「1.」「2.」로
@@ -251,13 +256,13 @@
   window.bsClose=function(){ BS={sub:'', key:'', idx:0}; mqScreen='home'; renderMCQ(); window.scrollTo(0,0); };   // 오른쪽 위 X — 기초학습을 닫고 시험 홈으로
   window.bsDone=function(){ var sub=BS.sub; BS={sub:'', key:'', idx:0}; if(sub) mqOpen[sub]=true; mqScreen='home'; renderMCQ(); window.scrollTo(0,0); };   // 끝 → 그 과목 기출 목록을 펼친 시험 홈
   /* 한 화 끝 → 그 화 개념이 나오는 레벨업 1단계 문제 1~2개(크리스). 문제는 adaptive/…__variantq 의 diff 1(AD_DATA variantPool · 읽기만).
-     지금 문제 풀이 화면(renderMcqExam) 그대로 그리고, 보기를 고르면 정답·해설을 편다. 견본이라 복습 기록·레벨·푼 수는 건드리지 않는다 */
+     지금 문제 풀이 화면(renderMcqExam) 그대로 그리고, 보기를 고르면 정답·해설을 편다. 화 문제는 맛보기라 복습 기록·레벨·푼 수는 건드리지 않는다 */
   var BQ=null;   // {key, sub, ep, list, idx}
   function bqFind(cert, ids){ var out=[]; var bank=MAP[cert]?Object.keys(MAP[cert]):[];
     ids.forEach(function(id){ var got=null; ['appraiser|econ','appraiser|civil'].concat(bank.map(function(s){ return cert+'|'+s; })).some(function(k){ var b=(typeof AD_DATA!=='undefined')&&AD_DATA[k]; var v=b&&b.variantPool&&b.variantPool.filter(function(x){ return x&&x.id===id; })[0]; if(v){ got=v; return true; } return false; }); if(got) out.push(got); });
     return out; }
   window.bsQuizStart=function(){ var c=D[BS.key].cards[BS.idx]; var list=bqFind(mqCert, c.quiz||[]);
-    if(!list.length){ if(typeof _luToast==='function') _luToast('이 화 문제를 아직 못 불러왔어요 — 다음 화로 넘어가요'); bsGo(1); return; }
+    if(!list.length){ if(typeof _luToast==='function') _luToast('문제를 불러오지 못해 다음 화로 넘어가요'); bsGo(1); return; }
     BQ={key:BS.key, sub:BS.sub, ep:BS.idx, list:list, idx:0};
     mqList=list; mqIdx=0; mqAns={}; mqShow={}; mqGuess={}; mqSub=BS.sub; mqSet=0; mqConcept=false; mqLevelUp=false; mqReview=false; mqDiag=false; mqInReview=false; mqGather=false;
     try{ mqStopTimer(); mqStopOverTimer(); }catch(_){}
@@ -280,7 +285,7 @@
     if(i>=BQ.list.length){ var ep=BQ.ep; BQ=null; mqList=null; if(ep>=D[BS.key].cards.length-1){ bsLevelUp(); return; } BS.idx=ep+1; mqScreen='basics'; renderMCQ(); window.scrollTo(0,0); return; }   // 마지막 화 문제 뒤에는 그 과목 레벨업 1단계로
     BQ.idx=i; renderMCQ(); window.scrollTo(0,0); };
   window.bsQuizBack=function(){ BQ=null; mqList=null; mqScreen='basics'; renderMCQ(); window.scrollTo(0,0); };
-  /* 견본 문제 화면에서는 고르기·해설·찍음이 화면만 바꾼다(복습 기록·레벨·푼 수 저장 없음) */
+  /* 기초학습 화 문제 화면에서는 고르기·해설·찍음이 화면만 바꾼다(복습 기록·레벨·푼 수 저장 없음) */
   ['mqPick','mqToggleExp','mqToggleGuess'].forEach(function(fn){ if(typeof window[fn]!=='function') return; var orig=window[fn];
     window[fn]=function(qid,n){ if(mqScreen!=='bsquiz') return orig.apply(this, arguments);
       if(fn==='mqPick'){ mqAns[qid]=n; mqShow[qid]=true; } else if(fn==='mqToggleExp'){ mqShow[qid]=!mqShow[qid]; } else { mqGuess[qid]=!mqGuess[qid]; }
@@ -288,13 +293,13 @@
   /* 기초학습 끝 → 그 과목 레벨업(크리스 「기초학습 끝나면 레벨업 1단계 풀라고 하면 되나」)
      · 이미 레벨이 있으면(레벨테스트 끝) 지금 레벨로 그 과목 레벨업을 이어서
      · 레벨테스트 전이면 그 과목만 Lv1(점수 10)으로 정하고 레벨테스트 관문을 한 번만 건너 바로 그 과목 레벨업. 다른 과목·레벨테스트는 그대로(나중에 볼 수 있음)
-     · 견본이라 Lv1 시드는 이 브라우저 메모리에만 — 로그인 상태에서는 레벨 저장(saveUserData)이 서버로 가므로 헤드 확인 전까지 막아 둔다 */
-  var BS_SERVER_OK=false;
+     · Lv1 시드는 eloState 에 넣고 저장은 원래 레벨 저장 흐름(로그인이면 saveUserData)을 따른다 */
+  var BS_SERVER_OK=true;   // 2026-11-24 크리스 라이브 배포 — 로그인 사용자 Lv1 도 원래 레벨 저장(saveUserData)으로 간다
   window.bsLevelUp=function(){
     var sub=BS.sub, cert=mqCert; if(!sub) return;
     var seeded=(typeof ltDone==='function') && !ltDone(cert);
     if(seeded && typeof currentUser!=='undefined' && currentUser && !BS_SERVER_OK){
-      if(typeof _luToast==='function') _luToast('견본: 로그인 상태에서는 Lv1 저장이 서버로 가서 아직 막아 뒀어요'); return; }
+      return; }
     if(seeded){
       try{ var k=cert+'|'+sub; if(!eloState[k]) eloState[k]={};
         var lv1=(window.AE&&AE.levelToScore)?AE.levelToScore(1):10;
@@ -320,7 +325,7 @@
   };
 
 
-  // 견본 바로가기 주소 — ?basics=econ | civil | q (로그인 없이)
+  // 바로가기 주소 — ?basics=econ | civil | q (로그인 없이)
   var m=/[?&]basics=(econ|civil|q2|q)\b/.exec(location.search); if(!m) return;
   var want=m[1], tries=0, entered=false;
   function go(){
