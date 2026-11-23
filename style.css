@@ -1906,7 +1906,7 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
 #mcqView .bs-rel-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr);align-items:center;gap:8px}
 #mcqView .bs-p{display:flex;align-items:center;justify-content:center;min-height:44px;padding:4px 8px;text-align:center;font-size:14px;font-weight:700;color:#0C447C;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:12px}
 #mcqView .bs-p.bs-thing{background:#E7F6EE;border-color:#BBF7D0;color:#15803D}
-#mcqView .bs-arrow{position:relative;text-align:center;border-bottom:2px solid #94A3B8;padding-bottom:4px}
+#mcqView .bs-arrow{position:relative;text-align:center;border-bottom:1.5px solid #94A3B8;padding-bottom:4px}
 #mcqView .bs-arrow small{font-size:12px;color:#334155;font-weight:600;line-height:1.4}
 #mcqView .bs-fig text{paint-order:stroke;stroke:#F8FAFC;stroke-width:3px;stroke-linejoin:round}   /* [spike-basics] 그래프 글씨 뒤에 카드 바탕색 테두리 — 선 가까이 있어도 읽히게 */
 #mcqView .bs-legend{font-size:12px;line-height:1.6;color:#475569;padding:4px 4px 0}   /* [spike-basics] 계산 그래프 아래 점 설명 */
@@ -1926,3 +1926,44 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
 .bs-prev-bar{position:fixed;top:0;left:0;right:0;height:28px;z-index:10000;display:flex;align-items:center;justify-content:center;background:#FFF3D6;color:#4B2000;border-bottom:1px solid #E0A52E;font-size:14px;font-weight:700;pointer-events:none}
 html.bs-preview body{padding-top:28px}
 html.bs-preview .header,html.bs-preview #mcqView .exam-sticky{top:28px}
+/* [spike-basics] 이야기 카드 — 스토리시안 그대로(화 표시 · 지난 이야기 · 말풍선 · 이번 화 개념 · 다음 화). 색은 앱 값 */
+#mcqView .bs-tag{display:inline-block;font-size:12px;font-weight:700;color:#185FA5;background:#E6F1FB;border-radius:999px;padding:2px 10px}
+#mcqView .ltitle.bs-st{margin:8px 0 4px}
+#mcqView .bs-prev{font-size:14px;color:#64748B;margin:0 0 8px}
+#mcqView .bs-scene p{margin:6px 0;font-size:14px;line-height:1.7;color:#334155}
+#mcqView .bs-say{display:flex;gap:8px;margin:12px 0;align-items:flex-start}
+#mcqView .bs-say>b{flex:none;width:40px;height:40px;border-radius:999px;display:grid;place-items:center;background:#E6F1FB;font-size:24px;line-height:1}
+#mcqView .bs-say>div{min-width:0;max-width:80%}
+#mcqView .bs-who{display:block;font-size:12px;font-weight:700;color:#64748B;margin:0 0 2px 4px}
+#mcqView .bs-bub{position:relative;display:inline-block;max-width:100%;background:#E6F1FB;color:#1B2430;border-radius:16px;border-top-left-radius:4px;padding:8px 12px;font-size:14px;line-height:1.6}
+#mcqView .bs-bub::before{content:"";position:absolute;left:-6px;top:0;border-top:10px solid #E6F1FB;border-left:8px solid transparent}
+#mcqView .bs-say.r{flex-direction:row-reverse}
+#mcqView .bs-say.r>div{text-align:right}
+#mcqView .bs-say.r .bs-who{text-align:right;margin:0 4px 2px 0}
+#mcqView .bs-say.r>b{background:#FFF3D6}
+#mcqView .bs-say.r .bs-bub{background:#FFF3D6;border-radius:16px;border-top-right-radius:4px;text-align:left}
+#mcqView .bs-say.r .bs-bub::before{left:auto;right:-6px;border-top-color:#FFF3D6;border-left:0;border-right:8px solid transparent}
+#mcqView .bs-learn{background:#E7F6EE;border-radius:12px;padding:10px 12px;margin-top:12px;font-size:14px;line-height:1.7}
+#mcqView .bs-learn strong{color:#15803D}
+#mcqView .bs-next{background:#FFF7E6;border:1px solid #F2D08A;border-radius:12px;padding:8px 12px;margin-top:12px;font-size:14px}
+#mcqView .lcard.bs-story{border-color:#B5D4F4}
+#mcqView .lcard.bs-soon-card .bs-scene p{color:#94A3B8}
+/* [spike-basics] 이야기 그래프(스토리시안) — 축 1 · 선 1.5 · 점선 1 */
+#mcqView .bs-fig2{max-width:none}
+#mcqView .bs-fig2 text{font-size:12px;fill:#1B2430}
+#mcqView .bs-fig2 .ax{stroke:#64748B;stroke-width:1;fill:none}
+#mcqView .bs-fig2 .dl{stroke:#185FA5;stroke-width:1.5;fill:none}
+#mcqView .bs-fig2 .rl{stroke:#C2410C;stroke-width:1.5;fill:none}
+#mcqView .bs-fig2 .gl{stroke:#15803D;stroke-width:1.5;fill:none}
+#mcqView .bs-fig2 .dash{stroke:#64748B;stroke-width:1;stroke-dasharray:4 4;fill:none}
+#mcqView .bs-fig2 .muted{fill:#64748B}
+/* [spike-basics] 말풍선 얼굴 — 동그라미 44px(그림은 위쪽 기준으로 자름) · 이름은 동그라미 밑 */
+#mcqView .bs-face{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;width:52px}
+#mcqView .bs-face b{width:44px;height:44px;border-radius:999px;display:grid;place-items:center;background:#E6F1FB;color:#185FA5;font-size:16px;font-weight:800;line-height:1;overflow:hidden}
+#mcqView .bs-face b.pic{background:#fff;border:1px solid #E2E8F0}
+#mcqView .bs-face b.pic img{width:100%;height:100%;object-fit:cover;object-position:center}   /* 정사각 그림 전체를 동그라미에 */
+#mcqView .bs-face i{font-style:normal;font-size:12px;font-weight:700;color:#64748B;text-align:center;line-height:1.3}
+#mcqView .bs-say.r .bs-face b{background:#FFF3D6;color:#4B2000}
+#mcqView .bs-say .bs-bub{margin-top:6px}
+/* [spike-basics] 기초학습 한 화 문제 — 시간·멈춤·선행학습 단추는 숨긴다 */
+#mcqRoot:has(.bs-quiz-mark) .etim,#mcqRoot:has(.bs-quiz-mark) .etim-pause,#mcqRoot:has(.bs-quiz-mark) .go-concept{display:none!important}

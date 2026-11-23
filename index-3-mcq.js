@@ -211,7 +211,8 @@ function renderMCQ(){
   if(mqScreen==='lt2') return renderLt2(root);
   if(mqScreen==='lu2') return renderLu2(root);
   if(mqScreen==='exam') return renderMcqExam(root);
-  if(mqScreen==='basics' && typeof renderBasics==='function') return renderBasics(root);   // [spike-basics] 과목 기초학습(선행학습과 따로)
+  if(mqScreen==='basics' && typeof renderBasics==='function') return renderBasics(root);
+  if(mqScreen==='bsquiz' && typeof renderBsQuiz==='function') return renderBsQuiz(root);   // [spike-basics] 한 화 끝 레벨업 1단계 문제   // [spike-basics] 과목 기초학습(선행학습과 따로)
   if(mqScreen==='mnlist') return renderMnList(root);
   if(mqScreen==='oxlearn') return renderOxLearn(root);
   if(mqScreen==='luhist') return renderLuHist(root);

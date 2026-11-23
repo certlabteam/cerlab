@@ -1760,7 +1760,8 @@ function renderMcqExam(root){
       '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
       '</div>'+
       '<div class="learn-hd"><span class="learn-step"><img class="mq-ico" src="icons/book.png" alt=""> 선행학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
-      '<div class="lcard">'+conceptCardHTML(q)+(typeof bsQHTML==='function'?bsQHTML(q):'')+(_lw?_mqMastersHTML(q):'')+   // [spike-basics] 개념 → (이 문제만의 예시·풀이 순서) → 문제 풀기
+      (typeof bsQPreHTML==='function'?bsQPreHTML(q):'')+   // [spike-basics] 이 문제 이야기 → 개념 → 풀이 순서 → 문제 풀기
+      '<div class="lcard">'+(typeof bsCardFilter==='function'?bsCardFilter(q,conceptCardHTML(q)):conceptCardHTML(q))+(typeof bsQHTML==='function'?bsQHTML(q):'')+(_lw?_mqMastersHTML(q):'')+   // [spike-basics] 개념 → (이 문제만의 예시·풀이 순서) → 문제 풀기
         '<button class="solve-btn" onclick="mqConceptSolve()">문제 풀기 →</button></div>';
     _mqKeepScroll(root, function(){
       root.innerHTML=(_lw && qs.length>1) ? '<div class="mq-split">'+_mqConceptListHTML(qs)+'<div class="mq-main">'+_learnHTML+'</div></div>' : _learnHTML;
