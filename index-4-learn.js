@@ -1865,6 +1865,9 @@ function renderMcqExam(root){
   const guessHint = (!mqInReview && guessOn) ? '<div class="guess-hint">확신이 없거나 <b>찍었을 때</b> 켜세요. 맞아도 <b>복습에 다시 나와요.</b></div>' : '';
   const mqReportBtn = mqInReview ? '' : '<button class="mq-report" onclick="openReportMcq(\''+q.id+'\')" aria-label="문제 오류 신고" title="문제 오류 신고"><img class="mq-ico" src="icons/warning.png" alt=""></button>';
   const conceptGoBtn = (!mqInReview && !mqDiag && !mqConcept && (mqLevelUp ? _qHasConcept(q) : setConceptReady(mqCert,mqSub,mqSet))) ? '<button class="go-concept" onclick="goConceptFromQuestion()"><img class="mq-ico mq-ico-lg" src="icons/book.png" alt=""> 선행학습</button>' : '';
+  const _jrHTML=(!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(_jr3Strip(jr.jaryo,q)),q)).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'';
+  /* [2026-11-23] 짧은 자료(조건·수치 몇 줄)는 문제와 같이 위에 붙여 둔다 — 보기·해설을 내려 봐도 조건이 보이게(크리스 「생산소요시간까지 고정값으로 해야겠다 문제와 같이」 감평 경제 2026_20). 길거나 표·그림·빈칸이 있으면 화면을 덮으니 지금처럼 아래에 둔다. */
+  const _jrPin=!!_jrHTML && String(jr.jaryo).length<=160 && String(jr.jaryo).split(/\n/).length<=5 && !/<table|\[tbl\]|<img|_{2,}|\(\s*\)/.test(String(jr.jaryo)) && !jaryoBlanksHTML(jr.jaryo,q);
   root.innerHTML=
     '<div class="exam-sticky">'+
     '<div class="exam-hd"><button class="exam-back" onclick="'+(mqInReview?'mqBackToResult()':'mqBackHome()')+'" aria-label="뒤로">'+BACK_ARROW+'</button>'+
@@ -1872,8 +1875,9 @@ function renderMcqExam(root){
       (mqInReview?'':('<button class="etim-pause'+(mqPaused?' on':'')+'" onclick="mqTogglePause()" title="'+(mqPaused?'계속하기':'일시정지')+'">'+(mqPaused?'▶':'⏸')+'</button><span class="etim'+(mqTimeUp?' over':(mqTimeLeft<=300?' red':''))+(mqPaused?' paused':'')+'" id="mqTimer">'+(mqTimeUp?('+'+mqFmt(mqOverElapsed())):mqFmt(mqTimeLeft))+'</span>'))+'</div>'+
     '<div class="mq-prog"><div class="row"><span id="mqProgNum">'+(mqIdx+1)+' / '+qs.length+' 문항</span><span class="mq-prog-r">'+_luComboPin()+'</span></div><div class="track prog-drag" onpointerdown="mqProgStart(event)"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
     '<div class="qstem"><div class="qhead"><div class="qnum">'+(mqIdx+1)+'</div>'+tags+mqReportBtn+guessToggle+'</div><div class="qtext">'+(isCountType(q)?countStemHTML(q.q,q,!showExp&&!mqInReview&&mqAns[q.id]===undefined):tpSwap(_jaryoDots(stemHTML(rm(_stemQ,q))),q.id))+'</div>'+guessHint+'</div>'+
+    (_jrPin?_jrHTML:'')+
     '</div>'+conceptGoBtn+
-    '<div class="qcard">'+((!isCountType(q)&&jr.jaryo)?tpSwap((jaryoBlanksHTML(jr.jaryo,q)||'<div class="jaryo">'+_jaryoSections(_jaryoDots(_jrGaNaBreak(rm(_jrHdr(_jr3Strip(jr.jaryo,q)),q)).replace(/ \/ /g,'<br>')))+'</div>'),q.id):'')+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
+    '<div class="qcard">'+(_jrPin?'':_jrHTML)+_comboJaryoHTML+imgBlock(q)+imgComboOXRow(q)+'<div class="opts">'+optHTML+'</div>'+
     '<div class="mcq-foot"><button class="mbtn mbtn-prev" '+(mqIdx===0?'disabled':'')+' onclick="mqNav(-1)">◀ 이전</button>'+
     '<button class="mbtn mbtn-exp" onclick="mqToggleExp(\''+q.id+'\')">'+(showExp?'정답 숨기기':'정답·해설')+'</button>'+
     '<button class="mbtn mbtn-next" onclick="mqNav(1)">'+(mqIdx>=qs.length-1?(mqInReview?'결과로 ✓':'채점 ✓'):'다음 ▶')+'</button></div>'+
