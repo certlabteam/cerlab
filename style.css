@@ -1895,3 +1895,16 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
   #communityView .cm-post.cm-post-cur{border-color:#0F172A;box-shadow:0 0 0 1px #0F172A}
 }
 
+/* [spike-basics] 선행학습 안 「기초」 견본 — 그림 · 관계도 · 건너뛰기 단추 (색은 앱에 있던 값) */
+#mcqView .bs-figwrap{margin:14px 0 4px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:8px}
+#mcqView .bs-fig{display:block;width:100%;max-width:360px;height:auto;margin:0 auto}
+#mcqView .bs-nav{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+#mcqView .bs-ghost{min-height:44px;background:none;border:0;padding:0 4px;font:inherit;font-size:14px;font-weight:700;color:#185FA5;cursor:pointer}
+#mcqView .bs-qbox{background:#fff;border:1px solid #B5D4F4;border-radius:16px;padding:4px 16px 16px;margin-bottom:12px}
+#mcqView .bs-qbox .learn-step{background:#185FA5}
+#mcqView .bs-rel{display:flex;flex-direction:column;gap:12px;padding:8px 4px}
+#mcqView .bs-rel-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr);align-items:center;gap:8px}
+#mcqView .bs-p{display:flex;align-items:center;justify-content:center;min-height:44px;padding:4px 8px;text-align:center;font-size:14px;font-weight:700;color:#0C447C;background:#E6F1FB;border:1px solid #B5D4F4;border-radius:12px}
+#mcqView .bs-p.bs-thing{background:#E7F6EE;border-color:#BBF7D0;color:#15803D}
+#mcqView .bs-arrow{position:relative;text-align:center;border-bottom:2px solid #94A3B8;padding-bottom:4px}
+#mcqView .bs-arrow small{font-size:12px;color:#334155;font-weight:600;line-height:1.4}

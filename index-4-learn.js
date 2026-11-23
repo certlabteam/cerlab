@@ -148,6 +148,8 @@ function startConceptStudy(id,si,startIdx){
   mqAns={}; mqIdx=(typeof startIdx==='number'&&startIdx>0&&startIdx<mqList.length)?startIdx:0;
   mqTimeUp=false; mqTimeLeft=_sessionSecs(mqList, mqCert);   // 개념학습은 타이머 미사용(값만 보관)
   mqConcept=true; mqConceptPhase='learn';
+  /* [spike-basics] 회차 처음부터 선행학습이면 그 과목 「기초」 카드를 먼저(문제에서 들어온 선행학습은 그 문제 카드 위 기초 칸으로) */
+  window._bsStage=(typeof bsDeckFor==='function' && !(typeof startIdx==='number'&&startIdx>0)) ? bsDeckFor(mqCert,id) : null;
   mqScreen='exam'; renderMCQ(); window.scrollTo(0,0);
 }
 // 개념 카드 → 문제 풀이로
@@ -1655,6 +1657,7 @@ document.addEventListener('keydown', function(e){
     if(document.querySelector('.inapp-popup:not(.hidden), .as-page:not(.hidden), .jr-sheet.on, #oxWarnPop[style*="flex"], #oxWarnPop[style*="block"]')) return;
     var qs=mqQuestions(), q=qs[mqIdx]; if(!q) return;
     var k=e.key;
+    if(window._bsStage && mqConcept) return;   // [spike-basics] 기초 카드 중에는 화살표로 개념 카드를 넘기지 않는다
     if(k==='ArrowLeft'){ if(mqIdx>0){ e.preventDefault(); mqNav(-1); } return; }
     if(k==='ArrowRight'){ if(mqIdx<qs.length-1){ e.preventDefault(); mqNav(1); } return; }   // 마지막 문항에서는 채점으로 넘기지 않는다(실수 막기)
     if(mqConcept && mqConceptPhase==='learn') return;
@@ -1757,11 +1760,17 @@ function renderMcqExam(root){
       '<div class="exam-sticky">'+
       '<div class="exam-hd"><button class="exam-back" onclick="mqBackHome()" aria-label="뒤로">'+BACK_ARROW+'</button>'+
         '<div class="exam-ti"><div class="nm">선행학습</div><div class="st">'+(sets[mqSet]?sets[mqSet].label:'')+'</div></div></div>'+
-      '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>'+
+      (window._bsStage   // [spike-basics] 기초 단계 동안은 진행 막대도 기초 기준
+        ? '<div class="mq-prog"><div class="row"><span>기초 '+(window._bsStage.idx+1)+' / '+bsStageInfo(window._bsStage).n+' · 다음은 개념 '+qs.length+'개</span><span></span></div><div class="track"><div class="bar" style="width:'+Math.round((window._bsStage.idx+1)/bsStageInfo(window._bsStage).n*100)+'%"></div></div></div>'
+        : '<div class="mq-prog"><div class="row"><span>'+(mqIdx+1)+' / '+qs.length+' 개념</span><span></span></div><div class="track"><div class="bar" style="width:'+pct+'%"></div></div></div>')+
       '</div>'+
-      '<div class="learn-hd"><span class="learn-step"><img class="mq-ico" src="icons/book.png" alt=""> 선행학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
-      '<div class="lcard">'+conceptCardHTML(q)+(_lw?_mqMastersHTML(q):'')+
-        '<button class="solve-btn" onclick="mqConceptSolve()">이 개념으로 문제 풀기 →</button></div>';
+      (window._bsStage
+        ? '<div class="learn-hd"><span class="learn-step">🧱 기초 · '+bsStageInfo(window._bsStage).name+'</span><span class="learn-num">기초 '+(window._bsStage.idx+1)+' / '+bsStageInfo(window._bsStage).n+'</span></div>'+
+          '<div class="lcard">'+bsCardHTML(window._bsStage)+'</div>'
+        : '<div class="learn-hd"><span class="learn-step"><img class="mq-ico" src="icons/book.png" alt=""> 선행학습</span><span class="learn-num">'+(mqIdx+1)+' / '+qs.length+'</span></div>'+
+          (typeof bsQHTML==='function'?bsQHTML(q):'')+
+          '<div class="lcard">'+conceptCardHTML(q)+(_lw?_mqMastersHTML(q):'')+
+          '<button class="solve-btn" onclick="mqConceptSolve()">이 개념으로 문제 풀기 →</button></div>');
     _mqKeepScroll(root, function(){
       root.innerHTML=(_lw && qs.length>1) ? '<div class="mq-split">'+_mqConceptListHTML(qs)+'<div class="mq-main">'+_learnHTML+'</div></div>' : _learnHTML;
     });
