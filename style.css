@@ -1922,3 +1922,7 @@ button.page-back-fixed{position:fixed;top:max(8px,env(safe-area-inset-top));left
 #mcqView .exam-hd:has(.bs-x) .exam-ti .nm{grid-column:1/5}
 #mcqView .exam-hd:has(.bs-x) .exam-ti .st{grid-column:1/4}
 #mcqView .bs-solve{margin-top:20px;padding-top:16px;border-top:1px solid #E2E8F0}   /* [spike-basics] 선행학습 개념 뒤 「풀이 순서」 — 같은 카드 안 */
+/* [spike-basics] 미리보기 띠 — html.bs-preview 일 때만(/preview-basics/ 주소). 라이브에서는 클래스가 안 붙어 아무 일도 없다 */
+.bs-prev-bar{position:fixed;top:0;left:0;right:0;height:28px;z-index:10000;display:flex;align-items:center;justify-content:center;background:#FFF3D6;color:#4B2000;border-bottom:1px solid #E0A52E;font-size:14px;font-weight:700;pointer-events:none}
+html.bs-preview body{padding-top:28px}
+html.bs-preview .header,html.bs-preview #mcqView .exam-sticky{top:28px}

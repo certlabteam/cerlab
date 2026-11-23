@@ -4,6 +4,13 @@
    ② 선행학습 = 그 문제를 풀기 위한 학습 — 「기초」 이름 없이 원래 개념 카드 뒤에 이 문제만의 것만(e26_9 숫자 예시 · e26_2 풀이 순서). 회차 흐름에서도 그 문제 차례에 나온다
    자료는 이 파일에 박은 견본뿐 — Firestore·서버에 아무것도 쓰지 않는다(본 카드 표시만 이 브라우저에 적어 둔다). 생김새는 선행학습 카드(learn-hd · lcard · lsec · lcue) 그대로.
    견본 바로가기: ?basics=econ · ?basics=civil(기초학습 화면) · ?basics=q(e26_9) · ?basics=q2(e26_2)(선행학습 그 문제) — 로그인 없이 */
+/* 미리보기 주소(/preview-basics/…)에서만 맨 위에 「미리보기 — 라이브와 다른 시안」 띠 — 라이브 주소에서는 절대 안 보인다 */
+(function(){
+  if(location.pathname.indexOf('/preview-basics/')!==0) return;
+  function put(){ if(document.getElementById('bsPrevBar')) return; document.documentElement.classList.add('bs-preview');
+    var b=document.createElement('div'); b.id='bsPrevBar'; b.className='bs-prev-bar'; b.setAttribute('role','note'); b.textContent='미리보기 — 라이브와 다른 시안'; document.body.appendChild(b); }
+  if(document.body) put(); else document.addEventListener('DOMContentLoaded', put);
+})();
 (function(){
   var AX='<line x1="34" y1="12" x2="34" y2="150" stroke="#94A3B8" stroke-width="1.5"/><line x1="34" y1="150" x2="250" y2="150" stroke="#94A3B8" stroke-width="1.5"/>'
     +'<text x="10" y="20" font-size="12" fill="#5F6B7A">값</text><text x="232" y="168" font-size="12" fill="#5F6B7A">양</text>';
