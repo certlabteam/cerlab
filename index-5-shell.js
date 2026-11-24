@@ -1758,6 +1758,8 @@ function clRouteFromHash(){
     if(_k<0){ var _q2=qbOf(cs.cert), _s2=_q2&&_q2[cs.sub]; var _si2=_s2&&_s2.sets?_s2.sets.findIndex(function(st){ return (st.questions||[]).some(function(x){return x&&x.id===qid;}); }):-1;
       if(_si2>=0){ resumeMcqExam(cs.sub, _si2); _k=(mqList||[]).findIndex(function(x){return x&&x.id===qid;}); } }
     mqIdx=_k>=0?_k:qi; renderMCQ(); try{ window.scrollTo(0,0); }catch(_){}
+    /* [2026-11-25] 링크로 바로 열면 출제분석 지도를 안 받아 ★중요도·단원 이름이 빠졌다(크리스 「중요도는 어디갔나」) — 문제를 띄운 뒤 그 과목 지도를 받아 같은 문제면 다시 그린다 */
+    try{ if(typeof loadAdaptiveSubject==='function'){ var _sv=cs.sub; loadAdaptiveSubject(cs.cert,_sv).then(function(b){ if(b && mqSub===_sv && mqList && mqList[mqIdx] && mqList[mqIdx].id===qid) renderMCQ(); }).catch(function(){}); } }catch(_){}
     return true;
   }
   var _done=false;
