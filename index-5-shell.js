@@ -496,6 +496,11 @@ async function goToCard(qid, certHint){
             var _ps=_raw?{exists:true,data:function(){ return _raw; }}:await db.collection('adaptive').doc(certHint+'__'+_subs[pf]+'__variantq').get();
             if(_ps && _ps.exists){
               var _pd=(typeof _adParse==='function')?_adParse(_ps.data()):(_ps.data());
+               if(typeof adVariantqJoin==='function') _pd=await adVariantqJoin(certHint+'__'+_subs[pf]+'__variantq',_pd,async function(sid){
+                 try{ var rr=await fetch('https://firestore.googleapis.com/v1/projects/'+firebase.app().options.projectId+'/databases/(default)/documents/adaptive/'+encodeURIComponent(sid)+'?key='+firebase.app().options.apiKey);
+                   if(rr.ok){ var rj=await rr.json(); return _fv({mapValue:{fields:rj.fields||{}}}); } }catch(_){}
+                 var sd=await db.collection('adaptive').doc(sid).get(); if(!sd.exists) throw new Error('레벨업 조각 없음: '+sid); return sd.data();
+               });
               var _pq=((_pd&&_pd.questions)||[]).find(function(q){ return q && q.id===qid; });
               if(_pq){
                 _found=_pq; _foundSub=_subs[pf];
@@ -527,6 +532,7 @@ async function goToCard(qid, certHint){
             var _snap=await db.collection('adaptive').doc(certHint+'__'+_sc+'__variantq').get();
             if(_snap && _snap.exists){
               var _dd=(typeof _adParse==='function')?_adParse(_snap.data()):(_snap.data());
+               if(typeof adVariantqJoin==='function') _dd=await adVariantqJoin(certHint+'__'+_sc+'__variantq',_dd);
               var _qs=(_dd&&_dd.questions)||[];
               var _h2=_qs.find(function(q){ return q && q.id===qid; });
               if(_h2){

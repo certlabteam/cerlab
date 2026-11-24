@@ -325,7 +325,7 @@ async function lvupImport(){
   for(var pi=0; pi<D.items.length; pi++){ var pit=D.items[pi];
     if(pit.kind==='variantq' || pit.kind==='calctmpl'){
       var pfield=(pit.kind==='calctmpl')?'templates':'questions', parr=pit[pfield]||[];
-      var exMap={}; try{ var pcur=await db.collection('adaptive').doc(pit.cert+'__'+pit.sub+'__'+pit.kind).get(); if(pcur.exists && Array.isArray(pcur.data()[pfield])) pcur.data()[pfield].forEach(function(q){ if(q&&q.id) exMap[q.id]=1; }); }catch(_){}
+      var exMap={}; try{ var pcur=pit.kind==='variantq'?await adminVariantqRead(pit.cert+'__'+pit.sub+'__'+pit.kind):await db.collection('adaptive').doc(pit.cert+'__'+pit.sub+'__'+pit.kind).get(); var pdat=pit.kind==='variantq'?pcur:(pcur.exists?pcur.data():null); if(pdat && Array.isArray(pdat[pfield])) pdat[pfield].forEach(function(q){ if(q&&q.id) exMap[q.id]=1; }); }catch(_){}
       var exTot=Object.keys(exMap).length, neu=0, ov=0; parr.forEach(function(q){ if(q&&q.id){ if(exMap[q.id]) ov++; else neu++; } });
       preLines.push('• '+pit.sub+'/'+pit.kind+': 기존 '+exTot+' → '+(exTot+neu)+' (신규 +'+neu+' · 덮어쓰기 '+ov+' · 삭제 0)'+((neu===0&&ov>0)?'  ⚠️신규0':''));
     } else { preLines.push('• '+pit.sub+'/'+pit.kind+': 적재'); }
@@ -340,7 +340,7 @@ async function lvupImport(){
         var field=(it.kind==='calctmpl')?'templates':'questions';
         var arr=(it.kind==='calctmpl')?it.templates:it.questions;
         var existing=[];
-        try{ var cur=await db.collection('adaptive').doc(docId).get(); if(cur.exists && Array.isArray(cur.data()[field])) existing=cur.data()[field]; }catch(_){}
+        var cur=await db.collection('adaptive').doc(docId).get(); var curData=it.kind==='variantq'?await adminVariantqRead(docId):(cur.exists?cur.data():null); if(curData && Array.isArray(curData[field])) existing=curData[field];
         var byId={}, order=[], nk=0;
         var _push=function(q){ var k=(q&&q.id)?('id:'+q.id):('__'+(nk++)); if(!(k in byId)) order.push(k); byId[k]=q; };
         existing.forEach(_push); arr.forEach(_push);   // 신규가 같은 id 덮어씀
@@ -349,8 +349,8 @@ async function lvupImport(){
         // [2026-08-11] 출처표시 보존 — .set()이 문서를 갈아끼우므로 기존 qsrc/docRole/srcNote를 물려준다
         try{ var _o=cur&&cur.exists?cur.data():null; if(_o){ ['qsrc','docRole','srcNote'].forEach(function(k){ if(_o[k]!=null) _rec[k]=_o[k]; }); } }catch(_){}
         var _bytes=null; try{ _bytes=new Blob([JSON.stringify(_rec)]).size; }catch(_){}
-        if(_bytes!==null && _bytes>1000000){ throw new Error('\ubb38\uc11c \ud06c\uae30 '+Math.round(_bytes/1024)+'KB\uac00 Firestore 1MB \ud55c\ub3c4 \ucd08\uacfc \u2014 \uacfc\ubaa9\uc744 \ub098\ub220 \uc62c\ub9ac\uc138\uc694'); }
-        await db.collection('adaptive').doc(docId).set(_rec);
+        if(it.kind!=='variantq' && _bytes!==null && _bytes>1000000){ throw new Error('\ubb38\uc11c \ud06c\uae30 '+Math.round(_bytes/1024)+'KB\uac00 Firestore 1MB \ud55c\ub3c4 \ucd08\uacfc \u2014 \uacfc\ubaa9\uc744 \ub098\ub220 \uc62c\ub9ac\uc138\uc694'); }
+        if(it.kind==='variantq') await adminVariantqWrite(docId,_rec); else await db.collection('adaptive').doc(docId).set(_rec);
         done.push(it.sub+'/'+it.kind+'('+existing.length+'+'+arr.length+'\u2192'+merged.length+')');
       } else {
         var _d2=Object.assign({}, it.data);   // [2026-08-11] 출처표시 보존
@@ -369,7 +369,7 @@ async function lvupImport(){
 var _lvupExpCache=null;
 async function lvupReadGroups(){
   var snap=await db.collection('adaptive').get();
-  var groups={};
+  var groups={}, variantIds=[];
   snap.forEach(function(doc){
     var id=doc.id, d=doc.data()||{};
     var parts=id.split('__'); if(parts.length<3) return;
@@ -379,9 +379,10 @@ async function lvupReadGroups(){
     if(kind==='map' && Array.isArray(d.mapping)) g.mapping=d.mapping;
     else if(kind==='diag'){ if(Array.isArray(d.diagnostic)) g.diagnostic=d.diagnostic; if(Array.isArray(d.topics)) g.topics=d.topics; }
     else if(kind==='variants' && Array.isArray(d.variants)) g.variants=d.variants;
-    else if(kind==='variantq' && Array.isArray(d.questions)) g.questions=d.questions;
+    else if(kind==='variantq' && Array.isArray(d.questions)) variantIds.push(id);
     else if(kind==='calctmpl' && Array.isArray(d.templates)) g.templates=d.templates;
   });
+  for(var id of variantIds){ var vd=await adminVariantqRead(id), pp=id.split('__'), g=groups[pp[0]+'||'+pp[1]]; if(vd && g) g.questions=vd.questions; }
   return groups;
 }
 var _subjNameMap=null, _certNameMap=null;

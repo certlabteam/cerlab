@@ -280,8 +280,10 @@ async function loadBank(examId, sub){
   // ★ 레벨업(variant) 문항: 회차 라벨을 '레벨업'으로 별도 부여(드롭다운에 '레벨업'으로 노출)
   try{
     const vd=await db.collection('adaptive').doc(k+'__variantq').get();
-    if(vd.exists && Array.isArray(vd.data().questions)){
-      vd.data().questions.forEach(q=>{ pushQ(q, '레벨업', 999999); });   // n 크게 → 최신순 맨 위
+    if(vd.exists){
+      const data=vd.data()||{}, all=(data.questions||[]).slice();
+      for(const sid of (data.shards||[])){ const part=await db.collection('adaptive').doc(sid).get(); if(!part.exists) throw new Error('Missing variantq shard: '+sid); all.push(...(part.data().questions||[])); }
+      all.forEach(q=>{ pushQ(q, '\uB808\uBCA8\uC5C5', 999999); });
     }
   }catch(_){}
 }

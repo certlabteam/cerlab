@@ -242,6 +242,34 @@ async function _mfBankDocs(pairs){
   return out;
 }
 var _MF_MASTER_COL={mn:'mnemonics', cpt:'concepts', tbl:'tables', grp:'graphs'};
+async function adminVariantqRead(id){
+  var root=await db.collection('adaptive').doc(id).get();
+  if(!root.exists) return null;
+  var data=root.data()||{}, qs=(data.questions||[]).slice();
+  for(var sid of (data.shards||[])){
+    var part=await db.collection('adaptive').doc(sid).get();
+    if(!part.exists || !Array.isArray(part.data().questions)) throw new Error('레벨업 조각 없음: '+sid);
+    qs.push.apply(qs,part.data().questions);
+  }
+  return Object.assign({},data,{questions:qs});
+}
+async function adminVariantqWrite(id, data){
+  var ref=db.collection('adaptive').doc(id), old=await ref.get(), oldShards=(old.exists&&old.data().shards)||[];
+  var base=Object.assign({},data,{kind:'variantq',count:data.questions.length}); delete base.shards;
+  var qs=base.questions, parts=[], current=[];
+  function bytes(d){ return new Blob([JSON.stringify(d)]).size; }
+  for(var q of qs){
+    var trial=current.concat([q]), shell=Object.assign({},base,{questions:trial});
+    if(bytes(shell)>900000 && current.length){ parts.push(current); current=[q]; }
+    else current=trial;
+    if(bytes(Object.assign({},base,{questions:current}))>900000) throw new Error('레벨업 문항 하나가 900KB 초과');
+  }
+  parts.push(current);
+  var shardIds=parts.slice(1).map(function(_,i){return id+'__p'+(i+2);});
+  for(var i=1;i<parts.length;i++) await db.collection('adaptive').doc(shardIds[i-1]).set({kind:'variantq',questions:parts[i]});
+  await ref.set(Object.assign({},base,{questions:parts[0],shards:shardIds}));
+  for(var stale of oldShards){ if(shardIds.indexOf(stale)<0) await db.collection('adaptive').doc(stale).delete(); }
+}
 /* 마스터에 certs 가 적혀 있으면 그 시험만 훑는다. 없으면 전체(예전과 같은 범위). */
 async function _mfCertsOf(refType, mid){
   var col=_MF_MASTER_COL[refType]; if(!col) return null;
@@ -259,9 +287,9 @@ async function _mfFindRefs(refType, mid, onStep){
   // 레벨업 변형 풀 — id 가 {cert}__{sub}__variantq 라 범위 안의 것만 집어 온다
   for(var i=0;i<pairs.length;i+=8){
     var ck=pairs.slice(i,i+8), ads;
-    try{ ads=await Promise.all(ck.map(function(pr){ return db.collection('adaptive').doc(pr.cert+'__'+pr.sub+'__variantq').get(); })); }
+    try{ ads=await Promise.all(ck.map(function(pr){ return adminVariantqRead(pr.cert+'__'+pr.sub+'__variantq'); })); }
     catch(e){ continue; }
-    ads.forEach(function(ad,j){ if(ad.exists) take((ad.data()||{}).questions, ck[j].cert, ck[j].sub, false); });
+    ads.forEach(function(ad,j){ if(ad) take(ad.questions, ck[j].cert, ck[j].sub, false); });
   }
   // 기출 은행 — 샤드를 한 문서씩
   var docs=await _mfBankDocs(pairs);
@@ -1114,9 +1142,8 @@ async function _ottagCollect(cert, subject){
   // 변형(레벨업) 풀: adaptive/{cert}__{subject}__variantq — banks에 없는 id만 채움(A안 자동 분기)
   try{
     var vqId=cert+'__'+subject+'__variantq';
-    var vd=await db.collection('adaptive').doc(vqId).get();
-    if(vd && vd.exists){
-      var vdata=vd.data()||{};
+    var vdata=await adminVariantqRead(vqId);
+    if(vdata){
       if(Array.isArray(vdata.questions) && vdata.questions.length){
         homes[vqId]={data:vdata, questions:vdata.questions, coll:'variantq'};
         vdata.questions.forEach(function(q){ if(q&&q.id && !byId[q.id]){ byId[q.id]={q:q, home:vqId}; } });
@@ -1205,8 +1232,8 @@ async function ottagExport(){
     try{   // 변형(레벨업) 풀의 ot도 백업에 포함 — adaptive/{cert}__{subject}__variantq
       if(rep){ rep.innerHTML='<span style="color:#475569">내보내는 중… adaptive(변형) 읽는 중</span>'; }
       for(var _k=0;_k<pairs.length;_k++){
-        try{ var _ad=await db.collection('adaptive').doc(pairs[_k].cert+'__'+pairs[_k].sub+'__variantq').get();
-          if(_ad.exists) _otTake((_ad.data()||{}).questions, pairs[_k].cert, pairs[_k].sub); }catch(_){}
+        try{ var _ad=await adminVariantqRead(pairs[_k].cert+'__'+pairs[_k].sub+'__variantq');
+          if(_ad) _otTake(_ad.questions, pairs[_k].cert, pairs[_k].sub); }catch(_){}
       }
     }catch(_){}
     var subjects=Object.keys(groups).map(function(k){ return groups[k]; });
@@ -1239,7 +1266,7 @@ async function ottagApply(){
       var hid=homeIds[i], h=sh.homes[hid];
       if(!h) continue;
       if(h.coll==='variantq'){   // 변형 풀: adaptive 컬렉션에 variantq 형식으로 저장
-        await db.collection('adaptive').doc(hid).set(Object.assign({}, h.data, {kind:'variantq', count:h.questions.length, questions:h.questions}));
+        await adminVariantqWrite(hid, Object.assign({}, h.data, {questions:h.questions}));
       } else {
         await db.collection('banks').doc(hid).set(Object.assign({}, h.data, {questions:h.questions}));
       }
@@ -1520,7 +1547,7 @@ async function cpatchApply(tok){
       var hid=homeIds[i], h=sh.homes[hid];
       if(!h) continue;
       if(h.coll==='variantq'){
-        await db.collection('adaptive').doc(hid).set(Object.assign({}, h.data, {kind:'variantq', count:h.questions.length, questions:h.questions}));
+        await adminVariantqWrite(hid, Object.assign({}, h.data, {questions:h.questions}));
       } else {
         await db.collection('banks').doc(hid).set(Object.assign({}, h.data, {questions:h.questions}));
       }

@@ -335,16 +335,25 @@ async function loadAdaptiveSubject(cert, sub){
   if(AD_DATA[key]) return AD_DATA[key];
   if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
   async function fetchDoc(kind){
-    var ck='ad:'+cert+':'+sub+':'+kind;
+    var ck='ad:'+cert+':'+sub+':'+kind+(kind==='variantq'?':shards1':'');
     try{ var c=localStorage.getItem(ck); if(c){ var w=JSON.parse(c); if(!AD_TTL_MS||(Date.now()-w.__ts)<=AD_TTL_MS) return w.d; } }catch(e){}
     var snap=await db.collection('adaptive').doc(cert+'__'+sub+'__'+kind).get();
     if(!snap.exists) return null;
     var d=_adParse(snap.data());
+    if(kind==='variantq') d=await adVariantqJoin(cert+'__'+sub+'__variantq', d);
     try{ localStorage.setItem(ck, JSON.stringify({__ts:Date.now(), d:d})); }catch(e){}
     return d;
   }
   var res=await Promise.all([fetchDoc('map'), fetchDoc('diag'), fetchDoc('variants'), fetchDoc('variantq'), fetchDoc('calctmpl')]);
   return AD_BUILD(key, res[0], res[1], res[2], res[3], res[4]);
+}
+async function adVariantqJoin(docId, data, getPart){
+  if(!data || !Array.isArray(data.shards) || !data.shards.length) return data;
+  var read=getPart||async function(id){ var s=await db.collection('adaptive').doc(id).get(); if(!s.exists) throw new Error('레벨업 조각 없음: '+id); return _adParse(s.data()); };
+  var parts=await Promise.all(data.shards.map(read));
+  var out=Object.assign({}, data, {questions:(data.questions||[]).slice()});
+  parts.forEach(function(p){ if(!p || !Array.isArray(p.questions)) throw new Error('레벨업 조각 문항 없음: '+docId); out.questions.push.apply(out.questions,p.questions); });
+  return out;
 }
 // 룩업·인덱스 빌드(순수). 로드시뮬·테스트에서 재사용.
 function AD_BUILD(key, mapDoc, diagDoc, varDoc, varqDoc, calcDoc){

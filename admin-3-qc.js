@@ -1167,8 +1167,8 @@ async function exportImages(){
         // 레벨업(변형문항) 이미지: adaptive {cert}__{sub}__variantq 스캔
         const re2=/img:\/\/([^\s\"'\\<>\]},]+)/g;
         for(const sub of subs){
-          try{ const vd=await db.collection('adaptive').doc(pick+'__'+sub.code+'__variantq').get();
-            if(vd.exists){ const t=JSON.stringify((vd.data()||{}).questions||[]); let mm; while((mm=re2.exec(t))!==null){ allKeys.add(mm[1]); filtKeys.add(mm[1]); } ((vd.data()||{}).questions||[]).forEach(function(q){ _qImgKeys(q).forEach(function(kk){ allKeys.add(kk); filtKeys.add(kk); }); }); }
+          try{ const vd=await adminVariantqRead(pick+'__'+sub.code+'__variantq');
+            if(vd){ const t=JSON.stringify(vd.questions||[]); let mm; while((mm=re2.exec(t))!==null){ allKeys.add(mm[1]); filtKeys.add(mm[1]); } (vd.questions||[]).forEach(function(q){ _qImgKeys(q).forEach(function(kk){ allKeys.add(kk); filtKeys.add(kk); }); }); }
           }catch(_){}
         }
       } else
@@ -1273,7 +1273,7 @@ async function _imgLibScan(){
           } else collect(JSON.stringify(data.questions||[]));
         }
       }catch(_){}
-      try{ const vd=await db.collection('adaptive').doc(docId+'__variantq').get(); if(vd.exists) collect(JSON.stringify((vd.data()||{}).questions||[])); }catch(_){}
+      try{ const vd=await adminVariantqRead(docId+'__variantq'); if(vd) collect(JSON.stringify(vd.questions||[])); }catch(_){}
     }
   }
 }
@@ -1439,7 +1439,7 @@ async function _mstScan(){
           _mstScanStat.ok++;
         }
       }catch(_){ _mstScanStat.fail++; }
-      try{ const vd=await db.collection('adaptive').doc(docId+'__variantq').get(); if(vd.exists) scanQs((vd.data()||{}).questions||[]); }catch(_){}
+      try{ const vd=await adminVariantqRead(docId+'__variantq'); if(vd) scanQs(vd.questions||[]); }catch(_){}
     }
   }
   // 개념이 물고 있는 표·암기·그래프 링크는 '사용 중'으로 간주(개념을 먼저 지운 뒤 재스캔하면 새 고아가 드러남)
