@@ -64,6 +64,7 @@
       if(v.gap){ h+='<text x="'+cx+'" y="'+(B-6)+'" text-anchor="middle" class="muted">…</text>'; return; }
       var bh=Math.max(2,(B-T)*v.v/mx), bw=Math.min(34,cw*0.62);
       h+='<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(B-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="3" fill="'+(v.total?'#185FA5':'#B5D4F4')+'"/>'
+        +(v.cut!=null?'<rect x="'+(cx-bw/2).toFixed(1)+'" y="'+(B-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+((B-T)*(v.v-v.cut)/mx).toFixed(1)+'" rx="3" fill="#FAC775"/>':'')
         +'<text x="'+cx.toFixed(1)+'" y="'+(B-bh-6).toFixed(1)+'" text-anchor="middle"'+(v.total?' style="font-weight:700"':'')+'>'+esc(v.top)+'</text>'
         +'<text x="'+cx.toFixed(1)+'" y="'+(B+15)+'" text-anchor="middle" class="muted">'+esc(v.lab)+'</text>'; });
     return fig('0 0 '+W+' '+H, o.label||'', h)+(o.legend?'<div class="bs-legend">'+esc(o.legend)+'</div>':'');
@@ -77,13 +78,43 @@
     var lines=rows.map(function(r){ var n=(CIRC[r[0]]||r[0])+'.'; var a=ARW[r[2]];
       return a ? n+' '+r[1]+' '+a[0]+r[4]+a[1]+' '+r[3] : n+' '+r[1]+(r[3]?' '+r[3]:'')+' — '+r[4]; });
     [].concat(result||[]).forEach(function(x){ lines.push('→ 결과: '+x); });
+    return dia(lines);
+  }
+  /* 나뭇가지·관계도 줄 — 앱 [dia] 꼴(pre.cc-dia) 그대로. 줄 앞 「1.」은 큰 숫자, 「→ 결과」 줄은 굵게 */
+  function dia(lines){
     var h=(typeof renderMath==='function') ? renderMath('[dia]\n'+lines.join('\n')+'\n[/dia]') : '<pre class="cc-dia">'+esc(lines.join('\n'))+'</pre>';
-    return h.replace(/(<pre class="cc-dia">|<br>)(\d+)\./g, '$1<b class="bs-dnum">$2.</b>').replace(/(<br>)(→ 결과:[^<]*)/g, '$1<b class="bs-dres">$2</b>');
+    return h.replace(/(<pre class="cc-dia">|<br>)([├└│ ]*)(\d+)\./g, '$1$2<b class="bs-dnum">$3.</b>').replace(/(<br>)(→ 결과:[^<]*)/g, '$1<b class="bs-dres">$2</b>');
   }
   function tbl(head, rows, note){ return '<table class="bs-tbl"><thead><tr>'+head.map(function(x){ return '<th>'+esc(x)+'</th>'; }).join('')+'</tr></thead><tbody>'
     +rows.map(function(r){ return '<tr>'+r.map(function(x,i){ var hl=(typeof x==='object'&&x); return '<td'+(hl?' class="hl"':'')+'>'+esc(hl?x.v:x)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody></table>'
     +(note?'<div class="bs-legend">'+esc(note)+'</div>':''); }
-  function flow(boxes, note){ return '<div class="bs-flow">'+boxes.map(function(b,i){ return (i?'<span class="bs-fa">→</span>':'')+'<div class="bs-fb"><b>'+esc(b[0])+'</b><span>'+esc(b[1])+'</span></div>'; }).join('')+'</div>'+(note?'<div class="bs-legend">'+esc(note)+'</div>':''); }
+  /* 칸 잇기 — opt.v 면 위에서 아래로(↓), opt.arw 는 화살표에 붙일 말(「기준」) */
+  function flow(boxes, note, opt){ opt=opt||{}; return '<div class="bs-flow'+(opt.v?' v':'')+'">'+boxes.map(function(b,i){ return (i?'<span class="bs-fa">'+(opt.arw?esc(opt.arw)+' ':'')+(opt.v?'↓':'→')+'</span>':'')+'<div class="bs-fb"><b>'+esc(b[0])+'</b>'+(b[1]?'<span>'+esc(b[1])+'</span>':'')+'</div>'; }).join('')+'</div>'+(note?'<div class="bs-legend">'+esc(note)+'</div>':''); }
+  /* 쌓은 막대 — 한 막대를 여러 칸으로 나눔(값 비율대로 높이). 칸 이름·값은 막대 오른쪽, 위에 합계, 밑에 막대 이름 */
+  var SEGC=['#185FA5','#B5D4F4','#FAC775','#9FE1CB'];
+  function stack(o){
+    var W=340, H=o.h||230, B=H-28, T=26, n=o.cols.length, bw=56, h='', gap=n>1?(W/n):W;
+    o.cols.forEach(function(c,ci){ var x=n>1?(12+gap*ci):110, y=B, prevLy=B+30;
+      c.segs.forEach(function(sg,si){ var sh=(B-T)*sg.v/o.max; y-=sh;
+        h+='<rect x="'+x+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+sh.toFixed(1)+'" fill="'+(sg.c||SEGC[si%SEGC.length])+'" stroke="#fff" stroke-width="1"/>';
+        var ly=Math.min(y+sh/2, prevLy-28, B-16); prevLy=ly;
+        h+='<text x="'+(x+bw+6)+'" y="'+(ly-2).toFixed(1)+'">'+esc(sg.lab)+'</text><text x="'+(x+bw+6)+'" y="'+(ly+12).toFixed(1)+'" class="muted">'+esc(sg.s)+'</text>'; });
+      h+='<text x="'+(x+bw/2)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle" style="font-weight:700">'+esc(c.top||'')+'</text>'
+        +'<text x="'+(x+bw/2)+'" y="'+(B+16)+'" text-anchor="middle" class="muted">'+esc(c.lab)+'</text>'; });
+    return fig('0 0 '+W+' '+H, o.label||'', '<path class="ax" d="M4 '+B+' H'+(W-4)+'"/>'+h)+(o.legend?'<div class="bs-legend">'+esc(o.legend)+'</div>':'');
+  }
+  /* 계단 — 가로 줄마다 이름·막대·값. t 는 합계(0부터), 아니면 앞 합계에서 더하고 뺀 만큼만 */
+  function steps(o){
+    var W=340, L=136, R=W-64, rh=30, H=o.rows.length*rh+10, run=0, h='';
+    var X=function(v){ return +(L+(R-L)*v/o.max).toFixed(1); };
+    o.rows.forEach(function(r,i){ var y=6+i*rh, a, b, c;
+      if(r.t){ a=0; b=r.v; run=r.v; c='#185FA5'; } else { a=run; b=run+r.v; run=b; c=r.v<0?'#C2410C':'#15803D'; }
+      var x0=X(Math.min(a,b)), x1=X(Math.max(a,b));
+      h+=String(r.lab).split('\n').map(function(t,k,all){ return '<text x="'+(L-6)+'" y="'+(y+(all.length>1?9+k*13:15))+'" text-anchor="end"'+(r.t?' style="font-weight:700"':'')+'>'+esc(t)+'</text>'; }).join('')
+        +'<rect x="'+x0+'" y="'+(y+3)+'" width="'+Math.max(2,x1-x0).toFixed(1)+'" height="'+(rh-12)+'" rx="2" fill="'+c+'"/>'
+        +'<text x="'+(x1+4)+'" y="'+(y+15)+'"'+(r.t?' style="font-weight:700"':' class="muted"')+'>'+esc(r.s)+'</text>'; });
+    return fig('0 0 '+W+' '+H, o.label||'', '<path class="ax" d="M'+L+' 2 V'+(H-2)+'"/>'+h)+(o.legend?'<div class="bs-legend">'+esc(o.legend)+'</div>':'');
+  }
 
   var De=function(q){ return 1500-50*q; }, MRe=function(q){ return 1500-100*q; }, TRe=function(q){ return 1500*q-50*q*q; };
   var D9=function(q){ return 1200-q; }, S9=function(q){ return 150+q/2; };
@@ -148,7 +179,7 @@
   }, civil:{
     2: rel([['①','乙(집주인)','→','甲','먼저 계약 — 채권만 생김'],['②','乙(집주인)','→','丙','또 팔고 丙이 등기 → 물권']], '집은 丙, 甲은 乙에게 손해배상'),
     3: rel([['①','법률','','(성문법)','가장 먼저'],['②','관습법','','(불문법)','법률에 없으면'],['③','조리','','(불문법)','관습법도 없으면']], '관습법과 조리는 불문법'),
-    4: rel([['①','乙','→','戊','짜고 한 가짜 매매 — 무효'],['②','戊','→','己','진짜 매매 — 己는 몰랐음(선의)'],['③','甲','⇢','己','무효 주장 못 함']], '甲은 선의의 己에게 무효를 주장 못 함'),
+    4: rel([['①','乙','→','丁','짜고 한 가짜 매매 — 무효'],['②','丁','→','戊','진짜 매매 — 戊는 몰랐음(선의)'],['③','甲','⇢','戊','무효 주장 못 함']], '甲은 선의의 戊에게 무효를 주장 못 함'),
     7: rel([['①','중개사','→','甲','속임(제3자의 사기)'],['②','甲','↔','집주인','매매계약']], ['집주인이 알았거나 알 수 있었음 → 甲은 취소 가능','몰랐고 알 수도 없었음 → 취소 불가']),
     8: tbl(['무효','취소'], [['비진의표시(상대방 악의·과실)','착오(중요부분)'],['통정허위표시','사기'],['','강박']], '취소 → 처음부터 무효(소급) · 추인 → 더는 취소 못 함'),
     10: rel([['①','甲(본인)','→','동생(대리인)','대리권 줌'],['②','동생','→','장학회','甲의 대리인으로 계약']], '효과는 甲에게 직접(장학회 → 甲)'),
@@ -163,12 +194,86 @@
       {txt:[9,5], dy:20, s:'지금(9년)', anc:'end'}, {txt:[9,5], dy:34, s:'소송으로 중단', anc:'end', cls:'muted'},
       {txt:[10,5], dx:4, dy:20, s:'10년'}, {txt:[10,5], dx:4, dy:34, s:'채권 시효 완성', cls:'muted'},
       {txt:[20,5], dy:-24, s:'20년', anc:'end'}, {txt:[20,5], dy:-10, s:'지상권 등 기타 재산권 완성', anc:'end', cls:'muted'}]})
+  }, acct:{
+    1: stack({label:'자산 3,500만 = 부채 1,000만 + 자본 2,500만', max:3500, legend:'자산 3,500만 원 = 부채 1,000만 원 + 자본 2,500만 원', cols:[
+      {lab:'자산', top:'3,500만', segs:[{v:2000,lab:'오븐',s:'2,000만'},{v:1000,lab:'예금',s:'1,000만'},{v:500,lab:'현금',s:'500만'}]},
+      {lab:'부채 + 자본', top:'3,500만', segs:[{v:1000,lab:'부채',s:'1,000만',c:'#C2410C'},{v:2500,lab:'자본',s:'2,500만',c:'#15803D'}]}]}),
+    2: flow([['1. 계약 식별',''],['2. 수행의무 식별','케이크·배달 2개'],['3. 거래가격','230,000원(부가세 제외)'],['4. 배분','케이크 200,000 / 배달 30,000'],['5. 이행할 때 인식','']], '', {v:1}),
+    3: stack({label:'판매대금 100,000원 = 수익 90,000원 + 환불부채 10,000원', max:100000, legend:'예상 반품 10% → 환불부채 10,000원', cols:[
+      {lab:'판매대금', top:'100,000원', segs:[{v:90000,lab:'수익',s:'90,000원'},{v:10000,lab:'환불부채',s:'10,000원',c:'#FAC775'}]}]}),
+    4: bars({label:'원가 8,000원과 순실현가능가치 7,000원', max:9000, legend:'원가 = 재료 7,500 + 운임 300 + 하역료 200 · 순실현가능가치 = 판매가 10,000 − 완성원가 2,500 − 판매비 500 · 낮은 쪽 7,000원에 표시, 차이 1,000원 평가손실', vals:[
+      {v:8000, top:'8,000원', lab:'원가'}, {v:7000, top:'7,000원', lab:'순실현가능가치', total:1}]}),
+    5: plot({label:'장부금액 1,000만 원에서 10년 동안 0으로', yl:'장부금액(만 원)', xl:'연수(년)', x:[0,10.5], y:[0,1100], items:[
+      {f:function(t){ return 1000-100*t; }, a:0, b:10}, {dash:[1,900]}, {pt:[1,900], lab:'1년 · 900만', dx:8, dy:-6},
+      {ty:1000, s:'1,000'}, {ty:900, s:'900'}, {tx:1, s:'1'}, {tx:10, s:'10'}]}),
+    6: bars({label:'장부금액 900만, 순공정가치 500만, 사용가치 600만', max:1000, legend:'회수가능액 = 큰 쪽 600만 원 · 노란 칸(900 − 600 = 300만 원) = 손상차손', vals:[
+      {v:900, top:'900만', lab:'장부금액', cut:600}, {v:500, top:'500만', lab:'순공정가치'}, {v:600, top:'600만', lab:'사용가치', total:1}]}),
+    7: bars({label:'취득원가 5,000만, 장부금액 4,500만, 공정가치 5,400만', max:6000, legend:'노란 칸(5,400 − 4,500 = 900만 원) = 재평가잉여금(기타포괄이익)', vals:[
+      {v:5000, top:'5,000만', lab:'취득원가'}, {v:4500, top:'4,500만', lab:'1년 뒤 장부금액'}, {v:5400, top:'5,400만', lab:'공정가치', total:1, cut:4500}]}),
+    8: steps({label:'충당부채 기초 30만에서 기말 35만', max:60, rows:[
+      {t:1, v:30, lab:'기초', s:'30만'}, {v:20, lab:'설정\n(2,000만 × 1%)', s:'+20만'}, {t:1, v:50, lab:'설정 뒤', s:'50만'}, {v:-15, lab:'실제 지출', s:'−15만'}, {t:1, v:35, lab:'기말', s:'35만'}]}),
+    9: tbl(['항목','금액'], [['기초','5,000만'],['무상증자','0'],['자기주식 취득','−300만'],['자기주식 소각','0'],['당기순이익','+800만'],['기타포괄이익','+900만'],[{v:'기말'},{v:'6,400만'}]]),
+    10: bars({label:'취득원가 10,500원, 연말 공정가치 12,000원', max:13500, legend:'취득원가 = 10주 × 1,000 + 수수료 500 · 공정가치 = 10주 × 1,200 · 노란 칸(차이 1,500원) = 기타포괄이익', vals:[
+      {v:10500, top:'10,500원', lab:'취득원가'}, {v:12000, top:'12,000원', lab:'연말 공정가치', total:1, cut:10500}]}),
+    11: steps({label:'세전이익 1,000만에서 법인세 204만', max:1100, rows:[
+      {t:1, v:1000, lab:'법인세비용차감전\n순이익', s:'1,000만'}, {v:50, lab:'손금불산입', s:'+50만'}, {v:-30, lab:'익금불산입', s:'−30만'}, {t:1, v:1020, lab:'과세소득', s:'1,020만'}, {t:1, v:204, lab:'법인세(× 20%)', s:'204만'}]}),
+    12: steps({label:'당기순이익 796만에서 영업활동현금흐름 856만', max:950, rows:[
+      {t:1, v:796, lab:'당기순이익', s:'796만'}, {v:100, lab:'감가상각비', s:'+100만'}, {v:-50, lab:'매출채권 증가', s:'−50만'}, {v:-30, lab:'재고자산 증가', s:'−30만'}, {v:40, lab:'매입채무 증가', s:'+40만'}, {t:1, v:856, lab:'영업활동\n현금흐름', s:'856만'}]}),
+    13: stack({label:'들어온 원가 570만 = 나간 500만 + 남은 70만', max:570, legend:'당기총제조원가 550만 = 직접재료 300 + 직접노무 150 + 제조간접 100', cols:[
+      {lab:'들어온 원가', top:'570만', segs:[{v:20,lab:'기초재공품',s:'20만'},{v:550,lab:'당기총제조원가',s:'550만'}]},
+      {lab:'나간 쪽 · 남는 쪽', top:'570만', segs:[{v:500,lab:'당기제품제조원가',s:'500만',c:'#15803D'},{v:70,lab:'기말재공품',s:'70만',c:'#FAC775'}]}]}),
+    14: tbl(['원가','환산량','단가','금액'], [['재료원가','200개','50원','10,000원'],['전환원가','100개(200 × 50%)','30원','3,000원'],[{v:'기말재공품'},'','',{v:'13,000원'}]]),
+    15: bars({label:'기초재고 2,000원, 기말재고 6,000원', max:7000, legend:'기초재고 50개 × 40원 · 기말재고 150개 × 40원 · 노란 칸(차이 4,000원) = 전부원가계산 이익이 더 큰 금액', vals:[
+      {v:2000, top:'2,000원', lab:'기초재고'}, {v:6000, top:'6,000원', lab:'기말재고', total:1, cut:2000}]})
+  }, real:{
+    5: plot({label:'수직 공급곡선에서 수요가 늘면 가격만 오른다', yl:'가격', xl:'토지의 양', x:[0,12], y:[0,10.5], legend:'공급 S는 수직선 — 수요가 D1에서 D2로 오른쪽으로 가도 양은 그대로, 가격만 P1에서 P2로 오른다', items:[
+      {line:[[5,0],[5,9.8]], cls:'gl'}, {txt:[5,9.8], dx:6, dy:4, s:'S'},
+      {f:function(x){ return 8-0.8*x; }, a:0, b:9.5, name:'D1'}, {f:function(x){ return 10-0.8*x; }, a:0, b:11.5, cls:'rl', name:'D2'},
+      {dash:[5,4], toX:false}, {dash:[5,6], toX:false}, {pt:[5,4]}, {pt:[5,6], color:'#C2410C'},
+      {ty:4, s:'P1'}, {ty:6, s:'P2'}]}),
+    6: plot({label:'부동산경기와 일반경기', yl:'경기', xl:'시간', x:[0,12.6], y:[0,10], h:220, legend:'파랑: 부동산경기 · 주황 점선: 일반경기(진폭이 작고 주기가 짧다)', items:[
+      {f:function(x){ return 5-3.2*Math.cos(Math.PI*x/6); }, a:0, b:12, n:96},
+      {f:function(x){ return 5-1.4*Math.cos(Math.PI*x/3); }, a:0, b:12, n:96, cls:'rl', dashed:1},
+      {pt:[0,1.8], lab:'저점', dx:0, dy:16, anc:'start'}, {pt:[2,3.4], lab:'회복', dx:-6, dy:-6, anc:'end'}, {pt:[4,6.6], lab:'상향', dx:-6, dy:-6, anc:'end'},
+      {pt:[6,8.2], lab:'정점', dx:0, dy:-10, anc:'middle'}, {pt:[8,6.6], lab:'후퇴', dx:6, dy:-6}, {pt:[10,3.4], lab:'하향', dx:6, dy:-6}, {pt:[12,1.8], lab:'저점', dx:0, dy:16, anc:'end'}]}),
+    8: fig('0 0 340 160','A시와 B시가 마을을 끄는 힘 1 : 1','<path class="ax" d="M40 60 H300"/>'
+      +'<path class="dl" d="M205 60 H62"/><path d="M62 60 l8 -4 v8 z" fill="#185FA5"/><path class="rl" d="M221 60 H288"/><path d="M288 60 l-8 -4 v8 z" fill="#C2410C"/>'
+      +'<circle cx="40" cy="60" r="18" fill="#185FA5"/><circle cx="213" cy="60" r="7" fill="#64748B"/><circle cx="300" cy="60" r="11" fill="#C2410C"/>'
+      +'<text x="40" y="30" text-anchor="middle">A시 40만</text><text x="213" y="40" text-anchor="middle">마을</text><text x="300" y="38" text-anchor="middle">B시 10만</text>'
+      +'<text x="126" y="80" text-anchor="middle" class="muted">20km</text><text x="257" y="80" text-anchor="middle" class="muted">10km</text>'
+      +'<text x="20" y="112">A: 400,000 ÷ 20² = 1,000</text><text x="20" y="132">B: 100,000 ÷ 10² = 1,000</text><text x="20" y="152" style="font-weight:700">→ 끄는 힘 1 : 1</text>'),
+    10: fig('0 0 320 200','동일수급권 안의 인근지역과 유사지역','<circle cx="160" cy="100" r="92" fill="#F8FAFC" stroke="#64748B" stroke-width="1"/>'
+      +'<circle cx="112" cy="110" r="42" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><circle cx="212" cy="110" r="38" fill="#FFF3D6" stroke="#C2410C" stroke-width="1.5"/>'
+      +'<text x="160" y="32" text-anchor="middle">동일수급권</text><text x="112" y="96" text-anchor="middle">인근지역</text><text x="212" y="114" text-anchor="middle">유사지역</text>'
+      +'<circle cx="112" cy="116" r="3.5" fill="#185FA5"/><text x="112" y="134" text-anchor="middle" class="muted">대상 건물</text>')
+      +flow([['1. 지역분석','표준적 이용 · 가격수준'],['2. 개별분석','최유효이용 · 구체적 가격']]),
+    11: stack({label:'재조달원가 6억 = 적산가액 4억 5,000만 + 감가수정액 1억 5,000만', max:6, legend:'감가수정액 = 6억 × 10/40 = 1억 5,000만 원', cols:[
+      {lab:'재조달원가', top:'6억', segs:[{v:4.5,lab:'적산가액',s:'4억 5,000만'},{v:1.5,lab:'감가수정액',s:'1억 5,000만',c:'#FAC775'}]}]}),
+    12: bars({label:'기대수익률 6%, 요구수익률 5%', max:7, legend:'기대수익률 6,000만 ÷ 10억 = 6% — 요구수익률 5%보다 높아 「투자 채택」', vals:[
+      {v:6, top:'6%', lab:'기대수익률', total:1}, {v:5, top:'5%', lab:'요구수익률'}]}),
+    13: bars({label:'LTV 50%면 5억, 40%면 4억', max:6, legend:'10억 × 50% = 5억 원 · LTV 40%로 강화 → 10억 × 40% = 4억 원', vals:[
+      {v:5, top:'5억', lab:'LTV 50%'}, {v:4, top:'4억', lab:'LTV 40%(강화)', total:1}]}),
+    14: tbl(['칸','적는 것'], [['표제부','건물 위치·면적'],['갑구','소유권 — 甲'],['을구','소유권 외 권리 — 은행 저당권']])
+  }, law:{
+    1: flow([['광역도시계획','여러 시·군의 큰 방향'],['도시·군기본계획','한 시·군의 장기 방향 · 국민 직접 구속 없음'],['도시·군관리계획','용도지역 등 구체적 이용 · 국민 구속']], '', {v:1}),
+    2: dia(['용도지역','├ 1. 도시지역 — 주거·상업·공업·녹지','├ 2. 관리지역 — 보전관리·생산관리·계획관리','├ 3. 농림지역','└ 4. 자연환경보전지역']),
+    5: fig('0 0 320 210','대지 200㎡ 위 4층 건물과 지하 1층','<path class="ax" d="M20 150 H300"/>'
+      +'<rect x="88" y="46" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/><rect x="88" y="72" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/><rect x="88" y="98" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/><rect x="88" y="124" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/>'
+      +'<rect x="88" y="150" width="144" height="26" fill="none" stroke="#64748B" stroke-dasharray="4 4"/>'
+      +'<text x="160" y="63" text-anchor="middle">4층 120㎡</text><text x="160" y="89" text-anchor="middle">3층 120㎡</text><text x="160" y="115" text-anchor="middle">2층 120㎡</text><text x="160" y="141" text-anchor="middle">1층 120㎡</text><text x="160" y="167" text-anchor="middle" class="muted">지하 1층 120㎡</text>'
+      +'<path class="dash" d="M40 186 H280 M40 181 V191 M280 181 V191"/><text x="160" y="203" text-anchor="middle">대지 200㎡</text>',
+      '')+'<div class="bs-legend">건폐율 120 ÷ 200 = 60% · 용적률 480 ÷ 200 = 240%(지하층 제외)</div>',
+    7: flow([['표준지공시지가','국토교통부장관이 조사·평가·공시'],['개별공시지가','시장·군수·구청장이 표준지공시지가를 기준으로 산정·결정·공시(재산세 등의 기준)']], '', {arw:'기준'}),
+    8: tbl(['주택가격','누가'], [['표준주택가격','국토교통부장관'],['개별주택가격','시장·군수·구청장'],['공동주택가격','국토교통부장관']], '상가·오피스는 주택가격 공시 대상 아님'),
+    11: tbl(['칸','적는 것','신청'], [['표제부','건물 위치·면적',''],['갑구','소유권보존 — 甲','단독신청'],['을구','저당권 — 은행','공동신청']]),
+    12: tbl(['정비사업','어떤 곳'], [['주거환경개선사업',''],['재개발사업','정비기반시설 열악 + 노후·불량건축물 밀집'],['재건축사업','정비기반시설 양호 + 노후 공동주택 밀집']], '도시개발사업 — 정비사업 아님'),
+    13: dia(['국유재산','├ 행정재산 — 공용·공공용·기업용·보존용','│   처분 금지 원칙','│      ┆ 용도폐지 ↓','└ 일반재산 — 대부·처분 가능'])
   } };
 
   /* 원고(basics-story-data.js · BS_STORY)를 한 장씩 카드로 — 글은 원고 그대로.
      말풍선: 그림 있는 인물은 그림, 그 밖은 동그라미 안 첫 글자 · 밑에 이름. 주인공 甲은 늘 왼쪽, 다른 사람은 오른쪽 */
   /* 과목마다 그림이 있는 인물 — 그 밖의 사람(동생·은행원·변호사·중개사 등)은 동그라미 안 글자 */
-  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_jeong','戊':'civ_mu'} };
+  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_mu','己':'civ_jeong'}, acct:{'甲':'baker'}, real:{'甲':'civ_gap'}, law:{'甲':'civ_gap'} };   // 「과목+한자」로 그림 — 같은 乙이라도 과목마다 다른 사람(크리스 11-24 한자 차례 정리: 민법 丁=옛 戊 그림, 己=옛 丁 그림)
   function cardsOf(key){ var S=(window.BS_STORY||{})[key]; if(!S) return [];
     return S['화'].map(function(e, i, all){
       var sc=e['장면'].map(function(x){ if(!x['말']) return x['글'];
@@ -181,19 +286,31 @@
     }); }
   var D={
     econ:{ name:'경제학원론', kind:'빵집 甲 이야기', cards:cardsOf('econ') },
-    civil:{ name:'민법', kind:'甲의 첫 집 사기', cards:cardsOf('civil') }
+    civil:{ name:'민법', kind:'甲의 첫 집 사기', cards:cardsOf('civil') },
+    acct:{ name:'회계학', kind:'빵집 甲의 장부', cards:cardsOf('acct') },
+    real:{ name:'부동산학원론', kind:'甲의 건물 한 채', cards:cardsOf('real') },
+    law:{ name:'감정평가관계법규', kind:'甲의 땅에 무엇을 지을까', cards:cardsOf('law') }
   };
   /* 한 화(또는 문제 이야기) 한 장 — 선행학습 lcard 안에 그린다 */
   /* 말하는 사람 얼굴 — 빵집 사장 甲만 그림(어른 웹툰체), 역할 없는 사람은 동그라미 안에 글자만. 이모지·마스코트 안 씀 */
   var FACE={ baker:'icons/story/baker_gap.png', baker_eul:'icons/story/baker_eul.png',
     civ_gap:'icons/story/civ_gap.png', civ_eul:'icons/story/civ_eul.png', civ_byeong:'icons/story/civ_byeong.png', civ_jeong:'icons/story/civ_jeong.png', civ_mu:'icons/story/civ_mu.png' };
   /* 과목마다 그림이 있는 인물 — 그 밖의 사람(동생·은행원·변호사·중개사 등)은 동그라미 안 글자 */
-  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_jeong','戊':'civ_mu'} };   // baker_eul(옆 빵집 乙)은 그림이 오면 넣는다 — 파일이 없으면 글자로
+  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_mu','己':'civ_jeong'}, acct:{'甲':'baker'}, real:{'甲':'civ_gap'}, law:{'甲':'civ_gap'} };   // 「과목+한자」로 그림 — 같은 乙이라도 과목마다 다른 사람(크리스 11-24 한자 차례 정리: 민법 丁=옛 戊 그림, 己=옛 丁 그림)   // baker_eul(옆 빵집 乙)은 그림이 오면 넣는다 — 파일이 없으면 글자로
   function faceHTML(f, alt){ return (f && f.charAt(0)==='@' && FACE[f.slice(1)]) ? '<b class="pic" aria-hidden="true" data-alt="'+esc(alt||'')+'"><img src="'+FACE[f.slice(1)]+'" alt="" onerror="var b=this.parentNode;b.classList.remove(\'pic\');b.textContent=b.getAttribute(\'data-alt\')"></b>' : '<b aria-hidden="true">'+esc(f||'')+'</b>'; }
-  function storyHTML(c, learnLbl){
+  var HJR={'甲':'갑','乙':'을','丙':'병','丁':'정','戊':'무','己':'기','庚':'경','辛':'신','壬':'임','癸':'계'};
+  function rubyAll(t){ return esc(t).replace(/[甲乙丙丁戊己庚辛壬癸]/g, function(c){ return '<ruby>'+c+'<rt>'+HJR[c]+'</rt></ruby>'; }); }
+  /* 한자 읽기(크리스 「한자 위 작게」) — 그 화 본문에서 각 한자가 처음 나올 때 한 번만. 태그·그래프(svg) 안은 건드리지 않는다 */
+  function rubyFirst(h){ var seen={};
+    return h.split(/(<svg[\s\S]*?<\/svg>|<[^>]+>)/).map(function(part){ if(!part || part.charAt(0)==='<') return part;
+      return part.replace(/[甲乙丙丁戊己庚辛壬癸]/g, function(c){ if(seen[c]) return c; seen[c]=1; return '<ruby>'+c+'<rt>'+HJR[c]+'</rt></ruby>'; }); }).join(''); }
+  function storyHTML(c, learnLbl){ var names=[];
+    return rubyFirst(storyBody(c, learnLbl, names)).replace(/\u0001(\d+)\u0002/g, function(_m,i){ return names[+i]; });   // 말풍선 얼굴·이름표 — 이름표는 늘 루비, 동그라미 글자는 그대로
+  }
+  function storyBody(c, learnLbl, names){
     return '<span class="bs-tag">'+esc(c.tag)+'</span><div class="ltitle bs-st">'+esc(c.t)+'</div>'
       +(c.prev?'<p class="bs-prev">지난 이야기: '+esc(c.prev)+'</p>':'')
-      +'<div class="bs-scene">'+c.scene.map(function(x){ return Array.isArray(x)?'<div class="bs-say'+(x[3]?' r':'')+'"><span class="bs-face">'+faceHTML(x[2], x[0].charAt(0))+'<i>'+esc(x[0])+'</i></span><div><span class="bs-bub">'+esc(x[1])+'</span></div></div>':'<p>'+esc(x)+'</p>'; }).join('')+'</div>'
+      +'<div class="bs-scene">'+c.scene.map(function(x){ return Array.isArray(x)?'<div class="bs-say'+(x[3]?' r':'')+'">\u0001'+(names.push('<span class="bs-face">'+faceHTML(x[2], x[0].charAt(0))+'<i>'+rubyAll(x[0])+'</i></span>')-1)+'\u0002<div><span class="bs-bub">'+esc(x[1])+'</span></div></div>':'<p>'+esc(x)+'</p>'; }).join('')+'</div>'
       +(c.fig?'<div class="bs-figwrap">'+c.fig+'</div>':'')
       +(c.learn?'<div class="bs-learn"><strong>'+esc(learnLbl||'이번 화 개념')+' · '+esc(c.learn[0])+'</strong><br>'+esc(c.learn[1])+'</div>':'')
       +(c.next?'<div class="bs-next">'+esc(c.next)+'</div>':'');
@@ -221,7 +338,7 @@
         learn:['한계수입과 탄력성','MR이 0보다 크면 탄력성은 1보다 크고, MR이 0이면 탄력성은 딱 1이다.'], next:'이어서 → 개념 카드 → 문제 풀기'} } };
 
   /* 기초는 시험이 아니라 과목 기초 묶음(D.civil · D.econ …) 단위 — 시험마다 「과목 → 묶음」 연결표만 둔다(크리스 「시험별로 공통적인 게 많다」) */
-  var MAP={ appraiser:{civil:'civil', econ:'econ'}, realestate1:{re1_civil:'civil'}, housing:{hm_civil:'civil'} };
+  var MAP={ appraiser:{civil:'civil', econ:'econ', acct:'acct', real:'real', law:'law'}, realestate1:{re1_civil:'civil'}, housing:{hm_civil:'civil'} };
   function keyOf(cert, sub){ var m=MAP[cert]; return (m&&m[sub]&&D[m[sub]])?m[sub]:''; }
   /* 본 화 표시 — 이 브라우저(localStorage)에만 */
   function seenGet(k){ try{ return JSON.parse(localStorage.getItem('certlab_bs_seen_'+k)||'[]'); }catch(_){ return []; } }
@@ -340,15 +457,15 @@
   };
 
 
-  // 바로가기 주소 — ?basics=econ | civil | q (로그인 없이)
-  var m=/[?&]basics=(econ|civil|q2|q)\b/.exec(location.search); if(!m) return;
+  // 바로가기 주소 — ?basics=econ | civil | acct | real | law | q (로그인 없이)
+  var m=/[?&]basics=(econ|civil|acct|real|law|q2|q)\b/.exec(location.search); if(!m) return;
   var want=m[1], tries=0, entered=false;
   function go(){
     tries++;
     try{
       if(typeof enterCert!=='function'){ if(tries<80) setTimeout(go,300); return; }
       if(!entered){ entered=true; enterCert('appraiser'); setTimeout(go,800); return; }   // 시험 화면을 실제로 연다(mqCert 기본값이 이미 appraiser 여도)
-      var qb=curQB(); var sub=want==='civil'?'civil':'econ';
+      var qb=curQB(); var sub=(want==='q'||want==='q2')?'econ':want;
       if(!qb || !qb[sub] || !(qb[sub].sets||[]).length){ if(tries<80) setTimeout(go,300); return; }
       var sets=qb[sub].sets, si=0, qi=0;
       if(want==='q'||want==='q2'){ var qid=want==='q2'?'e26_2':'e26_9'; for(var i=0;i<sets.length;i++){ var k=(sets[i].questions||[]).findIndex(function(x){ return x.id===qid; }); if(k>=0){ si=i; qi=k; break; } } }

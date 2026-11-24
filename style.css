@@ -2018,6 +2018,12 @@ html.bs-preview .header,html.bs-preview #mcqView .exam-sticky{top:28px}
 #mcqView .bs-r .bs-p{display:inline;min-height:0;border:0;text-align:left}   /* 옛 .bs-p 상자(테두리·높이 44)도 끈다 */
 /* [기초학습] 관계도는 앱 [dia] 꼴(cc-dia) — 번호 「1.」 큰 숫자 · 결과 줄 굵게 / 한자는 한 글꼴로 */
 #mcqView .bs-figwrap .cc-dia{margin:4px 0 0;padding:4px 2px;line-height:1.9;white-space:pre-wrap}   /* 글자 크기는 앱 관계도(12px) 그대로 */
-#mcqView .cc-dia .bs-dnum{font-size:16px;font-weight:800;color:#0C447C}
-#mcqView .cc-dia .bs-dres{color:#0C447C}
+#mcqView .cc-dia .bs-dnum{font-size:16px;font-weight:400;color:#0C447C}   /* 굵게 말고 크기만(크리스 「볼드 넣지마」) */
+#mcqView .cc-dia .bs-dres{font-weight:400;color:#0C447C}
 .hj{font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans CJK KR","Noto Sans CJK",sans-serif}
+#mcqView .bs-flow.v{flex-direction:column;gap:2px}   /* [기초학습] 위에서 아래로 잇는 칸(↓) */
+#mcqView .bs-flow.v .bs-fb{flex:none}
+#mcqView .bs-flow .bs-fa{font-size:12px;white-space:nowrap}
+/* [기초학습] 한자 읽기 루비 — 한자 위 작게, 줄 간격은 그대로 */
+#mcqView ruby{ruby-position:over;line-height:1}
+#mcqView ruby rt{font-size:10px;line-height:1;color:#94A3B8;font-weight:400;letter-spacing:0}
