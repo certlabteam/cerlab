@@ -156,6 +156,7 @@ function mqConceptSolve(){ if(mqLevelUp){ mqConcept=false; mqConceptPhase=''; re
 function mqConceptBackToLearn(){ mqConceptPhase='learn'; renderMCQ(); window.scrollTo(0,0); }
 
 // ===== 연속 오답 → 개념학습 권유 =====
+let mqWrongStreakSubject='';
 // 회차(세트)의 모든 문항에 전용 개념학습 데이터(exp.learn)가 있는지
 function setConceptReady(cert,sub,si){
   try{
@@ -177,16 +178,25 @@ function maybeOfferConcept(q,n,firstTime){
   if(!firstTime) return false;
   /* 가입·결제 팝업이 떠 있으면 그 위에 겹치지 않는다. 그쪽이 먼저다. */
   if(typeof _payPopupOpen==='function' && _payPopupOpen()) return false;
-  if(mqInReview||mqDiag||mqConcept) return false;
+  if(mqScreen!=='exam'||mqInReview||mqDiag||mqLevelTest||mqConcept) return false;
   if(mqMode==='wrong') return false;
   if(mqCert==='bodybuilding') return false;
   if(!q||!mqHasAnswer(q)) return false;
+  var sub=(mqReview||mqGather)?(q._subCode||q._subj):mqSub;
+  var streakSubject=mqCert+'|'+sub;
+  if(mqWrongStreakSubject!==streakSubject){ mqWrongStreak=0; mqWrongStreakSubject=streakSubject; }
   if(isCorr(q.ans,n)){ mqWrongStreak=0; return false; }
   mqWrongStreak++;
   if(mqWrongStreak<3) return false;
+  mqWrongStreak=0;
+  if(typeof bsStreakHasDeck==='function' && bsStreakHasDeck(mqCert,sub)){
+    var noLevelRecord=typeof ltDone==='function' && !ltDone(mqCert);
+    var lv=(!noLevelRecord && typeof luSubjectLevel==='function')?luSubjectLevel(mqCert,sub):null;
+    if(noLevelRecord || lv==null || lv===1) return bsStreakAfterPick(q);
+  }
   if(mqConceptOffered) return false;
   if(!setConceptReady(mqCert,mqSub,mqSet)) return false;
-  mqWrongStreak=0; mqConceptOffered=true;
+  mqConceptOffered=true;
   var el=document.getElementById('conceptOfferPopup'); if(el) el.classList.remove('hidden');
   return true;
 }
@@ -2073,6 +2083,8 @@ function renderMcqExam(root){
 }
 function mqPick(qid,n){
   if(mqInReview) return;
+  var _bsPopup=document.getElementById('bsStreakPopup'), _conceptPopup=document.getElementById('conceptOfferPopup');
+  if((_bsPopup&&!_bsPopup.classList.contains('hidden'))||(_conceptPopup&&!_conceptPopup.classList.contains('hidden'))) return;
   /*
    * 레벨테스트는 한도에서 뺀다.
    *

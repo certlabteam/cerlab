@@ -332,20 +332,28 @@ function _calcFromId(cert, id){ try{ var p=String(id).split(':'); if(p.length<4)
 
 async function loadAdaptiveSubject(cert, sub){
   var key=cert+'|'+sub;
-  if(AD_DATA[key]) return AD_DATA[key];
+  var ex=(typeof MANIFEST!=='undefined' && MANIFEST && (MANIFEST.exams||[]).find(function(e){ return e.id===cert; }));
+  var ver=ex?((ex.versions&&ex.versions[sub])||1):null;   // 은행과 같은 과목 version; manifest 미확인 시 TTL만 적용
+  if(AD_DATA[key]){
+    if(ver===null || AD_DATA[key].__adver===ver) return AD_DATA[key];
+    delete AD_DATA[key];
+  }
   if(!firebaseReady||!db){ throw new Error('Firestore 미초기화'); }
   async function fetchDoc(kind){
     var ck='ad:'+cert+':'+sub+':'+kind+(kind==='variantq'?':shards1':'');
-    try{ var c=localStorage.getItem(ck); if(c){ var w=JSON.parse(c); if(!AD_TTL_MS||(Date.now()-w.__ts)<=AD_TTL_MS) return w.d; } }catch(e){}
+    try{ var c=localStorage.getItem(ck); if(c){ var w=JSON.parse(c); if(ver!==null && w.__ver!==ver) localStorage.removeItem(ck);
+      else if(!AD_TTL_MS||(Date.now()-w.__ts)<=AD_TTL_MS) return w.d; } }catch(e){}
     var snap=await db.collection('adaptive').doc(cert+'__'+sub+'__'+kind).get();
     if(!snap.exists) return null;
     var d=_adParse(snap.data());
     if(kind==='variantq') d=await adVariantqJoin(cert+'__'+sub+'__variantq', d);
-    try{ localStorage.setItem(ck, JSON.stringify({__ts:Date.now(), d:d})); }catch(e){}
+    try{ localStorage.setItem(ck, JSON.stringify({__ts:Date.now(), __ver:ver, d:d})); }catch(e){}
     return d;
   }
   var res=await Promise.all([fetchDoc('map'), fetchDoc('diag'), fetchDoc('variants'), fetchDoc('variantq'), fetchDoc('calctmpl')]);
-  return AD_BUILD(key, res[0], res[1], res[2], res[3], res[4]);
+  var bundle=AD_BUILD(key, res[0], res[1], res[2], res[3], res[4]);
+  bundle.__adver=ver;
+  return bundle;
 }
 async function adVariantqJoin(docId, data, getPart){
   if(!data || !Array.isArray(data.shards) || !data.shards.length) return data;

@@ -207,7 +207,7 @@
       +fig('0 0 320 120','지분: 甲 1/2, 아내 1/4, 동생 1/4','<path d="M60 60 L60 18 A42 42 0 0 1 60 102 Z" fill="#185FA5"/><path d="M60 60 L60 102 A42 42 0 0 1 18 60 Z" fill="#B5D4F4"/><path d="M60 60 L18 60 A42 42 0 0 1 60 18 Z" fill="#FAC775"/>'
         +'<rect x="130" y="30" width="12" height="12" fill="#185FA5"/><text x="148" y="41">甲 1/2</text><rect x="130" y="54" width="12" height="12" fill="#B5D4F4"/><text x="148" y="65">아내 1/4</text><rect x="130" y="78" width="12" height="12" fill="#FAC775"/><text x="148" y="89">동생 1/4</text>'),
     14: tbl(['권리','무엇','특징'], [['지상권','남의 땅에 건물·수목 소유','최단 30/15/5년'],['지역권','내 땅 편익을 위해 남의 땅 이용','통행'],['전세권','전세금 내고 남의 부동산 사용·수익','우선변제']]),
-    15: tbl(['권리','어떻게','예'], [['유치권','물건 붙잡아 둠','목수 庚의 창고 열쇠'],['질권','동산을 넘겨받아 점유','맡긴 시계'],['저당권','점유는 그대로, 등기로','집']]),
+    15: tbl(['권리','어떻게','예'], [['유치권','물건 붙잡아 둠','목수 辛의 창고 열쇠'],['질권','동산을 넘겨받아 점유','맡긴 시계'],['저당권','점유는 그대로, 등기로','집']]),
     16: plot({label:'소멸시효 시간선', noAxis:1, L:16, R:16, x:[0,22], y:[0,10], h:150, legend:'소유권 — 시효 없음', items:[
       {line:[[0,5],[21,5]], cls:'dl'}, {pt:[0,5]}, {pt:[9,5], color:'#C2410C'}, {pt:[10,5], color:'#15803D'}, {pt:[20,5], color:'#15803D'},
       {txt:[0,5], dx:2, dy:-24, s:'권리 행사할 수 있는 때'}, {txt:[0,5], dx:2, dy:-10, s:'시효 시작', cls:'muted'},
@@ -293,13 +293,18 @@
   /* 원고(basics-story-data.js · BS_STORY)를 한 장씩 카드로 — 글은 원고 그대로.
      말풍선: 그림 있는 인물은 그림, 그 밖은 동그라미 안 첫 글자 · 밑에 이름. 주인공 甲은 늘 왼쪽, 다른 사람은 오른쪽 */
   /* 과목마다 그림이 있는 인물 — 그 밖의 사람(동생·은행원·변호사·중개사 등)은 동그라미 안 글자 */
-  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_mu','己':'civ_jeong'}, acct:{'甲':'baker'}, real:{'甲':'civ_gap'}, law:{'甲':'civ_gap'} };   // 「과목+한자」로 그림 — 같은 乙이라도 과목마다 다른 사람(크리스 11-24 한자 차례 정리: 민법 丁=옛 戊 그림, 己=옛 丁 그림)
+  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_mu','庚':'civ_jeong'}, acct:{'甲':'baker'}, real:{'甲':'civ_gap'}, law:{'甲':'civ_gap'} };   // 「과목+한자」로 그림 — 같은 乙이라도 과목마다 다른 사람(크리스 11-24 한자 차례 정리: 민법 丁=옛 戊 그림, 庚=옛 丁 그림(11-24 5화 己 새로 들어와 己→庚·庚→辛))
+  var ROLE_PIC={'세무사':'role_taxacc','학원 강사':'role_tutor','구청 직원':'role_clerk','동생':'role_brother','은행원':'role_banker','집주인':'role_landlord','변호사':'role_lawyer','감정평가사':'role_appraiser','꽃집 주인':'role_florist',
+    '마셜':'econ_marshall','쿠르노':'econ_cournot','애덤 스미스':'econ_smith','힉스':'econ_hicks','쿠즈네츠':'econ_kuznets','피셔':'econ_fisher','케인즈':'econ_keynes','프리드먼':'econ_friedman','카셀':'econ_cassel'};   // 경제 손님 경제학자(크리스 11-24)   // 자주 나오는 역할 인물 얼굴(크리스 11-24 「집주인은 캐릭터 없어?」)
   function cardsOf(key){ var S=(window.BS_STORY||{})[key]; if(!S) return [];
     return S['화'].map(function(e, i, all){
-      var sc=e['장면'].map(function(x){ if(!x['말']) return x['글'];
+      var L=e['장면'], left=null;
+      var sc=L.map(function(x, j){ if(!x['말']){ left=null; return x['글']; }
         var who=x['말'];
-        var face=(PIC[key]&&PIC[key][who]) ? '@'+PIC[key][who] : who.charAt(0);
-        return [who, x['글'], face, who==='甲'?0:1]; });   // 주인공 甲은 늘 왼쪽, 다른 사람은 오른쪽(크리스)
+        if(left===null){ left='?'; for(var k=j;k<L.length&&L[k]['말'];k++){ if(L[k]['말']==='甲'){ left='甲'; break; } } if(left==='?') left=who; }
+        var pic=(PIC[key]&&PIC[key][who])||ROLE_PIC[who];   // 한자 인물은 과목별, 역할 인물은 모든 과목 같은 얼굴
+        var face=pic ? '@'+pic : who.charAt(0);
+        return [who, x['글'], face, who===left?0:1]; });   // 대화 한 묶음에서 甲은 늘 왼쪽, 甲이 없으면 먼저 말한 사람이 왼쪽·상대는 오른쪽(크리스 11-24)
       var last=(i===all.length-1);
       return { tag:e['화']+'화 · '+e['개념'], t:e['제목'], prev:e['지난이야기']||'', scene:sc,
         learn:[e['개념'], e['개념상자']], next:last?e['다음화']:('다음 화 — '+e['다음화']), quiz:e['문제']||[], fig:(FIG[key]&&FIG[key][e['화']])||'' };
@@ -314,9 +319,11 @@
   /* 한 화(또는 문제 이야기) 한 장 — 선행학습 lcard 안에 그린다 */
   /* 말하는 사람 얼굴 — 빵집 사장 甲만 그림(어른 웹툰체), 역할 없는 사람은 동그라미 안에 글자만. 이모지·마스코트 안 씀 */
   var FACE={ baker:'icons/story/baker_gap.png', baker_eul:'icons/story/baker_eul.png',
-    civ_gap:'icons/story/civ_gap.png', civ_eul:'icons/story/civ_eul.png', civ_byeong:'icons/story/civ_byeong.png', civ_jeong:'icons/story/civ_jeong.png', civ_mu:'icons/story/civ_mu.png' };
+    civ_gap:'icons/story/civ_gap.png', civ_eul:'icons/story/civ_eul.png', civ_byeong:'icons/story/civ_byeong.png', civ_jeong:'icons/story/civ_jeong.png', civ_mu:'icons/story/civ_mu.png',
+    role_taxacc:'icons/story/role_taxacc.png', role_tutor:'icons/story/role_tutor.png', role_clerk:'icons/story/role_clerk.png', role_brother:'icons/story/role_brother.png', role_banker:'icons/story/role_banker.png', role_landlord:'icons/story/role_landlord.png', role_lawyer:'icons/story/role_lawyer.png', role_appraiser:'icons/story/role_appraiser.png', role_florist:'icons/story/role_florist.png',
+    econ_marshall:'icons/story/econ_marshall.png', econ_cournot:'icons/story/econ_cournot.png', econ_smith:'icons/story/econ_smith.png', econ_hicks:'icons/story/econ_hicks.png', econ_kuznets:'icons/story/econ_kuznets.png', econ_fisher:'icons/story/econ_fisher.png', econ_keynes:'icons/story/econ_keynes.png', econ_friedman:'icons/story/econ_friedman.png', econ_cassel:'icons/story/econ_cassel.png' };
   /* 과목마다 그림이 있는 인물 — 그 밖의 사람(동생·은행원·변호사·중개사 등)은 동그라미 안 글자 */
-  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_mu','己':'civ_jeong'}, acct:{'甲':'baker'}, real:{'甲':'civ_gap'}, law:{'甲':'civ_gap'} };   // 「과목+한자」로 그림 — 같은 乙이라도 과목마다 다른 사람(크리스 11-24 한자 차례 정리: 민법 丁=옛 戊 그림, 己=옛 丁 그림)   // baker_eul(옆 빵집 乙)은 그림이 오면 넣는다 — 파일이 없으면 글자로
+  var PIC={ econ:{'甲':'baker','乙':'baker_eul'}, civil:{'甲':'civ_gap','乙':'civ_eul','丙':'civ_byeong','丁':'civ_mu','庚':'civ_jeong'}, acct:{'甲':'baker'}, real:{'甲':'civ_gap'}, law:{'甲':'civ_gap'} };   // 「과목+한자」로 그림 — 같은 乙이라도 과목마다 다른 사람(크리스 11-24 한자 차례 정리: 민법 丁=옛 戊 그림, 庚=옛 丁 그림(11-24 5화 己 새로 들어와 己→庚·庚→辛))   // baker_eul(옆 빵집 乙)은 그림이 오면 넣는다 — 파일이 없으면 글자로
   function faceHTML(f, alt){ return (f && f.charAt(0)==='@' && FACE[f.slice(1)]) ? '<b class="pic" aria-hidden="true" data-alt="'+esc(alt||'')+'"><img src="'+FACE[f.slice(1)]+'" alt="" onerror="var b=this.parentNode;b.classList.remove(\'pic\');b.textContent=b.getAttribute(\'data-alt\')"></b>' : '<b aria-hidden="true">'+esc(f||'')+'</b>'; }
   var HJR={'甲':'갑','乙':'을','丙':'병','丁':'정','戊':'무','己':'기','庚':'경','辛':'신','壬':'임','癸':'계'};
   function rubyAll(t){ return esc(t).replace(/[甲乙丙丁戊己庚辛壬癸]/g, function(c){ return '<ruby>'+c+'<rt>'+HJR[c]+'</rt></ruby>'; }); }
@@ -360,6 +367,59 @@
   /* 기초는 시험이 아니라 과목 기초 묶음(D.civil · D.econ …) 단위 — 시험마다 「과목 → 묶음」 연결표만 둔다(크리스 「시험별로 공통적인 게 많다」) */
   var MAP={ appraiser:{civil:'civil', econ:'econ', acct:'acct', real:'real', law:'law'}, realestate1:{re1_civil:'civil'}, housing:{hm_civil:'civil'} };
   function keyOf(cert, sub){ var m=MAP[cert]; return (m&&m[sub]&&D[m[sub]])?m[sub]:''; }
+  /* 시트는 연 날 바로 기록해 닫기도 하루 한 번으로 센다. 연속 오답은 mqWrongStreak에서만 센다. */
+  var bsStreakPending=null;
+  function bsStreakDate(){ return (typeof _todayKST==='function')?_todayKST():new Date(Date.now()+9*3600000).toISOString().slice(0,10); }
+  window.bsStreakHasDeck=function(cert,sub){ return !!keyOf(cert,sub); };
+  function bsStreakMatch(deck, q, cert, sub){
+    var cards=deck.cards, i, id=String(q.id||'');
+    for(i=0;i<cards.length;i++) if((cards[i].quiz||[]).some(function(x){ return String(x)===id; })) return i;
+    var names=[];
+    if(q._topicName) names.push(q._topicName);
+    var info=(typeof AD_DATA!=='undefined'&&AD_DATA[cert+'|'+sub]||{}).lookup;
+    var code=q.topic||(info&&info[id]&&info[id].topic);
+    if(code){ var tm=(typeof topicNameMap==='function')&&topicNameMap(cert,sub); names.push((tm&&tm[code]&&tm[code].name)||code); }
+    ((q.exp&&q.exp.c)||[]).forEach(function(c){ if(c&&c.t) names.push(c.t); });
+    for(i=0;i<cards.length;i++){
+      var concept=String(cards[i].learn&&cards[i].learn[0]||'').trim();
+      if(concept && names.some(function(n){ n=String(n).trim(); return n && (n===concept || n.indexOf(concept)>=0 || concept.indexOf(n)>=0); })) return i;
+    }
+    return -1;
+  }
+  function bsStreakAdvance(){
+    var p=bsStreakPending; bsStreakPending=null;
+    if(!p || mqScreen!=='exam' || mqIdx!==p.idx) return;
+    var qs=mqQuestions();
+    if(mqIdx<qs.length-1){ mqIdx++; mqSaveProgress(); if(mqDiag) saveDiagProgress(); window.scrollTo(0,0); renderMCQ(); }
+    else mqResult();
+  }
+  window.bsStreakClose=function(advance){ var p=document.getElementById('bsStreakPopup'); if(p) p.classList.add('hidden'); if(advance) bsStreakAdvance(); else bsStreakPending=null; };
+  window.bsStreakGo=function(){ var p=bsStreakPending; bsStreakClose(false); if(p) bsOpen(p.sub, p.ep<0?undefined:p.ep); };
+  window.bsStreakAfterPick=function(q){
+    var cert=mqCert, sub=(mqReview||mqGather)?(q._subCode||q._subj):mqSub, key=keyOf(cert,sub);
+    if(!key) return false;
+    var storageKey='certlab_bs_streak_'+cert+'_'+sub;
+    try{ if(localStorage.getItem(storageKey)===bsStreakDate()) return false; }catch(_){}
+    if(typeof _payPopupOpen==='function' && _payPopupOpen()) return false;
+    var deck=D[key], ep=bsStreakMatch(deck,q,cert,sub), name=deck.name;
+    var concept=ep>=0?deck.cards[ep].learn[0]:'';
+    var p=document.getElementById('bsStreakPopup');
+    if(!p){ p=document.createElement('div'); p.id='bsStreakPopup'; p.className='auth-popup hidden'; document.body.appendChild(p);
+      p.addEventListener('click',function(e){ if(e.target===p) bsStreakClose(true); }); }
+    p.innerHTML='<div class="auth-sheet" style="text-align:center;max-width:340px">'
+      +'<button class="popup-x" onclick="bsStreakClose(true)" aria-label="닫기">✕</button>'
+      +'<div style="display:flex;justify-content:center;gap:8px;margin:4px 0 16px" aria-hidden="true">'
+      +'<span style="font-size:14px;color:#C0392B;border:1px solid #C0392B;border-radius:50%;width:24px;height:24px;line-height:22px">✕</span><span style="font-size:14px;color:#C0392B;border:1px solid #C0392B;border-radius:50%;width:24px;height:24px;line-height:22px">✕</span><span style="font-size:14px;color:#C0392B;border:1px solid #C0392B;border-radius:50%;width:24px;height:24px;line-height:22px">✕</span></div>'
+      +'<div class="auth-sheet-title">기초부터 잡고 갈까요?</div>'
+      +'<div class="auth-sheet-sub">'+esc(name)+' 문제를 3개 연이어 틀렸어요.<br>'
+      +(ep>=0?'방금 틀린 「'+esc(concept)+'」는 기초학습 '+(ep+1)+'화에 이야기로 나와요. 5분이면 봐요.':esc(name)+' 기초학습을 이어서 봐요')+'</div>'
+      +'<button class="btn-google-login" onclick="bsStreakGo()" style="justify-content:center;background:#185FA5;color:#fff;border:none">'+(ep>=0?'기초학습 '+(ep+1)+'화 보기 →':'기초학습 이어 보기 →')+'</button>'
+      +'<button class="auth-sheet-close" onclick="bsStreakClose(true)">계속 풀게요</button>'
+      +'<div style="font-size:12px;color:#888780;margin-top:12px">오늘은 '+esc(name)+'에서 다시 안 띄워요</div></div>';
+    bsStreakPending={sub:sub,ep:ep,idx:mqIdx};
+    try{ localStorage.setItem(storageKey,bsStreakDate()); }catch(_){}
+    p.classList.remove('hidden'); return true;
+  };
   /* 본 화 표시 — 이 브라우저(localStorage)에만 */
   function seenGet(k){ try{ return JSON.parse(localStorage.getItem('certlab_bs_seen_'+k)||'[]'); }catch(_){ return []; } }
   function seenAdd(k,i){ try{ var a=seenGet(k); if(a.indexOf(i)<0){ a.push(i); localStorage.setItem('certlab_bs_seen_'+k, JSON.stringify(a)); } }catch(_){} }
@@ -381,12 +441,13 @@
         return '<div class="scard bs-pick"><div class="scard-hd" onclick="bsOpen(\''+sub+'\')"><span class="sdot"></span><span class="snm">'+esc(nm)+'</span><span class="scard-set-label">'+esc(D[k].kind)+' · '+done+'/'+n+'</span><span class="b-go" style="margin-left:8px;flex-shrink:0">'+(done>=n?'다시 보기':done>0?'이어 보기':'시작')+'</span></div></div>'; }).join('');
   }
   window.bsOpen=function(sub, i){ var k=keyOf(mqCert, sub); if(!k) return; var seen=seenGet(k);
-    BS={sub:sub, key:k, idx:(typeof i==='number')?i:(seen.length<D[k].cards.length?(function(){ for(var j=0;j<D[k].cards.length;j++){ if(seen.indexOf(j)<0) return j; } return 0; })():0)};
+    var lastAt=-1; try{ lastAt=+(localStorage.getItem('certlab_bs_last_'+k)||-1); }catch(_){}   // 나갔다 들어오면 보던 화 그대로(크리스 11-24 「나갔다들어올때마다 다음화로 가네」)
+    BS={sub:sub, key:k, idx:(typeof i==='number')?i:(lastAt>=0&&lastAt<D[k].cards.length)?lastAt:(seen.length<D[k].cards.length?(function(){ for(var j=0;j<D[k].cards.length;j++){ if(seen.indexOf(j)<0) return j; } return 0; })():0)};
     mqScreen='basics'; renderMCQ(); window.scrollTo(0,0); };
   /* 기초학습 화면 — 머리 · 진행 막대 · 카드 한 장 · 이전/다음 · 마지막에 「기초학습 끝 — 기출 풀러 가기」 */
   window.renderBasics=function(root){
     var deck=D[BS.key]; if(!deck){ root.innerHTML=pickHTML(); return; }
-    var n=deck.cards.length, c=deck.cards[BS.idx], last=BS.idx>=n-1; seenAdd(BS.key, BS.idx);
+    var n=deck.cards.length, c=deck.cards[BS.idx], last=BS.idx>=n-1; seenAdd(BS.key, BS.idx); try{ localStorage.setItem('certlab_bs_last_'+BS.key, String(BS.idx)); }catch(_){}
     var done=seenGet(BS.key).length, pct=Math.round(done/n*100);
     root.innerHTML='<div class="exam-sticky"><div class="exam-hd">'
       +'<div class="exam-ti"><div class="nm">기초학습</div><div class="st">'+esc(deck.name)+' · '+esc(deck.kind)+'</div></div><button type="button" class="bs-x" onclick="bsClose()" aria-label="닫기">✕</button></div>'
