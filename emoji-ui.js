@@ -40,7 +40,7 @@
         fragment.appendChild(document.createTextNode(emoji)); continue;
       }
       var beside=!!(value.slice(0,start).trim() || value.slice(at).trim());
-      var color=dots[emoji] || (size<=16 && beside && emoji!=='📋' ? 'currentColor' : '');
+      var color=dots[emoji] || (size<=16 && beside && emoji!=='📋' && !parent.closest('.tmark') ? 'currentColor' : '');   // 문항 번호 줄 ⌛시간 표시는 점 말고 모래시계(크리스 11-25 「걸리는시간 모래시계아녔나」)
       if(color){
         var dot=document.createElement('span');
         dot.className='cl-emoji-dot';dot.style.setProperty('--cl-dot',color);
