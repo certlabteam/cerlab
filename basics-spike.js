@@ -39,6 +39,18 @@
     var Y=function(v){ return +(B-(v-o.y[0])/(o.y[1]-o.y[0])*(B-T)).toFixed(1); };
     var t=function(x,y,s,anc,cls){ return '<text x="'+x+'" y="'+y+'"'+(anc?' text-anchor="'+anc+'"':'')+(cls?' class="'+cls+'"':'')+'>'+esc(s)+'</text>'; };
     var h=o.noAxis?'':'<path class="ax" d="M'+L+' '+(T-4)+' V'+B+' H'+(R+8)+'"/>'+t(4,10,o.yl||'')+t(W-4,H-4,o.xl||'','end');
+    /* 축 눈금 — 축마다 1·2·5 단위로 고르게 다 적는다(크리스 11-25 「X축 Y축 눈금값이 없네」「그 부분만 넣지말고 100부터 500까지 다 넣어」).
+       손으로 적은 눈금(ty·tx)은 그대로 두고, 그 자리에 너무 붙는 고른 눈금만 뺀다 */
+    if(!o.noAxis){ var its=o.items||[], step=function(a){ var r=(a[1]-a[0])/6, p=Math.pow(10,Math.floor(Math.log10(r))), m=r/p; return (m<1.5?1:m<3.5?2:m<7.5?5:10)*p; };
+      var fmt=function(v){ return (+v.toFixed(6)).toLocaleString('ko-KR'); };
+      var hy=its.filter(function(it){ return it.ty!=null; }).map(function(it){ return Y(it.ty); }), hx=its.filter(function(it){ return it.tx!=null; }).map(function(it){ return X(it.tx); });
+      var near=function(arr,p,gap){ return arr.some(function(q){ return Math.abs(q-p)<gap; }); };
+      /* 점이 있는 자리의 값도 축에 적는다(크리스 11-25 「축에 점 값도 적기」) — 손 눈금·앞 점 값과 붙으면 건너뛴다 */
+      its.forEach(function(it){ if(!it.pt || it.noGuide) return; var gx=X(it.pt[0]), gy=Y(it.pt[1]); if(!(gx>L+1 && gy<B-1)) return;
+        if(!near(hy,gy,12)){ hy.push(gy); h+=t(L-5, gy+4, fmt(it.pt[1]), 'end'); }
+        if(!near(hx,gx,18)){ hx.push(gx); h+=t(gx, B+15, fmt(it.pt[0]), 'middle'); } });
+      var sy=step(o.y); for(var v=Math.ceil(o.y[0]/sy)*sy; v<=o.y[1]+1e-9; v+=sy){ var py=Y(v); h+='<path class="ax" d="M'+(L-3)+' '+py+' H'+L+'"/>'; if(py>=22 && !near(hy,py,12)) h+=t(L-5, py+4, fmt(v), 'end', 'muted'); }
+      var sx=step(o.x); for(var u=Math.ceil(o.x[0]/sx)*sx; u<=o.x[1]+1e-9; u+=sx){ if(Math.abs(u)<1e-9 && o.y[0]===0) continue; var px=X(u); h+='<path class="ax" d="M'+px+' '+B+' V'+(B+3)+'"/>'; if(!near(hx,px,22)) h+=t(px, B+15, fmt(u), 'middle', 'muted'); } }
     (o.items||[]).forEach(function(it){
       if(it.area) h+='<path d="M'+it.area.map(function(p){ return X(p[0])+' '+Y(p[1]); }).join(' L')+' Z" fill="'+it.fill+'" stroke="none"/>';
       else if(it.f){ var n=it.n||48, d=''; for(var i=0;i<=n;i++){ var q=it.a+(it.b-it.a)*i/n; d+=(i?' L':'M')+X(q)+' '+Y(it.f(q)); }
@@ -48,7 +60,10 @@
       else if(it.dash){ var p=it.dash; h+='<path class="dash" d="M'+L+' '+Y(p[1])+' H'+X(p[0])+(it.toX===false?'':' V'+B)+'"/>'; }
       else if(it.vdash){ var v=it.vdash; h+='<path class="dash" d="M'+X(v[0])+' '+Y(v[1])+' V'+B+'"/>'; }
       else if(it.hseg){ var s=it.hseg; h+='<path class="dash" d="M'+X(s[0])+' '+Y(s[2])+' H'+X(s[1])+'"/>'; }
-      else if(it.pt){ var c=it.pt; h+='<circle cx="'+X(c[0])+'" cy="'+Y(c[1])+'" r="3.5"'+(it.hollow?' fill="none" stroke="'+(it.color||'#185FA5')+'" stroke-width="1.5"':' fill="'+(it.color||'#185FA5')+'"')+'/>';
+      else if(it.pt){ var c=it.pt;
+        /* 점마다 두 축까지 점선(크리스 11-25 「그래프점 찍은값들은 점선으로 연결하고」) — 축 위 점·noAxis 그림은 빼고 */
+        if(!o.noAxis && !it.noGuide){ var gx=X(c[0]), gy=Y(c[1]); if(gx>L+1 && gy<B-1) h+='<path class="dash" d="M'+L+' '+gy+' H'+gx+' V'+B+'"/>'; }
+        h+='<circle cx="'+X(c[0])+'" cy="'+Y(c[1])+'" r="3.5"'+(it.hollow?' fill="none" stroke="'+(it.color||'#185FA5')+'" stroke-width="1.5"':' fill="'+(it.color||'#185FA5')+'"')+'/>';
         if(it.lab) h+=t(X(c[0])+(it.dx||8), Y(c[1])+(it.dy==null?-8:it.dy), it.lab, it.anc, it.lcls); }
       else if(it.ty) h+=t(L-5, Y(it.ty)+4, it.s, 'end', it.cls);
       else if(it.tx!=null) h+=t(X(it.tx), B+15, it.s, 'middle', it.cls);
