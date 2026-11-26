@@ -1421,6 +1421,8 @@ body{background:#FDF8F5;color:#2C2C2A;font-family:'Pretendard Variable',Pretenda
 .tr-row{display:flex;gap:8px;align-items:flex-start;line-height:1.65;font-size:14px}
 .tr-row+.tr-row{margin-top:6px}
 .tr-row>b{flex:0 0 auto;min-width:40px;text-align:center;font-size:12px;font-weight:800;background:#E2E8F0;color:#334155;border-radius:4px;padding:0 5px;margin-top:2px}
+.ex-sec+.ex-sec{margin-top:12px;padding-top:12px;border-top:1px solid #E2E8F0}
+.ex-h{font-size:14px;font-weight:800;color:#0F172A;margin:0 0 4px}
 .tr-src{white-space:pre-wrap;color:#334155}
 /* [2026-10-29] 첫 화면 예시 카드 — 글씨 한 단계(크리스 「지금 랜딩 형태 내용 그대로」라 나머지는 예전 그대로) */
 .lp-card .lp-q{font-size:18px;line-height:28px}

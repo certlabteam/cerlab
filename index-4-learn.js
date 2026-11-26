@@ -673,7 +673,13 @@ function _noteWithTr(q){
   if(!m) return '<div class="note">'+expNoteHTML(s,q)+'</div>';
   var src=q.jaryo?String(q.jaryo).replace(/\[\/?u\]/g,''):'';
   var box='<div class="tr-box"><div class="tr-ti">지문 해석</div>'+(src?'<div class="tr-row"><b>지문</b><div class="tr-src">'+_jaryoDots(rm(src,q))+'</div></div>':'')+'<div class="tr-row"><b>해석</b><div>'+_jaryoDots(rm(m[1].replace(/(\S)\s*○/g,'$1<br>○'),q))+'</div></div></div>';   /* [2026-11-26] 지문·해석의 ○ 진술은 문제 자료와 같은 작은 점으로, 해석도 ○마다 줄을 나눈다(크리스 「문제랑 해설에 표시된 점이 달라」 customs2026_trade_003) */
-  return box+(m[2]&&m[2].trim()?'<div class="note">'+expNoteHTML(m[2],q)+'</div>':'');
+  return box+(m[2]&&m[2].trim()?'<div class="note">'+_exSecs(m[2],q)+'</div>':'');
+}
+/* [2026-11-27] 해석 뒤 「▶ 구문: … ▶ 정답 근거: …」를 제목 붙은 칸으로 나눈다 — 같은 제목이 여럿이면 1·2 번호(크리스 「해설 보기가 너무 어렵다」 customs2026_trade_001) */
+function _exSecs(t,q){
+  var secs=String(t).split(/\s*▶\s*/).filter(function(x){return x.trim();}).map(function(x){var h=x.match(/^([^:：\n]{1,12})[:：]\s*([\s\S]*)$/);return h?{h:h[1].trim(),b:h[2]}:{h:'',b:x};});
+  var cnt={},no={}; secs.forEach(function(s){cnt[s.h]=(cnt[s.h]||0)+1;});
+  return secs.map(function(s){no[s.h]=(no[s.h]||0)+1;var h=s.h?(s.h+(cnt[s.h]>1?' '+no[s.h]:'')):'';return '<div class="ex-sec">'+(h?'<div class="ex-h">'+h+'</div>':'')+expNoteHTML(s.b.trim(),q)+'</div>';}).join('');
 }
 /* [2026-10-17] 예시 첫머리 「예를 들어 / 예컨대 / 가령」은 「예)」 표시와 겹쳐 뗀다 — 크리스 「예를 들어 또 중복 · 예)가 있잖아」 */
 function _exTrim(t){ return String(t==null?'':t).trim().replace(/^(예를\s*들어|예를\s*들면|예컨대|가령)\s*[,，]?\s*/,''); }
