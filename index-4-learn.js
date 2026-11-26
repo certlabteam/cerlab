@@ -609,7 +609,8 @@ function _dropNonFinalDot(h){ try{ h=String(h==null?'':h);
     if(/^\s*[0-9A-Za-z\u3131-\u314E\uAC00-\uD7A3]{1,2}$/.test(seg) || /^\s*[0-9A-Za-z\u3131-\u314E\uAC00-\uD7A3]{1,2}$/.test(line)) return m;
     return c+tags; });
 }catch(e){ return h; } }
-function rm(text, q){ return _dropNonFinalDot(renderMath(text, isEconQ(q)).replace(/(^|[^A-Za-z0-9_])(m|cm|km)([23])(?![0-9A-Za-z_])/g, '$1$2<sup>$3</sup>')); }   /* [2026-10-18] 원문 「145.450m2」 같은 넓이·부피 단위를 윗첨자로(크리스 「제곱미터 윗첨자가 없네」 「m2 말이야」 re2 taxreg23_4) — 숫자 바로 뒤 m2·m3·cm2·km2 만. 원문 글자는 그대로 둔다 */
+function rm(text, q){ text=String(text==null?'':text).replace(/\([  ]?\)/g,'(  )');   /* [2026-11-26] 빈칸 괄호 「()」가 들여올 때 붙어 버림 — 화면에서만 넓혀 보인다(크리스 「괄호가 너무 붙어 있어」 customs2026_trade_003). 글자는 그대로 */
+  return _dropNonFinalDot(renderMath(text, isEconQ(q)).replace(/(^|[^A-Za-z0-9_])(m|cm|km)([23])(?![0-9A-Za-z_])/g, '$1$2<sup>$3</sup>')); }   /* [2026-10-18] 원문 「145.450m2」 같은 넓이·부피 단위를 윗첨자로(크리스 「제곱미터 윗첨자가 없네」 「m2 말이야」 re2 taxreg23_4) — 숫자 바로 뒤 m2·m3·cm2·km2 만. 원문 글자는 그대로 둔다 */
 /* [2026-08-23] 해설(exp.o) 전용 — 줄바꿈을 살린다.
    데이터에는 ①②③ 단계마다 
  이 들어 있는데 rm 은 그대로 흘려 버려 한 문단으로 뭉쳤다.
@@ -671,7 +672,7 @@ function _noteWithTr(q){
   var s=String((q.exp&&q.exp.s)||''), m=s.match(/^\s*\[지문\s*해석\]\s*([\s\S]*?)(?:\s*▶\s*([\s\S]*))?$/);
   if(!m) return '<div class="note">'+expNoteHTML(s,q)+'</div>';
   var src=q.jaryo?String(q.jaryo).replace(/\[\/?u\]/g,''):'';
-  var box='<div class="tr-box"><div class="tr-ti">지문 해석</div>'+(src?'<div class="tr-row"><b>지문</b><div class="tr-src">'+rm(src,q)+'</div></div>':'')+'<div class="tr-row"><b>해석</b><div>'+rm(m[1],q)+'</div></div></div>';
+  var box='<div class="tr-box"><div class="tr-ti">지문 해석</div>'+(src?'<div class="tr-row"><b>지문</b><div class="tr-src">'+_jaryoDots(rm(src,q))+'</div></div>':'')+'<div class="tr-row"><b>해석</b><div>'+_jaryoDots(rm(m[1].replace(/(\S)\s*○/g,'$1<br>○'),q))+'</div></div></div>';   /* [2026-11-26] 지문·해석의 ○ 진술은 문제 자료와 같은 작은 점으로, 해석도 ○마다 줄을 나눈다(크리스 「문제랑 해설에 표시된 점이 달라」 customs2026_trade_003) */
   return box+(m[2]&&m[2].trim()?'<div class="note">'+expNoteHTML(m[2],q)+'</div>':'');
 }
 /* [2026-10-17] 예시 첫머리 「예를 들어 / 예컨대 / 가령」은 「예)」 표시와 겹쳐 뗀다 — 크리스 「예를 들어 또 중복 · 예)가 있잖아」 */
