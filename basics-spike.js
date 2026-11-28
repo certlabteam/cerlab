@@ -293,6 +293,19 @@
   }, law:{
     1: flow([['광역도시계획','여러 시·군의 큰 방향'],['도시·군기본계획','한 시·군의 장기 방향 · 국민 직접 구속 없음'],['도시·군관리계획','용도지역 등 구체적 이용 · 국민 구속']], '', {v:1}),
     2: dia(['용도지역','├ 1. 도시지역 — 주거·상업·공업·녹지','├ 2. 관리지역 — 보전관리·생산관리·계획관리','├ 3. 농림지역','└ 4. 자연환경보전지역']),
+    /* 필지 개념도(크리스 11-28 「필지 개념도 그림으로 기초학습에 넣어주라」) — 지적도처럼 칸마다 지번+지목 부호 하나 */
+    4: fig('0 0 320 220','지적도에서 본 필지 — 칸 하나가 필지, 칸마다 지번과 지목 하나',
+      '<rect x="20" y="14" width="250" height="160" fill="#F8FAFC" stroke="#64748B" stroke-width="1"/>'
+      +'<rect x="20" y="14" width="110" height="80" fill="#E6F1FB" stroke="#185FA5" stroke-width="2"/>'
+      +'<path d="M130 14 V174 M20 94 H270 M200 14 V94 M130 134 H270" stroke="#64748B" stroke-width="1" fill="none"/>'
+      +'<rect x="20" y="174" width="250" height="26" fill="#EEF2F6" stroke="#64748B" stroke-width="1"/>'
+      +'<rect x="270" y="14" width="30" height="186" fill="#E0F2FE" stroke="#64748B" stroke-width="1"/>'
+      +'<text x="75" y="52" text-anchor="middle" style="font-weight:700">123답</text><text x="75" y="72" text-anchor="middle" class="muted">甲의 땅</text>'
+      +'<text x="165" y="58" text-anchor="middle">124대</text><text x="235" y="58" text-anchor="middle">125전</text>'
+      +'<text x="75" y="138" text-anchor="middle">126장</text><text x="75" y="156" text-anchor="middle" class="muted">공장용지</text>'
+      +'<text x="200" y="118" text-anchor="middle">127과</text><text x="200" y="158" text-anchor="middle">128차</text>'
+      +'<text x="145" y="192" text-anchor="middle">130도</text><text x="285" y="110" text-anchor="middle" transform="rotate(90 285 110)">131천 · 하천</text>')
+      +'<div class="bs-legend">선으로 둘러싼 칸 하나 = 필지(지번 하나) · 칸마다 지목 부호는 하나(1필1목) · 칸을 가르는 선 = 경계 · 공장용지 「장」, 주차장 「차」, 하천 「천」은 둘째 글자</div>',
     5: fig('0 0 320 210','대지 200㎡ 위 4층 건물과 지하 1층','<path class="ax" d="M20 150 H300"/>'
       +'<rect x="88" y="46" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/><rect x="88" y="72" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/><rect x="88" y="98" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/><rect x="88" y="124" width="144" height="26" fill="#E6F1FB" stroke="#185FA5"/>'
       +'<rect x="88" y="150" width="144" height="26" fill="none" stroke="#64748B" stroke-dasharray="4 4"/>'
